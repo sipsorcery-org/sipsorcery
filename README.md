@@ -7,9 +7,9 @@
 
 This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) and the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550). 
 
-**This library provide an interface for audio/video capturing/rendering. For Windows the companion [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media) library does provide some audio & video functions. Supporting cross platform audio/video capabilities with .NET Core is a major project by itself.
+**This library does not provide any interface for audio/video capturing/rendering. For Windows the companion [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media) library does provide some audio & video functions. Supporting cross platform audio/video with .NET Core is a major project by itself.**
 
-**NEW (Jul 2020)**: Pre-release support for Web Real-Time Communication [(WebRTC)](https://www.w3.org/TR/webrtc/) for early adopters and now with C# DTLS/SRTP implementation (native libraries no longer required) thanks to @rafcsoares. See [Getting Started WebRTC](#getting-started-webrtc).
+**NEW (Jul 2020)**: Pre-release support for Web Real-Time Communication [(WebRTC)](https://www.w3.org/TR/webrtc/) now includes a C# DTLS/SRTP implementation (native libraries no longer required) thanks to @rafcsoares. See [Getting Started WebRTC](#getting-started-webrtc).
 
 ## Installation
 
