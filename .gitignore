@@ -169,3 +169,8 @@ bower_components
 *.dll
 *.vs
 
+<<<<<<< HEAD
+=======
+docfx/*
+**/.vscode*
+>>>>>>> master
