@@ -170,3 +170,4 @@ bower_components
 *.vs
 
 docfx/*
+**/.vscode*
