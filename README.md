@@ -40,10 +40,10 @@ dotnet new console --name SIPGetStarted
 cd SIPGetStarted
 dotnet add package SIPSorcery -v 4.0.58-pre
 dotnet add package SIPSorceryMedia -v 4.0.58-pre
-code . # If you have [Visual Studio Code](https://code.visualstudio.com/) installed
+code . # If you have Visual Studio Code https://code.visualstudio.com installed
 # edit Program.cs and paste in the contents below.
 dotnet run
-# if successful you will here the current time read out.
+# if successful you will hear the current time read out.
 ctrl-c
 ````
 
@@ -110,7 +110,7 @@ dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
 dotnet add package SIPSorcery -v 4.0.58-pre
 dotnet add package SIPSorceryMedia -v 4.0.58-pre
-code . # If you have [Visual Studio Code](https://code.visualstudio.com/) installed
+code . # If you have Visual Studio Code (https://code.visualstudio.com) installed
 # edit Program.cs and paste in the contents below.
 dotnet run
 ````
