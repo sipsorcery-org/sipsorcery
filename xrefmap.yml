@@ -11297,12 +11297,24 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.H263
   fullName: SIPSorcery.Net.SDPMediaFormatsEnum.H263
   nameWithType: SDPMediaFormatsEnum.H263
+- uid: SIPSorcery.Net.SDPMediaFormatsEnum.H264
+  name: H264
+  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_H264
+  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.H264
+  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.H264
+  nameWithType: SDPMediaFormatsEnum.H264
 - uid: SIPSorcery.Net.SDPMediaFormatsEnum.JPEG
   name: JPEG
   href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_JPEG
   commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.JPEG
   fullName: SIPSorcery.Net.SDPMediaFormatsEnum.JPEG
   nameWithType: SDPMediaFormatsEnum.JPEG
+- uid: SIPSorcery.Net.SDPMediaFormatsEnum.OPUS
+  name: OPUS
+  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_OPUS
+  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.OPUS
+  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.OPUS
+  nameWithType: SDPMediaFormatsEnum.OPUS
 - uid: SIPSorcery.Net.SDPMediaFormatsEnum.PCMA
   name: PCMA
   href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_PCMA
@@ -11327,6 +11339,12 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.VP8
   fullName: SIPSorcery.Net.SDPMediaFormatsEnum.VP8
   nameWithType: SDPMediaFormatsEnum.VP8
+- uid: SIPSorcery.Net.SDPMediaFormatsEnum.VP9
+  name: VP9
+  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_VP9
+  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.VP9
+  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.VP9
+  nameWithType: SDPMediaFormatsEnum.VP9
 - uid: SIPSorcery.Net.SDPMediaTypes
   name: SDPMediaTypes
   href: api/SIPSorcery.Net.SDPMediaTypes.html
