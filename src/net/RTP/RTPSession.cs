@@ -774,10 +774,16 @@ namespace SIPSorcery.Net
                         else
                         {
                             // Check that there is at least one compatible non-"RTP Event" audio codec.
-                            var audioCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats);
+                            var audioCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats) :
+                                SDPMediaFormat.GetCompatibleFormats(audioAnnounce.MediaFormats, AudioLocalTrack.Capabilities);
                             if (audioCompatibleFormats?.Count == 0)
                             {
                                 return SetDescriptionResultEnum.AudioIncompatible;
+                            }
+                            else
+                            {
+                                // Set the local audio capabilities to the common set.
+                                AudioLocalTrack.Capabilities = audioCompatibleFormats;
                             }
 
                             // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
@@ -863,10 +869,16 @@ namespace SIPSorcery.Net
                         else
                         {
                             // Check that there is at least one compatible video codec.
-                            var videoCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, videoAnnounce.MediaFormats);
+                            var videoCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, videoAnnounce.MediaFormats) :
+                                 SDPMediaFormat.GetCompatibleFormats(videoAnnounce.MediaFormats, VideoLocalTrack.Capabilities);
                             if (videoCompatibleFormats?.Count == 0)
                             {
                                 return SetDescriptionResultEnum.VideoIncompatible;
+                            }
+                            else
+                            {
+                                // Set the local video capabilities to the common set.
+                                VideoLocalTrack.Capabilities = videoCompatibleFormats;
                             }
 
                             var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connectionAddress;

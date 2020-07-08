@@ -1,0 +1,15 @@
+v=0
+o=- 1194704656 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 5016 RTP/AVP 111
+a=rtpmap:111 opus/48000/2
+a=fmtp:111 minptime=10;useinbandfec=1
+a=sendrecv
+m=video 5018 RTP/AVP 98 100
+a=rtpmap:98 VP9/90000
+a=fmtp:98 profile-id=0
+a=rtpmap:100 VP9/90000
+a=fmtp:100 profile-id=2
+a=sendrecv

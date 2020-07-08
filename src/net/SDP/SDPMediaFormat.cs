@@ -41,8 +41,12 @@ namespace SIPSorcery.Net
         // The types following are standard media types that do not have a 
         // recognised ID but still do have recognised properties. The ID
         // assigned is arbitrary and should not necessarily be used in SDP.
+        VP9 = 98,
         VP8 = 100,  // Video.
         Event = 101,
+        H264 = 102,
+        OPUS = 111,
+
 
         Unknown = 999,
     }
@@ -65,6 +69,8 @@ namespace SIPSorcery.Net
                 case SDPMediaFormatsEnum.G722:
                     return 16000;
                 case SDPMediaFormatsEnum.VP8:
+                case SDPMediaFormatsEnum.VP9:
+                case SDPMediaFormatsEnum.H264:
                     return 90000;
                 default:
                     return 0;
@@ -84,6 +90,8 @@ namespace SIPSorcery.Net
             {
                 case SDPMediaFormatsEnum.G722:
                     return 8000;
+                case SDPMediaFormatsEnum.OPUS:
+                    return 48000;
                 default:
                     return GetClockRate(payloadType);
             }
@@ -299,7 +307,8 @@ namespace SIPSorcery.Net
             {
                 // TODO: Need to compare all aspects of the format not just the codec.
                 if (format.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) != true
-                    && b.Any(x => x.FormatCodec == format.FormatCodec))
+                    && b.Any(x => (x.FormatCodec != SDPMediaFormatsEnum.Unknown && x.FormatCodec == format.FormatCodec)
+                    || (x.Name != null && format.Name != null && x.Name.ToLower() == format.Name.ToLower())))
                 {
                     compatible.Add(format);
                 }
