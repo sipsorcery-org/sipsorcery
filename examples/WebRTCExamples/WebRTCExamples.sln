@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCReceiveAudio", "WebRT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCAspNet", "WebRTCAspNetMvc\WebRTCAspNet.csproj", "{90C9E437-5644-4474-BF05-E57601F5B461}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{3DA833D9-F031-4888-BFAB-6360367E5D0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +113,18 @@ Global
 		{90C9E437-5644-4474-BF05-E57601F5B461}.Release|x64.Build.0 = Release|Any CPU
 		{90C9E437-5644-4474-BF05-E57601F5B461}.Release|x86.ActiveCfg = Release|Any CPU
 		{90C9E437-5644-4474-BF05-E57601F5B461}.Release|x86.Build.0 = Release|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Debug|x64.Build.0 = Debug|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Debug|x86.Build.0 = Debug|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Release|x64.ActiveCfg = Release|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Release|x64.Build.0 = Release|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Release|x86.ActiveCfg = Release|Any CPU
+		{3DA833D9-F031-4888-BFAB-6360367E5D0C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

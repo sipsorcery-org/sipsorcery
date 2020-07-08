@@ -6,36 +6,12 @@
 
         var pc;
 
-	// Paste the SDP offer from the dotnet console into the "offerSDP" value below.
-	// The offer should look similar to the one below but with different IP addresses etc.
+		function start(remoteOffer) {
 
-	var offerSDP = 
-`v=0
-o=- 95304 0 IN IP4 127.0.0.1
-s=-
-t=0 0
-a=fingerprint:sha-256 1E:D5:C4:54:F1:6E:8D:5E:A4:17:CF:A6:FB:19:4B:BC:22:6F:27:6A:45:B6:7E:31:9E:4A:34:7D:BA:5B:2C:7A
-a=group:BUNDLE 0
-m=video 9 UDP/TLS/RTP/SAVP 100
-c=IN IP4 0.0.0.0
-a=ice-ufrag:UFTU
-a=ice-pwd:KAPMTZKUJOPLCXHXLLXFCJAI
-a=fingerprint:sha-256 1E:D5:C4:54:F1:6E:8D:5E:A4:17:CF:A6:FB:19:4B:BC:22:6F:27:6A:45:B6:7E:31:9E:4A:34:7D:BA:5B:2C:7A
-a=candidate:2441 1 udp 659136 fe80::54a9:d238:b2ee:ceb%21 53194 typ host generation 0
-a=candidate:2944 1 udp 659136 192.168.11.50 53194 typ host generation 0
-a=ice-options:ice2,trickle
-a=mid:0
-a=rtpmap:100 VP8/90000
-a=rtcp-mux
-a=rtcp:9 IN IP4 0.0.0.0
-a=setup:actpass
-a=sendonly
-`;
+            if (remoteOffer === '') {
+                return alert('The SDP offer cannot not be empty.');
+            }
 
-		function start() {
-		
-			console.log(offerSDP);
-	
 			let videoControl = document.querySelector('#videoCtl');
 			
 			pc = new RTCPeerConnection(null);
@@ -65,13 +41,19 @@ a=sendonly
                     console.log(event.candidate);
                 }
             };
-			
-			pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: offerSDP }));
 
-			// Create the answer SDP.
+            pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(remoteOffer))))
+
+            //const offer = await pc.createOffer();
+            //document.getElementById('localSessionDescription').value = btoa(JSON.stringify(pc.localDescription))
+
+			//pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: offerSDP }));
+
+			//// Create the answer SDP.
 			pc.createAnswer().then(function (answer) {
 				console.log("answer SDP: " + answer.sdp)
-				pc.setLocalDescription(answer);
+                pc.setLocalDescription(answer);
+                document.getElementById('localAnswer').value = btoa(JSON.stringify(pc.localDescription))
 			});	
 		};	
 
@@ -87,10 +69,14 @@ a=sendonly
 <body>
 
     <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
-	
-	<div>
-		<button type="button" class="btn btn-success" onclick="start();">Start</button>
-		<button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
-	</div>
+
+    <h3>Paste in Remote SDP Offer (as a base64 string)</h3>
+    <textarea id="remoteOffer" rows="10" cols="80"></textarea> <br />
+    <button type="button" class="btn btn-success" onclick="start(document.getElementById('remoteOffer').value);">Start</button>
+
+    <h3>Local SDP Answer will appear here (as a base64 string)</h3>
+    <textarea id="localAnswer" readonly="true" rows="10" cols="80"></textarea> <br />
+
+    <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
 
 </body>

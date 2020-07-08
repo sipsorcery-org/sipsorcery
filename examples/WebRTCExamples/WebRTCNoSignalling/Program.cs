@@ -21,9 +21,11 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Serilog;
 using SIPSorcery.Net;
 using SIPSorceryMedia;
@@ -65,10 +67,6 @@ namespace WebRTCServer
 
             InitialiseTestPattern();
 
-            Console.WriteLine($"Starting Peer Connection...");
-
-            var pc = await StartPeerConnection();
-
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
@@ -77,28 +75,55 @@ namespace WebRTCServer
                 exitMre.Set();
             };
 
+            var pc = CreatePeerConnection();
+
             Console.WriteLine("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-            Console.WriteLine("THE SDP OFFER ABOVE NEEDS TO BE PASTED INTO YOUR BROWSER");
+            Console.WriteLine("THE SDP OFFER BELOW NEEDS TO BE PASTED INTO YOUR BROWSER");
             Console.WriteLine();
 
-            Console.WriteLine("Press enter when you the SDP answer is available and then enter the ICE username and password...");
-            Console.ReadLine();
+            var offerSdp = pc.createOffer(null);
+            await pc.setLocalDescription(offerSdp);
 
-            Console.Write("Enter the remote peer ICE User (e.g. for 'a=ice-ufrag:tGXy' enter tGXy) => ");
-            var remoteIceUser = Console.ReadLine();
+            var offerSerialised = Newtonsoft.Json.JsonConvert.SerializeObject(offerSdp,
+                 new Newtonsoft.Json.Converters.StringEnumConverter());
+            var offerBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(offerSerialised));
 
-            Console.Write("Enter the remote peer ICE Password (e.g. for 'a=ice-pwd:Icew1/BpwUIJLn2dBMbQyYPB' enter Icew1/BpwUIJLn2dBMbQyYPB) => ");
-            var remoteIcePassword = Console.ReadLine();
+            Console.WriteLine(offerBase64);
 
-            pc.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+            Console.WriteLine("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+            Console.WriteLine("THE SDP ANSWER FROM THE BROWSER NEEDS TO PASTED BELOW");
+            Console.WriteLine();
 
-            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
-            exitMre.WaitOne();
+            string remoteAnswerB64 = null;
+            while (string.IsNullOrWhiteSpace(remoteAnswerB64))
+            {
+                Console.Write("=> ");
+                remoteAnswerB64 = Console.ReadLine();
+            }
 
-            pc.Close("normal");
+            if (remoteAnswerB64 == "q")
+            {
+                Console.WriteLine("Quitting.");
+            }
+            else
+            {
+                string remoteAnswer = Encoding.UTF8.GetString(Convert.FromBase64String(remoteAnswerB64));
+                Console.WriteLine($"Remote answer: {remoteAnswer}");
+
+                RTCSessionDescriptionInit answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(remoteAnswer);
+                pc.setRemoteDescription(answerInit);
+
+                // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
+                exitMre.WaitOne();
+
+                Console.WriteLine("Closing.");
+                pc.Close("normal");
+
+                Task.Delay(1000).Wait();
+            }
         }
 
-        private static async Task<RTCPeerConnection> StartPeerConnection()
+        private static RTCPeerConnection CreatePeerConnection()
         {
             var peerConnection = new RTCPeerConnection(null);
 
@@ -130,11 +155,6 @@ namespace WebRTCServer
                     _sendTestPatternTimer = new Timer(SendTestPattern, null, 0, TEST_PATTERN_SPACING_MILLISECONDS);
                 }
             };
-
-            var offerSdp = peerConnection.createOffer(null);
-            await peerConnection.setLocalDescription(offerSdp);
-
-            logger.LogDebug(offerSdp.sdp);
 
             return peerConnection;
         }
