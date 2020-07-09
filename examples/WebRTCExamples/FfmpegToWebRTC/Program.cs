@@ -58,9 +58,21 @@ namespace SIPSorcery.Examples
     {
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
-        private const string FFMPEG_DEFAULT_COMMAND = "ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 -vcodec {0} -strict experimental -g 1 -f rtp rtp://127.0.0.1:{1} -sdp_file {2}";
+        private const string FFMPEG_DEFAULT_COMMAND = "ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 -vcodec {0} -pix_fmt yuv420p -strict experimental -g 1 -f rtp rtp://127.0.0.1:{1} -sdp_file {2}";
         private const string FFMPEG_SDP_FILE = "ffmpeg.sdp";
         private const int FFMPEG_DEFAULT_RTP_PORT = 5020;
+
+        /// <summary>
+        /// The codec to pass to ffmpeg via the command line. WebRTC supported options are:
+        /// - vp8
+        /// - vp9
+        /// - h264
+        /// Note if you change this option you will need to delete the ffmpeg.sdp file.
+        /// </summary>
+        private const string FFMPEG_VP8_CODEC = "vp8";
+        private const string FFMPEG_VP9_CODEC = "vp9";
+        private const string FFMPEG_H264_CODEC = "h264";
+        private const string FFMPEG_DEFAULT_CODEC = FFMPEG_VP9_CODEC;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -68,13 +80,31 @@ namespace SIPSorcery.Examples
         private static SDPMediaFormat _ffmpegVideoFormat;
         private static RTPSession _ffmpegListener;
 
-        private static string _ffmpegCommand = String.Format(FFMPEG_DEFAULT_COMMAND, "vp8", FFMPEG_DEFAULT_RTP_PORT, FFMPEG_SDP_FILE);
-
-        static async Task Main()
+        static async Task Main(string[] args)
         {
+            string videoCodec = FFMPEG_DEFAULT_CODEC;
+
+            if (args?.Length > 0)
+            {
+                switch(args[0].ToLower())
+                {
+                    case FFMPEG_VP8_CODEC:
+                    case FFMPEG_VP9_CODEC:
+                    case FFMPEG_H264_CODEC:
+                        videoCodec = args[0].ToLower();
+                        break;
+
+                    default:
+                        Console.WriteLine($"Video codec option not recognised. Valid values are {FFMPEG_VP8_CODEC}, {FFMPEG_VP9_CODEC} and {FFMPEG_H264_CODEC}. Using {videoCodec}.");
+                        break;
+                }
+            }
+
             CancellationTokenSource exitCts = new CancellationTokenSource();
 
             AddConsoleLogger();
+
+            string ffmpegCommand = String.Format(FFMPEG_DEFAULT_COMMAND, videoCodec, FFMPEG_DEFAULT_RTP_PORT, FFMPEG_SDP_FILE);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -89,11 +119,26 @@ namespace SIPSorcery.Examples
             });
             _webSocketServer.Start();
 
-            Console.WriteLine("Start ffmpeg using the command below and then initiate a WebRTC connection from the browser");
-            Console.WriteLine(_ffmpegCommand);
+            if(File.Exists(FFMPEG_SDP_FILE))
+            {
+                var sdp = SDP.ParseSDPDescription(File.ReadAllText(FFMPEG_SDP_FILE));
+                var videoAnn = sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video);
+                if(videoAnn.MediaFormats.First().Name.ToLower() != videoCodec)
+                {
+                    logger.LogWarning($"Removing existing ffmpeg SDP file {FFMPEG_SDP_FILE} due to codec mismatch.");
+                    File.Delete(FFMPEG_SDP_FILE);
+                }
+            }
 
-            Console.WriteLine();
-            Console.WriteLine($"Waiting for {FFMPEG_SDP_FILE} to appear...");
+            Console.WriteLine("Start ffmpeg using the command below and then initiate a WebRTC connection from the browser");
+            Console.WriteLine(ffmpegCommand);
+
+            if (!File.Exists(FFMPEG_SDP_FILE))
+            {
+                Console.WriteLine();
+                Console.WriteLine($"Waiting for {FFMPEG_SDP_FILE} to appear...");
+            }
+
             await Task.Run(() => StartFfmpegListener(FFMPEG_SDP_FILE, exitCts.Token));
 
             Console.WriteLine($"ffmpeg listener successfully created on port {FFMPEG_DEFAULT_RTP_PORT} with video format {_ffmpegVideoFormat.Name}.");
@@ -120,12 +165,18 @@ namespace SIPSorcery.Examples
 
                 // The SDP is only expected to contain a single video media announcement.
                 var videoAnn = sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video);
-
                 _ffmpegVideoFormat = videoAnn.MediaFormats.First();
 
                 _ffmpegListener = new RTPSession(false, false, false, IPAddress.Loopback, FFMPEG_DEFAULT_RTP_PORT);
                 MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { _ffmpegVideoFormat }, MediaStreamStatusEnum.RecvOnly);
                 _ffmpegListener.addTrack(videoTrack);
+
+                _ffmpegListener.SetRemoteDescription(SIP.App.SdpType.answer, sdp);
+
+                // Set a dummy destination end point or the RTP session will end up sending RTCP reports
+                // to itself.
+                var dummyIPEndPoint = new IPEndPoint(IPAddress.Loopback, 0);
+                _ffmpegListener.SetDestination(SDPMediaTypesEnum.video, dummyIPEndPoint, dummyIPEndPoint);
 
                 await _ffmpegListener.Start();
             }
@@ -173,7 +224,7 @@ namespace SIPSorcery.Examples
 
             pc.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
-            pc.OnReceiveReport += (type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
+            //pc.OnReceiveReport += (type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
             pc.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
             pc.OnRtpClosed += (reason) => logger.LogDebug($"Peer connection closed, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
 

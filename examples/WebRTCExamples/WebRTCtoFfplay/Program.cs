@@ -166,7 +166,7 @@ namespace SIPSorcery.Examples
 
             var pc = Createpc(context);
 
-             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, AudioOfferFormats, MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, AudioOfferFormats, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(audioTrack);
             MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, VideoOfferFormats, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(videoTrack);
@@ -203,11 +203,11 @@ namespace SIPSorcery.Examples
             {
                 logger.LogDebug($"Peer connection state changed to {state}.");
 
-                if(state == RTCPeerConnectionState.connected)
+                if (state == RTCPeerConnectionState.connected)
                 {
                     logger.LogDebug("Creating RTP session for ffplay.");
 
-                    var rtpSession = CreateRtpSession(pc.AudioLocalTrack?.Capabilities, pc.VideoLocalTrack?.Capabilities );
+                    var rtpSession = CreateRtpSession(pc.AudioLocalTrack?.Capabilities, pc.VideoLocalTrack?.Capabilities);
                     pc.OnRtpPacketReceived += (media, rtpPkt) =>
                     {
                         if (media == SDPMediaTypesEnum.audio && rtpSession.AudioDestinationEndPoint != null)
@@ -215,7 +215,7 @@ namespace SIPSorcery.Examples
                             //logger.LogDebug($"Forwarding {media} RTP packet to ffplay timestamp {rtpPkt.Header.Timestamp}.");
                             rtpSession.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
                         }
-                        else if(media == SDPMediaTypesEnum.video && rtpSession.VideoDestinationEndPoint != null)
+                        else if (media == SDPMediaTypesEnum.video && rtpSession.VideoDestinationEndPoint != null)
                         {
                             //logger.LogDebug($"Forwarding {media} RTP packet to ffplay timestamp {rtpPkt.Header.Timestamp}.");
                             rtpSession.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
@@ -223,7 +223,7 @@ namespace SIPSorcery.Examples
                     };
                     pc.OnRtpClosed += (reason) => rtpSession.Close(reason);
                 }
-                
+
             };
 
             _activePeerConnection = pc;
@@ -266,14 +266,15 @@ namespace SIPSorcery.Examples
             }
 
             Console.WriteLine(sdpOffer);
-            
-            using(StreamWriter sw = new StreamWriter(FFPLAY_DEFAULT_SDP_PATH))
+
+            using (StreamWriter sw = new StreamWriter(FFPLAY_DEFAULT_SDP_PATH))
             {
                 sw.Write(sdpOffer);
             }
 
             string ffplayCommand = String.Format(FFPLAY_DEFAULT_COMMAND, FFPLAY_DEFAULT_SDP_PATH);
-            Console.WriteLine($"Start ffplay using:{ffplayCommand}");
+            Console.WriteLine($"Start ffplay using the command below:");
+            Console.WriteLine(ffplayCommand);
             Console.WriteLine($"To request the remote peer to send a video key frame press 'k'");
 
             rtpSession.Start();
@@ -296,7 +297,7 @@ namespace SIPSorcery.Examples
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.
                     SDP remoteSdp = SDP.ParseSDPDescription(message);
 
-                    foreach(var ann in remoteSdp.Media)
+                    foreach (var ann in remoteSdp.Media)
                     {
                         var capbilities = FilterCodecs(ann.Media, ann.MediaFormats);
                         MediaStreamTrack track = new MediaStreamTrack(ann.Media, false, capbilities, MediaStreamStatusEnum.RecvOnly);
