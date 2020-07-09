@@ -21,11 +21,9 @@ ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 -vcodec h264 -pix_fmt yuv420
 Waiting for ffmpeg.sdp to appear...
 ````
 
-start ffmpeg using the command from the console output:
+ - start `ffmpeg` in the same directory as the test application (or adjust the output path for the `ffmpeg.sdp` file) using the command from the console output:
 
 `ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 -vcodec h264 -pix_fmt yuv420p -strict experimental -g 1 -f rtp rtp://127.0.0.1:5020 -sdp_file ffmpeg.sdp`
-
-** The test application needs to access the `ffmpeg.sdp` file so ensure to exeecute `ffmpeg` in the same directory as the test application.
 
 - Open the `webrtc.html` in a browser and click `Start` and the `ffmpeg` test pattern should appear.
 
