@@ -1329,8 +1329,20 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="uac">The client user agent used to initiate the call.</param>
         /// <param name="sipResponse">The INVITE ringing response.</param>
-        private void ClientCallRingingHandler(ISIPClientUserAgent uac, SIPResponse sipResponse)
+        private async void ClientCallRingingHandler(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
+            if (sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress &&
+                sipResponse.Body != null)
+            {
+                var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
+                logger.LogDebug($"Set remote description for early media result {setDescriptionResult}.");
+
+                if (setDescriptionResult == SetDescriptionResultEnum.OK)
+                {
+                    await MediaSession.Start().ConfigureAwait(false);
+                }
+            }
+
             if (ClientCallRinging != null)
             {
                 ClientCallRinging(uac, sipResponse);
@@ -1362,7 +1374,6 @@ namespace SIPSorcery.SIP.App
         {
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
-                // Only set the remote RTP end point if there hasn't already been a packet received on it.
                 var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
 
                 if (setDescriptionResult == SetDescriptionResultEnum.OK)
