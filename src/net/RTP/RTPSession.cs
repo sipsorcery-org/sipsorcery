@@ -2156,25 +2156,39 @@ namespace SIPSorcery.Net
                 isValidSource = true;
             }
             else if ((expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate()) ||
-               (
                 (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address))
-                && expectedEndPoint.Port == receivedOnEndPoint.Port)
                )
             {
                 // The end point doesn't match BUT we were supplied a private address and the remote source is a public address
                 // so high probability there's a NAT on the network path. Switch to the remote end point (note this can only happen once
                 // and only if the SSRV is 0, i.e. this is the first packet.
-                // If the remote end point is a loopback address AND the port matches then it's likely that this is a test/development 
+                // If the remote end point is a loopback address then it's likely that this is a test/development 
                 // scenario and the source can be trusted.
                 logger.LogDebug($"{mediaType} end point switched for RTP ssrc {ssrc} from {expectedEndPoint} to {receivedOnEndPoint}.");
 
                 if (mediaType == SDPMediaTypesEnum.audio)
                 {
                     AudioDestinationEndPoint = receivedOnEndPoint;
+                    if (m_isRtcpMultiplexed)
+                    {
+                        AudioControlDestinationEndPoint = AudioDestinationEndPoint;
+                    }
+                    else
+                    {
+                        AudioControlDestinationEndPoint = new IPEndPoint(AudioDestinationEndPoint.Address, AudioDestinationEndPoint.Port + 1);
+                    }
                 }
                 else
                 {
                     VideoDestinationEndPoint = receivedOnEndPoint;
+                    if (m_isRtcpMultiplexed)
+                    {
+                        VideoControlDestinationEndPoint = VideoDestinationEndPoint;
+                    }
+                    else
+                    {
+                        VideoControlDestinationEndPoint = new IPEndPoint(VideoControlDestinationEndPoint.Address, VideoControlDestinationEndPoint.Port + 1);
+                    }
                 }
 
                 isValidSource = true;
