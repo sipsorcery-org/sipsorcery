@@ -1,0 +1,10 @@
+SDP:
+v=0
+o=- 0 0 IN IP4 127.0.0.1
+s=No Name
+c=IN IP4 127.0.0.1
+t=0 0
+a=tool:libavformat 58.30.100
+m=video 5020 RTP/AVP 96
+b=AS:200
+a=rtpmap:96 VP8/90000

@@ -51,7 +51,7 @@ namespace SIPSorcery.Net.UnitTests
             _listenAddress = listenAddress;
             _listenPort = port;
 
-            NetServices.CreateRtpSocket(false, _listenAddress, out _clientSocket, out _);
+            NetServices.CreateRtpSocket(false, _listenAddress, 0, out _clientSocket, out _);
 
             ListeningEndPoint = _clientSocket.LocalEndPoint as IPEndPoint;
 
@@ -78,7 +78,7 @@ namespace SIPSorcery.Net.UnitTests
                         _clientEndPoint = remoteEndPoint;
 
                         // Create a new relay socket.
-                        NetServices.CreateRtpSocket(false, _listenAddress, out _relaySocket, out _);
+                        NetServices.CreateRtpSocket(false, _listenAddress, 0, out _relaySocket, out _);
 
                         _relayEndPoint = _relaySocket.LocalEndPoint as IPEndPoint;
 

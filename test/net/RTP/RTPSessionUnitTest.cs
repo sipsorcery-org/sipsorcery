@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -349,6 +350,35 @@ namespace SIPSorcery.Net.UnitTests
 
             localSession.Close("normal");
             remoteSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Checks that if an RTP session is requested with a specific port and it's already in use an exception is thrown.
+        /// </summary>
+        [Fact]
+        public void CheckDuplicateBindPortFailsUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // Create two RTP sessions. First one acts as the local session to generate the offer.
+            // Second one acts as the remote session to generate the answer.
+
+            RTPSession localSession = new RTPSession(false, false, false, IPAddress.Loopback);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            localSession.addTrack(localAudioTrack);
+
+            var rtpEndPoint = localSession.GetRtpChannel(SDPMediaTypesEnum.audio).RTPLocalEndPoint;
+
+            logger.LogDebug($"RTP session local end point {rtpEndPoint}.");
+
+            // Now attempt to create a second RTP session on the same port as the previous one.
+
+            RTPSession duplicateSession = new RTPSession(false, false, false, IPAddress.Loopback, rtpEndPoint.Port);
+            MediaStreamTrack duplicateTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            Assert.Throws<ApplicationException>(() => duplicateSession.addTrack(duplicateTrack));
+
+            localSession.Close(null);
         }
     }
 }

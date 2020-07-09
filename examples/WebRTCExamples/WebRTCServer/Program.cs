@@ -106,7 +106,7 @@ namespace WebRTCServer
             _mediaSource = new MediaSource();
 
             // To use the mp4 file media source uncomment the line below:
-            //_mediaSource.Init(MP4_FILE_PATH, true);
+            _mediaSource.Init(MP4_FILE_PATH, true);
 
             // To use a webcam as the media source uncomment the line below and adjust the
             // pixel format and dimensions to a mode supported by your webcam.
