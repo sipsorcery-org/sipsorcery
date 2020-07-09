@@ -122,20 +122,20 @@ functions.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.%23ctor(System.Boolean%2CSystem.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.%23ctor(System.Boolean%2CSystem.Net.IPAddress%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L259">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L260">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel__ctor_" data-uid="SIPSorcery.Net.RTPChannel.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_" data-uid="SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress)">RTPChannel(Boolean, IPAddress)</h4>
+  <h4 id="SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_System_Int32_" data-uid="SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress,System.Int32)">RTPChannel(Boolean, IPAddress, Int32)</h4>
   <div class="markdown level1 summary"><p>Creates a new RTP channel. The RTP and optionally RTCP sockets will be bound in the constructor.
 They do not start receiving until the Start method is called.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public RTPChannel(bool createControlSocket, IPAddress bindAddress)</code></pre>
+    <pre><code class="lang-csharp hljs">public RTPChannel(bool createControlSocket, IPAddress bindAddress, int bindPort = 0)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -160,6 +160,12 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
         <td><p>Optional. An IP address belonging to a local interface that will be used to bind
 the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
 and fallback to the IPv4 any address.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">bindPort</span></td>
+        <td><p>Optional. The specific port to attempt to bind the RTP port on.</p>
 </td>
       </tr>
     </tbody>
@@ -481,7 +487,7 @@ reporting purposes only.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L308">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L309">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_Close_" data-uid="SIPSorcery.Net.RTPChannel.Close*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_Close_System_String_" data-uid="SIPSorcery.Net.RTPChannel.Close(System.String)">Close(String)</h4>
@@ -514,7 +520,7 @@ reporting purposes only.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_Dispose.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.Dispose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L468">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L469">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_Dispose_" data-uid="SIPSorcery.Net.RTPChannel.Dispose*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_Dispose" data-uid="SIPSorcery.Net.RTPChannel.Dispose">Dispose()</h4>
@@ -529,7 +535,7 @@ reporting purposes only.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_Dispose_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.Dispose(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L463">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L464">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_Dispose_" data-uid="SIPSorcery.Net.RTPChannel.Dispose*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_Dispose_System_Boolean_" data-uid="SIPSorcery.Net.RTPChannel.Dispose(System.Boolean)">Dispose(Boolean)</h4>
@@ -561,7 +567,7 @@ reporting purposes only.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_OnRTPPacketReceived_SIPSorcery_Net_UdpReceiver_System_Int32_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver%2CSystem.Int32%2CSystem.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L441">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L442">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_OnRTPPacketReceived_" data-uid="SIPSorcery.Net.RTPChannel.OnRTPPacketReceived*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_OnRTPPacketReceived_SIPSorcery_Net_UdpReceiver_System_Int32_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.Net.RTPChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver,System.Int32,System.Net.IPEndPoint,System.Byte[])">OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte[])</h4>
@@ -613,7 +619,7 @@ reporting purposes only.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum%2CSystem.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L346">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L347">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_SendAsync_" data-uid="SIPSorcery.Net.RTPChannel.SendAsync*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])">SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])</h4>
@@ -676,7 +682,7 @@ whether the remote party received the packet or not.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_Start.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.Start%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L282">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L283">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_Start_" data-uid="SIPSorcery.Net.RTPChannel.Start*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_Start" data-uid="SIPSorcery.Net.RTPChannel.Start">Start()</h4>

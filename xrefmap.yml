@@ -7247,12 +7247,12 @@ references:
   commentId: T:SIPSorcery.Net.RTPChannel
   fullName: SIPSorcery.Net.RTPChannel
   nameWithType: RTPChannel
-- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress)
-  name: RTPChannel(Boolean, IPAddress)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress)
-  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Boolean, System.Net.IPAddress)
-  nameWithType: RTPChannel.RTPChannel(Boolean, IPAddress)
+- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress,System.Int32)
+  name: RTPChannel(Boolean, IPAddress, Int32)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress,System.Int32)
+  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Boolean, System.Net.IPAddress, System.Int32)
+  nameWithType: RTPChannel.RTPChannel(Boolean, IPAddress, Int32)
 - uid: SIPSorcery.Net.RTPChannel.#ctor*
   name: RTPChannel
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_
@@ -8144,12 +8144,12 @@ references:
   commentId: T:SIPSorcery.Net.RTPSession
   fullName: SIPSorcery.Net.RTPSession
   nameWithType: RTPSession
-- uid: SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress)
-  name: RTPSession(Boolean, Boolean, Boolean, IPAddress)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress)
-  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Boolean, System.Boolean, System.Boolean, System.Net.IPAddress)
-  nameWithType: RTPSession.RTPSession(Boolean, Boolean, Boolean, IPAddress)
+- uid: SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress,System.Int32)
+  name: RTPSession(Boolean, Boolean, Boolean, IPAddress, Int32)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_System_Net_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress,System.Int32)
+  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Boolean, System.Boolean, System.Boolean, System.Net.IPAddress, System.Int32)
+  nameWithType: RTPSession.RTPSession(Boolean, Boolean, Boolean, IPAddress, Int32)
 - uid: SIPSorcery.Net.RTPSession.#ctor*
   name: RTPSession
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_
@@ -11303,6 +11303,12 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.H264
   fullName: SIPSorcery.Net.SDPMediaFormatsEnum.H264
   nameWithType: SDPMediaFormatsEnum.H264
+- uid: SIPSorcery.Net.SDPMediaFormatsEnum.H265
+  name: H265
+  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_H265
+  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.H265
+  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.H265
+  nameWithType: SDPMediaFormatsEnum.H265
 - uid: SIPSorcery.Net.SDPMediaFormatsEnum.JPEG
   name: JPEG
   href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_JPEG
@@ -30836,15 +30842,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateBoundUdpSocket
   nameWithType: NetServices.CreateBoundUdpSocket
-- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
-  name: CreateRtpSocket(Boolean, IPAddress, out Socket, out Socket)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Net_Sockets_Socket__System_Net_Sockets_Socket__
-  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
-  name.vb: CreateRtpSocket(Boolean, IPAddress, ByRef Socket, ByRef Socket)
-  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.IPAddress, out System.Net.Sockets.Socket, out System.Net.Sockets.Socket)
-  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.IPAddress, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
-  nameWithType: NetServices.CreateRtpSocket(Boolean, IPAddress, out Socket, out Socket)
-  nameWithType.vb: NetServices.CreateRtpSocket(Boolean, IPAddress, ByRef Socket, ByRef Socket)
+- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Int32,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+  name: CreateRtpSocket(Boolean, IPAddress, Int32, out Socket, out Socket)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Int32_System_Net_Sockets_Socket__System_Net_Sockets_Socket__
+  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Int32,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+  name.vb: CreateRtpSocket(Boolean, IPAddress, Int32, ByRef Socket, ByRef Socket)
+  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.IPAddress, System.Int32, out System.Net.Sockets.Socket, out System.Net.Sockets.Socket)
+  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.IPAddress, System.Int32, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
+  nameWithType: NetServices.CreateRtpSocket(Boolean, IPAddress, Int32, out Socket, out Socket)
+  nameWithType.vb: NetServices.CreateRtpSocket(Boolean, IPAddress, Int32, ByRef Socket, ByRef Socket)
 - uid: SIPSorcery.Sys.NetServices.CreateRtpSocket*
   name: CreateRtpSocket
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_

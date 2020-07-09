@@ -281,13 +281,13 @@ even numbered port.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Net_Sockets_Socket__System_Net_Sockets_Socket__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean%2CSystem.Net.IPAddress%2CSystem.Net.Sockets.Socket%40%2CSystem.Net.Sockets.Socket%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Int32_System_Net_Sockets_Socket__System_Net_Sockets_Socket__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean%2CSystem.Net.IPAddress%2CSystem.Int32%2CSystem.Net.Sockets.Socket%40%2CSystem.Net.Sockets.Socket%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L333">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L335">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_NetServices_CreateRtpSocket_" data-uid="SIPSorcery.Sys.NetServices.CreateRtpSocket*"></a>
-  <h4 id="SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Net_Sockets_Socket__System_Net_Sockets_Socket__" data-uid="SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)">CreateRtpSocket(Boolean, IPAddress, out Socket, out Socket)</h4>
+  <h4 id="SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Int32_System_Net_Sockets_Socket__System_Net_Sockets_Socket__" data-uid="SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Int32,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)">CreateRtpSocket(Boolean, IPAddress, Int32, out Socket, out Socket)</h4>
   <div class="markdown level1 summary"><p>Attempts to create and bind a new RTP, and optionally an control (RTCP), socket(s).
 The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
 either IPv4 or IPv6 packets.</p>
@@ -295,7 +295,7 @@ either IPv4 or IPv6 packets.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, out Socket rtpSocket, out Socket controlSocket)</code></pre>
+    <pre><code class="lang-csharp hljs">public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, int bindPort, out Socket rtpSocket, out Socket controlSocket)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -323,6 +323,13 @@ will be made to bind the RTP and optionally control listeners on it.</p>
 </td>
       </tr>
       <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">bindPort</span></td>
+        <td><p>Optional. If 0 the choice of port will be left up to the Operating System. If specified
+a single attempt will be made to bind on the port.</p>
+</td>
+      </tr>
+      <tr>
         <td><span class="xref">System.Net.Sockets.Socket</span></td>
         <td><span class="parametername">rtpSocket</span></td>
         <td><p>An output parameter that will contain the allocated RTP socket.</p>
@@ -341,7 +348,7 @@ will be made to bind the RTP and optionally control listeners on it.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_GetLocalAddressesOnInterface_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L539">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L542">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_NetServices_GetLocalAddressesOnInterface_" data-uid="SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface*"></a>
   <h4 id="SIPSorcery_Sys_NetServices_GetLocalAddressesOnInterface_System_Net_IPAddress_" data-uid="SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress)">GetLocalAddressesOnInterface(IPAddress)</h4>
@@ -397,7 +404,7 @@ connects to the Internet will be used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_GetLocalAddressForInternet.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.GetLocalAddressForInternet%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L522">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L525">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_NetServices_GetLocalAddressForInternet_" data-uid="SIPSorcery.Sys.NetServices.GetLocalAddressForInternet*"></a>
   <h4 id="SIPSorcery_Sys_NetServices_GetLocalAddressForInternet" data-uid="SIPSorcery.Sys.NetServices.GetLocalAddressForInternet">GetLocalAddressForInternet()</h4>
@@ -429,7 +436,7 @@ connects to the Internet will be used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_GetLocalAddressForRemote_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.GetLocalAddressForRemote(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L479">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L482">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_NetServices_GetLocalAddressForRemote_" data-uid="SIPSorcery.Sys.NetServices.GetLocalAddressForRemote*"></a>
   <h4 id="SIPSorcery_Sys_NetServices_GetLocalAddressForRemote_System_Net_IPAddress_" data-uid="SIPSorcery.Sys.NetServices.GetLocalAddressForRemote(System.Net.IPAddress)">GetLocalAddressForRemote(IPAddress)</h4>
