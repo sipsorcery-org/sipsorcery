@@ -346,6 +346,7 @@ namespace SIPSorcery.Net
         private bool m_isMediaMultiplexed = false;      // Indicates whether audio and video are multiplexed on a single RTP channel or not.
         private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
         private IPAddress m_bindAddress = null;         // If set the address to use for binding the RTP and control sockets.
+        private int m_bindPort = 0;                     // If non-zero specifies the port number to attempt to bind the first RTP socket on.
         private bool m_rtpEventInProgress;              // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                // The last timestamp used in an RTP packet.    
 
@@ -543,16 +544,21 @@ namespace SIPSorcery.Net
         /// and control sockets created. Generally this address does not need to be set. The default behaviour
         /// is to bind to [::] or 0.0.0.0,d depending on system support, which minimises network routing
         /// causing connection issues.</param>
+        /// <param name="bindPort">Optional. If specified a single attempt will be made to bind the RTP socket
+        /// on this port. It's recommended to leave this parameter as the default of 0 to let the Operating
+        /// System select the port number.</param>
         public RTPSession(
             bool isMediaMultiplexed,
             bool isRtcpMultiplexed,
             bool isSecure,
-            IPAddress bindAddress = null)
+            IPAddress bindAddress = null,
+            int bindPort = 0)
         {
             m_isMediaMultiplexed = isMediaMultiplexed;
             m_isRtcpMultiplexed = isRtcpMultiplexed;
             IsSecure = isSecure;
             m_bindAddress = bindAddress;
+            m_bindPort = bindPort;
 
             m_sdpSessionID = Crypto.GetRandomInt(SDP_SESSIONID_LENGTH).ToString();
         }
@@ -1308,7 +1314,8 @@ namespace SIPSorcery.Net
         protected virtual RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
             // If RTCP is multiplexed we don't need a control socket.
-            var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress);
+            int bindPort = (m_bindPort == 0) ? 0 : m_bindPort + m_rtpChannels.Count() * 2;
+            var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress, bindPort);
             m_rtpChannels.Add(mediaType, rtpChannel);
 
             rtpChannel.OnRTPDataReceived += OnReceive;
@@ -1390,15 +1397,25 @@ namespace SIPSorcery.Net
         /// <param name="rtcpEndPoint">The remote end point for RTCP packets corresponding to the media type.</param>
         public void SetDestination(SDPMediaTypesEnum mediaType, IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
         {
-            if (mediaType == SDPMediaTypesEnum.audio)
+            if (m_isMediaMultiplexed)
             {
                 AudioDestinationEndPoint = rtpEndPoint;
-                AudioControlDestinationEndPoint = rtcpEndPoint;
-            }
-            else if (mediaType == SDPMediaTypesEnum.video)
-            {
                 VideoDestinationEndPoint = rtpEndPoint;
+                AudioControlDestinationEndPoint = rtcpEndPoint;
                 VideoControlDestinationEndPoint = rtcpEndPoint;
+            }
+            else
+            {
+                if (mediaType == SDPMediaTypesEnum.audio)
+                {
+                    AudioDestinationEndPoint = rtpEndPoint;
+                    AudioControlDestinationEndPoint = rtcpEndPoint;
+                }
+                else if (mediaType == SDPMediaTypesEnum.video)
+                {
+                    VideoDestinationEndPoint = rtpEndPoint;
+                    VideoControlDestinationEndPoint = rtcpEndPoint;
+                }
             }
         }
 

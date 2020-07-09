@@ -256,9 +256,10 @@ namespace SIPSorcery.Net
         /// <param name="bindAddress">Optional. An IP address belonging to a local interface that will be used to bind
         /// the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
         /// and fallback to the IPv4 any address.</param>
-        public RTPChannel(bool createControlSocket, IPAddress bindAddress)
+        /// <param name="bindPort">Optional. The specific port to attempt to bind the RTP port on.</param>
+        public RTPChannel(bool createControlSocket, IPAddress bindAddress, int bindPort = 0)
         {
-            NetServices.CreateRtpSocket(createControlSocket, bindAddress, out var rtpSocket, out m_controlSocket);
+            NetServices.CreateRtpSocket(createControlSocket, bindAddress, bindPort, out var rtpSocket, out m_controlSocket);
 
             if (rtpSocket == null)
             {

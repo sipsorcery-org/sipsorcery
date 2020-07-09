@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCtoFfplay", "WebRTCtoF
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{3B3F97EF-1986-4E6C-8E2E-E8FF304803CA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfmpegToWebRTC", "FfmpegToWebRTC\FfmpegToWebRTC.csproj", "{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +141,18 @@ Global
 		{3B3F97EF-1986-4E6C-8E2E-E8FF304803CA}.Release|x64.Build.0 = Release|Any CPU
 		{3B3F97EF-1986-4E6C-8E2E-E8FF304803CA}.Release|x86.ActiveCfg = Release|Any CPU
 		{3B3F97EF-1986-4E6C-8E2E-E8FF304803CA}.Release|x86.Build.0 = Release|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Debug|x64.Build.0 = Debug|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Debug|x86.Build.0 = Debug|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Release|x64.ActiveCfg = Release|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Release|x64.Build.0 = Release|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Release|x86.ActiveCfg = Release|Any CPU
+		{8C63DA7C-C211-4D13-BF62-D4D1F46F5765}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

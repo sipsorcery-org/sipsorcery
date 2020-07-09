@@ -148,9 +148,9 @@ namespace SIPSorcery.Sys
         /// <returns>A bound socket if successful or throws an ApplicationException if unable to bind.</returns>
         public static Socket CreateBoundUdpSocket(int port, IPAddress bindAddress, bool requireEvenPort = false, bool useDualMode = true)
         {
-            if (requireEvenPort && port != 0)
+            if (requireEvenPort && port != 0 && port % 2 != 0)
             {
-                throw new ArgumentException("Cannot specify both require even port and a specific port to bind on. Set port to 0.");
+                throw new ArgumentException("Cannot specify both require even port and a specific non-even port to bind on. Set port to 0.");
             }
 
             if (bindAddress == null)
@@ -328,9 +328,11 @@ namespace SIPSorcery.Sys
         /// <param name="bindAddress">Optional. If null The RTP and control sockets will be created as IPv4 and IPv6 dual mode 
         /// sockets which means they can send and receive either IPv4 or IPv6 packets. If the bind address is specified an attempt
         /// will be made to bind the RTP and optionally control listeners on it.</param>
+        /// <param name="bindPort">Optional. If 0 the choice of port will be left up to the Operating System. If specified
+        /// a single attempt will be made to bind on the port.</param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, out Socket rtpSocket, out Socket controlSocket)
+        public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, int bindPort, out Socket rtpSocket, out Socket controlSocket)
         {
             if (bindAddress == null)
             {
@@ -339,7 +341,7 @@ namespace SIPSorcery.Sys
 
             CheckBindAddressAndThrow(bindAddress);
 
-            IPEndPoint bindEP = new IPEndPoint(bindAddress, 0);
+            IPEndPoint bindEP = new IPEndPoint(bindAddress, bindPort);
             logger.LogDebug($"CreateRtpSocket attempting to create and bind RTP socket(s) on {bindEP}.");
 
             rtpSocket = null;
@@ -350,7 +352,7 @@ namespace SIPSorcery.Sys
             {
                 try
                 {
-                    rtpSocket = CreateBoundUdpSocket(0, bindAddress, createControlSocket);
+                    rtpSocket = CreateBoundUdpSocket(bindPort, bindAddress, createControlSocket);
                     rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
@@ -374,8 +376,9 @@ namespace SIPSorcery.Sys
                 }
                 catch (ApplicationException) { }
 
-                if (rtpSocket != null && (!createControlSocket || controlSocket != null))
+                if ((rtpSocket != null && (!createControlSocket || controlSocket != null)) || bindPort != 0)
                 {
+                    // If a specific bind port was specified only a single attempt to create the socket is made.
                     break;
                 }
                 else
