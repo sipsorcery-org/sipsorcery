@@ -106,14 +106,9 @@ namespace SIPSorcery.Examples
             //_webSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
             //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
             //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
-            _webSocketServer.AddWebSocketService<WebRtcClient>("/sendoffer", (client) =>
+            _webSocketServer.AddWebSocketService<WebRtcClient>("/", (client) =>
             {
                 client.WebSocketOpened += SendOffer;
-                client.OnMessageReceived += WebSocketMessageReceived;
-            });
-            _webSocketServer.AddWebSocketService<WebRtcClient>("/receiveoffer", (client) =>
-            {
-                client.WebSocketOpened += ReceiveOffer;
                 client.OnMessageReceived += WebSocketMessageReceived;
             });
             _webSocketServer.Start();
@@ -152,13 +147,6 @@ namespace SIPSorcery.Examples
             }
 
             return Task.CompletedTask;
-        }
-
-        private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
-        {
-            logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
-            var pc = Createpc(context);
-            return Task.FromResult(pc);
         }
 
         private static async Task<RTCPeerConnection> SendOffer(WebSocketContext context)

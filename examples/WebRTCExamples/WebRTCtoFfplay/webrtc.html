@@ -4,10 +4,8 @@
 
     <script type="text/javascript">
 
-        //const sendOfferUrl = "wss://localhost:8081/receiveoffer";
-        //const receiveOfferUrl = "wss://localhost:8081/sendoffer";
-        const sendOfferUrl = "ws://localhost:8081/receiveoffer";
-        const receiveOfferUrl = "ws://localhost:8081/sendoffer";
+        //const receiveOfferUrl = "wss://localhost:8081/";
+        const receiveOfferUrl = "ws://localhost:8081/";
 
         var pc;
         var ws;
@@ -60,14 +58,6 @@
                     console.log(event);
                     //	remoteStream.addTrack(event.track, remoteStream);
                 };
-
-                if (url == sendOfferUrl) {
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer)
-                    console.log("Sending offer SDP:");
-                    console.log(offer.sdp);
-                    ws.send(offer.sdp);
-                }
             };
 
             ws.onmessage = async function (evt) {
@@ -78,27 +68,20 @@
                     await pc.addIceCandidate({ candidate: evt.data, sdpMid: "0", sdpMLineIndex: 0 });
                 }
                 else {
-                    if (url == sendOfferUrl) {
-                        console.log("Answer SDP received:");
-                        console.log(evt.data);
-                        await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: evt.data }));
-                    }
-                    else {
-                        // Received SDP offer from the remote web socket server.
-                        console.log("Offer SDP received:");
-                        console.log(evt.data);
+                    // Received SDP offer from the remote web socket server.
+                    console.log("Offer SDP received:");
+                    console.log(evt.data);
 
-                        await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+                    await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
 
-                        // Now create our offer SDP to send back to the web socket server.
-                        pc.createAnswer().then(function (answer) {
-                            return pc.setLocalDescription(answer);
-                        }).then(function () {
-                            console.log("Sending answer SDP:");
-                            console.log(pc.localDescription.sdp);
-                            ws.send(pc.localDescription.sdp);
-                        });
-                    }
+                    // Now create our offer SDP to send back to the web socket server.
+                    pc.createAnswer().then(function (answer) {
+                        return pc.setLocalDescription(answer);
+                    }).then(function () {
+                        console.log("Sending answer SDP:");
+                        console.log(pc.localDescription.sdp);
+                        ws.send(pc.localDescription.sdp);
+                    });
                 }
             };
         };
@@ -119,8 +102,7 @@
 <body>
 
     <div>
-        <button type="button" class="btn btn-success" onclick="start(sendOfferUrl);">Start Send Offer</button>
-        <button type="button" class="btn btn-success" onclick="start(receiveOfferUrl);">Start Receive Offer</button>
+        <button type="button" class="btn btn-success" onclick="start(receiveOfferUrl);">Start</button>
         <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
     </div>
 

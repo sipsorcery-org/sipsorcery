@@ -8,7 +8,7 @@ You will need `ffmpeg` and `.Net Core` installed.
 
 `dotnet run`
 
--  Open the `webrtc.html` in a browser and click one of the `Start` buttons (the difference between them is which peer sends the intial SDP offer but they have the same outcome).
+-  Open the `webrtc.html` in a browser and click the `Start` button.
 
  - The test application will write an `ffplay.sdp` file and then display the command to start `ffplay`.
 
