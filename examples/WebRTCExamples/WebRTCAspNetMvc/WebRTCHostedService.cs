@@ -3,7 +3,7 @@
 //
 // Description: This class is designed to act as a singleton in an ASP.Net
 // server application to handle WebRTC peer connections. Currently it does
-// not server or process any media. The main point is as a proof of concept
+// not serve or process any media. The main point is as a proof of concept
 // to be able to negotiate the ICE checks, DTLS handshake and then receive
 // RTP & RTCP packets.
 //
@@ -25,7 +25,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorceryMedia;
 
 namespace WebRTCAspNetMvc
 {

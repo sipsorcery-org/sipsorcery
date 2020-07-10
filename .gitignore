@@ -173,4 +173,8 @@ bower_components
 =======
 docfx/*
 **/.vscode*
+<<<<<<< HEAD
+>>>>>>> master
+=======
+*.sdp
 >>>>>>> master
