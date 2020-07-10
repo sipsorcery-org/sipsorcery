@@ -56,7 +56,7 @@ namespace SIPSorcery.Examples
 
     class Program
     {
-        private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
+        //private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
         private const string FFMPEG_DEFAULT_COMMAND = "ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 -vcodec {0} -pix_fmt yuv420p -strict experimental -g 1 -f rtp rtp://127.0.0.1:{1} -sdp_file {2}";
         private const string FFMPEG_SDP_FILE = "ffmpeg.sdp";
@@ -108,16 +108,16 @@ namespace SIPSorcery.Examples
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            _webSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
-            _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            //_webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
+            //_webSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
+            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
             //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
             _webSocketServer.AddWebSocketService<WebRtcClient>("/", (client) =>
             {
                 client.WebSocketOpened += SendOffer;
                 client.OnMessageReceived += WebSocketMessageReceived;
             });
-            _webSocketServer.Start();
 
             if(File.Exists(FFMPEG_SDP_FILE))
             {
@@ -142,6 +142,8 @@ namespace SIPSorcery.Examples
             await Task.Run(() => StartFfmpegListener(FFMPEG_SDP_FILE, exitCts.Token));
 
             Console.WriteLine($"ffmpeg listener successfully created on port {FFMPEG_DEFAULT_RTP_PORT} with video format {_ffmpegVideoFormat.Name}.");
+
+            _webSocketServer.Start();
 
             Console.WriteLine();
             Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
