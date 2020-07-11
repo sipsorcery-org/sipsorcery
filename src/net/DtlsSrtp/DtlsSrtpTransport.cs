@@ -43,6 +43,8 @@ namespace SIPSorcery.Net
 
         private PipedMemoryStream _inStream = new PipedMemoryStream();
 
+        public DtlsTransport Transport { get; private set; }
+
         /// <summary>
         /// Sets the period in milliseconds that the handshake attempt will timeout
         /// after.
@@ -145,7 +147,8 @@ namespace SIPSorcery.Net
                 {
                     var client = (DtlsSrtpClient)connection;
                     // Perform the handshake in a non-blocking fashion
-                    clientProtocol.Connect(client, this);
+                    Transport = clientProtocol.Connect(client, this);
+                     
                     // Prepare the shared key to be used in RTP streaming
                     //client.PrepareSrtpSharedSecret();
                     // Generate encoders for DTLS traffic
