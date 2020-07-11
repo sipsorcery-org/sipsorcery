@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netcoreapp2.1</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>7.3</LangVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Version>0.0.2</Version>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseExpression>MPL-2.0 AND MIT</PackageLicenseExpression>
+    <Copyright><![CDATA[This package contains software from multiple projects:
+
+PortAudio.Net Cross Platform .NET Wrappers for PortAudio
+Copyright (c) 2019 Kyle Gagner
+
+PortAudio Portable Real-Time Audio Library
+Original work Copyright (c) 1999-2011 Ross Bencina, Phil Burk
+Modified work Copyright (c) 2019 Kyle Gagner
+
+Please note that the MIT license applies to the PortAudio Portable Real-Time Audio Library.
+Source code for PortAudio is available at portaudio.com.]]></Copyright>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--native runtimes may be included in the future-->
+    <Content Include="runtimes/**/*.*" Condition="Exists('runtimes')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>%(Identity)</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+  </ItemGroup>
+</Project>

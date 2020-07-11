@@ -20,7 +20,8 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using PortAudioSharp;
+//using PortAudioSharp;
+using PortAudio.Net;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
 
@@ -33,13 +34,16 @@ namespace demo
         private const int AUDIO_SAMPLE_BUFFER_LENGTH = 160;   // At 8Khz buffer of 160 corresponds to 20ms samples.
         private const int AUDIO_SAMPLING_RATE = 8000;
         private const float NORMALISE_FACTOR = 32768f;
+        private const int PORT_AUDIO_DEVICE_INDEX = 24;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
         /// <summary>
         /// Combined audio capture and render stream.
         /// </summary>
-        private PortAudioSharp.Stream _audioIOStream;
+        //private PortAudioSharp.Stream _audioIOStream;
+        private PaStream _audioIOStream;
+        private PaStreamParameters _portAudiStreamParameters;
 
         private List<float> _pendingRemoteSamples = new List<float>();
         private uint _rtpAudioTimestampPeriod = 0;
@@ -84,22 +88,37 @@ namespace demo
 
                 await base.Start();
 
-                PortAudio.Initialize();
+                //PortAudio.Initialize();
+                var paLibrary = PaLibrary.Initialize();
 
-                var outputDevice = PortAudio.DefaultOutputDevice;
-                if (outputDevice == PortAudio.NoDevice)
-                {
-                    throw new ApplicationException("No audio output device available.");
-                }
-                else
-                {
-                    StreamParameters stmInParams = new StreamParameters { device = 0, channelCount = 2, sampleFormat = SampleFormat.Float32 };
-                    StreamParameters stmOutParams = new StreamParameters { device = outputDevice, channelCount = 2, sampleFormat = SampleFormat.Float32 };
+                //var outputDevice = PortAudio.DefaultOutputDevice;
+                //if (outputDevice == PortAudio.NoDevice)
+                //{
+                //    throw new ApplicationException("No audio output device available.");
+                //}
+                //else
+                //{
+                //    StreamParameters stmInParams = new StreamParameters { device = 0, channelCount = 2, sampleFormat = SampleFormat.Float32 };
+                //    StreamParameters stmOutParams = new StreamParameters { device = outputDevice, channelCount = 2, sampleFormat = SampleFormat.Float32 };
 
-                    // Combined audio capture and render.
-                    _audioIOStream = new Stream(stmInParams, stmOutParams, AUDIO_SAMPLING_RATE, AUDIO_SAMPLE_BUFFER_LENGTH, StreamFlags.NoFlag, AudioSampleAvailable, null);
-                    _audioIOStream.Start();
-                }
+                //    // Combined audio capture and render.
+                //    _audioIOStream = new Stream(stmInParams, stmOutParams, AUDIO_SAMPLING_RATE, AUDIO_SAMPLE_BUFFER_LENGTH, StreamFlags.NoFlag, AudioSampleAvailable, null);
+                //    _audioIOStream.Start();
+                //}
+
+                _portAudiStreamParameters = new PaStreamParameters()
+                {
+                    device = PORT_AUDIO_DEVICE_INDEX,
+                    channelCount = 1,
+                    sampleFormat = PaSampleFormat.paFloat32,
+                    suggestedLatency = paLibrary.GetDeviceInfo(PORT_AUDIO_DEVICE_INDEX).Value.defaultHighOutputLatency,
+                    hostApiSpecificStreamInfo = IntPtr.Zero
+                };
+
+                _audioIOStream = paLibrary.OpenStream(
+                    null, _portAudiStreamParameters,
+                    AUDIO_SAMPLING_RATE, 512, PaStreamFlags.paNoFlag,
+                    AudioSampleAvailable, null);
 
                 if (_rtpAudioTimestampPeriod == 0)
                 {
@@ -132,7 +151,7 @@ namespace demo
 
                 base.OnRtpPacketReceived -= RtpPacketReceived;
 
-                _audioIOStream?.Stop();
+                //_audioIOStream?.Stop();
 
                 base.CloseSession(reason);
             }
@@ -142,11 +161,13 @@ namespace demo
         /// Event handler for audio sample being supplied by local capture device. The callback will also
         /// playback any remote samples available.
         /// </summary>
-        private StreamCallbackResult AudioSampleAvailable(IntPtr input, IntPtr output, uint frameCount, ref StreamCallbackTimeInfo timeInfo, StreamCallbackFlags statusFlags, IntPtr userDataPtr)
+        //private StreamCallbackResult AudioSampleAvailable(IntPtr input, IntPtr output, uint frameCount, ref StreamCallbackTimeInfo timeInfo, StreamCallbackFlags statusFlags, IntPtr userDataPtr)
+        private PaStreamCallbackResult AudioSampleAvailable(PaBuffer input, PaBuffer output, int frameCount, PaStreamCallbackTimeInfo timeInfo, PaStreamCallbackFlags statusFlags, object userData)
         {
             // Encode and transmit the sample from the audio input device.
             float[] inputSamples = new float[frameCount];
-            Marshal.Copy(input, inputSamples, 0, (int)frameCount);
+            //Marshal.Copy(input, inputSamples, 0, (int)frameCount);
+            Marshal.Copy(input.Pointer, inputSamples, 0, (int)frameCount);
 
             byte[] outputSamples = new byte[frameCount];
 
@@ -173,11 +194,13 @@ namespace demo
                 {
                     unsafe
                     {
-                        float* audioOut = (float*)output;
+                        //float* audioOut = (float*)output;
+                        var audioOut = (PaBuffer<float>)output;
 
                         for (int i = 0; i < _pendingRemoteSamples.Count; i++)
                         {
-                            *audioOut++ = _pendingRemoteSamples[i];
+                            //*audioOut++ = _pendingRemoteSamples[i];
+                            audioOut.Span[i] = _pendingRemoteSamples[i];
                         }
                     }
 
@@ -185,7 +208,8 @@ namespace demo
                 }
             }
 
-            return StreamCallbackResult.Continue;
+            //return StreamCallbackResult.Continue;
+            return PaStreamCallbackResult.paContinue;
         }
 
         /// <summary>
