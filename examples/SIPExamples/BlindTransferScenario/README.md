@@ -20,11 +20,11 @@ You will need `.Net Core` and optionally, if you wish to view a SIP trace, [sngr
 
 - On the `Transferor` console press `c` to create a call between the `Transferor` and the `Transferee`.
 
-  - When the call is answered the `Transferee` it sends a DTMF sequence of 6071 to the `Transferor` to verify that the RTP connection is correct. The DTMF sequence should appear on the `Transferor` console.
+  - When the call is answered the `Transferee` sends a DTMF sequence of 6071 to the `Transferor` to verify that the RTP connection is correct. The DTMF sequence should appear on the `Transferor` console.
 
 - On the `Transferor` console press `t` to initiate the Blind Transfer.
 
-  - When the call is answered the `Target` it sends a DTMF sequence of 6072 to the `Transferee` to verify that the RTP connection is correct. The DTMF sequence should appear on the `Transferor` console.
+  - When the call is answered the `Target` sends a DTMF sequence of 6072 to the `Transferee` to verify that the RTP connection is correct. The DTMF sequence should appear on the `Transferor` console.
 
 - On the `Transferee` or `Target` console press `h` to hangup the call.
 
