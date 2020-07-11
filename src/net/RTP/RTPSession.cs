@@ -779,6 +779,14 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
+                            // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
+                            SDPMediaFormat commonEventFormat = null;
+                            RemoteRtpEventPayloadID = audioAnnounce.GetTelephoneEventFormatID();
+                            if (RemoteRtpEventPayloadID != -1)
+                            {
+                                commonEventFormat = GetCommonRtpEventFormat(audioAnnounce);
+                            }
+
                             // Check that there is at least one compatible non-"RTP Event" audio codec.
                             var audioCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats) :
                                 SDPMediaFormat.GetCompatibleFormats(audioAnnounce.MediaFormats, AudioLocalTrack.Capabilities);
@@ -792,11 +800,9 @@ namespace SIPSorcery.Net
                                 AudioLocalTrack.Capabilities = audioCompatibleFormats;
                             }
 
-                            // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
-                            RemoteRtpEventPayloadID = audioAnnounce.GetTelephoneEventFormatID();
-                            if (RemoteRtpEventPayloadID != -1)
+                            if(commonEventFormat != null)
                             {
-                                AdjustRtpEventFormat(audioAnnounce);
+                                AudioLocalTrack.Capabilities.Add(commonEventFormat);
                             }
 
                             var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connectionAddress;
@@ -1139,36 +1145,40 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Checks the local audio capabilities against the remote party's audio announcement to see
-        /// whether RTP events can be supported on this media session. If necessary adjustments will be
-        /// made to the local audio capabilities to remote RTPe vents if not supported or adjust to make
-        /// compatible where possible.
+        /// whether RTP events can be supported on this media session. If compatible an RTP event format
+        /// will be returned that matches the local format with the remote format.
         /// </summary>
         /// <param name="remoteAudioAnnouncement">The audio announcement supplied from the remote party's
         /// session description offer or answer.</param>
-        private void AdjustRtpEventFormat(SDPMediaAnnouncement remoteAudioAnnouncement)
+        /// <returns>An RTP event format compatible with the local and remote parties.</returns>
+        private SDPMediaFormat GetCommonRtpEventFormat(SDPMediaAnnouncement remoteAudioAnnouncement)
         {
             if (remoteAudioAnnouncement != null)
             {
                 // Check if RTP events are supported and if required adjust the local format ID.
                 var remoteEventFormat = remoteAudioAnnouncement.MediaFormats.FirstOrDefault(x => x.FormatAttribute?.Contains(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true);
-                var localEventFormat = AudioLocalTrack.Capabilities.FirstOrDefault(y => y.FormatAttribute?.Contains(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true);
+                var compatibleEventFormat = AudioLocalTrack.Capabilities.FirstOrDefault(y => y.FormatAttribute?.Contains(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true);
 
-                if (remoteEventFormat != null && localEventFormat != null)
+                if (remoteEventFormat != null && compatibleEventFormat != null)
                 {
                     // We both support RTP events. If using different format ID's set ours to match the remote party's.
-                    if (remoteEventFormat.FormatID != localEventFormat.FormatID)
+                    if (remoteEventFormat.FormatID != compatibleEventFormat.FormatID)
                     {
-                        logger.LogDebug($"Adjusting the RTP event format ID on the local audio capabilities to match the remote part: {localEventFormat.FormatID} to {remoteEventFormat.FormatID}.");
-                        localEventFormat.FormatID = remoteEventFormat.FormatID;
+                        logger.LogDebug($"Adjusting the RTP event format ID on the local audio capabilities to match the remote part: {compatibleEventFormat.FormatID} to {remoteEventFormat.FormatID}.");
+                        compatibleEventFormat.FormatID = remoteEventFormat.FormatID;
                     }
+
+                    return compatibleEventFormat;
                 }
-                else if (localEventFormat != null)
+                else if (compatibleEventFormat != null)
                 {
-                    // Remote party does not support RTP events remove our capability.
+                    // Remote party does not support RTP events.
                     logger.LogWarning("Remote party does not support RTP events.");
-                    AudioLocalTrack.Capabilities.Remove(localEventFormat);
+                    return null;
                 }
             }
+
+            return null;
         }
 
         /// <summary>
