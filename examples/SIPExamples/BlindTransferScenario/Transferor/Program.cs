@@ -127,10 +127,14 @@ namespace SIPSorcery
                     }
                     else if (keyProps.KeyChar == 'h')
                     {
-                        if (_transfereeCall != null)
+                        if (_transfereeCall != null && _transfereeCall.IsCallActive)
                         {
                             Log.LogDebug("Hanging up transferee call.");
                             _transfereeCall.Hangup();
+                        }
+                        else
+                        {
+                            Log.LogDebug("No active transferee call.");
                         }
 
                         _transfereeCall = null;
@@ -152,7 +156,7 @@ namespace SIPSorcery
 
                                 await Task.Delay(2000);
 
-                                Log.LogDebug($"Transferee call status {_transfereeCall?.IsCallActive}.");
+                                Log.LogDebug($"Transferee is call active (should be false if transfer succeeded) {_transfereeCall?.IsCallActive}.");
                             });
                         }
                     }
