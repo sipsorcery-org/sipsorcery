@@ -28,8 +28,16 @@ You will need `.Net Core` and optionally, if you wish to view a SIP trace, [sngr
 
 - On the `Transferee` or `Target` console press `h` to hangup the call.
 
+#### Screenshot of sngrep call list from Blind Transfer Scenario
+
+![sngrep call list](sngrep_calllist.png)
+
+#### Screenshot of sngrep SIP trace for Transferor <-> Transferee
+![sngrep Transferor<->Transferee](sngrep_transferor_transferee.png)
+
+#### Screenshot of sngrep SIP trace for Transferee <-> Target
+![sngrep Transferee<->Target](sngrep_transferee_target.png)
+
 #### Screenshot of the 3 programs running the Blind Transfer Scenario
 
-![Terminal running scenario](console_scenario.png "Terminal")
-
-#### Screenshots of sngrep SIP trace from Blind Transfer Scenario
+![Terminal running scenario](console_scenario.png)
