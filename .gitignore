@@ -174,7 +174,12 @@ bower_components
 docfx/*
 **/.vscode*
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> master
 =======
 *.sdp
+>>>>>>> master
+=======
+*.sdp
+**/.ionide
 >>>>>>> master
