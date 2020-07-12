@@ -490,12 +490,12 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
         /// </summary>
-        public event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
+        public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
 
         /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
         /// </summary>
-        public event Action<RTPEvent, RTPHeader> OnRtpEvent;
+        public event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;
 
         /// <summary>
         /// Gets fired when the RTP session and underlying channel are closed.
@@ -521,7 +521,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
         /// </summary>
-        public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReport;
+        public event Action<IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReport;
 
         /// <summary>
         /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
@@ -2001,10 +2001,16 @@ namespace SIPSorcery.Net
                             if (AudioRemoteTrack != null && rtcpPkt.Bye.SSRC == AudioRemoteTrack.Ssrc)
                             {
                                 AudioRtcpSession?.RemoveReceptionReport(rtcpPkt.Bye.SSRC);
+                                //AudioDestinationEndPoint = null;
+                                //AudioControlDestinationEndPoint = null;
+                                AudioRemoteTrack.Ssrc = 0;
                             }
                             else if (VideoRemoteTrack != null && rtcpPkt.Bye.SSRC == VideoRemoteTrack.Ssrc)
                             {
                                 VideoRtcpSession?.RemoveReceptionReport(rtcpPkt.Bye.SSRC);
+                                //VideoDestinationEndPoint = null;
+                                //VideoControlDestinationEndPoint = null;
+                                VideoRemoteTrack.Ssrc = 0;
                             }
                         }
                         else if (!IsClosed)
@@ -2037,7 +2043,7 @@ namespace SIPSorcery.Net
                                 }
 
                                 rtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
-                                OnReceiveReport?.Invoke(rtcpSession.MediaType, rtcpPkt);
+                                OnReceiveReport?.Invoke(remoteEndPoint, rtcpSession.MediaType, rtcpPkt);
                             }
                             else
                             {
@@ -2082,7 +2088,7 @@ namespace SIPSorcery.Net
                         if (RemoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == RemoteRtpEventPayloadID)
                         {
                             RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
-                            OnRtpEvent?.Invoke(rtpEvent, rtpPacket.Header);
+                            OnRtpEvent?.Invoke(remoteEndPoint, rtpEvent, rtpPacket.Header);
                         }
                         else
                         {
@@ -2128,7 +2134,7 @@ namespace SIPSorcery.Net
 
                             SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
 
-                            OnRtpPacketReceived?.Invoke(mediaType, rtpPacket);
+                            OnRtpPacketReceived?.Invoke(remoteEndPoint, mediaType, rtpPacket);
 
                             // Used for reporting purposes.
                             if (rtpMediaType == SDPMediaTypesEnum.audio && AudioRtcpSession != null)
@@ -2165,13 +2171,17 @@ namespace SIPSorcery.Net
                 // Exact match on actual and expected destination.
                 isValidSource = true;
             }
-            else if ((expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate()) ||
-                (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address))
+            else if ((expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate()) 
+                //|| (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address
                )
             {
                 // The end point doesn't match BUT we were supplied a private address and the remote source is a public address
                 // so high probability there's a NAT on the network path. Switch to the remote end point (note this can only happen once
                 // and only if the SSRV is 0, i.e. this is the first packet.
+                // AC 12 Jul 2020: Commented out the expression that allows the end point to be change just because it's a loopback address.
+                // Need to determine the use case as to why I added that. A breaking case is doing an attended transfer test where
+                // two different agents are using loopback addresses. The expression allows an older session to override the destination
+                // set by a newer remote SDP.
                 // If the remote end point is a loopback address then it's likely that this is a test/development 
                 // scenario and the source can be trusted.
                 logger.LogDebug($"{mediaType} end point switched for RTP ssrc {ssrc} from {expectedEndPoint} to {receivedOnEndPoint}.");

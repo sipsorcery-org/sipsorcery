@@ -173,8 +173,11 @@ namespace SIPSorcery.Media
         /// and control sockets created. Generally this address does not need to be set. The default behaviour
         /// is to bind to [::] or 0.0.0.0,d depending on system support, which minimises network routing
         /// causing connection issues.</param>
-        public RtpAudioSession(AudioSourceOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs, IPAddress bindAddress = null) :
-            base(false, false, false, bindAddress)
+        /// <param name="bindPort">Optional. If specified the RTP socket will attempt to bind to this port. If the port
+        /// is already in use the RTP channel will not be created. Generally the port should be left as 0 which will
+        /// result in the Operating System choosing an ephemeral port.</param>
+        public RtpAudioSession(AudioSourceOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs, IPAddress bindAddress = null, int bindPort = 0) :
+            base(false, false, false, bindAddress, bindPort)
         {
             if (audioCodecs == null || audioCodecs.Count() == 0)
             {
@@ -478,9 +481,10 @@ namespace SIPSorcery.Media
         /// <summary>
         /// Event handler for receiving RTP packets from the remote party.
         /// </summary>
+        /// <param name="remoteEP">The remote end point the RTP was received from.</param>
         /// <param name="mediaType">The media type of the packets.</param>
         /// <param name="rtpPacket">The RTP packet with the media sample.</param>
-        private void RtpPacketReceived(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+        private void RtpPacketReceived(IPEndPoint remoteEP, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
             if (mediaType == SDPMediaTypesEnum.audio)
             {

@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -366,14 +367,8 @@ namespace SIPSorcery.SIP.App
 
             await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
 
-            ClientCallAnswered += (uac, resp) =>
-            {
-                callResult.TrySetResult(true);
-            };
-            ClientCallFailed += (uac, errorMessage, result) =>
-            {
-                callResult.TrySetResult(false);
-            };
+            ClientCallAnswered += (uac, resp) => callResult.TrySetResult(true);
+            ClientCallFailed += (uac, errorMessage, result) => callResult.TrySetResult(false);
 
             return callResult.Task.Result;
         }
@@ -1555,7 +1550,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="rtpEvent">The received RTP event.</param>
         /// <param name="rtpHeader">THe RTP header on the packet that the event was received in.</param>
-        private void OnRemoteRtpEvent(RTPEvent rtpEvent, RTPHeader rtpHeader)
+        private void OnRemoteRtpEvent(IPEndPoint remoteEP, RTPEvent rtpEvent, RTPHeader rtpHeader)
         {
             OnRtpEvent?.Invoke(rtpEvent, rtpHeader);
 

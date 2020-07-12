@@ -21,6 +21,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
@@ -32,6 +33,7 @@ namespace SIPSorcery
     class Program
     {
         private static int SIP_LISTEN_PORT = 6070;
+        private static int RTP_PORT_START = 18000;
         private static string TRANSFEREE_DST = "sip:transferee@127.0.0.1:6071";
         private static string TARGET_DST = "sip:target@127.0.0.1:6072";
 
@@ -41,6 +43,7 @@ namespace SIPSorcery
 
         private static SIPUserAgent _transfereeCall;
         private static SIPUserAgent _targetCall;
+        private static int _rtpPort = RTP_PORT_START;
 
         static void Main()
         {
@@ -142,16 +145,24 @@ namespace SIPSorcery
                     }
                     else if (keyProps.KeyChar == 'h')
                     {
-                        if (_transfereeCall != null)
+                        if (_transfereeCall != null && _transfereeCall.IsCallActive)
                         {
                             Log.LogDebug("Hanging up transferee call.");
                             _transfereeCall.Hangup();
                         }
+                        else
+                        {
+                            Log.LogDebug("Transferee call is not active.");
+                        }
 
-                        if (_targetCall != null)
+                        if (_targetCall != null && _targetCall.IsCallActive)
                         {
                             Log.LogDebug("Hanging up target call.");
                             _targetCall.Hangup();
+                        }
+                        else
+                        {
+                            Log.LogDebug("Target call is not active.");
                         }
 
                         _transfereeCall = null;
@@ -178,8 +189,8 @@ namespace SIPSorcery
 
                                 await Task.Delay(2000);
 
-                                Log.LogDebug($"Transferee call status {_transfereeCall?.IsCallActive}.");
-                                Log.LogDebug($"Target call status {_targetCall?.IsCallActive}.");
+                                Log.LogDebug($"Transferee call status (should be false) {_transfereeCall?.IsCallActive}.");
+                                Log.LogDebug($"Target call status (should be false) {_targetCall?.IsCallActive}.");
                             });
                         }
                     }
@@ -213,14 +224,15 @@ namespace SIPSorcery
         {
             List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
             var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-            var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
+            var rtpAudioSession = new RtpAudioSession(audioOptions, codecs, null, _rtpPort);
+            _rtpPort += 2;
 
             // Wire up the event handler for RTP packets received from the remote party.
             //rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(type, rtp);
             rtpAudioSession.OnRtcpBye += (reason) => Log.LogDebug($"RTCP BYE received.");
             rtpAudioSession.OnRtpClosed += (reason) => Log.LogDebug("RTP session closed.");
             rtpAudioSession.OnReceiveReport += RtpSession_OnReceiveReport;
-            rtpAudioSession.OnSendReport += RtpSession_OnSendReport;
+            //rtpAudioSession.OnSendReport += RtpSession_OnSendReport;
             //rtpAudioSession.OnTimeout += (mediaType) =>
             //{
             //    if (ua?.Dialogue != null)
@@ -252,37 +264,37 @@ namespace SIPSorcery
         /// <summary>
         /// Diagnostic handler to print out our RTCP sender/receiver reports.
         /// </summary>
-        private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
-        {
-            if (sentRtcpReport.SenderReport != null)
-            {
-                var sr = sentRtcpReport.SenderReport;
-                Log.LogDebug($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
-            }
-            else
-            {
-                var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
-                Log.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
-            }
-        }
+        //private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
+        //{
+        //    if (sentRtcpReport.SenderReport != null)
+        //    {
+        //        var sr = sentRtcpReport.SenderReport;
+        //        Log.LogDebug($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+        //    }
+        //    else
+        //    {
+        //        var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
+        //        Log.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
+        //    }
+        //}
 
         /// <summary>
         /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
         /// </summary>
-        private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
+        private static void RtpSession_OnReceiveReport(IPEndPoint remoteEP, SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
         {
-            Log.LogDebug($"RTCP {mediaType} CNAME {recvRtcpReport.SDesReport.CNAME} SSRC {recvRtcpReport.SDesReport.SSRC}.");
+            Log.LogDebug($"RTCP receive {mediaType} from {remoteEP} CNAME {recvRtcpReport.SDesReport.CNAME} SSRC {recvRtcpReport.SDesReport.SSRC}.");
 
-            var rr = (recvRtcpReport.SenderReport != null) ? recvRtcpReport.SenderReport.ReceptionReports.FirstOrDefault() : recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
+            //var rr = (recvRtcpReport.SenderReport != null) ? recvRtcpReport.SenderReport.ReceptionReports.FirstOrDefault() : recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
 
-            if (rr != null)
-            {
-                Log.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
-            }
-            else
-            {
-                Log.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
-            }
+            //if (rr != null)
+            //{
+            //    Log.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
+            //}
+            //else
+            //{
+            //    Log.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
+            //}
         }
 
         /// <summary>
