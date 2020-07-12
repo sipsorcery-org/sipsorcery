@@ -474,15 +474,15 @@ references:
   commentId: T:SIPSorcery.Media.RtpAudioSession
   fullName: SIPSorcery.Media.RtpAudioSession
   nameWithType: RtpAudioSession
-- uid: SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.AudioSourceOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Net.IPAddress)
-  name: RtpAudioSession(AudioSourceOptions, List<SDPMediaFormatsEnum>, IPAddress)
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_AudioSourceOptions_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormatsEnum__System_Net_IPAddress_
-  commentId: M:SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.AudioSourceOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Net.IPAddress)
-  name.vb: RtpAudioSession(AudioSourceOptions, List(Of SDPMediaFormatsEnum), IPAddress)
-  fullName: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.AudioSourceOptions, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormatsEnum>, System.Net.IPAddress)
-  fullName.vb: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.AudioSourceOptions, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormatsEnum), System.Net.IPAddress)
-  nameWithType: RtpAudioSession.RtpAudioSession(AudioSourceOptions, List<SDPMediaFormatsEnum>, IPAddress)
-  nameWithType.vb: RtpAudioSession.RtpAudioSession(AudioSourceOptions, List(Of SDPMediaFormatsEnum), IPAddress)
+- uid: SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.AudioSourceOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Net.IPAddress,System.Int32)
+  name: RtpAudioSession(AudioSourceOptions, List<SDPMediaFormatsEnum>, IPAddress, Int32)
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_AudioSourceOptions_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormatsEnum__System_Net_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.AudioSourceOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Net.IPAddress,System.Int32)
+  name.vb: RtpAudioSession(AudioSourceOptions, List(Of SDPMediaFormatsEnum), IPAddress, Int32)
+  fullName: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.AudioSourceOptions, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormatsEnum>, System.Net.IPAddress, System.Int32)
+  fullName.vb: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.AudioSourceOptions, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormatsEnum), System.Net.IPAddress, System.Int32)
+  nameWithType: RtpAudioSession.RtpAudioSession(AudioSourceOptions, List<SDPMediaFormatsEnum>, IPAddress, Int32)
+  nameWithType.vb: RtpAudioSession.RtpAudioSession(AudioSourceOptions, List(Of SDPMediaFormatsEnum), IPAddress, Int32)
 - uid: SIPSorcery.Media.RtpAudioSession.#ctor*
   name: RtpAudioSession
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_
