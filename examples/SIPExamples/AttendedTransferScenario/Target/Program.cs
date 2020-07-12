@@ -32,9 +32,11 @@ namespace SIPSorcery
     class Program
     {
         private static int SIP_LISTEN_PORT = 6072;
+        private static int RTP_PORT_START = 18200;
         private static byte[] DTMF_SEQUENCEFOR_TRANSFEROR = { 6, 0, 7, 2 };
 
         private static SIPTransport _sipTransport;
+        private static int _rtpPort = RTP_PORT_START;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -62,7 +64,11 @@ namespace SIPSorcery
             {
                 List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
                 var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-                var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
+                var rtpAudioSession = new RtpAudioSession(audioOptions, codecs, null, _rtpPort);
+                _rtpPort += 2;
+
+                rtpAudioSession.OnReceiveReport += RtpSession_OnReceiveReport;
+                //rtpAudioSession.OnSendReport += RtpSession_OnSendReport;
 
                 var uas = ua.AcceptCall(req);
                 bool answerResult = await ua.Answer(uas, rtpAudioSession);
@@ -148,6 +154,42 @@ namespace SIPSorcery
             {
                 Log.LogError($"Exception OnKeyPress. {excp.Message}.");
             }
+        }
+
+        /// <summary>
+        /// Diagnostic handler to print out our RTCP sender/receiver reports.
+        /// </summary>
+        //private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
+        //{
+        //    if (sentRtcpReport.SenderReport != null)
+        //    {
+        //        var sr = sentRtcpReport.SenderReport;
+        //        Log.LogDebug($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+        //    }
+        //    else
+        //    {
+        //        var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
+        //        Log.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
+        //    }
+        //}
+
+        /// <summary>
+        /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
+        /// </summary>
+        private static void RtpSession_OnReceiveReport(IPEndPoint remoteEP, SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
+        {
+            Log.LogDebug($"RTCP receive {mediaType} from {remoteEP} CNAME {recvRtcpReport.SDesReport.CNAME} SSRC {recvRtcpReport.SDesReport.SSRC}.");
+
+            //var rr = (recvRtcpReport.SenderReport != null) ? recvRtcpReport.SenderReport.ReceptionReports.FirstOrDefault() : recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
+
+            //if (rr != null)
+            //{
+            //    Log.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
+            //}
+            //else
+            //{
+            //    Log.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
+            //}
         }
 
         /// <summary>

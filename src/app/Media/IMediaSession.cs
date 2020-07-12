@@ -70,7 +70,7 @@ namespace SIPSorcery.SIP.App
         /// Fired when an RTP event (typically representing a DTMF tone) is
         /// detected.
         /// </summary>
-        event Action<RTPEvent, RTPHeader> OnRtpEvent;
+        event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;
 
         /// <summary>
         /// Creates a new SDP offer based on the local media tracks in the session.
