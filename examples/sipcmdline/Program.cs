@@ -59,9 +59,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -80,8 +78,6 @@ namespace SIPSorcery
 {
     class Program
     {
-        private const int DEFAULT_SIP_CLIENT_PORT = 0;
-        private const int DEFAULT_SIPS_CLIENT_PORT = 0;
         private const int DEFAULT_RESPONSE_TIMEOUT_SECONDS = 5;
 
         private static Microsoft.Extensions.Logging.ILogger logger;
