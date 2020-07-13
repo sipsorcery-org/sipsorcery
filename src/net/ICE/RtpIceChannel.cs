@@ -233,6 +233,12 @@ namespace SIPSorcery.Net
         public event Action<RTCIceGatheringState> OnIceGatheringStateChange;
         public event Action<RTCIceCandidate, string> OnIceCandidateError;
 
+        /// <summary>
+        /// This event gets fired when a STUN message is received by this channel.
+        /// The event is for diagnostic purposes only.
+        /// </summary>
+        public event Action<STUNMessage, IPEndPoint, bool> OnStunMessageReceived;
+
         public new event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
 
         /// <summary>
@@ -1127,7 +1133,7 @@ namespace SIPSorcery.Net
         {
             remoteEndPoint = (!remoteEndPoint.Address.IsIPv4MappedToIPv6) ? remoteEndPoint : new IPEndPoint(remoteEndPoint.Address.MapToIPv4(), remoteEndPoint.Port);
 
-            //logger.LogDebug($"ICE RTP channel STUN message received from remote {remoteEndPoint} {stunMessage.Header.MessageType} (was relayed {wasRelayed}).");
+            OnStunMessageReceived?.Invoke(stunMessage, remoteEndPoint, wasRelayed);
 
             // Check if the  STUN message is for an ICE server check.
             var iceServer = GetIceServerForTransactionID(stunMessage.Header.TransactionId);

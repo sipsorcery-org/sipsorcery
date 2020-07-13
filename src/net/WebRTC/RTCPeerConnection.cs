@@ -273,8 +273,8 @@ namespace SIPSorcery.Net
                             //}
                             //else
                             //{
-                                usableCert = cert;
-                                break;
+                            usableCert = cert;
+                            break;
                             //}
                         }
                     }
@@ -313,7 +313,7 @@ namespace SIPSorcery.Net
             // be used to multiplex all required media streams.
             addSingleTrack();
 
-            _rtpIceChannel = GetRtpChannel(SDPMediaTypesEnum.audio) as RtpIceChannel;
+            _rtpIceChannel = GetRtpChannel();
 
             _rtpIceChannel.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
             _rtpIceChannel.OnIceConnectionStateChange += (state) =>
@@ -718,6 +718,16 @@ namespace SIPSorcery.Net
         public void SetRemoteCredentials(string remoteIceUser, string remoteIcePassword)
         {
             _rtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+        }
+
+        /// <summary>
+        /// Gets the RTP channel being used to send and receive data on this peer connection.
+        /// Unlike the base RTP session peer connections only ever use a single RTP channel.
+        /// Audio and video (and RTCP) are all multiplexed on the same channel.
+        /// </summary>
+        public RtpIceChannel GetRtpChannel()
+        {
+            return m_rtpChannels.FirstOrDefault().Value as RtpIceChannel;
         }
 
         /// <summary>
