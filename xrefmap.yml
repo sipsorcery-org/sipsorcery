@@ -5701,6 +5701,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.getConfiguration
   nameWithType: RTCPeerConnection.getConfiguration
+- uid: SIPSorcery.Net.RTCPeerConnection.GetRtpChannel
+  name: GetRtpChannel()
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_GetRtpChannel
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.GetRtpChannel
+  fullName: SIPSorcery.Net.RTCPeerConnection.GetRtpChannel()
+  nameWithType: RTCPeerConnection.GetRtpChannel()
+- uid: SIPSorcery.Net.RTCPeerConnection.GetRtpChannel*
+  name: GetRtpChannel
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_GetRtpChannel_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.GetRtpChannel
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.GetRtpChannel
+  nameWithType: RTCPeerConnection.GetRtpChannel
 - uid: SIPSorcery.Net.RTCPeerConnection.iceConnectionState
   name: iceConnectionState
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_iceConnectionState
@@ -7973,6 +7986,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived
   nameWithType: RtpIceChannel.OnRTPPacketReceived
+- uid: SIPSorcery.Net.RtpIceChannel.OnStunMessageReceived
+  name: OnStunMessageReceived
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_OnStunMessageReceived
+  commentId: E:SIPSorcery.Net.RtpIceChannel.OnStunMessageReceived
+  fullName: SIPSorcery.Net.RtpIceChannel.OnStunMessageReceived
+  nameWithType: RtpIceChannel.OnStunMessageReceived
 - uid: SIPSorcery.Net.RtpIceChannel.ProcessStunMessage(SIPSorcery.Net.STUNMessage,System.Net.IPEndPoint,System.Boolean)
   name: ProcessStunMessage(STUNMessage, IPEndPoint, Boolean)
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_ProcessStunMessage_SIPSorcery_Net_STUNMessage_System_Net_IPEndPoint_System_Boolean_

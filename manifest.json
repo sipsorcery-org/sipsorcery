@@ -885,7 +885,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "nLYwvAbUZs+DpPzrmx4CKA=="
+          "hash": "AHs4bv4/1T62/SqCD37ogw=="
         }
       },
       "is_incremental": false,
@@ -1317,7 +1317,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RtpIceChannel.html",
-          "hash": "DZ6mC6Q/x3+8J2QOAGjA1Q=="
+          "hash": "IxhXxmZ2Zr7EWAeOifaksw=="
         }
       },
       "is_incremental": false,
