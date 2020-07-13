@@ -18,19 +18,17 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
-using SIPSorceryMedia;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
+using VP8L;
 
 namespace WebRTCServer
 {
@@ -65,21 +63,17 @@ namespace WebRTCServer
     class Program
     {
         private static string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
-        private const int TEST_PATTERN_SPACING_MILLISECONDS = 33;
-        private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
-        private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
+        private const int TEST_PATTERN_SPACING_MILLISECONDS = 1000;
+        private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // Height of text as a percentage of the total image height.
+        private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f;  // Black text outline thickness is set as a percentage of text height in pixels
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
         private const int VP8_TIMESTAMP_SPACING = 3000;
-        private const int VP8_PAYLOAD_TYPE_ID = 100;
-        private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static WebSocketServer _webSocketServer;
-        private static SIPSorceryMedia.VpxEncoder _vpxEncoder;
-        private static SIPSorceryMedia.ImageConvert _colorConverter;
         private static Bitmap _testPattern;
         private static int _stride;
         private static Timer _sendTestPatternTimer;
@@ -102,10 +96,6 @@ namespace WebRTCServer
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
             _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            //_webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            //_webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
-            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
-            //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
                 sdpExchanger.WebSocketOpened += SendSDPOffer;
@@ -136,10 +126,14 @@ namespace WebRTCServer
             MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
 
-            pc.OnReceiveReport += RtpSession_OnReceiveReport;
-            pc.OnSendReport += RtpSession_OnSendReport;
+            //pc.OnReceiveReport += RtpSession_OnReceiveReport;
+            //pc.OnSendReport += RtpSession_OnSendReport;
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+            pc.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE received from remote peer reason: {(reason != null ? reason : "<none>")}.");
+            pc.OnRtpClosed += (reason) => logger.LogDebug($"RTP socket closed reason: {(reason != null ? reason : "<none>")}.");
+            //(pc.GetRtpChannel(SDPMediaTypesEnum.audio) as RtpIceChannel).OnStunMessageReceived += (stunMessage, remoteEndPoint, wasRelayed) =>
+            //    logger.LogDebug($"STUN message received from remote {remoteEndPoint} {stunMessage.Header.MessageType} (was relayed {wasRelayed}).");
 
             pc.onconnectionstatechange += (state) =>
             {
@@ -205,12 +199,6 @@ namespace WebRTCServer
             _stride = bmpData.Stride;
 
             _testPattern.UnlockBits(bmpData);
-
-            // Initialise the video codec and color converter.
-            _vpxEncoder = new VpxEncoder();
-            _vpxEncoder.InitEncoder((uint)_testPattern.Width, (uint)_testPattern.Height, (uint)_stride);
-
-            _colorConverter = new ImageConvert();
         }
 
         private static void SendTestPattern(object state)
@@ -219,72 +207,34 @@ namespace WebRTCServer
             {
                 lock (_sendTestPatternTimer)
                 {
-                    unsafe
+                    if (OnTestPatternSampleReady != null)
                     {
-                        byte[] sampleBuffer = null;
-                        byte[] encodedBuffer = null;
+                        var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
+                        AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
 
-                        if (OnTestPatternSampleReady != null)
-                        {
-                            var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
-                            AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-                            sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
+                        var image = new VP8L.Image(stampedTestPattern as System.Drawing.Bitmap);
 
-                            fixed (byte* p = sampleBuffer)
-                            {
-                                byte[] convertedFrame = null;
-                                _colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, _testPattern.Width, _testPattern.Height, _stride, VideoSubTypesEnum.I420, ref convertedFrame);
+                        BitWriter bw = new BitWriter();
+                        VP8L.Format.WriteImageBitstream(bw, image);
+                        byte[] encodedBuffer = bw.ByteBuffer.ToArray();
 
-                                fixed (byte* q = convertedFrame)
-                                {
-                                    int encodeResult = _vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
+                        Console.WriteLine($"VP8 encoded buffer ready {encodedBuffer.Length} bytes.");
 
-                                    if (encodeResult != 0)
-                                    {
-                                        logger.LogWarning("VPX encode of video sample failed.");
-                                    }
-                                }
-                            }
+                        OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VP8_TIMESTAMP_SPACING, encodedBuffer);
 
-                            stampedTestPattern.Dispose();
-                            stampedTestPattern = null;
-
-                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VP8_TIMESTAMP_SPACING, encodedBuffer);
-
-                            encodedBuffer = null;
-                        }
-                        else
-                        {
-                            _sendTestPatternTimer?.Dispose();
-                            _sendTestPatternTimer = null;
-                        }
+                        stampedTestPattern.Dispose();
+                        stampedTestPattern = null;
+                    }
+                    else
+                    {
+                        _sendTestPatternTimer?.Dispose();
+                        _sendTestPatternTimer = null;
                     }
                 }
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception SendTestPattern. " + excp);
-            }
-        }
-
-        private static byte[] BitmapToRGB24(Bitmap bitmap)
-        {
-            try
-            {
-                BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                var length = bitmapData.Stride * bitmapData.Height;
-
-                byte[] bytes = new byte[length];
-
-                // Copy bitmap to byte[]
-                Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
-                bitmap.UnlockBits(bitmapData);
-
-                return bytes;
-            }
-            catch (Exception)
-            {
-                return new byte[] { };
             }
         }
 
@@ -351,7 +301,7 @@ namespace WebRTCServer
         /// <summary>
         /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
         /// </summary>
-        private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
+        private static void RtpSession_OnReceiveReport(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
         {
             if (recvRtcpReport.Bye != null)
             {

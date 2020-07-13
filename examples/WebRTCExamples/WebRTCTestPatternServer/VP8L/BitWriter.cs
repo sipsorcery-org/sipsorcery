@@ -3,7 +3,7 @@ namespace VP8L {
   using System.Collections.Generic;
 
   /// Helper object to generate a bitstream.
-  internal sealed class BitWriter {
+  public class BitWriter {
     internal List<Byte> ByteBuffer = new List<Byte>();
     private UInt64 BitBuffer = 0;
     private int BitBufferSize = 0;

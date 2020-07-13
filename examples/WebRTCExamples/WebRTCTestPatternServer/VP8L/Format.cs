@@ -30,7 +30,7 @@ namespace VP8L {
     }
 
     /// Encodes the image as a raw VP8L bitstream.
-    static void WriteImageBitstream(BitWriter b, Image image) {
+    public static void WriteImageBitstream(BitWriter b, Image image) {
       var analysis = Analysis.AnalyzeImage(image);
       WriteHeader(b, image.Width, image.Height, analysis.HasAlpha);
 
