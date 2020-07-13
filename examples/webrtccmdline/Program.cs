@@ -150,6 +150,7 @@ namespace SIPSorcery.Examples
             if (options.CreateJsonOffer)
             {
                 var pc = Createpc(null, _stunServer);
+                pc.createDataChannel("mychannel");
 
                 var offerSdp = pc.createOffer(null);
                 await pc.setLocalDescription(offerSdp);
@@ -175,9 +176,13 @@ namespace SIPSorcery.Examples
                 else
                 {
                     string remoteAnswer = Encoding.UTF8.GetString(Convert.FromBase64String(remoteAnswerB64));
-                    //Console.WriteLine($"Remote answer: {remoteAnswer}");
+
+                    Console.WriteLine(remoteAnswer);
 
                     RTCSessionDescriptionInit answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(remoteAnswer);
+
+                    Console.WriteLine($"Remote answer: {answerInit.sdp}");
+
                     pc.setRemoteDescription(answerInit);
 
                     // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
@@ -215,6 +220,7 @@ namespace SIPSorcery.Examples
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
 
             var pc = Createpc(context, _stunServer);
+            pc.createDataChannel("mychannel2");
 
             var offerInit = pc.createOffer(null);
             await pc.setLocalDescription(offerInit);
@@ -246,15 +252,16 @@ namespace SIPSorcery.Examples
             var pc = new RTCPeerConnection(pcConfiguration);
 
             // Add inactive audio and video tracks.
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
-            pc.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.Inactive);
-            pc.addTrack(videoTrack);
+            //MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
+            //pc.addTrack(audioTrack);
+            //MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.Inactive);
+            //pc.addTrack(videoTrack);
 
             pc.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
             pc.onconnectionstatechange += (state) => logger.LogDebug($"Peer connection state changed to {state}.");
-            pc.OnReceiveReport += (type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
+            pc.OnReceiveReport += (ep, type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
             pc.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
+            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
             pc.onicecandidate += (candidate) =>
             {

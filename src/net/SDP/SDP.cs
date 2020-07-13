@@ -199,6 +199,7 @@ namespace SIPSorcery.Net
                 {
                     SDP sdp = new SDP();
                     sdp.m_rawSdp = sdpDescription;
+                    int mLineIndex = 0;
                     SDPMediaAnnouncement activeAnnouncement = null;
 
                     string[] sdpLines = Regex.Split(sdpDescription, CRLF);
@@ -260,6 +261,7 @@ namespace SIPSorcery.Net
                             if (mediaMatch.Success)
                             {
                                 SDPMediaAnnouncement announcement = new SDPMediaAnnouncement();
+                                announcement.MLineIndex = mLineIndex;
                                 announcement.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
                                 Int32.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
                                 announcement.Transport = mediaMatch.Result("${transport}");
@@ -272,6 +274,8 @@ namespace SIPSorcery.Net
                             {
                                 logger.LogWarning("A media line in SDP was invalid: " + sdpLineTrimmed.Substring(2) + ".");
                             }
+
+                            mLineIndex++;
                         }
                         else if (sdpLineTrimmed.StartsWith("a=" + GROUP_ATRIBUTE_PREFIX))
                         {
@@ -479,6 +483,52 @@ namespace SIPSorcery.Net
                                 logger.LogWarning("A ssrc attribute can only be set on a media announcement.");
                             }
                         }
+                        else if(sdpLineTrimmed.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX))
+                        {
+                            if (activeAnnouncement != null)
+                            {
+                                activeAnnouncement.SctpMap = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            }
+                            else
+                            {
+                                logger.LogWarning("An sctpmap attribute can only be set on a media announcement.");
+                            }
+                        }
+                        else if (sdpLineTrimmed.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX))
+                        {
+                            if (activeAnnouncement != null)
+                            {
+                                string sctpPortStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+
+                                if (ushort.TryParse(sctpPortStr, out var sctpPort))
+                                {
+                                    activeAnnouncement.SctpPort = sctpPort;
+                                }
+                                else
+                                {
+                                    logger.LogWarning($"An sctp-port value of {sctpPortStr} was not recognised as a valid integer.");
+                                }
+                            }
+                            else
+                            {
+                                logger.LogWarning("An sctp-port attribute can only be set on a media announcement.");
+                            }
+                        }
+                        else if (sdpLineTrimmed.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX))
+                        {
+                            if (activeAnnouncement != null)
+                            {
+                                string maxMessageSizeStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                                if (!long.TryParse(maxMessageSizeStr, out activeAnnouncement.MaxMessageSize))
+                                {
+                                    logger.LogWarning($"A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.");
+                                }
+                            }
+                            else
+                            {
+                                logger.LogWarning("A max-message-size attribute can only be set on a media announcement.");
+                            }
+                        }
                         else
                         {
                             if (activeAnnouncement != null)
@@ -571,7 +621,7 @@ namespace SIPSorcery.Net
                 sdp += MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus) + CRLF;
             }
 
-            foreach (SDPMediaAnnouncement media in Media)
+            foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             {
                 sdp += (media == null) ? null : media.ToString();
             }

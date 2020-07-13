@@ -9,6 +9,9 @@
 // See also:
 // https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-25#section-3.5.4
 //
+// Author(s):
+// Aaron Clauson
+//
 // History:
 // 16 Mar 2020	Aaron Clauson	Created.
 //

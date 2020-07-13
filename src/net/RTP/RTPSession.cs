@@ -96,6 +96,13 @@ namespace SIPSorcery.Net
         /// matched the fingerprint.
         /// </summary>
         DtlsFingerprintDigestNotSupported,
+
+        /// <summary>
+        /// An unsupported data channel transport was requested (at the time of writing only
+        /// SCTP over DTLS is supported, no TCP option).
+        /// </summary>
+        DataChannelTransportNotSupported,
+
     }
 
     /// <summary>
@@ -352,7 +359,7 @@ namespace SIPSorcery.Net
 
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
-        private int m_mLineIndex = 0;                   // The media announcement index assigned to local tracks. Gets overruled if a remote SDP offer is received.
+        protected int m_mLineIndex = 0;                   // The media announcement index assigned to local tracks. Gets overruled if a remote SDP offer is received.
 
         internal Dictionary<SDPMediaTypesEnum, RTPChannel> m_rtpChannels = new Dictionary<SDPMediaTypesEnum, RTPChannel>();
 
@@ -699,15 +706,17 @@ namespace SIPSorcery.Net
             {
                 // Check the obvious conditions that will prevent at least one compatible media stream 
                 // being negotiated.
-                if (AudioLocalTrack == null && VideoLocalTrack == null)
-                {
-                    return SetDescriptionResultEnum.NoLocalMedia;
-                }
-                else if (sessionDescription.Media?.Count == 0)
-                {
-                    return SetDescriptionResultEnum.NoRemoteMedia;
-                }
-                else if (sessionDescription.Media?.Count == 1)
+                // These two assumptions don't apply if "application" media types for WebRTC data channels are supported.
+                //if (AudioLocalTrack == null && VideoLocalTrack == null)
+                //{
+                //    return SetDescriptionResultEnum.NoLocalMedia;
+                //}
+                //else if (sessionDescription.Media?.Count == 0)
+                //{
+                //    return SetDescriptionResultEnum.NoRemoteMedia;
+                //}
+                //else 
+                if (sessionDescription.Media?.Count == 1)
                 {
                     var remoteMediaType = sessionDescription.Media.First().Media;
                     if (remoteMediaType == SDPMediaTypesEnum.audio && AudioLocalTrack == null)
@@ -800,7 +809,7 @@ namespace SIPSorcery.Net
                                 AudioLocalTrack.Capabilities = audioCompatibleFormats;
                             }
 
-                            if(commonEventFormat != null)
+                            if (commonEventFormat != null)
                             {
                                 AudioLocalTrack.Capabilities.Add(commonEventFormat);
                             }
@@ -930,7 +939,10 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                AdjustLocalTracks(sdpType);
+                if (AudioLocalTrack != null || VideoLocalTrack != null)
+                {
+                    AdjustLocalTracks(sdpType);
+                }
 
                 // If we get to here then the remote description was compatible with the local media tracks.
                 // Set the remote description and end points.
@@ -2171,8 +2183,8 @@ namespace SIPSorcery.Net
                 // Exact match on actual and expected destination.
                 isValidSource = true;
             }
-            else if ((expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate()) 
-                //|| (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address
+            else if ((expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate())
+               //|| (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address
                )
             {
                 // The end point doesn't match BUT we were supplied a private address and the remote source is a public address

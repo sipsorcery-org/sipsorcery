@@ -594,9 +594,8 @@ a=rtpmap:100 VP8/90000";
             Assert.Equal("video", rndTripSdp.Media[1].MediaID);
         }
 
-
         /// <summary>
-        /// Tests that parsing an SDP offer from Chrome gets parsed correctly
+        /// Tests that parsing an SDP offer from Chrome gets parsed correctly.
         /// </summary>
         [Fact]
         public void ParseChromeOfferSDPUnitTest()
@@ -785,6 +784,47 @@ a=sendrecv";
             Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().SsrcAttributes, x => x.SSRC == 1676157391U);
             Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3966011320U);
             Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 1316862390U);
+        }
+
+        /// <summary>
+        /// Tests that parsing an SDP offer that only contains a data channel media announcement gets parsed correctly.
+        /// </summary>
+        [Fact]
+        public void ParseDataChannelOnlyOfferSDPUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=- 2691666610091555147 2 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE 0
+a=msid-semantic: WMS
+m=application 9 UDP/DTLS/SCTP webrtc-datachannel
+c=IN IP4 0.0.0.0
+a=ice-ufrag:KQVl
+a=ice-pwd:E+imlxJhaTN7Is+Qen3Hu6eK
+a=ice-options:trickle
+a=fingerprint:sha-256 6E:04:B9:05:60:84:22:B5:5A:A3:E9:00:6D:1A:29:FC:6F:C7:D9:79:D7:3B:BC:8D:BC:3D:7F:FC:94:3A:10:9E
+a=setup:actpass
+a=mid:0
+a=sctp-port:5000
+a=max-message-size:262144";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("BUNDLE 0", rndTripSdp.Group);
+            Assert.Single(rndTripSdp.Media);
+            Assert.Equal("sha-256 6E:04:B9:05:60:84:22:B5:5A:A3:E9:00:6D:1A:29:FC:6F:C7:D9:79:D7:3B:BC:8D:BC:3D:7F:FC:94:3A:10:9E", rndTripSdp.Media.Single().DtlsFingerprint);
+            Assert.Single(rndTripSdp.Media.Single().MediaFormats);
+            Assert.Equal(5000, rndTripSdp.Media.Single().SctpPort);
+            Assert.Equal(262144, rndTripSdp.Media.Single().MaxMessageSize);
         }
     }
 }

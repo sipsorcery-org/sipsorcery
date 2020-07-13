@@ -42,13 +42,9 @@
                     }
                 };
 
-                pc.onicegatheringstatechange = function () {
-                    console.log("onicegatheringstatechange: " + pc.iceGatheringState);
-                }
-
-                pc.oniceconnectionstatechange = function () {
-                    console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
-                }
+                pc.onicegatheringstatechange = () => console.log("ICE gathering state change to " + pc.iceGatheringState);
+                pc.oniceconnectionstatechange = () => console.log("ICE connection state change to " + pc.iceConnectionState);
+                pc.onconnectionstatechange = () => console.log("Peer connection state change to " + pc.connectionState);
 
                 pc.ontrack = async function (event) {
                     console.log('Remote ' + event.track.kind + ' stream available.');

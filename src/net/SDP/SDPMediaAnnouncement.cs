@@ -58,6 +58,9 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
         public const string MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX = "a=ssrc:";
         public const string MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX = "a=ssrc-group:";
+        public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
+        public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
+        public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
 
         public const string m_CRLF = "\r\n";
 
@@ -72,6 +75,7 @@ namespace SIPSorcery.Net
         public string IceOptions;               // Optional attribute to specify support ICE options, e.g. "trickle".
         public bool IceEndOfCandidates;         // If ICE candidate trickling is being used this needs to be set if all candidates have been gathered.
         public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
+        public int MLineIndex = 0;
 
         /// <summary>
         /// If being used in a bundle this the ID for the announcement.
@@ -83,6 +87,24 @@ namespace SIPSorcery.Net
         /// The "ssrc" attributes group ID as specified in RFC5576.
         /// </summary>
         public string SsrcGroupID;
+
+        /// <summary>
+        /// The "sctpmap" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
+        /// use in WebRTC data channels.
+        /// </summary>
+        public string SctpMap;
+
+        /// <summary>
+        /// The "sctp-port" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
+        /// use in WebRTC data channels.
+        /// </summary>
+        public ushort? SctpPort = null;
+
+        /// <summary>
+        /// The "max-message-size" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
+        /// use in WebRTC data channels.
+        /// </summary>
+        public long MaxMessageSize = 0;
 
         /// <summary>
         /// If the RFC5576 is being used this is the list of "ssrc" attributes
@@ -271,6 +293,21 @@ namespace SIPSorcery.Net
                 }
             }
 
+            if(SctpMap != null)
+            {
+                announcement += $"{MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX}{SctpMap}" + m_CRLF;
+            }
+
+            if (SctpPort != null)
+            {
+                announcement += $"{MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX}{SctpPort}" + m_CRLF;
+            }
+
+            if (MaxMessageSize != 0)
+            {
+                announcement += $"{MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX}{MaxMessageSize}" + m_CRLF;
+            }
+
             return announcement;
         }
 
@@ -297,10 +334,12 @@ namespace SIPSorcery.Net
                     {
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatAttribute + m_CRLF;
                     }
-                    else
+                    else if(Media == SDPMediaTypesEnum.audio || Media == SDPMediaTypesEnum.video)
                     {
+                        // If no format attribute is specified then a default one can be constructed for dynamic audio and video types.
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.Name + "/" + mediaFormat.ClockRate + m_CRLF;
                     }
+
                     if (mediaFormat.FormatParameterAttribute != null)
                     {
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatParameterAttribute + m_CRLF;

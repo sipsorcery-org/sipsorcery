@@ -25,7 +25,7 @@ using System;
 
 namespace SIPSorcery.Net
 {
-    enum RTCDataChannelState
+    public enum RTCDataChannelState
     {
         /// <summary>
         /// The user agent is attempting to establish the underlying data transport. 
@@ -152,14 +152,11 @@ namespace SIPSorcery.Net
 
     interface IRTCDataChannelInit
     {
-        bool Ordered { get; set; } = true;
-        [EnforceRange]
-        unsigned short maxPacketLifeTime;
-        [EnforceRange]
-        unsigned short maxRetransmits;
-        USVString protocol = "";
-        boolean negotiated = false;
-        [EnforceRange]
-        unsigned short id;
+        bool Ordered { get; set; }
+        ushort maxPacketLifeTime { get; set; }
+        ushort maxRetransmits { get; set; }
+        string protocol { get; set; }
+        bool negotiated { get; set; }
+        ushort id { get; set; }
     };
 }
