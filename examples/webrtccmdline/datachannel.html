@@ -4,13 +4,12 @@
 
     <script type="text/javascript">
 
-        const sendOfferUrl = "wss://localhost:8081/receiveoffer";
-        const receiveOfferUrl = "wss://localhost:8081/sendoffer";
-        const stunUrl = "stun:stun.sipsorcery.com"
-        const turnUrl = "turn:67.222.131.149"
+        const sendOfferUrl = "ws://localhost:8081/receiveoffer";
+        const receiveOfferUrl = "ws://localhost:8081/sendoffer";
 
         var pc;
         var ws;
+        var dc;
 
         async function start(url) {
 
@@ -18,32 +17,16 @@
 
             closePeer();
 
-            const localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-
             ws = new WebSocket(url, []);
 
             ws.onopen = async function () {
                 console.log("web socket onopen.");
 
-                pc = new RTCPeerConnection(
-                    {
-                    //iceServers: [
-                    //    {
-                    //        //urls: stunUrl,
-                    //        urls: turnUrl,
-                    //        username: "aaron",
-                    //        credential: "password"
-                    //    }
-                    //],
-                    //iceTransportPolicy: "relay"
-                    iceTransportPolicy: "all"
-                });
+                pc = new RTCPeerConnection();
+                dc = pc.createDataChannel("dc1");
 
-                localStream.getTracks().forEach(track => {
-                    console.log('add local track ' + track.kind + ' to peer connection.');
-                    console.log(track);
-                    pc.addTrack(track, localStream);
-                });
+                dc.onopen = (event) => console.log(`data channel onopen: ${event}.`);
+                dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
 
                 pc.onicecandidate = function (event) {
                     if (event.candidate) {
