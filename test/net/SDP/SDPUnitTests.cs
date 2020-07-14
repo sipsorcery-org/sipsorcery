@@ -823,7 +823,7 @@ a=max-message-size:262144";
             Assert.Single(rndTripSdp.Media);
             Assert.Equal("sha-256 6E:04:B9:05:60:84:22:B5:5A:A3:E9:00:6D:1A:29:FC:6F:C7:D9:79:D7:3B:BC:8D:BC:3D:7F:FC:94:3A:10:9E", rndTripSdp.Media.Single().DtlsFingerprint);
             Assert.Single(rndTripSdp.Media.Single().MediaFormats);
-            Assert.Equal(5000, rndTripSdp.Media.Single().SctpPort);
+            Assert.Equal(5000, rndTripSdp.Media.Single().SctpPort.Value);
             Assert.Equal(262144, rndTripSdp.Media.Single().MaxMessageSize);
         }
     }

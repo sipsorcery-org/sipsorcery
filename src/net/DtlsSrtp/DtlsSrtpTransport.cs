@@ -49,7 +49,7 @@ namespace SIPSorcery.Net
         /// Sets the period in milliseconds that the handshake attempt will timeout
         /// after.
         /// </summary>
-        public int TimeoutMilliseconds = DEFAULT_TIMEOUT_MILLISECONDS; 
+        public int TimeoutMilliseconds = DEFAULT_TIMEOUT_MILLISECONDS;
 
         public Action<byte[]> OnDataReady;
 
@@ -148,7 +148,7 @@ namespace SIPSorcery.Net
                     var client = (DtlsSrtpClient)connection;
                     // Perform the handshake in a non-blocking fashion
                     Transport = clientProtocol.Connect(client, this);
-                     
+
                     // Prepare the shared key to be used in RTP streaming
                     //client.PrepareSrtpSharedSecret();
                     // Generate encoders for DTLS traffic
@@ -196,9 +196,9 @@ namespace SIPSorcery.Net
                 try
                 {
                     var server = (DtlsSrtpServer)connection;
-                    
+
                     // Perform the handshake in a non-blocking fashion
-                    serverProtocol.Accept(server, this);
+                    Transport = serverProtocol.Accept(server, this);
                     // Prepare the shared key to be used in RTP streaming
                     //server.PrepareSrtpSharedSecret();
                     // Generate encoders for DTLS traffic
@@ -417,16 +417,25 @@ namespace SIPSorcery.Net
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
         {
-            int millisecondsRemaining = GetMillisecondsRemaining();
-
-            if (millisecondsRemaining <= 0)
+            if (!handshakeComplete)
             {
-                logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
-                throw new TimeoutException();
+                // The timeout for the handshake applies from when it started rather than
+                // for each individual receive..
+                int millisecondsRemaining = GetMillisecondsRemaining();
+
+                if (millisecondsRemaining <= 0)
+                {
+                    logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
+                    throw new TimeoutException();
+                }
+                else
+                {
+                    waitMillis = (int)System.Math.Min(waitMillis, millisecondsRemaining);
+                    return _inStream.Read(buf, off, len, waitMillis);
+                }
             }
             else
             {
-                waitMillis = (int)System.Math.Min(waitMillis, millisecondsRemaining);
                 return _inStream.Read(buf, off, len, waitMillis);
             }
         }

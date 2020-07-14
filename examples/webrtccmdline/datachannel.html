@@ -23,10 +23,7 @@
                 console.log("web socket onopen.");
 
                 pc = new RTCPeerConnection();
-                dc = pc.createDataChannel("dc1");
-
-                dc.onopen = (event) => console.log(`data channel onopen: ${event}.`);
-                dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+                openDataChannel();
 
                 pc.onicecandidate = function (event) {
                     if (event.candidate) {
@@ -94,6 +91,36 @@
             };
         };
 
+        function sendMessage(message) {
+            console.log(`send message: ${message}.`);
+            if (dc != null) {
+                dc.send(message);
+            }
+        }
+
+        function openDataChannel() {
+            console.log("openDataChannel.");
+            if (pc != null && dc == null) {
+                dc = pc.createDataChannel("dc1");
+
+                dc.onopen = (event) => console.log(`data channel onopen: ${event}.`);
+                dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+                dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
+
+                console.log("data channel created.");
+            }
+        }
+
+        function closeDataChannel() {
+            console.log("closeDataChannel.");
+            if (dc != null) {
+                dc.close();
+                dc = null;
+
+                console.log("data channel closed.");
+            }
+        }
+
         function closePeer() {
             console.log("close peer");
             if (ws != null) {
@@ -113,6 +140,13 @@
         <button type="button" class="btn btn-success" onclick="start(sendOfferUrl);">Start Send Offer</button>
         <button type="button" class="btn btn-success" onclick="start(receiveOfferUrl);">Start Receive Offer</button>
         <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+    <div>
+        <input type="text" id="message" />
+        <button type="button" class="btn btn-success" onclick="sendMessage(document.querySelector('#message').value);">Send Message</button>
+        <button type="button" class="btn btn-success" onclick="closeDataChannel();">Close Data Channel</button>
+        <button type="button" class="btn btn-success" onclick="openDataChannel();">Open Data Channel</button>
     </div>
 
 </body>

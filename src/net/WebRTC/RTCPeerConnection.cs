@@ -150,6 +150,9 @@ namespace SIPSorcery.Net
 
         private List<RTCDataChannel> _dataChannels = new List<RTCDataChannel>();
 
+        private DtlsSrtpTransport _dtlsHandle;
+        private pe.pi.sctp4j.sctp.small.ThreadedAssociation _dataChannelAssociation;
+
         /// <summary>
         /// The ICE role the peer is acting in.
         /// </summary>
@@ -242,7 +245,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<RTCPeerConnectionState> onconnectionstatechange;
 
-        public event Action<byte[]> OnDtlsPacket;
+        //public event Action<byte[]> OnDtlsPacket;
 
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
@@ -338,19 +341,13 @@ namespace SIPSorcery.Net
 
                     logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
 
-                    DtlsSrtpTransport dtlsHandle = new DtlsSrtpTransport(
+                    _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
                                 (IDtlsSrtpPeer)new DtlsSrtpClient(_currentCertificate.Certificate) :
                                 (IDtlsSrtpPeer)new DtlsSrtpServer(_currentCertificate.Certificate));
 
-                    OnDtlsPacket += (buf) =>
-                    {
-                        logger.LogDebug($"DTLS transport received {buf.Length} bytes from {AudioDestinationEndPoint}.");
-                        dtlsHandle.WriteToRecvStream(buf);
-                    };
-
                     logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
-                    Task.Run<bool>(() => DoDtlsHandshake(dtlsHandle))
+                    Task.Run<bool>(() => DoDtlsHandshake(_dtlsHandle))
                     .ContinueWith(t =>
                     {
                         if (t.IsFaulted)
@@ -905,7 +902,39 @@ namespace SIPSorcery.Net
                     //if (buffer[0] >= 20 && buffer[0] <= 63)
                     {
                         // DTLS packet.
-                        OnDtlsPacket?.Invoke(buffer);
+                        //OnDtlsPacket?.Invoke(buffer);
+
+                        if(_dtlsHandle != null)
+                        {
+                            logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
+                            _dtlsHandle.WriteToRecvStream(buffer);
+
+                            //if(_dtlsHandle.IsHandshakeComplete() && _dtlsHandle.Transport != null)
+                            //{
+                            //    byte[] dtlsBuf = new byte[4096];
+                            //    int bytesDecrypted = _dtlsHandle.Transport.Receive(dtlsBuf, 0, 4096, 0);
+
+                            //    logger.LogDebug($"DTLS transport decrypted {bytesDecrypted} bytes from {AudioDestinationEndPoint}.");
+                            //    logger.LogDebug(dtlsBuf.Take(bytesDecrypted).ToArray().HexStr());
+
+                            //    //var sctpPacket = SCTP.SCTPPacket.FromArray(dtlsBuf, 0, bytesDecrypted);
+                            //    //if(sctpPacket != null)
+                            //    //{
+                            //    //    logger.LogDebug($"SCTP packet {sctpPacket.Header.DestinationPort}->{sctpPacket.Header.DestinationPort}.");
+                            //    //}
+
+                            //    //var sctpPacket = new pe.pi.sctp4j.sctp.messages.Packet(new SCTP4CS.Utils.ByteBuffer(dtlsBuf, 0, bytesDecrypted));
+                            //    //if (sctpPacket != null)
+                            //    //{
+                            //    //    logger.LogDebug($"SCTP packet {sctpPacket.getSrcPort()}->{sctpPacket.getDestPort()}.");
+                            //    //}
+                            //    //var assoc = new pe.pi.sctp4j.sctp.small.ThreadedAssociation(_dtlsHandle, null);
+                            //}
+                        }
+                       else
+                        {
+                            logger.LogWarning($"DTLS packet received {buffer.Length} bytes from {AudioDestinationEndPoint} but no DTLS transport available.");
+                        }
                     }
                 }
                 catch (Exception excp)
@@ -1021,6 +1050,10 @@ namespace SIPSorcery.Net
                         dtlsHandle.UnprotectRTP,
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);
+
+                    DataChannelAssociationListener associationListener = new DataChannelAssociationListener();
+                    _dataChannelAssociation = new pe.pi.sctp4j.sctp.small.ThreadedAssociation(_dtlsHandle.Transport, associationListener);
+                    _dataChannelAssociation.associate();
 
                     return true;
                 }
