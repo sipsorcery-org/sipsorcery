@@ -367,6 +367,7 @@ namespace SIPSorcery.Net
         {
             if (!_closed)
             {
+                logger.LogDebug($"RtpIceChannel for {base.RTPLocalEndPoint} closed.");
                 _closed = true;
                 _processChecklistTimer?.Dispose();
                 _processIceServersTimer?.Dispose();
@@ -1548,7 +1549,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public override SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        internal override SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
             if (NominatedEntry != null && NominatedEntry.LocalCandidate.type == RTCIceCandidateType.relay &&
                 NominatedEntry.LocalCandidate.IceServer != null &&

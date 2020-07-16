@@ -90,7 +90,7 @@ namespace pe.pi.sctp4j.sctp.messages {
 
 		public OutgoingSSNResetRequestParameter getOutgoingReset() {
 			foreach (var v in _varList)
-				if (typeof(IncomingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
+				if (typeof(OutgoingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
 					return (OutgoingSSNResetRequestParameter) v;
 			return null;
 		}

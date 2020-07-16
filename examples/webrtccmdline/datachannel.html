@@ -43,6 +43,14 @@
                 pc.oniceconnectionstatechange = () => console.log("ICE connection state change to " + pc.iceConnectionState);
                 pc.onconnectionstatechange = () => console.log("Peer connection state change to " + pc.connectionState);
 
+                pc.onnegotiationneeded = e => pc.createOffer().then(d => {
+                    console.log(`${JSON.stringify(d)}`);
+                    console.log(d.sdp);
+                    pc.setLocalDescription(d);
+                });
+                //pc.onnegotiationneeded = e => console.log(`negotiation needed ${JSON.stringify(e)}.`);
+                pc.onsignalingstatechange = e => console.log(`signalling state change ${JSON.stringify(e)}.`);
+
                 pc.ontrack = async function (event) {
                     console.log('Remote ' + event.track.kind + ' stream available.');
                     console.log(event);

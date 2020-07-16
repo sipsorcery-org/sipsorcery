@@ -736,10 +736,10 @@ namespace SIPSorcery.Net
                 {
                     connectionAddress = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
                 }
-                else
-                {
-                    logger.LogWarning("RTP session set remote description was supplied an SDP with no connection address.");
-                }
+                //else
+                //{
+                //    logger.LogWarning("RTP session set remote description was supplied an SDP with no connection address.");
+                //}
 
                 IPEndPoint remoteAudioRtpEP = null;
                 IPEndPoint remoteAudioRtcpEP = null;
@@ -2402,9 +2402,18 @@ namespace SIPSorcery.Net
         /// <param name="report">RTCP report to send.</param>
         private void SendRtcpReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket report)
         {
-            var reportBytes = report.GetBytes();
-            SendRtcpReport(mediaType, reportBytes);
-            OnSendReport?.Invoke(mediaType, report);
+            if (IsSecure && !IsSecureContextReady && report.Bye != null)
+            {
+                // Do nothing. The RTCP BYE gets generated when an RTP session is closed.
+                // If that occurs before the connection was able to set up the secure context
+                // there's no point trying to send it.
+            }
+            else
+            {
+                var reportBytes = report.GetBytes();
+                SendRtcpReport(mediaType, reportBytes);
+                OnSendReport?.Invoke(mediaType, report);
+            }
         }
 
         /// <summary>

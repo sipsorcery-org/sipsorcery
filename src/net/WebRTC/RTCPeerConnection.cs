@@ -245,8 +245,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<RTCPeerConnectionState> onconnectionstatechange;
 
-        //public event Action<byte[]> OnDtlsPacket;
-
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
@@ -610,6 +608,8 @@ namespace SIPSorcery.Net
         {
             if (!IsClosed)
             {
+                logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
+
                 _rtpIceChannel.Close();
                 base.Close(reason);
 
@@ -775,10 +775,27 @@ namespace SIPSorcery.Net
 
             bool iceCandidatesAdded = false;
 
-            // Add a bundle attribute. Indicates that audio and video sessions will be multiplexed
-            // on a single RTP socket.
-            offerSdp.Group = BUNDLE_ATTRIBUTE;
+            // Add a bundle attribute as long as there's something to bundle. Indicates that audio
+            // and video sessions as well as any data channels will be multiplexed on a single RTP socket.
+            if (tracks.Count > 0 || _dataChannels?.Count > 0)
+            {
+                offerSdp.Group = BUNDLE_ATTRIBUTE;
+            }
+
             offerSdp.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
+            offerSdp.IceUfrag = GetRtpChannel().LocalIceUser;
+            offerSdp.IcePwd = GetRtpChannel().LocalIcePassword;
+            offerSdp.IceCandidates = new List<string>();
+            // Add ICE candidates.
+            foreach (var iceCandidate in _rtpIceChannel.Candidates)
+            {
+                offerSdp.IceCandidates.Add(iceCandidate.ToString());
+            }
+
+            if (_rtpIceChannel.IceGatheringState == RTCIceGatheringState.complete)
+            {
+                offerSdp.AddExtra($"a={SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
+            }
 
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)

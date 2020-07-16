@@ -183,7 +183,12 @@ namespace SIPSorcery.Examples
 
                     Console.WriteLine($"Remote answer: {answerInit.sdp}");
 
-                    pc.setRemoteDescription(answerInit);
+                    var res = pc.setRemoteDescription(answerInit);
+                    if(res != SetDescriptionResultEnum.OK)
+                    {
+                        // No point continuing. Something will need to change and then try again.
+                        pc.Close("failed to set remote sdp");
+                    }
 
                     // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
                     exitMre.WaitOne();
@@ -296,17 +301,29 @@ namespace SIPSorcery.Examples
                     // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.
                     SDP remoteSdp = SDP.ParseSDPDescription(message);
-                    pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+                    var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+                    if (res != SetDescriptionResultEnum.OK)
+                    {
+                        // No point continuing. Something will need to change and then try again.
+                        pc.Close("failed to set remote sdp");
+                    }
+                    else
+                    {
+                        var answer = pc.createAnswer(null);
+                        await pc.setLocalDescription(answer);
 
-                    var answer = pc.createAnswer(null);
-                    await pc.setLocalDescription(answer);
-
-                    context.WebSocket.Send(answer.sdp);
+                        context.WebSocket.Send(answer.sdp);
+                    }
                 }
                 else if (pc.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    if (res != SetDescriptionResultEnum.OK)
+                    {
+                        // No point continuing. Something will need to change and then try again.
+                        pc.Close("failed to set remote sdp");
+                    }
                 }
                 else
                 {
