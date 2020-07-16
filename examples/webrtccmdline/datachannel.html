@@ -44,9 +44,15 @@
                 pc.onconnectionstatechange = () => console.log("Peer connection state change to " + pc.connectionState);
 
                 pc.onnegotiationneeded = e => pc.createOffer().then(d => {
-                    console.log(`${JSON.stringify(d)}`);
-                    console.log(d.sdp);
+                    //console.log(`${JSON.stringify(d)}`);
+                    //console.log(d.sdp);
                     pc.setLocalDescription(d);
+
+                    if (url == sendOfferUrl) {
+                        console.log("Sending offer SDP:");
+                        console.log(d.sdp);
+                        ws.send(d.sdp);
+                    }
                 });
                 //pc.onnegotiationneeded = e => console.log(`negotiation needed ${JSON.stringify(e)}.`);
                 pc.onsignalingstatechange = e => console.log(`signalling state change ${JSON.stringify(e)}.`);
@@ -56,14 +62,6 @@
                     console.log(event);
                     //	remoteStream.addTrack(event.track, remoteStream);
                 };
-
-                if (url == sendOfferUrl) {
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer)
-                    console.log("Sending offer SDP:");
-                    console.log(offer.sdp);
-                    ws.send(offer.sdp);
-                }
             };
 
             ws.onmessage = async function (evt) {

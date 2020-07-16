@@ -783,19 +783,6 @@ namespace SIPSorcery.Net
             }
 
             offerSdp.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
-            offerSdp.IceUfrag = GetRtpChannel().LocalIceUser;
-            offerSdp.IcePwd = GetRtpChannel().LocalIcePassword;
-            offerSdp.IceCandidates = new List<string>();
-            // Add ICE candidates.
-            foreach (var iceCandidate in _rtpIceChannel.Candidates)
-            {
-                offerSdp.IceCandidates.Add(iceCandidate.ToString());
-            }
-
-            if (_rtpIceChannel.IceGatheringState == RTCIceGatheringState.complete)
-            {
-                offerSdp.AddExtra($"a={SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
-            }
 
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)

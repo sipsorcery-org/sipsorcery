@@ -26,7 +26,7 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
+        private static string DESTINATION = "aaron@192.168.11.50:6060";
 
         static async Task Main()
         {
