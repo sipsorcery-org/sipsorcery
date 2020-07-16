@@ -18,7 +18,7 @@
 
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.messages.Params;
+using SIPSorcery.Net.messages.Params;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -26,7 +26,7 @@ using SIPSorcery.Sys;
  *
  * @author tim
  */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public class InitChunk : Chunk {
         /*
 		 0                   1                   2                   3

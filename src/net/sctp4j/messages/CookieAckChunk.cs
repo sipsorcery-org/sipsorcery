@@ -23,7 +23,7 @@ using SCTP4CS.Utils;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public class CookieAckChunk : Chunk {
 		public CookieAckChunk(CType type, byte flags, int length, ByteBuffer pkt)
 			: base(type, flags, length, pkt) { }

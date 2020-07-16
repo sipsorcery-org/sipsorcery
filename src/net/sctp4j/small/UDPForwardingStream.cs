@@ -16,7 +16,7 @@
  */
 // Modified by Andrés Leone Gámez
 
-using pe.pi.sctp4j.sctp.behave;
+using SIPSorcery.Net.behave;
 using System;
 using System.Net.Sockets;
 using System.Threading;
@@ -27,7 +27,7 @@ using SIPSorcery.Sys;
  *
  * @author tim
  */
-namespace pe.pi.sctp4j.sctp.small {
+namespace SIPSorcery.Net.small {
 	public class UDPForwardingStream : BlockingSCTPStream {
 
         private static ILogger logger = Log.Logger;
@@ -60,12 +60,12 @@ namespace pe.pi.sctp4j.sctp.small {
 						Array.Copy(buff, 0, pkt, 0, l);
 						send(pkt);
 					}
-					catch (SocketException stx) {
-						; // ignore - lets us check for close....
+					catch (SocketException) {
+						// ignore - lets us check for close....
 					}
 				}
 			}
-			catch (Exception x) {
+			catch (Exception) {
 
 			}
 			// clean up here.....

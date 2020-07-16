@@ -17,7 +17,7 @@
 // Modified by Andrés Leone Gámez
 
 using Org.BouncyCastle.Crypto.Tls;
-using pe.pi.sctp4j.sctp.messages;
+using SIPSorcery.Net.messages;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,7 +30,7 @@ using SIPSorcery.Sys;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp.small {
+namespace SIPSorcery.Net.small {
 	public class ThreadedAssociation : Association {
 		static int MAXBLOCKS = 10; // some number....
 		private Queue<DataChunk> _freeBlocks;
@@ -80,7 +80,8 @@ namespace pe.pi.sctp4j.sctp.small {
 		 to facilitate cwnd adjustment.
 		 */
 		private long _partial_bytes_acked;
-		private bool _fastRecovery;
+		// AC: This variable was never being set. Removed for now.
+        //private bool _fastRecovery;
 		/*
 		 10.2.  Probing Method Using SCTP
 
@@ -178,7 +179,7 @@ namespace pe.pi.sctp4j.sctp.small {
 			int retries = 0;
 
 			public void run() {
-				logger.LogDebug("T1 init timer expired in state " + ta._state.ToString());
+				///logger.LogDebug("T1 init timer expired in state " + ta._state.ToString());
 
 				if ((ta._state == State.COOKIEECHOED) || (ta._state == State.COOKIEWAIT)) {
 					try {
@@ -200,7 +201,7 @@ namespace pe.pi.sctp4j.sctp.small {
 						SimpleSCTPTimer.setRunnable(run, ta.getT1());
 					}
 				} else {
-					logger.LogDebug("T1 init timer expired with nothing to do");
+					//logger.LogDebug("T1 init timer expired with nothing to do");
 				}
 			}
 		}
@@ -211,7 +212,7 @@ namespace pe.pi.sctp4j.sctp.small {
 		}
 
 		public override SCTPStream mkStream(int id) {
-			logger.LogDebug("Make new Blocking stream " + id);
+			//logger.LogDebug("Make new Blocking stream " + id);
 			return new BlockingSCTPStream(this, id);
 		}
 
@@ -221,7 +222,7 @@ namespace pe.pi.sctp4j.sctp.small {
 
 		public override void enqueue(DataChunk d) {
 			// todo - this worries me - 2 nested synchronized 
-			logger.LogDebug(" Aspiring to enqueue " + d.ToString());
+			//logger.LogDebug(" Aspiring to enqueue " + d.ToString());
 
 			lock (this) {
 				long now = Time.CurrentTimeMillis();
@@ -232,17 +233,17 @@ namespace pe.pi.sctp4j.sctp.small {
 				SimpleSCTPTimer.setRunnable(run, getT3());
 				reduceRwnd(d.getDataSize());
 				//_outbound.put(new Long(d.getTsn()), d);
-				logger.LogDebug(" DataChunk enqueued " + d.ToString());
+				//logger.LogDebug(" DataChunk enqueued " + d.ToString());
 				// all sorts of things wrong here - being in a synchronized not the least of them
 
 				Chunk[] toSend = addSackIfNeeded(d);
 				try {
 					send(toSend);
-					logger.LogDebug("sent, syncing on inFlight... " + d.getTsn());
+					//logger.LogDebug("sent, syncing on inFlight... " + d.getTsn());
 					lock (_inFlight) {
 						_inFlight.Add(d.getTsn(), d);
 					}
-					logger.LogDebug("added to inFlight... " + d.getTsn());
+					//logger.LogDebug("added to inFlight... " + d.getTsn());
 
 				}
 				catch (SctpPacketFormatException ex) {
@@ -269,12 +270,12 @@ namespace pe.pi.sctp4j.sctp.small {
 					dc = _freeBlocks.Count > 0 ? _freeBlocks.Dequeue() : new DataChunk();
 				}
 				m.fill(dc);
-				logger.LogDebug("thinking about waiting for congestion " + dc.getTsn());
+				//logger.LogDebug("thinking about waiting for congestion " + dc.getTsn());
 
 				lock (_congestion) {
-					logger.LogDebug("In congestion sync block ");
+					//logger.LogDebug("In congestion sync block ");
 					while (!this.maySend(dc.getDataSize())) {
-						logger.LogDebug("about to wait for congestion for " + this.getT3());
+						//logger.LogDebug("about to wait for congestion for " + this.getT3());
 						Monitor.Wait(_congestion, (int) this.getT3());// wholly wrong
 					}
 				}
@@ -494,7 +495,7 @@ namespace pe.pi.sctp4j.sctp.small {
 					long te = gb.getEnd() + ackedTo;
 					lock (_inFlight) {
 						for (long t = ts; t <= te; t++) {
-							logger.LogDebug("gap block says far end has seen " + t);
+							//logger.LogDebug("gap block says far end has seen " + t);
 							DataChunk d;
 							if (_inFlight.TryGetValue(t, out d)) {
 								d.setGapAck(true);
@@ -521,7 +522,7 @@ namespace pe.pi.sctp4j.sctp.small {
 					}
 				}
 				_rwnd = sack.getArWin() - totalDataInFlight;
-				logger.LogDebug("Setting rwnd to " + _rwnd);
+				//logger.LogDebug("Setting rwnd to " + _rwnd);
 				bool advanced = (_lastCumuTSNAck < ackedTo);
 				adjustCwind(advanced, totalDataInFlight, totalAcked);
 				_lastCumuTSNAck = ackedTo;
@@ -586,7 +587,7 @@ namespace pe.pi.sctp4j.sctp.small {
 				maysend = (sz <= _cwnd);
 				_cwnd -= sz;
 			}
-			logger.LogDebug("MaySend " + maysend + " rwnd = " + _rwnd + " cwnd = " + _cwnd + " sz = " + sz);
+			//logger.LogDebug("MaySend " + maysend + " rwnd = " + _rwnd + " cwnd = " + _cwnd + " sz = " + sz);
 			return maysend;
 		}
 
@@ -610,12 +611,12 @@ namespace pe.pi.sctp4j.sctp.small {
 				// slow start
 				logger.LogDebug("slow start");
 
-				if (didAdvance && fullyUtilized && !_fastRecovery) {
+				if (didAdvance && fullyUtilized) {// && !_fastRecovery) {
 					int incCwinBy = Math.Min(_transpMTU, totalAcked);
 					_cwnd += incCwinBy;
 					logger.LogDebug("cwnd now " + _cwnd);
 				} else {
-					logger.LogDebug("cwnd static at " + _cwnd + " (didAdvance fullyUtilized  _fastRecovery inFlightBytes totalAcked)  " + didAdvance + " " + fullyUtilized + " " + _fastRecovery + " " + inFlightBytes + " " + totalAcked);
+					logger.LogDebug("cwnd static at " + _cwnd + " (didAdvance fullyUtilized  inFlightBytes totalAcked)  " + didAdvance + " " + fullyUtilized + " " + inFlightBytes + " " + totalAcked);
 				}
 
 			} else {
@@ -712,7 +713,7 @@ namespace pe.pi.sctp4j.sctp.small {
 		public void run() {
 			if (canSend()) {
 				long now = Time.CurrentTimeMillis();
-				logger.LogDebug("retry timer went off at " + now);
+				//logger.LogDebug("retry timer went off at " + now);
 				List<DataChunk> dcs = new List<DataChunk>();
 				int space = _transpMTU - 12; // room for packet header
 				bool resetTimer = false;
@@ -721,12 +722,12 @@ namespace pe.pi.sctp4j.sctp.small {
 						DataChunk d = kvp.Value;
 						long k = kvp.Key;
 						if (d.getGapAck()) {
-							logger.LogDebug("skipping gap-acked tsn " + d.getTsn());
+							//logger.LogDebug("skipping gap-acked tsn " + d.getTsn());
 							continue;
 						}
 						if (d.getRetryTime() <= now) {
 							space -= d.getChunkLength();
-							logger.LogDebug("available space in pkt is " + space);
+							//logger.LogDebug("available space in pkt is " + space);
 							if (space <= 0) {
 								resetTimer = true;
 								break;
@@ -735,7 +736,7 @@ namespace pe.pi.sctp4j.sctp.small {
 								d.setRetryTime(now + getT3() - 1);
 							}
 						} else {
-							logger.LogDebug("retry not yet due for  " + d.ToString());
+							//logger.LogDebug("retry not yet due for  " + d.ToString());
 							resetTimer = true;
 						}
 					}
@@ -749,7 +750,7 @@ namespace pe.pi.sctp4j.sctp.small {
 					}
 					resetTimer = true;
 					try {
-						logger.LogDebug("Sending retry for  " + da.Length + " data chunks");
+						//logger.LogDebug("Sending retry for  " + da.Length + " data chunks");
 						this.send(da);
 					}
 					catch (EndOfStreamException end) {
@@ -761,11 +762,11 @@ namespace pe.pi.sctp4j.sctp.small {
 						logger.LogError("Cant send retry - eek " + ex.ToString());
 					}
 				} else {
-					logger.LogDebug("Nothing to do ");
+					//logger.LogDebug("Nothing to do ");
 				}
 				if (resetTimer) {
 					SimpleSCTPTimer.setRunnable(run, getT3());
-					logger.LogDebug("Try again in a while  " + getT3());
+					//logger.LogDebug("Try again in a while  " + getT3());
 
 				}
 			}
@@ -826,21 +827,21 @@ namespace pe.pi.sctp4j.sctp.small {
 				_srtt = (1 - _rtoAlpha) * _srtt + _rtoAlpha * cr;
 				nrto = _srtt + 4 * _rttvar;
 			}
-			logger.LogDebug("new r =" + r + "candidate  rto is " + nrto);
+			//logger.LogDebug("new r =" + r + "candidate  rto is " + nrto);
 
 			if (nrto < _rtoMin) {
-				logger.LogDebug("clamping min rto as " + nrto + " < " + _rtoMin);
+				//logger.LogDebug("clamping min rto as " + nrto + " < " + _rtoMin);
 				nrto = _rtoMin;
 			}
 			if (nrto > _rtoMax) {
-				logger.LogDebug("clamping max rto as " + nrto + " > " + _rtoMax);
+				//logger.LogDebug("clamping max rto as " + nrto + " > " + _rtoMax);
 				nrto = _rtoMax;
 			}
 			if ((nrto < _rtoMax) && (nrto > _rtoMin)) {
 				// if still out of range (i.e. a NaN) ignore it.
 				_rto = nrto;
 			}
-			logger.LogDebug("new rto is " + _rto);
+			//logger.LogDebug("new rto is " + _rto);
 			/*
 
 

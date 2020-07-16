@@ -25,7 +25,7 @@ using System.Text;
 *
 * @author Westhawk Ltd<thp@westhawk.co.uk>
 */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public class SackChunk : Chunk {
 
 		/**

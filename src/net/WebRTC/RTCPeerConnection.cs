@@ -151,7 +151,7 @@ namespace SIPSorcery.Net
         private List<RTCDataChannel> _dataChannels = new List<RTCDataChannel>();
 
         private DtlsSrtpTransport _dtlsHandle;
-        private pe.pi.sctp4j.sctp.small.ThreadedAssociation _dataChannelAssociation;
+        private SIPSorcery.Net.small.ThreadedAssociation _dataChannelAssociation;
 
         /// <summary>
         /// The ICE role the peer is acting in.
@@ -927,12 +927,12 @@ namespace SIPSorcery.Net
                             //    //    logger.LogDebug($"SCTP packet {sctpPacket.Header.DestinationPort}->{sctpPacket.Header.DestinationPort}.");
                             //    //}
 
-                            //    //var sctpPacket = new pe.pi.sctp4j.sctp.messages.Packet(new SCTP4CS.Utils.ByteBuffer(dtlsBuf, 0, bytesDecrypted));
+                            //    //var sctpPacket = new SIPSorcery.Net.messages.Packet(new SCTP4CS.Utils.ByteBuffer(dtlsBuf, 0, bytesDecrypted));
                             //    //if (sctpPacket != null)
                             //    //{
                             //    //    logger.LogDebug($"SCTP packet {sctpPacket.getSrcPort()}->{sctpPacket.getDestPort()}.");
                             //    //}
-                            //    //var assoc = new pe.pi.sctp4j.sctp.small.ThreadedAssociation(_dtlsHandle, null);
+                            //    //var assoc = new SIPSorcery.Net.small.ThreadedAssociation(_dtlsHandle, null);
                             //}
                         }
                        else
@@ -1056,7 +1056,7 @@ namespace SIPSorcery.Net
                         dtlsHandle.UnprotectRTCP);
 
                     DataChannelAssociationListener associationListener = new DataChannelAssociationListener();
-                    _dataChannelAssociation = new pe.pi.sctp4j.sctp.small.ThreadedAssociation(_dtlsHandle.Transport, associationListener);
+                    _dataChannelAssociation = new SIPSorcery.Net.small.ThreadedAssociation(_dtlsHandle.Transport, associationListener);
                     _dataChannelAssociation.associate();
 
                     return true;

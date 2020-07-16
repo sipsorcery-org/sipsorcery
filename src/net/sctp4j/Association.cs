@@ -17,17 +17,17 @@
 // Modified by Andrés Leone Gámez
 
 
-using pe.pi.sctp4j.sctp.messages;
+using SIPSorcery.Net.messages;
 using System.Collections.Generic;
 using System.Threading;
 using System;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
-using pe.pi.sctp4j.sctp.small;
+using SIPSorcery.Net.small;
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.dataChannel.DECP;
-using pe.pi.sctp4j.sctp.behave;
-using pe.pi.sctp4j.sctp.messages.Params;
+using SIPSorcery.Net.dataChannel.DECP;
+using SIPSorcery.Net.behave;
+using SIPSorcery.Net.messages.Params;
 using System.IO;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
@@ -37,7 +37,7 @@ using SIPSorcery.Sys;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp {
+namespace SIPSorcery.Net {
 	public abstract class Association {
 		private bool _even;
 

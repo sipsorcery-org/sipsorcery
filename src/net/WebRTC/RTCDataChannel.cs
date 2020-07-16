@@ -55,17 +55,17 @@ namespace SIPSorcery.Net
 
         public void close()
         {
-            
+            onclose?.Invoke();
         }
 
         public void send(string data)
         {
-           
+
         }
 
         public void send(byte[] data)
         {
-            
+
         }
     }
 }

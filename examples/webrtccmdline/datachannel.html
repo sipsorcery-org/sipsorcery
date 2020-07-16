@@ -23,7 +23,10 @@
                 console.log("web socket onopen.");
 
                 pc = new RTCPeerConnection();
-                openDataChannel();
+
+                if (url == sendOfferUrl) {
+                    openDataChannel();
+                }
 
                 pc.onicecandidate = function (event) {
                     if (event.candidate) {

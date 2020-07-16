@@ -25,7 +25,7 @@ using System.Text;
  *
  * @author tim
  */
-namespace pe.pi.sctp4j.sctp.messages.Params {
+namespace SIPSorcery.Net.messages.Params {
 	public class HostNameAddress : KnownParam {
 		string hostname;
 

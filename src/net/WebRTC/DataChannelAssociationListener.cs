@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 using Microsoft.Extensions.Logging;
-using pe.pi.sctp4j.sctp;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class DataChannelAssociationListener : pe.pi.sctp4j.sctp.AssociationListener
+    public class DataChannelAssociationListener : SIPSorcery.Net.AssociationListener
     {
         private static ILogger logger = Log.Logger;
 
@@ -21,7 +17,7 @@ namespace SIPSorcery.Net
         {
             logger.LogDebug($"Data Channel onDCEPStream.");
             string test = "Test message";
-            //SCTPMessage m = s.getAssociation().makeMessage(test, (pe.pi.sctp4j.sctp.small.BlockingSCTPStream)s);
+            //SCTPMessage m = s.getAssociation().makeMessage(test, (SIPSorcery.Net.small.BlockingSCTPStream)s);
             //SCTPMessage m = instanceLeft.makeMessage(test, (BlockingSCTPStream)s);
             s.send(test);
 
@@ -39,7 +35,7 @@ namespace SIPSorcery.Net
         }
     }
 
-    public class DataChannelStreamListener : pe.pi.sctp4j.sctp.SCTPStreamListener
+    public class DataChannelStreamListener : SIPSorcery.Net.SCTPStreamListener
     {
         private static ILogger logger = Log.Logger;
 

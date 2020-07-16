@@ -18,7 +18,7 @@
 
 
 using SCTP4CS;
-using pe.pi.sctp4j.sctp.messages;
+using SIPSorcery.Net.messages;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -28,7 +28,7 @@ using SIPSorcery.Sys;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp.small {
+namespace SIPSorcery.Net.small {
 	public class BlockingSCTPStream : SCTPStream {
 		private Dictionary<int, SCTPMessage> undeliveredOutboundMessages = new Dictionary<int, SCTPMessage>();
 

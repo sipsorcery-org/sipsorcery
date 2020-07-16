@@ -17,7 +17,7 @@
 // Modified by Andrés Leone Gámez
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.dataChannel.DECP;
+using SIPSorcery.Net.dataChannel.DECP;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,7 +28,7 @@ using SIPSorcery.Sys;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public class DataChunk : Chunk, IComparer<DataChunk>, IComparable<DataChunk> {
 
         private static ILogger logger = Log.Logger;

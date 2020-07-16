@@ -251,7 +251,8 @@ namespace SIPSorcery.Examples
                 certificates = presetCertificates,
                 X_RemoteSignallingAddress = (context != null) ? context.UserEndPoint.Address : null,
                 iceServers = stunServer != null ? new List<RTCIceServer> { stunServer } : null,
-                iceTransportPolicy = RTCIceTransportPolicy.all
+                iceTransportPolicy = RTCIceTransportPolicy.all,
+                X_BindAddress = IPAddress.Any, // NOTE: Not reqd. Using this to filter out IPv6 addresses so can test with Pion.
             };
 
             var pc = new RTCPeerConnection(pcConfiguration);

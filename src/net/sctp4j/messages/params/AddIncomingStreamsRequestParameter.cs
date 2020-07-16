@@ -21,7 +21,7 @@
  *
  * @author tim
  */
-namespace pe.pi.sctp4j.sctp.messages.Params {
+namespace SIPSorcery.Net.messages.Params {
 	public class AddIncomingStreamsRequestParameter : AddStreamsRequestParameter {
 		public AddIncomingStreamsRequestParameter(int t, string n) : base(t, n) { }
 	}

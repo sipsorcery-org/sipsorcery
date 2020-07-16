@@ -75,7 +75,7 @@ RFC 4960          Stream Control Transmission Protocol    September 2007
       State Cookie parameter to become a COOKIE ECHO chunk.
  * </code>
  */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public class CookieEchoChunk : Chunk {
 
         private static ILogger logger = Log.Logger;

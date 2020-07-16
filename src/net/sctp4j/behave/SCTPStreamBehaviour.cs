@@ -17,13 +17,13 @@
 // Modified by Andrés Leone Gámez
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.messages;
+using SIPSorcery.Net.messages;
 
 /**
  *
  * @author tim
  */
-namespace pe.pi.sctp4j.sctp.behave {
+namespace SIPSorcery.Net.behave {
 	internal interface SCTPStreamBehaviour {
 
 		// Something has happend to the stream, this is our chance to respond.

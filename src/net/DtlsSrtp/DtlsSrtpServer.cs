@@ -23,6 +23,8 @@ using System.Collections.Generic;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Utilities;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -40,6 +42,8 @@ namespace SIPSorcery.Net
 
     public class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
     {
+        private static readonly ILogger logger = Log.Logger;
+
         Certificate mCertificateChain = null;
         AsymmetricKeyParameter mPrivateKey = null;
 
@@ -78,7 +82,7 @@ namespace SIPSorcery.Net
         {
         }
 
-        public DtlsSrtpServer(string[] certificatesPath, string keyPath) : 
+        public DtlsSrtpServer(string[] certificatesPath, string keyPath) :
             this(DtlsUtils.LoadCertificateChain(certificatesPath), DtlsUtils.LoadPrivateKeyResource(keyPath))
         {
         }
@@ -391,6 +395,40 @@ namespace SIPSorcery.Net
         public Certificate GetRemoteCertificate()
         {
             return ClientCertificate;
+        }
+
+        public override void NotifyAlertRaised(byte alertLevel, byte alertDescription, string message, Exception cause)
+        {
+            string description = null;
+            if (message != null)
+            {
+                description += message;
+            }
+            if (cause != null)
+            {
+                description += cause;
+            }
+
+            logger.LogWarning($"DTLS server raised alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
+        }
+
+        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
+        {
+            logger.LogWarning($"DTLS server received alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}.");
+        }
+
+        /// <summary>
+        /// This override prevents a TLS fault from being generated if a "Client Hello" is received that
+        /// does not support TLS renegotiation (https://tools.ietf.org/html/rfc5746).
+        /// This override is required to be able to complete a DTLS handshake with the Pion WebRTC library,
+        /// see https://github.com/pion/dtls/issues/274.
+        /// </summary>
+        public override void NotifySecureRenegotiation(bool secureRenegotiation)
+        {
+            if (!secureRenegotiation)
+            {
+                logger.LogWarning($"DTLS server received a client handshake without renegotiation support.");
+            }
         }
     }
 }

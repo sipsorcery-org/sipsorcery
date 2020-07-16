@@ -18,7 +18,7 @@
 
 using SCTP4CS;
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.messages;
+using SIPSorcery.Net.messages;
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
@@ -28,7 +28,7 @@ using SIPSorcery.Sys;
  *
  * @author tim
  */
-namespace pe.pi.sctp4j.sctp.behave {
+namespace SIPSorcery.Net.behave {
 	internal class OrderedStreamBehaviour : SCTPStreamBehaviour {
 
         private static ILogger logger = Log.Logger;

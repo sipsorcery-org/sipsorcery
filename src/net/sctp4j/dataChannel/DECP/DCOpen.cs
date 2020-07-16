@@ -17,7 +17,7 @@
 // Modified by Andrés Leone Gámez
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.behave;
+using SIPSorcery.Net.behave;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -26,7 +26,7 @@ using SIPSorcery.Sys;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp.dataChannel.DECP {
+namespace SIPSorcery.Net.dataChannel.DECP {
 	public class DCOpen {
 
 		/*
@@ -105,7 +105,7 @@ namespace pe.pi.sctp4j.sctp.dataChannel.DECP {
 
 		public byte[] getBytes() {
 			int sz = 12 + _labLen + pad(_labLen) + _protLen + pad(_protLen);
-			logger.LogDebug("dcopen needs " + sz + " bytes ");
+			//logger.LogDebug("dcopen needs " + sz + " bytes ");
 
 			byte[] ret = new byte[sz];
 			ByteBuffer buff = new ByteBuffer(ret);
@@ -126,12 +126,12 @@ namespace pe.pi.sctp4j.sctp.dataChannel.DECP {
 		static public int pad(int len) {
 			int mod = len % 4;
 			int res = 0;
-			logger.LogDebug("field of " + len + " mod 4 is " + mod);
+			//logger.LogDebug("field of " + len + " mod 4 is " + mod);
 
 			if (mod > 0) {
 				res = (4 - mod);
 			}
-			logger.LogDebug("padded by " + res);
+			//logger.LogDebug("padded by " + res);
 			return res;
 		}
 

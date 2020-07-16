@@ -17,8 +17,8 @@
 // Modified by Andrés Leone Gámez
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.behave;
-using pe.pi.sctp4j.sctp.messages;
+using SIPSorcery.Net.behave;
+using SIPSorcery.Net.messages;
 using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -27,7 +27,7 @@ using SIPSorcery.Sys;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp {
+namespace SIPSorcery.Net {
 	public abstract class SCTPStream {
         /* unfortunately a webRTC SCTP stream can change it's reliability rules etc post creation
 		 so we can't encapsulate the streams into multiple implementations of the same interface/abstract
@@ -96,7 +96,7 @@ namespace pe.pi.sctp4j.sctp {
 		}
 
 		public Chunk[] append(DataChunk dc) {
-			logger.LogDebug("adding data to stash on stream " + _label + "(" + dc + ")");
+			//logger.LogDebug("adding data to stash on stream " + _label + "(" + dc + ")");
 			_stash.Add(dc);
 			return _behave.respond(this);
 		}
@@ -144,7 +144,7 @@ namespace pe.pi.sctp4j.sctp {
 
 		public void setSCTPStreamListener(SCTPStreamListener sl) {
 			_sl = sl;
-			logger.LogDebug("action a delayed delivery now we have a listener.");
+			//logger.LogDebug("action a delayed delivery now we have a listener.");
 			//todo think about what reliablility looks like here.
 			_behave.deliver(this, _stash, _sl);
 		}
@@ -180,11 +180,12 @@ namespace pe.pi.sctp4j.sctp {
 
 		abstract internal void deliverMessage(SCTPMessage message);
 
-		public void setDeferred(bool b) {
-			bool deferred = true;
-		}
+        //public void setDeferred(bool b)
+        //{
+        //    bool deferred = true;
+        //}
 
-		public void reset() {
+        public void reset() {
 			logger.LogDebug("Resetting stream " + this._sno);
 			if (this._sl != null) {
 				_sl.close(this);
@@ -230,7 +231,7 @@ namespace pe.pi.sctp4j.sctp {
 		}
 
 		State getState() {
-			logger.LogDebug("Stream State for " + _sno + " is currently " + state);
+			//logger.LogDebug("Stream State for " + _sno + " is currently " + state);
 			return state;
 		}
 

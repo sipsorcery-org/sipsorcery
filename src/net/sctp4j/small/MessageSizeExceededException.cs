@@ -23,7 +23,7 @@ using System;
 *
 * @author Westhawk Ltd<thp@westhawk.co.uk>
 */
-namespace pe.pi.sctp4j.sctp.small {
+namespace SIPSorcery.Net.small {
 	class MessageSizeExceededException : Exception {
 		public MessageSizeExceededException() { }
 	}

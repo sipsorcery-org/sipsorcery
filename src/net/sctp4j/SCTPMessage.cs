@@ -17,7 +17,7 @@
 // Modified by Andrés Leone Gámez
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.messages;
+using SIPSorcery.Net.messages;
 using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -26,7 +26,7 @@ using SIPSorcery.Sys;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp {
+namespace SIPSorcery.Net {
 	internal class SCTPMessage {
 		private SCTPStream _stream;
 		private byte[] _data;

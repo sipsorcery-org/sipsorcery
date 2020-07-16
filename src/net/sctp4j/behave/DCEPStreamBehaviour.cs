@@ -17,7 +17,7 @@
 // Modified by Andrés Leone Gámez
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.messages;
+using SIPSorcery.Net.messages;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -26,7 +26,7 @@ using SIPSorcery.Sys;
  * @author tim
  * what DCEPS do 
  */
-namespace pe.pi.sctp4j.sctp.behave {
+namespace SIPSorcery.Net.behave {
 	internal class DCEPStreamBehaviour : SCTPStreamBehaviour {
 
         private static ILogger logger = Log.Logger;

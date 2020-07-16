@@ -20,7 +20,7 @@
  *
  * @author tim
  */
-namespace pe.pi.sctp4j.sctp.behave {
+namespace SIPSorcery.Net.behave {
 	internal class UnorderedStreamBehaviour : OrderedStreamBehaviour {
 		public UnorderedStreamBehaviour() {
 			_ordered = false;

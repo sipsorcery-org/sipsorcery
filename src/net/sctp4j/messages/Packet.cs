@@ -27,7 +27,7 @@ using SIPSorcery.Sys;
 *
 * @author Westhawk Ltd<thp@westhawk.co.uk>
 */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public class Packet {
         /*
 		 SCTP Common Header Format
@@ -92,7 +92,7 @@ namespace pe.pi.sctp4j.sctp.messages {
 				c.write(cs); // ask the chunk to write itself into there.
 				pad = cs.Position % 4;
 				pad = (pad != 0) ? 4 - pad : 0;
-				logger.LogDebug("padding by " + pad);
+				//logger.LogDebug("padding by " + pad);
 				ret.Position += pad + cs.Position;// move us along.
 			}
 			/*Log.logger.verb("un padding by " + pad);

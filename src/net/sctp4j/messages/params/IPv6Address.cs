@@ -24,7 +24,7 @@ using System.Net;
 *
 * @author tim
 */
-namespace pe.pi.sctp4j.sctp.messages.Params {
+namespace SIPSorcery.Net.messages.Params {
 	public class IPv6Address : KnownParam {
 		IPAddress addr;
 

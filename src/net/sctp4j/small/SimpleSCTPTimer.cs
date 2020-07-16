@@ -26,7 +26,7 @@ using System.Threading;
  * Assumption is that timers _always_ go off - it is up to the 
  * runnable to decide if something needs to be done or not.
  */
-namespace pe.pi.sctp4j.sctp.small {
+namespace SIPSorcery.Net.small {
 	static class SimpleSCTPTimer {
 		public static void setRunnable(Action r, long at) {
 			new Timer((o) => { r(); }, null, at, Timeout.Infinite);

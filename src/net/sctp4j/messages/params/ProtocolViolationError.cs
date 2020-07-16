@@ -22,7 +22,7 @@
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp.messages.Params {
+namespace SIPSorcery.Net.messages.Params {
 	public class ProtocolViolationError : KnownError {
 		public ProtocolViolationError(int t, string n) : base(t, n) { }
 	}

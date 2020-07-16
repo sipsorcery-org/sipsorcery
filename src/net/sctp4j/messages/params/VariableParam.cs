@@ -23,7 +23,7 @@ using SCTP4CS.Utils;
  *
  * @author tim
  */
-namespace pe.pi.sctp4j.sctp.messages.Params {
+namespace SIPSorcery.Net.messages.Params {
 	public interface VariableParam {
 		void readBody(ByteBuffer b, int len);
 		void writeBody(ByteBuffer b);

@@ -21,7 +21,7 @@
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp {
+namespace SIPSorcery.Net {
 	public interface SCTPByteStreamListener : SCTPStreamListener {
 		void onMessage(SCTPStream s, byte[] message);
 	}

@@ -18,7 +18,7 @@
 
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.messages.Params;
+using SIPSorcery.Net.messages.Params;
 using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -27,7 +27,7 @@ using SIPSorcery.Sys;
  *
  * @author thp
  */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public class ReConfigChunk : Chunk {
 
         private static ILogger logger = Log.Logger;

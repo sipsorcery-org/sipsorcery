@@ -18,13 +18,13 @@
 
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.messages.Params;
+using SIPSorcery.Net.messages.Params;
 
 /**
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public class HeartBeatChunk : Chunk {
 		public HeartBeatChunk(CType type, byte flags, int length, ByteBuffer pkt)
 			: base(type, flags, length, pkt) {

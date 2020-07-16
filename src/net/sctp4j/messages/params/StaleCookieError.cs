@@ -24,7 +24,7 @@ using SCTP4CS.Utils;
 *
 * @author Westhawk Ltd<thp@westhawk.co.uk>
 */
-namespace pe.pi.sctp4j.sctp.messages.Params {
+namespace SIPSorcery.Net.messages.Params {
 	public class StaleCookieError : KnownError {
 		private uint _measure;
 		/*

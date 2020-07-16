@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections;
-using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;

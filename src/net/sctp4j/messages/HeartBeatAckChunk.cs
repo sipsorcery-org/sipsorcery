@@ -22,7 +22,7 @@ using SCTP4CS.Utils;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public class HeartBeatAckChunk : Chunk {
 		public HeartBeatAckChunk() : base(CType.HEARTBEAT_ACK) { }
 

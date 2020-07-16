@@ -16,8 +16,8 @@
  */
 // Modified by Andrés Leone Gámez
 
-using pe.pi.sctp4j.sctp.messages;
-using pe.pi.sctp4j.sctp.messages.Params;
+using SIPSorcery.Net.messages;
+using SIPSorcery.Net.messages.Params;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -26,13 +26,13 @@ using SIPSorcery.Sys;
  *
  * @author thp
  */
-namespace pe.pi.sctp4j.sctp {
+namespace SIPSorcery.Net {
 	class ReconfigState {
 
         private static ILogger logger = Log.Logger;
 
         ReConfigChunk recentInbound = null;
-		ReConfigChunk recentOutboundRequest = null;
+		//ReConfigChunk recentOutboundRequest = null;
 		ReConfigChunk sentReply = null;
 		bool timerRunning = false;
 		uint nearSeqno = 0;
@@ -81,7 +81,7 @@ namespace pe.pi.sctp4j.sctp {
 		public Chunk[] deal(ReConfigChunk rconf) {
 			Chunk[] ret = new Chunk[1];
 			ReConfigChunk reply = null;
-			logger.LogDebug("Got a reconfig message to deal with");
+			//logger.LogDebug("Got a reconfig message to deal with");
 			if (haveSeen(rconf)) {
 				// if not - is this a repeat
 				reply = getPrevious(rconf); // then send the same reply
@@ -100,10 +100,11 @@ namespace pe.pi.sctp4j.sctp {
 					}
 					// if we are behind, we are supposed to wait until we catch up.
 					if (oreset.getLastAssignedTSN() > assoc.getCumAckPt()) {
-						logger.LogDebug("Last assigned > farTSN " + oreset.getLastAssignedTSN() + " v " + assoc.getCumAckPt());
+						//logger.LogDebug("Last assigned > farTSN " + oreset.getLastAssignedTSN() + " v " + assoc.getCumAckPt());
 						foreach (int s in streams) {
 							SCTPStream defstr = assoc.getStream(s);
-							defstr.setDeferred(true);
+                            // AC: All this call did was set an unused local variable. Removed for now.
+							//defstr.setDeferred(true);
 						}
 						ReconfigurationResponseParameter rep = new ReconfigurationResponseParameter();
 						rep.setSeq(oreset.getReqSeqNo());
@@ -111,7 +112,7 @@ namespace pe.pi.sctp4j.sctp {
 						reply.addParam(rep);
 					} else {
 						// somehow invoke this when TSN catches up ?!?! ToDo
-						logger.LogDebug("we are up-to-date ");
+						//logger.LogDebug("we are up-to-date ");
 						ReconfigurationResponseParameter rep = new ReconfigurationResponseParameter();
 						rep.setSeq(oreset.getReqSeqNo());
 						int result = streams.Length > 0 ? ReconfigurationResponseParameter.SUCCESS_PERFORMED : ReconfigurationResponseParameter.SUCCESS_NOTHING_TO_DO;
@@ -119,7 +120,7 @@ namespace pe.pi.sctp4j.sctp {
 						foreach (int s in streams) {
 							SCTPStream cstrm = assoc.delStream(s);
 							if (cstrm == null) {
-								logger.LogError("Close a non existant stream");
+								//logger.LogError("Close a non existant stream");
 								rep.setResult(ReconfigurationResponseParameter.ERROR_WRONG_SSN);
 								break;
 								// bidriectional might be a problem here...

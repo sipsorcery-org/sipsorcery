@@ -17,34 +17,34 @@
 // Modified by Andrés Leone Gámez
 
 using SCTP4CS.Utils;
-using pe.pi.sctp4j.sctp.messages.Params;
+using SIPSorcery.Net.messages.Params;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 /*
-import pe.pi.sctp4j.sctp.messages.params.RequestedHMACAlgorithmParameter;
-import pe.pi.sctp4j.sctp.messages.params.AddIncomingStreamsRequestParameter;
-import pe.pi.sctp4j.sctp.messages.params.AddOutgoingStreamsRequestParameter;
-import pe.pi.sctp4j.sctp.messages.params.ReconfigurationResponseParameter;
-import pe.pi.sctp4j.sctp.messages.params.SSNTSNResetRequestParameter;
-import pe.pi.sctp4j.sctp.messages.params.CookiePreservative;
-import pe.pi.sctp4j.sctp.messages.params.UnrecognizedParameters;
-import pe.pi.sctp4j.sctp.messages.params.StateCookie;
-import pe.pi.sctp4j.sctp.messages.params.IPv6Address;
-import pe.pi.sctp4j.sctp.messages.params.IPv4Address;
-import pe.pi.sctp4j.sctp.messages.exceptions.SctpPacketFormatException;
-import pe.pi.sctp4j.sctp.messages.params.HostNameAddress;
-import pe.pi.sctp4j.sctp.messages.params.IncomingSSNResetRequestParameter;
-import pe.pi.sctp4j.sctp.messages.params.KnownError;
-import pe.pi.sctp4j.sctp.messages.params.KnownParam;
-import pe.pi.sctp4j.sctp.messages.params.OutgoingSSNResetRequestParameter;
-import pe.pi.sctp4j.sctp.messages.params.ProtocolViolationError;
-import pe.pi.sctp4j.sctp.messages.params.StaleCookieError;
-import pe.pi.sctp4j.sctp.messages.params.SupportedAddressTypes;
-import pe.pi.sctp4j.sctp.messages.params.Unknown;
-import pe.pi.sctp4j.sctp.messages.params.VariableParam;
+import SIPSorcery.Net.messages.params.RequestedHMACAlgorithmParameter;
+import SIPSorcery.Net.messages.params.AddIncomingStreamsRequestParameter;
+import SIPSorcery.Net.messages.params.AddOutgoingStreamsRequestParameter;
+import SIPSorcery.Net.messages.params.ReconfigurationResponseParameter;
+import SIPSorcery.Net.messages.params.SSNTSNResetRequestParameter;
+import SIPSorcery.Net.messages.params.CookiePreservative;
+import SIPSorcery.Net.messages.params.UnrecognizedParameters;
+import SIPSorcery.Net.messages.params.StateCookie;
+import SIPSorcery.Net.messages.params.IPv6Address;
+import SIPSorcery.Net.messages.params.IPv4Address;
+import SIPSorcery.Net.messages.exceptions.SctpPacketFormatException;
+import SIPSorcery.Net.messages.params.HostNameAddress;
+import SIPSorcery.Net.messages.params.IncomingSSNResetRequestParameter;
+import SIPSorcery.Net.messages.params.KnownError;
+import SIPSorcery.Net.messages.params.KnownParam;
+import SIPSorcery.Net.messages.params.OutgoingSSNResetRequestParameter;
+import SIPSorcery.Net.messages.params.ProtocolViolationError;
+import SIPSorcery.Net.messages.params.StaleCookieError;
+import SIPSorcery.Net.messages.params.SupportedAddressTypes;
+import SIPSorcery.Net.messages.params.Unknown;
+import SIPSorcery.Net.messages.params.VariableParam;
 import com.phono.srtplight.Log;
 import java.nio.MemoryStream;
 import java.util.List;
@@ -55,7 +55,7 @@ import java.util.HashMap;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace pe.pi.sctp4j.sctp.messages {
+namespace SIPSorcery.Net.messages {
 	public abstract class Chunk {
 		/*
 		 0                   1                   2                   3
@@ -270,17 +270,17 @@ namespace pe.pi.sctp4j.sctp.messages {
 			int pad = 0;
 			if (_varList != null) {
 				foreach (VariableParam v in this._varList) {
-					logger.LogDebug("var " + v.getName() + " at " + ret.Position);
+					//logger.LogDebug("var " + v.getName() + " at " + ret.Position);
 
 					ByteBuffer var = ret.slice();
 					var.Put((ushort) v.getType());
 					var.Put((ushort) 4); // length holder.
 					v.writeBody(var);
 					var.Put(2, (ushort) var.Position);
-					logger.LogDebug("setting var length to " + var.Position);
+					//logger.LogDebug("setting var length to " + var.Position);
 					pad = var.Position % 4;
 					pad = (pad != 0) ? 4 - pad : 0;
-					logger.LogDebug("padding by " + pad);
+					//logger.LogDebug("padding by " + pad);
 					ret.Position += var.Position + pad;
 				}
 			}
@@ -362,7 +362,7 @@ namespace pe.pi.sctp4j.sctp.messages {
 			int type = _body.GetUShort();
 			int len = _body.GetUShort();
 			int blen = len - 4;
-			byte[] data;
+			//byte[] data;
 			Unknown var;
 			switch (type) {
 				case 1:
@@ -476,7 +476,7 @@ namespace pe.pi.sctp4j.sctp.messages {
 			int type = _body.GetUShort();
 			int len = _body.GetUShort();
 			int blen = len - 4;
-			byte[] data;
+			//byte[] data;
 			KnownError var = null;
 			switch (type) {
 				case 1:
