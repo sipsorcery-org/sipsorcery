@@ -16,45 +16,52 @@
  */
 // Modified by Andrés Leone Gámez
 
-
 using SCTP4CS.Utils;
-using SIPSorcery.Net.messages.Params;
 
 /**
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net.messages {
-	public class HeartBeatChunk : Chunk {
-		public HeartBeatChunk(CType type, byte flags, int length, ByteBuffer pkt)
-			: base(type, flags, length, pkt) {
-			if (_body.remaining() >= 4) {
-				while (_body.hasRemaining()) {
-					VariableParam v = readVariable();
-					_varList.Add(v);
-				}
-			}
-		}
+namespace SIPSorcery.Net.Sctp
+{
+    public class HeartBeatChunk : Chunk
+    {
+        public HeartBeatChunk(CType type, byte flags, int length, ByteBuffer pkt)
+            : base(type, flags, length, pkt)
+        {
+            if (_body.remaining() >= 4)
+            {
+                while (_body.hasRemaining())
+                {
+                    VariableParam v = readVariable();
+                    _varList.Add(v);
+                }
+            }
+        }
 
-		public override void validate() {
-			VariableParam hbd;
-			if ((_varList == null) || (_varList.Count != 1)) {
-				throw new SctpPacketFormatException("No (or too much content in this heartbeat packet");
-			}
-			hbd = _varList[0];
-			if (!typeof(HeartbeatInfo).IsAssignableFrom(hbd.GetType())) {
-				throw new SctpPacketFormatException("Expected a heartbeatinfo in this packet");
-			}
-		}
+        public override void validate()
+        {
+            VariableParam hbd;
+            if ((_varList == null) || (_varList.Count != 1))
+            {
+                throw new SctpPacketFormatException("No (or too much content in this heartbeat packet");
+            }
+            hbd = _varList[0];
+            if (!typeof(HeartbeatInfo).IsAssignableFrom(hbd.GetType()))
+            {
+                throw new SctpPacketFormatException("Expected a heartbeatinfo in this packet");
+            }
+        }
 
-		public Chunk[] mkReply() {
-			Chunk[] rep = new Chunk[1];
-			HeartBeatAckChunk dub = new HeartBeatAckChunk();
-			dub._varList = this._varList;
-			rep[0] = dub;
-			return rep;
-		}
+        public Chunk[] mkReply()
+        {
+            Chunk[] rep = new Chunk[1];
+            HeartBeatAckChunk dub = new HeartBeatAckChunk();
+            dub._varList = this._varList;
+            rep[0] = dub;
+            return rep;
+        }
 
-		protected override void putFixedParams(ByteBuffer ret) { }
-	}
+        protected override void putFixedParams(ByteBuffer ret) { }
+    }
 }

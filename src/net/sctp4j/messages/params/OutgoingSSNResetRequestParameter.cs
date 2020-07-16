@@ -16,16 +16,18 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SCTP4CS.Utils;
 using System.Text;
+using SCTP4CS.Utils;
 
 /**
 *
 * @author tim
 */
-namespace SIPSorcery.Net.messages.Params {
-	public class OutgoingSSNResetRequestParameter : KnownParam {
-		/*
+namespace SIPSorcery.Net.Sctp
+{
+    public class OutgoingSSNResetRequestParameter : KnownParam
+    {
+        /*
 		 0                   1                   2                   3
 		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -44,80 +46,97 @@ namespace SIPSorcery.Net.messages.Params {
 		 |  Stream Number N-1 (optional) |    Stream Number N (optional) |
 		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		 */
-		uint reqSeqNo;
-		uint respSeqNo;
-		uint lastTsn;
-		int[] streams;
+        uint reqSeqNo;
+        uint respSeqNo;
+        uint lastTsn;
+        int[] streams;
 
-		public OutgoingSSNResetRequestParameter(int t, string n) : base(t, n) { }
-		public OutgoingSSNResetRequestParameter() : base(13, "OutgoingSSNResetRequestParameter") { }
-		public OutgoingSSNResetRequestParameter(uint reqNo, uint respNo, uint lastTsn) : this() {
-			this.respSeqNo = respNo;
-			this.lastTsn = lastTsn;
-			this.reqSeqNo = reqNo;
-		}
+        public OutgoingSSNResetRequestParameter(int t, string n) : base(t, n) { }
+        public OutgoingSSNResetRequestParameter() : base(13, "OutgoingSSNResetRequestParameter") { }
+        public OutgoingSSNResetRequestParameter(uint reqNo, uint respNo, uint lastTsn) : this()
+        {
+            this.respSeqNo = respNo;
+            this.lastTsn = lastTsn;
+            this.reqSeqNo = reqNo;
+        }
 
-		public uint getRespSeqNo() {
-			return respSeqNo;
-		}
+        public uint getRespSeqNo()
+        {
+            return respSeqNo;
+        }
 
-		public uint getReqSeqNo() {
-			return reqSeqNo;
-		}
+        public uint getReqSeqNo()
+        {
+            return reqSeqNo;
+        }
 
-		public override void readBody(ByteBuffer body, int blen) {
-			reqSeqNo = body.GetUInt();
-			respSeqNo = body.GetUInt();
-			lastTsn = body.GetUInt();
-			streams = new int[(blen - 12) / 2];
-			for (int i = 0; i < streams.Length; i++) {
-				streams[i] = body.GetUShort();
-			}
-		}
+        public override void readBody(ByteBuffer body, int blen)
+        {
+            reqSeqNo = body.GetUInt();
+            respSeqNo = body.GetUInt();
+            lastTsn = body.GetUInt();
+            streams = new int[(blen - 12) / 2];
+            for (int i = 0; i < streams.Length; i++)
+            {
+                streams[i] = body.GetUShort();
+            }
+        }
 
-		public override void writeBody(ByteBuffer body) {
-			body.Put(reqSeqNo);
-			body.Put(respSeqNo);
-			body.Put(lastTsn);
-			if (streams != null) {
-				for (int i = 0; i < streams.Length; i++) {
-					body.Put((ushort) streams[i]);
-				}
-			}
-		}
+        public override void writeBody(ByteBuffer body)
+        {
+            body.Put(reqSeqNo);
+            body.Put(respSeqNo);
+            body.Put(lastTsn);
+            if (streams != null)
+            {
+                for (int i = 0; i < streams.Length; i++)
+                {
+                    body.Put((ushort)streams[i]);
+                }
+            }
+        }
 
-		public override string ToString() {
-			StringBuilder ret = new StringBuilder();
-			ret.Append(this.GetType().Name).Append(" ");
-			ret.Append("reqseq:").Append(this.reqSeqNo).Append(" ");
-			ret.Append("respseq:").Append(this.respSeqNo).Append(" ");
-			ret.Append("latsTSN:").Append(this.lastTsn).Append(" ");
+        public override string ToString()
+        {
+            StringBuilder ret = new StringBuilder();
+            ret.Append(this.GetType().Name).Append(" ");
+            ret.Append("reqseq:").Append(this.reqSeqNo).Append(" ");
+            ret.Append("respseq:").Append(this.respSeqNo).Append(" ");
+            ret.Append("latsTSN:").Append(this.lastTsn).Append(" ");
 
-			if (streams != null) {
-				ret.Append("streams {");
-				foreach (int s in streams) {
-					ret.Append("" + s);
-				}
-				ret.Append("}");
-			} else {
-				ret.Append("no streams");
-			}
-			return ret.ToString();
-		}
+            if (streams != null)
+            {
+                ret.Append("streams {");
+                foreach (int s in streams)
+                {
+                    ret.Append("" + s);
+                }
+                ret.Append("}");
+            }
+            else
+            {
+                ret.Append("no streams");
+            }
+            return ret.ToString();
+        }
 
-		public long getLastAssignedTSN() {
-			return lastTsn;
-		}
+        public long getLastAssignedTSN()
+        {
+            return lastTsn;
+        }
 
-		public int[] getStreams() {
-			return streams;
-		}
-		public void setStreams(int[] ss) {
-			this.streams = ss;
-		}
+        public int[] getStreams()
+        {
+            return streams;
+        }
+        public void setStreams(int[] ss)
+        {
+            this.streams = ss;
+        }
 
-		public bool sameAs(OutgoingSSNResetRequestParameter other) {
-			return this.reqSeqNo == other.reqSeqNo;
-		}
-	}
+        public bool sameAs(OutgoingSSNResetRequestParameter other)
+        {
+            return this.reqSeqNo == other.reqSeqNo;
+        }
+    }
 }

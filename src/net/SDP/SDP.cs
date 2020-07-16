@@ -463,7 +463,7 @@ namespace SIPSorcery.Net
                                 if (ssrcFields.Length > 0 && uint.TryParse(ssrcFields[0], out var ssrc))
                                 {
                                     var ssrcAttribute = activeAnnouncement.SsrcAttributes.FirstOrDefault(x => x.SSRC == ssrc);
-                                    if(ssrcAttribute == null)
+                                    if (ssrcAttribute == null)
                                     {
                                         ssrcAttribute = new SDPSsrcAttribute(ssrc, null, null);
                                         activeAnnouncement.SsrcAttributes.Add(ssrcAttribute);
@@ -483,7 +483,7 @@ namespace SIPSorcery.Net
                                 logger.LogWarning("A ssrc attribute can only be set on a media announcement.");
                             }
                         }
-                        else if(sdpLineTrimmed.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX))
+                        else if (sdpLineTrimmed.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX))
                         {
                             if (activeAnnouncement != null)
                             {
@@ -590,9 +590,9 @@ namespace SIPSorcery.Net
             sdp += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
             sdp += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + CRLF : null;
             sdp += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + CRLF : null;
-            if(IceCandidates?.Count > 0)
+            if (IceCandidates?.Count > 0)
             {
-                foreach(var candidate in IceCandidates)
+                foreach (var candidate in IceCandidates)
                 {
                     sdp += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{CRLF}";
                 }

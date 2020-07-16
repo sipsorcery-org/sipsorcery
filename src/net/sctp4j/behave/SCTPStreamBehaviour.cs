@@ -17,21 +17,22 @@
 // Modified by Andrés Leone Gámez
 
 using SCTP4CS.Utils;
-using SIPSorcery.Net.messages;
 
 /**
  *
  * @author tim
  */
-namespace SIPSorcery.Net.behave {
-	internal interface SCTPStreamBehaviour {
+namespace SIPSorcery.Net.Sctp
+{
+    internal interface SCTPStreamBehaviour
+    {
 
-		// Something has happend to the stream, this is our chance to respond.
-		// typically this means sending nothing
-		Chunk[] respond(SCTPStream a);
+        // Something has happend to the stream, this is our chance to respond.
+        // typically this means sending nothing
+        Chunk[] respond(SCTPStream a);
 
-		// we have a sorted queue of datachunks for this stream to deliver
-		// according to the appropriate behaviour.
-		void deliver(SCTPStream s, SortedArray<DataChunk> a, SCTPStreamListener l);
-	}
+        // we have a sorted queue of datachunks for this stream to deliver
+        // according to the appropriate behaviour.
+        void deliver(SCTPStream s, SortedArray<DataChunk> a, SCTPStreamListener l);
+    }
 }

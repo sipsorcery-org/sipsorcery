@@ -22,6 +22,7 @@ using System;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-public class InvalidSCTPPacketException : Exception {
-	public InvalidSCTPPacketException(string message) : base(message) { }
+public class InvalidSCTPPacketException : Exception
+{
+    public InvalidSCTPPacketException(string message) : base(message) { }
 }

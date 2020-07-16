@@ -21,11 +21,13 @@
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net {
-	public interface AssociationListener {
-		void onAssociated(Association a);
-		void onDisAssociated(Association a);
-		void onDCEPStream(SCTPStream s, string label, int type);
-		void onRawStream(SCTPStream s);
-	}
+namespace SIPSorcery.Net.Sctp
+{
+    public interface AssociationListener
+    {
+        void onAssociated(Association a);
+        void onDisAssociated(Association a);
+        void onDCEPStream(SCTPStream s, string label, int type);
+        void onRawStream(SCTPStream s);
+    }
 }

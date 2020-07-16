@@ -23,8 +23,10 @@ using System;
 *
 * @author Westhawk Ltd<thp@westhawk.co.uk>
 */
-namespace SIPSorcery.Net.small {
-	class MessageSizeExceededException : Exception {
-		public MessageSizeExceededException() { }
-	}
+namespace SIPSorcery.Net.Sctp
+{
+    class MessageSizeExceededException : Exception
+    {
+        public MessageSizeExceededException() { }
+    }
 }

@@ -24,10 +24,12 @@ using SCTP4CS.Utils;
 *
 * @author Westhawk Ltd<thp@westhawk.co.uk>
 */
-namespace SIPSorcery.Net.messages.Params {
-	public class StaleCookieError : KnownError {
-		private uint _measure;
-		/*
+namespace SIPSorcery.Net.Sctp
+{
+    public class StaleCookieError : KnownError
+    {
+        private uint _measure;
+        /*
 		 <code>
 		 Stale Cookie Error (3)
 
@@ -56,23 +58,27 @@ namespace SIPSorcery.Net.messages.Params {
 		 </code>
 		 */
 
-		public StaleCookieError() : base(3, "StaleCookieError") { }
+        public StaleCookieError() : base(3, "StaleCookieError") { }
 
-		public override void readBody(ByteBuffer body, int blen) {
-			_measure = body.GetUInt();
-		}
+        public override void readBody(ByteBuffer body, int blen)
+        {
+            _measure = body.GetUInt();
+        }
 
 
-		public override void writeBody(ByteBuffer body) {
-			body.Put(_measure);
-		}
+        public override void writeBody(ByteBuffer body)
+        {
+            body.Put(_measure);
+        }
 
-		public long getMeasure() {
-			return _measure;
-		}
+        public long getMeasure()
+        {
+            return _measure;
+        }
 
-		public void setMeasure(uint mes) {
-			_measure = mes;
-		}
-	}
+        public void setMeasure(uint mes)
+        {
+            _measure = mes;
+        }
+    }
 }

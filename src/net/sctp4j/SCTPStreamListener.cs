@@ -20,9 +20,11 @@
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net {
-	public interface SCTPStreamListener {
-		void onMessage(SCTPStream s, string message);
-		void close(SCTPStream aThis);
-	}
+namespace SIPSorcery.Net.Sctp
+{
+    public interface SCTPStreamListener
+    {
+        void onMessage(SCTPStream s, string message);
+        void close(SCTPStream aThis);
+    }
 }

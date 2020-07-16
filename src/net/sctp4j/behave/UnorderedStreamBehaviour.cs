@@ -20,10 +20,13 @@
  *
  * @author tim
  */
-namespace SIPSorcery.Net.behave {
-	internal class UnorderedStreamBehaviour : OrderedStreamBehaviour {
-		public UnorderedStreamBehaviour() {
-			_ordered = false;
-		}
-	}
+namespace SIPSorcery.Net.Sctp
+{
+    internal class UnorderedStreamBehaviour : OrderedStreamBehaviour
+    {
+        public UnorderedStreamBehaviour()
+        {
+            _ordered = false;
+        }
+    }
 }

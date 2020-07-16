@@ -20,13 +20,15 @@
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net {
-	internal interface MessageCompleteHandler {
-		/**
+namespace SIPSorcery.Net.Sctp
+{
+    internal interface MessageCompleteHandler
+    {
+        /**
 		 * 
 		 * @param m message which has completed
 		 * @param me Null if message was delivered - or indicates failure mode
 		 */
-		void messageComplete(SCTPMessage m, MessageException me);
-	}
+        void messageComplete(SCTPMessage m, MessageException me);
+    }
 }

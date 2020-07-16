@@ -23,25 +23,32 @@ using SCTP4CS.Utils;
  *
  * @author tim
  */
-namespace SIPSorcery.Net.messages.Params {
-	public class SupportedAddressTypes : KnownParam {
-		int[] supported;
+namespace SIPSorcery.Net.Sctp
+{
+    public class SupportedAddressTypes : KnownParam
+    {
+        int[] supported;
 
-		public SupportedAddressTypes(int t, string n) : base(t, n) { }
+        public SupportedAddressTypes(int t, string n) : base(t, n) { }
 
-		public override void readBody(ByteBuffer body, int blen) {
-			supported = new int[blen / 2];
-			for (int i = 0; i < supported.Length; i++) {
-				supported[i] = body.GetUShort();
-			}
-		}
+        public override void readBody(ByteBuffer body, int blen)
+        {
+            supported = new int[blen / 2];
+            for (int i = 0; i < supported.Length; i++)
+            {
+                supported[i] = body.GetUShort();
+            }
+        }
 
-		public override void writeBody(ByteBuffer body) {
-			if (supported != null) {
-				for (int i = 0; i < supported.Length; i++) {
-					body.Put((ushort) supported[i]);
-				}
-			}
-		}
-	}
+        public override void writeBody(ByteBuffer body)
+        {
+            if (supported != null)
+            {
+                for (int i = 0; i < supported.Length; i++)
+                {
+                    body.Put((ushort)supported[i]);
+                }
+            }
+        }
+    }
 }

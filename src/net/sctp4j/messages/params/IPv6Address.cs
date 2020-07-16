@@ -17,27 +17,31 @@
 // Modified by Andrés Leone Gámez
 
 
-using SCTP4CS.Utils;
 using System.Net;
+using SCTP4CS.Utils;
 
 /**
 *
 * @author tim
 */
-namespace SIPSorcery.Net.messages.Params {
-	public class IPv6Address : KnownParam {
-		IPAddress addr;
+namespace SIPSorcery.Net.Sctp
+{
+    public class IPv6Address : KnownParam
+    {
+        IPAddress addr;
 
-		public IPv6Address(int t, string n) : base(t, n) { }
+        public IPv6Address(int t, string n) : base(t, n) { }
 
-		public override void readBody(ByteBuffer body, int blen) {
-			byte[] data = new byte[blen];
-			body.GetBytes(data, data.Length);
-			addr = new IPAddress(data);
-		}
+        public override void readBody(ByteBuffer body, int blen)
+        {
+            byte[] data = new byte[blen];
+            body.GetBytes(data, data.Length);
+            addr = new IPAddress(data);
+        }
 
-		public override void writeBody(ByteBuffer body) {
-			body.Put(addr.GetAddressBytes());
-		}
-	}
+        public override void writeBody(ByteBuffer body)
+        {
+            body.Put(addr.GetAddressBytes());
+        }
+    }
 }

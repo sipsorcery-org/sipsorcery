@@ -21,8 +21,10 @@
  *
  * @author tim
  */
-namespace SIPSorcery.Net.messages.Params {
-	public class AddIncomingStreamsRequestParameter : AddStreamsRequestParameter {
-		public AddIncomingStreamsRequestParameter(int t, string n) : base(t, n) { }
-	}
+namespace SIPSorcery.Net.Sctp
+{
+    public class AddIncomingStreamsRequestParameter : AddStreamsRequestParameter
+    {
+        public AddIncomingStreamsRequestParameter(int t, string n) : base(t, n) { }
+    }
 }

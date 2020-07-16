@@ -16,19 +16,21 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SCTP4CS.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
 /**
 *
 * @author Westhawk Ltd<thp@westhawk.co.uk>
 */
-namespace SIPSorcery.Net.messages {
-	public class Packet {
+namespace SIPSorcery.Net.Sctp
+{
+    public class Packet
+    {
         /*
 		 SCTP Common Header Format
 
@@ -46,109 +48,125 @@ namespace SIPSorcery.Net.messages {
         private static ILogger logger = Log.Logger;
 
         static int MTU = 1500;
-		ushort _srcPort;
-		ushort _destPort;
-		int _verTag;
-		uint _chksum;
-		List<Chunk> _chunks;
-		private static int SUMOFFSET = 8;
+        ushort _srcPort;
+        ushort _destPort;
+        int _verTag;
+        uint _chksum;
+        List<Chunk> _chunks;
+        private static int SUMOFFSET = 8;
 
-		/**
+        /**
 		 * Constructor used to parse an incoming packet
 		 *
 		 * @param pkt
 		 */
-		public Packet(ByteBuffer pkt) {
-			if (pkt.Length < 12) {
-				throw new SctpPacketFormatException("SCTP packet too short expected 12 bytes, got " + pkt.Length);
-			}
-			checkChecksum(pkt); // if this isn't ok, then we dump the packet silently - by throwing an exception.
+        public Packet(ByteBuffer pkt)
+        {
+            if (pkt.Length < 12)
+            {
+                throw new SctpPacketFormatException("SCTP packet too short expected 12 bytes, got " + pkt.Length);
+            }
+            checkChecksum(pkt); // if this isn't ok, then we dump the packet silently - by throwing an exception.
 
-			_srcPort = pkt.GetUShort();
-			_destPort = pkt.GetUShort();
-			_verTag = pkt.GetInt();
-			_chksum = pkt.GetUInt();
-			_chunks = mkChunks(pkt);
+            _srcPort = pkt.GetUShort();
+            _destPort = pkt.GetUShort();
+            _verTag = pkt.GetInt();
+            _chksum = pkt.GetUInt();
+            _chunks = mkChunks(pkt);
 
-			pkt.Position = 0;
-		}
+            pkt.Position = 0;
+        }
 
-		public Packet(int sp, int dp, int vertag) {
-			_srcPort = (ushort) sp;
-			_destPort = (ushort) dp;
-			_verTag = vertag;
-			_chunks = new List<Chunk>();
-		}
+        public Packet(int sp, int dp, int vertag)
+        {
+            _srcPort = (ushort)sp;
+            _destPort = (ushort)dp;
+            _verTag = vertag;
+            _chunks = new List<Chunk>();
+        }
 
-		public ByteBuffer getByteBuffer() {
-			ByteBuffer ret = new ByteBuffer(new byte[MTU]);
-			ret.Put(_srcPort);
-			ret.Put(_destPort);
-			ret.Put(_verTag);
-			ret.Put(_chksum);
-			int pad = 0;
-			foreach (Chunk c in _chunks) {
-				ByteBuffer cs = ret.slice();            // create a zero offset buffer to play in
-				c.write(cs); // ask the chunk to write itself into there.
-				pad = cs.Position % 4;
-				pad = (pad != 0) ? 4 - pad : 0;
-				//logger.LogDebug("padding by " + pad);
-				ret.Position += pad + cs.Position;// move us along.
-			}
-			/*Log.logger.verb("un padding by " + pad);
+        public ByteBuffer getByteBuffer()
+        {
+            ByteBuffer ret = new ByteBuffer(new byte[MTU]);
+            ret.Put(_srcPort);
+            ret.Put(_destPort);
+            ret.Put(_verTag);
+            ret.Put(_chksum);
+            int pad = 0;
+            foreach (Chunk c in _chunks)
+            {
+                ByteBuffer cs = ret.slice();            // create a zero offset buffer to play in
+                c.write(cs); // ask the chunk to write itself into there.
+                pad = cs.Position % 4;
+                pad = (pad != 0) ? 4 - pad : 0;
+                //logger.LogDebug("padding by " + pad);
+                ret.Position += pad + cs.Position;// move us along.
+            }
+            /*Log.logger.verb("un padding by " + pad);
 			ret.position(ret.position() - pad);*/
-			ret = ret.flip();
-			setChecksum(ret);
-			return ret;
-		}
+            ret = ret.flip();
+            setChecksum(ret);
+            return ret;
+        }
 
-		public int getSrcPort() {
-			return _srcPort;
-		}
+        public int getSrcPort()
+        {
+            return _srcPort;
+        }
 
-		public int getDestPort() {
-			return _destPort;
-		}
+        public int getDestPort()
+        {
+            return _destPort;
+        }
 
-		public int getVerTag() {
-			return _verTag;
-		}
+        public int getVerTag()
+        {
+            return _verTag;
+        }
 
-		public uint getChksum() {
-			return _chksum;
-		}
+        public uint getChksum()
+        {
+            return _chksum;
+        }
 
-		public static string getHex(ByteBuffer _in, string separation = "") {
-			return getHex(_in.Data, (uint) _in.offset, _in.Length, separation);
-		}
-		public static string getHex(byte[] _in, string separation = "") {
-			return getHex(_in, 0, _in.Length, separation);
-		}
-		public static string getHex(byte[] _in, uint off, int len, string separation = "") {
-			StringBuilder ret = new StringBuilder("");
-			int top = Math.Min(_in.Length, len);
-			for (int i = (int) off; i < top; i++) {
-				ret.AppendFormat("{0:x2}", _in[i]);
-				if (i < top - 1) ret.Append(separation);
-			}
-			return ret.ToString().ToUpper();
-		}
+        public static string getHex(ByteBuffer _in, string separation = "")
+        {
+            return getHex(_in.Data, (uint)_in.offset, _in.Length, separation);
+        }
+        public static string getHex(byte[] _in, string separation = "")
+        {
+            return getHex(_in, 0, _in.Length, separation);
+        }
+        public static string getHex(byte[] _in, uint off, int len, string separation = "")
+        {
+            StringBuilder ret = new StringBuilder("");
+            int top = Math.Min(_in.Length, len);
+            for (int i = (int)off; i < top; i++)
+            {
+                ret.AppendFormat("{0:x2}", _in[i]);
+                if (i < top - 1) ret.Append(separation);
+            }
+            return ret.ToString().ToUpper();
+        }
 
-		private List<Chunk> mkChunks(ByteBuffer pkt) {
-			List<Chunk> ret = new List<Chunk>();
-			Chunk next = null;
-			while (null != (next = Chunk.mkChunk(pkt))) {
-				ret.Add(next);
-				logger.LogDebug("saw chunk: " + next.typeLookup());
-			}
-			return ret;
-		}
+        private List<Chunk> mkChunks(ByteBuffer pkt)
+        {
+            List<Chunk> ret = new List<Chunk>();
+            Chunk next = null;
+            while (null != (next = Chunk.mkChunk(pkt)))
+            {
+                ret.Add(next);
+                logger.LogDebug("saw chunk: " + next.typeLookup());
+            }
+            return ret;
+        }
 
-		public List<Chunk> getChunkList() {
-			return _chunks;
-		}
+        public List<Chunk> getChunkList()
+        {
+            return _chunks;
+        }
 
-		/*
+        /*
 		 When an SCTP packet is received, the receiver MUST first check the
 		 CRC32c checksum as follows:
 
@@ -168,25 +186,28 @@ namespace SIPSorcery.Net.messages {
 		 Any hardware implementation SHOULD be done in a way that is
 		 verifiable by the software.
 		 */
-		void setChecksum(ByteBuffer pkt) {
-			pkt.Put(SUMOFFSET, 0);
-			var UUint = new FastBit.Uint(SCTP4CS.Utils.Crc32.CRC32C.Calculate(pkt.Data, pkt.offset, pkt.Limit));
-			uint flip = new FastBit.Uint(UUint.b3, UUint.b2, UUint.b1, UUint.b0).Auint;
-			pkt.Put(SUMOFFSET, flip);
-		}
+        void setChecksum(ByteBuffer pkt)
+        {
+            pkt.Put(SUMOFFSET, 0);
+            var UUint = new FastBit.Uint(SCTP4CS.Utils.Crc32.CRC32C.Calculate(pkt.Data, pkt.offset, pkt.Limit));
+            uint flip = new FastBit.Uint(UUint.b3, UUint.b2, UUint.b1, UUint.b0).Auint;
+            pkt.Put(SUMOFFSET, flip);
+        }
 
-		protected virtual void checkChecksum(ByteBuffer pkt) {
-			uint farsum = pkt.GetUInt(SUMOFFSET);
-			setChecksum(pkt);
-			uint calc = pkt.GetUInt(SUMOFFSET);
-			if (calc != farsum) {
-				logger.LogError("Checksums don't match " + calc.ToString("X4") + " vs " + farsum.ToString("X4"));
-				byte[] p = pkt.Data;
-				logger.LogError("for packet " + getHex(p));
-				throw new ChecksumException();
-			}
-		}
-		/*
+        protected virtual void checkChecksum(ByteBuffer pkt)
+        {
+            uint farsum = pkt.GetUInt(SUMOFFSET);
+            setChecksum(pkt);
+            uint calc = pkt.GetUInt(SUMOFFSET);
+            if (calc != farsum)
+            {
+                logger.LogError("Checksums don't match " + calc.ToString("X4") + " vs " + farsum.ToString("X4"));
+                byte[] p = pkt.Data;
+                logger.LogError("for packet " + getHex(p));
+                throw new ChecksumException();
+            }
+        }
+        /*
 		 8.5.  Verification Tag
 
 		 The Verification Tag rules defined in this section apply when sending
@@ -272,63 +293,87 @@ namespace SIPSorcery.Net.messages {
 
 		 */
 
-		private void reflectedVerify(int cno, Association ass) {
-			Chunk chunk = _chunks[cno];
-			bool t = ((Chunk.TBIT & chunk._flags) > 0);
-			int cverTag = t ? ass.getPeerVerTag() : ass.getMyVerTag();
-			if (cverTag != _verTag) {
-				throw new InvalidSCTPPacketException("VerTag on an " + chunk.typeLookup() + " doesn't match " + (t ? "their " : "our ") + " vertag " + _verTag + " != " + cverTag);
-			}
-		}
+        private void reflectedVerify(int cno, Association ass)
+        {
+            Chunk chunk = _chunks[cno];
+            bool t = ((Chunk.TBIT & chunk._flags) > 0);
+            int cverTag = t ? ass.getPeerVerTag() : ass.getMyVerTag();
+            if (cverTag != _verTag)
+            {
+                throw new InvalidSCTPPacketException("VerTag on an " + chunk.typeLookup() + " doesn't match " + (t ? "their " : "our ") + " vertag " + _verTag + " != " + cverTag);
+            }
+        }
 
-		public void validate(Association ass) {
-			// step 1 - deduce the validation rules:
-			// validation depends on the types of chunk in the list.
-			if ((_chunks != null) && (_chunks.Count > 0)) {
-				int init = findChunk(Chunk.CType.INIT);
-				if (init >= 0) {
-					if (init != 0) {
-						throw new InvalidSCTPPacketException("Init must be only chunk in a packet");
-					}
-					if (_verTag != 0) {
-						throw new InvalidSCTPPacketException("VerTag on an init packet expected to be Zeros");
-					}
-				} else {
-					int abo = findChunk(Chunk.CType.ABORT);
-					if (abo >= 0) {
-						// we have an abort
-						_chunks = _chunks.GetRange(0, abo + 1); // remove any subsequent chunks.
-						reflectedVerify(abo, ass);
-					} else {
-						int sdc = findChunk(Chunk.CType.SHUTDOWN_COMPLETE);
-						if (sdc >= 0) {
-							if (sdc == 0) {
-								reflectedVerify(sdc, ass);
-							} else {
-								throw new InvalidSCTPPacketException("SHUTDOWN_COMPLETE must be only chunk in a packet");
-							}
-						} else {
-							// somewhat hidden here - but this is the normal case - not init abort or shutdown complete 
-							if (_verTag != ass.getMyVerTag()) {
-								throw new InvalidSCTPPacketException("VerTag on plain packet expected to match ours " + _verTag + " != " + ass.getMyVerTag());
-							}
-						}
-					}
-				}
-			}
-		}
+        public void validate(Association ass)
+        {
+            // step 1 - deduce the validation rules:
+            // validation depends on the types of chunk in the list.
+            if ((_chunks != null) && (_chunks.Count > 0))
+            {
+                int init = findChunk(Chunk.CType.INIT);
+                if (init >= 0)
+                {
+                    if (init != 0)
+                    {
+                        throw new InvalidSCTPPacketException("Init must be only chunk in a packet");
+                    }
+                    if (_verTag != 0)
+                    {
+                        throw new InvalidSCTPPacketException("VerTag on an init packet expected to be Zeros");
+                    }
+                }
+                else
+                {
+                    int abo = findChunk(Chunk.CType.ABORT);
+                    if (abo >= 0)
+                    {
+                        // we have an abort
+                        _chunks = _chunks.GetRange(0, abo + 1); // remove any subsequent chunks.
+                        reflectedVerify(abo, ass);
+                    }
+                    else
+                    {
+                        int sdc = findChunk(Chunk.CType.SHUTDOWN_COMPLETE);
+                        if (sdc >= 0)
+                        {
+                            if (sdc == 0)
+                            {
+                                reflectedVerify(sdc, ass);
+                            }
+                            else
+                            {
+                                throw new InvalidSCTPPacketException("SHUTDOWN_COMPLETE must be only chunk in a packet");
+                            }
+                        }
+                        else
+                        {
+                            // somewhat hidden here - but this is the normal case - not init abort or shutdown complete 
+                            if (_verTag != ass.getMyVerTag())
+                            {
+                                throw new InvalidSCTPPacketException("VerTag on plain packet expected to match ours " + _verTag + " != " + ass.getMyVerTag());
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-		private int findChunk(Chunk.CType bty) {
-			int ret = 0;
-			foreach (Chunk c in _chunks) {
-				if (c._type == bty) {
-					break;
-				} else {
-					ret++;
-				}
-			}
-			return (ret < _chunks.Count) ? ret : -1;
-		}
+        private int findChunk(Chunk.CType bty)
+        {
+            int ret = 0;
+            foreach (Chunk c in _chunks)
+            {
+                if (c._type == bty)
+                {
+                    break;
+                }
+                else
+                {
+                    ret++;
+                }
+            }
+            return (ret < _chunks.Count) ? ret : -1;
+        }
 
-	}
+    }
 }

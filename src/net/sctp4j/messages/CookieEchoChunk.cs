@@ -16,8 +16,8 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SCTP4CS.Utils;
 using Microsoft.Extensions.Logging;
+using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
 /**
@@ -75,37 +75,45 @@ RFC 4960          Stream Control Transmission Protocol    September 2007
       State Cookie parameter to become a COOKIE ECHO chunk.
  * </code>
  */
-namespace SIPSorcery.Net.messages {
-	public class CookieEchoChunk : Chunk {
+namespace SIPSorcery.Net.Sctp
+{
+    public class CookieEchoChunk : Chunk
+    {
 
         private static ILogger logger = Log.Logger;
 
         private byte[] _cookieData;
 
-		public CookieEchoChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt) {
-			_cookieData = new byte[_body.remaining()];
-			_body.GetBytes(_cookieData, _cookieData.Length);
-		}
+        public CookieEchoChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt)
+        {
+            _cookieData = new byte[_body.remaining()];
+            _body.GetBytes(_cookieData, _cookieData.Length);
+        }
 
-		public CookieEchoChunk() : base(CType.COOKIE_ECHO) { }
+        public CookieEchoChunk() : base(CType.COOKIE_ECHO) { }
 
-		public override void validate() {
-			if (_cookieData.Length != Association.COOKIESIZE) {
-				throw new SctpPacketFormatException("cookie Echo wrong length for our association " + _cookieData.Length + " != " + Association.COOKIESIZE);
-			}
-		}
+        public override void validate()
+        {
+            if (_cookieData.Length != Association.COOKIESIZE)
+            {
+                throw new SctpPacketFormatException("cookie Echo wrong length for our association " + _cookieData.Length + " != " + Association.COOKIESIZE);
+            }
+        }
 
-		public void setCookieData(byte[] cd) {
-			_cookieData = cd;
-		}
+        public void setCookieData(byte[] cd)
+        {
+            _cookieData = cd;
+        }
 
-		public byte[] getCookieData() {
-			return _cookieData;
-		}
+        public byte[] getCookieData()
+        {
+            return _cookieData;
+        }
 
-		protected override void putFixedParams(ByteBuffer ret) {
-			logger.LogDebug("cookie is " + _cookieData + "and buffer is " + ret);
-			ret.Put(_cookieData);
-		}
-	}
+        protected override void putFixedParams(ByteBuffer ret)
+        {
+            logger.LogDebug("cookie is " + _cookieData + "and buffer is " + ret);
+            ret.Put(_cookieData);
+        }
+    }
 }

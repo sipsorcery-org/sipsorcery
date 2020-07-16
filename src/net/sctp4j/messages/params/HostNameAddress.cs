@@ -17,36 +17,40 @@
 // Modified by Andrés Leone Gámez
 
 
-using SCTP4CS.Utils;
-using System;
 using System.Text;
+using SCTP4CS.Utils;
 
 /**
  *
  * @author tim
  */
-namespace SIPSorcery.Net.messages.Params {
-	public class HostNameAddress : KnownParam {
-		string hostname;
+namespace SIPSorcery.Net.Sctp
+{
+    public class HostNameAddress : KnownParam
+    {
+        string hostname;
 
-		public HostNameAddress(int t, string n) : base(t, n) { }
+        public HostNameAddress(int t, string n) : base(t, n) { }
 
-		public override void readBody(ByteBuffer body, int blen) {
-			byte[] data = new byte[blen];
-			body.GetBytes(data, data.Length);
-			int off = blen - 1;
-			// trim any 0 bytes off the end.
-			while ((off > 0) && (data[off--] == 0)) {
-				blen--;
-			}
-			hostname = Encoding.ASCII.GetString(data, 0, blen);
-		}
-		public override void writeBody(ByteBuffer body) {
-			// gonz up a C style string.
-			byte[] b = Encoding.ASCII.GetBytes(hostname);
-			_data = new byte[b.Length + 1];
-			b.CopyTo(_data, 0);
-			body.Put(_data);
-		}
-	}
+        public override void readBody(ByteBuffer body, int blen)
+        {
+            byte[] data = new byte[blen];
+            body.GetBytes(data, data.Length);
+            int off = blen - 1;
+            // trim any 0 bytes off the end.
+            while ((off > 0) && (data[off--] == 0))
+            {
+                blen--;
+            }
+            hostname = Encoding.ASCII.GetString(data, 0, blen);
+        }
+        public override void writeBody(ByteBuffer body)
+        {
+            // gonz up a C style string.
+            byte[] b = Encoding.ASCII.GetBytes(hostname);
+            _data = new byte[b.Length + 1];
+            b.CopyTo(_data, 0);
+            body.Put(_data);
+        }
+    }
 }

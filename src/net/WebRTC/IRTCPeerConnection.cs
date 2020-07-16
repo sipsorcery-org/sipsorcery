@@ -151,14 +151,14 @@ namespace SIPSorcery.Net
         {
             fingerprint = null;
 
-            if(string.IsNullOrEmpty(str))
+            if (string.IsNullOrEmpty(str))
             {
                 return false;
             }
             else
             {
                 int spaceIndex = str.IndexOf(' ');
-                if(spaceIndex == -1)
+                if (spaceIndex == -1)
                 {
                     return false;
                 }
@@ -204,7 +204,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if(Certificate == null)
+                if (Certificate == null)
                 {
                     return 0;
                 }

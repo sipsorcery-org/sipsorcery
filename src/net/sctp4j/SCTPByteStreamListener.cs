@@ -21,8 +21,10 @@
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net {
-	public interface SCTPByteStreamListener : SCTPStreamListener {
-		void onMessage(SCTPStream s, byte[] message);
-	}
+namespace SIPSorcery.Net.Sctp
+{
+    public interface SCTPByteStreamListener : SCTPStreamListener
+    {
+        void onMessage(SCTPStream s, byte[] message);
+    }
 }

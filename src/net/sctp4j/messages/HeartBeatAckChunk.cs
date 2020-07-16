@@ -22,10 +22,12 @@ using SCTP4CS.Utils;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net.messages {
-	public class HeartBeatAckChunk : Chunk {
-		public HeartBeatAckChunk() : base(CType.HEARTBEAT_ACK) { }
+namespace SIPSorcery.Net.Sctp
+{
+    public class HeartBeatAckChunk : Chunk
+    {
+        public HeartBeatAckChunk() : base(CType.HEARTBEAT_ACK) { }
 
-		protected override void putFixedParams(ByteBuffer ret) { }
-	}
+        protected override void putFixedParams(ByteBuffer ret) { }
+    }
 }

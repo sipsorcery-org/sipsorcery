@@ -23,32 +23,39 @@ using SCTP4CS.Utils;
 *
 * @author tim
 */
-namespace SIPSorcery.Net.messages.Params {
-	public class Unknown : VariableParam {
-		protected byte[] _data;
-		protected int _type;
-		protected string _name;
+namespace SIPSorcery.Net.Sctp
+{
+    public class Unknown : VariableParam
+    {
+        protected byte[] _data;
+        protected int _type;
+        protected string _name;
 
-		public Unknown(int t, string n) {
-			_type = t;
-			_name = n;
-		}
+        public Unknown(int t, string n)
+        {
+            _type = t;
+            _name = n;
+        }
 
-		public virtual void readBody(ByteBuffer b, int len) {
-			_data = new byte[len];
-			b.GetBytes(_data, len);
-		}
+        public virtual void readBody(ByteBuffer b, int len)
+        {
+            _data = new byte[len];
+            b.GetBytes(_data, len);
+        }
 
-		public virtual void writeBody(ByteBuffer b) {
-			b.Put(_data);
-		}
+        public virtual void writeBody(ByteBuffer b)
+        {
+            b.Put(_data);
+        }
 
-		public int getType() {
-			return _type;
-		}
+        public int getType()
+        {
+            return _type;
+        }
 
-		public string getName() {
-			return _name;
-		}
-	}
+        public string getName()
+        {
+            return _name;
+        }
+    }
 }

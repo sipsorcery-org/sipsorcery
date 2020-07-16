@@ -1,10 +1,11 @@
 ﻿
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Net.Sctp;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class DataChannelAssociationListener : SIPSorcery.Net.AssociationListener
+    public class DataChannelAssociationListener : AssociationListener
     {
         private static ILogger logger = Log.Logger;
 
@@ -35,7 +36,7 @@ namespace SIPSorcery.Net
         }
     }
 
-    public class DataChannelStreamListener : SIPSorcery.Net.SCTPStreamListener
+    public class DataChannelStreamListener : SCTPStreamListener
     {
         private static ILogger logger = Log.Logger;
 

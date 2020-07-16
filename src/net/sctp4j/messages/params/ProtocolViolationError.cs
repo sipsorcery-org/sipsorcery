@@ -22,8 +22,10 @@
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net.messages.Params {
-	public class ProtocolViolationError : KnownError {
-		public ProtocolViolationError(int t, string n) : base(t, n) { }
-	}
+namespace SIPSorcery.Net.Sctp
+{
+    public class ProtocolViolationError : KnownError
+    {
+        public ProtocolViolationError(int t, string n) : base(t, n) { }
+    }
 }

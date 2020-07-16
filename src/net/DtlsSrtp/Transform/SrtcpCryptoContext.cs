@@ -57,15 +57,15 @@
 
 using System.IO;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Utilities;
 
 namespace SIPSorcery.Net
 {
-    public class SrtcpCryptoContext 
+    public class SrtcpCryptoContext
     {
         /** The replay check windows size */
         private const long REPLAY_WINDOW_SIZE = 64;
@@ -102,11 +102,11 @@ namespace SIPSorcery.Net
 
         /** Encryption / Authentication policy for this session */
         private SrtpPolicy policy;
-    
-    /**
-     * The HMAC object we used to do packet authentication
-     */
-    private IMac mac;             // used for various HMAC computations
+
+        /**
+         * The HMAC object we used to do packet authentication
+         */
+        private IMac mac;             // used for various HMAC computations
 
         // The symmetric cipher engines we need here
         private IBlockCipher cipher = null;

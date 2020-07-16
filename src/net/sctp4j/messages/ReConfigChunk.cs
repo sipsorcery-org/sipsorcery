@@ -17,89 +17,101 @@
 // Modified by Andrés Leone Gámez
 
 
-using SCTP4CS.Utils;
-using SIPSorcery.Net.messages.Params;
 using System;
 using Microsoft.Extensions.Logging;
+using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
 /**
  *
  * @author thp
  */
-namespace SIPSorcery.Net.messages {
-	public class ReConfigChunk : Chunk {
+namespace SIPSorcery.Net.Sctp
+{
+    public class ReConfigChunk : Chunk
+    {
 
         private static ILogger logger = Log.Logger;
 
         private long sentAt;
-		private int retries;
+        private int retries;
 
-		public ReConfigChunk(CType type, byte flags, int length, ByteBuffer pkt)
-			: base(type, flags, length, pkt) {
-			logger.LogDebug("ReConfig chunk" + this.ToString());
-			if (_body.remaining() >= 4) {
-				while (_body.hasRemaining()) {
-					VariableParam v = this.readVariable();
-					_varList.Add(v);
-					logger.LogDebug("\tParam :" + v.ToString());
-				}
-			}
-		}
+        public ReConfigChunk(CType type, byte flags, int length, ByteBuffer pkt)
+            : base(type, flags, length, pkt)
+        {
+            logger.LogDebug("ReConfig chunk" + this.ToString());
+            if (_body.remaining() >= 4)
+            {
+                while (_body.hasRemaining())
+                {
+                    VariableParam v = this.readVariable();
+                    _varList.Add(v);
+                    logger.LogDebug("\tParam :" + v.ToString());
+                }
+            }
+        }
 
-		public ReConfigChunk() : base(CType.RE_CONFIG) { }
+        public ReConfigChunk() : base(CType.RE_CONFIG) { }
 
-		protected override void putFixedParams(ByteBuffer ret) {
-			//throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-		}
+        protected override void putFixedParams(ByteBuffer ret)
+        {
+            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
 
-		public bool hasIncomingReset() {
-			foreach (var v in _varList)
-				if (typeof(IncomingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
-					return true;
-			return false;
-		}
+        public bool hasIncomingReset()
+        {
+            foreach (var v in _varList)
+                if (typeof(IncomingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
+                    return true;
+            return false;
+        }
 
-		public IncomingSSNResetRequestParameter getIncomingReset() {
-			foreach (var v in _varList)
-				if (typeof(IncomingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
-					return (IncomingSSNResetRequestParameter) v;
-			return null;
-		}
+        public IncomingSSNResetRequestParameter getIncomingReset()
+        {
+            foreach (var v in _varList)
+                if (typeof(IncomingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
+                    return (IncomingSSNResetRequestParameter)v;
+            return null;
+        }
 
-		public bool hasOutgoingReset() {
-			foreach (var v in _varList)
-				if (typeof(OutgoingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
-					return true;
-			return false;
-		}
+        public bool hasOutgoingReset()
+        {
+            foreach (var v in _varList)
+                if (typeof(OutgoingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
+                    return true;
+            return false;
+        }
 
-		private bool hasOutgoingAdd() {
-			foreach (var v in _varList)
-				if (typeof(AddOutgoingStreamsRequestParameter).IsAssignableFrom(v.GetType()))
-					return true;
-			return false;
-		}
+        private bool hasOutgoingAdd()
+        {
+            foreach (var v in _varList)
+                if (typeof(AddOutgoingStreamsRequestParameter).IsAssignableFrom(v.GetType()))
+                    return true;
+            return false;
+        }
 
-		private bool hasResponse() {
-			foreach (var v in _varList)
-				if (typeof(ReconfigurationResponseParameter).IsAssignableFrom(v.GetType()))
-					return true;
-			return false;
-		}
+        private bool hasResponse()
+        {
+            foreach (var v in _varList)
+                if (typeof(ReconfigurationResponseParameter).IsAssignableFrom(v.GetType()))
+                    return true;
+            return false;
+        }
 
-		public OutgoingSSNResetRequestParameter getOutgoingReset() {
-			foreach (var v in _varList)
-				if (typeof(OutgoingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
-					return (OutgoingSSNResetRequestParameter) v;
-			return null;
-		}
+        public OutgoingSSNResetRequestParameter getOutgoingReset()
+        {
+            foreach (var v in _varList)
+                if (typeof(OutgoingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
+                    return (OutgoingSSNResetRequestParameter)v;
+            return null;
+        }
 
-		public bool hasParam() {
-			return _varList.Count > 0;
-		}
+        public bool hasParam()
+        {
+            return _varList.Count > 0;
+        }
 
-		/*
+        /*
 		   1.   Outgoing SSN Reset Request Parameter.
 
 	   2.   Incoming SSN Reset Request Parameter.
@@ -124,101 +136,130 @@ namespace SIPSorcery.Net.messages {
 	   10.  Re-configuration Response Parameter, Re-configuration Response
 			Parameter.
 		 */
-		public override void validate() {
-			if (_varList.Count < 1) {
-				throw new Exception("[IllegalArgumentException] Too few params " + _varList.Count);
-			}
-			if (_varList.Count > 2) {
-				throw new Exception("[IllegalArgumentException] Too many params " + _varList.Count);
-			}
-			// now check for invalid combos
-			if ((_varList.Count == 2)) {
-				if (this.hasOutgoingReset()) {
-					VariableParam remain = null;
-					foreach (var v in _varList) {
-						if (!typeof(OutgoingSSNResetRequestParameter).IsAssignableFrom(v.GetType())) {
-							remain = v;
-							break;
-						}
-					}
-					if (remain == null) {
-						throw new Exception("[IllegalArgumentException] 2 OutgoingSSNResetRequestParameter in one Chunk not allowed ");
-					}
-					if (!typeof(IncomingSSNResetRequestParameter).IsAssignableFrom(remain.GetType()) //3
-						&& !typeof(ReconfigurationResponseParameter).IsAssignableFrom(remain.GetType())) //9
-					{
-						throw new Exception("[IllegalArgumentException] OutgoingSSNResetRequestParameter and " + remain.GetType().Name + " in same Chunk not allowed ");
-					}
-				} else if (this.hasOutgoingAdd()) {
-					VariableParam remain = null;
+        public override void validate()
+        {
+            if (_varList.Count < 1)
+            {
+                throw new Exception("[IllegalArgumentException] Too few params " + _varList.Count);
+            }
+            if (_varList.Count > 2)
+            {
+                throw new Exception("[IllegalArgumentException] Too many params " + _varList.Count);
+            }
+            // now check for invalid combos
+            if ((_varList.Count == 2))
+            {
+                if (this.hasOutgoingReset())
+                {
+                    VariableParam remain = null;
+                    foreach (var v in _varList)
+                    {
+                        if (!typeof(OutgoingSSNResetRequestParameter).IsAssignableFrom(v.GetType()))
+                        {
+                            remain = v;
+                            break;
+                        }
+                    }
+                    if (remain == null)
+                    {
+                        throw new Exception("[IllegalArgumentException] 2 OutgoingSSNResetRequestParameter in one Chunk not allowed ");
+                    }
+                    if (!typeof(IncomingSSNResetRequestParameter).IsAssignableFrom(remain.GetType()) //3
+                        && !typeof(ReconfigurationResponseParameter).IsAssignableFrom(remain.GetType())) //9
+                    {
+                        throw new Exception("[IllegalArgumentException] OutgoingSSNResetRequestParameter and " + remain.GetType().Name + " in same Chunk not allowed ");
+                    }
+                }
+                else if (this.hasOutgoingAdd())
+                {
+                    VariableParam remain = null;
 
-					foreach (var v in _varList) {
-						if (!typeof(AddOutgoingStreamsRequestParameter).IsAssignableFrom(v.GetType())) {
-							remain = v;
-							break;
-						}
-					}
-					if (remain == null) {
-						throw new Exception("[IllegalArgumentException] 2 AddOutgoingStreamsRequestParameter in one Chunk not allowed ");
-					}
-					if (!typeof(AddIncomingStreamsRequestParameter).IsAssignableFrom(remain.GetType())) //7
-					{
-						throw new Exception("[IllegalArgumentException] OutgoingSSNResetRequestParameter and " + remain.GetType().Name + " in same Chunk not allowed ");
-					}
-				} else if (this.hasResponse()) {
-					VariableParam remain = null;
+                    foreach (var v in _varList)
+                    {
+                        if (!typeof(AddOutgoingStreamsRequestParameter).IsAssignableFrom(v.GetType()))
+                        {
+                            remain = v;
+                            break;
+                        }
+                    }
+                    if (remain == null)
+                    {
+                        throw new Exception("[IllegalArgumentException] 2 AddOutgoingStreamsRequestParameter in one Chunk not allowed ");
+                    }
+                    if (!typeof(AddIncomingStreamsRequestParameter).IsAssignableFrom(remain.GetType())) //7
+                    {
+                        throw new Exception("[IllegalArgumentException] OutgoingSSNResetRequestParameter and " + remain.GetType().Name + " in same Chunk not allowed ");
+                    }
+                }
+                else if (this.hasResponse())
+                {
+                    VariableParam remain = null;
 
-					foreach (var v in _varList) {
-						if (!typeof(ReconfigurationResponseParameter).IsAssignableFrom(v.GetType())) {
-							remain = v;
-							break;
-						}
-					}
+                    foreach (var v in _varList)
+                    {
+                        if (!typeof(ReconfigurationResponseParameter).IsAssignableFrom(v.GetType()))
+                        {
+                            remain = v;
+                            break;
+                        }
+                    }
 
-					if (remain != null) { // 10
-						throw new Exception("[IllegalArgumentException] ReconfigurationResponseParameter and " + remain.GetType().Name + " in same Chunk not allowed ");
-					}
-				}
-			} // implicitly just one - which is ok 1,2,4,5,6,8
-		}
+                    if (remain != null)
+                    { // 10
+                        throw new Exception("[IllegalArgumentException] ReconfigurationResponseParameter and " + remain.GetType().Name + " in same Chunk not allowed ");
+                    }
+                }
+            } // implicitly just one - which is ok 1,2,4,5,6,8
+        }
 
-		public void addParam(VariableParam rep) {
-			logger.LogDebug("adding " + rep + " to " + this);
-			_varList.Add(rep);
-			validate();
-		}
+        public void addParam(VariableParam rep)
+        {
+            logger.LogDebug("adding " + rep + " to " + this);
+            _varList.Add(rep);
+            validate();
+        }
 
-		public bool sameAs(ReConfigChunk other) {
-			// we ignore other var types for now....
-			bool ret = false; // assume the negative.
-			if (other != null) {
-				// if there are 2 params and both match
-				if ((this.hasIncomingReset() && other.hasIncomingReset())
-						&& (this.hasOutgoingReset() && other.hasOutgoingReset())) {
-					ret = this.getIncomingReset().sameAs(other.getIncomingReset())
-							&& this.getOutgoingReset().sameAs(other.getOutgoingReset());
-				} else {
-					// there is only one (of these) params
-					// that has to match too
-					if (this.hasIncomingReset() && other.hasIncomingReset()) {
-						ret = this.getIncomingReset().sameAs(other.getIncomingReset());
-					}
-					if (this.hasOutgoingReset() && other.hasOutgoingReset()) {
-						ret = this.getOutgoingReset().sameAs(other.getOutgoingReset());
-					}
-				}
-			}
-			return ret;
-		}
-		// stuff to manage outbound retries
-		public long getSentTime() {
-			return sentAt;
-		}
-		public void setSentTime(long now) {
-			sentAt = now;
-		}
-		public int getAndIncrementRetryCount() {
-			return retries++;
-		}
-	}
+        public bool sameAs(ReConfigChunk other)
+        {
+            // we ignore other var types for now....
+            bool ret = false; // assume the negative.
+            if (other != null)
+            {
+                // if there are 2 params and both match
+                if ((this.hasIncomingReset() && other.hasIncomingReset())
+                        && (this.hasOutgoingReset() && other.hasOutgoingReset()))
+                {
+                    ret = this.getIncomingReset().sameAs(other.getIncomingReset())
+                            && this.getOutgoingReset().sameAs(other.getOutgoingReset());
+                }
+                else
+                {
+                    // there is only one (of these) params
+                    // that has to match too
+                    if (this.hasIncomingReset() && other.hasIncomingReset())
+                    {
+                        ret = this.getIncomingReset().sameAs(other.getIncomingReset());
+                    }
+                    if (this.hasOutgoingReset() && other.hasOutgoingReset())
+                    {
+                        ret = this.getOutgoingReset().sameAs(other.getOutgoingReset());
+                    }
+                }
+            }
+            return ret;
+        }
+        // stuff to manage outbound retries
+        public long getSentTime()
+        {
+            return sentAt;
+        }
+        public void setSentTime(long now)
+        {
+            sentAt = now;
+        }
+        public int getAndIncrementRetryCount()
+        {
+            return retries++;
+        }
+    }
 }

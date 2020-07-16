@@ -15,11 +15,11 @@
 
 using System;
 using System.Collections;
+using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
-using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -330,7 +330,7 @@ namespace SIPSorcery.Net
                 description += cause;
             }
 
-            logger.LogWarning($"DTLS client raised alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");  
+            logger.LogWarning($"DTLS client raised alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
         }
 
         public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)

@@ -23,17 +23,21 @@ using SCTP4CS.Utils;
  *
  * @author tim
  */
-namespace SIPSorcery.Net.messages.Params {
-	public class CookiePreservative : KnownParam {
-		int time;
-		public CookiePreservative(int t, string n) : base(t, n) { }
+namespace SIPSorcery.Net.Sctp
+{
+    public class CookiePreservative : KnownParam
+    {
+        int time;
+        public CookiePreservative(int t, string n) : base(t, n) { }
 
-		public override void readBody(ByteBuffer body, int blen) {
-			time = body.GetInt();
-		}
+        public override void readBody(ByteBuffer body, int blen)
+        {
+            time = body.GetInt();
+        }
 
-		public override void writeBody(ByteBuffer body) {
-			body.Put(time);
-		}
-	}
+        public override void writeBody(ByteBuffer body)
+        {
+            body.Put(time);
+        }
+    }
 }

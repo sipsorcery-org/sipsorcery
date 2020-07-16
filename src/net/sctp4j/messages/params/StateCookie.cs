@@ -21,9 +21,11 @@
  *
  * @author tim
  */
-namespace SIPSorcery.Net.messages.Params {
-	public class StateCookie : KnownParam {
-		public StateCookie() : base(7, "StateCookie") { }
-		public StateCookie(int t, string n) : base(t, n) { }
-	}
+namespace SIPSorcery.Net.Sctp
+{
+    public class StateCookie : KnownParam
+    {
+        public StateCookie() : base(7, "StateCookie") { }
+        public StateCookie(int t, string n) : base(t, n) { }
+    }
 }

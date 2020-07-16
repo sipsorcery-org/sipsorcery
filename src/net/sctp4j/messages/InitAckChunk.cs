@@ -16,9 +16,8 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SCTP4CS.Utils;
-using SIPSorcery.Net.messages.Params;
 using Microsoft.Extensions.Logging;
+using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
 /**
@@ -48,132 +47,159 @@ using SIPSorcery.Sys;
  \                                                               \
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-namespace SIPSorcery.Net.messages {
-	public class InitAckChunk : Chunk {
+namespace SIPSorcery.Net.Sctp
+{
+    public class InitAckChunk : Chunk
+    {
 
         private static ILogger logger = Log.Logger;
 
         int _initiateTag;
-		uint _adRecWinCredit;
-		int _numOutStreams;
-		int _numInStreams;
-		uint _initialTSN;
-		private byte[] _cookie;
-		private byte[] _supportedExtensions;
+        uint _adRecWinCredit;
+        int _numOutStreams;
+        int _numInStreams;
+        uint _initialTSN;
+        private byte[] _cookie;
+        private byte[] _supportedExtensions;
 
-		public InitAckChunk() : base(CType.INITACK) { }
+        public InitAckChunk() : base(CType.INITACK) { }
 
-		public int getInitiateTag() {
-			return _initiateTag;
-		}
+        public int getInitiateTag()
+        {
+            return _initiateTag;
+        }
 
-		public void setInitiateTag(int v) {
-			_initiateTag = v;
-		}
+        public void setInitiateTag(int v)
+        {
+            _initiateTag = v;
+        }
 
-		public uint getAdRecWinCredit() {
-			return _adRecWinCredit;
-		}
+        public uint getAdRecWinCredit()
+        {
+            return _adRecWinCredit;
+        }
 
-		public void setAdRecWinCredit(uint v) {
-			_adRecWinCredit = v;
-		}
+        public void setAdRecWinCredit(uint v)
+        {
+            _adRecWinCredit = v;
+        }
 
-		public int getNumOutStreams() {
-			return _numOutStreams;
-		}
+        public int getNumOutStreams()
+        {
+            return _numOutStreams;
+        }
 
-		public void setNumOutStreams(int v) {
-			_numOutStreams = v;
-		}
+        public void setNumOutStreams(int v)
+        {
+            _numOutStreams = v;
+        }
 
-		public int getNumInStreams() {
-			return _numInStreams;
-		}
+        public int getNumInStreams()
+        {
+            return _numInStreams;
+        }
 
-		public void setNumInStreams(int v) {
-			_numInStreams = v;
-		}
+        public void setNumInStreams(int v)
+        {
+            _numInStreams = v;
+        }
 
-		public uint getInitialTSN() {
-			return _initialTSN;
-		}
+        public uint getInitialTSN()
+        {
+            return _initialTSN;
+        }
 
-		public void setInitialTSN(uint v) {
-			_initialTSN = v;
-		}
+        public void setInitialTSN(uint v)
+        {
+            _initialTSN = v;
+        }
 
-		public byte[] getCookie() {
-			return _cookie;
-		}
+        public byte[] getCookie()
+        {
+            return _cookie;
+        }
 
-		public void setCookie(byte[] v) {
-			_cookie = v;
-		}
+        public void setCookie(byte[] v)
+        {
+            _cookie = v;
+        }
 
-		public InitAckChunk(CType type, byte flags, int length, ByteBuffer pkt)
-			: base(type, flags, length, pkt) {
-			if (_body.remaining() >= 16) {
-				_initiateTag = _body.GetInt();
-				_adRecWinCredit = _body.GetUInt(); ;
-				_numOutStreams = _body.GetUShort();
-				_numInStreams = _body.GetUShort();
-				_initialTSN = _body.GetUInt();
-				logger.LogDebug("Init Ack" + this.ToString());
-				while (_body.hasRemaining()) {
-					VariableParam v = readVariable();
-					_varList.Add(v);
-				}
+        public InitAckChunk(CType type, byte flags, int length, ByteBuffer pkt)
+            : base(type, flags, length, pkt)
+        {
+            if (_body.remaining() >= 16)
+            {
+                _initiateTag = _body.GetInt();
+                _adRecWinCredit = _body.GetUInt(); ;
+                _numOutStreams = _body.GetUShort();
+                _numInStreams = _body.GetUShort();
+                _initialTSN = _body.GetUInt();
+                logger.LogDebug("Init Ack" + this.ToString());
+                while (_body.hasRemaining())
+                {
+                    VariableParam v = readVariable();
+                    _varList.Add(v);
+                }
 
-				foreach (VariableParam v in _varList) {
-					// now look for variables we are expecting...
-					logger.LogDebug("variable of type: " + v.getName() + " " + v.ToString());
-					if (typeof(StateCookie).IsAssignableFrom(v.GetType())) {
-						_cookie = ((StateCookie) v).getData();
-					} else {
-						logger.LogDebug("ignored variable of type: " + v.getName());
-					}
-				}
+                foreach (VariableParam v in _varList)
+                {
+                    // now look for variables we are expecting...
+                    logger.LogDebug("variable of type: " + v.getName() + " " + v.ToString());
+                    if (typeof(StateCookie).IsAssignableFrom(v.GetType()))
+                    {
+                        _cookie = ((StateCookie)v).getData();
+                    }
+                    else
+                    {
+                        logger.LogDebug("ignored variable of type: " + v.getName());
+                    }
+                }
 
-			}
-		}
+            }
+        }
 
-		public override string ToString() {
-			string ret = base.ToString();
-			ret += " initiateTag : " + _initiateTag
-					+ " adRecWinCredit : " + _adRecWinCredit
-					+ " numOutStreams : " + _numOutStreams
-					+ " numInStreams : " + _numInStreams
-					+ " initialTSN : " + _initialTSN
-					+ ((_supportedExtensions == null) ? " no supported extensions" : " supported extensions are: " + chunksToNames(_supportedExtensions));
-			;
-			return ret;
-		}
+        public override string ToString()
+        {
+            string ret = base.ToString();
+            ret += " initiateTag : " + _initiateTag
+                    + " adRecWinCredit : " + _adRecWinCredit
+                    + " numOutStreams : " + _numOutStreams
+                    + " numInStreams : " + _numInStreams
+                    + " initialTSN : " + _initialTSN
+                    + ((_supportedExtensions == null) ? " no supported extensions" : " supported extensions are: " + chunksToNames(_supportedExtensions));
+            ;
+            return ret;
+        }
 
-		protected override void putFixedParams(ByteBuffer ret) {
-			ret.Put(_initiateTag);
-			ret.Put(_adRecWinCredit);
-			ret.Put((ushort) _numOutStreams);
-			ret.Put((ushort) _numInStreams);
-			ret.Put(_initialTSN);
-			if (_cookie != null) {
-				StateCookie sc = new StateCookie();
-				sc.setData(_cookie);
-				_varList.Add(sc);
-			}
-			if (_supportedExtensions != null) {
-				SupportedExtensions se = new SupportedExtensions();
-				se.setData(_supportedExtensions);
-				_varList.Add(se);
-			}
-		}
+        protected override void putFixedParams(ByteBuffer ret)
+        {
+            ret.Put(_initiateTag);
+            ret.Put(_adRecWinCredit);
+            ret.Put((ushort)_numOutStreams);
+            ret.Put((ushort)_numInStreams);
+            ret.Put(_initialTSN);
+            if (_cookie != null)
+            {
+                StateCookie sc = new StateCookie();
+                sc.setData(_cookie);
+                _varList.Add(sc);
+            }
+            if (_supportedExtensions != null)
+            {
+                SupportedExtensions se = new SupportedExtensions();
+                se.setData(_supportedExtensions);
+                _varList.Add(se);
+            }
+        }
 
-		public byte[] getSupportedExtensions(byte[] v) {
-			return _supportedExtensions;
-		}
+        public byte[] getSupportedExtensions(byte[] v)
+        {
+            return _supportedExtensions;
+        }
 
-		public void setSupportedExtensions(byte[] v) {
-			_supportedExtensions = v;
-		}
-	}
+        public void setSupportedExtensions(byte[] v)
+        {
+            _supportedExtensions = v;
+        }
+    }
 }

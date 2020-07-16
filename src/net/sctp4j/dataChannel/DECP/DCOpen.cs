@@ -16,20 +16,21 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SCTP4CS.Utils;
-using SIPSorcery.Net.behave;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SCTP4CS.Utils;
+using SIPSorcery.Net.Sctp;
 using SIPSorcery.Sys;
 
 /**
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net.dataChannel.DECP {
-	public class DCOpen {
-
-		/*
+namespace SIPSorcery.Net
+{
+    public class DCOpen
+    {
+        /*
 		 +------------------------------------------------+------+-----------+
 		 | Name                                           | Type | Reference |
 		 +------------------------------------------------+------+-----------+
@@ -44,12 +45,12 @@ namespace SIPSorcery.Net.dataChannel.DECP {
 		 | Unassigned                                     | rest |           |
 		 +------------------------------------------------+------+-----------+
 		 */
-		public const byte RELIABLE = 0x0;
-		public const byte PARTIAL_RELIABLE_REXMIT = 0x01;
-		public const byte PARTIAL_RELIABLE_REXMIT_UNORDERED = (byte) 0x81;
-		public const byte PARTIAL_RELIABLE_TIMED = 0x02;
-		public const byte PARTIAL_RELIABLE_TIMED_UNORDERED = (byte) 0x82;
-		public const byte RELIABLE_UNORDERED = (byte) 0x80;
+        public const byte RELIABLE = 0x0;
+        public const byte PARTIAL_RELIABLE_REXMIT = 0x01;
+        public const byte PARTIAL_RELIABLE_REXMIT_UNORDERED = (byte)0x81;
+        public const byte PARTIAL_RELIABLE_TIMED = 0x02;
+        public const byte PARTIAL_RELIABLE_TIMED_UNORDERED = (byte)0x82;
+        public const byte RELIABLE_UNORDERED = (byte)0x80;
 
         /*
 		 5.1.  DATA_CHANNEL_OPEN Message
@@ -79,133 +80,146 @@ namespace SIPSorcery.Net.dataChannel.DECP {
         private static ILogger logger = Log.Logger;
 
         private byte _messType;
-		private byte _chanType;
-		private int _priority;
-		private long _reliablity;
-		int _labLen;
-		int _protLen;
-		private byte[] _label;
-		private byte[] _protocol;
-		const int OPEN = 0x03;
-		const int ACK = 0x02;
-		bool _isAck = false;
+        private byte _chanType;
+        private int _priority;
+        private long _reliablity;
+        int _labLen;
+        int _protLen;
+        private byte[] _label;
+        private byte[] _protocol;
+        const int OPEN = 0x03;
+        const int ACK = 0x02;
+        bool _isAck = false;
 
-		public DCOpen(string label) : this((byte) RELIABLE, 0, 0, label, "") { }
+        public DCOpen(string label) : this((byte)RELIABLE, 0, 0, label, "") { }
 
-		public DCOpen(byte chanType, int priority, long reliablity, string label, string protocol) {
-			_messType = (byte) OPEN;
-			_chanType = chanType;
-			_priority = priority;
-			_reliablity = reliablity;
-			_label = Encoding.ASCII.GetBytes(label);
-			_protocol = Encoding.ASCII.GetBytes(protocol);
-			_labLen = _label.Length;
-			_protLen = _protocol.Length;
-		}
+        public DCOpen(byte chanType, int priority, long reliablity, string label, string protocol)
+        {
+            _messType = (byte)OPEN;
+            _chanType = chanType;
+            _priority = priority;
+            _reliablity = reliablity;
+            _label = Encoding.ASCII.GetBytes(label);
+            _protocol = Encoding.ASCII.GetBytes(protocol);
+            _labLen = _label.Length;
+            _protLen = _protocol.Length;
+        }
 
-		public byte[] getBytes() {
-			int sz = 12 + _labLen + pad(_labLen) + _protLen + pad(_protLen);
-			//logger.LogDebug("dcopen needs " + sz + " bytes ");
+        public byte[] getBytes()
+        {
+            int sz = 12 + _labLen + pad(_labLen) + _protLen + pad(_protLen);
+            //logger.LogDebug("dcopen needs " + sz + " bytes ");
 
-			byte[] ret = new byte[sz];
-			ByteBuffer buff = new ByteBuffer(ret);
-			buff.Put((byte) _messType);
-			buff.Put((byte) _chanType);
-			buff.Put((ushort) _priority);
-			buff.Put((int) _reliablity);
-			buff.Put((ushort) _labLen);
-			buff.Put((ushort) _protLen);
-			buff.Put(_label);
-			buff.Position += pad(_labLen);
-			buff.Put(_protocol);
-			buff.Position += pad(_protLen);
+            byte[] ret = new byte[sz];
+            ByteBuffer buff = new ByteBuffer(ret);
+            buff.Put((byte)_messType);
+            buff.Put((byte)_chanType);
+            buff.Put((ushort)_priority);
+            buff.Put((int)_reliablity);
+            buff.Put((ushort)_labLen);
+            buff.Put((ushort)_protLen);
+            buff.Put(_label);
+            buff.Position += pad(_labLen);
+            buff.Put(_protocol);
+            buff.Position += pad(_protLen);
 
-			return ret;
-		}
+            return ret;
+        }
 
-		static public int pad(int len) {
-			int mod = len % 4;
-			int res = 0;
-			//logger.LogDebug("field of " + len + " mod 4 is " + mod);
+        static public int pad(int len)
+        {
+            int mod = len % 4;
+            int res = 0;
+            //logger.LogDebug("field of " + len + " mod 4 is " + mod);
 
-			if (mod > 0) {
-				res = (4 - mod);
-			}
-			//logger.LogDebug("padded by " + res);
-			return res;
-		}
+            if (mod > 0)
+            {
+                res = (4 - mod);
+            }
+            //logger.LogDebug("padded by " + res);
+            return res;
+        }
 
-		public DCOpen(ByteBuffer bb) {
-			_messType = bb.GetByte();
-			switch (_messType) {
-				case OPEN:
-					_chanType = bb.GetByte();
-					_priority = bb.GetUShort();
-					_reliablity = bb.GetInt();
-					_labLen = bb.GetUShort();
-					_protLen = bb.GetUShort();
-					_label = new byte[_labLen];
-					bb.GetBytes(_label, _label.Length);
-					_protocol = new byte[_protLen];
-					bb.GetBytes(_protocol, _protocol.Length);
-					break;
-				case ACK:
-					_isAck = true;
-					break;
-				default:
-					throw new InvalidDataChunkException("Unexpected DCEP message type " + _messType);
-			}
-		}
+        public DCOpen(ByteBuffer bb)
+        {
+            _messType = bb.GetByte();
+            switch (_messType)
+            {
+                case OPEN:
+                    _chanType = bb.GetByte();
+                    _priority = bb.GetUShort();
+                    _reliablity = bb.GetInt();
+                    _labLen = bb.GetUShort();
+                    _protLen = bb.GetUShort();
+                    _label = new byte[_labLen];
+                    bb.GetBytes(_label, _label.Length);
+                    _protocol = new byte[_protLen];
+                    bb.GetBytes(_protocol, _protocol.Length);
+                    break;
+                case ACK:
+                    _isAck = true;
+                    break;
+                default:
+                    throw new InvalidDataChunkException("Unexpected DCEP message type " + _messType);
+            }
+        }
 
-		public override string ToString() {
-			return _isAck ? "Ack " : "Open "
-					+ " _chanType =" + (int) _chanType
-					+ " _priority = " + _priority
-					+ " _reliablity = " + _reliablity
-					+ " _label = " + Encoding.ASCII.GetString(_label)
-					+ " _protocol = " + messages.Packet.getHex(_protocol);
-		}
+        public override string ToString()
+        {
+            return _isAck ? "Ack " : "Open "
+                    + " _chanType =" + (int)_chanType
+                    + " _priority = " + _priority
+                    + " _reliablity = " + _reliablity
+                    + " _label = " + Encoding.ASCII.GetString(_label)
+                    + " _protocol = " + Packet.getHex(_protocol);
+        }
 
-		public bool isAck() {
-			return _isAck;
-		}
+        public bool isAck()
+        {
+            return _isAck;
+        }
 
-		internal SCTPStreamBehaviour mkStreamBehaviour() {
-			logger.LogDebug("Making a behaviour for dcep stream " + _label);
-			SCTPStreamBehaviour behave = null;
-			switch (_chanType) {
-				case RELIABLE:
-					behave = new OrderedStreamBehaviour();
-					break;
-				case RELIABLE_UNORDERED:
-					behave = new UnorderedStreamBehaviour();
-					break;
-				// todo these next 4 are wrong... the odering is atleast correct
-				// even if the retry is wrong.
-				case PARTIAL_RELIABLE_REXMIT:
-				case PARTIAL_RELIABLE_TIMED:
-					behave = new OrderedStreamBehaviour();
-					break;
-				case PARTIAL_RELIABLE_REXMIT_UNORDERED:
-				case PARTIAL_RELIABLE_TIMED_UNORDERED:
-					behave = new UnorderedStreamBehaviour();
-					break;
-			}
-			if (behave != null) {
-				logger.LogDebug(_label + " behaviour is " + behave.GetType().Name);
-			}
+        internal SCTPStreamBehaviour mkStreamBehaviour()
+        {
+            logger.LogDebug("Making a behaviour for dcep stream " + _label);
+            SCTPStreamBehaviour behave = null;
+            switch (_chanType)
+            {
+                case RELIABLE:
+                    behave = new OrderedStreamBehaviour();
+                    break;
+                case RELIABLE_UNORDERED:
+                    behave = new UnorderedStreamBehaviour();
+                    break;
+                // todo these next 4 are wrong... the odering is atleast correct
+                // even if the retry is wrong.
+                case PARTIAL_RELIABLE_REXMIT:
+                case PARTIAL_RELIABLE_TIMED:
+                    behave = new OrderedStreamBehaviour();
+                    break;
+                case PARTIAL_RELIABLE_REXMIT_UNORDERED:
+                case PARTIAL_RELIABLE_TIMED_UNORDERED:
+                    behave = new UnorderedStreamBehaviour();
+                    break;
+            }
+            if (behave != null)
+            {
+                logger.LogDebug(_label + " behaviour is " + behave.GetType().Name);
+            }
 
-			return behave;
-		}
+            return behave;
+        }
 
-		public string getLabel() {
-			return Encoding.ASCII.GetString(_label);
-		}
+        public string getLabel()
+        {
+            return Encoding.ASCII.GetString(_label);
+        }
 
-		public byte[] mkAck() {
-			byte[] a = new byte[1];
-			a[0] = ACK;
-			return a;
-		}
-	}
+        public byte[] mkAck()
+        {
+            byte[] a = new byte[1];
+            a[0] = ACK;
+            return a;
+        }
+    }
 }

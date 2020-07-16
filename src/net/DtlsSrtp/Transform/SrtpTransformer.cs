@@ -46,8 +46,8 @@ namespace SIPSorcery.Net
     public class SrtpTransformer : IPacketTransformer
     {
         private RawPacket rawPacket;
-	
-	    private SrtpTransformEngine forwardEngine;
+
+        private SrtpTransformEngine forwardEngine;
         private SrtpTransformEngine reverseEngine;
 
         /**

@@ -268,17 +268,17 @@ namespace SIPSorcery.Net
                 announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus) + m_CRLF;
             }
 
-            if(SsrcGroupID != null && SsrcAttributes.Count > 0)
+            if (SsrcGroupID != null && SsrcAttributes.Count > 0)
             {
                 announcement += MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX + SsrcGroupID;
-                foreach(var ssrcAttr in SsrcAttributes)
+                foreach (var ssrcAttr in SsrcAttributes)
                 {
                     announcement += $" {ssrcAttr.SSRC}";
                 }
                 announcement += m_CRLF;
             }
 
-            if(SsrcAttributes.Count > 0)
+            if (SsrcAttributes.Count > 0)
             {
                 foreach (var ssrcAttr in SsrcAttributes)
                 {
@@ -293,7 +293,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            if(SctpMap != null)
+            if (SctpMap != null)
             {
                 announcement += $"{MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX}{SctpMap}" + m_CRLF;
             }
@@ -334,7 +334,7 @@ namespace SIPSorcery.Net
                     {
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatAttribute + m_CRLF;
                     }
-                    else if(Media == SDPMediaTypesEnum.audio || Media == SDPMediaTypesEnum.video)
+                    else if (Media == SDPMediaTypesEnum.audio || Media == SDPMediaTypesEnum.video)
                     {
                         // If no format attribute is specified then a default one can be constructed for dynamic audio and video types.
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.Name + "/" + mediaFormat.ClockRate + m_CRLF;

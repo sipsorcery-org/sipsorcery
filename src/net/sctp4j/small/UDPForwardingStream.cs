@@ -16,7 +16,6 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SIPSorcery.Net.behave;
 using System;
 using System.Net.Sockets;
 using System.Threading;
@@ -27,53 +26,64 @@ using SIPSorcery.Sys;
  *
  * @author tim
  */
-namespace SIPSorcery.Net.small {
-	public class UDPForwardingStream : BlockingSCTPStream {
+namespace SIPSorcery.Net.Sctp
+{
+    public class UDPForwardingStream : BlockingSCTPStream
+    {
 
         private static ILogger logger = Log.Logger;
 
         Socket _udpSock;
-		private Thread _rcv;
+        private Thread _rcv;
 
-		public UDPForwardingStream(Association a, int id, int toPort) : base(a, id) {
-			_udpSock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-			_udpSock.Connect("localhost", toPort);
-			_rcv = new Thread(run);
-			_rcv.Name = "UDPForwarding_rcv";
-			_rcv.Start();
-			SCTPStreamBehaviour behave = mkBehave();
-			base.setBehave(behave);
-		}
+        public UDPForwardingStream(Association a, int id, int toPort) : base(a, id)
+        {
+            _udpSock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            _udpSock.Connect("localhost", toPort);
+            _rcv = new Thread(run);
+            _rcv.Name = "UDPForwarding_rcv";
+            _rcv.Start();
+            SCTPStreamBehaviour behave = mkBehave();
+            base.setBehave(behave);
+        }
 
-		public void run() {
-			try {
-				_udpSock.ReceiveTimeout = 1000;
-				byte[] buff = new byte[4096];
-				while (_rcv != null) {
-					try {
-						int l = _udpSock.Receive(buff);
-						if (l > buff.Length) {
-							logger.LogWarning("truncated packet from " + _udpSock.RemoteEndPoint.ToString());
-							l = buff.Length;
-						}
-						byte[] pkt = new byte[l];
-						Array.Copy(buff, 0, pkt, 0, l);
-						send(pkt);
-					}
-					catch (SocketException) {
-						// ignore - lets us check for close....
-					}
-				}
-			}
-			catch (Exception) {
+        public void run()
+        {
+            try
+            {
+                _udpSock.ReceiveTimeout = 1000;
+                byte[] buff = new byte[4096];
+                while (_rcv != null)
+                {
+                    try
+                    {
+                        int l = _udpSock.Receive(buff);
+                        if (l > buff.Length)
+                        {
+                            logger.LogWarning("truncated packet from " + _udpSock.RemoteEndPoint.ToString());
+                            l = buff.Length;
+                        }
+                        byte[] pkt = new byte[l];
+                        Array.Copy(buff, 0, pkt, 0, l);
+                        send(pkt);
+                    }
+                    catch (SocketException)
+                    {
+                        // ignore - lets us check for close....
+                    }
+                }
+            }
+            catch (Exception)
+            {
 
-			}
-			// clean up here.....
-		}
+            }
+            // clean up here.....
+        }
 
 
-		private SCTPStreamBehaviour mkBehave() {
-			return new UnorderedStreamBehaviour();
-		}
-	}
+        private SCTPStreamBehaviour mkBehave()
+        {
+            return new UnorderedStreamBehaviour();
+        }
+    }
 }

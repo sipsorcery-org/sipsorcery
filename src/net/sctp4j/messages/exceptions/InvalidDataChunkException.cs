@@ -22,6 +22,7 @@ using System;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-public class InvalidDataChunkException : Exception {
-	public InvalidDataChunkException(string message) : base(message) { }
+public class InvalidDataChunkException : Exception
+{
+    public InvalidDataChunkException(string message) : base(message) { }
 }

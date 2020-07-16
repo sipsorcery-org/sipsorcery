@@ -23,10 +23,12 @@ using SCTP4CS.Utils;
 *
 * @author tim
 */
-namespace SIPSorcery.Net.messages {
-	public class FailChunk : Chunk {
-		public FailChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt) { }
+namespace SIPSorcery.Net.Sctp
+{
+    public class FailChunk : Chunk
+    {
+        public FailChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt) { }
 
-		protected override void putFixedParams(ByteBuffer ret) { }
-	}
+        protected override void putFixedParams(ByteBuffer ret) { }
+    }
 }

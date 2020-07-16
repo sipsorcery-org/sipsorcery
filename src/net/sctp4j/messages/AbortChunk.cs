@@ -16,9 +16,8 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SCTP4CS.Utils;
-using SIPSorcery.Net.messages.Params;
 using Microsoft.Extensions.Logging;
+using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
 /**
@@ -39,24 +38,29 @@ using SIPSorcery.Sys;
 
  
  */
-namespace SIPSorcery.Net.messages {
-	public class AbortChunk : Chunk {
+namespace SIPSorcery.Net.Sctp
+{
+    public class AbortChunk : Chunk
+    {
 
         private static ILogger logger = Log.Logger;
 
         public AbortChunk() : base(CType.ABORT) { }
 
-		public AbortChunk(CType type, byte flags, int length, ByteBuffer pkt)
-			: base(type, flags, length, pkt) {
-			if (_body.remaining() >= 4) {
-				logger.LogDebug("Abort" + this.ToString());
-				while (_body.hasRemaining()) {
-					VariableParam v = readErrorParam();
-					_varList.Add(v);
-				}
-			}
-		}
+        public AbortChunk(CType type, byte flags, int length, ByteBuffer pkt)
+            : base(type, flags, length, pkt)
+        {
+            if (_body.remaining() >= 4)
+            {
+                logger.LogDebug("Abort" + this.ToString());
+                while (_body.hasRemaining())
+                {
+                    VariableParam v = readErrorParam();
+                    _varList.Add(v);
+                }
+            }
+        }
 
-		protected override void putFixedParams(ByteBuffer ret) { }
-	}
+        protected override void putFixedParams(ByteBuffer ret) { }
+    }
 }

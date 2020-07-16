@@ -22,9 +22,11 @@ using SCTP4CS.Utils;
 *
 * @author tim
 */
-namespace SIPSorcery.Net.messages.Params {
-	public class RequestedHMACAlgorithmParameter : KnownParam {
-		/*
+namespace SIPSorcery.Net.Sctp
+{
+    public class RequestedHMACAlgorithmParameter : KnownParam
+    {
+        /*
 
 		 0                   1                   2                   3
 		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -41,8 +43,8 @@ namespace SIPSorcery.Net.messages.Params {
 		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		 */
 
-		int[] hmacs;
-		/*
+        int[] hmacs;
+        /*
 		 +-----------------+--------------------------+
 		 | HMAC Identifier | Message Digest Algorithm |
 		 +-----------------+--------------------------+
@@ -53,50 +55,61 @@ namespace SIPSorcery.Net.messages.Params {
 		 +-----------------+--------------------------+
 		 */
 
-		public RequestedHMACAlgorithmParameter(int t, string n) : base(t, n) { }
+        public RequestedHMACAlgorithmParameter(int t, string n) : base(t, n) { }
 
-		public override void readBody(ByteBuffer body, int blen) {
-			hmacs = new int[blen / 2];
-			for (int i = 0; i < hmacs.Length; i++) {
-				hmacs[i] = body.GetUShort();
-			}
-		}
+        public override void readBody(ByteBuffer body, int blen)
+        {
+            hmacs = new int[blen / 2];
+            for (int i = 0; i < hmacs.Length; i++)
+            {
+                hmacs[i] = body.GetUShort();
+            }
+        }
 
-		public override void writeBody(ByteBuffer body) {
-			if (hmacs != null) {
-				for (int i = 0; i < hmacs.Length; i++) {
-					body.Put((ushort) hmacs[i]);
-				}
-			}
-		}
+        public override void writeBody(ByteBuffer body)
+        {
+            if (hmacs != null)
+            {
+                for (int i = 0; i < hmacs.Length; i++)
+                {
+                    body.Put((ushort)hmacs[i]);
+                }
+            }
+        }
 
-		public override string ToString() {
-			string ret = " Hmacs are ";
-			for (int i = 0; i < hmacs.Length; i++) {
-				switch (hmacs[i]) {
-					case 0:
-					case 2:
-						ret += " Reserved ";
-						break;
-					case 1:
-						ret += " SHA-1 ";
-						break;
-					case 3:
-						ret += " SHA-256 ";
-						break;
-				}
-			}
-			return base.ToString() + ret;
-		}
+        public override string ToString()
+        {
+            string ret = " Hmacs are ";
+            for (int i = 0; i < hmacs.Length; i++)
+            {
+                switch (hmacs[i])
+                {
+                    case 0:
+                    case 2:
+                        ret += " Reserved ";
+                        break;
+                    case 1:
+                        ret += " SHA-1 ";
+                        break;
+                    case 3:
+                        ret += " SHA-256 ";
+                        break;
+                }
+            }
+            return base.ToString() + ret;
+        }
 
-		public bool doesSha256() {
-			bool ret = false;
-			for (int i = 0; i < hmacs.Length; i++) {
-				if (3 == hmacs[i]) {
-					ret = true;
-				}
-			}
-			return ret;
-		}
-	}
+        public bool doesSha256()
+        {
+            bool ret = false;
+            for (int i = 0; i < hmacs.Length; i++)
+            {
+                if (3 == hmacs[i])
+                {
+                    ret = true;
+                }
+            }
+            return ret;
+        }
+    }
 }

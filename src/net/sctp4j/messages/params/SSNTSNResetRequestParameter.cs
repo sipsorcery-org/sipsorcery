@@ -22,11 +22,13 @@ using SCTP4CS.Utils;
  *
  * @author tim
  */
-namespace SIPSorcery.Net.messages.Params {
-	public class SSNTSNResetRequestParameter : Unknown {
-		uint _seqno;
-		public SSNTSNResetRequestParameter(int t, string n) : base(t, n) { }
-		/*
+namespace SIPSorcery.Net.Sctp
+{
+    public class SSNTSNResetRequestParameter : Unknown
+    {
+        uint _seqno;
+        public SSNTSNResetRequestParameter(int t, string n) : base(t, n) { }
+        /*
 		 0                   1                   2                   3
 		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -36,12 +38,14 @@ namespace SIPSorcery.Net.messages.Params {
 		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		 */
 
-		public override void readBody(ByteBuffer body, int blen) {
-			_seqno = body.GetUInt();
-		}
+        public override void readBody(ByteBuffer body, int blen)
+        {
+            _seqno = body.GetUInt();
+        }
 
-		public override void writeBody(ByteBuffer body) {
-			body.Put(_seqno);
-		}
-	}
+        public override void writeBody(ByteBuffer body)
+        {
+            body.Put(_seqno);
+        }
+    }
 }

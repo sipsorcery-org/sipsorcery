@@ -16,9 +16,8 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SCTP4CS.Utils;
-using SIPSorcery.Net.messages.Params;
 using Microsoft.Extensions.Logging;
+using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
 /**
@@ -54,34 +53,41 @@ using SIPSorcery.Sys;
  Set to the size of the chunk in bytes, including the chunk header
  and all the Error Cause fields present.
  */
-namespace SIPSorcery.Net.messages {
-
-    public class ErrorChunk : Chunk {
+namespace SIPSorcery.Net.Sctp
+{
+    public class ErrorChunk : Chunk
+    {
 
         private static ILogger logger = Log.Logger;
 
         public ErrorChunk() : base(CType.ERROR) { }
 
-		public ErrorChunk(KnownError e) : this() {
-			_varList.Add(e);
-		}
+        public ErrorChunk(KnownError e) : this()
+        {
+            _varList.Add(e);
+        }
 
-		public ErrorChunk(KnownError[] el) : this() {
-			foreach (KnownError e in el) {
-				_varList.Add(e);
-			}
-		}
+        public ErrorChunk(KnownError[] el) : this()
+        {
+            foreach (KnownError e in el)
+            {
+                _varList.Add(e);
+            }
+        }
 
-		public ErrorChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt) {
-			if (_body.remaining() >= 4) {
-				logger.LogDebug("Error" + this.ToString());
-				while (_body.hasRemaining()) {
-					VariableParam v = readErrorParam();
-					_varList.Add(v);
-				}
-			}
-		}
+        public ErrorChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt)
+        {
+            if (_body.remaining() >= 4)
+            {
+                logger.LogDebug("Error" + this.ToString());
+                while (_body.hasRemaining())
+                {
+                    VariableParam v = readErrorParam();
+                    _varList.Add(v);
+                }
+            }
+        }
 
-		protected override void putFixedParams(ByteBuffer ret) { }
-	}
+        protected override void putFixedParams(ByteBuffer ret) { }
+    }
 }

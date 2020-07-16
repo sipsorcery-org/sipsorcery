@@ -16,13 +16,12 @@
  */
 // Modified by Andrés Leone Gámez
 
-using Org.BouncyCastle.Crypto.Tls;
-using SIPSorcery.Net.messages;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto.Tls;
 using SIPSorcery.Sys;
 
 /**
@@ -30,13 +29,15 @@ using SIPSorcery.Sys;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net.small {
-	public class ThreadedAssociation : Association {
-		static int MAXBLOCKS = 10; // some number....
-		private Queue<DataChunk> _freeBlocks;
-		private Dictionary<long, DataChunk> _inFlight;
-		private long _lastCumuTSNAck;
-		static int MAX_INIT_RETRANS = 8;
+namespace SIPSorcery.Net.Sctp
+{
+    public class ThreadedAssociation : Association
+    {
+        static int MAXBLOCKS = 10; // some number....
+        private Queue<DataChunk> _freeBlocks;
+        private Dictionary<long, DataChunk> _inFlight;
+        private long _lastCumuTSNAck;
+        static int MAX_INIT_RETRANS = 8;
 
 
         private static ILogger logger = Log.Logger;
@@ -49,24 +50,24 @@ namespace SIPSorcery.Net.small {
 		 Note: This variable is kept on the entire association.
 		 */
         private long _rwnd;
-		/*
+        /*
 		 o  Congestion control window (cwnd, in bytes), which is adjusted by
 		 the sender based on observed network conditions.
 
 		 Note: This variable is maintained on a per-destination-address
 		 basis.
 		 */
-		private long _cwnd;
-		// assume a single destination via ICE
-		/*
+        private long _cwnd;
+        // assume a single destination via ICE
+        /*
 			 o  Slow-start threshold (ssthresh, in bytes), which is used by the
 			 sender to distinguish slow-start and congestion avoidance phases.
 
 			 Note: This variable is maintained on a per-destination-address
 			 basis.
 			 */
-		private long _ssthresh;
-		/*
+        private long _ssthresh;
+        /*
 
 
 
@@ -79,10 +80,10 @@ namespace SIPSorcery.Net.small {
 		 partial_bytes_acked, which is used during congestion avoidance phase
 		 to facilitate cwnd adjustment.
 		 */
-		private long _partial_bytes_acked;
-		// AC: This variable was never being set. Removed for now.
+        private long _partial_bytes_acked;
+        // AC: This variable was never being set. Removed for now.
         //private bool _fastRecovery;
-		/*
+        /*
 		 10.2.  Probing Method Using SCTP
 
 		 In the Stream Control Transmission Protocol (SCTP) [RFC2960], the
@@ -110,15 +111,15 @@ namespace SIPSorcery.Net.small {
 
 		 To do .....
 		 */
-		private int _transpMTU = 768;
-		private Chunk[] _stashCookieEcho;
-		private object _congestion = new Object();
-		private bool _firstRTT = true;
-		private double _srtt;
-		private double _rttvar;
-		private double _rto = 3.0;
+        private int _transpMTU = 768;
+        private Chunk[] _stashCookieEcho;
+        private object _congestion = new Object();
+        private bool _firstRTT = true;
+        private double _srtt;
+        private double _rttvar;
+        private double _rto = 3.0;
 
-		/*
+        /*
 		 RTO.Initial - 3 seconds
 		 RTO.Min - 1 second
 		 RTO.Max - 60 seconds
@@ -126,33 +127,38 @@ namespace SIPSorcery.Net.small {
 		 RTO.Alpha - 1/8
 		 RTO.Beta - 1/4
 		 */
-		private static double _rtoBeta = 0.2500;
-		private static double _rtoAlpha = 0.1250;
-		private static double _rtoMin = 1.0;
-		private static double _rtoMax = 60.0;
+        private static double _rtoBeta = 0.2500;
+        private static double _rtoAlpha = 0.1250;
+        private static double _rtoMin = 1.0;
+        private static double _rtoMax = 60.0;
 
-		public ThreadedAssociation(DatagramTransport transport, AssociationListener al)
-			: base(transport, al) {
-			try {
-				_transpMTU = Math.Min(transport.GetReceiveLimit(), transport.GetSendLimit());
-				logger.LogDebug("Transport MTU is now " + _transpMTU);
-			}
-			catch (IOException x) {
-				logger.LogWarning("Failed to get suitable transport mtu ");
-				logger.LogWarning(x.ToString());
-			}
-			_freeBlocks = new Queue<DataChunk>(/*MAXBLOCKS*/);
-			_inFlight = new Dictionary<long, DataChunk>(MAXBLOCKS);
+        public ThreadedAssociation(DatagramTransport transport, AssociationListener al)
+            : base(transport, al)
+        {
+            try
+            {
+                _transpMTU = Math.Min(transport.GetReceiveLimit(), transport.GetSendLimit());
+                logger.LogDebug("Transport MTU is now " + _transpMTU);
+            }
+            catch (IOException x)
+            {
+                logger.LogWarning("Failed to get suitable transport mtu ");
+                logger.LogWarning(x.ToString());
+            }
+            _freeBlocks = new Queue<DataChunk>(/*MAXBLOCKS*/);
+            _inFlight = new Dictionary<long, DataChunk>(MAXBLOCKS);
 
-			for (int i = 0; i < MAXBLOCKS; i++) {
-				DataChunk dc = new DataChunk();
-				lock (_freeBlocks) {
-					_freeBlocks.Enqueue(dc);
-				}
-			}
-			resetCwnd();
-		}
-		/*
+            for (int i = 0; i < MAXBLOCKS; i++)
+            {
+                DataChunk dc = new DataChunk();
+                lock (_freeBlocks)
+                {
+                    _freeBlocks.Enqueue(dc);
+                }
+            }
+            resetCwnd();
+        }
+        /*
 		 If the T1-init timer expires at "A" after the INIT or COOKIE ECHO
 		 chunks are sent, the same INIT or COOKIE ECHO chunk with the same
 		 Initiate Tag (i.e., Tag_A) or State Cookie shall be retransmitted and
@@ -164,185 +170,228 @@ namespace SIPSorcery.Net.small {
 		 defined in Section 6.3 to determine the proper timer value.
 		 */
 
-		protected override Chunk[] iackDeal(InitAckChunk iack) {
-			Chunk[] ret = base.iackDeal(iack);
-			_stashCookieEcho = ret;
-			return ret;
-		}
+        protected override Chunk[] iackDeal(InitAckChunk iack)
+        {
+            Chunk[] ret = base.iackDeal(iack);
+            _stashCookieEcho = ret;
+            return ret;
+        }
 
-		class AssocRun {
-			ThreadedAssociation ta;
-			private AssocRun() { }
-			public AssocRun(ThreadedAssociation ta) {
-				this.ta = ta;
-			}
-			int retries = 0;
+        class AssocRun
+        {
+            ThreadedAssociation ta;
+            private AssocRun() { }
+            public AssocRun(ThreadedAssociation ta)
+            {
+                this.ta = ta;
+            }
+            int retries = 0;
 
-			public void run() {
-				///logger.LogDebug("T1 init timer expired in state " + ta._state.ToString());
+            public void run()
+            {
+                ///logger.LogDebug("T1 init timer expired in state " + ta._state.ToString());
 
-				if ((ta._state == State.COOKIEECHOED) || (ta._state == State.COOKIEWAIT)) {
-					try {
-						if (ta._state == State.COOKIEWAIT) {
-							ta.sendInit();
-						} else { // COOKIEECHOED
-							ta.send(ta._stashCookieEcho);
-						}
-					}
-					catch (EndOfStreamException end) {
-						ta.unexpectedClose(end);
-						logger.LogError(end.ToString());
-					}
-					catch (Exception ex) {
-						logger.LogError("Cant send Init/cookie retry " + retries + " because " + ex.ToString());
-					}
-					retries++;
-					if (retries < MAX_INIT_RETRANS) {
-						SimpleSCTPTimer.setRunnable(run, ta.getT1());
-					}
-				} else {
-					//logger.LogDebug("T1 init timer expired with nothing to do");
-				}
-			}
-		}
+                if ((ta._state == State.COOKIEECHOED) || (ta._state == State.COOKIEWAIT))
+                {
+                    try
+                    {
+                        if (ta._state == State.COOKIEWAIT)
+                        {
+                            ta.sendInit();
+                        }
+                        else
+                        { // COOKIEECHOED
+                            ta.send(ta._stashCookieEcho);
+                        }
+                    }
+                    catch (EndOfStreamException end)
+                    {
+                        ta.unexpectedClose(end);
+                        logger.LogError(end.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError("Cant send Init/cookie retry " + retries + " because " + ex.ToString());
+                    }
+                    retries++;
+                    if (retries < MAX_INIT_RETRANS)
+                    {
+                        SimpleSCTPTimer.setRunnable(run, ta.getT1());
+                    }
+                }
+                else
+                {
+                    //logger.LogDebug("T1 init timer expired with nothing to do");
+                }
+            }
+        }
 
-		public override void associate() {
-			sendInit();
-			SimpleSCTPTimer.setRunnable(new AssocRun(this).run, getT1());
-		}
+        public override void associate()
+        {
+            sendInit();
+            SimpleSCTPTimer.setRunnable(new AssocRun(this).run, getT1());
+        }
 
-		public override SCTPStream mkStream(int id) {
-			//logger.LogDebug("Make new Blocking stream " + id);
-			return new BlockingSCTPStream(this, id);
-		}
+        public override SCTPStream mkStream(int id)
+        {
+            //logger.LogDebug("Make new Blocking stream " + id);
+            return new BlockingSCTPStream(this, id);
+        }
 
-		public long getT3() {
-			return (_rto > 0) ? (long) (1000.0 * _rto) : 100;
-		}
+        public long getT3()
+        {
+            return (_rto > 0) ? (long)(1000.0 * _rto) : 100;
+        }
 
-		public override void enqueue(DataChunk d) {
-			// todo - this worries me - 2 nested synchronized 
-			//logger.LogDebug(" Aspiring to enqueue " + d.ToString());
+        public override void enqueue(DataChunk d)
+        {
+            // todo - this worries me - 2 nested synchronized 
+            //logger.LogDebug(" Aspiring to enqueue " + d.ToString());
 
-			lock (this) {
-				long now = Time.CurrentTimeMillis();
-				d.setTsn(_nearTSN++);
-				d.setGapAck(false);
-				d.setRetryTime(now + getT3() - 1);
-				d.setSentTime(now);
-				SimpleSCTPTimer.setRunnable(run, getT3());
-				reduceRwnd(d.getDataSize());
-				//_outbound.put(new Long(d.getTsn()), d);
-				//logger.LogDebug(" DataChunk enqueued " + d.ToString());
-				// all sorts of things wrong here - being in a synchronized not the least of them
+            lock (this)
+            {
+                long now = Time.CurrentTimeMillis();
+                d.setTsn(_nearTSN++);
+                d.setGapAck(false);
+                d.setRetryTime(now + getT3() - 1);
+                d.setSentTime(now);
+                SimpleSCTPTimer.setRunnable(run, getT3());
+                reduceRwnd(d.getDataSize());
+                //_outbound.put(new Long(d.getTsn()), d);
+                //logger.LogDebug(" DataChunk enqueued " + d.ToString());
+                // all sorts of things wrong here - being in a synchronized not the least of them
 
-				Chunk[] toSend = addSackIfNeeded(d);
-				try {
-					send(toSend);
-					//logger.LogDebug("sent, syncing on inFlight... " + d.getTsn());
-					lock (_inFlight) {
-						_inFlight.Add(d.getTsn(), d);
-					}
-					//logger.LogDebug("added to inFlight... " + d.getTsn());
+                Chunk[] toSend = addSackIfNeeded(d);
+                try
+                {
+                    send(toSend);
+                    //logger.LogDebug("sent, syncing on inFlight... " + d.getTsn());
+                    lock (_inFlight)
+                    {
+                        _inFlight.Add(d.getTsn(), d);
+                    }
+                    //logger.LogDebug("added to inFlight... " + d.getTsn());
 
-				}
-				catch (SctpPacketFormatException ex) {
-					logger.LogError("badly formatted chunk " + d.ToString());
-					logger.LogError(ex.ToString());
-				}
-				catch (EndOfStreamException end) {
-					unexpectedClose(end);
-					logger.LogError(end.ToString());
-				}
-				catch (IOException ex) {
-					logger.LogError("Can not send chunk " + d.ToString());
-					logger.LogError(ex.ToString());
-				}
-			}
-			logger.LogDebug("leaving enqueue" + d.getTsn());
+                }
+                catch (SctpPacketFormatException ex)
+                {
+                    logger.LogError("badly formatted chunk " + d.ToString());
+                    logger.LogError(ex.ToString());
+                }
+                catch (EndOfStreamException end)
+                {
+                    unexpectedClose(end);
+                    logger.LogError(end.ToString());
+                }
+                catch (IOException ex)
+                {
+                    logger.LogError("Can not send chunk " + d.ToString());
+                    logger.LogError(ex.ToString());
+                }
+            }
+            logger.LogDebug("leaving enqueue" + d.getTsn());
 
-		}
+        }
 
-		internal override void sendAndBlock(SCTPMessage m) {
-			while (m.hasMoreData()) {
-				DataChunk dc;
-				lock (_freeBlocks) {
-					dc = _freeBlocks.Count > 0 ? _freeBlocks.Dequeue() : new DataChunk();
-				}
-				m.fill(dc);
-				//logger.LogDebug("thinking about waiting for congestion " + dc.getTsn());
+        internal override void sendAndBlock(SCTPMessage m)
+        {
+            while (m.hasMoreData())
+            {
+                DataChunk dc;
+                lock (_freeBlocks)
+                {
+                    dc = _freeBlocks.Count > 0 ? _freeBlocks.Dequeue() : new DataChunk();
+                }
+                m.fill(dc);
+                //logger.LogDebug("thinking about waiting for congestion " + dc.getTsn());
 
-				lock (_congestion) {
-					//logger.LogDebug("In congestion sync block ");
-					while (!this.maySend(dc.getDataSize())) {
-						//logger.LogDebug("about to wait for congestion for " + this.getT3());
-						Monitor.Wait(_congestion, (int) this.getT3());// wholly wrong
-					}
-				}
-				// todo check rollover - will break at maxint.
-				enqueue(dc);
-			}
-		}
+                lock (_congestion)
+                {
+                    //logger.LogDebug("In congestion sync block ");
+                    while (!this.maySend(dc.getDataSize()))
+                    {
+                        //logger.LogDebug("about to wait for congestion for " + this.getT3());
+                        Monitor.Wait(_congestion, (int)this.getT3());// wholly wrong
+                    }
+                }
+                // todo check rollover - will break at maxint.
+                enqueue(dc);
+            }
+        }
 
-		internal override SCTPMessage makeMessage(byte[] bytes, BlockingSCTPStream s) {
-			lock (this) {
-				SCTPMessage m = null;
-				if (base.canSend()) {
-					if (bytes.Length < this.maxMessageSize()) {
-						m = new SCTPMessage(bytes, s);
-						lock (s) {
-							int mseq = s.getNextMessageSeqOut();
-							s.setNextMessageSeqOut(mseq + 1);
-							m.setSeq(mseq);
-						}
-					}
-				}
-				return m;
-			}
-		}
+        internal override SCTPMessage makeMessage(byte[] bytes, BlockingSCTPStream s)
+        {
+            lock (this)
+            {
+                SCTPMessage m = null;
+                if (base.canSend())
+                {
+                    if (bytes.Length < this.maxMessageSize())
+                    {
+                        m = new SCTPMessage(bytes, s);
+                        lock (s)
+                        {
+                            int mseq = s.getNextMessageSeqOut();
+                            s.setNextMessageSeqOut(mseq + 1);
+                            m.setSeq(mseq);
+                        }
+                    }
+                }
+                return m;
+            }
+        }
 
-		internal override SCTPMessage makeMessage(string bytes, BlockingSCTPStream s) {
-			SCTPMessage m = null;
-			if (base.canSend()) {
-				if (bytes.Length < this.maxMessageSize()) {
-					m = new SCTPMessage(bytes, s);
-					lock (s) {
-						int mseq = s.getNextMessageSeqOut();
-						s.setNextMessageSeqOut(mseq + 1);
-						m.setSeq(mseq);
-					}
-				} else {
-					logger.LogWarning("Message too long " + bytes.Length + " > " + this.maxMessageSize());
-				}
-			} else {
-				logger.LogWarning("Can't send a message right now");
-			}
-			return m;
-		}
+        internal override SCTPMessage makeMessage(string bytes, BlockingSCTPStream s)
+        {
+            SCTPMessage m = null;
+            if (base.canSend())
+            {
+                if (bytes.Length < this.maxMessageSize())
+                {
+                    m = new SCTPMessage(bytes, s);
+                    lock (s)
+                    {
+                        int mseq = s.getNextMessageSeqOut();
+                        s.setNextMessageSeqOut(mseq + 1);
+                        m.setSeq(mseq);
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("Message too long " + bytes.Length + " > " + this.maxMessageSize());
+                }
+            }
+            else
+            {
+                logger.LogWarning("Can't send a message right now");
+            }
+            return m;
+        }
 
-		/**
+        /**
 		 * try and create a sack packet - if we have any new acks to send or null if
 		 * we don't
 		 *
 		 * @return
 		 */
-		private Chunk[] addSackIfNeeded(DataChunk d) {
-			/*
+        private Chunk[] addSackIfNeeded(DataChunk d)
+        {
+            /*
 			 Before an endpoint transmits a DATA chunk, if any received DATA
 			 chunks have not been acknowledged (e.g., due to delayed ack), the
 			 sender should create a SACK and bundle it with the outbound DATA
 			 chunk, as long as the size of the final SCTP packet does not exceed
 			 the current MTU.  See Section 6.2.
 			 */
-			// ToDo - check on unacked recvs (why?)
-			// and then check on size - will it fit?
-			// then add sack
-			Chunk[] ret = { d };
-			return ret;
-		}
+            // ToDo - check on unacked recvs (why?)
+            // and then check on size - will it fit?
+            // then add sack
+            Chunk[] ret = { d };
+            return ret;
+        }
 
 
-		/*
+        /*
 		 6.2.1.  Processing a Received SACK
 
 		 Each SACK an endpoint receives contains an a_rwnd value.  This value
@@ -376,29 +425,32 @@ namespace SIPSorcery.Net.small {
 		 using the a_rwnd value, the Cumulative TSN Ack, and Gap Ack Blocks in
 		 a received SACK.
 		 */
-		/*
+        /*
 		 A) At the establishment of the association, the endpoint initializes
 		 the rwnd to the Advertised Receiver Window Credit (a_rwnd) the
 		 peer specified in the INIT or INIT ACK.
 		 */
-		public override Chunk[] inboundInit(InitChunk init) {
-			_rwnd = init.getAdRecWinCredit();
-			setSsthresh(init);
-			return base.inboundInit(init);
-		}
-		/*
+        public override Chunk[] inboundInit(InitChunk init)
+        {
+            _rwnd = init.getAdRecWinCredit();
+            setSsthresh(init);
+            return base.inboundInit(init);
+        }
+        /*
 		 B) Any time a DATA chunk is transmitted (or retransmitted) to a peer,
 		 the endpoint subtracts the data size of the chunk from the rwnd of
 		 that peer.
 		 */
 
-		private void reduceRwnd(int dataSize) {
-			_rwnd -= dataSize;
-			if (_rwnd < 0) {
-				_rwnd = 0;
-			}
-		}
-		/*
+        private void reduceRwnd(int dataSize)
+        {
+            _rwnd -= dataSize;
+            if (_rwnd < 0)
+            {
+                _rwnd = 0;
+            }
+        }
+        /*
 		 C) Any time a DATA chunk is marked for retransmission, either via
 		 T3-rtx timer expiration (Section 6.3.3) or via Fast Retransmit
 		 (Section 7.2.4), add the data size of those chunks to the rwnd.
@@ -408,10 +460,11 @@ namespace SIPSorcery.Net.small {
 		 for retransmission.
 		 */
 
-		private void incrRwnd(int dataSize) {
-			_rwnd += dataSize;
-		}
-		/*
+        private void incrRwnd(int dataSize)
+        {
+            _rwnd += dataSize;
+        }
+        /*
 
 		 D) Any time a SACK arrives, the endpoint performs the following:
 
@@ -433,53 +486,62 @@ namespace SIPSorcery.Net.small {
 
 		 */
 
-		protected override Chunk[] sackDeal(SackChunk sack) {
-			Chunk[] ret = { };
-			/*
+        protected override Chunk[] sackDeal(SackChunk sack)
+        {
+            Chunk[] ret = { };
+            /*
 			 i) If Cumulative TSN Ack is less than the Cumulative TSN Ack
 			 Point, then drop the SACK.  Since Cumulative TSN Ack is
 			 monotonically increasing, a SACK whose Cumulative TSN Ack is
 			 less than the Cumulative TSN Ack Point indicates an out-of-
 			 order SACK.
 			 */
-			if (sack.getCumuTSNAck() >= this._lastCumuTSNAck) {
-				long ackedTo = sack.getCumuTSNAck();
-				int totalAcked = 0;
-				long now = Time.CurrentTimeMillis();
-				// interesting SACK
-				// process acks
-				lock (_inFlight) {
-					List<long> removals = new List<long>();
-					foreach (var kvp in _inFlight) {
-						if (kvp.Key <= ackedTo) {
-							removals.Add(kvp.Key);
-						}
-					}
-					foreach (long k in removals) {
-						DataChunk d = _inFlight[k];
-						_inFlight.Remove(k);
-						totalAcked += d.getDataSize();
-						/*
+            if (sack.getCumuTSNAck() >= this._lastCumuTSNAck)
+            {
+                long ackedTo = sack.getCumuTSNAck();
+                int totalAcked = 0;
+                long now = Time.CurrentTimeMillis();
+                // interesting SACK
+                // process acks
+                lock (_inFlight)
+                {
+                    List<long> removals = new List<long>();
+                    foreach (var kvp in _inFlight)
+                    {
+                        if (kvp.Key <= ackedTo)
+                        {
+                            removals.Add(kvp.Key);
+                        }
+                    }
+                    foreach (long k in removals)
+                    {
+                        DataChunk d = _inFlight[k];
+                        _inFlight.Remove(k);
+                        totalAcked += d.getDataSize();
+                        /*
 						 todo     IMPLEMENTATION NOTE: RTT measurements should only be made using
 						 a chunk with TSN r if no chunk with TSN less than or equal to r
 						 is retransmitted since r is first sent.
 						 */
-						setRTO(now - d.getSentTime());
-						try {
-							int sid = d.getStreamId();
-							SCTPStream stream = getStream(sid);
-							if (stream != null) { stream.delivered(d); }
-							lock (_freeBlocks) {
-								_freeBlocks.Enqueue(d);
-							}
-						}
-						catch (Exception ex) {
-							logger.LogError("eek - can't replace free block on list!?!");
-							logger.LogError(ex.ToString());
-						}
-					}
-				}
-				/*
+                        setRTO(now - d.getSentTime());
+                        try
+                        {
+                            int sid = d.getStreamId();
+                            SCTPStream stream = getStream(sid);
+                            if (stream != null) { stream.delivered(d); }
+                            lock (_freeBlocks)
+                            {
+                                _freeBlocks.Enqueue(d);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError("eek - can't replace free block on list!?!");
+                            logger.LogError(ex.ToString());
+                        }
+                    }
+                }
+                /*
 				 Gap Ack Blocks:
 
 				 These fields contain the Gap Ack Blocks.  They are repeated for
@@ -490,50 +552,61 @@ namespace SIPSorcery.Net.small {
 				 Block End) of each Gap Ack Block are assumed to have been received
 				 correctly.
 				 */
-				foreach (SackChunk.GapBlock gb in sack.getGaps()) {
-					long ts = gb.getStart() + ackedTo;
-					long te = gb.getEnd() + ackedTo;
-					lock (_inFlight) {
-						for (long t = ts; t <= te; t++) {
-							//logger.LogDebug("gap block says far end has seen " + t);
-							DataChunk d;
-							if (_inFlight.TryGetValue(t, out d)) {
-								d.setGapAck(true);
-								totalAcked += d.getDataSize();
-							} else {
-								logger.LogDebug("Huh? gap for something not inFlight ?!? " + t);
-							}
-						}
-					}
-				}
-				/*
+                foreach (SackChunk.GapBlock gb in sack.getGaps())
+                {
+                    long ts = gb.getStart() + ackedTo;
+                    long te = gb.getEnd() + ackedTo;
+                    lock (_inFlight)
+                    {
+                        for (long t = ts; t <= te; t++)
+                        {
+                            //logger.LogDebug("gap block says far end has seen " + t);
+                            DataChunk d;
+                            if (_inFlight.TryGetValue(t, out d))
+                            {
+                                d.setGapAck(true);
+                                totalAcked += d.getDataSize();
+                            }
+                            else
+                            {
+                                logger.LogDebug("Huh? gap for something not inFlight ?!? " + t);
+                            }
+                        }
+                    }
+                }
+                /*
 				 ii) Set rwnd equal to the newly received a_rwnd minus the number
 				 of bytes still outstanding after processing the Cumulative
 				 TSN Ack and the Gap Ack Blocks.
 				 */
-				int totalDataInFlight = 0;
-				lock (_inFlight) {
-					foreach (var kvp in _inFlight) {
-						DataChunk d = kvp.Value;
-						long k = kvp.Key;
-						if (!d.getGapAck()) {
-							totalDataInFlight += d.getDataSize();
-						}
-					}
-				}
-				_rwnd = sack.getArWin() - totalDataInFlight;
-				//logger.LogDebug("Setting rwnd to " + _rwnd);
-				bool advanced = (_lastCumuTSNAck < ackedTo);
-				adjustCwind(advanced, totalDataInFlight, totalAcked);
-				_lastCumuTSNAck = ackedTo;
+                int totalDataInFlight = 0;
+                lock (_inFlight)
+                {
+                    foreach (var kvp in _inFlight)
+                    {
+                        DataChunk d = kvp.Value;
+                        long k = kvp.Key;
+                        if (!d.getGapAck())
+                        {
+                            totalDataInFlight += d.getDataSize();
+                        }
+                    }
+                }
+                _rwnd = sack.getArWin() - totalDataInFlight;
+                //logger.LogDebug("Setting rwnd to " + _rwnd);
+                bool advanced = (_lastCumuTSNAck < ackedTo);
+                adjustCwind(advanced, totalDataInFlight, totalAcked);
+                _lastCumuTSNAck = ackedTo;
 
-			} else {
-				logger.LogDebug("Dumping Sack - already seen later sack.");
-			}
-			return ret;
-		}
+            }
+            else
+            {
+                logger.LogDebug("Dumping Sack - already seen later sack.");
+            }
+            return ret;
+        }
 
-		/* 
+        /* 
     
 		 7.2.1.  Slow-Start
 
@@ -547,24 +620,28 @@ namespace SIPSorcery.Net.small {
 		 long idle period MUST be set to min(4*MTU, max (2*MTU, 4380
 		 bytes)).
 		 */
-		protected void resetCwnd() {
-			_cwnd = Math.Min(4 * _transpMTU, Math.Max(2 * _transpMTU, 4380));
-			lock (_congestion) {
-				Monitor.PulseAll(_congestion);
-			}
-		}
-		/*
+        protected void resetCwnd()
+        {
+            _cwnd = Math.Min(4 * _transpMTU, Math.Max(2 * _transpMTU, 4380));
+            lock (_congestion)
+            {
+                Monitor.PulseAll(_congestion);
+            }
+        }
+        /*
 		 o  The initial cwnd after a retransmission timeout MUST be no more
 		 than 1*MTU.
 		 */
 
-		protected void setCwndPostRetrans() {
-			_cwnd = _transpMTU;
-			lock (_congestion) {
-				Monitor.PulseAll(_congestion);
-			}
-		}
-		/*
+        protected void setCwndPostRetrans()
+        {
+            _cwnd = _transpMTU;
+            lock (_congestion)
+            {
+                Monitor.PulseAll(_congestion);
+            }
+        }
+        /*
     
 
 		 o  The initial value of ssthresh MAY be arbitrarily high (for
@@ -572,26 +649,29 @@ namespace SIPSorcery.Net.small {
 		 advertised window).
 		 */
 
-		void setSsthresh(InitChunk init) {
-			this._ssthresh = init.getAdRecWinCredit();
-		}
+        void setSsthresh(InitChunk init)
+        {
+            this._ssthresh = init.getAdRecWinCredit();
+        }
 
-		/*
+        /*
 		 o  Whenever cwnd is greater than zero, the endpoint is allowed to
 		 have cwnd bytes of data outstanding on that transport address.
 		 */
-		bool maySend(int sz) {
-			// todo somehow take account of stuff sent without and sacks yet.......
-			bool maysend = (sz <= _rwnd);
-			if (!maysend) {
-				maysend = (sz <= _cwnd);
-				_cwnd -= sz;
-			}
-			//logger.LogDebug("MaySend " + maysend + " rwnd = " + _rwnd + " cwnd = " + _cwnd + " sz = " + sz);
-			return maysend;
-		}
+        bool maySend(int sz)
+        {
+            // todo somehow take account of stuff sent without and sacks yet.......
+            bool maysend = (sz <= _rwnd);
+            if (!maysend)
+            {
+                maysend = (sz <= _cwnd);
+                _cwnd -= sz;
+            }
+            //logger.LogDebug("MaySend " + maysend + " rwnd = " + _rwnd + " cwnd = " + _cwnd + " sz = " + sz);
+            return maysend;
+        }
 
-		/*
+        /*
 		 o  When cwnd is less than or equal to ssthresh, an SCTP endpoint MUST
 		 use the slow-start algorithm to increase cwnd only if the current
 		 congestion window is being fully utilized, an incoming SACK
@@ -604,23 +684,30 @@ namespace SIPSorcery.Net.small {
 		 path MTU.  This upper bound protects against the ACK-Splitting
 		 attack outlined in [SAVAGE99].
 		 */
-		protected void adjustCwind(bool didAdvance, int inFlightBytes, int totalAcked) {
-			bool fullyUtilized = ((inFlightBytes - _cwnd) < DataChunk.GetCapacity()); // could we fit one more in?
+        protected void adjustCwind(bool didAdvance, int inFlightBytes, int totalAcked)
+        {
+            bool fullyUtilized = ((inFlightBytes - _cwnd) < DataChunk.GetCapacity()); // could we fit one more in?
 
-			if (_cwnd <= _ssthresh) {
-				// slow start
-				logger.LogDebug("slow start");
+            if (_cwnd <= _ssthresh)
+            {
+                // slow start
+                logger.LogDebug("slow start");
 
-				if (didAdvance && fullyUtilized) {// && !_fastRecovery) {
-					int incCwinBy = Math.Min(_transpMTU, totalAcked);
-					_cwnd += incCwinBy;
-					logger.LogDebug("cwnd now " + _cwnd);
-				} else {
-					logger.LogDebug("cwnd static at " + _cwnd + " (didAdvance fullyUtilized  inFlightBytes totalAcked)  " + didAdvance + " " + fullyUtilized + " " + inFlightBytes + " " + totalAcked);
-				}
+                if (didAdvance && fullyUtilized)
+                {// && !_fastRecovery) {
+                    int incCwinBy = Math.Min(_transpMTU, totalAcked);
+                    _cwnd += incCwinBy;
+                    logger.LogDebug("cwnd now " + _cwnd);
+                }
+                else
+                {
+                    logger.LogDebug("cwnd static at " + _cwnd + " (didAdvance fullyUtilized  inFlightBytes totalAcked)  " + didAdvance + " " + fullyUtilized + " " + inFlightBytes + " " + totalAcked);
+                }
 
-			} else {
-				/*
+            }
+            else
+            {
+                /*
 				 7.2.2.  Congestion Avoidance
 
 				 When cwnd is greater than ssthresh, cwnd should be incremented by
@@ -662,19 +749,22 @@ namespace SIPSorcery.Net.small {
 				 to 0.
 
 				 */
-				if (didAdvance) {
-					_partial_bytes_acked += totalAcked;
-					if ((_partial_bytes_acked >= _cwnd) && fullyUtilized) {
-						_cwnd += _transpMTU;
-						_partial_bytes_acked -= _cwnd;
-					}
-				}
-			}
-			lock (_congestion) {
-				Monitor.PulseAll(_congestion);
-			}
-		}
-		/*
+                if (didAdvance)
+                {
+                    _partial_bytes_acked += totalAcked;
+                    if ((_partial_bytes_acked >= _cwnd) && fullyUtilized)
+                    {
+                        _cwnd += _transpMTU;
+                        _partial_bytes_acked -= _cwnd;
+                    }
+                }
+            }
+            lock (_congestion)
+            {
+                Monitor.PulseAll(_congestion);
+            }
+        }
+        /*
 		 In instances where its peer endpoint is multi-homed, if an endpoint
 		 receives a SACK that advances its Cumulative TSN Ack Point, then it
 		 should update its cwnd (or cwnds) apportioned to the destination
@@ -709,74 +799,94 @@ namespace SIPSorcery.Net.small {
 
 		 */
 
-		// timer goes off,
-		public void run() {
-			if (canSend()) {
-				long now = Time.CurrentTimeMillis();
-				//logger.LogDebug("retry timer went off at " + now);
-				List<DataChunk> dcs = new List<DataChunk>();
-				int space = _transpMTU - 12; // room for packet header
-				bool resetTimer = false;
-				lock (_inFlight) {
-					foreach (var kvp in _inFlight) {
-						DataChunk d = kvp.Value;
-						long k = kvp.Key;
-						if (d.getGapAck()) {
-							//logger.LogDebug("skipping gap-acked tsn " + d.getTsn());
-							continue;
-						}
-						if (d.getRetryTime() <= now) {
-							space -= d.getChunkLength();
-							//logger.LogDebug("available space in pkt is " + space);
-							if (space <= 0) {
-								resetTimer = true;
-								break;
-							} else {
-								dcs.Add(d);
-								d.setRetryTime(now + getT3() - 1);
-							}
-						} else {
-							//logger.LogDebug("retry not yet due for  " + d.ToString());
-							resetTimer = true;
-						}
-					}
-				}
-				if (dcs.Count != 0) {
-					dcs.Sort();
-					DataChunk[] da = new DataChunk[dcs.Count];
-					int i = 0;
-					foreach (DataChunk d in dcs) {
-						da[i++] = d;
-					}
-					resetTimer = true;
-					try {
-						//logger.LogDebug("Sending retry for  " + da.Length + " data chunks");
-						this.send(da);
-					}
-					catch (EndOfStreamException end) {
-						logger.LogDebug("Retry send failed " + end.ToString());
-						unexpectedClose(end);
-						resetTimer = false;
-					}
-					catch (Exception ex) {
-						logger.LogError("Cant send retry - eek " + ex.ToString());
-					}
-				} else {
-					//logger.LogDebug("Nothing to do ");
-				}
-				if (resetTimer) {
-					SimpleSCTPTimer.setRunnable(run, getT3());
-					//logger.LogDebug("Try again in a while  " + getT3());
+        // timer goes off,
+        public void run()
+        {
+            if (canSend())
+            {
+                long now = Time.CurrentTimeMillis();
+                //logger.LogDebug("retry timer went off at " + now);
+                List<DataChunk> dcs = new List<DataChunk>();
+                int space = _transpMTU - 12; // room for packet header
+                bool resetTimer = false;
+                lock (_inFlight)
+                {
+                    foreach (var kvp in _inFlight)
+                    {
+                        DataChunk d = kvp.Value;
+                        long k = kvp.Key;
+                        if (d.getGapAck())
+                        {
+                            //logger.LogDebug("skipping gap-acked tsn " + d.getTsn());
+                            continue;
+                        }
+                        if (d.getRetryTime() <= now)
+                        {
+                            space -= d.getChunkLength();
+                            //logger.LogDebug("available space in pkt is " + space);
+                            if (space <= 0)
+                            {
+                                resetTimer = true;
+                                break;
+                            }
+                            else
+                            {
+                                dcs.Add(d);
+                                d.setRetryTime(now + getT3() - 1);
+                            }
+                        }
+                        else
+                        {
+                            //logger.LogDebug("retry not yet due for  " + d.ToString());
+                            resetTimer = true;
+                        }
+                    }
+                }
+                if (dcs.Count != 0)
+                {
+                    dcs.Sort();
+                    DataChunk[] da = new DataChunk[dcs.Count];
+                    int i = 0;
+                    foreach (DataChunk d in dcs)
+                    {
+                        da[i++] = d;
+                    }
+                    resetTimer = true;
+                    try
+                    {
+                        //logger.LogDebug("Sending retry for  " + da.Length + " data chunks");
+                        this.send(da);
+                    }
+                    catch (EndOfStreamException end)
+                    {
+                        logger.LogDebug("Retry send failed " + end.ToString());
+                        unexpectedClose(end);
+                        resetTimer = false;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError("Cant send retry - eek " + ex.ToString());
+                    }
+                }
+                else
+                {
+                    //logger.LogDebug("Nothing to do ");
+                }
+                if (resetTimer)
+                {
+                    SimpleSCTPTimer.setRunnable(run, getT3());
+                    //logger.LogDebug("Try again in a while  " + getT3());
 
-				}
-			}
-		}
+                }
+            }
+        }
 
-		private long getT1() {
-			return (long) (_rto * 1000) * 10;
-		}
+        private long getT1()
+        {
+            return (long)(_rto * 1000) * 10;
+        }
 
-		/*
+        /*
 		 6.3.1.  RTO Calculation
 
 		 The rules governing the computation of SRTT, RTTVAR, and RTO are as
@@ -786,15 +896,17 @@ namespace SIPSorcery.Net.small {
 		 given destination transport address, set RTO to the protocol
 		 parameter 'RTO.Initial'.
 		 */
-		// a guess at the round-trip time
-		private void setRTOnonRFC(long r) {
-			_rto = 0.2;
-		}
+        // a guess at the round-trip time
+        private void setRTOnonRFC(long r)
+        {
+            _rto = 0.2;
+        }
 
-		private void setRTO(long r) {
-			double nrto = 1.0;
-			double cr = r / 1000.0;
-			/*
+        private void setRTO(long r)
+        {
+            double nrto = 1.0;
+            double cr = r / 1000.0;
+            /*
 			 C2)  When the first RTT measurement R is made, set
 
 			 SRTT <- R,
@@ -803,13 +915,16 @@ namespace SIPSorcery.Net.small {
 
 			 RTO <- SRTT + 4 * RTTVAR.
 			 */
-			if (_firstRTT) {
-				_firstRTT = false;
-				_srtt = cr;
-				_rttvar = cr / 2;
-				nrto = _srtt + (4 * _rttvar);
-			} else {
-				/*
+            if (_firstRTT)
+            {
+                _firstRTT = false;
+                _srtt = cr;
+                _rttvar = cr / 2;
+                nrto = _srtt + (4 * _rttvar);
+            }
+            else
+            {
+                /*
 				 C3)  When a new RTT measurement R' is made, set
 
 				 RTTVAR <- (1 - RTO.Beta) * RTTVAR + RTO.Beta * |SRTT - R'|
@@ -823,26 +938,29 @@ namespace SIPSorcery.Net.small {
 
 				 After the computation, update RTO <- SRTT + 4 * RTTVAR.
 				 */
-				_rttvar = (1 - _rtoBeta) * _rttvar + _rtoBeta * Math.Abs(_srtt - cr);
-				_srtt = (1 - _rtoAlpha) * _srtt + _rtoAlpha * cr;
-				nrto = _srtt + 4 * _rttvar;
-			}
-			//logger.LogDebug("new r =" + r + "candidate  rto is " + nrto);
+                _rttvar = (1 - _rtoBeta) * _rttvar + _rtoBeta * Math.Abs(_srtt - cr);
+                _srtt = (1 - _rtoAlpha) * _srtt + _rtoAlpha * cr;
+                nrto = _srtt + 4 * _rttvar;
+            }
+            //logger.LogDebug("new r =" + r + "candidate  rto is " + nrto);
 
-			if (nrto < _rtoMin) {
-				//logger.LogDebug("clamping min rto as " + nrto + " < " + _rtoMin);
-				nrto = _rtoMin;
-			}
-			if (nrto > _rtoMax) {
-				//logger.LogDebug("clamping max rto as " + nrto + " > " + _rtoMax);
-				nrto = _rtoMax;
-			}
-			if ((nrto < _rtoMax) && (nrto > _rtoMin)) {
-				// if still out of range (i.e. a NaN) ignore it.
-				_rto = nrto;
-			}
-			//logger.LogDebug("new rto is " + _rto);
-			/*
+            if (nrto < _rtoMin)
+            {
+                //logger.LogDebug("clamping min rto as " + nrto + " < " + _rtoMin);
+                nrto = _rtoMin;
+            }
+            if (nrto > _rtoMax)
+            {
+                //logger.LogDebug("clamping max rto as " + nrto + " > " + _rtoMax);
+                nrto = _rtoMax;
+            }
+            if ((nrto < _rtoMax) && (nrto > _rtoMin))
+            {
+                // if still out of range (i.e. a NaN) ignore it.
+                _rto = nrto;
+            }
+            //logger.LogDebug("new rto is " + _rto);
+            /*
 
 
 			 Stewart                     Standards Track                    [Page 83]
@@ -882,6 +1000,6 @@ namespace SIPSorcery.Net.small {
 			 C7)  A maximum value may be placed on RTO provided it is at least
 			 RTO.max seconds.
 			 */
-		}
-	}
+        }
+    }
 }

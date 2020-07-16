@@ -23,13 +23,15 @@ using SCTP4CS.Utils;
  *
  * @author tim
  */
-namespace SIPSorcery.Net.messages.Params {
-	public interface VariableParam {
-		void readBody(ByteBuffer b, int len);
-		void writeBody(ByteBuffer b);
+namespace SIPSorcery.Net.Sctp
+{
+    public interface VariableParam
+    {
+        void readBody(ByteBuffer b, int len);
+        void writeBody(ByteBuffer b);
 
-		int getType();
+        int getType();
 
-		string getName();
-	}
+        string getName();
+    }
 }

@@ -16,9 +16,8 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SCTP4CS.Utils;
-using SIPSorcery.Net.messages;
 using Microsoft.Extensions.Logging;
+using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
 /**
@@ -26,28 +25,35 @@ using SIPSorcery.Sys;
  * @author tim
  * what DCEPS do 
  */
-namespace SIPSorcery.Net.behave {
-	internal class DCEPStreamBehaviour : SCTPStreamBehaviour {
-
+namespace SIPSorcery.Net.Sctp
+{
+    internal class DCEPStreamBehaviour : SCTPStreamBehaviour
+    {
         private static ILogger logger = Log.Logger;
 
-        public Chunk[] respond(SCTPStream a) {
-			logger.LogDebug("in respond() for a opened stream " + a.getLabel());
-			return null;
-		}
+        public Chunk[] respond(SCTPStream a)
+        {
+            logger.LogDebug("in respond() for a opened stream " + a.getLabel());
+            return null;
+        }
 
-		public void deliver(SCTPStream s, SortedArray<DataChunk> a, SCTPStreamListener l) {
+        public void deliver(SCTPStream s, SortedArray<DataChunk> a, SCTPStreamListener l)
+        {
             logger.LogDebug("in deliver() for stream " + s.getLabel() + " with " + a.Count + " chunks. ");
-			// strictly this should be looking at flags etc, and bundling the result into a message
-			foreach (DataChunk dc in a) {
-				if (dc.getDCEP() != null) {
+            // strictly this should be looking at flags etc, and bundling the result into a message
+            foreach (DataChunk dc in a)
+            {
+                if (dc.getDCEP() != null)
+                {
                     logger.LogDebug("in deliver() for a DCEP message " + dc.getDataAsString());
-				} else {
+                }
+                else
+                {
                     logger.LogDebug("inbound data chunk is " + dc.ToString());
-					l.onMessage(s, dc.getDataAsString());
-				}
-			}
-			a.Clear();
-		}
-	}
+                    l.onMessage(s, dc.getDataAsString());
+                }
+            }
+            a.Clear();
+        }
+    }
 }

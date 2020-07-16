@@ -23,11 +23,13 @@ using SCTP4CS.Utils;
  *
  * @author tim
  */
-namespace SIPSorcery.Net.messages.Params {
-	public class AddStreamsRequestParameter : Unknown {
-		public AddStreamsRequestParameter(int t, string n) : base(t, n) { }
+namespace SIPSorcery.Net.Sctp
+{
+    public class AddStreamsRequestParameter : Unknown
+    {
+        public AddStreamsRequestParameter(int t, string n) : base(t, n) { }
 
-		/*
+        /*
 		 0                   1                   2                   3
 		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -39,20 +41,22 @@ namespace SIPSorcery.Net.messages.Params {
 		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		 */
 
-		uint reconfReqSeqNo;
-		int numNewStreams;
-		int reserved;
+        uint reconfReqSeqNo;
+        int numNewStreams;
+        int reserved;
 
-		public override void readBody(ByteBuffer body, int blen) {
-			reconfReqSeqNo = body.GetUInt();
-			numNewStreams = body.GetUShort();
-			reserved = body.GetUShort();
-		}
+        public override void readBody(ByteBuffer body, int blen)
+        {
+            reconfReqSeqNo = body.GetUInt();
+            numNewStreams = body.GetUShort();
+            reserved = body.GetUShort();
+        }
 
-		public override void writeBody(ByteBuffer body) {
-			body.Put((uint) reconfReqSeqNo);
-			body.Put((ushort) numNewStreams);
-			body.Put((ushort) reserved);
-		}
-	}
+        public override void writeBody(ByteBuffer body)
+        {
+            body.Put((uint)reconfReqSeqNo);
+            body.Put((ushort)numNewStreams);
+            body.Put((ushort)reserved);
+        }
+    }
 }

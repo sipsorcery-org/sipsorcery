@@ -23,14 +23,17 @@ using SCTP4CS.Utils;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net.messages {
-	public class CookieAckChunk : Chunk {
-		public CookieAckChunk(CType type, byte flags, int length, ByteBuffer pkt)
-			: base(type, flags, length, pkt) { }
+namespace SIPSorcery.Net.Sctp
+{
+    public class CookieAckChunk : Chunk
+    {
+        public CookieAckChunk(CType type, byte flags, int length, ByteBuffer pkt)
+            : base(type, flags, length, pkt) { }
 
-		public CookieAckChunk() : base(CType.COOKIE_ACK) { }
+        public CookieAckChunk() : base(CType.COOKIE_ACK) { }
 
-		protected override void putFixedParams(ByteBuffer ret) {
-		}
-	}
+        protected override void putFixedParams(ByteBuffer ret)
+        {
+        }
+    }
 }

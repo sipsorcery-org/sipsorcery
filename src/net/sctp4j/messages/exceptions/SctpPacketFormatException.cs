@@ -22,6 +22,7 @@ using System;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-public class SctpPacketFormatException : Exception {
-	public SctpPacketFormatException(string message) : base(message) { }
+public class SctpPacketFormatException : Exception
+{
+    public SctpPacketFormatException(string message) : base(message) { }
 }

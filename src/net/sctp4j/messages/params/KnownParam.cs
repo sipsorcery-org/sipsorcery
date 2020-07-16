@@ -21,19 +21,24 @@
  *
  * @author tim
  */
-namespace SIPSorcery.Net.messages.Params {
-	public class KnownParam : Unknown {
-		public KnownParam(int t, string n) : base(t, n) { }
+namespace SIPSorcery.Net.Sctp
+{
+    public class KnownParam : Unknown
+    {
+        public KnownParam(int t, string n) : base(t, n) { }
 
-		public byte[] getData() {
-			return _data;
-		}
-		public void setData(byte[] data) {
-			_data = data;
-		}
+        public byte[] getData()
+        {
+            return _data;
+        }
+        public void setData(byte[] data)
+        {
+            _data = data;
+        }
 
-		public override string ToString() {
-			return "Variable param " + this.getName();
-		}
-	}
+        public override string ToString()
+        {
+            return "Variable param " + this.getName();
+        }
+    }
 }

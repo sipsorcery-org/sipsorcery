@@ -23,19 +23,24 @@ using System.Text;
 *
 * @author tim
 */
-namespace SIPSorcery.Net.messages.Params {
-	public class KnownError : Unknown {
-		public KnownError(int t, string n) : base(t, n) { }
+namespace SIPSorcery.Net.Sctp
+{
+    public class KnownError : Unknown
+    {
+        public KnownError(int t, string n) : base(t, n) { }
 
-		public byte[] getData() {
-			return _data;
-		}
-		public void setData(byte[] data) {
-			_data = data;
-		}
+        public byte[] getData()
+        {
+            return _data;
+        }
+        public void setData(byte[] data)
+        {
+            _data = data;
+        }
 
-		public override string ToString() {
-			return "Variable error " + this.getName() + " data " + Encoding.ASCII.GetString(_data) + " " + Packet.getHex(_data);
-		}
-	}
+        public override string ToString()
+        {
+            return "Variable error " + this.getName() + " data " + Encoding.ASCII.GetString(_data) + " " + Packet.getHex(_data);
+        }
+    }
 }

@@ -61,10 +61,10 @@
  * @author Werner Dittmann <werner.dittmann@t-online.de>
  */
 
+using System.IO;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Utilities;
-using System.IO;
 
 namespace SIPSorcery.Net
 {

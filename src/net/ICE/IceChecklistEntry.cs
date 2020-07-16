@@ -206,7 +206,7 @@ namespace SIPSorcery.Net
 
         internal void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)
         {
-            if(stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+            if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
             {
                 State = ChecklistEntryState.Succeeded;
                 ChecksSent = 0;

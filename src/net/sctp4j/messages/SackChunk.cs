@@ -18,44 +18,50 @@
 
 
 
-using SCTP4CS.Utils;
 using System.Collections.Generic;
 using System.Text;
+using SCTP4CS.Utils;
 /**
 *
 * @author Westhawk Ltd<thp@westhawk.co.uk>
 */
-namespace SIPSorcery.Net.messages {
-	public class SackChunk : Chunk {
+namespace SIPSorcery.Net.Sctp
+{
+    public class SackChunk : Chunk
+    {
 
-		/**
+        /**
 		 * @return the cumuTSNAck
 		 */
-		public long getCumuTSNAck() {
-			return _cumuTSNAck;
-		}
+        public long getCumuTSNAck()
+        {
+            return _cumuTSNAck;
+        }
 
-		/**
+        /**
 		 * @param cumuTSNAck the _cumuTSNAck to set
 		 */
-		public void setCumuTSNAck(uint cumuTSNAck) {
-			_cumuTSNAck = cumuTSNAck;
-		}
+        public void setCumuTSNAck(uint cumuTSNAck)
+        {
+            _cumuTSNAck = cumuTSNAck;
+        }
 
-		/**
+        /**
 		 * @return the _arWin
 		 */
-		public long getArWin() {
-			return _arWin;
-		}
+        public long getArWin()
+        {
+            return _arWin;
+        }
 
-		/**
+        /**
 		 * @param _arWin the _arWin to set
 		 */
-		public void setArWin(uint arWin) {
-			_arWin = arWin;
-		}
-		/*
+        public void setArWin(uint arWin)
+        {
+            _arWin = arWin;
+        }
+        /*
     
 		 0                   1                   2                   3
 		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -88,125 +94,155 @@ namespace SIPSorcery.Net.messages {
 
 
 
-		public class GapBlock {
-			public ushort _start;
-			public ushort _end;
-			public GapBlock(ByteBuffer b) {
-				_start = (ushort) b.GetUShort();
-				_end = (ushort) b.GetUShort();
-			}
-			public GapBlock(ushort start) {
-				_start = start;
-			}
-			public void setEnd(ushort end) {
-				_end = end;
-			}
+        public class GapBlock
+        {
+            public ushort _start;
+            public ushort _end;
+            public GapBlock(ByteBuffer b)
+            {
+                _start = (ushort)b.GetUShort();
+                _end = (ushort)b.GetUShort();
+            }
+            public GapBlock(ushort start)
+            {
+                _start = start;
+            }
+            public void setEnd(ushort end)
+            {
+                _end = end;
+            }
 
-			public void put(ByteBuffer b) {
-				b.Put(_start);
-				b.Put(_end);
-			}
-			public ushort getStart() {
-				return _start;
-			}
-			public ushort getEnd() {
-				return _end;
-			}
-		}
+            public void put(ByteBuffer b)
+            {
+                b.Put(_start);
+                b.Put(_end);
+            }
+            public ushort getStart()
+            {
+                return _start;
+            }
+            public ushort getEnd()
+            {
+                return _end;
+            }
+        }
 
-		GapBlock[] _gaps;
-		uint[] _duplicateTSNs;
-		private uint _cumuTSNAck;
-		private uint _arWin;
+        GapBlock[] _gaps;
+        uint[] _duplicateTSNs;
+        private uint _cumuTSNAck;
+        private uint _arWin;
 
-		public SackChunk(CType type, byte flags, int length, ByteBuffer pkt)
-			: base(type, flags, length, pkt) {
-			_cumuTSNAck = _body.GetUInt();
-			_arWin = _body.GetUInt();
-			int ngaps = _body.GetUShort();
-			int nDTSNs = _body.GetUShort();
-			_gaps = new GapBlock[ngaps];
-			_duplicateTSNs = new uint[nDTSNs];
-			for (int i = 0; i < ngaps; i++) {
-				_gaps[i] = new GapBlock(_body);
-			}
-			for (int i = 0; i < nDTSNs; i++) {
-				_duplicateTSNs[i] = _body.GetUInt();
-			}
-		}
+        public SackChunk(CType type, byte flags, int length, ByteBuffer pkt)
+            : base(type, flags, length, pkt)
+        {
+            _cumuTSNAck = _body.GetUInt();
+            _arWin = _body.GetUInt();
+            int ngaps = _body.GetUShort();
+            int nDTSNs = _body.GetUShort();
+            _gaps = new GapBlock[ngaps];
+            _duplicateTSNs = new uint[nDTSNs];
+            for (int i = 0; i < ngaps; i++)
+            {
+                _gaps[i] = new GapBlock(_body);
+            }
+            for (int i = 0; i < nDTSNs; i++)
+            {
+                _duplicateTSNs[i] = _body.GetUInt();
+            }
+        }
 
-		public GapBlock[] getGaps() {
-			return _gaps;
-		}
-		public uint[] getDupTSNs() {
-			return _duplicateTSNs;
-		}
-		public SackChunk() : base(Chunk.CType.SACK) {
-			_gaps = new GapBlock[0];
-			_duplicateTSNs = new uint[0];
-		}
+        public GapBlock[] getGaps()
+        {
+            return _gaps;
+        }
+        public uint[] getDupTSNs()
+        {
+            return _duplicateTSNs;
+        }
+        public SackChunk() : base(Chunk.CType.SACK)
+        {
+            _gaps = new GapBlock[0];
+            _duplicateTSNs = new uint[0];
+        }
 
-		public void setDuplicates(List<uint> dups) {
-			_duplicateTSNs = new uint[dups.Count];
-			int i = 0;
-			foreach (uint du in dups) {
-				_duplicateTSNs[i++] = du;
-			}
-		}
+        public void setDuplicates(List<uint> dups)
+        {
+            _duplicateTSNs = new uint[dups.Count];
+            int i = 0;
+            foreach (uint du in dups)
+            {
+                _duplicateTSNs[i++] = du;
+            }
+        }
 
-		public void setGaps(List<uint> seenTsns) {
-			long cuTsn = _cumuTSNAck;
-			List<GapBlock> gaplist = new List<GapBlock>();
-			GapBlock currentGap = null;
-			ushort prevoff = (ushort) 0;
-			foreach (long t in seenTsns) {
-				ushort offs = (ushort) (t - cuTsn);
-				if (currentGap == null) {
-					currentGap = new GapBlock(offs);
-					currentGap.setEnd(offs);
-					gaplist.Add(currentGap);
-				} else {
-					if (offs == prevoff + 1) {
-						currentGap.setEnd(offs);
-					} else {
-						currentGap = new GapBlock(offs);
-						currentGap.setEnd(offs);
-						gaplist.Add(currentGap);
-					}
-				}
-				prevoff = offs;
-			}
-			_gaps = new GapBlock[gaplist.Count];
-			int i = 0;
-			foreach (GapBlock g in gaplist) {
-				_gaps[i++] = g;
-			}
-		}
+        public void setGaps(List<uint> seenTsns)
+        {
+            long cuTsn = _cumuTSNAck;
+            List<GapBlock> gaplist = new List<GapBlock>();
+            GapBlock currentGap = null;
+            ushort prevoff = (ushort)0;
+            foreach (long t in seenTsns)
+            {
+                ushort offs = (ushort)(t - cuTsn);
+                if (currentGap == null)
+                {
+                    currentGap = new GapBlock(offs);
+                    currentGap.setEnd(offs);
+                    gaplist.Add(currentGap);
+                }
+                else
+                {
+                    if (offs == prevoff + 1)
+                    {
+                        currentGap.setEnd(offs);
+                    }
+                    else
+                    {
+                        currentGap = new GapBlock(offs);
+                        currentGap.setEnd(offs);
+                        gaplist.Add(currentGap);
+                    }
+                }
+                prevoff = offs;
+            }
+            _gaps = new GapBlock[gaplist.Count];
+            int i = 0;
+            foreach (GapBlock g in gaplist)
+            {
+                _gaps[i++] = g;
+            }
+        }
 
-		protected override void putFixedParams(ByteBuffer ret) {
-			ret.Put(_cumuTSNAck);
-			ret.Put(_arWin);
-			ret.Put((ushort) _gaps.Length);
-			ret.Put((ushort) _duplicateTSNs.Length);
-			for (int i = 0; i < _gaps.Length; i++) {
-				_gaps[i].put(ret);
-			}
-			for (int i = 0; i < _duplicateTSNs.Length; i++) {
-				ret.Put(_duplicateTSNs[i]);
-			}
-		}
-		public override string ToString() {
-			StringBuilder ret = new StringBuilder("SACK cumuTSNAck=" + _cumuTSNAck)
-					.Append(" _arWin=" + _arWin)
-					.Append(" _gaps=" + _gaps.Length + " [");
-			foreach (GapBlock g in _gaps) {
-				ret.Append("\n\t{" + (int) g._start + "," + (int) g._end + "}");
-			}
-			ret.Append("]\n _duplicateTSNs=" + _duplicateTSNs.Length);
-			foreach (long t in _duplicateTSNs) {
-				ret.Append("\n\t" + t);
-			}
-			return ret.ToString();
-		}
-	}
+        protected override void putFixedParams(ByteBuffer ret)
+        {
+            ret.Put(_cumuTSNAck);
+            ret.Put(_arWin);
+            ret.Put((ushort)_gaps.Length);
+            ret.Put((ushort)_duplicateTSNs.Length);
+            for (int i = 0; i < _gaps.Length; i++)
+            {
+                _gaps[i].put(ret);
+            }
+            for (int i = 0; i < _duplicateTSNs.Length; i++)
+            {
+                ret.Put(_duplicateTSNs[i]);
+            }
+        }
+        public override string ToString()
+        {
+            StringBuilder ret = new StringBuilder("SACK cumuTSNAck=" + _cumuTSNAck)
+                    .Append(" _arWin=" + _arWin)
+                    .Append(" _gaps=" + _gaps.Length + " [");
+            foreach (GapBlock g in _gaps)
+            {
+                ret.Append("\n\t{" + (int)g._start + "," + (int)g._end + "}");
+            }
+            ret.Append("]\n _duplicateTSNs=" + _duplicateTSNs.Length);
+            foreach (long t in _duplicateTSNs)
+            {
+                ret.Append("\n\t" + t);
+            }
+            return ret.ToString();
+        }
+    }
 }

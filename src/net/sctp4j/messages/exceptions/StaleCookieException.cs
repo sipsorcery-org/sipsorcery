@@ -22,14 +22,17 @@ using System;
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-public class StaleCookieException : Exception {
-	long _stale;
+public class StaleCookieException : Exception
+{
+    long _stale;
 
-	public StaleCookieException(long howstale) {
-		_stale = howstale;
-	}
+    public StaleCookieException(long howstale)
+    {
+        _stale = howstale;
+    }
 
-	public long getStale() {
-		return _stale;
-	}
+    public long getStale()
+    {
+        return _stale;
+    }
 }

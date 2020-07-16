@@ -16,48 +16,21 @@
  */
 // Modified by Andrés Leone Gámez
 
-using SCTP4CS.Utils;
-using SIPSorcery.Net.messages.Params;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SCTP4CS.Utils;
 using SIPSorcery.Sys;
-
-/*
-import SIPSorcery.Net.messages.params.RequestedHMACAlgorithmParameter;
-import SIPSorcery.Net.messages.params.AddIncomingStreamsRequestParameter;
-import SIPSorcery.Net.messages.params.AddOutgoingStreamsRequestParameter;
-import SIPSorcery.Net.messages.params.ReconfigurationResponseParameter;
-import SIPSorcery.Net.messages.params.SSNTSNResetRequestParameter;
-import SIPSorcery.Net.messages.params.CookiePreservative;
-import SIPSorcery.Net.messages.params.UnrecognizedParameters;
-import SIPSorcery.Net.messages.params.StateCookie;
-import SIPSorcery.Net.messages.params.IPv6Address;
-import SIPSorcery.Net.messages.params.IPv4Address;
-import SIPSorcery.Net.messages.exceptions.SctpPacketFormatException;
-import SIPSorcery.Net.messages.params.HostNameAddress;
-import SIPSorcery.Net.messages.params.IncomingSSNResetRequestParameter;
-import SIPSorcery.Net.messages.params.KnownError;
-import SIPSorcery.Net.messages.params.KnownParam;
-import SIPSorcery.Net.messages.params.OutgoingSSNResetRequestParameter;
-import SIPSorcery.Net.messages.params.ProtocolViolationError;
-import SIPSorcery.Net.messages.params.StaleCookieError;
-import SIPSorcery.Net.messages.params.SupportedAddressTypes;
-import SIPSorcery.Net.messages.params.Unknown;
-import SIPSorcery.Net.messages.params.VariableParam;
-import com.phono.srtplight.Log;
-import java.nio.MemoryStream;
-import java.util.List;
-import java.util.HashMap;
-*/
 
 /**
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
-namespace SIPSorcery.Net.messages {
-	public abstract class Chunk {
-		/*
+namespace SIPSorcery.Net.Sctp
+{
+    public abstract class Chunk
+    {
+        /*
 		 0                   1                   2                   3
 		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -69,60 +42,61 @@ namespace SIPSorcery.Net.messages {
 		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		 */
 
-		public enum CType : byte {
-			DATA = 0,
-			INIT = 1,
-			INITACK = 2,
-			SACK = 3,
-			HEARTBEAT = 4,
-			HEARTBEAT_ACK = 5,
-			ABORT = 6,
-			SHUTDOWN = 7,
-			SHUTDOWN_ACK = 8,
-			ERROR = 9,
-			COOKIE_ECHO = 10,
-			COOKIE_ACK = 11,
-			ECNE = 12,
-			CWR = 13,
-			SHUTDOWN_COMPLETE = 14,
-			AUTH = 15,
-			PKTDROP = 129,
-			RE_CONFIG = 130,
-			FORWARDTSN = 192,
-			ASCONF = 193,
-			ASCONF_ACK = 128,
-		}
+        public enum CType : byte
+        {
+            DATA = 0,
+            INIT = 1,
+            INITACK = 2,
+            SACK = 3,
+            HEARTBEAT = 4,
+            HEARTBEAT_ACK = 5,
+            ABORT = 6,
+            SHUTDOWN = 7,
+            SHUTDOWN_ACK = 8,
+            ERROR = 9,
+            COOKIE_ECHO = 10,
+            COOKIE_ACK = 11,
+            ECNE = 12,
+            CWR = 13,
+            SHUTDOWN_COMPLETE = 14,
+            AUTH = 15,
+            PKTDROP = 129,
+            RE_CONFIG = 130,
+            FORWARDTSN = 192,
+            ASCONF = 193,
+            ASCONF_ACK = 128,
+        }
 
-		static readonly Dictionary<CType, string> _typeLookup = new Dictionary<CType, string>() {
-			{ CType.DATA, "DATA" },
-			{ CType.INIT, "INIT" },
-			{ CType.INITACK, "INIT ACK" },
-			{ CType.SACK, "SACK" },
-			{ CType.HEARTBEAT, "HEARTBEAT" },
-			{ CType.HEARTBEAT_ACK, "HEARTBEAT ACK" },
-			{ CType.ABORT, "ABORT" },
-			{ CType.SHUTDOWN, "SHUTDOWN" },
-			{ CType.SHUTDOWN_ACK, "SHUTDOWN ACK" },
-			{ CType.ERROR, "ERROR" },
-			{ CType.COOKIE_ECHO, "COOKIE ECHO" },
-			{ CType.COOKIE_ACK, "COOKIE ACK" },
-			{ CType.ECNE, "ECNE" },
-			{ CType.CWR, "CWR" },
-			{ CType.SHUTDOWN_COMPLETE, "SHUTDOWN COMPLETE" },
-			{ CType.AUTH, "AUTH" },
-			{ CType.PKTDROP, "PKTDROP" },
-			{ CType.RE_CONFIG, "RE-CONFIG" },
-			{ CType.FORWARDTSN, "FORWARDTSN" },
-			{ CType.ASCONF, "ASCONF" },
-			{ CType.ASCONF_ACK, "ASCONF-ACK" }
-		};
+        static readonly Dictionary<CType, string> _typeLookup = new Dictionary<CType, string>() {
+            { CType.DATA, "DATA" },
+            { CType.INIT, "INIT" },
+            { CType.INITACK, "INIT ACK" },
+            { CType.SACK, "SACK" },
+            { CType.HEARTBEAT, "HEARTBEAT" },
+            { CType.HEARTBEAT_ACK, "HEARTBEAT ACK" },
+            { CType.ABORT, "ABORT" },
+            { CType.SHUTDOWN, "SHUTDOWN" },
+            { CType.SHUTDOWN_ACK, "SHUTDOWN ACK" },
+            { CType.ERROR, "ERROR" },
+            { CType.COOKIE_ECHO, "COOKIE ECHO" },
+            { CType.COOKIE_ACK, "COOKIE ACK" },
+            { CType.ECNE, "ECNE" },
+            { CType.CWR, "CWR" },
+            { CType.SHUTDOWN_COMPLETE, "SHUTDOWN COMPLETE" },
+            { CType.AUTH, "AUTH" },
+            { CType.PKTDROP, "PKTDROP" },
+            { CType.RE_CONFIG, "RE-CONFIG" },
+            { CType.FORWARDTSN, "FORWARDTSN" },
+            { CType.ASCONF, "ASCONF" },
+            { CType.ASCONF_ACK, "ASCONF-ACK" }
+        };
 
 
         private static ILogger logger = Log.Logger;
 
         public const byte TBIT = 1;
 
-		/*
+        /*
 		   Chunk Length: 16 bits (unsigned integer)
 
 		  This value represents the size of the chunk in bytes, including
@@ -131,59 +105,66 @@ namespace SIPSorcery.Net.messages {
 		  field will be set to 4.  The Chunk Length field does not count any
 		  chunk padding.
 		*/
-		public static Chunk mkChunk(ByteBuffer pkt) {
-			Chunk ret = null;
-			if (pkt.remaining() >= 4) {
-				CType type = (CType) pkt.GetByte();
-				byte flags = pkt.GetByte();
-				int length = pkt.GetUShort();
-				switch (type) {
-					case CType.DATA:
-						ret = new DataChunk(type, flags, length, pkt);
-						break;
-					case CType.INIT:
-						ret = new InitChunk(type, flags, length, pkt);
-						break;
-					case CType.SACK:
-						ret = new SackChunk(type, flags, length, pkt);
-						break;
-					case CType.INITACK:
-						ret = new InitAckChunk(type, flags, length, pkt);
-						break;
-					case CType.COOKIE_ECHO:
-						ret = new CookieEchoChunk(type, flags, length, pkt);
-						break;
-					case CType.COOKIE_ACK:
-						ret = new CookieAckChunk(type, flags, length, pkt);
-						break;
-					case CType.ABORT:
-						ret = new AbortChunk(type, flags, length, pkt);
-						break;
-					case CType.HEARTBEAT:
-						ret = new HeartBeatChunk(type, flags, length, pkt);
-						break;
-					case CType.RE_CONFIG:
-						ret = new ReConfigChunk(type, flags, length, pkt);
-						break;
-					default:
-						logger.LogWarning("Default chunk type " + type + " read in ");
-						ret = new FailChunk(type, flags, length, pkt);
-						break;
-				}
-				if (ret != null) {
-					if (pkt.hasRemaining()) {
-						int mod = ret.getLength() % 4;
-						if (mod != 0) {
-							for (int pad = mod; pad < 4; pad++) {
-								pkt.GetByte();
-							}
-						}
-					}
-				}
-			}
-			return ret;
-		}
-		/*
+        public static Chunk mkChunk(ByteBuffer pkt)
+        {
+            Chunk ret = null;
+            if (pkt.remaining() >= 4)
+            {
+                CType type = (CType)pkt.GetByte();
+                byte flags = pkt.GetByte();
+                int length = pkt.GetUShort();
+                switch (type)
+                {
+                    case CType.DATA:
+                        ret = new DataChunk(type, flags, length, pkt);
+                        break;
+                    case CType.INIT:
+                        ret = new InitChunk(type, flags, length, pkt);
+                        break;
+                    case CType.SACK:
+                        ret = new SackChunk(type, flags, length, pkt);
+                        break;
+                    case CType.INITACK:
+                        ret = new InitAckChunk(type, flags, length, pkt);
+                        break;
+                    case CType.COOKIE_ECHO:
+                        ret = new CookieEchoChunk(type, flags, length, pkt);
+                        break;
+                    case CType.COOKIE_ACK:
+                        ret = new CookieAckChunk(type, flags, length, pkt);
+                        break;
+                    case CType.ABORT:
+                        ret = new AbortChunk(type, flags, length, pkt);
+                        break;
+                    case CType.HEARTBEAT:
+                        ret = new HeartBeatChunk(type, flags, length, pkt);
+                        break;
+                    case CType.RE_CONFIG:
+                        ret = new ReConfigChunk(type, flags, length, pkt);
+                        break;
+                    default:
+                        logger.LogWarning("Default chunk type " + type + " read in ");
+                        ret = new FailChunk(type, flags, length, pkt);
+                        break;
+                }
+                if (ret != null)
+                {
+                    if (pkt.hasRemaining())
+                    {
+                        int mod = ret.getLength() % 4;
+                        if (mod != 0)
+                        {
+                            for (int pad = mod; pad < 4; pad++)
+                            {
+                                pkt.GetByte();
+                            }
+                        }
+                    }
+                }
+            }
+            return ret;
+        }
+        /*
 		 0          - Payload Data (DATA)
 		 1          - Initiation (INIT)
 		 2          - Initiation Acknowledgement (INIT ACK)
@@ -210,7 +191,7 @@ namespace SIPSorcery.Net.messages {
 		 13         - Reserved for Congestion Window Reduced (CWR)
 		 14         - Shutdown Complete (SHUTDOWN COMPLETE)
 		 */
-		/*
+        /*
     
 		 Chunk Type  Chunk Name
 		 --------------------------------------------------------------
@@ -235,93 +216,106 @@ namespace SIPSorcery.Net.messages {
 		 0x81    Packet Drop Chunk        (PKTDROP)
 		 */
 
-		public CType _type;
-		public byte _flags;
-		int _length;
-		protected ByteBuffer _body;
-		public List<VariableParam> _varList = new List<VariableParam>();
+        public CType _type;
+        public byte _flags;
+        int _length;
+        protected ByteBuffer _body;
+        public List<VariableParam> _varList = new List<VariableParam>();
 
 
-		protected Chunk(CType type) {
-			_type = type;
-		}
+        protected Chunk(CType type)
+        {
+            _type = type;
+        }
 
-		protected Chunk(CType type, byte flags, int length, ByteBuffer pkt) {
-			_type = type;
-			_flags = flags;
-			_length = length;
-			/* Copy version 
+        protected Chunk(CType type, byte flags, int length, ByteBuffer pkt)
+        {
+            _type = type;
+            _flags = flags;
+            _length = length;
+            /* Copy version 
 			byte[] bb = new byte[length -4]; 
 			pkt[bb];
 			_body = MemoryStream.wrap(bb);
 			*/
-			// or use same data but different MemoryStreams wrapping it
-			_body = pkt.slice();
-			_body.Limit = length - 4;
-			pkt.Position += (length - 4);
-		}
-		// sad ommission in MemoryStream 
+            // or use same data but different MemoryStreams wrapping it
+            _body = pkt.slice();
+            _body.Limit = length - 4;
+            pkt.Position += (length - 4);
+        }
+        // sad ommission in MemoryStream 
 
-		public void write(ByteBuffer ret) {
-			ret.Put((byte) _type);
-			ret.Put((byte) _flags);
-			ret.Put((ushort) 4); // marker for length;
-			putFixedParams(ret);
-			int pad = 0;
-			if (_varList != null) {
-				foreach (VariableParam v in this._varList) {
-					//logger.LogDebug("var " + v.getName() + " at " + ret.Position);
+        public void write(ByteBuffer ret)
+        {
+            ret.Put((byte)_type);
+            ret.Put((byte)_flags);
+            ret.Put((ushort)4); // marker for length;
+            putFixedParams(ret);
+            int pad = 0;
+            if (_varList != null)
+            {
+                foreach (VariableParam v in this._varList)
+                {
+                    //logger.LogDebug("var " + v.getName() + " at " + ret.Position);
 
-					ByteBuffer var = ret.slice();
-					var.Put((ushort) v.getType());
-					var.Put((ushort) 4); // length holder.
-					v.writeBody(var);
-					var.Put(2, (ushort) var.Position);
-					//logger.LogDebug("setting var length to " + var.Position);
-					pad = var.Position % 4;
-					pad = (pad != 0) ? 4 - pad : 0;
-					//logger.LogDebug("padding by " + pad);
-					ret.Position += var.Position + pad;
-				}
-			}
-			//Console.WriteLine("un padding by " + pad);
-			ret.Position -= pad;
-			// and push the new length into place.
-			ret.Put(2, (ushort) ret.Position);
-			//Console.WriteLine("setting chunk length to " + ret.position());
-		}
+                    ByteBuffer var = ret.slice();
+                    var.Put((ushort)v.getType());
+                    var.Put((ushort)4); // length holder.
+                    v.writeBody(var);
+                    var.Put(2, (ushort)var.Position);
+                    //logger.LogDebug("setting var length to " + var.Position);
+                    pad = var.Position % 4;
+                    pad = (pad != 0) ? 4 - pad : 0;
+                    //logger.LogDebug("padding by " + pad);
+                    ret.Position += var.Position + pad;
+                }
+            }
+            //Console.WriteLine("un padding by " + pad);
+            ret.Position -= pad;
+            // and push the new length into place.
+            ret.Put(2, (ushort)ret.Position);
+            //Console.WriteLine("setting chunk length to " + ret.position());
+        }
 
-		public string typeLookup() {
-			return typeLookup(this._type);
-		}
+        public string typeLookup()
+        {
+            return typeLookup(this._type);
+        }
 
-		public static string typeLookup(CType t) {
-			string ret;
-			if (!_typeLookup.TryGetValue(t, out ret) || ret == null) {
-				ret = "unknown(" + t + ")";
-			}
-			return ret;
-		}
-		public static string chunksToNames(byte[] fse) {
-			StringBuilder ret = new StringBuilder();
-			foreach (CType f in fse) {
-				ret.Append(typeLookup(f));
-				ret.Append(" ");
-			}
-			return ret.ToString();
-		}
-		public override string ToString() {
-			return "Chunk : type " + typeLookup(_type) + " flags " + ((0xff) & _flags).ToString("X4") + " length = " + _length;
-		}
+        public static string typeLookup(CType t)
+        {
+            string ret;
+            if (!_typeLookup.TryGetValue(t, out ret) || ret == null)
+            {
+                ret = "unknown(" + t + ")";
+            }
+            return ret;
+        }
+        public static string chunksToNames(byte[] fse)
+        {
+            StringBuilder ret = new StringBuilder();
+            foreach (CType f in fse)
+            {
+                ret.Append(typeLookup(f));
+                ret.Append(" ");
+            }
+            return ret.ToString();
+        }
+        public override string ToString()
+        {
+            return "Chunk : type " + typeLookup(_type) + " flags " + ((0xff) & _flags).ToString("X4") + " length = " + _length;
+        }
 
-		public CType getType() {
-			return _type;
-		}
+        public CType getType()
+        {
+            return _type;
+        }
 
-		protected int getLength() {
-			return _length;
-		}
-		/*
+        protected int getLength()
+        {
+            return _length;
+        }
+        /*
     
 		 1	Heartbeat Info	[RFC4960]
 		 2-4	Unassigned	
@@ -358,257 +352,282 @@ namespace SIPSorcery.Net.messages {
     
 		 */
 
-		protected VariableParam readVariable() {
-			int type = _body.GetUShort();
-			int len = _body.GetUShort();
-			int blen = len - 4;
-			//byte[] data;
-			Unknown var;
-			switch (type) {
-				case 1:
-					var = new HeartbeatInfo(1, "HeartbeatInfo");
-					break;
-				//      2-4	Unassigned	
-				case 5:
-					var = new IPv4Address(5, "IPv4Address");
-					break;
-				case 6:
-					var = new IPv6Address(6, "IPv6Address");
-					break;
-				case 7:
-					var = new StateCookie(7, "StateCookie");
-					break;
-				case 8:
-					var = new UnrecognizedParameters(8, "UnrecognizedParameters");
-					break;
-				case 9:
-					var = new CookiePreservative(9, "CookiePreservative");
-					break;
-				//      10	Unassigned	
-				case 11:
-					var = new HostNameAddress(11, "HostNameAddress");
-					break;
-				case 12:
-					var = new SupportedAddressTypes(12, "SupportedAddressTypes");
-					break;
-				case 13:
-					var = new OutgoingSSNResetRequestParameter(13, "OutgoingSSNResetRequestParameter");
-					break;
-				case 14:
-					var = new IncomingSSNResetRequestParameter(14, "IncomingSSNResetRequestParameter");
-					break;
-				case 15:
-					var = new SSNTSNResetRequestParameter(15, "SSNTSNResetRequestParameter");
-					break;
-				case 16:
-					var = new ReconfigurationResponseParameter(16, "ReconfigurationResponseParameter");
-					break;
-				case 17:
-					var = new AddOutgoingStreamsRequestParameter(17, "AddOutgoingStreamsRequestParameter");
-					break;
-				case 18:
-					var = new AddIncomingStreamsRequestParameter(18, "AddIncomingStreamsRequestParameter");
-					break;
-				//      19-32767	Unassigned	
-				case 32768:
-					var = new Unknown(32768, "ReservedforECNCapable");
-					break;
-				case 32770:
-					var = new RandomParam(32770, "Random");
-					break;
-				case 32771:
-					var = new ChunkListParam(32771, "ChunkList");
-					break;
-				case 32772:
-					var = new RequestedHMACAlgorithmParameter(32772, "RequestedHMACAlgorithmParameter");
-					break;
-				case 32773:
-					var = new Unknown(32773, "Padding");
-					break;
-				case 32776:
-					var = new SupportedExtensions(32776, "SupportedExtensions");
-					break;
-				//      32777-49151	Unassigned	
-				case 49152:
-					var = new ForwardTSNsupported(49152, "ForwardTSNsupported");
-					break;
-				case 49153:
-					var = new Unknown(49153, "AddIPAddress");
-					break;
-				case 49154:
-					var = new Unknown(49154, "DeleteIPAddress");
-					break;
-				case 49155:
-					var = new Unknown(49155, "ErrorCauseIndication");
-					break;
-				case 49156:
-					var = new Unknown(49156, "SetPrimaryAddress");
-					break;
-				case 49157:
-					var = new Unknown(49157, "SuccessIndication");
-					break;
-				case 49158:
-					var = new Unknown(49158, "AdaptationLayerIndication");
-					break;
-				default:
-					var = new Unknown(-1, "Unknown");
-					break;
-			}
-			try {
-				var.readBody(_body, blen);
-				logger.LogDebug("variable type " + var.getType() + " name " + var.getName());
-			}
-			catch (SctpPacketFormatException ex) {
-				logger.LogError(ex.ToString());
-			}
-			if (_body.hasRemaining()) {
-				int mod = blen % 4;
-				if (mod != 0) {
-					for (int pad = mod; pad < 4; pad++) {
-						_body.GetByte();
-					}
-				}
-			}
-			return var;
-		}
+        protected VariableParam readVariable()
+        {
+            int type = _body.GetUShort();
+            int len = _body.GetUShort();
+            int blen = len - 4;
+            //byte[] data;
+            Unknown var;
+            switch (type)
+            {
+                case 1:
+                    var = new HeartbeatInfo(1, "HeartbeatInfo");
+                    break;
+                //      2-4	Unassigned	
+                case 5:
+                    var = new IPv4Address(5, "IPv4Address");
+                    break;
+                case 6:
+                    var = new IPv6Address(6, "IPv6Address");
+                    break;
+                case 7:
+                    var = new StateCookie(7, "StateCookie");
+                    break;
+                case 8:
+                    var = new UnrecognizedParameters(8, "UnrecognizedParameters");
+                    break;
+                case 9:
+                    var = new CookiePreservative(9, "CookiePreservative");
+                    break;
+                //      10	Unassigned	
+                case 11:
+                    var = new HostNameAddress(11, "HostNameAddress");
+                    break;
+                case 12:
+                    var = new SupportedAddressTypes(12, "SupportedAddressTypes");
+                    break;
+                case 13:
+                    var = new OutgoingSSNResetRequestParameter(13, "OutgoingSSNResetRequestParameter");
+                    break;
+                case 14:
+                    var = new IncomingSSNResetRequestParameter(14, "IncomingSSNResetRequestParameter");
+                    break;
+                case 15:
+                    var = new SSNTSNResetRequestParameter(15, "SSNTSNResetRequestParameter");
+                    break;
+                case 16:
+                    var = new ReconfigurationResponseParameter(16, "ReconfigurationResponseParameter");
+                    break;
+                case 17:
+                    var = new AddOutgoingStreamsRequestParameter(17, "AddOutgoingStreamsRequestParameter");
+                    break;
+                case 18:
+                    var = new AddIncomingStreamsRequestParameter(18, "AddIncomingStreamsRequestParameter");
+                    break;
+                //      19-32767	Unassigned	
+                case 32768:
+                    var = new Unknown(32768, "ReservedforECNCapable");
+                    break;
+                case 32770:
+                    var = new RandomParam(32770, "Random");
+                    break;
+                case 32771:
+                    var = new ChunkListParam(32771, "ChunkList");
+                    break;
+                case 32772:
+                    var = new RequestedHMACAlgorithmParameter(32772, "RequestedHMACAlgorithmParameter");
+                    break;
+                case 32773:
+                    var = new Unknown(32773, "Padding");
+                    break;
+                case 32776:
+                    var = new SupportedExtensions(32776, "SupportedExtensions");
+                    break;
+                //      32777-49151	Unassigned	
+                case 49152:
+                    var = new ForwardTSNsupported(49152, "ForwardTSNsupported");
+                    break;
+                case 49153:
+                    var = new Unknown(49153, "AddIPAddress");
+                    break;
+                case 49154:
+                    var = new Unknown(49154, "DeleteIPAddress");
+                    break;
+                case 49155:
+                    var = new Unknown(49155, "ErrorCauseIndication");
+                    break;
+                case 49156:
+                    var = new Unknown(49156, "SetPrimaryAddress");
+                    break;
+                case 49157:
+                    var = new Unknown(49157, "SuccessIndication");
+                    break;
+                case 49158:
+                    var = new Unknown(49158, "AdaptationLayerIndication");
+                    break;
+                default:
+                    var = new Unknown(-1, "Unknown");
+                    break;
+            }
+            try
+            {
+                var.readBody(_body, blen);
+                logger.LogDebug("variable type " + var.getType() + " name " + var.getName());
+            }
+            catch (SctpPacketFormatException ex)
+            {
+                logger.LogError(ex.ToString());
+            }
+            if (_body.hasRemaining())
+            {
+                int mod = blen % 4;
+                if (mod != 0)
+                {
+                    for (int pad = mod; pad < 4; pad++)
+                    {
+                        _body.GetByte();
+                    }
+                }
+            }
+            return var;
+        }
 
-		protected VariableParam readErrorParam() {
-			int type = _body.GetUShort();
-			int len = _body.GetUShort();
-			int blen = len - 4;
-			//byte[] data;
-			KnownError var = null;
-			switch (type) {
-				case 1:
-					var = new KnownError(1, "InvalidStreamIdentifier");
-					break;//[RFC4960]
-				case 2:
-					var = new KnownError(2, "MissingMandatoryParameter");
-					break;//[RFC4960]
-				case 3:
-					var = new StaleCookieError();
-					break;//[RFC4960]
-				case 4:
-					var = new KnownError(4, "OutofResource");
-					break;//[RFC4960]
-				case 5:
-					var = new KnownError(5, "UnresolvableAddress");
-					break;//[RFC4960]
-				case 6:
-					var = new KnownError(6, "UnrecognizedChunkType");
-					break;//[RFC4960]
-				case 7:
-					var = new KnownError(7, "InvalidMandatoryParameter");
-					break;//[RFC4960]
-				case 8:
-					var = new KnownError(8, "UnrecognizedParameters");
-					break;//[RFC4960]
-				case 9:
-					var = new KnownError(9, "NoUserData");
-					break;//[RFC4960]
-				case 10:
-					var = new KnownError(10, "CookieReceivedWhileShuttingDown");
-					break;//[RFC4960]
-				case 11:
-					var = new KnownError(11, "RestartofanAssociationwithNewAddresses");
-					break;//[RFC4960]
-				case 12:
-					var = new KnownError(12, "UserInitiatedAbort");
-					break;//[RFC4460]
-				case 13:
-					var = new ProtocolViolationError(13, "ProtocolViolation");
-					break;//[RFC4460]
-						  // 14-159,Unassigned,
-				case 160:
-					var = new KnownError(160, "RequesttoDeleteLastRemainingIPAddress");
-					break;//[RFC5061]
-				case 161:
-					var = new KnownError(161, "OperationRefusedDuetoResourceShortage");
-					break;//[RFC5061]
-				case 162:
-					var = new KnownError(162, "RequesttoDeleteSourceIPAddress");
-					break;//[RFC5061]
-				case 163:
-					var = new KnownError(163, "AssociationAbortedduetoillegalASCONF-ACK");
-					break;//[RFC5061]
-				case 164:
-					var = new KnownError(164, "Requestrefused-noauthorization");
-					break;//[RFC5061]
-						  // 165-260,Unassigned,
-				case 261:
-					var = new KnownError(261, "UnsupportedHMACIdentifier");
-					break;//[RFC4895]
-						  // 262-65535,Unassigned,
-			}
-			try {
-				var.readBody(_body, blen);
-				logger.LogDebug("variable type " + var.getType() + " name " + var.getName());
-				logger.LogDebug("additional info " + var.ToString());
-			}
-			catch (SctpPacketFormatException ex) {
-				logger.LogError(ex.ToString());
-			}
-			if (_body.hasRemaining()) {
-				int mod = blen % 4;
-				if (mod != 0) {
-					for (int pad = mod; pad < 4; pad++) {
-						_body.GetByte();
-					}
-				}
-			}
-			return var;
-		}
+        protected VariableParam readErrorParam()
+        {
+            int type = _body.GetUShort();
+            int len = _body.GetUShort();
+            int blen = len - 4;
+            //byte[] data;
+            KnownError var = null;
+            switch (type)
+            {
+                case 1:
+                    var = new KnownError(1, "InvalidStreamIdentifier");
+                    break;//[RFC4960]
+                case 2:
+                    var = new KnownError(2, "MissingMandatoryParameter");
+                    break;//[RFC4960]
+                case 3:
+                    var = new StaleCookieError();
+                    break;//[RFC4960]
+                case 4:
+                    var = new KnownError(4, "OutofResource");
+                    break;//[RFC4960]
+                case 5:
+                    var = new KnownError(5, "UnresolvableAddress");
+                    break;//[RFC4960]
+                case 6:
+                    var = new KnownError(6, "UnrecognizedChunkType");
+                    break;//[RFC4960]
+                case 7:
+                    var = new KnownError(7, "InvalidMandatoryParameter");
+                    break;//[RFC4960]
+                case 8:
+                    var = new KnownError(8, "UnrecognizedParameters");
+                    break;//[RFC4960]
+                case 9:
+                    var = new KnownError(9, "NoUserData");
+                    break;//[RFC4960]
+                case 10:
+                    var = new KnownError(10, "CookieReceivedWhileShuttingDown");
+                    break;//[RFC4960]
+                case 11:
+                    var = new KnownError(11, "RestartofanAssociationwithNewAddresses");
+                    break;//[RFC4960]
+                case 12:
+                    var = new KnownError(12, "UserInitiatedAbort");
+                    break;//[RFC4460]
+                case 13:
+                    var = new ProtocolViolationError(13, "ProtocolViolation");
+                    break;//[RFC4460]
+                          // 14-159,Unassigned,
+                case 160:
+                    var = new KnownError(160, "RequesttoDeleteLastRemainingIPAddress");
+                    break;//[RFC5061]
+                case 161:
+                    var = new KnownError(161, "OperationRefusedDuetoResourceShortage");
+                    break;//[RFC5061]
+                case 162:
+                    var = new KnownError(162, "RequesttoDeleteSourceIPAddress");
+                    break;//[RFC5061]
+                case 163:
+                    var = new KnownError(163, "AssociationAbortedduetoillegalASCONF-ACK");
+                    break;//[RFC5061]
+                case 164:
+                    var = new KnownError(164, "Requestrefused-noauthorization");
+                    break;//[RFC5061]
+                          // 165-260,Unassigned,
+                case 261:
+                    var = new KnownError(261, "UnsupportedHMACIdentifier");
+                    break;//[RFC4895]
+                          // 262-65535,Unassigned,
+            }
+            try
+            {
+                var.readBody(_body, blen);
+                logger.LogDebug("variable type " + var.getType() + " name " + var.getName());
+                logger.LogDebug("additional info " + var.ToString());
+            }
+            catch (SctpPacketFormatException ex)
+            {
+                logger.LogError(ex.ToString());
+            }
+            if (_body.hasRemaining())
+            {
+                int mod = blen % 4;
+                if (mod != 0)
+                {
+                    for (int pad = mod; pad < 4; pad++)
+                    {
+                        _body.GetByte();
+                    }
+                }
+            }
+            return var;
+        }
 
-		protected abstract void putFixedParams(ByteBuffer ret);
+        protected abstract void putFixedParams(ByteBuffer ret);
 
-		public virtual void validate() { // todo be more specific in the Exception tree
-										 // throw new Exception("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-		}
+        public virtual void validate()
+        { // todo be more specific in the Exception tree
+          // throw new Exception("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
 
-		protected class HeartbeatInfo : KnownParam {
-			public HeartbeatInfo(int t, string n) : base(t, n) { }
-		}
+        protected class HeartbeatInfo : KnownParam
+        {
+            public HeartbeatInfo(int t, string n) : base(t, n) { }
+        }
 
-		protected class ForwardTSNsupported : KnownParam {
-			public ForwardTSNsupported(int t, string n) : base(t, n) { }
-		}
+        protected class ForwardTSNsupported : KnownParam
+        {
+            public ForwardTSNsupported(int t, string n) : base(t, n) { }
+        }
 
-		protected class RandomParam : KnownParam {
-			public RandomParam(int t, string n) : base(t, n) { }
+        protected class RandomParam : KnownParam
+        {
+            public RandomParam(int t, string n) : base(t, n) { }
 
-			public override string ToString() {
-				string ret = " random value ";
-				ret += Packet.getHex(this.getData());
-				return base.ToString() + ret;
-			}
-		}
+            public override string ToString()
+            {
+                string ret = " random value ";
+                ret += Packet.getHex(this.getData());
+                return base.ToString() + ret;
+            }
+        }
 
-		protected class ChunkListParam : KnownParam {
-			public ChunkListParam(int t, string n) : base(t, n) { }
+        protected class ChunkListParam : KnownParam
+        {
+            public ChunkListParam(int t, string n) : base(t, n) { }
 
-			public override string ToString() {
-				string ret = " ChunksTypes ";
-				byte[] data = this.getData();
-				for (int i = 0; i < data.Length; i++) {
-					ret += " " + typeLookup((CType) data[i]);
-				}
-				return base.ToString() + ret;
-			}
-		}
+            public override string ToString()
+            {
+                string ret = " ChunksTypes ";
+                byte[] data = this.getData();
+                for (int i = 0; i < data.Length; i++)
+                {
+                    ret += " " + typeLookup((CType)data[i]);
+                }
+                return base.ToString() + ret;
+            }
+        }
 
-		protected class SupportedExtensions : KnownParam {
-			public SupportedExtensions() : base(32776, "SupportedExtensions") { }
+        protected class SupportedExtensions : KnownParam
+        {
+            public SupportedExtensions() : base(32776, "SupportedExtensions") { }
 
-			public SupportedExtensions(int t, string n) : base(t, n) { }
+            public SupportedExtensions(int t, string n) : base(t, n) { }
 
-			public override string ToString() {
-				string ret = " ChunksTypes ";
-				byte[] data = this.getData();
-				for (int i = 0; i < data.Length; i++) {
-					ret += " " + typeLookup((CType) data[i]);
-				}
-				return base.ToString() + ret;
-			}
-		}
-	}
+            public override string ToString()
+            {
+                string ret = " ChunksTypes ";
+                byte[] data = this.getData();
+                for (int i = 0; i < data.Length; i++)
+                {
+                    ret += " " + typeLookup((CType)data[i]);
+                }
+                return base.ToString() + ret;
+            }
+        }
+    }
 }
