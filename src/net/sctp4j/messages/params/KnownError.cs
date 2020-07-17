@@ -16,8 +16,7 @@
  */
 // Modified by Andrés Leone Gámez
 
-
-using System.Text;
+using SIPSorcery.Sys;
 
 /**
 *
@@ -40,7 +39,7 @@ namespace SIPSorcery.Net.Sctp
 
         public override string ToString()
         {
-            return "Variable error " + this.getName() + " data " + Encoding.ASCII.GetString(_data) + " " + Packet.getHex(_data);
+            return $"Known error {getName()}, data: {_data.HexStr()}.";
         }
     }
 }

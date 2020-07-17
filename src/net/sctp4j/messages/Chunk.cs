@@ -142,6 +142,9 @@ namespace SIPSorcery.Net.Sctp
                     case CType.RE_CONFIG:
                         ret = new ReConfigChunk(type, flags, length, pkt);
                         break;
+                    case CType.ERROR:
+                        ret = new ErrorChunk(type, flags, length, pkt);
+                        break;
                     default:
                         logger.LogWarning("Default chunk type " + type + " read in ");
                         ret = new FailChunk(type, flags, length, pkt);
@@ -546,8 +549,8 @@ namespace SIPSorcery.Net.Sctp
             try
             {
                 var.readBody(_body, blen);
-                logger.LogDebug("variable type " + var.getType() + " name " + var.getName());
-                logger.LogDebug("additional info " + var.ToString());
+                //logger.LogDebug("variable type " + var.getType() + " name " + var.getName());
+                //logger.LogDebug("additional info " + var.ToString());
             }
             catch (SctpPacketFormatException ex)
             {

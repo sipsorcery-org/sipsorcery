@@ -360,6 +360,19 @@ namespace SIPSorcery.Net
                         {
                             connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                             onconnectionstatechange?.Invoke(connectionState);
+
+                            //if (connectionState == RTCPeerConnectionState.connected && _dataChannels?.Count > 0)
+                            //{
+                            //    foreach (var datachannel in _dataChannels)
+                            //    {
+                            //        var stm = _dataChannelAssociation.mkStream((int)datachannel.id);
+                            //        stm.OnOpen = () =>
+                            //        {
+                            //            logger.LogDebug($"Data channel initialisation label={stm?.getLabel()}.");
+                            //            stm.send("hello world");
+                            //        };
+                            //    }
+                            //}
                         }
                     });
                 }
@@ -1041,7 +1054,7 @@ namespace SIPSorcery.Net
                 var expectedFp = RemotePeerDtlsFingerprint;
                 var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
 
-                if (remoteFingerprint.value != expectedFp.value)
+                if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
                 {
                     logger.LogWarning($"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
                     return false;

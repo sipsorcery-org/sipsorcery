@@ -289,8 +289,7 @@ namespace SIPSorcery.Net.Sctp
                     logger.LogError(ex.ToString());
                 }
             }
-            logger.LogDebug("leaving enqueue" + d.getTsn());
-
+            //logger.LogDebug("leaving enqueue" + d.getTsn());
         }
 
         internal override void sendAndBlock(SCTPMessage m)
@@ -691,18 +690,18 @@ namespace SIPSorcery.Net.Sctp
             if (_cwnd <= _ssthresh)
             {
                 // slow start
-                logger.LogDebug("slow start");
+                //logger.LogDebug("slow start");
 
                 if (didAdvance && fullyUtilized)
                 {// && !_fastRecovery) {
                     int incCwinBy = Math.Min(_transpMTU, totalAcked);
                     _cwnd += incCwinBy;
-                    logger.LogDebug("cwnd now " + _cwnd);
+                    //logger.LogDebug("cwnd now " + _cwnd);
                 }
-                else
-                {
-                    logger.LogDebug("cwnd static at " + _cwnd + " (didAdvance fullyUtilized  inFlightBytes totalAcked)  " + didAdvance + " " + fullyUtilized + " " + inFlightBytes + " " + totalAcked);
-                }
+                //else
+                //{
+                //    logger.LogDebug("cwnd static at " + _cwnd + " (didAdvance fullyUtilized  inFlightBytes totalAcked)  " + didAdvance + " " + fullyUtilized + " " + inFlightBytes + " " + totalAcked);
+                //}
 
             }
             else
@@ -859,7 +858,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     catch (EndOfStreamException end)
                     {
-                        logger.LogDebug("Retry send failed " + end.ToString());
+                        logger.LogWarning("Retry send failed " + end.ToString());
                         unexpectedClose(end);
                         resetTimer = false;
                     }

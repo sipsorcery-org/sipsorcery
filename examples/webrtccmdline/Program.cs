@@ -150,7 +150,7 @@ namespace SIPSorcery.Examples
             if (options.CreateJsonOffer)
             {
                 var pc = Createpc(null, _stunServer);
-                pc.createDataChannel("mychannel");
+                pc.createDataChannel("dc12");
 
                 var offerSdp = pc.createOffer(null);
                 await pc.setLocalDescription(offerSdp);

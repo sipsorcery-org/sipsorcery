@@ -136,7 +136,7 @@ namespace SIPSorcery.Sys
                 }
             }
 
-            return rv;
+            return rv.ToUpper();
         }
 
         public static byte[] ParseHexStr(string hexStr)

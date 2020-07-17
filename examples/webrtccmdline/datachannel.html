@@ -61,9 +61,17 @@
                 pc.onsignalingstatechange = e => console.log(`signalling state change ${JSON.stringify(e)}.`);
 
                 pc.ontrack = async function (event) {
-                    console.log('Remote ' + event.track.kind + ' stream available.');
+                    console.log(`Remote ${event.track.kind} stream available.`);
                     console.log(event);
                     //	remoteStream.addTrack(event.track, remoteStream);
+                };
+
+                pc.ondatachannel = e => {
+                    console.log(`ondatachannel ${JSON.stringify(e.channel)}`);
+
+                    e.channel.onopen = (event) => console.log(`data channel onopen: ${event}.`);
+                    e.channel.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+                    e.channel.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
                 };
             };
 

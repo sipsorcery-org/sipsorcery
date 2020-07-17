@@ -16,9 +16,8 @@
  */
 // Modified by Andrés Leone Gámez
 
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using SCTP4CS.Utils;
 using SIPSorcery.Sys;
@@ -129,24 +128,19 @@ namespace SIPSorcery.Net.Sctp
             return _chksum;
         }
 
-        public static string getHex(ByteBuffer _in, string separation = "")
+        public static string getHex(ByteBuffer buf, char? separator = null)
         {
-            return getHex(_in.Data, (uint)_in.offset, _in.Length, separation);
+            return getHex(buf.Data, buf.offset, buf.Length, separator);
         }
-        public static string getHex(byte[] _in, string separation = "")
+
+        public static string getHex(byte[] buf, char? separator = null)
         {
-            return getHex(_in, 0, _in.Length, separation);
+            return buf.HexStr(separator);
         }
-        public static string getHex(byte[] _in, uint off, int len, string separation = "")
+
+        public static string getHex(byte[] buf, int off, int len, char? separator = null)
         {
-            StringBuilder ret = new StringBuilder("");
-            int top = Math.Min(_in.Length, len);
-            for (int i = (int)off; i < top; i++)
-            {
-                ret.AppendFormat("{0:x2}", _in[i]);
-                if (i < top - 1) ret.Append(separation);
-            }
-            return ret.ToString().ToUpper();
+            return buf.Skip(off).Take(len).ToArray().HexStr(separator);
         }
 
         private List<Chunk> mkChunks(ByteBuffer pkt)
@@ -156,7 +150,7 @@ namespace SIPSorcery.Net.Sctp
             while (null != (next = Chunk.mkChunk(pkt)))
             {
                 ret.Add(next);
-                logger.LogDebug("saw chunk: " + next.typeLookup());
+                //logger.LogDebug("saw chunk: " + next.typeLookup());
             }
             return ret;
         }
@@ -374,6 +368,5 @@ namespace SIPSorcery.Net.Sctp
             }
             return (ret < _chunks.Count) ? ret : -1;
         }
-
     }
 }

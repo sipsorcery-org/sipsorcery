@@ -57,7 +57,6 @@ namespace SIPSorcery.Net.Sctp
 {
     public class ErrorChunk : Chunk
     {
-
         private static ILogger logger = Log.Logger;
 
         public ErrorChunk() : base(CType.ERROR) { }
@@ -79,7 +78,7 @@ namespace SIPSorcery.Net.Sctp
         {
             if (_body.remaining() >= 4)
             {
-                logger.LogDebug("Error" + this.ToString());
+                //logger.LogDebug("Error" + this.ToString());
                 while (_body.hasRemaining())
                 {
                     VariableParam v = readErrorParam();

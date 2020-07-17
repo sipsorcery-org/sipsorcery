@@ -53,6 +53,7 @@ namespace SIPSorcery.Net
         public const byte RELIABLE_UNORDERED = (byte)0x80;
 
         /*
+         * https://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-09
 		 5.1.  DATA_CHANNEL_OPEN Message
 
 		 This message is sent initially on the stream used for user messages
@@ -99,8 +100,8 @@ namespace SIPSorcery.Net
             _chanType = chanType;
             _priority = priority;
             _reliablity = reliablity;
-            _label = Encoding.ASCII.GetBytes(label);
-            _protocol = Encoding.ASCII.GetBytes(protocol);
+            _label = Encoding.UTF8.GetBytes(label);
+            _protocol = Encoding.UTF8.GetBytes(protocol);
             _labLen = _label.Length;
             _protLen = _protocol.Length;
         }
@@ -170,7 +171,7 @@ namespace SIPSorcery.Net
                     + " _chanType =" + (int)_chanType
                     + " _priority = " + _priority
                     + " _reliablity = " + _reliablity
-                    + " _label = " + Encoding.ASCII.GetString(_label)
+                    + " _label = " + Encoding.UTF8.GetString(_label)
                     + " _protocol = " + Packet.getHex(_protocol);
         }
 
@@ -202,17 +203,17 @@ namespace SIPSorcery.Net
                     behave = new UnorderedStreamBehaviour();
                     break;
             }
-            if (behave != null)
-            {
-                logger.LogDebug(_label + " behaviour is " + behave.GetType().Name);
-            }
+            //if (behave != null)
+            //{
+            //    logger.LogDebug(_label + " behaviour is " + behave.GetType().Name);
+            //}
 
             return behave;
         }
 
         public string getLabel()
         {
-            return Encoding.ASCII.GetString(_label);
+            return Encoding.UTF8.GetString(_label);
         }
 
         public byte[] mkAck()

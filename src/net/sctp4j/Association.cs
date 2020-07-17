@@ -250,11 +250,10 @@ namespace SIPSorcery.Net.Sctp
                                 logger.LogDebug("Probably tick time out");
                                 continue;
                             }
-                            logger.LogDebug("DTLS message received\n" + Packet.getHex(buf, 0, length));
+                            logger.LogDebug("SCTP message received: " + Packet.getHex(buf, 0, length));
                             ByteBuffer pbb = new ByteBuffer(buf);
                             pbb.Limit = length;
                             Packet rec = new Packet(pbb);
-                            logger.LogDebug("SCTP message parsed\n" + rec.ToString());
                             deal(rec);
                         }
                         catch (SocketException e)
@@ -342,16 +341,16 @@ namespace SIPSorcery.Net.Sctp
             if ((c != null) && (c.Length > 0))
             {
                 ByteBuffer obb = mkPkt(c);
-                logger.LogDebug("sending SCTP packet" + Packet.getHex(obb));
+                logger.LogDebug($"SCTP packet send: {Packet.getHex(obb)}");
                 lock (this)
                 {
                     _transp.Send(obb.Data, obb.offset, obb.Limit);
                 }
             }
-            else
-            {
-                logger.LogDebug("Blocked empty packet send() - probably no response needed.");
-            }
+            //else
+            //{
+            //    logger.LogDebug("Blocked empty packet send() - probably no response needed.");
+            //}
         }
 
         /**
@@ -402,7 +401,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     break;
                 case Chunk.CType.INITACK:
-                    logger.LogDebug("got initack " + c.ToString());
+                    //logger.LogDebug("got initack " + c.ToString());
                     if (_state == State.COOKIEWAIT)
                     {
                         InitAckChunk iack = (InitAckChunk)c;
@@ -414,7 +413,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     break;
                 case Chunk.CType.COOKIE_ECHO:
-                    logger.LogDebug("got cookie echo " + c.ToString());
+                    // logger.LogDebug("got cookie echo " + c.ToString());
                     reply = cookieEchoDeal((CookieEchoChunk)c);
                     if (reply.Length > 0)
                     {
@@ -422,7 +421,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     break;
                 case Chunk.CType.COOKIE_ACK:
-                    logger.LogDebug("got cookie ack " + c.ToString());
+                    //logger.LogDebug("got cookie ack " + c.ToString());
                     if (_state == State.COOKIEECHOED)
                     {
                         _state = State.ESTABLISHED;
@@ -441,12 +440,23 @@ namespace SIPSorcery.Net.Sctp
                     reply = ((HeartBeatChunk)c).mkReply();
                     break;
                 case Chunk.CType.SACK:
-                    logger.LogDebug("got tsak for TSN " + ((SackChunk)c).getCumuTSNAck());
+                    //logger.LogDebug("got tsak for TSN " + ((SackChunk)c).getCumuTSNAck());
                     reply = sackDeal((SackChunk)c);
                     // fix the outbound list here
                     break;
                 case Chunk.CType.RE_CONFIG:
                     reply = reconfigState.deal((ReConfigChunk)c);
+                    break;
+                case Chunk.CType.ERROR:
+                    logger.LogWarning($"SCTP error chunk received.");
+                    foreach(var vparam in c._varList)
+                    {
+                        if(vparam is KnownError)
+                        {
+                            var knownErr = vparam as KnownError;
+                            logger.LogWarning($"{knownErr.getName()}, {knownErr}");
+                        }
+                    }
                     break;
             }
             if (reply != null)
@@ -483,7 +493,7 @@ namespace SIPSorcery.Net.Sctp
             Packet ob = new Packet(_srcPort, _destPort, _peerVerTag);
             foreach (Chunk r in cs)
             {
-                logger.LogDebug("adding chunk to outbound packet: " + r.ToString());
+                //logger.LogDebug("adding chunk to outbound packet: " + r.ToString());
                 ob.getChunkList().Add(r);
                 //todo - this needs to workout if all the chunks will fit...
             }
@@ -740,7 +750,7 @@ namespace SIPSorcery.Net.Sctp
             if (tsn > _farTSN)
             {
                 // put it in the pen.
-                logger.LogDebug("TSN:::" + tsn);
+                //logger.LogDebug("TSN:::" + tsn);
                 DataChunk dup;
                 if (_holdingPen.TryGetValue(tsn, out dup))
                 {
@@ -761,7 +771,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     else
                     {
-                        logger.LogDebug("gap in inbound tsns at " + t);
+                        //logger.LogDebug("gap in inbound tsns at " + t);
                         gap = true;
                     }
                 }
@@ -786,10 +796,10 @@ namespace SIPSorcery.Net.Sctp
         private Chunk[] dcepDeal(SCTPStream s, DataChunk dc, DCOpen dcep)
         {
             Chunk[] rep = null;
-            logger.LogDebug("dealing with a decp for stream " + dc.getDataAsString());
+            //logger.LogDebug("dealing with a decp for stream " + dc.getDataAsString());
             if (!dcep.isAck())
             {
-                logger.LogDebug("decp is not an ack... ");
+                //logger.LogDebug("decp is not an ack... ");
 
                 SCTPStreamBehaviour behave = dcep.mkStreamBehaviour();
                 s.setBehave(behave);
@@ -811,7 +821,7 @@ namespace SIPSorcery.Net.Sctp
             }
             else
             {
-                logger.LogDebug("got a dcep ack for " + s.getLabel());
+                //logger.LogDebug("got a dcep ack for " + s.getLabel());
                 SCTPStreamBehaviour behave = dcep.mkStreamBehaviour();
                 s.setBehave(behave);
                 lock (s)
@@ -904,7 +914,6 @@ namespace SIPSorcery.Net.Sctp
                 {
                     logger.LogError("Got a COOKIE_ECHO that doesn't match any we sent. ?!?");
                 }
-
             }
             else
             {
@@ -921,7 +930,7 @@ namespace SIPSorcery.Net.Sctp
             ret.setArWin((uint)(MAXBUFF - stashcap));
             ret.setGaps(pen);
             ret.setDuplicates(dups);
-            logger.LogDebug("made SACK " + ret.ToString());
+            //logger.LogDebug("made SACK " + ret.ToString());
             return ret;
         }
 
