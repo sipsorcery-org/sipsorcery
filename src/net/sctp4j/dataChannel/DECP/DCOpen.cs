@@ -182,7 +182,7 @@ namespace SIPSorcery.Net
 
         internal SCTPStreamBehaviour mkStreamBehaviour()
         {
-            logger.LogDebug("Making a behaviour for dcep stream " + _label);
+            //logger.LogDebug("Making a behaviour for dcep stream " + _label);
             SCTPStreamBehaviour behave = null;
             switch (_chanType)
             {

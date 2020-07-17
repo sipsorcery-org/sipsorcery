@@ -289,9 +289,9 @@ namespace SIPSorcery.Net.Sctp
         }
 
         // default is server
-        public Association(DatagramTransport transport, AssociationListener al) : this(transport, al, false) { }
+        public Association(DatagramTransport transport, AssociationListener al, int srcPort, int dstPort) : this(transport, al, false, srcPort, dstPort) { }
 
-        public Association(DatagramTransport transport, AssociationListener al, bool client)
+        public Association(DatagramTransport transport, AssociationListener al, bool client, int srcPort, int dstPort)
         {
             //Log.setLevel(Log.ALL);
             logger.LogDebug("Created an Association of type: " + this.GetType().Name);
@@ -322,6 +322,8 @@ namespace SIPSorcery.Net.Sctp
 			Streams with odd Stream Identifiers. */
             _even = client;
 
+            _srcPort = srcPort;
+            _destPort = dstPort;
         }
 
         /**
@@ -963,7 +965,7 @@ namespace SIPSorcery.Net.Sctp
             Chunk[] cs = new Chunk[1];
             if (canSend())
             {
-                logger.LogDebug("due to reconfig stream " + st);
+                //logger.LogDebug("due to reconfig stream " + st);
                 cs[0] = reconfigState.makeClose(st);
             }
             this.send(cs);

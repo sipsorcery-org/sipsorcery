@@ -55,7 +55,7 @@ namespace SIPSorcery.Net.Sctp
 
         public SCTPMessage(string data, SCTPStream s)
         {
-            _data = (data.Length > 0) ? System.Text.Encoding.ASCII.GetBytes(data) : new byte[1];
+            _data = (data.Length > 0) ? System.Text.Encoding.UTF8.GetBytes(data) : new byte[1];
             _stream = s;
             _pPid = (data.Length > 0) ? DataChunk.WEBRTCstring : DataChunk.WEBRTCstringEMPTY;
         }
@@ -208,7 +208,7 @@ namespace SIPSorcery.Net.Sctp
                         data = new byte[0];
                         goto case DataChunk.WEBRTCstring;
                     case DataChunk.WEBRTCstring:
-                        _li.onMessage(_stream, System.Text.Encoding.ASCII.GetString(_data));
+                        _li.onMessage(_stream, System.Text.Encoding.UTF8.GetString(_data));
                         _delivered = true;
                         break;
                 }

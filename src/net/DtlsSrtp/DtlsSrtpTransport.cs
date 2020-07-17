@@ -53,6 +53,14 @@ namespace SIPSorcery.Net
 
         public Action<byte[]> OnDataReady;
 
+        /// <summary>
+        /// Parameters:
+        ///  - alert level,
+        ///  - alert type,
+        ///  - alert description.
+        /// </summary>
+        public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
+
         private System.DateTime startTime = System.DateTime.MinValue;
 
         // Network properties
@@ -72,6 +80,8 @@ namespace SIPSorcery.Net
             this.sendLimit = System.Math.Max(0, mtu - MAX_IP_OVERHEAD - UDP_OVERHEAD);
 
             this.connection = connection;
+
+            connection.OnAlert += (level, type, description) => OnAlert?.Invoke(level, type, description);
         }
 
         public IPacketTransformer SrtpDecoder
@@ -131,6 +141,11 @@ namespace SIPSorcery.Net
             {
                 return DoHandshakeAsServer();
             }
+        }
+
+        public bool IsClient
+        {
+            get { return connection.IsClient(); }
         }
 
         public bool DoHandshakeAsClient()

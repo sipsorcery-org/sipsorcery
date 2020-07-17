@@ -11,9 +11,12 @@
 // - "Session Description Protocol (SDP) Offer/Answer Procedures For Stream
 //   Control Transmission Protocol(SCTP) over Datagram Transport Layer
 //   Security(DTLS) Transport." [ed: specification for negotiating
-//   data channels in SDP] EXPIRED:
+//   data channels in SDP, this defines the SDP "sctp-port" attribute] 
+//   The document is also EXPIRED:
 //   https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26
-// - "SDP-based Data Channel Negotiation" [ed: not currently implemented]:
+// - "SDP-based Data Channel Negotiation" [ed: not currently implemented,
+//   actually seems like a big pain to implement this given it can already
+//   be done in-band on the SCTP connection]:
 //   https://tools.ietf.org/html/draft-ietf-mmusic-data-channel-sdpneg-28
 //
 // Author(s):
@@ -152,7 +155,7 @@ namespace SIPSorcery.Net
         private List<RTCDataChannel> _dataChannels = new List<RTCDataChannel>();
 
         private DtlsSrtpTransport _dtlsHandle;
-        private ThreadedAssociation _dataChannelAssociation;
+        private RTCPeerSctpAssociation _peerSctpAssociation;
 
         /// <summary>
         /// The ICE role the peer is acting in.
@@ -345,6 +348,8 @@ namespace SIPSorcery.Net
                                 (IDtlsSrtpPeer)new DtlsSrtpClient(_currentCertificate.Certificate) :
                                 (IDtlsSrtpPeer)new DtlsSrtpServer(_currentCertificate.Certificate));
 
+                    _dtlsHandle.OnAlert += OnDtlsAlert;
+
                     logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
                     Task.Run<bool>(() => DoDtlsHandshake(_dtlsHandle))
                     .ContinueWith(t =>
@@ -389,6 +394,11 @@ namespace SIPSorcery.Net
             onnegotiationneeded?.Invoke();
 
             _rtpIceChannel.StartGathering();
+        }
+
+        private void _dtlsHandle_OnAlert(AlertLevelsEnum arg1, AlertTypesEnum arg2, string arg3)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -1069,12 +1079,20 @@ namespace SIPSorcery.Net
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);
 
-                    DataChannelAssociationListener associationListener = new DataChannelAssociationListener();
-                    _dataChannelAssociation = new ThreadedAssociation(_dtlsHandle.Transport, associationListener);
-                    _dataChannelAssociation.associate();
-
+                    _peerSctpAssociation = new RTCPeerSctpAssociation(_dtlsHandle.Transport, _dtlsHandle.IsClient, 4000, 4002);
+                    
                     return true;
                 }
+            }
+        }
+
+        private void OnDtlsAlert(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription)
+        {
+            logger.LogWarning($"DTLS {alertLevel} alert {alertType}: {alertDescription}");
+
+            if(alertType == AlertTypesEnum.close_notify)
+            {
+                _peerSctpAssociation.Close();
             }
         }
     }

@@ -132,8 +132,8 @@ namespace SIPSorcery.Net.Sctp
         private static double _rtoMin = 1.0;
         private static double _rtoMax = 60.0;
 
-        public ThreadedAssociation(DatagramTransport transport, AssociationListener al)
-            : base(transport, al)
+        public ThreadedAssociation(DatagramTransport transport, AssociationListener al, bool isClient, int srcPort, int destPort)
+            : base(transport, al, isClient, srcPort, destPort)
         {
             try
             {

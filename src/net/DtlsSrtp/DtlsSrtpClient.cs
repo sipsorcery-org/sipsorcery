@@ -95,6 +95,14 @@ namespace SIPSorcery.Net
         private SrtpPolicy srtpPolicy;
         private SrtpPolicy srtcpPolicy;
 
+        /// <summary>
+        /// Parameters:
+        ///  - alert level,
+        ///  - alert type,
+        ///  - alert description.
+        /// </summary>
+        public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
+
         public DtlsSrtpClient() :
             this(DtlsUtils.CreateSelfSignedCert())
         {
@@ -333,11 +341,6 @@ namespace SIPSorcery.Net
             logger.LogWarning($"DTLS client raised alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
         }
 
-        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
-        {
-            logger.LogWarning($"DTLS client received alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}.");
-        }
-
         public override void NotifyServerVersion(ProtocolVersion serverVersion)
         {
             base.NotifyServerVersion(serverVersion);
@@ -346,6 +349,28 @@ namespace SIPSorcery.Net
         public Certificate GetRemoteCertificate()
         {
             return ServerCertificate;
+        }
+
+        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
+        {
+            string description = AlertDescription.GetText(alertDescription);
+
+            logger.LogWarning($"DTLS client received alert: {AlertLevel.GetText(alertLevel)}, {description}.");
+
+            AlertLevelsEnum level = AlertLevelsEnum.Warning;
+            AlertTypesEnum alertType = AlertTypesEnum.unknown;
+
+            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
+            {
+                level = (AlertLevelsEnum)alertLevel;
+            }
+
+            if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
+            {
+                alertType = (AlertTypesEnum)alertDescription;
+            }
+
+            OnAlert?.Invoke(level, alertType, description);
         }
     }
 }

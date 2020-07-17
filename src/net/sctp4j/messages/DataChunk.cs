@@ -79,8 +79,8 @@ namespace SIPSorcery.Net.Sctp
 
         public DataChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt)
         {
-            logger.LogDebug("read in chunk header " + length);
-            logger.LogDebug("body remaining " + _body.remaining());
+            //logger.LogDebug("read in chunk header " + length);
+            //logger.LogDebug("body remaining " + _body.remaining());
 
             if (_body.remaining() >= 12)
             {
@@ -89,11 +89,11 @@ namespace SIPSorcery.Net.Sctp
                 _sSeqNo = _body.GetUShort();
                 _ppid = _body.GetInt();
 
-                logger.LogDebug(" _tsn : " + _tsn
-                        + " _streamId : " + _streamId
-                        + " _sSeqNo : " + _sSeqNo
-                        + " _ppid : " + _ppid);
-                logger.LogDebug("data size remaining " + _body.remaining());
+                //logger.LogDebug(" _tsn : " + _tsn
+                //        + " _streamId : " + _streamId
+                //        + " _sSeqNo : " + _sSeqNo
+                //        + " _ppid : " + _ppid);
+                //logger.LogDebug("data size remaining " + _body.remaining());
 
                 switch (_ppid)
                 {
@@ -107,7 +107,7 @@ namespace SIPSorcery.Net.Sctp
                         {
                             _invalid = ex;
                         }
-                        logger.LogDebug("Got an DCEP " + _open);
+                        //logger.LogDebug("Got an DCEP " + _open);
                         break;
                     case WEBRTCstring:
                         // what format is a string ?
@@ -115,14 +115,14 @@ namespace SIPSorcery.Net.Sctp
                         _body.GetBytes(_data, _data.Length);
                         _dataOffset = 0;
                         _dataLength = _data.Length;
-                        logger.LogDebug("string data is " + Encoding.ASCII.GetString(_data));
+                        //logger.LogDebug("string data is " + Encoding.ASCII.GetString(_data));
                         break;
                     case WEBRTCBINARY:
                         _data = new byte[_body.remaining()];
                         _body.GetBytes(_data, _data.Length);
                         _dataOffset = 0;
                         _dataLength = _data.Length;
-                        logger.LogDebug("data is " + Packet.getHex(_data));
+                        //logger.LogDebug("data is " + Packet.getHex(_data));
                         break;
 
                     default:
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net.Sctp
                     ret = "Got an DCEP " + _open;
                     break;
                 case WEBRTCstring:
-                    ret = Encoding.ASCII.GetString(_data, _dataOffset, _dataLength);
+                    ret = Encoding.UTF8.GetString(_data, _dataOffset, _dataLength);
                     break;
                 case WEBRTCstringEMPTY:
                     ret = "Empty string message";
