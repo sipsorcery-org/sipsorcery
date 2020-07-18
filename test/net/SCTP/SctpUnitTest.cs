@@ -12,6 +12,7 @@
 
 using Microsoft.Extensions.Logging;
 using SCTP4CS.Utils;
+using SIPSorcery.Net.Sctp;
 using SIPSorcery.Sys;
 using Xunit;
 
@@ -36,15 +37,42 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var dataChanOpen = new DCOpen("label");
+            var dataChanOpen = new DataChannelOpen("label");
             byte[] pkt = dataChanOpen.getBytes();
 
             logger.LogDebug(pkt.HexStr());
 
-            var rndTripPkt = new DCOpen(new ByteBuffer(pkt));
+            var rndTripPkt = new DataChannelOpen(new ByteBuffer(pkt));
 
             Assert.NotNull(rndTripPkt);
             Assert.Equal(dataChanOpen.getLabel(), rndTripPkt.getLabel());
+        }
+
+        /// <summary>
+        /// Tests that a Data Channel Open chunk can be correctly serialised and parsed.
+        /// </summary>
+        [Fact]
+        public void RoundTripDataChannelOpenChunkUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            DataChunk dcopen = DataChunk.mkDataChannelOpen("123");
+            int chunkLength = dcopen.getChunkLength();
+
+            Assert.Equal(32, chunkLength);
+
+            byte[] buf = new byte[chunkLength];
+            ByteBuffer byteBuf = new ByteBuffer(buf);
+            dcopen.write(byteBuf);
+
+            logger.LogDebug(byteBuf.Data.HexStr());
+
+            var rndTripChunk = new DataChunk(Chunk.CType.DATA, 0, byteBuf.Data.Length, byteBuf);
+            var dataChannelOpenChunk = rndTripChunk.getDCEP();
+
+            Assert.NotNull(rndTripChunk);
+            Assert.NotNull(dataChannelOpenChunk);
         }
     }
 }

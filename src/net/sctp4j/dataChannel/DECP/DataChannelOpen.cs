@@ -15,6 +15,10 @@
  *
  */
 // Modified by Andrés Leone Gámez
+/**
+ *
+ * @author Westhawk Ltd<thp@westhawk.co.uk>
+ */
 
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -22,29 +26,56 @@ using SCTP4CS.Utils;
 using SIPSorcery.Net.Sctp;
 using SIPSorcery.Sys;
 
-/**
- *
- * @author Westhawk Ltd<thp@westhawk.co.uk>
- */
 namespace SIPSorcery.Net
 {
-    public class DCOpen
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <remarks>
+    /// 
+    /*
+    * https://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-09
+    5.1.  DATA_CHANNEL_OPEN Message
+
+    This message is sent initially on the stream used for user messages
+    using the channel.
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |  Message Type |  Channel Type |            Priority           |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                    Reliability Parameter                      |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |         Label Length          |       Protocol Length         |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    \                                                               /
+    |                             Label                             |
+    /                                                               \
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    \                                                               /
+    |                            Protocol                           |
+    /                                                               \
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+     Reliability Parameter:
+    +------------------------------------------------+------+-----------+
+    | Name                                           | Type | Reference |
+    +------------------------------------------------+------+-----------+
+    | DATA_CHANNEL_RELIABLE                          | 0x00 | [RFCXXXX] |
+    | DATA_CHANNEL_RELIABLE_UNORDERED                | 0x80 | [RFCXXXX] |
+    | DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT           | 0x01 | [RFCXXXX] |
+    | DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT_UNORDERED | 0x81 | [RFCXXXX] |
+    | DATA_CHANNEL_PARTIAL_RELIABLE_TIMED            | 0x02 | [RFCXXXX] |
+    | DATA_CHANNEL_PARTIAL_RELIABLE_TIMED_UNORDERED  | 0x82 | [RFCXXXX] |
+    | Reserved                                       | 0x7f | [RFCXXXX] |
+    | Reserved                                       | 0xff | [RFCXXXX] |
+    | Unassigned                                     | rest |           |
+    +------------------------------------------------+------+-----------+
+    */
+    /// </remarks>
+    public class DataChannelOpen
     {
-        /*
-		 +------------------------------------------------+------+-----------+
-		 | Name                                           | Type | Reference |
-		 +------------------------------------------------+------+-----------+
-		 | DATA_CHANNEL_RELIABLE                          | 0x00 | [RFCXXXX] |
-		 | DATA_CHANNEL_RELIABLE_UNORDERED                | 0x80 | [RFCXXXX] |
-		 | DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT           | 0x01 | [RFCXXXX] |
-		 | DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT_UNORDERED | 0x81 | [RFCXXXX] |
-		 | DATA_CHANNEL_PARTIAL_RELIABLE_TIMED            | 0x02 | [RFCXXXX] |
-		 | DATA_CHANNEL_PARTIAL_RELIABLE_TIMED_UNORDERED  | 0x82 | [RFCXXXX] |
-		 | Reserved                                       | 0x7f | [RFCXXXX] |
-		 | Reserved                                       | 0xff | [RFCXXXX] |
-		 | Unassigned                                     | rest |           |
-		 +------------------------------------------------+------+-----------+
-		 */
         public const byte RELIABLE = 0x0;
         public const byte PARTIAL_RELIABLE_REXMIT = 0x01;
         public const byte PARTIAL_RELIABLE_REXMIT_UNORDERED = (byte)0x81;
@@ -52,49 +83,23 @@ namespace SIPSorcery.Net
         public const byte PARTIAL_RELIABLE_TIMED_UNORDERED = (byte)0x82;
         public const byte RELIABLE_UNORDERED = (byte)0x80;
 
-        /*
-         * https://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-09
-		 5.1.  DATA_CHANNEL_OPEN Message
-
-		 This message is sent initially on the stream used for user messages
-		 using the channel.
-
-		 0                   1                   2                   3
-		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |  Message Type |  Channel Type |            Priority           |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |                    Reliability Parameter                      |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |         Label Length          |       Protocol Length         |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 \                                                               /
-		 |                             Label                             |
-		 /                                                               \
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 \                                                               /
-		 |                            Protocol                           |
-		 /                                                               \
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 */
-
         private static ILogger logger = Log.Logger;
 
         private byte _messType;
         private byte _chanType;
         private int _priority;
         private long _reliablity;
-        int _labLen;
-        int _protLen;
+        public int _labLen;
+        public int _protLen;
         private byte[] _label;
         private byte[] _protocol;
         const int OPEN = 0x03;
         const int ACK = 0x02;
         bool _isAck = false;
 
-        public DCOpen(string label) : this((byte)RELIABLE, 0, 0, label, "") { }
+        public DataChannelOpen(string label) : this((byte)RELIABLE, 0, 0, label, "") { }
 
-        public DCOpen(byte chanType, int priority, long reliablity, string label, string protocol)
+        public DataChannelOpen(byte chanType, int priority, long reliablity, string label, string protocol)
         {
             _messType = (byte)OPEN;
             _chanType = chanType;
@@ -109,7 +114,7 @@ namespace SIPSorcery.Net
         public byte[] getBytes()
         {
             int sz = 12 + _labLen + pad(_labLen) + _protLen + pad(_protLen);
-            //logger.LogDebug("dcopen needs " + sz + " bytes ");
+            //logger.LogDebug("DataChannelOpen needs " + sz + " bytes ");
 
             byte[] ret = new byte[sz];
             ByteBuffer buff = new ByteBuffer(ret);
@@ -141,7 +146,7 @@ namespace SIPSorcery.Net
             return res;
         }
 
-        public DCOpen(ByteBuffer bb)
+        public DataChannelOpen(ByteBuffer bb)
         {
             _messType = bb.GetByte();
             switch (_messType)

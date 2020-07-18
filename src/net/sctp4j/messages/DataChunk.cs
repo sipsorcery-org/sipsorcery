@@ -15,6 +15,10 @@
  *
  */
 // Modified by Andrés Leone Gámez
+/**
+ *
+ * @author Westhawk Ltd<thp@westhawk.co.uk>
+ */
 
 using System;
 using System.Collections.Generic;
@@ -23,19 +27,43 @@ using Microsoft.Extensions.Logging;
 using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
-/**
- *
- * @author Westhawk Ltd<thp@westhawk.co.uk>
- */
 namespace SIPSorcery.Net.Sctp
 {
-    public class DataChunk : Chunk, IComparer<DataChunk>, IComparable<DataChunk>
-    {
-
-        private static ILogger logger = Log.Logger;
-
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <remarks>
+    /// 
         /*
-	   +-------------------------------+----------+-----------+------------+
+   
+		 0                   1                   2                   3
+		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 |   Type = 0    | Reserved|U|B|E|    Length                     |
+		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 |                              TSN                              |
+		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 |      Stream Identifier S      |   Stream Sequence Number n    |
+		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 |                  Payload Protocol Identifier                  |
+		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 \                                                               \
+		 /                 User Data (seq n of Stream S)                 /
+		 \                                                               \
+		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+        Length:
+        This field indicates the length of the DATA chunk in bytes from
+        the beginning of the type field to the end of the User Data field
+        excluding any padding.  A DATA chunk with one byte of user data
+        will have Length set to 17 (indicating 17 bytes).
+
+        A DATA chunk with a User Data field of length L will have the
+        Length field set to (16 + L) (indicating 16+L bytes) where L MUST
+        be greater than 0.
+
+       Payload Protocol Identifier:
+       +-------------------------------+----------+-----------+------------+
 	   | Value                         | SCTP     | Reference | Date       |
 	   |                               | PPID     |           |            |
 	   +-------------------------------+----------+-----------+------------+
@@ -50,6 +78,10 @@ namespace SIPSorcery.Net.Sctp
 	   +-------------------------------+----------+-----------+------------+
 
 		 */
+    /// </remarks>
+    public class DataChunk : Chunk, IComparer<DataChunk>, IComparable<DataChunk>
+    {
+        private static ILogger logger = Log.Logger;
 
         public const int WEBRTCCONTROL = 50;
         public const int WEBRTCstring = 51;
@@ -70,7 +102,7 @@ namespace SIPSorcery.Net.Sctp
         private int _dataOffset;
         private int _dataLength;
 
-        private DCOpen _open;
+        private DataChannelOpen _open;
         private InvalidDataChunkException _invalid;
         private bool _gapAck;
         private long _retryTime;
@@ -101,7 +133,7 @@ namespace SIPSorcery.Net.Sctp
                         ByteBuffer bb = _body.slice();
                         try
                         {
-                            _open = new DCOpen(bb);
+                            _open = new DataChannelOpen(bb);
                         }
                         catch (InvalidDataChunkException ex)
                         {
@@ -174,26 +206,6 @@ namespace SIPSorcery.Net.Sctp
             setFlags(0); // default assumption.
         }
 
-        /*
-   
-		 0                   1                   2                   3
-		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |   Type = 0    | Reserved|U|B|E|    Length                     |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |                              TSN                              |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |      Stream Identifier S      |   Stream Sequence Number n    |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |                  Payload Protocol Identifier                  |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 \                                                               \
-		 /                 User Data (seq n of Stream S)                 /
-		 \                                                               \
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-		 */
-
         public uint getTsn()
         {
             return _tsn;
@@ -219,7 +231,7 @@ namespace SIPSorcery.Net.Sctp
             return this._data;
         }
 
-        public DCOpen getDCEP()
+        public DataChannelOpen getDCEP()
         {
             return this._open;
         }
@@ -278,7 +290,7 @@ namespace SIPSorcery.Net.Sctp
             _sSeqNo = sSeqNo;
         }
 
-        public DataChunk mkAck(DCOpen dcep)
+        public DataChunk mkAck(DataChannelOpen dcep)
         {
             DataChunk ack = new DataChunk();
             ack.setData(dcep.mkAck());
@@ -288,10 +300,10 @@ namespace SIPSorcery.Net.Sctp
             return ack;
         }
 
-        public static DataChunk mkDCOpen(string label)
+        public static DataChunk mkDataChannelOpen(string label)
         {
             DataChunk open = new DataChunk();
-            DCOpen dope = new DCOpen(label);
+            DataChannelOpen dope = new DataChannelOpen(label);
             open.setData(dope.getBytes());
             open._ppid = WEBRTCCONTROL;
             open.setFlags(DataChunk.SINGLEFLAG);

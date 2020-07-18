@@ -795,7 +795,7 @@ namespace SIPSorcery.Net.Sctp
         // todo should be in a behave block
         // then we wouldn't be messing with stream seq numbers.
 
-        private Chunk[] dcepDeal(SCTPStream s, DataChunk dc, DCOpen dcep)
+        private Chunk[] dcepDeal(SCTPStream s, DataChunk dc, DataChannelOpen dcep)
         {
             Chunk[] rep = null;
             //logger.LogDebug("dealing with a decp for stream " + dc.getDataAsString());
@@ -1029,10 +1029,10 @@ namespace SIPSorcery.Net.Sctp
                     sout.setLabel(label);
                     _streams.Add(sno, sout);
                 }// todo - move this to behave
-                DataChunk dcopen = DataChunk.mkDCOpen(label);
-                sout.outbound(dcopen);
-                dcopen.setTsn(_nearTSN++);
-                Chunk[] hack = { dcopen };
+                DataChunk DataChannelOpen = DataChunk.mkDataChannelOpen(label);
+                sout.outbound(DataChannelOpen);
+                DataChannelOpen.setTsn(_nearTSN++);
+                Chunk[] hack = { DataChannelOpen };
                 try
                 {
                     send(hack);
