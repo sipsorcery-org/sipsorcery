@@ -26,7 +26,7 @@ namespace SIPSorcery.Net.Sctp
 {
     public class HeartBeatChunk : Chunk
     {
-        public HeartBeatChunk(CType type, byte flags, int length, ByteBuffer pkt)
+        public HeartBeatChunk(ChunkType type, byte flags, int length, ByteBuffer pkt)
             : base(type, flags, length, pkt)
         {
             if (_body.remaining() >= 4)

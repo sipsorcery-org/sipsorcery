@@ -28,7 +28,7 @@ using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net.Sctp
-{
+{ 
     /// <summary>
     /// 
     /// </summary>
@@ -109,7 +109,7 @@ namespace SIPSorcery.Net.Sctp
         private int _retryCount;
         private long _sentTime;
 
-        public DataChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt)
+        public DataChunk(byte flags, int length, ByteBuffer pkt) : base(ChunkType.DATA, flags, length, pkt)
         {
             //logger.LogDebug("read in chunk header " + length);
             //logger.LogDebug("body remaining " + _body.remaining());
@@ -158,7 +158,8 @@ namespace SIPSorcery.Net.Sctp
                         break;
 
                     default:
-                        _invalid = new InvalidDataChunkException("Invalid Protocol Id in data Chunk " + _ppid);
+                        logger.LogWarning($"Invalid payload protocol identifier Id in data chunk, ppid {_ppid}.");
+                        _invalid = new InvalidDataChunkException($"Invalid payload protocol identifier in data chunk, ppid {_ppid}.");
                         break;
                 }
             }
@@ -201,7 +202,7 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        public DataChunk() : base(Chunk.CType.DATA)
+        public DataChunk() : base(ChunkType.DATA)
         {
             setFlags(0); // default assumption.
         }
@@ -246,7 +247,7 @@ namespace SIPSorcery.Net.Sctp
             return _dataLength;
         }
 
-        public int getChunkLength()
+        public new int getLength()
         {
             int len = base.getLength();
             if (len == 0)
@@ -264,6 +265,20 @@ namespace SIPSorcery.Net.Sctp
             ret.Put((ushort)_sSeqNo);// = _body.getushort();
             ret.Put(_ppid);// = _body.getInt();
             ret.Put(_data, _dataOffset, _dataLength);
+        }
+
+        private int pad(int len)
+        {
+            int mod = len % 4;
+            int res = 0;
+            //logger.LogDebug("field of " + len + " mod 4 is " + mod);
+
+            if (mod > 0)
+            {
+                res = (4 - mod);
+            }
+            //logger.LogDebug("padded by " + res);
+            return res;
         }
 
         /**
@@ -310,18 +325,11 @@ namespace SIPSorcery.Net.Sctp
             return open;
         }
 
-        /*
-		public DataChunk(string s) {
-			this();
-			_data = s.getBytes();
-			_ppid = WEBRTCstring;
-		}
-		 */
         public override string ToString()
         {
             string ret = base.ToString();
-            ret += " ppid = " + _ppid + "seqn " + _sSeqNo + " streamId " + _streamId + " tsn " + _tsn
-                    + " retry " + _retryTime + " gap acked " + _gapAck;
+            ret += $" ppid {_ppid}, seqn {_sSeqNo}, streamId {_streamId}, tsn {_tsn}"
+                    + $", retry {_retryTime}, gap acked {_gapAck}.";
             return ret;
         }
 
@@ -339,6 +347,7 @@ namespace SIPSorcery.Net.Sctp
         {
             return 1024; // shrug - needs to be less than the theoretical MTU or slow start fails.
         }
+
         public static int GetCapacity()
         {
             return 1024; // shrug - needs to be less than the theoretical MTU or slow start fails.

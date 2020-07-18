@@ -36,7 +36,7 @@ namespace SIPSorcery.Net.Sctp
         private long sentAt;
         private int retries;
 
-        public ReConfigChunk(CType type, byte flags, int length, ByteBuffer pkt)
+        public ReConfigChunk(ChunkType type, byte flags, int length, ByteBuffer pkt)
             : base(type, flags, length, pkt)
         {
             logger.LogDebug("ReConfig chunk" + this.ToString());
@@ -51,7 +51,7 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        public ReConfigChunk() : base(CType.RE_CONFIG) { }
+        public ReConfigChunk() : base(ChunkType.RE_CONFIG) { }
 
         protected override void putFixedParams(ByteBuffer ret)
         {

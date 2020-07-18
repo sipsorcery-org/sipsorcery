@@ -294,7 +294,7 @@ namespace SIPSorcery.Net.Sctp
             int cverTag = t ? ass.getPeerVerTag() : ass.getMyVerTag();
             if (cverTag != _verTag)
             {
-                throw new InvalidSCTPPacketException("VerTag on an " + chunk.typeLookup() + " doesn't match " + (t ? "their " : "our ") + " vertag " + _verTag + " != " + cverTag);
+                throw new InvalidSCTPPacketException($"VerTag on an {(ChunkType)chunk._type} doesn't match " + (t ? "their " : "our ") + " vertag " + _verTag + " != " + cverTag);
             }
         }
 
@@ -304,7 +304,7 @@ namespace SIPSorcery.Net.Sctp
             // validation depends on the types of chunk in the list.
             if ((_chunks != null) && (_chunks.Count > 0))
             {
-                int init = findChunk(Chunk.CType.INIT);
+                int init = findChunk(ChunkType.INIT);
                 if (init >= 0)
                 {
                     if (init != 0)
@@ -318,7 +318,7 @@ namespace SIPSorcery.Net.Sctp
                 }
                 else
                 {
-                    int abo = findChunk(Chunk.CType.ABORT);
+                    int abo = findChunk(ChunkType.ABORT);
                     if (abo >= 0)
                     {
                         // we have an abort
@@ -327,7 +327,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     else
                     {
-                        int sdc = findChunk(Chunk.CType.SHUTDOWN_COMPLETE);
+                        int sdc = findChunk(ChunkType.SHUTDOWN_COMPLETE);
                         if (sdc >= 0)
                         {
                             if (sdc == 0)
@@ -352,7 +352,7 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        private int findChunk(Chunk.CType bty)
+        private int findChunk(ChunkType bty)
         {
             int ret = 0;
             foreach (Chunk c in _chunks)

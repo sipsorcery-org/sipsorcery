@@ -15,15 +15,14 @@
  *
  */
 // Modified by Andrés Leone Gámez
-
-
-using System.Text;
-using SCTP4CS.Utils;
-
 /**
  *
  * @author tim
  */
+
+using System.Text;
+using SCTP4CS.Utils;
+
 namespace SIPSorcery.Net.Sctp
 {
     public class ReconfigurationResponseParameter : KnownParam
@@ -135,6 +134,5 @@ namespace SIPSorcery.Net.Sctp
         {
             seqNo = reqSeqNo;
         }
-
     }
 }

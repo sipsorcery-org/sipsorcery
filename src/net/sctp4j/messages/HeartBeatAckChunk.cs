@@ -26,7 +26,7 @@ namespace SIPSorcery.Net.Sctp
 {
     public class HeartBeatAckChunk : Chunk
     {
-        public HeartBeatAckChunk() : base(CType.HEARTBEAT_ACK) { }
+        public HeartBeatAckChunk() : base(ChunkType.HEARTBEAT_ACK) { }
 
         protected override void putFixedParams(ByteBuffer ret) { }
     }

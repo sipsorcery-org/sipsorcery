@@ -167,7 +167,7 @@ namespace SIPSorcery.Net.Sctp
         {
             _li = li;
             _delivered = false;
-            logger.LogDebug("delegating message delivery to stream of type " + _stream.GetType().Name);
+            //logger.LogDebug("delegating message delivery to stream of type " + _stream.GetType().Name);
             _stream.deliverMessage(this);
             return true;
         }
@@ -188,7 +188,7 @@ namespace SIPSorcery.Net.Sctp
 
         public void run()
         {
-            logger.LogDebug("delegated message delivery from stream of type " + _stream.GetType().Name);
+            //logger.LogDebug("delegated message delivery from stream of type " + _stream.GetType().Name);
             byte[] data = _data;
             if (_li != null)
             {

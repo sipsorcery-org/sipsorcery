@@ -15,6 +15,10 @@
  *
  */
 // Modified by Andrés Leone Gámez
+/**
+ *
+ * @author Westhawk Ltd<thp@westhawk.co.uk>
+ */
 
 using System.Collections.Generic;
 using System.Text;
@@ -22,131 +26,161 @@ using Microsoft.Extensions.Logging;
 using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
-/**
- *
- * @author Westhawk Ltd<thp@westhawk.co.uk>
- */
 namespace SIPSorcery.Net.Sctp
 {
+    public enum ChunkType : byte
+    {
+        DATA = 0,
+        INIT = 1,
+        INITACK = 2,
+        SACK = 3,
+        HEARTBEAT = 4,
+        HEARTBEAT_ACK = 5,
+        ABORT = 6,
+        SHUTDOWN = 7,
+        SHUTDOWN_ACK = 8,
+        ERROR = 9,
+        COOKIE_ECHO = 10,
+        COOKIE_ACK = 11,
+        ECNE = 12,
+        CWR = 13,
+        SHUTDOWN_COMPLETE = 14,
+        AUTH = 15,
+        PKTDROP = 129,
+        RE_CONFIG = 130,
+        FORWARDTSN = 192,
+        ASCONF = 193,
+        ASCONF_ACK = 128,
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <remarks>
+    /*
+	0                   1                   2                   3
+	0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	|   Chunk Type  | Chunk  Flags  |        Chunk Length           |
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	\                                                               \
+	/                          Chunk Value                          /
+	\                                                               \
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+	Chunk Length: 16 bits (unsigned integer)
+
+	This value represents the size of the chunk in bytes, including
+	the Chunk Type, Chunk Flags, Chunk Length, and Chunk Value fields.
+	Therefore, if the Chunk Value field is zero-length, the Length
+	field will be set to 4.  The Chunk Length field does not count any
+	chunk padding.
+
+
+     Chunk Type  Chunk Name
+     --------------------------------------------------------------
+     0xC1    Address Configuration Change Chunk        (ASCONF)
+     0x80    Address Configuration Acknowledgment      (ASCONF-ACK)
+
+     +------------+------------------------------------+
+     | Chunk Type | Chunk Name                         |
+     +------------+------------------------------------+
+     | 130        | Re-configuration Chunk (RE-CONFIG) |
+     +------------+------------------------------------+
+
+     The following new chunk type is defined:
+
+     Chunk Type    Chunk Name
+     ------------------------------------------------------
+     192 (0xC0)    Forward Cumulative TSN (FORWARD TSN)
+
+     Chunk Type  Chunk Name
+     --------------------------------------------------------------
+     0x81    Packet Drop Chunk        (PKTDROP)
+
+    Chunk Named Variables? :
+
+         1	Heartbeat Info	[RFC4960]
+         2-4	Unassigned	
+         5	IPv4 Address	[RFC4960]
+         6	IPv6 Address	[RFC4960]
+         7	State Cookie	[RFC4960]
+         8	Unrecognized Parameters	[RFC4960]
+         9	Cookie Preservative	[RFC4960]
+         10	Unassigned	
+         11	Host Name Address	[RFC4960]
+         12	Supported Address Types	[RFC4960]
+         13	Outgoing SSN Reset Request Parameter	[RFC6525]
+         14	Incoming SSN Reset Request Parameter	[RFC6525]
+         15	SSN/TSN Reset Request Parameter	[RFC6525]
+         16	Re-configuration Response Parameter	[RFC6525]
+         17	Add Outgoing Streams Request Parameter	[RFC6525]
+         18	Add Incoming Streams Request Parameter	[RFC6525]
+         19-32767	Unassigned	
+         32768	Reserved for ECN Capable (0x8000)	
+         32770	Random (0x8002)	[RFC4805]
+         32771	Chunk List (0x8003)	[RFC4895]
+         32772	Requested HMAC Algorithm Parameter (0x8004)	[RFC4895]
+         32773	Padding (0x8005)	
+         32776	Supported Extensions (0x8008)	[RFC5061]
+         32777-49151	Unassigned	
+         49152	Forward TSN supported (0xC000)	[RFC3758]
+         49153	Add IP Address (0xC001)	[RFC5061]
+         49154	Delete IP Address (0xC002)	[RFC5061]
+         49155	Error Cause Indication (0xC003)	[RFC5061]
+         49156	Set Primary Address (0xC004)	[RFC5061]
+         49157	Success Indication (0xC005)	[RFC5061]
+         49158	Adaptation Layer Indication (0xC006)	[RFC5061]
+         */
+    /// </remarks>
     public abstract class Chunk
     {
-        /*
-		 0                   1                   2                   3
-		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |   Chunk Type  | Chunk  Flags  |        Chunk Length           |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 \                                                               \
-		 /                          Chunk Value                          /
-		 \                                                               \
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 */
-
-        public enum CType : byte
-        {
-            DATA = 0,
-            INIT = 1,
-            INITACK = 2,
-            SACK = 3,
-            HEARTBEAT = 4,
-            HEARTBEAT_ACK = 5,
-            ABORT = 6,
-            SHUTDOWN = 7,
-            SHUTDOWN_ACK = 8,
-            ERROR = 9,
-            COOKIE_ECHO = 10,
-            COOKIE_ACK = 11,
-            ECNE = 12,
-            CWR = 13,
-            SHUTDOWN_COMPLETE = 14,
-            AUTH = 15,
-            PKTDROP = 129,
-            RE_CONFIG = 130,
-            FORWARDTSN = 192,
-            ASCONF = 193,
-            ASCONF_ACK = 128,
-        }
-
-        static readonly Dictionary<CType, string> _typeLookup = new Dictionary<CType, string>() {
-            { CType.DATA, "DATA" },
-            { CType.INIT, "INIT" },
-            { CType.INITACK, "INIT ACK" },
-            { CType.SACK, "SACK" },
-            { CType.HEARTBEAT, "HEARTBEAT" },
-            { CType.HEARTBEAT_ACK, "HEARTBEAT ACK" },
-            { CType.ABORT, "ABORT" },
-            { CType.SHUTDOWN, "SHUTDOWN" },
-            { CType.SHUTDOWN_ACK, "SHUTDOWN ACK" },
-            { CType.ERROR, "ERROR" },
-            { CType.COOKIE_ECHO, "COOKIE ECHO" },
-            { CType.COOKIE_ACK, "COOKIE ACK" },
-            { CType.ECNE, "ECNE" },
-            { CType.CWR, "CWR" },
-            { CType.SHUTDOWN_COMPLETE, "SHUTDOWN COMPLETE" },
-            { CType.AUTH, "AUTH" },
-            { CType.PKTDROP, "PKTDROP" },
-            { CType.RE_CONFIG, "RE-CONFIG" },
-            { CType.FORWARDTSN, "FORWARDTSN" },
-            { CType.ASCONF, "ASCONF" },
-            { CType.ASCONF_ACK, "ASCONF-ACK" }
-        };
-
+        public const byte TBIT = 1;
 
         private static ILogger logger = Log.Logger;
 
-        public const byte TBIT = 1;
-
-        /*
-		   Chunk Length: 16 bits (unsigned integer)
-
-		  This value represents the size of the chunk in bytes, including
-		  the Chunk Type, Chunk Flags, Chunk Length, and Chunk Value fields.
-		  Therefore, if the Chunk Value field is zero-length, the Length
-		  field will be set to 4.  The Chunk Length field does not count any
-		  chunk padding.
-		*/
         public static Chunk mkChunk(ByteBuffer pkt)
         {
             Chunk ret = null;
             if (pkt.remaining() >= 4)
             {
-                CType type = (CType)pkt.GetByte();
+                ChunkType type = (ChunkType)pkt.GetByte();
                 byte flags = pkt.GetByte();
                 int length = pkt.GetUShort();
                 switch (type)
                 {
-                    case CType.DATA:
-                        ret = new DataChunk(type, flags, length, pkt);
+                    case ChunkType.DATA:
+                        ret = new DataChunk(flags, length, pkt);
                         break;
-                    case CType.INIT:
+                    case ChunkType.INIT:
                         ret = new InitChunk(type, flags, length, pkt);
                         break;
-                    case CType.SACK:
+                    case ChunkType.SACK:
                         ret = new SackChunk(type, flags, length, pkt);
                         break;
-                    case CType.INITACK:
+                    case ChunkType.INITACK:
                         ret = new InitAckChunk(type, flags, length, pkt);
                         break;
-                    case CType.COOKIE_ECHO:
+                    case ChunkType.COOKIE_ECHO:
                         ret = new CookieEchoChunk(type, flags, length, pkt);
                         break;
-                    case CType.COOKIE_ACK:
+                    case ChunkType.COOKIE_ACK:
                         ret = new CookieAckChunk(type, flags, length, pkt);
                         break;
-                    case CType.ABORT:
+                    case ChunkType.ABORT:
                         ret = new AbortChunk(type, flags, length, pkt);
                         break;
-                    case CType.HEARTBEAT:
+                    case ChunkType.HEARTBEAT:
                         ret = new HeartBeatChunk(type, flags, length, pkt);
                         break;
-                    case CType.RE_CONFIG:
+                    case ChunkType.RE_CONFIG:
                         ret = new ReConfigChunk(type, flags, length, pkt);
                         break;
-                    case CType.ERROR:
+                    case ChunkType.ERROR:
                         ret = new ErrorChunk(type, flags, length, pkt);
                         break;
                     default:
-                        logger.LogWarning("Default chunk type " + type + " read in ");
+                        logger.LogWarning($"SCTP unknown chunk type received {type}.");
                         ret = new FailChunk(type, flags, length, pkt);
                         break;
                 }
@@ -167,86 +201,27 @@ namespace SIPSorcery.Net.Sctp
             }
             return ret;
         }
-        /*
-		 0          - Payload Data (DATA)
-		 1          - Initiation (INIT)
-		 2          - Initiation Acknowledgement (INIT ACK)
-		 3          - Selective Acknowledgement (SACK)
-		 4          - Heartbeat Request (HEARTBEAT)
-		 5          - Heartbeat Acknowledgement (HEARTBEAT ACK)
-		 6          - Abort (ABORT)
-		 7          - Shutdown (SHUTDOWN)
-		 8          - Shutdown Acknowledgement (SHUTDOWN ACK)
-		 9          - Operation Error (ERROR)
-		 10         - State Cookie (COOKIE ECHO)
-		 11         - Cookie Acknowledgement (COOKIE ACK)
 
-
-
-
-		 Stewart                     Standards Track                    [Page 17]
-
-		 RFC 4960          Stream Control Transmission Protocol    September 2007
-
-
-		 12         - Reserved for Explicit Congestion Notification Echo
-		 (ECNE)
-		 13         - Reserved for Congestion Window Reduced (CWR)
-		 14         - Shutdown Complete (SHUTDOWN COMPLETE)
-		 */
-        /*
-    
-		 Chunk Type  Chunk Name
-		 --------------------------------------------------------------
-		 0xC1    Address Configuration Change Chunk        (ASCONF)
-		 0x80    Address Configuration Acknowledgment      (ASCONF-ACK)
-    
-		 +------------+------------------------------------+
-		 | Chunk Type | Chunk Name                         |
-		 +------------+------------------------------------+
-		 | 130        | Re-configuration Chunk (RE-CONFIG) |
-		 +------------+------------------------------------+
-    
-		 The following new chunk type is defined:
-
-		 Chunk Type    Chunk Name
-		 ------------------------------------------------------
-		 192 (0xC0)    Forward Cumulative TSN (FORWARD TSN)
-     
-    
-		 Chunk Type  Chunk Name
-		 --------------------------------------------------------------
-		 0x81    Packet Drop Chunk        (PKTDROP)
-		 */
-
-        public CType _type;
+        public ChunkType _type;
         public byte _flags;
         int _length;
         protected ByteBuffer _body;
         public List<VariableParam> _varList = new List<VariableParam>();
 
-
-        protected Chunk(CType type)
+        protected Chunk(ChunkType type)
         {
             _type = type;
         }
 
-        protected Chunk(CType type, byte flags, int length, ByteBuffer pkt)
+        protected Chunk(ChunkType type, byte flags, int length, ByteBuffer pkt)
         {
             _type = type;
             _flags = flags;
             _length = length;
-            /* Copy version 
-			byte[] bb = new byte[length -4]; 
-			pkt[bb];
-			_body = MemoryStream.wrap(bb);
-			*/
-            // or use same data but different MemoryStreams wrapping it
             _body = pkt.slice();
             _body.Limit = length - 4;
             pkt.Position += (length - 4);
         }
-        // sad ommission in MemoryStream 
 
         public void write(ByteBuffer ret)
         {
@@ -280,36 +255,12 @@ namespace SIPSorcery.Net.Sctp
             //Console.WriteLine("setting chunk length to " + ret.position());
         }
 
-        public string typeLookup()
-        {
-            return typeLookup(this._type);
-        }
-
-        public static string typeLookup(CType t)
-        {
-            string ret;
-            if (!_typeLookup.TryGetValue(t, out ret) || ret == null)
-            {
-                ret = "unknown(" + t + ")";
-            }
-            return ret;
-        }
-        public static string chunksToNames(byte[] fse)
-        {
-            StringBuilder ret = new StringBuilder();
-            foreach (CType f in fse)
-            {
-                ret.Append(typeLookup(f));
-                ret.Append(" ");
-            }
-            return ret.ToString();
-        }
         public override string ToString()
         {
-            return "Chunk : type " + typeLookup(_type) + " flags " + ((0xff) & _flags).ToString("X4") + " length = " + _length;
+            return $"Chunk: type {_type}, flags {((0xff) & _flags).ToString("X4")}, length {_length}.";
         }
 
-        public CType getType()
+        public ChunkType getType()
         {
             return _type;
         }
@@ -318,42 +269,6 @@ namespace SIPSorcery.Net.Sctp
         {
             return _length;
         }
-        /*
-    
-		 1	Heartbeat Info	[RFC4960]
-		 2-4	Unassigned	
-		 5	IPv4 Address	[RFC4960]
-		 6	IPv6 Address	[RFC4960]
-		 7	State Cookie	[RFC4960]
-		 8	Unrecognized Parameters	[RFC4960]
-		 9	Cookie Preservative	[RFC4960]
-		 10	Unassigned	
-		 11	Host Name Address	[RFC4960]
-		 12	Supported Address Types	[RFC4960]
-		 13	Outgoing SSN Reset Request Parameter	[RFC6525]
-		 14	Incoming SSN Reset Request Parameter	[RFC6525]
-		 15	SSN/TSN Reset Request Parameter	[RFC6525]
-		 16	Re-configuration Response Parameter	[RFC6525]
-		 17	Add Outgoing Streams Request Parameter	[RFC6525]
-		 18	Add Incoming Streams Request Parameter	[RFC6525]
-		 19-32767	Unassigned	
-		 32768	Reserved for ECN Capable (0x8000)	
-		 32770	Random (0x8002)	[RFC4805]
-		 32771	Chunk List (0x8003)	[RFC4895]
-		 32772	Requested HMAC Algorithm Parameter (0x8004)	[RFC4895]
-		 32773	Padding (0x8005)	
-		 32776	Supported Extensions (0x8008)	[RFC5061]
-		 32777-49151	Unassigned	
-		 49152	Forward TSN supported (0xC000)	[RFC3758]
-		 49153	Add IP Address (0xC001)	[RFC5061]
-		 49154	Delete IP Address (0xC002)	[RFC5061]
-		 49155	Error Cause Indication (0xC003)	[RFC5061]
-		 49156	Set Primary Address (0xC004)	[RFC5061]
-		 49157	Success Indication (0xC005)	[RFC5061]
-		 49158	Adaptation Layer Indication (0xC006)	[RFC5061]
-
-    
-		 */
 
         protected VariableParam readVariable()
         {
@@ -456,7 +371,7 @@ namespace SIPSorcery.Net.Sctp
             try
             {
                 var.readBody(_body, blen);
-                logger.LogDebug("variable type " + var.getType() + " name " + var.getName());
+                //logger.LogDebug("variable type " + var.getType() + " name " + var.getName());
             }
             catch (SctpPacketFormatException ex)
             {
@@ -609,7 +524,7 @@ namespace SIPSorcery.Net.Sctp
                 byte[] data = this.getData();
                 for (int i = 0; i < data.Length; i++)
                 {
-                    ret += " " + typeLookup((CType)data[i]);
+                    ret += $" {(ChunkType)data[i]}";
                 }
                 return base.ToString() + ret;
             }
@@ -627,7 +542,7 @@ namespace SIPSorcery.Net.Sctp
                 byte[] data = this.getData();
                 for (int i = 0; i < data.Length; i++)
                 {
-                    ret += " " + typeLookup((CType)data[i]);
+                    ret += $" ${(ChunkType)data[i]}";
                 }
                 return base.ToString() + ret;
             }

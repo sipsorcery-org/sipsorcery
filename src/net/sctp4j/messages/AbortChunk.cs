@@ -45,9 +45,9 @@ namespace SIPSorcery.Net.Sctp
 
         private static ILogger logger = Log.Logger;
 
-        public AbortChunk() : base(CType.ABORT) { }
+        public AbortChunk() : base(ChunkType.ABORT) { }
 
-        public AbortChunk(CType type, byte flags, int length, ByteBuffer pkt)
+        public AbortChunk(ChunkType type, byte flags, int length, ByteBuffer pkt)
             : base(type, flags, length, pkt)
         {
             if (_body.remaining() >= 4)

@@ -87,7 +87,7 @@ namespace SIPSorcery.Net.Sctp
             SHUTDOWNACKSENT, CLOSED
         };
 
-        private byte[] _supportedExtensions = { (byte)Chunk.CType.RE_CONFIG };
+        private byte[] _supportedExtensions = { (byte)ChunkType.RE_CONFIG };
         /*
 		 For what it is worth, here's the logic as to why we don't have any supported extensions.
 		 { 
@@ -148,7 +148,7 @@ namespace SIPSorcery.Net.Sctp
         private List<CookieHolder> _cookies = new List<CookieHolder>();
 
         protected byte[] getSupportedExtensions()
-        { // this lets others swithc features off.
+        { // this lets others switch features off.
             return _supportedExtensions;
         }
         public uint getNearTSN()
@@ -160,13 +160,13 @@ namespace SIPSorcery.Net.Sctp
             ByteBuffer unionbb = new ByteBuffer(new byte[far.Length]);
             for (int f = 0; f < far.Length; f++)
             {
-                logger.LogDebug("offered extension " + Chunk.typeLookup((Chunk.CType)far[f]));
+                //logger.LogDebug($"offered extension {(ChunkType)far[f]}.");
                 for (int n = 0; n < _supportedExtensions.Length; n++)
                 {
-                    logger.LogDebug("supported extension " + Chunk.typeLookup((Chunk.CType)_supportedExtensions[n]));
+                    //logger.LogDebug($"supported extension {(ChunkType)_supportedExtensions[n]}.");
                     if (_supportedExtensions[n] == far[f])
                     {
-                        logger.LogDebug("matching extension " + Chunk.typeLookup((Chunk.CType)_supportedExtensions[n]));
+                        //logger.LogDebug($"matching extension {(ChunkType)_supportedExtensions[n]}.");
                         unionbb.Put(far[f]);
                     }
                 }
@@ -174,7 +174,7 @@ namespace SIPSorcery.Net.Sctp
             byte[] res = new byte[unionbb.Position];
             unionbb.Position = 0;
             unionbb.GetBytes(res, res.Length);
-            logger.LogDebug("union of extensions contains :" + Chunk.chunksToNames(res));
+            //logger.LogDebug("union of extensions contains :" + Chunk.chunksToNames(res));
             return res;
         }
 
@@ -187,7 +187,7 @@ namespace SIPSorcery.Net.Sctp
             {
                 c.validate();
             }
-            if (cl[0].getType() == Chunk.CType.INIT)
+            if (cl[0].getType() == ChunkType.INIT)
             {
                 _srcPort = rec.getDestPort();
                 _destPort = rec.getSrcPort();
@@ -203,7 +203,7 @@ namespace SIPSorcery.Net.Sctp
             Chunk hisack = null;
             foreach (var c in replies)
             {
-                if (c.getType() == Chunk.CType.SACK)
+                if (c.getType() == ChunkType.SACK)
                 {
                     if (hisack == null || ((SackChunk)c).getCumuTSNAck() > ((SackChunk)hisack).getCumuTSNAck())
                     {
@@ -214,9 +214,9 @@ namespace SIPSorcery.Net.Sctp
             // remove all sacks
             replies.RemoveAll((Chunk c) =>
             {
-                return c.getType() == Chunk.CType.SACK;
+                return c.getType() == ChunkType.SACK;
             });
-            // insert the higest one first.
+            // insert the highest one first.
             if (hisack != null)
             {
                 replies.Insert(0, hisack);
@@ -293,8 +293,7 @@ namespace SIPSorcery.Net.Sctp
 
         public Association(DatagramTransport transport, AssociationListener al, bool client, int srcPort, int dstPort)
         {
-            //Log.setLevel(Log.ALL);
-            logger.LogDebug("Created an Association of type: " + this.GetType().Name);
+            //logger.LogDebug($"SCTP created an Association of type: {this.GetType().Name}.");
             _al = al;
             _random = new SecureRandom();
             _myVerTag = _random.NextInt();
@@ -385,13 +384,13 @@ namespace SIPSorcery.Net.Sctp
 		 */
         private bool deal(Chunk c, List<Chunk> replies)
         {
-            Chunk.CType ty = c.getType();
+            ChunkType ty = c.getType();
             bool ret = true;
             State oldState = _state;
             Chunk[] reply = null;
             switch (ty)
             {
-                case Chunk.CType.INIT:
+                case ChunkType.INIT:
                     if (acceptableStateForInboundInit())
                     {
                         InitChunk init = (InitChunk)c;
@@ -402,7 +401,7 @@ namespace SIPSorcery.Net.Sctp
                         logger.LogDebug("Got an INIT when state was " + _state.ToString() + " - ignoring it for now ");
                     }
                     break;
-                case Chunk.CType.INITACK:
+                case ChunkType.INITACK:
                     //logger.LogDebug("got initack " + c.ToString());
                     if (_state == State.COOKIEWAIT)
                     {
@@ -414,7 +413,7 @@ namespace SIPSorcery.Net.Sctp
                         logger.LogDebug("Got an INITACK when not waiting for it - ignoring it");
                     }
                     break;
-                case Chunk.CType.COOKIE_ECHO:
+                case ChunkType.COOKIE_ECHO:
                     // logger.LogDebug("got cookie echo " + c.ToString());
                     reply = cookieEchoDeal((CookieEchoChunk)c);
                     if (reply.Length > 0)
@@ -422,34 +421,34 @@ namespace SIPSorcery.Net.Sctp
                         ret = !typeof(ErrorChunk).IsAssignableFrom(reply[0].GetType()); // ignore any following data chunk. 
                     }
                     break;
-                case Chunk.CType.COOKIE_ACK:
+                case ChunkType.COOKIE_ACK:
                     //logger.LogDebug("got cookie ack " + c.ToString());
                     if (_state == State.COOKIEECHOED)
                     {
                         _state = State.ESTABLISHED;
                     }
                     break;
-                case Chunk.CType.DATA:
+                case ChunkType.DATA:
                     logger.LogDebug("got data " + c.ToString());
                     reply = dataDeal((DataChunk)c);
                     break;
-                case Chunk.CType.ABORT:
+                case ChunkType.ABORT:
                     // no reply we should just bail I think.
                     _rcv = null;
                     _transp.Close();
                     break;
-                case Chunk.CType.HEARTBEAT:
+                case ChunkType.HEARTBEAT:
                     reply = ((HeartBeatChunk)c).mkReply();
                     break;
-                case Chunk.CType.SACK:
+                case ChunkType.SACK:
                     //logger.LogDebug("got tsak for TSN " + ((SackChunk)c).getCumuTSNAck());
                     reply = sackDeal((SackChunk)c);
                     // fix the outbound list here
                     break;
-                case Chunk.CType.RE_CONFIG:
+                case ChunkType.RE_CONFIG:
                     reply = reconfigState.deal((ReConfigChunk)c);
                     break;
-                case Chunk.CType.ERROR:
+                case ChunkType.ERROR:
                     logger.LogWarning($"SCTP error chunk received.");
                     foreach(var vparam in c._varList)
                     {
@@ -687,14 +686,14 @@ namespace SIPSorcery.Net.Sctp
             }
             reply = new Chunk[1];
             reply[0] = iac;
-            logger.LogDebug("Got in bound init :" + init.ToString());
-            logger.LogDebug("Replying with init-ack :" + iac.ToString());
+            logger.LogDebug("SCTP received INIT:" + init.ToString());
+            //logger.LogDebug("Replying with init-ack :" + iac.ToString());
             return reply;
         }
 
         private void ingest(DataChunk dc, List<Chunk> rep)
         {
-            logger.LogDebug("ingesting " + dc.ToString());
+            logger.LogDebug("SCTP received " + dc.ToString());
             Chunk closer = null;
             int sno = dc.getStreamId();
             uint tsn = dc.getTsn();

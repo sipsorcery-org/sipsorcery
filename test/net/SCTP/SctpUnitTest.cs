@@ -49,27 +49,94 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that a Data Channel Open chunk can be correctly serialised and parsed.
+        /// Tests that a Data Channel Open chunk can be correctly serialised and parsed when 
+        /// no padding is required.
         /// </summary>
         [Fact]
-        public void RoundTripDataChannelOpenChunkUnitTest()
+        public void RoundTripDataChannelOpenChunkNoPaddingUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DataChunk dcopen = DataChunk.mkDataChannelOpen("123");
-            int chunkLength = dcopen.getChunkLength();
+            DataChunk dcopen = DataChunk.mkDataChannelOpen("1234");
+            int chunkLength = dcopen.getLength();
 
+            Assert.Equal(DataChunk.WEBRTCCONTROL, dcopen.getPpid());
             Assert.Equal(32, chunkLength);
 
-            byte[] buf = new byte[chunkLength];
+            byte[] buf = new byte[32];
             ByteBuffer byteBuf = new ByteBuffer(buf);
             dcopen.write(byteBuf);
 
             logger.LogDebug(byteBuf.Data.HexStr());
 
-            var rndTripChunk = new DataChunk(Chunk.CType.DATA, 0, byteBuf.Data.Length, byteBuf);
-            var dataChannelOpenChunk = rndTripChunk.getDCEP();
+            ByteBuffer rtnByteBuf = new ByteBuffer(byteBuf.Data);
+            //var rndTripChunk = new DataChunk(0, 32, rtnByteBuf);
+            var rndTripChunk = Chunk.mkChunk(rtnByteBuf);
+            var dataChannelOpenChunk = (rndTripChunk as DataChunk).getDCEP();
+
+            Assert.NotNull(rndTripChunk);
+            Assert.NotNull(dataChannelOpenChunk);
+        }
+
+        /// <summary>
+        /// Tests that a Data Channel Open chunk can be correctly serialised and parsed when one
+        /// byte of padding is required.
+        /// </summary>
+        [Fact]
+        public void RoundTripDataChannelOpenChunkOneBytePaddingUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            DataChunk dcopen = DataChunk.mkDataChannelOpen("123");
+            int chunkLength = dcopen.getLength();
+
+            Assert.Equal(DataChunk.WEBRTCCONTROL, dcopen.getPpid());
+            Assert.Equal(31, chunkLength);
+
+            byte[] buf = new byte[32];
+            ByteBuffer byteBuf = new ByteBuffer(buf);
+            dcopen.write(byteBuf);
+
+            logger.LogDebug(byteBuf.Data.HexStr());
+
+            ByteBuffer rtnByteBuf = new ByteBuffer(byteBuf.Data);
+            //var rndTripChunk = new DataChunk(0, 32, rtnByteBuf);
+            var rndTripChunk = Chunk.mkChunk(rtnByteBuf);
+            var dataChannelOpenChunk = (rndTripChunk as DataChunk).getDCEP();
+
+            Assert.NotNull(rndTripChunk);
+            Assert.NotNull(dataChannelOpenChunk);
+        }
+
+
+        /// <summary>
+        /// Tests that a Data Channel Open chunk can be correctly serialised and parsed when three
+        /// bytes of padding is required.
+        /// </summary>
+        [Fact]
+        public void RoundTripDataChannelOpenChunkThreeBytesPaddingUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            DataChunk dcopen = DataChunk.mkDataChannelOpen("12356");
+            int chunkLength = dcopen.getLength();
+
+            Assert.Equal(DataChunk.WEBRTCCONTROL, dcopen.getPpid());
+            Assert.Equal(33, chunkLength);
+
+            byte[] buf = new byte[36];
+            ByteBuffer byteBuf = new ByteBuffer(buf);
+            dcopen.write(byteBuf);
+
+            logger.LogDebug(byteBuf.Data.HexStr());
+
+            ByteBuffer rtnByteBuf = new ByteBuffer(byteBuf.Data);
+            //var rndTripChunk = new DataChunk(0, 32, rtnByteBuf);
+            var rndTripChunk = Chunk.mkChunk(rtnByteBuf);
+            var dataChannelOpenChunk = (rndTripChunk as DataChunk).getDCEP();
 
             Assert.NotNull(rndTripChunk);
             Assert.NotNull(dataChannelOpenChunk);

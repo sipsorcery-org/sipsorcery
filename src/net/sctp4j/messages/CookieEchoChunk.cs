@@ -84,13 +84,13 @@ namespace SIPSorcery.Net.Sctp
 
         private byte[] _cookieData;
 
-        public CookieEchoChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt)
+        public CookieEchoChunk(ChunkType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt)
         {
             _cookieData = new byte[_body.remaining()];
             _body.GetBytes(_cookieData, _cookieData.Length);
         }
 
-        public CookieEchoChunk() : base(CType.COOKIE_ECHO) { }
+        public CookieEchoChunk() : base(ChunkType.COOKIE_ECHO) { }
 
         public override void validate()
         {

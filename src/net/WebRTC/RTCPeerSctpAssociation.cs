@@ -87,7 +87,7 @@ namespace SIPSorcery.Net
 
         public void onDCEPStream(SCTPStream s, string label, int type)
         {
-            logger.LogDebug($"Data Channel onDCEPStream.");
+            logger.LogDebug($"Data channel stream created for label {label} and type {type}.");
             s.setSCTPStreamListener(new DataChannelStreamListener());
         }
 
@@ -113,7 +113,7 @@ namespace SIPSorcery.Net
 
         public void onMessage(SCTPStream s, string message)
         {
-            logger.LogDebug($"Data channel stream message label={s.getLabel()} ,streamID={s.getNum()}: {message}.");
+            logger.LogDebug($"Data channel received message (label={s.getLabel()}, streamID={s.getNum()}): {message}.");
 
             s.send($"got it {message}.");
         }

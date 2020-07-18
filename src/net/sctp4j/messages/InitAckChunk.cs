@@ -62,7 +62,7 @@ namespace SIPSorcery.Net.Sctp
         private byte[] _cookie;
         private byte[] _supportedExtensions;
 
-        public InitAckChunk() : base(CType.INITACK) { }
+        public InitAckChunk() : base(ChunkType.INITACK) { }
 
         public int getInitiateTag()
         {
@@ -124,7 +124,7 @@ namespace SIPSorcery.Net.Sctp
             _cookie = v;
         }
 
-        public InitAckChunk(CType type, byte flags, int length, ByteBuffer pkt)
+        public InitAckChunk(ChunkType type, byte flags, int length, ByteBuffer pkt)
             : base(type, flags, length, pkt)
         {
             if (_body.remaining() >= 16)
@@ -165,8 +165,8 @@ namespace SIPSorcery.Net.Sctp
                     + " adRecWinCredit : " + _adRecWinCredit
                     + " numOutStreams : " + _numOutStreams
                     + " numInStreams : " + _numInStreams
-                    + " initialTSN : " + _initialTSN
-                    + ((_supportedExtensions == null) ? " no supported extensions" : " supported extensions are: " + chunksToNames(_supportedExtensions));
+                    + " initialTSN : " + _initialTSN;
+                    //+ ((_supportedExtensions == null) ? " no supported extensions" : " supported extensions are: " + chunksToNames(_supportedExtensions));
             ;
             return ret;
         }

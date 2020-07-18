@@ -132,7 +132,7 @@ namespace SIPSorcery.Net.Sctp
         private uint _cumuTSNAck;
         private uint _arWin;
 
-        public SackChunk(CType type, byte flags, int length, ByteBuffer pkt)
+        public SackChunk(ChunkType type, byte flags, int length, ByteBuffer pkt)
             : base(type, flags, length, pkt)
         {
             _cumuTSNAck = _body.GetUInt();
@@ -159,7 +159,7 @@ namespace SIPSorcery.Net.Sctp
         {
             return _duplicateTSNs;
         }
-        public SackChunk() : base(Chunk.CType.SACK)
+        public SackChunk() : base(ChunkType.SACK)
         {
             _gaps = new GapBlock[0];
             _duplicateTSNs = new uint[0];

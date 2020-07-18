@@ -59,7 +59,7 @@ namespace SIPSorcery.Net.Sctp
     {
         private static ILogger logger = Log.Logger;
 
-        public ErrorChunk() : base(CType.ERROR) { }
+        public ErrorChunk() : base(ChunkType.ERROR) { }
 
         public ErrorChunk(KnownError e) : this()
         {
@@ -74,7 +74,7 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        public ErrorChunk(CType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt)
+        public ErrorChunk(ChunkType type, byte flags, int length, ByteBuffer pkt) : base(type, flags, length, pkt)
         {
             if (_body.remaining() >= 4)
             {

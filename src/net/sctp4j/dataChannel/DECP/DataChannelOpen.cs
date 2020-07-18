@@ -113,7 +113,8 @@ namespace SIPSorcery.Net
 
         public byte[] getBytes()
         {
-            int sz = 12 + _labLen + pad(_labLen) + _protLen + pad(_protLen);
+            //int sz = 12 + _labLen + pad(_labLen) + _protLen + pad(_protLen);
+            int sz = 12 + _labLen + _protLen;
             //logger.LogDebug("DataChannelOpen needs " + sz + " bytes ");
 
             byte[] ret = new byte[sz];
@@ -125,25 +126,11 @@ namespace SIPSorcery.Net
             buff.Put((ushort)_labLen);
             buff.Put((ushort)_protLen);
             buff.Put(_label);
-            buff.Position += pad(_labLen);
+            //buff.Position += pad(_labLen);
             buff.Put(_protocol);
-            buff.Position += pad(_protLen);
+            //buff.Position += pad(_protLen);
 
             return ret;
-        }
-
-        static public int pad(int len)
-        {
-            int mod = len % 4;
-            int res = 0;
-            //logger.LogDebug("field of " + len + " mod 4 is " + mod);
-
-            if (mod > 0)
-            {
-                res = (4 - mod);
-            }
-            //logger.LogDebug("padded by " + res);
-            return res;
         }
 
         public DataChannelOpen(ByteBuffer bb)

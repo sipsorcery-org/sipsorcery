@@ -821,7 +821,7 @@ namespace SIPSorcery.Net.Sctp
                         }
                         if (d.getRetryTime() <= now)
                         {
-                            space -= d.getChunkLength();
+                            space -= d.getLength();
                             //logger.LogDebug("available space in pkt is " + space);
                             if (space <= 0)
                             {

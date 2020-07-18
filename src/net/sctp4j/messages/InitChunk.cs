@@ -63,9 +63,9 @@ namespace SIPSorcery.Net.Sctp
         byte[] _farChunks;
         public int _outStreams;
 
-        public InitChunk() : base(CType.INIT) { }
+        public InitChunk() : base(ChunkType.INIT) { }
 
-        public InitChunk(CType type, byte flags, int length, ByteBuffer pkt)
+        public InitChunk(ChunkType type, byte flags, int length, ByteBuffer pkt)
             : base(type, flags, length, pkt)
         {
             if (_body.remaining() >= 16)
@@ -121,8 +121,8 @@ namespace SIPSorcery.Net.Sctp
                     + " numOutStreams : " + _numOutStreams
                     + " numInStreams : " + _numInStreams
                     + " initialTSN : " + _initialTSN
-                    + " farForwardTSNsupported : " + _farForwardTSNsupported
-                    + ((_farSupportedExtensions == null) ? " no supported extensions" : " supported extensions are: " + chunksToNames(_farSupportedExtensions));
+                    + " farForwardTSNsupported : " + _farForwardTSNsupported;
+                    //+ ((_farSupportedExtensions == null) ? " no supported extensions" : " supported extensions are: " + chunksToNames(_farSupportedExtensions));
             return ret;
         }
 
