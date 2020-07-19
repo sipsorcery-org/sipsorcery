@@ -39,7 +39,6 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net.Sctp;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
@@ -157,7 +156,7 @@ namespace SIPSorcery.Net
         private List<RTCDataChannel> _dataChannels = new List<RTCDataChannel>();
 
         private DtlsSrtpTransport _dtlsHandle;
-        private RTCPeerSctpAssociation _peerSctpAssociation;
+        public RTCPeerSctpAssociation _peerSctpAssociation;
 
         /// <summary>
         /// The ICE role the peer is acting in.
@@ -371,7 +370,7 @@ namespace SIPSorcery.Net
                             if (connectionState == RTCPeerConnectionState.connected && _dataChannels?.Count > 0)
                             {
                                 var sctpAnn = RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
-                                int destinationPort = sctpAnn != null ? (int)sctpAnn.SctpPort : SCTP_DEFAULT_PORT;
+                                int destinationPort = sctpAnn?.SctpPort != null ? (int)sctpAnn.SctpPort : SCTP_DEFAULT_PORT;
 
                                 _peerSctpAssociation = new RTCPeerSctpAssociation(_dtlsHandle.Transport, _dtlsHandle.IsClient, SCTP_DEFAULT_PORT, destinationPort);
                             }
@@ -929,37 +928,11 @@ namespace SIPSorcery.Net
                         base.OnReceive(localPort, remoteEP, buffer);
                     }
                     else
-                    //if (buffer[0] >= 20 && buffer[0] <= 63)
                     {
-                        // DTLS packet.
-                        //OnDtlsPacket?.Invoke(buffer);
-
                         if (_dtlsHandle != null)
                         {
-                            logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
+                            //logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
                             _dtlsHandle.WriteToRecvStream(buffer);
-
-                            //if(_dtlsHandle.IsHandshakeComplete() && _dtlsHandle.Transport != null)
-                            //{
-                            //    byte[] dtlsBuf = new byte[4096];
-                            //    int bytesDecrypted = _dtlsHandle.Transport.Receive(dtlsBuf, 0, 4096, 0);
-
-                            //    logger.LogDebug($"DTLS transport decrypted {bytesDecrypted} bytes from {AudioDestinationEndPoint}.");
-                            //    logger.LogDebug(dtlsBuf.Take(bytesDecrypted).ToArray().HexStr());
-
-                            //    //var sctpPacket = SCTP.SCTPPacket.FromArray(dtlsBuf, 0, bytesDecrypted);
-                            //    //if(sctpPacket != null)
-                            //    //{
-                            //    //    logger.LogDebug($"SCTP packet {sctpPacket.Header.DestinationPort}->{sctpPacket.Header.DestinationPort}.");
-                            //    //}
-
-                            //    //var sctpPacket = new SIPSorcery.Net.messages.Packet(new SCTP4CS.Utils.ByteBuffer(dtlsBuf, 0, bytesDecrypted));
-                            //    //if (sctpPacket != null)
-                            //    //{
-                            //    //    logger.LogDebug($"SCTP packet {sctpPacket.getSrcPort()}->{sctpPacket.getDestPort()}.");
-                            //    //}
-                            //    //var assoc = new SIPSorcery.Net.small.ThreadedAssociation(_dtlsHandle, null);
-                            //}
                         }
                         else
                         {
@@ -1023,6 +996,11 @@ namespace SIPSorcery.Net
             };
 
             _dataChannels.Add(channel);
+
+            if (_peerSctpAssociation != null)
+            {
+                _peerSctpAssociation.CreateStream(label);
+            }
 
             return channel;
         }

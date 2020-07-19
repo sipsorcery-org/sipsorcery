@@ -190,11 +190,6 @@ namespace SIPSorcery.Examples
                     // No point continuing. Something will need to change and then try again.
                     pc.Close("failed to set remote sdp");
                 }
-
-                Console.WriteLine("Closing.");
-                pc.Close("normal");
-
-                Task.Delay(1000).Wait();
             }
 
             _ = Task.Run(() => ProcessInput(exitCts));
@@ -215,6 +210,8 @@ namespace SIPSorcery.Examples
             _peerConnection?.Close("application exit");
 
             _webSocketServer?.Stop();
+
+            Task.Delay(1000).Wait();
         }
 
         /// <summary>
@@ -272,7 +269,26 @@ namespace SIPSorcery.Examples
                                 }
                                 break;
 
-                            case var x when x.StartsWith("m"):
+                            case var x when x.StartsWith("cdc"):
+                                // Attempt to create a new data channel.
+                                if (_peerConnection != null)
+                                {
+                                    (_, var label) = x.Split(" ", 2, StringSplitOptions.None);
+                                    if (!string.IsNullOrWhiteSpace(label))
+                                    {
+                                        Console.WriteLine();
+                                        Console.WriteLine($"Creating data channel for label {label}.");
+                                        _peerConnection.createDataChannel(label, null);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine();
+                                        Console.WriteLine($"Send message command was in the wrong format. Needs to be: cdc <label>");
+                                    }
+                                }
+                                break;
+
+                            case var x when x.StartsWith("send"):
                                 // Send data channel message.
                                 if (_peerConnection != null)
                                 {
@@ -281,12 +297,12 @@ namespace SIPSorcery.Examples
                                     {
                                         Console.WriteLine();
                                         Console.WriteLine($"Sending message on channel {label}: {msg}");
-                                        //_peerConnection.
+                                        _peerConnection._peerSctpAssociation.Send(label, msg);
                                     }
                                     else
                                     {
                                         Console.WriteLine();
-                                        Console.WriteLine($"Send message command was in the wrong format. Needs to be: m <label> <message>");
+                                        Console.WriteLine($"Send message command was in the wrong format. Needs to be: send <label> <message>");
                                     }
                                 }
                                 break;
@@ -413,7 +429,7 @@ namespace SIPSorcery.Examples
             _peerConnection.onconnectionstatechange += (state) => logger.LogDebug($"Peer connection state changed to {state}.");
             _peerConnection.OnReceiveReport += (ep, type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
             _peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
-            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
+            //_peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
             _peerConnection.onicecandidate += (candidate) =>
             {

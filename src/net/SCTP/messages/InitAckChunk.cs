@@ -144,15 +144,15 @@ namespace SIPSorcery.Net.Sctp
                 foreach (VariableParam v in _varList)
                 {
                     // now look for variables we are expecting...
-                    logger.LogDebug("variable of type: " + v.getName() + " " + v.ToString());
+                    //logger.LogDebug("variable of type: " + v.getName() + " " + v.ToString());
                     if (typeof(StateCookie).IsAssignableFrom(v.GetType()))
                     {
                         _cookie = ((StateCookie)v).getData();
                     }
-                    else
-                    {
-                        logger.LogDebug("ignored variable of type: " + v.getName());
-                    }
+                    //else
+                    //{
+                    //    logger.LogDebug("ignored variable of type: " + v.getName());
+                    //}
                 }
 
             }

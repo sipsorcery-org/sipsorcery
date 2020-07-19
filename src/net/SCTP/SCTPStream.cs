@@ -15,16 +15,16 @@
  *
  */
 // Modified by Andrés Leone Gámez
+/**
+ *
+ * @author Westhawk Ltd<thp@westhawk.co.uk>
+ */
 
 using System;
 using Microsoft.Extensions.Logging;
 using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
-/**
- *
- * @author Westhawk Ltd<thp@westhawk.co.uk>
- */
 namespace SIPSorcery.Net.Sctp
 {
     public abstract class SCTPStream
@@ -102,7 +102,7 @@ namespace SIPSorcery.Net.Sctp
 
         public override string ToString()
         {
-            return "Stream (" + _sno + ") label:" + _label + " state:" + state + " behave:" + _behave.GetType().Name;
+            return $"Stream id {_sno}, label {_label}, state {state} behaviour { _behave.GetType().Name}.";
         }
 
         public Chunk[] append(DataChunk dc)
@@ -181,7 +181,7 @@ namespace SIPSorcery.Net.Sctp
 
         public void close()
         {
-            logger.LogDebug("closing stream " + this._label + " " + this._sno);
+            //logger.LogDebug($"SCTP closing stream id {_sno}, label {_label}.");
             _ass.closeStream(this);
         }
 

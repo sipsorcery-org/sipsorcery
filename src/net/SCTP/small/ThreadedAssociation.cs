@@ -39,7 +39,6 @@ namespace SIPSorcery.Net.Sctp
         private long _lastCumuTSNAck;
         static int MAX_INIT_RETRANS = 8;
 
-
         private static ILogger logger = Log.Logger;
 
         /*   

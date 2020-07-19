@@ -138,12 +138,58 @@ namespace SIPSorcery.Net.Sctp
         static int __assocNo = 1;
         private ReconfigState reconfigState;
 
+        /// <summary>
+        /// The next ID to use when creating a new stream. 
+        /// Note originally this value as generated randomly between 0 and 65535 but Chrome was rejecting
+        /// ID's that were greater than maximum number of streams set on the SCTP association. Hence
+        /// changed it to be sequential.
+        /// </summary>
+        private int _nextStreamID = 0;
+
         class CookieHolder
         {
             public byte[] cookieData;
             public long cookieTime;
         };
         private List<CookieHolder> _cookies = new List<CookieHolder>();
+
+        // default is server
+        public Association(DatagramTransport transport, AssociationListener al, int srcPort, int dstPort) : this(transport, al, false, srcPort, dstPort) { }
+
+        public Association(DatagramTransport transport, AssociationListener al, bool client, int srcPort, int dstPort)
+        {
+            //logger.LogDebug($"SCTP created an Association of type: {this.GetType().Name}.");
+            _al = al;
+            _random = new SecureRandom();
+            _myVerTag = _random.NextInt();
+            _transp = transport;
+            _streams = new Dictionary<int, SCTPStream>();
+            _outbound = new Dictionary<long, DataChunk>();
+            _holdingPen = new Dictionary<uint, DataChunk>();
+            var IInt = new FastBit.Int(_random.NextInt());
+            _nearTSN = new FastBit.Uint(IInt.b0, IInt.b1, IInt.b2, IInt.b3).Auint;
+            _state = State.CLOSED;
+            if (_transp != null)
+            {
+                startRcv();
+            }
+            else
+            {
+                logger.LogError("Created an Association with a null transport somehow...");
+            }
+            __assocNo++;
+            /*
+			the method used to determine which
+			side uses odd or even is based on the underlying DTLS connection
+			role: the side acting as the DTLS client MUST use Streams with even
+			Stream Identifiers, the side acting as the DTLS server MUST use
+			Streams with odd Stream Identifiers. */
+            _even = client;
+            _nextStreamID = (_even) ? _nextStreamID : _nextStreamID + 1;
+
+            _srcPort = srcPort;
+            _destPort = dstPort;
+        }
 
         protected byte[] getSupportedExtensions()
         { // this lets others switch features off.
@@ -267,7 +313,7 @@ namespace SIPSorcery.Net.Sctp
                             }
                         }
                     }
-                    logger.LogDebug("SCTP message recv null\n Shutting down.");
+                    logger.LogDebug("SCTP message receive was empty, closing association listener.");
 
                     _transp.Close();
                 }
@@ -278,49 +324,12 @@ namespace SIPSorcery.Net.Sctp
                 }
                 catch (Exception ex)
                 {
-                    logger.LogDebug("Association rcv failed " + ex.GetType().Name + " " + ex.ToString());
+                    logger.LogDebug("Association receive failed " + ex.GetType().Name + " " + ex.ToString());
                 }
             });
             _rcv.Priority = ThreadPriority.AboveNormal;
             _rcv.Name = "AssocRcv" + __assocNo;
             _rcv.Start();
-        }
-
-        // default is server
-        public Association(DatagramTransport transport, AssociationListener al, int srcPort, int dstPort) : this(transport, al, false, srcPort, dstPort) { }
-
-        public Association(DatagramTransport transport, AssociationListener al, bool client, int srcPort, int dstPort)
-        {
-            //logger.LogDebug($"SCTP created an Association of type: {this.GetType().Name}.");
-            _al = al;
-            _random = new SecureRandom();
-            _myVerTag = _random.NextInt();
-            _transp = transport;
-            _streams = new Dictionary<int, SCTPStream>();
-            _outbound = new Dictionary<long, DataChunk>();
-            _holdingPen = new Dictionary<uint, DataChunk>();
-            var IInt = new FastBit.Int(_random.NextInt());
-            _nearTSN = new FastBit.Uint(IInt.b0, IInt.b1, IInt.b2, IInt.b3).Auint;
-            _state = State.CLOSED;
-            if (_transp != null)
-            {
-                startRcv();
-            }
-            else
-            {
-                logger.LogError("Created an Association with a null transport somehow...");
-            }
-            __assocNo++;
-            /*
-			the method used to determine which
-			side uses odd or even is based on the underlying DTLS connection
-			role: the side acting as the DTLS client MUST use Streams with even
-			Stream Identifiers, the side acting as the DTLS server MUST use
-			Streams with odd Stream Identifiers. */
-            _even = client;
-
-            _srcPort = srcPort;
-            _destPort = dstPort;
         }
 
         /**
@@ -396,7 +405,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     else
                     {
-                        logger.LogDebug("Got an INIT when state was " + _state.ToString() + " - ignoring it for now ");
+                       // logger.LogDebug("Got an INIT when state was " + _state.ToString() + " - ignoring it for now ");
                     }
                     break;
                 case ChunkType.INITACK:
@@ -408,7 +417,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     else
                     {
-                        logger.LogDebug("Got an INITACK when not waiting for it - ignoring it");
+                        //logger.LogDebug("Got an INITACK when not waiting for it - ignoring it");
                     }
                     break;
                 case ChunkType.COOKIE_ECHO:
@@ -968,21 +977,22 @@ namespace SIPSorcery.Net.Sctp
             this.send(cs);
         }
 
-
         public SCTPStream mkStream(string label)
         {
-            int n = 1;
-            int tries = this._maxOutStreams;
-            do
-            {
-                n = 2 * _random.Next(this._maxOutStreams);
-                if (!_even) n += 1;
-                if (--tries < 0)
-                {
-                    logger.LogError("StreamNumberInUseException");
-                    return null;
-                }
-            } while (_streams.ContainsKey(n));
+            //int n = 1;
+            //int tries = this._maxOutStreams;
+            //do
+            //{
+            //    n = 2 * _random.Next(this._maxOutStreams);
+            //    if (!_even) n += 1;
+            //    if (--tries < 0)
+            //    {
+            //        logger.LogError("StreamNumberInUseException");
+            //        return null;
+            //    }
+            //} while (_streams.ContainsKey(n));
+            int n = _nextStreamID;
+            _nextStreamID += 2;
             return mkStream(n, label);
         }
 
@@ -1029,6 +1039,7 @@ namespace SIPSorcery.Net.Sctp
                 DataChunk DataChannelOpen = DataChunk.mkDataChannelOpen(label);
                 sout.outbound(DataChannelOpen);
                 DataChannelOpen.setTsn(_nearTSN++);
+                logger.LogDebug($"SCTP data channel open chunk {DataChannelOpen}.");
                 Chunk[] hack = { DataChannelOpen };
                 try
                 {

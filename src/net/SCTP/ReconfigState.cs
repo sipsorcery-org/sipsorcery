@@ -15,15 +15,15 @@
  *
  */
 // Modified by Andrés Leone Gámez
+/**
+ *
+ * @author thp
+ */
 
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
-/**
- *
- * @author thp
- */
 namespace SIPSorcery.Net.Sctp
 {
     class ReconfigState
@@ -178,14 +178,14 @@ namespace SIPSorcery.Net.Sctp
                     }
                     reply.addParam(rep);
                     // set outbound timer running here ???
-                    logger.LogDebug("Ireset " + ireset);
+                    //logger.LogDebug("Ireset " + ireset);
                 }
             }
             if (reply.hasParam())
             {
                 ret[0] = reply;
                 // todo should add sack here
-                logger.LogDebug("about to reply with " + reply.ToString());
+                //logger.LogDebug("about to reply with " + reply.ToString());
             }
             else
             {
@@ -202,7 +202,7 @@ namespace SIPSorcery.Net.Sctp
         public ReConfigChunk makeClose(SCTPStream st)
         {
             ReConfigChunk ret = null;
-            logger.LogDebug("building reconfig so close stream " + st);
+            logger.LogDebug($"SCTP closing stream {st}");
             st.setClosing(true);
             lock (listOfStreamsToReset)
             {
@@ -218,7 +218,7 @@ namespace SIPSorcery.Net.Sctp
         private ReConfigChunk makeSSNResets()
         {
             ReConfigChunk reply = new ReConfigChunk(); // create a new thing
-            logger.LogDebug("closing streams n=" + listOfStreamsToReset.Count);
+            logger.LogDebug($"SCTP closing {listOfStreamsToReset.Count} stream.");
             List<int> streamsL = new List<int>();
             lock (listOfStreamsToReset)
             {
@@ -243,7 +243,7 @@ namespace SIPSorcery.Net.Sctp
                 rep.setStreams(streams);
                 reply.addParam(rep);
             }
-            logger.LogDebug("reconfig chunk is " + reply.ToString());
+            //logger.LogDebug("reconfig chunk is " + reply.ToString());
             return reply;
         }
     }

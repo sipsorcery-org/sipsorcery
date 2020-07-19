@@ -1,5 +1,5 @@
-﻿
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
 using SIPSorcery.Net.Sctp;
@@ -19,6 +19,8 @@ namespace SIPSorcery.Net
 
         private ThreadedAssociation _sctpAssociation;
 
+        public Dictionary<int, SCTPStream> Streams = new Dictionary<int, SCTPStream>();
+
         public RTCPeerSctpAssociation(DatagramTransport dtlsTransport, bool isClient, int srcPort, int dstPort)
         {
             logger.LogDebug($"SCTP creating association is client {isClient} {srcPort}:{dstPort}.");
@@ -29,11 +31,9 @@ namespace SIPSorcery.Net
 
             PeerAssociationListener listener = new PeerAssociationListener(isClient);
             _sctpAssociation = new ThreadedAssociation(dtlsTransport, listener, isClient, srcPort, dstPort);
-
-            //if (!isClient)
-            //{
-            //    _sctpAssociation.associate();
-            //}
+            
+            // Network send.
+            _sctpAssociation.associate();
         }
 
         public void Close()
@@ -46,6 +46,27 @@ namespace SIPSorcery.Net
                 _sctpAssociation.delStream(streamID);
             }
         }
+
+        public void CreateStream(string label)
+        {
+            logger.LogDebug($"SCTP creating stream for label {label}.");
+            var stm = _sctpAssociation.mkStream(label);
+            Streams.Add(stm.getNum(), stm);
+        }
+
+        public void Send(string label, string message)
+        {
+            var stm = Streams.Where(x => x.Value.getLabel() == label).Select(x => x.Value).FirstOrDefault();
+
+            if(stm == null)
+            {
+                logger.LogWarning($"SCTP no stream was found for label {label}.");
+            }
+            else
+            {
+                stm.send(message);
+            }
+        }
     }
 
     public class PeerAssociationListener : AssociationListener
@@ -53,6 +74,7 @@ namespace SIPSorcery.Net
         private static ILogger logger = Log.Logger;
 
         private bool _isClient;
+        private Association _association;
 
         public PeerAssociationListener(bool isClient)
         {
@@ -62,32 +84,12 @@ namespace SIPSorcery.Net
         public void onAssociated(Association a)
         {
             logger.LogDebug($"Data Channel onAssociated.");
-
-            if (!_isClient)
-            {
-                var s = a.mkStream("dc123");
-                s.setSCTPStreamListener(new DataChannelStreamListener());
-
-                //s.OnOpen = () =>
-                //{
-                //    logger.LogDebug($"Data Channel stream opened streamID {s.getNum()}.");
-                //    _ = Task.Run(async () =>
-                //    {
-                //        int counter = 1;
-                //        while (s.OutboundIsOpen())
-                //        {
-                //            await Task.Delay(3000);
-                //            s.send(counter.ToString());
-                //            counter++;
-                //        }
-                //    });
-                //};
-            }
+            _association = a;
         }
 
         public void onDCEPStream(SCTPStream s, string label, int type)
         {
-            logger.LogDebug($"Data channel stream created for label {label} and type {type}.");
+            logger.LogDebug($"Data channel stream created for label {label}, type {type}, id {s.getNum()}.");
             s.setSCTPStreamListener(new DataChannelStreamListener());
         }
 
@@ -98,7 +100,8 @@ namespace SIPSorcery.Net
 
         public void onRawStream(SCTPStream s)
         {
-            logger.LogDebug($"Data Channel onRawStream.");
+            logger.LogDebug($"Data Channel onRawStream label {s.getLabel()}, id {s.getNum()}.");
+            s.setSCTPStreamListener(new DataChannelStreamListener());
         }
     }
 
@@ -106,9 +109,9 @@ namespace SIPSorcery.Net
     {
         private static ILogger logger = Log.Logger;
 
-        public void close(SCTPStream aThis)
+        public void close(SCTPStream s)
         {
-            logger.LogDebug("Data channel stream closed.");
+            logger.LogDebug($"Data channel stream closed id {s.getNum()}.");
         }
 
         public void onMessage(SCTPStream s, string message)

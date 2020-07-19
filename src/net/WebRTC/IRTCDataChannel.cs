@@ -154,11 +154,11 @@ namespace SIPSorcery.Net
 
     public class RTCDataChannelInit
     {
-        bool ordered { get; set; }
-        ushort maxPacketLifeTime { get; set; }
-        ushort maxRetransmits { get; set; }
-        string protocol { get; set; }
-        bool negotiated { get; set; }
-        ushort id { get; set; }
+        public bool ordered { get; set; }
+        public ushort maxPacketLifeTime { get; set; }
+        public ushort maxRetransmits { get; set; }
+        public string protocol { get; set; }
+        public bool negotiated { get; set; }
+        public ushort id { get; set; }
     };
 }

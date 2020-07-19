@@ -39,14 +39,14 @@ namespace SIPSorcery.Net.Sctp
         public ReConfigChunk(ChunkType type, byte flags, int length, ByteBuffer pkt)
             : base(type, flags, length, pkt)
         {
-            logger.LogDebug("ReConfig chunk" + this.ToString());
+            //logger.LogDebug("ReConfig chunk" + this.ToString());
             if (_body.remaining() >= 4)
             {
                 while (_body.hasRemaining())
                 {
                     VariableParam v = this.readVariable();
                     _varList.Add(v);
-                    logger.LogDebug("\tParam :" + v.ToString());
+                    //logger.LogDebug("\tParam :" + v.ToString());
                 }
             }
         }
@@ -205,7 +205,7 @@ namespace SIPSorcery.Net.Sctp
                     }
 
                     if (remain != null)
-                    { // 10
+                    { 
                         throw new Exception("[IllegalArgumentException] ReconfigurationResponseParameter and " + remain.GetType().Name + " in same Chunk not allowed ");
                     }
                 }
@@ -248,15 +248,18 @@ namespace SIPSorcery.Net.Sctp
             }
             return ret;
         }
+
         // stuff to manage outbound retries
         public long getSentTime()
         {
             return sentAt;
         }
+
         public void setSentTime(long now)
         {
             sentAt = now;
         }
+
         public int getAndIncrementRetryCount()
         {
             return retries++;

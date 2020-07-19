@@ -15,16 +15,15 @@
  *
  */
 // Modified by Andrés Leone Gámez
-
+/**
+ *
+ * @author tim
+ */
 
 using Microsoft.Extensions.Logging;
 using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
-/**
- *
- * @author tim
- */
 namespace SIPSorcery.Net.Sctp
 {
     public class InitChunk : Chunk
@@ -75,7 +74,7 @@ namespace SIPSorcery.Net.Sctp
                 _numOutStreams = _body.GetUShort();
                 _numInStreams = _body.GetUShort();
                 _initialTSN = _body.GetUInt();
-                logger.LogDebug("Init " + this.ToString());
+                //logger.LogDebug("Init " + this.ToString());
                 while (_body.hasRemaining())
                 {
                     VariableParam v = readVariable();
@@ -84,7 +83,7 @@ namespace SIPSorcery.Net.Sctp
                 foreach (VariableParam v in _varList)
                 {
                     // now look for variables we are expecting...
-                    logger.LogDebug("variable of type: " + v.getName() + " " + v.ToString());
+                    //logger.LogDebug("variable of type: " + v.getName() + " " + v.ToString());
                     if (typeof(SupportedExtensions).IsAssignableFrom(v.GetType()))
                     {
                         _farSupportedExtensions = ((SupportedExtensions)v).getData();
@@ -107,7 +106,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     else
                     {
-                        logger.LogDebug("unexpected variable of type: " + v.getName());
+                       //logger.LogDebug("unexpected variable of type: " + v.getName());
                     }
                 }
             }
@@ -144,34 +143,42 @@ namespace SIPSorcery.Net.Sctp
         {
             return _adRecWinCredit;
         }
+
         public int getNumOutStreams()
         {
             return _numOutStreams;
         }
+
         public int getNumInStreams()
         {
             return _numInStreams;
         }
+
         public long getInitialTSN()
         {
             return _initialTSN;
         }
+
         public void setInitialTSN(uint tsn)
         {
             _initialTSN = tsn;
         }
+
         public void setAdRecWinCredit(uint credit)
         {
             _adRecWinCredit = credit;
         }
+
         public void setNumOutStreams(int outn)
         {
             _numOutStreams = outn;
         }
+
         public void setNumInStreams(int inn)
         {
             _numInStreams = inn;
         }
+
         public byte[] getFarSupportedExtensions()
         {
             return _farSupportedExtensions;

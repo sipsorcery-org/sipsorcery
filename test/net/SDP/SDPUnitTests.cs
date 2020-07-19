@@ -826,5 +826,43 @@ a=max-message-size:262144";
             Assert.Equal(5000, rndTripSdp.Media.Single().SctpPort.Value);
             Assert.Equal(262144, rndTripSdp.Media.Single().MaxMessageSize);
         }
+
+        /// <summary>
+        /// Tests that parsing an SDP offer from the Pion Go library that only contains a data channel media 
+        /// announcement gets parsed correctly.
+        /// </summary>
+        [Fact]
+        public void ParsePionDataChannelOnlyOfferSDPUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=- 87119400 1595185172 IN IP4 0.0.0.0
+s=-
+t=0 0
+a=fingerprint:sha-256 81:5C:47:85:9C:3D:CC:E6:B5:94:0B:3B:65:D5:39:1A:CD:8F:48:2D:78:0F:9F:0B:18:93:BF:C9:F6:C9:8E:F8
+a=group:BUNDLE 0
+m=application 9 DTLS/SCTP 5000
+c=IN IP4 0.0.0.0
+a=setup:active
+a=mid:0
+a=sendrecv
+a=sctpmap:5000 webrtc-datachannel 1024";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("BUNDLE 0", rndTripSdp.Group);
+            Assert.Single(rndTripSdp.Media);
+            Assert.Equal("sha-256 81:5C:47:85:9C:3D:CC:E6:B5:94:0B:3B:65:D5:39:1A:CD:8F:48:2D:78:0F:9F:0B:18:93:BF:C9:F6:C9:8E:F8", rndTripSdp.DtlsFingerprint);
+            Assert.Single(rndTripSdp.Media.Single().MediaFormats);
+            Assert.Equal(5000, rndTripSdp.Media.Single().SctpPort.Value);
+            Assert.Equal(1024, rndTripSdp.Media.Single().MaxMessageSize);
+        }
     }
 }

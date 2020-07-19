@@ -71,7 +71,6 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug(byteBuf.Data.HexStr());
 
             ByteBuffer rtnByteBuf = new ByteBuffer(byteBuf.Data);
-            //var rndTripChunk = new DataChunk(0, 32, rtnByteBuf);
             var rndTripChunk = Chunk.mkChunk(rtnByteBuf);
             var dataChannelOpenChunk = (rndTripChunk as DataChunk).getDCEP();
 
@@ -102,7 +101,6 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug(byteBuf.Data.HexStr());
 
             ByteBuffer rtnByteBuf = new ByteBuffer(byteBuf.Data);
-            //var rndTripChunk = new DataChunk(0, 32, rtnByteBuf);
             var rndTripChunk = Chunk.mkChunk(rtnByteBuf);
             var dataChannelOpenChunk = (rndTripChunk as DataChunk).getDCEP();
 
@@ -134,7 +132,6 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug(byteBuf.Data.HexStr());
 
             ByteBuffer rtnByteBuf = new ByteBuffer(byteBuf.Data);
-            //var rndTripChunk = new DataChunk(0, 32, rtnByteBuf);
             var rndTripChunk = Chunk.mkChunk(rtnByteBuf);
             var dataChannelOpenChunk = (rndTripChunk as DataChunk).getDCEP();
 
