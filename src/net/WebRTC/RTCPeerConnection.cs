@@ -140,6 +140,8 @@ namespace SIPSorcery.Net
         private const string BUNDLE_ATTRIBUTE = "BUNDLE";
         private const string ICE_OPTIONS = "ice2,trickle";          // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
+        private const int SCTP_DEFAULT_PORT = 5000;
+        private const long SCTP_DEFAULT_MAX_MESSAGE_SIZE = 262144;
 
         private new readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
         private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
@@ -366,6 +368,14 @@ namespace SIPSorcery.Net
                             connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                             onconnectionstatechange?.Invoke(connectionState);
 
+                            if (connectionState == RTCPeerConnectionState.connected && _dataChannels?.Count > 0)
+                            {
+                                var sctpAnn = RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
+                                int destinationPort = sctpAnn != null ? (int)sctpAnn.SctpPort : SCTP_DEFAULT_PORT;
+
+                                _peerSctpAssociation = new RTCPeerSctpAssociation(_dtlsHandle.Transport, _dtlsHandle.IsClient, SCTP_DEFAULT_PORT, destinationPort);
+                            }
+
                             //if (connectionState == RTCPeerConnectionState.connected && _dataChannels?.Count > 0)
                             //{
                             //    foreach (var datachannel in _dataChannels)
@@ -512,14 +522,6 @@ namespace SIPSorcery.Net
                             ann.Transport == RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE)
                         {
                             dtlsFingerprint = dtlsFingerprint ?? ann.DtlsFingerprint;
-                            RTCDataChannel dataChannel = new RTCDataChannel
-                            {
-                                id = ann.SctpPort,
-                                MaxMessageSize = ann.MaxMessageSize,
-                                MLineIndex = mLineIndex,
-                                MediaID = ann.MediaID
-                            };
-                            _dataChannels.Add(dataChannel);
                         }
                         else
                         {
@@ -777,6 +779,7 @@ namespace SIPSorcery.Net
         /// Generates the base SDP for an offer or answer. The SDP will then be tailored depending
         /// on whether it's being used in an offer or an answer.
         /// </summary>
+        /// <param name="tracks">THe local media tracks to add to the SDP description.</param>
         /// <param name="audioCapabilities">Optional. The audio formats to support in the SDP. This list can differ from
         /// the local audio track if an answer is being generated and only mutually supported formats are being
         /// used.</param>
@@ -796,13 +799,7 @@ namespace SIPSorcery.Net
             offerSdp.SessionId = LocalSdpSessionID;
 
             bool iceCandidatesAdded = false;
-
-            // Add a bundle attribute as long as there's something to bundle. Indicates that audio
-            // and video sessions as well as any data channels will be multiplexed on a single RTP socket.
-            if (tracks.Count > 0 || _dataChannels?.Count > 0)
-            {
-                offerSdp.Group = BUNDLE_ATTRIBUTE;
-            }
+            int mediaIndex = 0;
 
             offerSdp.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
 
@@ -829,7 +826,7 @@ namespace SIPSorcery.Net
             // Media announcements must be in the same order in the offer and answer.
             foreach (var track in tracks)
             {
-                offerSdp.Group += $" {track.MID}";
+                int mindex = RemoteDescription == null ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(track.Kind);
 
                 SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
                  track.Kind,
@@ -841,8 +838,8 @@ namespace SIPSorcery.Net
                 announcement.AddExtra(RTCP_MUX_ATTRIBUTE);
                 announcement.AddExtra(RTCP_ATTRIBUTE);
                 announcement.MediaStreamStatus = track.StreamStatus;
-                announcement.MediaID = track.MID;
-                announcement.MLineIndex = track.MLineIndex;
+                announcement.MediaID = mindex.ToString();
+                announcement.MLineIndex = mindex;
 
                 announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
                 announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
@@ -860,33 +857,40 @@ namespace SIPSorcery.Net
 
             if (_dataChannels?.Count > 0)
             {
-                foreach (var dataChannel in _dataChannels)
-                {
-                    SDPMediaAnnouncement dataChannelAnnouncement = new SDPMediaAnnouncement(
+                int mindex = RemoteDescription == null ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application);
+
+                SDPMediaAnnouncement dataChannelAnnouncement = new SDPMediaAnnouncement(
                         SDPMediaTypesEnum.application,
                         SDP.IGNORE_RTP_PORT_NUMBER,
                         new List<SDPMediaFormat> { new SDPMediaFormat(SDP_DATACHANNEL_FORMAT_ID) });
-                    dataChannelAnnouncement.Transport = RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE;
-                    dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
+                dataChannelAnnouncement.Transport = RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE;
+                dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
 
-                    dataChannelAnnouncement.SctpPort = dataChannel.id;
-                    dataChannelAnnouncement.MaxMessageSize = dataChannel.MaxMessageSize;
-                    dataChannelAnnouncement.MLineIndex = dataChannel.MLineIndex;
-                    dataChannelAnnouncement.MediaID = dataChannel.MediaID;
-                    dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
-                    dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
-                    dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
-                    dataChannelAnnouncement.DtlsFingerprint = offerSdp.DtlsFingerprint;
+                dataChannelAnnouncement.SctpPort = SCTP_DEFAULT_PORT;
+                dataChannelAnnouncement.MaxMessageSize = SCTP_DEFAULT_MAX_MESSAGE_SIZE;
+                dataChannelAnnouncement.MLineIndex = mindex;
+                dataChannelAnnouncement.MediaID = mindex.ToString();
+                dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
+                dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
+                dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
+                dataChannelAnnouncement.DtlsFingerprint = offerSdp.DtlsFingerprint;
 
-                    if (iceCandidatesAdded == false)
-                    {
-                        AddIceCandidates(dataChannelAnnouncement);
-                        iceCandidatesAdded = true;
-                    }
+                if (iceCandidatesAdded == false)
+                {
+                    AddIceCandidates(dataChannelAnnouncement);
+                    iceCandidatesAdded = true;
+                }
 
-                    offerSdp.Media.Add(dataChannelAnnouncement);
+                offerSdp.Media.Add(dataChannelAnnouncement);
+            }
 
-                    offerSdp.Group += $" {dataChannel.MLineIndex}";
+            // Set the Bundle attribute to indicate all media announcements are being multiplexed.
+            if (offerSdp.Media?.Count > 0)
+            {
+                offerSdp.Group = BUNDLE_ATTRIBUTE;
+                foreach (var ann in offerSdp.Media.OrderBy(x => x.MediaID))
+                {
+                    offerSdp.Group += $" {ann.MediaID}";
                 }
             }
 
@@ -1011,17 +1015,12 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="label">THe label used to identify the data channel.</param>
         /// <returns>The data channel created.</returns>
-        public RTCDataChannel createDataChannel(string label)
+        public RTCDataChannel createDataChannel(string label, RTCDataChannelInit init)
         {
             RTCDataChannel channel = new RTCDataChannel
             {
                 label = label,
-                id = 4000,
-                MaxMessageSize = 262144
             };
-
-            channel.MLineIndex = base.m_mLineIndex++;
-            channel.MediaID = channel.MLineIndex.ToString();
 
             _dataChannels.Add(channel);
 
@@ -1077,19 +1076,26 @@ namespace SIPSorcery.Net
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);
 
-                    _peerSctpAssociation = new RTCPeerSctpAssociation(_dtlsHandle.Transport, _dtlsHandle.IsClient, 4000, 4002);
-                    
                     return true;
                 }
             }
         }
 
+        /// <summary>
+        /// Event handler for TLS alerts from the DTLS transport.
+        /// </summary>
+        /// <param name="alertLevel">The level of the alert: warning or critical.</param>
+        /// <param name="alertType">The type of the alert.</param>
+        /// <param name="alertDescription">An optional description for the alert.</param>
         private void OnDtlsAlert(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription)
         {
             logger.LogWarning($"DTLS {alertLevel} alert {alertType}: {alertDescription}");
 
-            if(alertType == AlertTypesEnum.close_notify)
+            if (alertType == AlertTypesEnum.close_notify)
             {
+                logger.LogWarning($"SCTP closing association as a result of DTLS transport closure.");
+
+                // No point keeping the SCTP association open if there is no DTLS transport available.
                 _peerSctpAssociation.Close();
             }
         }

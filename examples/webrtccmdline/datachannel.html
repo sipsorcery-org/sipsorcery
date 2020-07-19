@@ -140,12 +140,15 @@
 
         function closePeer() {
             console.log("close peer");
-            if (ws != null) {
-                ws.close();
-            }
+
+            closeDataChannel();
 
             if (pc != null) {
                 pc.close();
+            }
+
+            if (ws != null) {
+                ws.close();
             }
         };
 

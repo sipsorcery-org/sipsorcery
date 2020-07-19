@@ -23,10 +23,9 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SCTP4CS.Utils;
-using SIPSorcery.Net.Sctp;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net.Sctp
 {
     /// <summary>
     /// 

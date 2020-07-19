@@ -28,7 +28,6 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SDPSsrcAttribute
     {
-        //public const string MEDIA_SSRC_ATTRIBUE_PREFIX = "ssrc";
         public const string MEDIA_CNAME_ATTRIBUE_PREFIX = "cname";
 
         public uint SSRC { get; set; }

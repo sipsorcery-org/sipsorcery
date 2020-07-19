@@ -40,11 +40,11 @@ namespace SIPSorcery.Net
         public ulong bufferedAmountLowThreshold { get; set; }
         public string binaryType { get; set; }
 
-        public long MaxMessageSize { get; set; }
+        //public long MaxMessageSize { get; set; }
 
-        public int MLineIndex { get; set; }
+        //public int MLineIndex { get; set; }
 
-        public string MediaID { get; set; }
+        //public string MediaID { get; set; }
 
         public event Action onopen;
         public event Action onbufferedamountlow;

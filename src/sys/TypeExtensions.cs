@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace SIPSorcery.Sys
@@ -178,6 +179,19 @@ namespace SIPSorcery.Sys
         public static bool IsPrivate(this IPAddress address)
         {
             return IPSocket.IsPrivateAddress(address.ToString());
+        }
+
+        /// <summary>
+        /// Purpose of this extension is to allow deconstruction of a list into a fixed size tuple.
+        /// </summary>
+        /// <example>
+        /// (var field0, var field1, _) = "a b c".Split();
+        /// </example>
+        public static void Deconstruct<T>(this IList<T> list, out T first, out T second, out T third)
+        {
+            first = list.Count > 0 ? list[0] : default(T);
+            second = list.Count > 1 ? list[1] : default(T);
+            third = list.Count > 2 ? list[2] : default(T);
         }
     }
 }

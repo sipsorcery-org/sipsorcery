@@ -123,6 +123,7 @@ namespace SIPSorcery.Net
         public const string MEDIA_ID_ATTRIBUTE_PREFIX = "mid";
         public const int IGNORE_RTP_PORT_NUMBER = 9;
         public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
+        public const int MEDIA_INDEX_NOT_PRESENT = -1;
 
         // ICE attributes.
         public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
@@ -699,6 +700,32 @@ namespace SIPSorcery.Net
                     return MediaStreamStatusEnum.SendRecv;
                 }
             }
+        }
+
+        /// <summary>
+        /// Media announcements can be placed in SDP in any order BUT the orders must match
+        /// up in offer/answer pairs. This method can be used to get the index for a specific
+        /// media type. It is useful for obtaining the index of a particular media type when
+        /// constructing an SDP answer.
+        /// </summary>
+        /// <param name="mediaType">The media type to get the index for.</param>
+        /// <returns></returns>
+        public int GetIndexForMediaType(SDPMediaTypesEnum mediaType)
+        {
+            int index = 0;
+            foreach(var ann in Media)
+            {
+                if(ann.Media == mediaType)
+                {
+                    return index;
+                }
+                else
+                {
+                    index++;
+                }
+            }
+
+            return MEDIA_INDEX_NOT_PRESENT;
         }
     }
 }

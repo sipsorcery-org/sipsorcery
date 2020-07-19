@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection.Emit;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -156,7 +157,7 @@ namespace SIPSorcery.Examples
             if (options.CreateJsonOffer)
             {
                 var pc = Createpc(null, _stunServer);
-                pc.createDataChannel("dc12");
+                pc.createDataChannel("dc12", null);
 
                 var offerSdp = pc.createOffer(null);
                 await pc.setLocalDescription(offerSdp);
@@ -228,11 +229,11 @@ namespace SIPSorcery.Examples
                 // The cursor is already at the current row.
                 if (Console.CursorTop == lastPromptRow)
                 {
-                        // The command was corrected. Need to re-write the whole line.
-                        Console.SetCursorPosition(0, Console.CursorTop);
-                        Console.Write(new string(' ', Console.WindowWidth));
-                        Console.SetCursorPosition(0, Console.CursorTop);
-                        Console.Write($"{COMMAND_PROMPT}{cmd}");
+                    // The command was corrected. Need to re-write the whole line.
+                    Console.SetCursorPosition(0, Console.CursorTop);
+                    Console.Write(new string(' ', Console.WindowWidth));
+                    Console.SetCursorPosition(0, Console.CursorTop);
+                    Console.Write($"{COMMAND_PROMPT}{cmd}");
                 }
                 else
                 {
@@ -241,8 +242,6 @@ namespace SIPSorcery.Examples
                     Console.Write($"{COMMAND_PROMPT}{cmd}");
                 }
             };
-
-            Console.Write(COMMAND_PROMPT);
 
             string command = null;
             int lastInputRow = Console.CursorTop;
@@ -263,6 +262,35 @@ namespace SIPSorcery.Examples
                         // Attempt to execute the current command.
                         switch (command.ToLower())
                         {
+                            case "c":
+                                // Close active peer connection.
+                                if (_peerConnection != null)
+                                {
+                                    Console.WriteLine();
+                                    Console.WriteLine("Closing peer connection");
+                                    _peerConnection.Close("user initiated");
+                                }
+                                break;
+
+                            case var x when x.StartsWith("m"):
+                                // Send data channel message.
+                                if (_peerConnection != null)
+                                {
+                                    (_, var label, var msg) = x.Split(" ", 3, StringSplitOptions.None);
+                                    if (!string.IsNullOrWhiteSpace(label) && !string.IsNullOrWhiteSpace(msg))
+                                    {
+                                        Console.WriteLine();
+                                        Console.WriteLine($"Sending message on channel {label}: {msg}");
+                                        //_peerConnection.
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine();
+                                        Console.WriteLine($"Send message command was in the wrong format. Needs to be: m <label> <message>");
+                                    }
+                                }
+                                break;
+
                             case "q":
                                 // Quit.
                                 Console.WriteLine();
@@ -274,7 +302,6 @@ namespace SIPSorcery.Examples
                                 // Check responsiveness.
                                 Console.WriteLine();
                                 Console.WriteLine("yep");
-                                command = null;
                                 Console.Write(COMMAND_PROMPT);
                                 break;
 
@@ -282,10 +309,11 @@ namespace SIPSorcery.Examples
                                 // Command not recognised.
                                 Console.WriteLine();
                                 Console.WriteLine($"Unknown command: {command}");
-                                command = null;
                                 Console.Write(COMMAND_PROMPT);
                                 break;
                         }
+
+                        command = null;
                     }
                 }
                 else if (inKey.Key == ConsoleKey.UpArrow)
@@ -328,6 +356,8 @@ namespace SIPSorcery.Examples
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
             var pc = Createpc(context, _stunServer);
+            pc.createDataChannel("receiveoffer", null);
+
             return Task.FromResult(pc);
         }
 
@@ -336,7 +366,7 @@ namespace SIPSorcery.Examples
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
 
             var pc = Createpc(context, _stunServer);
-            pc.createDataChannel("mychannel2");
+            pc.createDataChannel("sendoffer", null);
 
             var offerInit = pc.createOffer(null);
             await pc.setLocalDescription(offerInit);
@@ -350,7 +380,7 @@ namespace SIPSorcery.Examples
 
         private static RTCPeerConnection Createpc(WebSocketContext context, RTCIceServer stunServer)
         {
-            if(_peerConnection != null)
+            if (_peerConnection != null)
             {
                 _peerConnection.Close("normal");
             }

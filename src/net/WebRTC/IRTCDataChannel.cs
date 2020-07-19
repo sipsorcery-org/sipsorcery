@@ -152,9 +152,9 @@ namespace SIPSorcery.Net
         //void send(ArrayBufferView data);
     };
 
-    interface IRTCDataChannelInit
+    public class RTCDataChannelInit
     {
-        bool Ordered { get; set; }
+        bool ordered { get; set; }
         ushort maxPacketLifeTime { get; set; }
         ushort maxRetransmits { get; set; }
         string protocol { get; set; }
