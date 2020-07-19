@@ -25,13 +25,14 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class DtlsSrtpTransport : DatagramTransport
+    public class DtlsSrtpTransport : DatagramTransport, IDisposable
     {
         public const int DEFAULT_MTU = 1500;
         public const int MIN_IP_OVERHEAD = 20;
         public const int MAX_IP_OVERHEAD = MIN_IP_OVERHEAD + 64;
         public const int UDP_OVERHEAD = 8;
         public const int DEFAULT_TIMEOUT_MILLISECONDS = 20000;
+        public const int DTLS_RECEIVE_ERROR_CODE = -1;
 
         private static readonly ILogger logger = Log.Logger;
 
@@ -62,6 +63,7 @@ namespace SIPSorcery.Net
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
         private System.DateTime startTime = System.DateTime.MinValue;
+        private bool _isClosed = false;
 
         // Network properties
         private int mtu;
@@ -443,15 +445,23 @@ namespace SIPSorcery.Net
                     logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
                     throw new TimeoutException();
                 }
-                else
+                else if(!_isClosed)
                 {
                     waitMillis = (int)System.Math.Min(waitMillis, millisecondsRemaining);
                     return _inStream.Read(buf, off, len, waitMillis);
                 }
+                else
+                {
+                    return DTLS_RECEIVE_ERROR_CODE;
+                }
+            }
+            else if(!_isClosed)
+            {
+                return _inStream.Read(buf, off, len, waitMillis);
             }
             else
             {
-                return _inStream.Read(buf, off, len, waitMillis);
+                return DTLS_RECEIVE_ERROR_CODE;
             }
         }
 
@@ -462,7 +472,25 @@ namespace SIPSorcery.Net
 
         public virtual void Close()
         {
+            _isClosed = true;
             this.startTime = System.DateTime.MinValue;
+            _inStream.Close();
+        }
+
+        /// <summary>
+        /// Close the transport if the instance is out of scope.
+        /// </summary>
+        protected void Dispose(bool disposing)
+        {
+            Close();
+        }
+
+        /// <summary>
+        /// Close the transport if the instance is out of scope.
+        /// </summary>
+        public void Dispose()
+        {
+            Close();
         }
     }
 }

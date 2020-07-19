@@ -396,11 +396,6 @@ namespace SIPSorcery.Net
             _rtpIceChannel.StartGathering();
         }
 
-        private void _dtlsHandle_OnAlert(AlertLevelsEnum arg1, AlertTypesEnum arg2, string arg3)
-        {
-            throw new NotImplementedException();
-        }
-
         /// <summary>
         /// Creates a new RTP ICE channel (which manages the UDP socket sending and receiving RTP
         /// packets) for use with this session.
@@ -634,7 +629,10 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
-                _rtpIceChannel.Close();
+                _rtpIceChannel?.Close();
+                _dtlsHandle?.Close();
+                _peerSctpAssociation?.Close();
+
                 base.Close(reason);
 
                 connectionState = RTCPeerConnectionState.closed;
@@ -1094,6 +1092,22 @@ namespace SIPSorcery.Net
             {
                 _peerSctpAssociation.Close();
             }
+        }
+
+        /// <summary>
+        /// Close the session if the instance is out of scope.
+        /// </summary>
+        protected override void Dispose(bool disposing)
+        {
+            Close("disposed");
+        }
+
+        /// <summary>
+        /// Close the session if the instance is out of scope.
+        /// </summary>
+        public override void Dispose()
+        {
+            Close("disposed");
         }
     }
 }

@@ -39,8 +39,6 @@ namespace SIPSorcery.Net.Sctp
 
         public abstract void associate();
 
-
-
         /**
 		 * <code>
 		 *                     -----          -------- (from any state)
@@ -245,10 +243,10 @@ namespace SIPSorcery.Net.Sctp
                         try
                         {
                             int length = _transp.Receive(buf, 0, buf.Length, TICK);
-                            if (length == -1)
+                            if (length == DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE)
                             {
-                                logger.LogDebug("Probably tick time out");
-                                continue;
+                                // The DTLS transport has been closed or i no longer available.
+                                break;
                             }
                             logger.LogDebug("SCTP message received: " + Packet.getHex(buf, 0, length));
                             ByteBuffer pbb = new ByteBuffer(buf);

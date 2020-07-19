@@ -83,11 +83,17 @@ namespace SIPSorcery.Examples
         //private const string SIPSORCERY_STUN_SERVER = "turn:sipsorcery.com";
         //private const string SIPSORCERY_STUN_SERVER_USERNAME = "aaron"; //"stun.sipsorcery.com";
         //private const string SIPSORCERY_STUN_SERVER_PASSWORD = "password"; //"stun.sipsorcery.com";
+        private const string COMMAND_PROMPT = "Command => ";
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static WebSocketServer _webSocketServer;
         private static RTCIceServer _stunServer;
+
+        /// <summary>
+        /// For simplicity this program only supports one active peer connection.
+        /// </summary>
+        private static RTCPeerConnection _peerConnection;
 
         static void Main(string[] args)
         {
@@ -98,11 +104,11 @@ namespace SIPSorcery.Examples
                 .WithParsed<Options>(opts => RunCommand(opts).Wait());
         }
 
-        static async Task RunCommand(Options options)
+        private static async Task RunCommand(Options options)
         {
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
-            ManualResetEvent exitMre = new ManualResetEvent(false);
+            //ManualResetEvent exitMre = new ManualResetEvent(false);
 
             AddConsoleLogger();
 
@@ -169,48 +175,153 @@ namespace SIPSorcery.Examples
                     remoteAnswerB64 = Console.ReadLine();
                 }
 
-                if (remoteAnswerB64 == "q")
+                string remoteAnswer = Encoding.UTF8.GetString(Convert.FromBase64String(remoteAnswerB64));
+
+                Console.WriteLine(remoteAnswer);
+
+                RTCSessionDescriptionInit answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(remoteAnswer);
+
+                Console.WriteLine($"Remote answer: {answerInit.sdp}");
+
+                var res = pc.setRemoteDescription(answerInit);
+                if (res != SetDescriptionResultEnum.OK)
                 {
-                    Console.WriteLine("Quitting.");
+                    // No point continuing. Something will need to change and then try again.
+                    pc.Close("failed to set remote sdp");
                 }
-                else
-                {
-                    string remoteAnswer = Encoding.UTF8.GetString(Convert.FromBase64String(remoteAnswerB64));
 
-                    Console.WriteLine(remoteAnswer);
+                Console.WriteLine("Closing.");
+                pc.Close("normal");
 
-                    RTCSessionDescriptionInit answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(remoteAnswer);
-
-                    Console.WriteLine($"Remote answer: {answerInit.sdp}");
-
-                    var res = pc.setRemoteDescription(answerInit);
-                    if(res != SetDescriptionResultEnum.OK)
-                    {
-                        // No point continuing. Something will need to change and then try again.
-                        pc.Close("failed to set remote sdp");
-                    }
-
-                    // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
-                    exitMre.WaitOne();
-
-                    Console.WriteLine("Closing.");
-                    pc.Close("normal");
-
-                    Task.Delay(1000).Wait();
-                }
+                Task.Delay(1000).Wait();
             }
+
+            _ = Task.Run(() => ProcessInput(exitCts));
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
-                exitMre.Set();
+                exitCts.Cancel();
             };
 
             // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
-            exitMre.WaitOne();
+            exitCts.Token.WaitHandle.WaitOne();
+
+            Console.WriteLine();
+            Console.WriteLine("Exiting...");
+
+            _peerConnection?.Close("application exit");
 
             _webSocketServer?.Stop();
+        }
+
+        /// <summary>
+        /// This application spits out a lot of log messages. In an attempt to make command entry slightly more usable
+        /// this method attempts to always write the current command input as the bottom line on the console output.
+        /// </summary>
+        private static void ProcessInput(CancellationTokenSource cts)
+        {
+            // Local function to write the current command in the process of being entered.
+            Action<int, string> writeCommandPrompt = (lastPromptRow, cmd) =>
+            {
+                // The cursor is already at the current row.
+                if (Console.CursorTop == lastPromptRow)
+                {
+                        // The command was corrected. Need to re-write the whole line.
+                        Console.SetCursorPosition(0, Console.CursorTop);
+                        Console.Write(new string(' ', Console.WindowWidth));
+                        Console.SetCursorPosition(0, Console.CursorTop);
+                        Console.Write($"{COMMAND_PROMPT}{cmd}");
+                }
+                else
+                {
+                    // The cursor row has changed since the last input. Rewrite the prompt and command
+                    // on the current line.
+                    Console.Write($"{COMMAND_PROMPT}{cmd}");
+                }
+            };
+
+            Console.Write(COMMAND_PROMPT);
+
+            string command = null;
+            int lastInputRow = Console.CursorTop;
+
+            while (!cts.IsCancellationRequested)
+            {
+                var inKey = Console.ReadKey(true);
+
+                if (inKey.Key == ConsoleKey.Enter)
+                {
+                    if (command == null)
+                    {
+                        Console.WriteLine();
+                        Console.Write(COMMAND_PROMPT);
+                    }
+                    else
+                    {
+                        // Attempt to execute the current command.
+                        switch (command.ToLower())
+                        {
+                            case "q":
+                                // Quit.
+                                Console.WriteLine();
+                                Console.WriteLine("Quitting...");
+                                cts.Cancel();
+                                break;
+
+                            case "isalive":
+                                // Check responsiveness.
+                                Console.WriteLine();
+                                Console.WriteLine("yep");
+                                command = null;
+                                Console.Write(COMMAND_PROMPT);
+                                break;
+
+                            default:
+                                // Command not recognised.
+                                Console.WriteLine();
+                                Console.WriteLine($"Unknown command: {command}");
+                                command = null;
+                                Console.Write(COMMAND_PROMPT);
+                                break;
+                        }
+                    }
+                }
+                else if (inKey.Key == ConsoleKey.UpArrow)
+                {
+                    // Convenience mechanism to get the current input prompt without
+                    // needing to change the command being entered.
+                    writeCommandPrompt(lastInputRow, command);
+                }
+                else if (inKey.Key == ConsoleKey.Escape)
+                {
+                    // Escape key clears the current command.
+                    command = null;
+                    writeCommandPrompt(lastInputRow, command);
+                }
+                else if (inKey.Key == ConsoleKey.Backspace)
+                {
+                    // Backspace removes the last character.
+                    command = (command?.Length > 0) ? command.Substring(0, command.Length - 1) : null;
+                    writeCommandPrompt(lastInputRow, command);
+                }
+                else if (!Char.IsControl(inKey.KeyChar))
+                {
+                    // Non-control character, append to current command.
+                    command += inKey.KeyChar;
+                    if (Console.CursorTop == lastInputRow)
+                    {
+                        Console.Write(inKey.KeyChar);
+                    }
+                    else
+                    {
+                        writeCommandPrompt(lastInputRow, command);
+                    }
+                }
+
+                lastInputRow = Console.CursorTop;
+            }
         }
 
         private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
@@ -239,6 +350,11 @@ namespace SIPSorcery.Examples
 
         private static RTCPeerConnection Createpc(WebSocketContext context, RTCIceServer stunServer)
         {
+            if(_peerConnection != null)
+            {
+                _peerConnection.Close("normal");
+            }
+
             List<RTCCertificate> presetCertificates = null;
             if (File.Exists(LOCALHOST_CERTIFICATE_PATH))
             {
@@ -255,7 +371,7 @@ namespace SIPSorcery.Examples
                 X_BindAddress = IPAddress.Any, // NOTE: Not reqd. Using this to filter out IPv6 addresses so can test with Pion.
             };
 
-            var pc = new RTCPeerConnection(pcConfiguration);
+            _peerConnection = new RTCPeerConnection(pcConfiguration);
 
             // Add inactive audio and video tracks.
             //MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
@@ -263,16 +379,16 @@ namespace SIPSorcery.Examples
             //MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.Inactive);
             //pc.addTrack(videoTrack);
 
-            pc.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
-            pc.onconnectionstatechange += (state) => logger.LogDebug($"Peer connection state changed to {state}.");
-            pc.OnReceiveReport += (ep, type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
-            pc.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
-            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
+            _peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
+            _peerConnection.onconnectionstatechange += (state) => logger.LogDebug($"Peer connection state changed to {state}.");
+            _peerConnection.OnReceiveReport += (ep, type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
+            _peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
+            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
-            pc.onicecandidate += (candidate) =>
+            _peerConnection.onicecandidate += (candidate) =>
             {
-                if (pc.signalingState == RTCSignalingState.have_local_offer ||
-                    pc.signalingState == RTCSignalingState.have_remote_offer)
+                if (_peerConnection.signalingState == RTCSignalingState.have_local_offer ||
+                    _peerConnection.signalingState == RTCSignalingState.have_remote_offer)
                 {
                     if (context != null)
                     {
@@ -282,12 +398,12 @@ namespace SIPSorcery.Examples
             };
 
             // Peer ICE connection state changes are for ICE events such as the STUN checks completing.
-            pc.oniceconnectionstatechange += (state) =>
+            _peerConnection.oniceconnectionstatechange += (state) =>
             {
                 logger.LogDebug($"ICE connection state change to {state}.");
             };
 
-            return pc;
+            return _peerConnection;
         }
 
         private static async Task WebSocketMessageReceived(WebSocketContext context, RTCPeerConnection pc, string message)

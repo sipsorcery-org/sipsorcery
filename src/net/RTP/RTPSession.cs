@@ -2528,14 +2528,20 @@ namespace SIPSorcery.Net
             Close(reason);
         }
 
+        /// <summary>
+        /// Close the session if the instance is out of scope.
+        /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            Close(null);
+            Close("disposed");
         }
 
-        public void Dispose()
+        /// <summary>
+        /// Close the session if the instance is out of scope.
+        /// </summary>
+        public virtual void Dispose()
         {
-            Close(null);
+            Close("disposed");
         }
     }
 }
