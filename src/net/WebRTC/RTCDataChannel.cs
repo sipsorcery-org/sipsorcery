@@ -14,11 +14,16 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Net.Sctp;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class RTCDataChannel : IRTCDataChannel
+    public class RTCDataChannel : SCTPStreamListener, IRTCDataChannel
     {
+        private static ILogger logger = Log.Logger;
+
         public string label { get; set; }
 
         public bool ordered { get; set; }
@@ -42,30 +47,84 @@ namespace SIPSorcery.Net
 
         //public long MaxMessageSize { get; set; }
 
-        //public int MLineIndex { get; set; }
+        private SCTPStream _sctpStream;
 
-        //public string MediaID { get; set; }
+        public string Error { get; private set; }
+
+        public bool IsOpened { get; private set; } = false;
 
         public event Action onopen;
         public event Action onbufferedamountlow;
-        public event Action onerror;
+        public event Action<string> onerror;
         public event Action onclosing;
         public event Action onclose;
-        public event Action onmessage;
+        public event Action<string> onmessage;
+
+        internal void SetStream(SCTPStream s)
+        {
+            _sctpStream = s;
+            s.setSCTPStreamListener(this);
+            s.OnOpen = OnStreamOpened;
+        }
+
+        internal void OnStreamOpened()
+        {
+            logger.LogDebug($"Data channel for label {label} now open.");
+            IsOpened = true;
+            id = (ushort)_sctpStream.getNum();
+            onopen?.Invoke();
+        }
+
+        /// <summary>
+        /// Sets the error message is there was a problem creating the data channel.
+        /// </summary>
+        internal void SetError(string error)
+        {
+            Error = error;
+            onerror?.Invoke(error);
+        }
 
         public void close()
         {
-            onclose?.Invoke();
+            IsOpened = false;
+            _sctpStream?.close();
         }
 
         public void send(string data)
         {
-
+            if (!IsOpened)
+            {
+                logger.LogWarning("An attempt was made to send on a closed data channel.");
+            }
+            else
+            {
+                _sctpStream.send(data);
+            }
         }
 
         public void send(byte[] data)
         {
+            if (!IsOpened)
+            {
+                logger.LogWarning("An attempt was made to send on a closed data channel.");
+            }
+            else
+            {
+                _sctpStream.send(data);
+            }
+        }
 
+        public void close(SCTPStream s)
+        {
+            IsOpened = false;
+            logger.LogDebug($"Data channel stream closed id {s.getNum()}.");
+            onclose?.Invoke();
+        }
+
+        public void onMessage(SCTPStream s, string message)
+        {
+            //logger.LogDebug($"Data channel received message (label={s.getLabel()}, streamID={s.getNum()}): {message}.");
+            onmessage?.Invoke(message);
         }
     }
 }

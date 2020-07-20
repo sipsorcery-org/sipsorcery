@@ -294,7 +294,7 @@ namespace SIPSorcery.Net.Sctp
                                 // The DTLS transport has been closed or i no longer available.
                                 break;
                             }
-                            logger.LogDebug("SCTP message received: " + Packet.getHex(buf, 0, length));
+                            //logger.LogDebug("SCTP message received: " + Packet.getHex(buf, 0, length));
                             ByteBuffer pbb = new ByteBuffer(buf);
                             pbb.Limit = length;
                             Packet rec = new Packet(pbb);
@@ -349,7 +349,7 @@ namespace SIPSorcery.Net.Sctp
             if ((c != null) && (c.Length > 0))
             {
                 ByteBuffer obb = mkPkt(c);
-                logger.LogDebug($"SCTP packet send: {Packet.getHex(obb)}");
+                //logger.LogDebug($"SCTP packet send: {Packet.getHex(obb)}");
                 lock (this)
                 {
                     _transp.Send(obb.Data, obb.offset, obb.Limit);
@@ -436,7 +436,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     break;
                 case ChunkType.DATA:
-                    logger.LogDebug("got data " + c.ToString());
+                    //logger.LogDebug("got data " + c.ToString());
                     reply = dataDeal((DataChunk)c);
                     break;
                 case ChunkType.ABORT:
@@ -693,14 +693,14 @@ namespace SIPSorcery.Net.Sctp
             }
             reply = new Chunk[1];
             reply[0] = iac;
-            logger.LogDebug("SCTP received INIT:" + init.ToString());
+            //logger.LogDebug("SCTP received INIT:" + init.ToString());
             //logger.LogDebug("Replying with init-ack :" + iac.ToString());
             return reply;
         }
 
         private void ingest(DataChunk dc, List<Chunk> rep)
         {
-            logger.LogDebug("SCTP received " + dc.ToString());
+            //logger.LogDebug("SCTP received " + dc.ToString());
             Chunk closer = null;
             int sno = dc.getStreamId();
             uint tsn = dc.getTsn();

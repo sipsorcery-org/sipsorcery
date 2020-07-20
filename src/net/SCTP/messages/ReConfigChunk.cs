@@ -214,7 +214,7 @@ namespace SIPSorcery.Net.Sctp
 
         public void addParam(VariableParam rep)
         {
-            logger.LogDebug("adding " + rep + " to " + this);
+            //logger.LogDebug("adding " + rep + " to " + this);
             _varList.Add(rep);
             validate();
         }

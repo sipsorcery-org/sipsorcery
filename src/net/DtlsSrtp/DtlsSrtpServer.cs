@@ -461,19 +461,10 @@ namespace SIPSorcery.Net
                 description += cause;
             }
 
-            logger.LogWarning($"DTLS server raised alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
-        }
-
-        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
-        {
-            string description = AlertDescription.GetText(alertDescription);
-
-            logger.LogWarning($"DTLS server received alert: {AlertLevel.GetText(alertLevel)}, {description}.");
-
             AlertLevelsEnum level = AlertLevelsEnum.Warning;
             AlertTypesEnum alertType = AlertTypesEnum.unknown;
 
-            if(Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
+            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
             {
                 level = (AlertLevelsEnum)alertLevel;
             }
@@ -481,6 +472,42 @@ namespace SIPSorcery.Net
             if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
             {
                 alertType = (AlertTypesEnum)alertDescription;
+            }
+
+            if (alertType == AlertTypesEnum.close_notify)
+            {
+                logger.LogDebug($"DTLS server raised close notify: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
+            }
+            else
+            {
+                logger.LogWarning($"DTLS server raised unexpected alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
+            }
+        }
+
+        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
+        {
+            string description = AlertDescription.GetText(alertDescription);
+
+            AlertLevelsEnum level = AlertLevelsEnum.Warning;
+            AlertTypesEnum alertType = AlertTypesEnum.unknown;
+
+            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
+            {
+                level = (AlertLevelsEnum)alertLevel;
+            }
+
+            if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
+            {
+                alertType = (AlertTypesEnum)alertDescription;
+            }
+
+            if (alertType == AlertTypesEnum.close_notify)
+            {
+                logger.LogDebug($"DTLS server received close notification: {AlertLevel.GetText(alertLevel)}, {description}.");
+            }
+            else
+            {
+                logger.LogWarning($"DTLS server received unexpected alert: {AlertLevel.GetText(alertLevel)}, {description}.");
             }
 
             OnAlert?.Invoke(level, alertType, description);

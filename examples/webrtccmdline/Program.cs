@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection.Emit;
 using System.Security.Cryptography.X509Certificates;
@@ -26,6 +27,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Serilog;
 using SIPSorcery.Net;
@@ -85,6 +87,7 @@ namespace SIPSorcery.Examples
         //private const string SIPSORCERY_STUN_SERVER_USERNAME = "aaron"; //"stun.sipsorcery.com";
         //private const string SIPSORCERY_STUN_SERVER_PASSWORD = "password"; //"stun.sipsorcery.com";
         private const string COMMAND_PROMPT = "Command => ";
+        private const string DATA_CHANNEL_LABEL = "dcx";
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -157,7 +160,6 @@ namespace SIPSorcery.Examples
             if (options.CreateJsonOffer)
             {
                 var pc = Createpc(null, _stunServer);
-                pc.createDataChannel("dc12", null);
 
                 var offerSdp = pc.createOffer(null);
                 await pc.setLocalDescription(offerSdp);
@@ -288,7 +290,27 @@ namespace SIPSorcery.Examples
                                 }
                                 break;
 
-                            case var x when x.StartsWith("send"):
+                            case var x when x.StartsWith("ldc"):
+                                // List data channels.
+                                if (_peerConnection != null)
+                                {
+                                    if (_peerConnection.DataChannels.Count > 0)
+                                    {
+                                        Console.WriteLine();
+                                        foreach (var dc in _peerConnection.DataChannels)
+                                        {
+                                            Console.WriteLine($" data channel: label {dc.label}, stream ID {dc.id}, is open {dc.IsOpened}.");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine();
+                                        Console.WriteLine(" no data channels available.");
+                                    }
+                                }
+                                break;
+
+                            case var x when x.StartsWith("sdc"):
                                 // Send data channel message.
                                 if (_peerConnection != null)
                                 {
@@ -297,12 +319,21 @@ namespace SIPSorcery.Examples
                                     {
                                         Console.WriteLine();
                                         Console.WriteLine($"Sending message on channel {label}: {msg}");
-                                        _peerConnection._peerSctpAssociation.Send(label, msg);
+
+                                        var dc = _peerConnection.DataChannels.FirstOrDefault(x => x.label == label && x.IsOpened);
+                                        if (dc != null)
+                                        {
+                                            dc.send(msg);
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine($"No data channel was found for label {label}.");
+                                        }
                                     }
                                     else
                                     {
                                         Console.WriteLine();
-                                        Console.WriteLine($"Send message command was in the wrong format. Needs to be: send <label> <message>");
+                                        Console.WriteLine($"Send data channel message command was in the wrong format. Needs to be: sdc <label> <message>");
                                     }
                                 }
                                 break;
@@ -372,8 +403,6 @@ namespace SIPSorcery.Examples
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
             var pc = Createpc(context, _stunServer);
-            pc.createDataChannel("receiveoffer", null);
-
             return Task.FromResult(pc);
         }
 
@@ -382,7 +411,6 @@ namespace SIPSorcery.Examples
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
 
             var pc = Createpc(context, _stunServer);
-            pc.createDataChannel("sendoffer", null);
 
             var offerInit = pc.createOffer(null);
             await pc.setLocalDescription(offerInit);
@@ -419,6 +447,9 @@ namespace SIPSorcery.Examples
 
             _peerConnection = new RTCPeerConnection(pcConfiguration);
 
+            var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
+            dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
+
             // Add inactive audio and video tracks.
             //MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             //pc.addTrack(audioTrack);
@@ -447,6 +478,15 @@ namespace SIPSorcery.Examples
             _peerConnection.oniceconnectionstatechange += (state) =>
             {
                 logger.LogDebug($"ICE connection state change to {state}.");
+            };
+
+            _peerConnection.ondatachannel += (dc) =>
+            {
+                logger.LogDebug($"Data channel opened by remote peer, label {dc.label}, stream ID {dc.id}.");
+                dc.onmessage += (msg) =>
+                {
+                    logger.LogDebug($"data channel ({dc.label}:{dc.id}): {msg}.");
+                };
             };
 
             return _peerConnection;

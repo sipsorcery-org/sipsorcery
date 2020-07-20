@@ -112,7 +112,7 @@ namespace SIPSorcery.Net.Sctp
 
         protected override void putFixedParams(ByteBuffer ret)
         {
-            logger.LogDebug("cookie is " + _cookieData + "and buffer is " + ret);
+            //logger.LogDebug("cookie is " + _cookieData + "and buffer is " + ret);
             ret.Put(_cookieData);
         }
     }

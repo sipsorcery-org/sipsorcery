@@ -15,12 +15,11 @@
  *
  */
 // Modified by Andrés Leone Gámez
-
-
 /**
  *
  * @author Westhawk Ltd<thp@westhawk.co.uk>
  */
+
 namespace SIPSorcery.Net.Sctp
 {
     public interface AssociationListener

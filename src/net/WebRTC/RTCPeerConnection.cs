@@ -131,7 +131,7 @@ namespace SIPSorcery.Net
         //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private const string RTP_MEDIA_NON_FEEDBACK_PROFILE = "UDP/TLS/RTP/SAVP";
         private const string RTP_MEDIA_FEEDBACK_PROFILE = "UDP/TLS/RTP/SAVPF";
-        private const string RTP_MEDIA_DATACHANNEL_DTLS_PROFILE = "DTLS/SCTP"; // Spec states "UDP/DTLS/SCTP" but it's clear the "UDP" is redundant.
+        private const string RTP_MEDIA_DATACHANNEL_DTLS_PROFILE = "DTLS/SCTP"; // Legacy.
         private const string RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE = "UDP/DTLS/SCTP";
         private const string SDP_DATACHANNEL_FORMAT_ID = "webrtc-datachannel";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";    // Indicates the media announcement is using multiplexed RTCP.
@@ -141,6 +141,7 @@ namespace SIPSorcery.Net
         private const string NORMAL_CLOSE_REASON = "normal";
         private const int SCTP_DEFAULT_PORT = 5000;
         private const long SCTP_DEFAULT_MAX_MESSAGE_SIZE = 262144;
+        private const string UNKNOWN_DATACHANNEL_ERROR = "unknown";
 
         private new readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
         private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
@@ -153,7 +154,7 @@ namespace SIPSorcery.Net
 
         private RtpIceChannel _rtpIceChannel;
 
-        private List<RTCDataChannel> _dataChannels = new List<RTCDataChannel>();
+        public List<RTCDataChannel> DataChannels { get; private set; } = new List<RTCDataChannel>();
 
         private DtlsSrtpTransport _dtlsHandle;
         public RTCPeerSctpAssociation _peerSctpAssociation;
@@ -249,6 +250,11 @@ namespace SIPSorcery.Net
         /// suitable for media packets can be exchanged.
         /// </summary>
         public event Action<RTCPeerConnectionState> onconnectionstatechange;
+
+        /// <summary>
+        /// Fires when a new data channel is created by the remote peer.
+        /// </summary>
+        public event Action<RTCDataChannel> ondatachannel;
 
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
@@ -367,26 +373,10 @@ namespace SIPSorcery.Net
                             connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                             onconnectionstatechange?.Invoke(connectionState);
 
-                            if (connectionState == RTCPeerConnectionState.connected && _dataChannels?.Count > 0)
+                            if (connectionState == RTCPeerConnectionState.connected && RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
                             {
-                                var sctpAnn = RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
-                                int destinationPort = sctpAnn?.SctpPort != null ? (int)sctpAnn.SctpPort : SCTP_DEFAULT_PORT;
-
-                                _peerSctpAssociation = new RTCPeerSctpAssociation(_dtlsHandle.Transport, _dtlsHandle.IsClient, SCTP_DEFAULT_PORT, destinationPort);
+                                InitialiseSctpAssociation();
                             }
-
-                            //if (connectionState == RTCPeerConnectionState.connected && _dataChannels?.Count > 0)
-                            //{
-                            //    foreach (var datachannel in _dataChannels)
-                            //    {
-                            //        var stm = _dataChannelAssociation.mkStream((int)datachannel.id);
-                            //        stm.OnOpen = () =>
-                            //        {
-                            //            logger.LogDebug($"Data channel initialisation label={stm?.getLabel()}.");
-                            //            stm.send("hello world");
-                            //        };
-                            //    }
-                            //}
                         }
                     });
                 }
@@ -403,6 +393,53 @@ namespace SIPSorcery.Net
             onnegotiationneeded?.Invoke();
 
             _rtpIceChannel.StartGathering();
+        }
+
+        /// <summary>
+        /// Initialises the SCTP association and will attempt to create any pending data channel requests.
+        /// </summary>
+        private void InitialiseSctpAssociation()
+        {
+            // If a data channel was requested by the application then create the SCTP association.
+            var sctpAnn = RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
+            int destinationPort = sctpAnn?.SctpPort != null ? (int)sctpAnn.SctpPort : SCTP_DEFAULT_PORT;
+
+            _peerSctpAssociation = new RTCPeerSctpAssociation(_dtlsHandle.Transport, _dtlsHandle.IsClient, SCTP_DEFAULT_PORT, destinationPort);
+            _peerSctpAssociation.OnAssociated += () =>
+            {
+                logger.LogDebug("SCTP association successfully initialised.");
+
+                // Create new SCTP streams for any outstanding data channel requests.
+                foreach (var dataChannel in DataChannels)
+                {
+                    CreateSctpStreamForDataChannel(dataChannel);
+                }
+            };
+            _peerSctpAssociation.OnSCTPStreamOpen += (stm, isLocal) =>
+            {
+                logger.LogDebug($"SCTP stream opened for label {stm.getLabel()} and stream ID {stm.getNum()} (is local stream ID {isLocal}).");
+
+                if(!isLocal)
+                {
+                    // A new data channel that was opened by the remote peer.
+                    RTCDataChannel dataChannel = new RTCDataChannel
+                    {
+                        label = stm.getLabel(),
+                        id = (ushort)stm.getNum()
+                    };
+                    dataChannel.SetStream(stm);
+                    DataChannels.Add(dataChannel);
+                }
+            };
+
+            Task.Run(_peerSctpAssociation.Associate).ContinueWith(
+                u =>
+                {
+                    if (u.IsFaulted)
+                    {
+                        logger.LogWarning($"SCTP exception initialising association. {u.Exception?.Flatten().Message}");
+                    }
+                }).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -854,7 +891,7 @@ namespace SIPSorcery.Net
                 offerSdp.Media.Add(announcement);
             }
 
-            if (_dataChannels?.Count > 0)
+            if (DataChannels.Count > 0 || (RemoteDescription?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
             {
                 int mindex = RemoteDescription == null ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application);
 
@@ -990,19 +1027,61 @@ namespace SIPSorcery.Net
         /// <returns>The data channel created.</returns>
         public RTCDataChannel createDataChannel(string label, RTCDataChannelInit init)
         {
+            logger.LogDebug($"Attempting to create data channel for label {label}.");
+
             RTCDataChannel channel = new RTCDataChannel
             {
                 label = label,
             };
 
-            _dataChannels.Add(channel);
+            DataChannels.Add(channel);
 
-            if (_peerSctpAssociation != null)
+            // If the SCTP association is ready attempt to create a new SCTP stream for the data channel.
+            // If the association is not ready the stream creation attempt will be triggered once it is.
+            if (_peerSctpAssociation != null && _peerSctpAssociation.IsAssociated)
             {
-                _peerSctpAssociation.CreateStream(label);
+                CreateSctpStreamForDataChannel(channel);
             }
 
             return channel;
+        }
+
+        /// <summary>
+        /// Attempts to create and wire up the SCTP stream for a data channel.
+        /// </summary>
+        /// <param name="dataChannel">The data channel to create the SCTP stream for.</param>
+        /// <returns>The Task being used to create the SCTP stream.</returns>
+        private void CreateSctpStreamForDataChannel(RTCDataChannel dataChannel)
+        {
+            logger.LogDebug($"Attempting to create SCTP stream for data channel with label {dataChannel.label}.");
+
+            Task.Run(() =>
+            {
+                return _peerSctpAssociation.CreateStream(dataChannel.label);
+            })
+            .ContinueWith(
+                (t) =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        if (t.Exception != null)
+                        {
+                            logger.LogWarning($"Exception creating data channel {t.Exception.Flatten().Message}");
+                            dataChannel.SetError(t.Exception.InnerExceptions.First().Message);
+                        }
+                        else
+                        {
+                            logger.LogWarning($"Unable to create a data channel.");
+                            dataChannel.SetError(UNKNOWN_DATACHANNEL_ERROR);
+                        }
+                    }
+                    else
+                    {
+                        logger.LogDebug($"SCTP stream successfully initialised for data channel with label {dataChannel.label}.");
+                        dataChannel.SetStream(t.Result);
+                    }
+                })
+            .ConfigureAwait(false);
         }
 
         /// <summary>
