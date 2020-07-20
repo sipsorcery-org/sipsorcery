@@ -21834,6 +21834,18 @@ references:
   commentId: T:SIPSorcery.Net.STUNDns
   fullName: SIPSorcery.Net.STUNDns
   nameWithType: STUNDns
+- uid: SIPSorcery.Net.STUNDns.DNS_RETRIES_PER_SERVER
+  name: DNS_RETRIES_PER_SERVER
+  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_DNS_RETRIES_PER_SERVER
+  commentId: F:SIPSorcery.Net.STUNDns.DNS_RETRIES_PER_SERVER
+  fullName: SIPSorcery.Net.STUNDns.DNS_RETRIES_PER_SERVER
+  nameWithType: STUNDns.DNS_RETRIES_PER_SERVER
+- uid: SIPSorcery.Net.STUNDns.DNS_TIMEOUT_SECONDS
+  name: DNS_TIMEOUT_SECONDS
+  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_DNS_TIMEOUT_SECONDS
+  commentId: F:SIPSorcery.Net.STUNDns.DNS_TIMEOUT_SECONDS
+  fullName: SIPSorcery.Net.STUNDns.DNS_TIMEOUT_SECONDS
+  nameWithType: STUNDns.DNS_TIMEOUT_SECONDS
 - uid: SIPSorcery.Net.STUNDns.MDNS_TLD
   name: MDNS_TLD
   href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_MDNS_TLD
