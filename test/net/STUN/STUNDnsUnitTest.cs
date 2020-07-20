@@ -45,7 +45,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.NotNull(result);
             Assert.Equal(IPAddress.Loopback, result.Address);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(result);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
 
             // Using System.Net.Dns.GetHostEntry doesn't return IPv6 results on Linux or WSL
             // even when there is an IPv6 address assigned. Works correctly on Mac and Windows.
@@ -104,7 +104,7 @@ namespace SIPSorcery.Net.UnitTests
 
                 Assert.NotNull(result);
 
-                logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+                logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
             }
         }
 
@@ -135,7 +135,7 @@ namespace SIPSorcery.Net.UnitTests
 
                 Assert.NotNull(result);
 
-                logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+                logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
             }
 
             // Using System.Net.Dns.GetHostEntry doesn't return IPv6 results on Linux or WSL
@@ -166,11 +166,11 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(result);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
         }
 
         /// <summary>
-        /// Tests that looking up a STUN URI with an explicit port works correctly.
+        /// Tests that looking up a STUN URI with a preference for IPv6 hosts works correctly
         /// </summary>
         [Fact]
         public async void LookupHostPreferIPv6TestMethod()
@@ -181,12 +181,31 @@ namespace SIPSorcery.Net.UnitTests
             STUNUri.TryParse("www.google.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
 
             Assert.NotNull(result);
 
            // There's no guarantee that a particular DNS server will have AAAA records for
            // a particular hostname so can't check which result type was returned.
+        }
+
+        /// <summary>
+        /// Tests that looking up a STUN URI with a preference for IPv6 AND the hostname does
+        /// not have any IPv6 addresses, thus requiring fallback to IPv4, works correctly.
+        /// </summary>
+        [Fact]
+        public async void LookupHostPreferIPv6FallbackTestMethod()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            STUNUri.TryParse("webrtc.sipsorcery.com", out var stunUri);
+            var result = await STUNDns.Resolve(stunUri, true);
+
+            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+
+            Assert.NotNull(result);
+            Assert.Equal(AddressFamily.InterNetwork, result.AddressFamily);
         }
 
         /// <summary>
@@ -203,7 +222,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(result);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
         }
 
         /// <summary>
@@ -223,7 +242,7 @@ namespace SIPSorcery.Net.UnitTests
             // No IPv6 DNS record available so should fallback to IPv4.
             Assert.Equal(AddressFamily.InterNetwork, result.AddressFamily);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
         }
 
         /// <summary>
@@ -238,7 +257,7 @@ namespace SIPSorcery.Net.UnitTests
             STUNUri.TryParse("idontexist", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
 
             Assert.Null(result);
         }
@@ -255,7 +274,7 @@ namespace SIPSorcery.Net.UnitTests
             STUNUri.TryParse("somehost.fsdfergerw.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
 
             Assert.Null(result);
         }
