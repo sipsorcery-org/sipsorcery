@@ -1,0 +1,653 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class ThreadedAssociation
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class ThreadedAssociation
+   ">
+    <meta name="generator" content="docfx 2.56.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation">
+  
+  
+  <h1 id="SIPSorcery_Net_Sctp_ThreadedAssociation" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation" class="text-break">Class ThreadedAssociation
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.Net.Sctp.Association.html">Association</a></div>
+    <div class="level2"><span class="xref">ThreadedAssociation</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_COOKIESIZE">Association.COOKIESIZE</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__transp">Association._transp</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__myVerTag">Association._myVerTag</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_MAXBUFF">Association.MAXBUFF</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__nearTSN">Association._nearTSN</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__state">Association._state</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_getSupportedExtensions">Association.getSupportedExtensions()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_getNearTSN">Association.getNearTSN()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_deal_SIPSorcery_Net_Sctp_Packet_">Association.deal(Packet)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_doBidirectionalInit">Association.doBidirectionalInit()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_send_SIPSorcery_Net_Sctp_Chunk___">Association.send(Chunk[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_mkPkt_SIPSorcery_Net_Sctp_Chunk___">Association.mkPkt(Chunk[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_getPeerVerTag">Association.getPeerVerTag()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_getMyVerTag">Association.getMyVerTag()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_sendInit">Association.sendInit()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_getCumAckPt">Association.getCumAckPt()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_addToCloseList_SIPSorcery_Net_Sctp_SCTPStream_">Association.addToCloseList(SCTPStream)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_closeStream_SIPSorcery_Net_Sctp_SCTPStream_">Association.closeStream(SCTPStream)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_mkStream_System_String_">Association.mkStream(String)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_allStreams">Association.allStreams()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_getStream_System_Int32_">Association.getStream(Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_delStream_System_Int32_">Association.delStream(Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_mkStream_System_Int32_System_String_">Association.mkStream(Int32, String)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_maxMessageSize">Association.maxMessageSize()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_canSend">Association.canSend()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_unexpectedClose_System_Exception_">Association.unexpectedClose(Exception)</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.Sctp.html">SIPSorcery.Net.Sctp</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_Sctp_ThreadedAssociation_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class ThreadedAssociation : Association</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.%23ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport%2CSIPSorcery.Net.Sctp.AssociationListener%2CSystem.Boolean%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L134">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation__ctor_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)">ThreadedAssociation(DatagramTransport, AssociationListener, Boolean, Int32, Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ThreadedAssociation(DatagramTransport transport, AssociationListener al, bool isClient, int srcPort, int destPort)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.DatagramTransport</span></td>
+        <td><span class="parametername">transport</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.AssociationListener.html">AssociationListener</a></td>
+        <td><span class="parametername">al</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">isClient</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">srcPort</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">destPort</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_adjustCwind_System_Boolean_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.adjustCwind(System.Boolean%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L685">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_adjustCwind_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.adjustCwind*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_adjustCwind_System_Boolean_System_Int32_System_Int32_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.adjustCwind(System.Boolean,System.Int32,System.Int32)">adjustCwind(Boolean, Int32, Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void adjustCwind(bool didAdvance, int inFlightBytes, int totalAcked)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">didAdvance</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">inFlightBytes</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">totalAcked</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_associate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.associate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L228">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_associate_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.associate*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_associate" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.associate">associate()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void associate()</code></pre>
+  </div>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_associate">Association.associate()</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_enqueue_SIPSorcery_Net_Sctp_DataChunk_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.enqueue(SIPSorcery.Net.Sctp.DataChunk)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L245">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_enqueue_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.enqueue*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_enqueue_SIPSorcery_Net_Sctp_DataChunk_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.enqueue(SIPSorcery.Net.Sctp.DataChunk)">enqueue(DataChunk)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void enqueue(DataChunk d)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.DataChunk.html">DataChunk</a></td>
+        <td><span class="parametername">d</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_enqueue_SIPSorcery_Net_Sctp_DataChunk_">Association.enqueue(DataChunk)</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_getT3.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.getT3%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L240">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_getT3_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.getT3*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_getT3" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.getT3">getT3()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long getT3()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int64</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_iackDeal_SIPSorcery_Net_Sctp_InitAckChunk_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.iackDeal(SIPSorcery.Net.Sctp.InitAckChunk)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L172">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_iackDeal_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.iackDeal*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_iackDeal_SIPSorcery_Net_Sctp_InitAckChunk_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.iackDeal(SIPSorcery.Net.Sctp.InitAckChunk)">iackDeal(InitAckChunk)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override Chunk[] iackDeal(InitAckChunk iack)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.InitAckChunk.html">InitAckChunk</a></td>
+        <td><span class="parametername">iack</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html">Chunk</a>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_iackDeal_SIPSorcery_Net_Sctp_InitAckChunk_">Association.iackDeal(InitAckChunk)</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_inboundInit_SIPSorcery_Net_Sctp_InitChunk_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.inboundInit(SIPSorcery.Net.Sctp.InitChunk)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L431">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_inboundInit_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.inboundInit*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_inboundInit_SIPSorcery_Net_Sctp_InitChunk_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.inboundInit(SIPSorcery.Net.Sctp.InitChunk)">inboundInit(InitChunk)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override Chunk[] inboundInit(InitChunk init)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.InitChunk.html">InitChunk</a></td>
+        <td><span class="parametername">init</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html">Chunk</a>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_inboundInit_SIPSorcery_Net_Sctp_InitChunk_">Association.inboundInit(InitChunk)</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_mkStream_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.mkStream(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L234">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_mkStream_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.mkStream*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_mkStream_System_Int32_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.mkStream(System.Int32)">mkStream(Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override SCTPStream mkStream(int id)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">id</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html">SCTPStream</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_mkStream_System_Int32_">Association.mkStream(Int32)</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_resetCwnd.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.resetCwnd%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L621">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_resetCwnd_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.resetCwnd*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_resetCwnd" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.resetCwnd">resetCwnd()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void resetCwnd()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_run.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.run%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L801">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_run_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.run*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_run" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.run">run()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void run()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_sackDeal_SIPSorcery_Net_Sctp_SackChunk_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.sackDeal(SIPSorcery.Net.Sctp.SackChunk)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L487">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_sackDeal_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.sackDeal*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_sackDeal_SIPSorcery_Net_Sctp_SackChunk_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.sackDeal(SIPSorcery.Net.Sctp.SackChunk)">sackDeal(SackChunk)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override Chunk[] sackDeal(SackChunk sack)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.SackChunk.html">SackChunk</a></td>
+        <td><span class="parametername">sack</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html">Chunk</a>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association_sackDeal_SIPSorcery_Net_Sctp_SackChunk_">Association.sackDeal(SackChunk)</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation_setCwndPostRetrans.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation.setCwndPostRetrans%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L634">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_ThreadedAssociation_setCwndPostRetrans_" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.setCwndPostRetrans*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_ThreadedAssociation_setCwndPostRetrans" data-uid="SIPSorcery.Net.Sctp.ThreadedAssociation.setCwndPostRetrans">setCwndPostRetrans()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void setCwndPostRetrans()</code></pre>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_ThreadedAssociation.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.ThreadedAssociation%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/ThreadedAssociation.cs/#L34" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

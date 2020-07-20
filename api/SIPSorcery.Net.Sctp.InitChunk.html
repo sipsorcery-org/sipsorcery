@@ -1,0 +1,691 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class InitChunk
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class InitChunk
+   ">
+    <meta name="generator" content="docfx 2.56.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.Sctp.InitChunk">
+  
+  
+  <h1 id="SIPSorcery_Net_Sctp_InitChunk" data-uid="SIPSorcery.Net.Sctp.InitChunk" class="text-break">Class InitChunk
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html">Chunk</a></div>
+    <div class="level2"><span class="xref">InitChunk</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_TBIT">Chunk.TBIT</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_mkChunk_SCTP4CS_Utils_ByteBuffer_">Chunk.mkChunk(ByteBuffer)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk__type">Chunk._type</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk__flags">Chunk._flags</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk__body">Chunk._body</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk__varList">Chunk._varList</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_write_SCTP4CS_Utils_ByteBuffer_">Chunk.write(ByteBuffer)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_getType">Chunk.getType()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_getLength">Chunk.getLength()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_readVariable">Chunk.readVariable()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_readErrorParam">Chunk.readErrorParam()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_validate">Chunk.validate()</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.Sctp.html">SIPSorcery.Net.Sctp</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_Sctp_InitChunk_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class InitChunk : Chunk</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L65">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk__ctor_" data-uid="SIPSorcery.Net.Sctp.InitChunk.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk__ctor" data-uid="SIPSorcery.Net.Sctp.InitChunk.#ctor">InitChunk()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public InitChunk()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk__ctor_SIPSorcery_Net_Sctp_ChunkType_System_Byte_System_Int32_SCTP4CS_Utils_ByteBuffer_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.%23ctor(SIPSorcery.Net.Sctp.ChunkType%2CSystem.Byte%2CSystem.Int32%2CSCTP4CS.Utils.ByteBuffer)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L67">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk__ctor_" data-uid="SIPSorcery.Net.Sctp.InitChunk.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk__ctor_SIPSorcery_Net_Sctp_ChunkType_System_Byte_System_Int32_SCTP4CS_Utils_ByteBuffer_" data-uid="SIPSorcery.Net.Sctp.InitChunk.#ctor(SIPSorcery.Net.Sctp.ChunkType,System.Byte,System.Int32,SCTP4CS.Utils.ByteBuffer)">InitChunk(ChunkType, Byte, Int32, ByteBuffer)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public InitChunk(ChunkType type, byte flags, int length, ByteBuffer pkt)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.ChunkType.html">ChunkType</a></td>
+        <td><span class="parametername">type</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span></td>
+        <td><span class="parametername">flags</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">length</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SCTP4CS.Utils.ByteBuffer.html">ByteBuffer</a></td>
+        <td><span class="parametername">pkt</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk__outStreams.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk._outStreams%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L63">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk__outStreams" data-uid="SIPSorcery.Net.Sctp.InitChunk._outStreams">_outStreams</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int _outStreams</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_getAdRecWinCredit.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.getAdRecWinCredit%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L142">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_getAdRecWinCredit_" data-uid="SIPSorcery.Net.Sctp.InitChunk.getAdRecWinCredit*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_getAdRecWinCredit" data-uid="SIPSorcery.Net.Sctp.InitChunk.getAdRecWinCredit">getAdRecWinCredit()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long getAdRecWinCredit()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int64</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_getFarSupportedExtensions.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.getFarSupportedExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L182">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_getFarSupportedExtensions_" data-uid="SIPSorcery.Net.Sctp.InitChunk.getFarSupportedExtensions*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_getFarSupportedExtensions" data-uid="SIPSorcery.Net.Sctp.InitChunk.getFarSupportedExtensions">getFarSupportedExtensions()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] getFarSupportedExtensions()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_getInitialTSN.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.getInitialTSN%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L157">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_getInitialTSN_" data-uid="SIPSorcery.Net.Sctp.InitChunk.getInitialTSN*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_getInitialTSN" data-uid="SIPSorcery.Net.Sctp.InitChunk.getInitialTSN">getInitialTSN()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public long getInitialTSN()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int64</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_getInitiateTag.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.getInitiateTag%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L137">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_getInitiateTag_" data-uid="SIPSorcery.Net.Sctp.InitChunk.getInitiateTag*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_getInitiateTag" data-uid="SIPSorcery.Net.Sctp.InitChunk.getInitiateTag">getInitiateTag()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int getInitiateTag()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_getNumInStreams.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.getNumInStreams%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L152">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_getNumInStreams_" data-uid="SIPSorcery.Net.Sctp.InitChunk.getNumInStreams*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_getNumInStreams" data-uid="SIPSorcery.Net.Sctp.InitChunk.getNumInStreams">getNumInStreams()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int getNumInStreams()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_getNumOutStreams.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.getNumOutStreams%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L147">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_getNumOutStreams_" data-uid="SIPSorcery.Net.Sctp.InitChunk.getNumOutStreams*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_getNumOutStreams" data-uid="SIPSorcery.Net.Sctp.InitChunk.getNumOutStreams">getNumOutStreams()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int getNumOutStreams()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_putFixedParams_SCTP4CS_Utils_ByteBuffer_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.putFixedParams(SCTP4CS.Utils.ByteBuffer)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L128">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_putFixedParams_" data-uid="SIPSorcery.Net.Sctp.InitChunk.putFixedParams*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_putFixedParams_SCTP4CS_Utils_ByteBuffer_" data-uid="SIPSorcery.Net.Sctp.InitChunk.putFixedParams(SCTP4CS.Utils.ByteBuffer)">putFixedParams(ByteBuffer)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override void putFixedParams(ByteBuffer ret)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SCTP4CS.Utils.ByteBuffer.html">ByteBuffer</a></td>
+        <td><span class="parametername">ret</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_putFixedParams_SCTP4CS_Utils_ByteBuffer_">Chunk.putFixedParams(ByteBuffer)</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_setAdRecWinCredit_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.setAdRecWinCredit(System.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L167">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_setAdRecWinCredit_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setAdRecWinCredit*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_setAdRecWinCredit_System_UInt32_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setAdRecWinCredit(System.UInt32)">setAdRecWinCredit(UInt32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void setAdRecWinCredit(uint credit)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">credit</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_setInitialTSN_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.setInitialTSN(System.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L162">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_setInitialTSN_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setInitialTSN*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_setInitialTSN_System_UInt32_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setInitialTSN(System.UInt32)">setInitialTSN(UInt32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void setInitialTSN(uint tsn)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">tsn</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_setInitiate_System_Int64_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.setInitiate(System.Int64)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L187">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_setInitiate_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setInitiate*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_setInitiate_System_Int64_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setInitiate(System.Int64)">setInitiate(Int64)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void setInitiate(long tag)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int64</span></td>
+        <td><span class="parametername">tag</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_setNumInStreams_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.setNumInStreams(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L177">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_setNumInStreams_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setNumInStreams*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_setNumInStreams_System_Int32_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setNumInStreams(System.Int32)">setNumInStreams(Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void setNumInStreams(int inn)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">inn</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_setNumOutStreams_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.setNumOutStreams(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L172">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_setNumOutStreams_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setNumOutStreams*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_setNumOutStreams_System_Int32_" data-uid="SIPSorcery.Net.Sctp.InitChunk.setNumOutStreams(System.Int32)">setNumOutStreams(Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void setNumOutStreams(int outn)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">outn</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk_ToString.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk.ToString%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L115">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_InitChunk_ToString_" data-uid="SIPSorcery.Net.Sctp.InitChunk.ToString*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_InitChunk_ToString" data-uid="SIPSorcery.Net.Sctp.InitChunk.ToString">ToString()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.Sctp.Chunk.html#SIPSorcery_Net_Sctp_Chunk_ToString">Chunk.ToString()</a></div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_InitChunk.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.InitChunk%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/messages/InitChunk.cs/#L29" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

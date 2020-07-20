@@ -117,7 +117,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_WhiteSpaceChars.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.WhiteSpaceChars%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L28">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L29">View Source</a>
   </span>
   <h4 id="SIPSorcery_Sys_TypeExtensions_WhiteSpaceChars" data-uid="SIPSorcery.Sys.TypeExtensions.WhiteSpaceChars">WhiteSpaceChars</h4>
   <div class="markdown level1 summary"></div>
@@ -145,10 +145,137 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_Deconstruct__1_System_Collections_Generic_IList___0____0____0__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.Deconstruct%60%601(System.Collections.Generic.IList%7B%60%600%7D%2C%60%600%40%2C%60%600%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L191">View Source</a>
+  </span>
+  <a id="SIPSorcery_Sys_TypeExtensions_Deconstruct_" data-uid="SIPSorcery.Sys.TypeExtensions.Deconstruct*"></a>
+  <h4 id="SIPSorcery_Sys_TypeExtensions_Deconstruct__1_System_Collections_Generic_IList___0____0____0__" data-uid="SIPSorcery.Sys.TypeExtensions.Deconstruct``1(System.Collections.Generic.IList{``0},``0@,``0@)">Deconstruct&lt;T&gt;(IList&lt;T&gt;, out T, out T)</h4>
+  <div class="markdown level1 summary"><p>Purpose of this extension is to allow deconstruction of a list into a fixed size tuple.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void Deconstruct&lt;T&gt;(this IList&lt;T&gt; list, out T first, out T second)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;T&gt;</td>
+        <td><span class="parametername">list</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><span class="parametername">first</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><span class="parametername">second</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="SIPSorcery_Sys_TypeExtensions_Deconstruct__1_System_Collections_Generic_IList___0____0____0___examples">Examples</h5>
+  <p>(var field0, var field1) = &quot;a b c&quot;.Split();</p>
+
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_Deconstruct__1_System_Collections_Generic_IList___0____0____0____0__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.Deconstruct%60%601(System.Collections.Generic.IList%7B%60%600%7D%2C%60%600%40%2C%60%600%40%2C%60%600%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L203">View Source</a>
+  </span>
+  <a id="SIPSorcery_Sys_TypeExtensions_Deconstruct_" data-uid="SIPSorcery.Sys.TypeExtensions.Deconstruct*"></a>
+  <h4 id="SIPSorcery_Sys_TypeExtensions_Deconstruct__1_System_Collections_Generic_IList___0____0____0____0__" data-uid="SIPSorcery.Sys.TypeExtensions.Deconstruct``1(System.Collections.Generic.IList{``0},``0@,``0@,``0@)">Deconstruct&lt;T&gt;(IList&lt;T&gt;, out T, out T, out T)</h4>
+  <div class="markdown level1 summary"><p>Purpose of this extension is to allow deconstruction of a list into a fixed size tuple.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void Deconstruct&lt;T&gt;(this IList&lt;T&gt; list, out T first, out T second, out T third)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.IList</span>&lt;T&gt;</td>
+        <td><span class="parametername">list</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><span class="parametername">first</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><span class="parametername">second</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td><span class="parametername">third</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="SIPSorcery_Sys_TypeExtensions_Deconstruct__1_System_Collections_Generic_IList___0____0____0____0___examples">Examples</h5>
+  <p>(var field0, var field1, var field2) = &quot;a b c&quot;.Split();</p>
+
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_Deconstruct__2_System_Collections_Generic_KeyValuePair___0___1____0____1__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.Deconstruct%60%602(System.Collections.Generic.KeyValuePair%7B%60%600%2C%60%601%7D%2C%60%600%40%2C%60%601%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L171">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L172">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_TypeExtensions_Deconstruct_" data-uid="SIPSorcery.Sys.TypeExtensions.Deconstruct*"></a>
   <h4 id="SIPSorcery_Sys_TypeExtensions_Deconstruct__2_System_Collections_Generic_KeyValuePair___0___1____0____1__" data-uid="SIPSorcery.Sys.TypeExtensions.Deconstruct``2(System.Collections.Generic.KeyValuePair{``0,``1},``0@,``1@)">Deconstruct&lt;T1, T2&gt;(KeyValuePair&lt;T1, T2&gt;, out T1, out T2)</h4>
@@ -209,7 +336,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_GetEpoch_System_DateTime_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.GetEpoch(System.DateTime)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L76">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L77">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_TypeExtensions_GetEpoch_" data-uid="SIPSorcery.Sys.TypeExtensions.GetEpoch*"></a>
   <h4 id="SIPSorcery_Sys_TypeExtensions_GetEpoch_System_DateTime_" data-uid="SIPSorcery.Sys.TypeExtensions.GetEpoch(System.DateTime)">GetEpoch(DateTime)</h4>
@@ -256,7 +383,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_HexStr_System_Byte___System_Int32_System_Nullable_System_Char__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.HexStr(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Nullable%7BSystem.Char%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L123">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L124">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_TypeExtensions_HexStr_" data-uid="SIPSorcery.Sys.TypeExtensions.HexStr*"></a>
   <h4 id="SIPSorcery_Sys_TypeExtensions_HexStr_System_Byte___System_Int32_System_Nullable_System_Char__" data-uid="SIPSorcery.Sys.TypeExtensions.HexStr(System.Byte[],System.Int32,System.Nullable{System.Char})">HexStr(Byte[], Int32, Nullable&lt;Char&gt;)</h4>
@@ -313,7 +440,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_HexStr_System_Byte___System_Nullable_System_Char__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.HexStr(System.Byte%5B%5D%2CSystem.Nullable%7BSystem.Char%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L118">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L119">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_TypeExtensions_HexStr_" data-uid="SIPSorcery.Sys.TypeExtensions.HexStr*"></a>
   <h4 id="SIPSorcery_Sys_TypeExtensions_HexStr_System_Byte___System_Nullable_System_Char__" data-uid="SIPSorcery.Sys.TypeExtensions.HexStr(System.Byte[],System.Nullable{System.Char})">HexStr(Byte[], Nullable&lt;Char&gt;)</h4>
@@ -365,7 +492,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_IsNullOrBlank_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.IsNullOrBlank(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L56">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L57">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_TypeExtensions_IsNullOrBlank_" data-uid="SIPSorcery.Sys.TypeExtensions.IsNullOrBlank*"></a>
   <h4 id="SIPSorcery_Sys_TypeExtensions_IsNullOrBlank_System_String_" data-uid="SIPSorcery.Sys.TypeExtensions.IsNullOrBlank(System.String)">IsNullOrBlank(String)</h4>
@@ -413,7 +540,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_IsPrivate_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.IsPrivate(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L178">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L179">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_TypeExtensions_IsPrivate_" data-uid="SIPSorcery.Sys.TypeExtensions.IsPrivate*"></a>
   <h4 id="SIPSorcery_Sys_TypeExtensions_IsPrivate_System_Net_IPAddress_" data-uid="SIPSorcery.Sys.TypeExtensions.IsPrivate(System.Net.IPAddress)">IsPrivate(IPAddress)</h4>
@@ -460,7 +587,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_NotNullOrBlank_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.NotNullOrBlank(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L66">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L67">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_TypeExtensions_NotNullOrBlank_" data-uid="SIPSorcery.Sys.TypeExtensions.NotNullOrBlank*"></a>
   <h4 id="SIPSorcery_Sys_TypeExtensions_NotNullOrBlank_System_String_" data-uid="SIPSorcery.Sys.TypeExtensions.NotNullOrBlank(System.String)">NotNullOrBlank(String)</h4>
@@ -507,7 +634,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_ParseHexStr_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.ParseHexStr(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L142">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L143">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_TypeExtensions_ParseHexStr_" data-uid="SIPSorcery.Sys.TypeExtensions.ParseHexStr*"></a>
   <h4 id="SIPSorcery_Sys_TypeExtensions_ParseHexStr_System_String_" data-uid="SIPSorcery.Sys.TypeExtensions.ParseHexStr(System.String)">ParseHexStr(String)</h4>
@@ -554,7 +681,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_Slice_System_String_System_Char_System_Char_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.Slice(System.String%2CSystem.Char%2CSystem.Char)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L96">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L97">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_TypeExtensions_Slice_" data-uid="SIPSorcery.Sys.TypeExtensions.Slice*"></a>
   <h4 id="SIPSorcery_Sys_TypeExtensions_Slice_System_String_System_Char_System_Char_" data-uid="SIPSorcery.Sys.TypeExtensions.Slice(System.String,System.Char,System.Char)">Slice(String, Char, Char)</h4>
@@ -624,7 +751,7 @@ start and end character. The delimiting characters are not included.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L24" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L25" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

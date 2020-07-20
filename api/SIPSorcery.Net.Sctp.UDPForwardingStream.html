@@ -1,0 +1,292 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class UDPForwardingStream
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class UDPForwardingStream
+   ">
+    <meta name="generator" content="docfx 2.56.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.Sctp.UDPForwardingStream">
+  
+  
+  <h1 id="SIPSorcery_Net_Sctp_UDPForwardingStream" data-uid="SIPSorcery.Net.Sctp.UDPForwardingStream" class="text-break">Class UDPForwardingStream
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html">SCTPStream</a></div>
+    <div class="level2"><a class="xref" href="SIPSorcery.Net.Sctp.BlockingSCTPStream.html">BlockingSCTPStream</a></div>
+    <div class="level3"><span class="xref">UDPForwardingStream</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.BlockingSCTPStream.html#SIPSorcery_Net_Sctp_BlockingSCTPStream_send_System_String_">BlockingSCTPStream.send(String)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.BlockingSCTPStream.html#SIPSorcery_Net_Sctp_BlockingSCTPStream_send_System_Byte___">BlockingSCTPStream.send(Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.BlockingSCTPStream.html#SIPSorcery_Net_Sctp_BlockingSCTPStream_delivered_SIPSorcery_Net_Sctp_DataChunk_">BlockingSCTPStream.delivered(DataChunk)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.BlockingSCTPStream.html#SIPSorcery_Net_Sctp_BlockingSCTPStream_idle">BlockingSCTPStream.idle()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream__ass">SCTPStream._ass</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_OnOpen">SCTPStream.OnOpen</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_InboundIsOpen">SCTPStream.InboundIsOpen()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_OutboundIsOpen">SCTPStream.OutboundIsOpen()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_immediateClose">SCTPStream.immediateClose()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_setLabel_System_String_">SCTPStream.setLabel(String)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_getNum">SCTPStream.getNum()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_ToString">SCTPStream.ToString()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_append_SIPSorcery_Net_Sctp_DataChunk_">SCTPStream.append(DataChunk)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_outbound_SIPSorcery_Net_Sctp_DataChunk_">SCTPStream.outbound(DataChunk)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_inbound_SIPSorcery_Net_Sctp_DataChunk_">SCTPStream.inbound(DataChunk)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_getLabel">SCTPStream.getLabel()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_stashCap">SCTPStream.stashCap()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_setSCTPStreamListener_SIPSorcery_Net_Sctp_SCTPStreamListener_">SCTPStream.setSCTPStreamListener(SCTPStreamListener)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_getAssociation">SCTPStream.getAssociation()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_close">SCTPStream.close()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_setNextMessageSeqIn_System_Int32_">SCTPStream.setNextMessageSeqIn(Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_getNextMessageSeqIn">SCTPStream.getNextMessageSeqIn()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_setNextMessageSeqOut_System_Int32_">SCTPStream.setNextMessageSeqOut(Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_getNextMessageSeqOut">SCTPStream.getNextMessageSeqOut()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_reset">SCTPStream.reset()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_setClosing_System_Boolean_">SCTPStream.setClosing(Boolean)</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.Sctp.html">SIPSorcery.Net.Sctp</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_Sctp_UDPForwardingStream_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class UDPForwardingStream : BlockingSCTPStream</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_UDPForwardingStream__ctor_SIPSorcery_Net_Sctp_Association_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.UDPForwardingStream.%23ctor(SIPSorcery.Net.Sctp.Association%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/UDPForwardingStream.cs/#L39">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_UDPForwardingStream__ctor_" data-uid="SIPSorcery.Net.Sctp.UDPForwardingStream.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_UDPForwardingStream__ctor_SIPSorcery_Net_Sctp_Association_System_Int32_System_Int32_" data-uid="SIPSorcery.Net.Sctp.UDPForwardingStream.#ctor(SIPSorcery.Net.Sctp.Association,System.Int32,System.Int32)">UDPForwardingStream(Association, Int32, Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public UDPForwardingStream(Association a, int id, int toPort)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.Sctp.Association.html">Association</a></td>
+        <td><span class="parametername">a</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">id</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">toPort</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_UDPForwardingStream_run.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.UDPForwardingStream.run%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/UDPForwardingStream.cs/#L50">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_Sctp_UDPForwardingStream_run_" data-uid="SIPSorcery.Net.Sctp.UDPForwardingStream.run*"></a>
+  <h4 id="SIPSorcery_Net_Sctp_UDPForwardingStream_run" data-uid="SIPSorcery.Net.Sctp.UDPForwardingStream.run">run()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void run()</code></pre>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_Sctp_UDPForwardingStream.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.Sctp.UDPForwardingStream%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SCTP/small/UDPForwardingStream.cs/#L31" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
