@@ -144,16 +144,16 @@ namespace SIPSorcery.Net
                 return (STUNClassTypesEnum)@class;
             }
 
-        //return (STUNClassTypesEnum)((ushort)MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK);
+            //return (STUNClassTypesEnum)((ushort)MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK);
 
-        //if (Enum.IsDefined(typeof(STUNClassTypesEnum), (ushort)(MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK)))
-        //{
-        //    return (STUNClassTypesEnum)((ushort)MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK);
-        //}
-        //else
-        //{
-        //    return STUNClassTypesEnum.Request;
-        //}
+            //if (Enum.IsDefined(typeof(STUNClassTypesEnum), (ushort)(MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK)))
+            //{
+            //    return (STUNClassTypesEnum)((ushort)MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK);
+            //}
+            //else
+            //{
+            //    return STUNClassTypesEnum.Request;
+            //}
         }
         public UInt16 MessageLength;
         public byte[] TransactionId = new byte[TRANSACTION_ID_LENGTH];

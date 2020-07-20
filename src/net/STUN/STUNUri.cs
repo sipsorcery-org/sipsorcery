@@ -106,7 +106,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if(Transport == STUNProtocolsEnum.tcp || Transport == STUNProtocolsEnum.tls)
+                if (Transport == STUNProtocolsEnum.tcp || Transport == STUNProtocolsEnum.tls)
                 {
                     return ProtocolType.Tcp;
                 }
@@ -262,7 +262,7 @@ namespace SIPSorcery.Net
             {
                 return false;
             }
-            else if(uri1.ExplicitPort != uri2.ExplicitPort)
+            else if (uri1.ExplicitPort != uri2.ExplicitPort)
             {
                 return false;
             }
@@ -277,10 +277,10 @@ namespace SIPSorcery.Net
 
         public override int GetHashCode()
         {
-            return Scheme.GetHashCode() 
-                + Transport.GetHashCode() 
-                + ((Host != null) ? Host.GetHashCode() : 0) 
-                + Port 
+            return Scheme.GetHashCode()
+                + Transport.GetHashCode()
+                + ((Host != null) ? Host.GetHashCode() : 0)
+                + Port
                 + ((ExplicitPort) ? 1 : 0);
         }
     }

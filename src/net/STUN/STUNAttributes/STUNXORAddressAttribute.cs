@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
 
         public IPEndPoint GetIPEndPoint()
         {
-            if(Address != null)
+            if (Address != null)
             {
                 return new IPEndPoint(Address, Port);
             }

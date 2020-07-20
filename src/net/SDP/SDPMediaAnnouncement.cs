@@ -28,7 +28,6 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SDPSsrcAttribute
     {
-        //public const string MEDIA_SSRC_ATTRIBUE_PREFIX = "ssrc";
         public const string MEDIA_CNAME_ATTRIBUE_PREFIX = "cname";
 
         public uint SSRC { get; set; }
@@ -58,6 +57,9 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
         public const string MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX = "a=ssrc:";
         public const string MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX = "a=ssrc-group:";
+        public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
+        public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
+        public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
 
         public const string m_CRLF = "\r\n";
 
@@ -72,6 +74,7 @@ namespace SIPSorcery.Net
         public string IceOptions;               // Optional attribute to specify support ICE options, e.g. "trickle".
         public bool IceEndOfCandidates;         // If ICE candidate trickling is being used this needs to be set if all candidates have been gathered.
         public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
+        public int MLineIndex = 0;
 
         /// <summary>
         /// If being used in a bundle this the ID for the announcement.
@@ -83,6 +86,24 @@ namespace SIPSorcery.Net
         /// The "ssrc" attributes group ID as specified in RFC5576.
         /// </summary>
         public string SsrcGroupID;
+
+        /// <summary>
+        /// The "sctpmap" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
+        /// use in WebRTC data channels.
+        /// </summary>
+        public string SctpMap;
+
+        /// <summary>
+        /// The "sctp-port" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
+        /// use in WebRTC data channels.
+        /// </summary>
+        public ushort? SctpPort = null;
+
+        /// <summary>
+        /// The "max-message-size" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
+        /// use in WebRTC data channels.
+        /// </summary>
+        public long MaxMessageSize = 0;
 
         /// <summary>
         /// If the RFC5576 is being used this is the list of "ssrc" attributes
@@ -246,17 +267,17 @@ namespace SIPSorcery.Net
                 announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus) + m_CRLF;
             }
 
-            if(SsrcGroupID != null && SsrcAttributes.Count > 0)
+            if (SsrcGroupID != null && SsrcAttributes.Count > 0)
             {
                 announcement += MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX + SsrcGroupID;
-                foreach(var ssrcAttr in SsrcAttributes)
+                foreach (var ssrcAttr in SsrcAttributes)
                 {
                     announcement += $" {ssrcAttr.SSRC}";
                 }
                 announcement += m_CRLF;
             }
 
-            if(SsrcAttributes.Count > 0)
+            if (SsrcAttributes.Count > 0)
             {
                 foreach (var ssrcAttr in SsrcAttributes)
                 {
@@ -268,6 +289,26 @@ namespace SIPSorcery.Net
                     {
                         announcement += $"{MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX}{ssrcAttr.SSRC}" + m_CRLF;
                     }
+                }
+            }
+
+            // If the "sctpmap" attribute is set use it instead of the separate "sctpport" and "max-message-size"
+            // attributes. They both contain the same information. The "sctpmap" is the legacy attribute and if
+            // an application sets it then it's likely to be for a specific reason.
+            if (SctpMap != null)
+            {
+                announcement += $"{MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX}{SctpMap}" + m_CRLF;
+            }
+            else
+            {
+                if (SctpPort != null)
+                {
+                    announcement += $"{MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX}{SctpPort}" + m_CRLF;
+                }
+
+                if (MaxMessageSize != 0)
+                {
+                    announcement += $"{MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX}{MaxMessageSize}" + m_CRLF;
                 }
             }
 
@@ -297,10 +338,12 @@ namespace SIPSorcery.Net
                     {
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatAttribute + m_CRLF;
                     }
-                    else
+                    else if (Media == SDPMediaTypesEnum.audio || Media == SDPMediaTypesEnum.video)
                     {
+                        // If no format attribute is specified then a default one can be constructed for dynamic audio and video types.
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.Name + "/" + mediaFormat.ClockRate + m_CRLF;
                     }
+
                     if (mediaFormat.FormatParameterAttribute != null)
                     {
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatParameterAttribute + m_CRLF;

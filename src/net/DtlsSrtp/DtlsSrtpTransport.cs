@@ -18,20 +18,21 @@
 
 using System;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
-using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class DtlsSrtpTransport : DatagramTransport
+    public class DtlsSrtpTransport : DatagramTransport, IDisposable
     {
         public const int DEFAULT_MTU = 1500;
         public const int MIN_IP_OVERHEAD = 20;
         public const int MAX_IP_OVERHEAD = MIN_IP_OVERHEAD + 64;
         public const int UDP_OVERHEAD = 8;
         public const int DEFAULT_TIMEOUT_MILLISECONDS = 20000;
+        public const int DTLS_RECEIVE_ERROR_CODE = -1;
 
         private static readonly ILogger logger = Log.Logger;
 
@@ -43,15 +44,26 @@ namespace SIPSorcery.Net
 
         private PipedMemoryStream _inStream = new PipedMemoryStream();
 
+        public DtlsTransport Transport { get; private set; }
+
         /// <summary>
         /// Sets the period in milliseconds that the handshake attempt will timeout
         /// after.
         /// </summary>
-        public int TimeoutMilliseconds = DEFAULT_TIMEOUT_MILLISECONDS; 
+        public int TimeoutMilliseconds = DEFAULT_TIMEOUT_MILLISECONDS;
 
         public Action<byte[]> OnDataReady;
 
+        /// <summary>
+        /// Parameters:
+        ///  - alert level,
+        ///  - alert type,
+        ///  - alert description.
+        /// </summary>
+        public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
+
         private System.DateTime startTime = System.DateTime.MinValue;
+        private bool _isClosed = false;
 
         // Network properties
         private int mtu;
@@ -70,6 +82,8 @@ namespace SIPSorcery.Net
             this.sendLimit = System.Math.Max(0, mtu - MAX_IP_OVERHEAD - UDP_OVERHEAD);
 
             this.connection = connection;
+
+            connection.OnAlert += (level, type, description) => OnAlert?.Invoke(level, type, description);
         }
 
         public IPacketTransformer SrtpDecoder
@@ -131,6 +145,11 @@ namespace SIPSorcery.Net
             }
         }
 
+        public bool IsClient
+        {
+            get { return connection.IsClient(); }
+        }
+
         public bool DoHandshakeAsClient()
         {
             logger.LogDebug("DTLS commencing handshake as client.");
@@ -145,7 +164,8 @@ namespace SIPSorcery.Net
                 {
                     var client = (DtlsSrtpClient)connection;
                     // Perform the handshake in a non-blocking fashion
-                    clientProtocol.Connect(client, this);
+                    Transport = clientProtocol.Connect(client, this);
+
                     // Prepare the shared key to be used in RTP streaming
                     //client.PrepareSrtpSharedSecret();
                     // Generate encoders for DTLS traffic
@@ -193,9 +213,9 @@ namespace SIPSorcery.Net
                 try
                 {
                     var server = (DtlsSrtpServer)connection;
-                    
+
                     // Perform the handshake in a non-blocking fashion
-                    serverProtocol.Accept(server, this);
+                    Transport = serverProtocol.Accept(server, this);
                     // Prepare the shared key to be used in RTP streaming
                     //server.PrepareSrtpSharedSecret();
                     // Generate encoders for DTLS traffic
@@ -414,17 +434,34 @@ namespace SIPSorcery.Net
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
         {
-            int millisecondsRemaining = GetMillisecondsRemaining();
-
-            if (millisecondsRemaining <= 0)
+            if (!handshakeComplete)
             {
-                logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
-                throw new TimeoutException();
+                // The timeout for the handshake applies from when it started rather than
+                // for each individual receive..
+                int millisecondsRemaining = GetMillisecondsRemaining();
+
+                if (millisecondsRemaining <= 0)
+                {
+                    logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
+                    throw new TimeoutException();
+                }
+                else if(!_isClosed)
+                {
+                    waitMillis = (int)System.Math.Min(waitMillis, millisecondsRemaining);
+                    return _inStream.Read(buf, off, len, waitMillis);
+                }
+                else
+                {
+                    return DTLS_RECEIVE_ERROR_CODE;
+                }
+            }
+            else if(!_isClosed)
+            {
+                return _inStream.Read(buf, off, len, waitMillis);
             }
             else
             {
-                waitMillis = (int)System.Math.Min(waitMillis, millisecondsRemaining);
-                return _inStream.Read(buf, off, len, waitMillis);
+                return DTLS_RECEIVE_ERROR_CODE;
             }
         }
 
@@ -435,7 +472,25 @@ namespace SIPSorcery.Net
 
         public virtual void Close()
         {
+            _isClosed = true;
             this.startTime = System.DateTime.MinValue;
+            _inStream.Close();
+        }
+
+        /// <summary>
+        /// Close the transport if the instance is out of scope.
+        /// </summary>
+        protected void Dispose(bool disposing)
+        {
+            Close();
+        }
+
+        /// <summary>
+        /// Close the transport if the instance is out of scope.
+        /// </summary>
+        public void Dispose()
+        {
+            Close();
         }
     }
 }

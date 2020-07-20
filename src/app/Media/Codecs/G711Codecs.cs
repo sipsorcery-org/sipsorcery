@@ -16,8 +16,6 @@
 // MS_PL Microsoft Public License.
 //-----------------------------------------------------------------------------
 
-using System;
-
 namespace SIPSorcery.Media
 {
     /// <summary>

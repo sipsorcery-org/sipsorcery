@@ -64,7 +64,7 @@ namespace SIPSorcery.Sys
         {
             lock (this)
             {
-                if(_ms.Position != _writePos)
+                if (_ms.Position != _writePos)
                 {
                     _ms.Seek(_writePos, SeekOrigin.Begin);
                 }

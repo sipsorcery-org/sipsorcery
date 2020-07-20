@@ -113,7 +113,7 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
-            Assert.Equal(SetDescriptionResultEnum.NoLocalMedia, result);
+            Assert.Equal(SetDescriptionResultEnum.NoMatchingMediaType, result);
 
             localSession.Close("normal");
             remoteSession.Close("normal");
