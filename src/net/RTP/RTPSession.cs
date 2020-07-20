@@ -711,12 +711,11 @@ namespace SIPSorcery.Net
                 //{
                 //    return SetDescriptionResultEnum.NoLocalMedia;
                 //}
-                //else if (sessionDescription.Media?.Count == 0)
-                //{
-                //    return SetDescriptionResultEnum.NoRemoteMedia;
-                //}
-                //else 
-                if (sessionDescription.Media?.Count == 1)
+                if (sessionDescription.Media?.Count == 0)
+                {
+                    return SetDescriptionResultEnum.NoRemoteMedia;
+                }
+                else if (sessionDescription.Media?.Count == 1)
                 {
                     var remoteMediaType = sessionDescription.Media.First().Media;
                     if (remoteMediaType == SDPMediaTypesEnum.audio && AudioLocalTrack == null)

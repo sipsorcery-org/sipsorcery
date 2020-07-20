@@ -128,13 +128,14 @@ namespace SIPSorcery.Net.UnitTests
 
             SDP sdp = SDP.ParseSDPDescription(sipRequest.Body);
             Assert.NotNull(sdp);
-            Assert.Equal("10.2.19.102", sdp.Connection.ConnectionAddress);
+            //Assert.Equal("10.2.19.102", sdp.Connection.ConnectionAddress);
             Assert.Equal("-", sdp.Username);
             Assert.Equal("pjmedia", sdp.SessionName);
             Assert.Equal(SDPMediaTypesEnum.audio, sdp.Media[0].Media);
             Assert.Equal(MediaStreamStatusEnum.SendRecv, sdp.Media[0].MediaStreamStatus);
 
             Assert.NotEmpty(sdp.Media[0].SecurityDescriptions);
+            Assert.Equal("10.2.19.102", sdp.Media[0].Connection.ConnectionAddress);
             Assert.Equal(SDPSecurityDescription.CryptoSuites.AES_256_CM_HMAC_SHA1_80, sdp.Media[0].SecurityDescriptions[0].CryptoSuite);
             Assert.NotEmpty(sdp.Media[0].SecurityDescriptions[0].KeyParams);
             Assert.Null(sdp.Media[0].SecurityDescriptions[0].SessionParam);
