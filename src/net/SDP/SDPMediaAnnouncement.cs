@@ -292,19 +292,24 @@ namespace SIPSorcery.Net
                 }
             }
 
+            // If the "sctpmap" attribute is set use it instead of the separate "sctpport" and "max-message-size"
+            // attributes. They both contain the same information. The "sctpmap" is the legacy attribute and if
+            // an application sets it then it's likely to be for a specific reason.
             if (SctpMap != null)
             {
                 announcement += $"{MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX}{SctpMap}" + m_CRLF;
             }
-
-            if (SctpPort != null)
+            else
             {
-                announcement += $"{MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX}{SctpPort}" + m_CRLF;
-            }
+                if (SctpPort != null)
+                {
+                    announcement += $"{MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX}{SctpPort}" + m_CRLF;
+                }
 
-            if (MaxMessageSize != 0)
-            {
-                announcement += $"{MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX}{MaxMessageSize}" + m_CRLF;
+                if (MaxMessageSize != 0)
+                {
+                    announcement += $"{MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX}{MaxMessageSize}" + m_CRLF;
+                }
             }
 
             return announcement;
