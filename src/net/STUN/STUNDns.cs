@@ -50,6 +50,8 @@ namespace SIPSorcery.Net
     public class STUNDns
     {
         public const string MDNS_TLD = "local"; // Top Level Domain name for multicast lookups as per RFC6762.
+        public const int DNS_TIMEOUT_SECONDS = 1;
+        public const int DNS_RETRIES_PER_SERVER = 1;
 
         private static readonly ILogger logger = Log.Logger;
 
@@ -57,7 +59,14 @@ namespace SIPSorcery.Net
 
         static STUNDns()
         {
-            _lookupClient = new LookupClient();
+            LookupClientOptions clientOptions = new LookupClientOptions()
+            {
+                Retries = DNS_RETRIES_PER_SERVER,
+                Timeout = TimeSpan.FromSeconds(DNS_TIMEOUT_SECONDS),
+                UseCache = true,
+            };
+
+            _lookupClient = new LookupClient(clientOptions);
         }
 
         /// <summary>
@@ -159,27 +168,59 @@ namespace SIPSorcery.Net
                             {
                                 var addrRecord = x.Result.Answers.FirstOrDefault();
                                 return GetFromLookupResult(addrRecord, uri.Port);
+                            })
+                            .ContinueWith<IPEndPoint>(y =>
+                            {
+                                if (y.IsFaulted)
+                                {
+                                    Console.WriteLine($"STUNDns lookup failure: {y.Exception?.Flatten().Message}");
+                                    return null;
+                                }
+                                else
+                                {
+                                    return y.Result;
+                                }
                             });
                     }
                     else
                     {
                         // No explicit port so use a SRV -> (A | AAAA) record lookup.
-                        return _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol)
+                        return _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower())
                             .ContinueWith<IPEndPoint>(x =>
                             {
-                                var srvResult = x.Result.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
-
-                                string host = uri.Host; // If no SRV results then fallback is to lookup the hostname directly.
-                                int port = uri.Port;    // If no SRV results then fallback is to use the default port.
-
-                                if (srvResult != null)
+                                if (!x.IsFaulted)
                                 {
-                                    host = srvResult.HostName;
-                                    port = srvResult.Port;
-                                }
+                                    var srvResult = x.Result.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
 
-                                var addrRecord = _lookupClient.Query(host, queryType).Answers.FirstOrDefault();
-                                return GetFromLookupResult(addrRecord, uri.Port);
+                                    string host = uri.Host; // If no SRV results then fallback is to lookup the hostname directly.
+                                    int port = uri.Port;    // If no SRV results then fallback is to use the default port.
+
+                                    if (srvResult != null)
+                                    {
+                                        host = srvResult.HostName;
+                                        port = srvResult.Port;
+                                    }
+
+                                    var addrRecord = _lookupClient.Query(host, queryType).Answers.FirstOrDefault();
+                                    return GetFromLookupResult(addrRecord, uri.Port);
+                                }
+                                else
+                                {
+                                    logger.LogWarning($"STUNDns lookup service failure for {uri}. {x.Exception?.Flatten().Message}");
+                                    return null;
+                                }
+                            })
+                            .ContinueWith<IPEndPoint>(y =>
+                            {
+                                if (y.IsFaulted)
+                                {
+                                    Console.WriteLine($"STUNDns lookup failure: {y.Exception?.Flatten().Message}");
+                                    return null;
+                                }
+                                else
+                                {
+                                    return y.Result;
+                                }
                             });
                     }
                 }
