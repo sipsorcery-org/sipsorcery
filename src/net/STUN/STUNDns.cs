@@ -140,7 +140,10 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                return Task.FromResult<IPEndPoint>(null);
+                                // Didn't get a result for the preferred address family so just use the 
+                                // first available result.
+                                var addressResult = addressList.First();
+                                return Task.FromResult(new IPEndPoint(addressResult, uri.Port));
                             }
                         }
                     }
@@ -153,29 +156,11 @@ namespace SIPSorcery.Net
                 {
                     if (uri.ExplicitPort)
                     {
-                        // If the URI has an explicit port then it indicates SRV records should not be used.
-                        return _lookupClient.QueryAsync(uri.Host, queryType)
-                            .ContinueWith<IPEndPoint>(x =>
-                            {
-                                var addrRecord = x.Result.Answers.FirstOrDefault();
-                                return GetFromLookupResult(addrRecord, uri.Port);
-                            })
-                            .ContinueWith<IPEndPoint>(y =>
-                            {
-                                if (y.IsFaulted)
-                                {
-                                    Console.WriteLine($"STUNDns lookup failure: {y.Exception?.Flatten().Message}");
-                                    return null;
-                                }
-                                else
-                                {
-                                    return y.Result;
-                                }
-                            });
+                        return Task.FromResult(HostQuery(uri.Host, uri.Port, queryType));
                     }
                     else
                     {
-                        // No explicit port so use a SRV -> (A | AAAA) record lookup.
+                        // No explicit port so use a SRV -> (A | AAAA -> A) record lookup.
                         return _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower())
                             .ContinueWith<IPEndPoint>(x =>
                             {
@@ -203,15 +188,7 @@ namespace SIPSorcery.Net
                                     port = srvResult.Port;
                                 }
 
-                                IPEndPoint result = HostQuery(host, port, queryType);
-
-                                if (result == null && queryType == QueryType.AAAA)
-                                {
-                                    // If the query was for AAAA fallback to trying A.
-                                    result = HostQuery(host, port, QueryType.A);
-                                }
-
-                                return result;
+                                return HostQuery(host, port, queryType);
                             });
                     }
                 }
@@ -238,6 +215,11 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogWarning($"STUNDns lookup failure for {host} and query {queryType}. {excp.Message}");
+            }
+
+            if(queryType == QueryType.AAAA)
+            {
+                return HostQuery(host, port, QueryType.A);
             }
 
             return null;
