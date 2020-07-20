@@ -278,7 +278,7 @@ namespace SIPSorcery.Sys
             {
                 // Create a dummy IPv4 socket and attempt to bind it to the same port
                 // to check the port isn't already in use.
-                if(Socket.OSSupportsIPv4)
+                if (Socket.OSSupportsIPv4)
                 {
                     logger.LogDebug($"WSL detected, carrying out bind check on 0.0.0.0:{port}.");
 

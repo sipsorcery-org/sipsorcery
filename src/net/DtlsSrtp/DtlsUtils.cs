@@ -73,7 +73,7 @@ namespace SIPSorcery.Net
 
         public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, Org.BouncyCastle.Asn1.X509.X509CertificateStructure c)
         {
-            if(!IsHashSupported(hashAlgorithm))
+            if (!IsHashSupported(hashAlgorithm))
             {
                 throw new ApplicationException($"Hash algorithm {hashAlgorithm} is not supported for DTLS fingerprints.");
             }

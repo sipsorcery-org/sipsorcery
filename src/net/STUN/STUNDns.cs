@@ -115,10 +115,10 @@ namespace SIPSorcery.Net
 
                     try
                     {
-                       hostEntry = Dns.GetHostEntry(uri.Host);
+                        hostEntry = Dns.GetHostEntry(uri.Host);
                     }
                     catch (SocketException)
-                    { 
+                    {
                         // Socket exception gets thrown for failed lookups,
                     }
 

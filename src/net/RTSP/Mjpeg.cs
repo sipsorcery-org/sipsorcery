@@ -212,7 +212,7 @@ namespace SIPSorcery.Net
 
             //Huffman Tables
             ushort huffmanLength = (ushort)(6 +
-                bits_dc_luminance.Length + val_dc.Length + 
+                bits_dc_luminance.Length + val_dc.Length +
                 bits_dc_chrominance.Length + val_dc.Length +
                 bits_ac_luminance.Length + val_ac_luminance.Length +
                 bits_ac_chrominance.Length + val_ac_chrominance.Length);

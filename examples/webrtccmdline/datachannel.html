@@ -1,0 +1,172 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const sendOfferUrl = "ws://localhost:8081/receiveoffer";
+        const receiveOfferUrl = "ws://localhost:8081/sendoffer";
+
+        var pc;
+        var ws;
+        var dc;
+
+        async function start(url) {
+
+            console.log(`start ${url}.`);
+
+            closePeer();
+
+            ws = new WebSocket(url, []);
+
+            ws.onopen = async function () {
+                console.log("web socket onopen.");
+
+                pc = new RTCPeerConnection();
+
+                if (url == sendOfferUrl) {
+                    openDataChannel();
+                }
+
+                pc.onicecandidate = function (event) {
+                    if (event.candidate) {
+                        console.log('new-ice-candidate:');
+                        console.log(event.candidate.candidate);
+                        console.log(event.candidate);
+                        //console.log(pc.localDescription.sdp);
+                        //ws.send(event.candidate.candidate);
+                        //console.log("JSON: " + event.candidate.toJSON().stringify())
+                        console.log("JSON: " + JSON.stringify(event.candidate.toJSON()))
+                        //ws.send(event.candidate.toJSON().stringify());
+                        ws.send(JSON.stringify(event.candidate.toJSON()));
+                    }
+                };
+
+                pc.onicegatheringstatechange = () => console.log("ICE gathering state change to " + pc.iceGatheringState);
+                pc.oniceconnectionstatechange = () => console.log("ICE connection state change to " + pc.iceConnectionState);
+                pc.onconnectionstatechange = () => console.log("Peer connection state change to " + pc.connectionState);
+
+                pc.onnegotiationneeded = e => pc.createOffer().then(d => {
+                    //console.log(`${JSON.stringify(d)}`);
+                    //console.log(d.sdp);
+                    pc.setLocalDescription(d);
+
+                    if (url == sendOfferUrl) {
+                        console.log("Sending offer SDP:");
+                        console.log(d.sdp);
+                        ws.send(d.sdp);
+                    }
+                });
+                //pc.onnegotiationneeded = e => console.log(`negotiation needed ${JSON.stringify(e)}.`);
+                pc.onsignalingstatechange = e => console.log(`signalling state change ${JSON.stringify(e)}.`);
+
+                pc.ontrack = async function (event) {
+                    console.log(`Remote ${event.track.kind} stream available.`);
+                    console.log(event);
+                    //	remoteStream.addTrack(event.track, remoteStream);
+                };
+
+                pc.ondatachannel = e => {
+                    console.log(`ondatachannel ${JSON.stringify(e.channel)}`);
+
+                    e.channel.onopen = (event) => console.log(`data channel onopen: ${event}.`);
+                    e.channel.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+                    e.channel.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
+                };
+            };
+
+            ws.onmessage = async function (evt) {
+
+                if (!evt.data.startsWith("v=")) {
+                    console.log("Remote ICE candidate received.");
+                    console.log(evt.data);
+                    await pc.addIceCandidate({ candidate: evt.data, sdpMid: "0", sdpMLineIndex: 0 });
+                }
+                else {
+                    if (url == sendOfferUrl) {
+                        console.log("Answer SDP received:");
+                        console.log(evt.data);
+                        await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: evt.data }));
+                    }
+                    else {
+                        // Received SDP offer from the remote web socket server.
+                        console.log("Offer SDP received:");
+                        console.log(evt.data);
+
+                        await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+
+                        // Now create our offer SDP to send back to the web socket server.
+                        pc.createAnswer().then(function (answer) {
+                            return pc.setLocalDescription(answer);
+                        }).then(function () {
+                            console.log("Sending answer SDP:");
+                            console.log(pc.localDescription.sdp);
+                            ws.send(pc.localDescription.sdp);
+                        });
+                    }
+                }
+            };
+        };
+
+        function sendMessage(message) {
+            console.log(`send message: ${message}.`);
+            if (dc != null) {
+                dc.send(message);
+            }
+        }
+
+        function openDataChannel() {
+            console.log("openDataChannel.");
+            if (pc != null && dc == null) {
+                dc = pc.createDataChannel("dc1");
+
+                dc.onopen = (event) => console.log(`data channel onopen: ${event}.`);
+                dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+                dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
+
+                console.log("data channel created.");
+            }
+        }
+
+        function closeDataChannel() {
+            console.log("closeDataChannel.");
+            if (dc != null) {
+                dc.close();
+                dc = null;
+
+                console.log("data channel closed.");
+            }
+        }
+
+        function closePeer() {
+            console.log("close peer");
+
+            closeDataChannel();
+
+            if (pc != null) {
+                pc.close();
+            }
+
+            if (ws != null) {
+                ws.close();
+            }
+        };
+
+    </script>
+</head>
+<body>
+
+    <div>
+        <button type="button" class="btn btn-success" onclick="start(sendOfferUrl);">Start Send Offer</button>
+        <button type="button" class="btn btn-success" onclick="start(receiveOfferUrl);">Start Receive Offer</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+    <div>
+        <input type="text" id="message" />
+        <button type="button" class="btn btn-success" onclick="sendMessage(document.querySelector('#message').value);">Send Message</button>
+        <button type="button" class="btn btn-success" onclick="closeDataChannel();">Close Data Channel</button>
+        <button type="button" class="btn btn-success" onclick="openDataChannel();">Open Data Channel</button>
+    </div>
+
+</body>

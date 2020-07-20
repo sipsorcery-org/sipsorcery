@@ -34,7 +34,7 @@ namespace demo
     {
         private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
         private const string VIDEO_TEST_PATTERN_FILE = "media/testpattern.jpeg";
-        private static string DESTINATION = "aaron@127.0.0.1:51042"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
+        private static string DESTINATION = "aaron@127.0.0.1:6060"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
         private static int CALL_IMTEOUT_SECONDS = 20;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
