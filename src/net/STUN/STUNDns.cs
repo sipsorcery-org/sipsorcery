@@ -78,16 +78,7 @@ namespace SIPSorcery.Net
         /// <returns>An IPEndPoint or null.</returns>
         public static Task<IPEndPoint> Resolve(STUNUri uri, bool preferIPv6 = false)
         {
-            if (preferIPv6)
-            {
-                // Try AAAA record lookup followed by A record if none found.
-                return Resolve(uri, QueryType.AAAA)
-                    .ContinueWith(x => x.Result ?? Resolve(uri, QueryType.A).Result);
-            }
-            else
-            {
-                return Resolve(uri, QueryType.A);
-            }
+            return Resolve(uri, preferIPv6 ? QueryType.AAAA : QueryType.A);
         }
 
         /// <summary>
@@ -97,7 +88,7 @@ namespace SIPSorcery.Net
         /// <param name="uri">The STUN uri to lookup.</param>
         /// <param name="queryType">Whether the address lookup should be A or AAAA.</param>
         /// <returns>An IPEndPoint or null.</returns>
-        public static Task<IPEndPoint> Resolve(STUNUri uri, QueryType queryType)
+        private static Task<IPEndPoint> Resolve(STUNUri uri, QueryType queryType)
         {
             if (uri == null || String.IsNullOrWhiteSpace(uri.Host))
             {
@@ -188,43 +179,68 @@ namespace SIPSorcery.Net
                         return _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower())
                             .ContinueWith<IPEndPoint>(x =>
                             {
-                                if (!x.IsFaulted)
+                                ServiceHostEntry srvResult = null;
+
+                                if (x.IsFaulted)
                                 {
-                                    var srvResult = x.Result.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
-
-                                    string host = uri.Host; // If no SRV results then fallback is to lookup the hostname directly.
-                                    int port = uri.Port;    // If no SRV results then fallback is to use the default port.
-
-                                    if (srvResult != null)
-                                    {
-                                        host = srvResult.HostName;
-                                        port = srvResult.Port;
-                                    }
-
-                                    var addrRecord = _lookupClient.Query(host, queryType).Answers.FirstOrDefault();
-                                    return GetFromLookupResult(addrRecord, uri.Port);
+                                    logger.LogWarning($"STUNDns SRV lookup failure for {uri}. {x.Exception?.InnerException?.Message}");
+                                }
+                                else if (x.Result == null || x.Result.Count() == 0)
+                                {
+                                    logger.LogWarning($"STUNDns SRV lookup returned no results for {uri}.");
                                 }
                                 else
                                 {
-                                    logger.LogWarning($"STUNDns lookup service failure for {uri}. {x.Exception?.Flatten().Message}");
-                                    return null;
+                                    srvResult = x.Result.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
                                 }
-                            })
-                            .ContinueWith<IPEndPoint>(y =>
-                            {
-                                if (y.IsFaulted)
+
+                                string host = uri.Host; // If no SRV results then fallback is to lookup the hostname directly.
+                                int port = uri.Port;    // If no SRV results then fallback is to use the default port.
+
+                                if (srvResult != null)
                                 {
-                                    Console.WriteLine($"STUNDns lookup failure: {y.Exception?.Flatten().Message}");
-                                    return null;
+                                    host = srvResult.HostName;
+                                    port = srvResult.Port;
                                 }
-                                else
+
+                                IPEndPoint result = HostQuery(host, port, queryType);
+
+                                if (result == null && queryType == QueryType.AAAA)
                                 {
-                                    return y.Result;
+                                    // If the query was for AAAA fallback to trying A.
+                                    result = HostQuery(host, port, QueryType.A);
                                 }
+
+                                return result;
                             });
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Attempts to resolve a hostname.
+        /// </summary>
+        /// <param name="host">The hostname to resolve.</param>
+        /// <param name="port">The service port to use in the end pint result (not used for the lookup).</param>
+        /// <param name="queryType">The lookup query type, either A or AAAA.</param>
+        /// <returns>If successful an IPEndPoint or null if not.</returns>
+        private static IPEndPoint HostQuery(string host, int port, QueryType queryType)
+        {
+            try
+            {
+                var addrRecord = _lookupClient.Query(host, queryType).Answers.FirstOrDefault();
+                if (addrRecord != null)
+                {
+                    return GetFromLookupResult(addrRecord, port);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.LogWarning($"STUNDns lookup failure for {host} and query {queryType}. {excp.Message}");
+            }
+
+            return null;
         }
 
         /// <summary>
