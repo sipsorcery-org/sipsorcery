@@ -1220,8 +1220,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                // TODO: The integrity check method needs to be implemented (currently just returns true).
-                bool result = bindingRequest.CheckIntegrity(Encoding.UTF8.GetBytes(LocalIcePassword), LocalIceUser, RemoteIceUser);
+                bool result = bindingRequest.CheckIntegrity(Encoding.UTF8.GetBytes(LocalIcePassword));
 
                 if (!result)
                 {

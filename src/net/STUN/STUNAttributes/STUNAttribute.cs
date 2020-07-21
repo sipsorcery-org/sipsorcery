@@ -94,7 +94,6 @@ namespace SIPSorcery.Net
         public static readonly byte[] UdpTransportType = new byte[] { 0x11, 0x00, 0x00, 0x00 };     // The payload type for UDP in a RequestedTransport type attribute.
     }
 
-
     public class STUNAttribute
     {
         public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
