@@ -28,11 +28,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
+    public delegate Task<SIPEndPoint> ResolveSIPUriDelegate(SIPURI uri, bool preferIPv6);
+   
     public class SIPTransport : IDisposable
     {
         private const int MAX_QUEUEWAIT_PERIOD = 200;              // Maximum time to wait to check the message received queue if no events are received.
@@ -73,7 +74,12 @@ namespace SIPSorcery.SIP
         private Dictionary<string, SIPChannel> m_sipChannels = new Dictionary<string, SIPChannel>();
 
         internal SIPTransactionEngine m_transactionEngine;
-        //private ResolveSIPEndPointDelegate ResolveSIPEndPoint_External;
+
+        /// <summary>
+        /// Default call to do DNS lookups for SIP URI's. Can be replaced for custom scenarios
+        /// and unit testing.
+        /// </summary>
+        public ResolveSIPUriDelegate ResolveSIPUri;
 
         public event SIPTransportRequestAsyncDelegate SIPTransportRequestReceived;
         public event SIPTransportResponseAsyncDelegate SIPTransportResponseReceived;
@@ -114,10 +120,13 @@ namespace SIPSorcery.SIP
         /// </summary>
         public SIPTransport()
         {
+            ResolveSIPUri = SIPDns.Resolve;
+
             //ResolveSIPEndPoint_External = SIPDNSManager.ResolveSIPService;
             m_transactionEngine = new SIPTransactionEngine(this);
             m_transactionEngine.SIPRequestRetransmitTraceEvent += (tx, req, count) => SIPRequestRetransmitTraceEvent?.Invoke(tx, req, count);
             m_transactionEngine.SIPResponseRetransmitTraceEvent += (tx, resp, count) => SIPResponseRetransmitTraceEvent?.Invoke(tx, resp, count);
+
         }
 
         /// <summary>
@@ -130,6 +139,8 @@ namespace SIPSorcery.SIP
         /// all messages to an upstream SIP server irrespective of the URI.</param>
         public SIPTransport(bool stateless)
         {
+            ResolveSIPUri = SIPDns.Resolve;
+
             if (stateless)
             {
                 m_queueIncoming = false;
@@ -380,69 +391,35 @@ namespace SIPSorcery.SIP
             // in extreme cases, the lookup is put on it's own thread and then when ready the result
             // will be used on the next SIP retransmit.
 
-            if (sipRequest.DnsResult != null)
+            else if (sipRequest.DnsResult != null)
             {
-                SIPEndPoint requestEndPoint = sipRequest.DnsResult;
-
-                if (requestEndPoint != null && requestEndPoint.Address.Equals(BlackholeAddress))
-                {
-                    // Ignore packet, it's destined for the blackhole.
-                    return Task.FromResult(SocketError.Success);
-                }
-                else if (requestEndPoint != null)
-                {
-                    return SendRequestAsync(requestEndPoint, sipRequest);
-                }
-                else
-                {
-                    logger.LogWarning($"SIP Transport could not send request as end point could not be determined:  {sipRequest.StatusLine}.");
-                    return Task.FromResult(SocketError.HostNotFound);
-                }
+                return SendRequestAsync(sipRequest.DnsResult, sipRequest);
             }
             else if (sipRequest.DnsLookupFailedAt != DateTime.MinValue)
             {
-                // The lookup failed.
                 return Task.FromResult(SocketError.HostNotFound);
             }
             else if (sipRequest.DnsLookupStartedAt != DateTime.MinValue)
             {
-                // The lookup is in progress.
+                // Still in progress.
                 return Task.FromResult(SocketError.InProgress);
             }
             else
             {
-                sipRequest.DnsLookupStartedAt = DateTime.Now;
-
-                //SIPDNSLookupResult dnsResult = GetRequestEndPoint(sipRequest, null, true);
-                SIPURI lookupURI = (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0) ? 
+                SIPURI lookupURI = (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0) ?
                     sipRequest.Header.Routes.TopRoute.URI : sipRequest.URI;
+                var result = GetDestinationForSend(sipRequest, lookupURI);
 
-               GetURIEndPoint(lookupURI)
-                .ContinueWith(
-                        t =>
-                        {
-                            if (t.IsFaulted)
-                            {
-                                sipRequest.DnsLookupFailedAt = DateTime.Now;
-                                var duration = sipRequest.DnsLookupFailedAt.Subtract(sipRequest.DnsLookupStartedAt).TotalMilliseconds;
-                                logger.LogWarning($"SIP DNS lookup for request URI {lookupURI} failed in {duration:0.##}ms. {t.Exception?.InnerException?.Message}");
-                            }
-                            else if (t.Result == null)
-                            {
-                                sipRequest.DnsLookupFailedAt = DateTime.Now;
-                                var duration = sipRequest.DnsLookupFailedAt.Subtract(sipRequest.DnsLookupStartedAt).TotalMilliseconds;
-                                logger.LogWarning($"SIP DNS lookup for request URI {lookupURI} did not get a result after {duration:0.##}ms.");
-                            }
-                            else
-                            {
-                                var duration = DateTime.Now.Subtract(sipRequest.DnsLookupStartedAt).TotalMilliseconds;
-                                logger.LogDebug($"SIP DNS lookup for request URI {lookupURI} successful in {duration:0.##}ms.");
-                                sipRequest.DnsResult = t.Result;
-                            }
-                        }
-                    );
-
-                return Task.FromResult(SocketError.InProgress);
+                if (result.dstEndPoint != null)
+                {
+                    // If the destination is an IP address the lookup result will be 
+                    // available immediately.
+                    return SendRequestAsync(sipRequest.DnsResult, sipRequest);
+                }
+                else
+                {
+                    return Task.FromResult(result.status);
+                }
             }
         }
 
@@ -558,27 +535,40 @@ namespace SIPSorcery.SIP
             {
                 throw new ArgumentNullException("sipResponse", "The SIP response must be set for SendResponseAsync.");
             }
-
-            if (sipResponse.DnsResult == null)
+            else if (sipResponse.Header.Vias?.TopViaHeader == null)
             {
-                // First step, resolving the destination end point.
-                //SIPEndPoint dstEndPoint = null;
-                var result = GetDestinationForResponse(sipResponse);
-                //if (result.status == SocketError.Success)
-                //{
-                //    dstEndPoint = result.dstEndPoint;
-                //}
-                //else
-                //{
-                //    // The destination couldn't be resolved, return the error message.
-                //    // Note this could be a temporary failure it we're still waiting for a DNS resolution.
-                //    return Task.FromResult(result.status);
-                //}
-                return Task.FromResult(result.status);
+                logger.LogWarning($"There was no top Via header on a SIP response from {sipResponse.RemoteSIPEndPoint} in SendResponseAsync, response dropped.");
+                sipResponse.DnsLookupFailedAt = DateTime.Now;
+                return Task.FromResult(SocketError.Fault);
+            }
+            else if (sipResponse.DnsResult != null)
+            {
+                return SendResponseAsync(sipResponse.DnsResult, sipResponse);
+            }
+            else if(sipResponse.DnsLookupFailedAt != DateTime.MinValue)
+            {
+                return Task.FromResult(SocketError.HostNotFound);
+            }
+            else if(sipResponse.DnsLookupStartedAt != DateTime.MinValue)
+            {
+                return Task.FromResult(SocketError.InProgress);
             }
             else
             {
-                return SendResponseAsync(sipResponse.DnsResult, sipResponse);
+                var topViaHeader = sipResponse.Header.Vias.TopViaHeader;
+                SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
+                var result = GetDestinationForSend(sipResponse, topViaUri);
+
+                if (result.dstEndPoint != null)
+                {
+                    // If the destination is an IP address the lookup result will be 
+                    // available immediately.
+                    return SendResponseAsync(sipResponse.DnsResult, sipResponse);
+                }
+                else
+                {
+                    return Task.FromResult(result.status);
+                }
             }
         }
 
@@ -677,83 +667,57 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Attempts to resolve the destination end point for a SIP response from the top SIP Via header. 
-        /// Normally the address in the header will be an IP address but the standard does permit a host which 
-        /// will require a DNS lookup.
+        /// Attempts to resolve the destination end point for a SIP request or response send.
         /// </summary>
-        /// <param name="sipResponse">The SIP response to forward.</param>
+        /// <param name="sipMessage">The SIP request or response being sent.</param>
+        /// <param name="destinationUri">The URI representing the destination for the send</param>
         /// <returns>A socket error object indicating the result of the resolve attempt and if successful a SIP
         /// end point to forward the SIP response to.</returns>
-        private (SocketError status, SIPEndPoint dstEndPoint) GetDestinationForResponse(SIPResponse sipResponse)
+        private (SocketError status, SIPEndPoint dstEndPoint) GetDestinationForSend(SIPMessageBase sipMessage, SIPURI destinationUri)
         {
-            if (sipResponse.DnsResult != null)
+            if(IPAddress.TryParse(destinationUri.MAddrOrHostAddress, out var dstIPAddress))
             {
-                return (SocketError.Success, sipResponse.DnsResult);
-            }
-            else if (sipResponse.DnsLookupStartedAt == DateTime.MaxValue)
-            {
-                // The lookup failed.
-                return (SocketError.HostNotFound, null);
-            }
-            else if (sipResponse.DnsLookupStartedAt != DateTime.MinValue)
-            {
-                // The lookup is in progress.
-                return (SocketError.InProgress, null);
+                // The URI is an IP address, no need for a DNS query.
+                if (!ushort.TryParse(destinationUri.HostPort, out var port))
+                {
+                    port = (ushort)SIPConstants.GetDefaultPort(destinationUri.Protocol);
+                }
+                SIPEndPoint dstEndPoint = new SIPEndPoint(destinationUri.Protocol, dstIPAddress, port);
+                sipMessage.DnsResult = dstEndPoint;
+                return (SocketError.Success, dstEndPoint);
             }
             else
             {
-                SIPViaHeader topViaHeader = sipResponse.Header.Vias.TopViaHeader;
-                if (topViaHeader == null)
-                {
-                    logger.LogWarning($"There was no top Via header on a SIP response from {sipResponse.RemoteSIPEndPoint} in SendResponseAsync, response dropped.");
-                    sipResponse.DnsLookupStartedAt = DateTime.MaxValue;
-                    return (SocketError.Fault, null);
-                }
-                else
-                {
-                    SIPURI lookupURI = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
-                    //SIPDNSLookupResult lookupResult = GetURIEndPoint(lookupURI, false);
-                    //var dnsResult = GetURIEndPoint(lookupURI);
+                // Initiate the DNS query.
+                sipMessage.DnsLookupStartedAt = DateTime.Now;
 
-                    //if (!dnsResult.IsCompleted)
-                    //{
-                    //    // Ignore this response transmission and wait for the transaction retransmit mechanism to try again when DNS will have 
-                    //    // hopefully resolved the end point.
-                    //    return (SocketError.InProgress, null);
-                    //}
-                    //else if (dnsResult.Result == null)
-                    //{
-                    //    logger.LogWarning("Could not resolve destination for response.\n" + sipResponse.ToString());
-                    //    return (SocketError.HostNotFound, null);
-                    //}
-                    //else
-                    //{
-                    //    return (SocketError.Success, dnsResult.Result);
-                    //}
-
-                    GetURIEndPoint(lookupURI)
-                        .ContinueWith(
-                            t =>
+                Task.Run(() => ResolveSIPUri(destinationUri, false))
+                    .ContinueWith(
+                        t =>
+                        {
+                            if (t.IsFaulted)
                             {
-                                if(t.IsFaulted)
-                                {
-                                    logger.LogWarning($"SIP DNS lookup for response URI {lookupURI} failed. {t.Exception?.InnerException?.Message}");
-                                    sipResponse.DnsLookupStartedAt = DateTime.MaxValue;
-                                }
-                                else if(t.Result == null)
-                                {
-                                    logger.LogWarning($"SIP DNS lookup for response URI {lookupURI} did not get a result.");
-                                    sipResponse.DnsLookupStartedAt = DateTime.MaxValue;
-                                }
-                                else
-                                {
-                                    sipResponse.DnsResult = t.Result;
-                                }
+                                sipMessage.DnsLookupFailedAt = DateTime.Now;
+                                var duration = sipMessage.DnsLookupFailedAt.Subtract(sipMessage.DnsLookupStartedAt).TotalMilliseconds;
+                                logger.LogWarning($"SIP transport DNS lookup for URI {destinationUri} failed in {duration:0.##}ms. {t.Exception?.InnerException?.Message}");
+                                
                             }
-                        );
+                            else if (t.Result == null)
+                            {
+                                sipMessage.DnsLookupFailedAt = DateTime.Now;
+                                var duration = sipMessage.DnsLookupFailedAt.Subtract(sipMessage.DnsLookupStartedAt).TotalMilliseconds;
+                                logger.LogWarning($"SIP transport DNS lookup for URI {destinationUri} did not get a result after {duration:0.##}ms.");
+                            }
+                            else
+                            {
+                                var duration = DateTime.Now.Subtract(sipMessage.DnsLookupStartedAt).TotalMilliseconds;
+                                logger.LogDebug($"SIP transport DNS lookup successful for URI {destinationUri} to {t.Result} in {duration:0.##}ms.");
+                                sipMessage.DnsResult = t.Result;
+                            }
+                        }
+                    );
 
-                    return (SocketError.InProgress, null);
-                }
+                return (SocketError.InProgress, null);
             }
         }
 
@@ -1191,46 +1155,6 @@ namespace SIPSorcery.SIP
 
             return sipChannel;
         }
-
-        #region DNS resolution methods.
-
-        public Task<SIPEndPoint> GetURIEndPoint(SIPURI uri)
-        {
-            return SIPDns.Resolve(uri);
-        }
-
-        //public SIPDNSLookupResult GetHostEndPoint(string host, bool async)
-        //{
-        //    //return ResolveSIPEndPoint_External(SIPURI.ParseSIPURIRelaxed(host), async);
-        //    SIPURI uri = SIPURI.ParseSIPURIRelaxed(host);
-        //    return this.GetURIEndPoint(uri, async);
-        //}
-
-        //public SIPDNSLookupResult GetURIEndPoint(SIPURI uri, bool async)
-        //{
-        //    //return ResolveSIPEndPoint_External(uri, async);
-        //    return ResolveSIPEndPoint_External(uri, async, null);
-        //}
-
-        /// <summary>
-        /// Based on the information in the SIP request attempts to determine the end point the request should
-        /// be sent to.
-        /// </summary>
-        //public SIPDNSLookupResult GetRequestEndPoint(SIPRequest sipRequest, SIPEndPoint outboundProxy, bool async)
-        //{
-        //    SIPURI lookupURI = (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0) ? sipRequest.Header.Routes.TopRoute.URI : sipRequest.URI;
-
-        //    if (outboundProxy != null)
-        //    {
-        //        return new SIPDNSLookupResult(lookupURI, outboundProxy);
-        //    }
-        //    else
-        //    {
-        //        return GetURIEndPoint(lookupURI, async);
-        //    }
-        //}
-
-        #endregion
 
         public void Dispose()
         {

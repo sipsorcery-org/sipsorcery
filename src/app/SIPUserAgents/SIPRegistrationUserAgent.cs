@@ -310,7 +310,7 @@ namespace SIPSorcery.SIP.App
                     {
                         //SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
                         SIPURI uri = SIPURI.ParseSIPURIRelaxed(m_registrarHost);
-                        var lookupResult = m_sipTransport.GetURIEndPoint(uri).Result;
+                        var lookupResult = m_sipTransport.ResolveSIPUri(uri, false).Result;
                         if (lookupResult == null)
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve " + m_registrarHost + ".", null));
@@ -384,7 +384,7 @@ namespace SIPSorcery.SIP.App
                             {
                                 //SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
                                 SIPURI uri = SIPURI.ParseSIPURIRelaxed(m_registrarHost);
-                                var lookupResult = m_sipTransport.GetURIEndPoint(uri).Result;
+                                var lookupResult = m_sipTransport.ResolveSIPUri(uri, false).Result;
                                 if (lookupResult == null)
                                 {
                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve " + m_registrarHost + ".", null));

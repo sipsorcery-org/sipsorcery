@@ -55,6 +55,17 @@ namespace SIPSorcery.SIP
             _lookupClient = new LookupClient(clientOptions);
         }
 
+        //private static SIPDns _singleton = null;
+        //public static SIPDns GetSingleton()
+        //{
+        //    if (_singleton == null)
+        //    {
+        //        _singleton = new SIPDns();
+        //    }
+
+        //    return _singleton;
+        //}
+
         /// <summary>
         /// Resolve method that can be used to request an AAAA result and fallback to an A
         /// record lookup if none found.
@@ -81,7 +92,7 @@ namespace SIPSorcery.SIP
                 throw new ArgumentNullException("uri", "SIP DNS resolve was supplied an empty input.");
             }
 
-            if(!ushort.TryParse(uri.HostPort, out var uriPort))
+            if (!ushort.TryParse(uri.HostPort, out var uriPort))
             {
                 uriPort = SIPConstants.DEFAULT_SIP_PORT;
             }
@@ -208,7 +219,7 @@ namespace SIPSorcery.SIP
                 logger.LogWarning($"SIP DNS lookup failure for {host} and query {queryType}. {excp.Message}");
             }
 
-            if(queryType == QueryType.AAAA)
+            if (queryType == QueryType.AAAA)
             {
                 return HostQuery(protocol, host, port, QueryType.A);
             }

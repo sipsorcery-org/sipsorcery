@@ -59,10 +59,6 @@ namespace SIPSorcery.SIP
             get { return Header?.CSeqMethod + " " + StatusCode + " " + ReasonPhrase; }
         }
 
-        internal DateTime DnsLookupStartedAt = DateTime.MinValue;
-
-        internal SIPEndPoint DnsResult;
-
         private SIPResponse()
         { }
 

@@ -151,6 +151,7 @@ namespace SIPSorcery.SIP.App
             {
                 //SIPDNSLookupResult lookupResult = null;
                 SIPEndPoint lookupResult = null;
+                double lookupDurationMilliseconds = 0;
 
                 if (sipCallDescriptor.RouteSet != null && sipCallDescriptor.RouteSet.IndexOf(OUTBOUNDPROXY_AS_ROUTESET_CHAR) != -1)
                 {
@@ -158,26 +159,34 @@ namespace SIPSorcery.SIP.App
                     routeSet.PushRoute(new SIPRoute(sipCallDescriptor.RouteSet, true));
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Route set for call " + routeSet.ToString() + ".", Owner));
                     //lookupResult = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, false);
-                    lookupResult = await m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI).ConfigureAwait(false);
+                    lookupResult = await m_sipTransport.ResolveSIPUri(routeSet.TopRoute.URI, false).ConfigureAwait(false);
                 }
                 else
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Attempting to resolve " + callURI.Host + ".", Owner));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "SIPClientUserAgent attempting to resolve " + callURI.Host + ".", Owner));
                     //lookupResult = m_sipTransport.GetURIEndPoint(callURI, false);
-                    lookupResult = await m_sipTransport.GetURIEndPoint(callURI).ConfigureAwait(false);
+                    DateTime lookupStartedAt = DateTime.Now;
+                    lookupResult = await m_sipTransport.ResolveSIPUri(callURI, false).ConfigureAwait(false);
+                    lookupDurationMilliseconds = DateTime.Now.Subtract(lookupStartedAt).TotalMilliseconds;
                 }
 
                 if (lookupResult == null)
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "DNS error resolving " + callURI.Host + ". Call cannot proceed.", Owner));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, $"SIPClientUserAgent DNS failure resolving {callURI.Host} in {lookupDurationMilliseconds:0.##}ms. Call cannot proceed.", Owner));
                 }
                 else
                 {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, $"SIPClientUserAgent resolved {callURI.Host} to {lookupResult} in {lookupDurationMilliseconds:0.##}ms.", Owner));
                     serverEndPoint = lookupResult;
                 }
             }
 
             return serverEndPoint;
+        }
+
+        public SIPRequest Call(SIPCallDescriptor sipCallDescriptor)
+        {
+            return Call(sipCallDescriptor, null);
         }
 
         /// <summary>
