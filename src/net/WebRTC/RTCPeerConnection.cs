@@ -541,7 +541,6 @@ namespace SIPSorcery.Net
                 string remoteIcePassword = remoteSdp.IcePwd;
                 string dtlsFingerprint = remoteSdp.DtlsFingerprint;
 
-                int mLineIndex = 0;
                 foreach (var ann in remoteSdp.Media)
                 {
                     if (remoteIceUser == null || remoteIcePassword == null || dtlsFingerprint == null)
@@ -567,7 +566,6 @@ namespace SIPSorcery.Net
                             return SetDescriptionResultEnum.DataChannelTransportNotSupported;
                         }
                     }
-                    mLineIndex++;
                 }
 
                 SdpSessionID = remoteSdp.SessionId;
