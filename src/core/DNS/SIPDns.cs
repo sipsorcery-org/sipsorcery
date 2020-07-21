@@ -25,6 +25,28 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
+    /// <summary>
+    /// SIP specific DNS resolution.
+    /// </summary>
+    /// <remarks>
+    /// 1. If transport parameter is specified it takes precedence,
+    /// 2. If no transport parameter and target is an IP address then sip should use udp and sips tcp,
+    /// 3. If no transport parameter and target is a host name with an explicit port then sip should use 
+    ///    udp and sips tcp and host should be resolved using an A or AAAA record DNS lookup (section 4.2),
+    /// 4*. If no transport protocol and no explicit port and target is a host name then the client should no
+    ///    an NAPTR lookup and utilise records for services SIP+D2U, SIP+D2T, SIP+D2S, SIPS+D2T and SIPS+D2S,
+    /// 5. If NAPTR record(s) are found select the desired transport and lookup the SRV record,
+    /// 6. If no NAPT records are found lookup SRV record for desired protocol _sip._udp, _sip._tcp, _sips._tcp,
+    ///    _sip._tls,
+    /// 7. If no SRV records found lookup A or AAAA record.
+    /// 
+    /// * NAPTR lookups are currently not implemented as they have been found to be hardly ever used and can 
+    /// increase the DNS query time noticeably.
+    /// 
+    /// Observations from the field.
+    /// - A DNS server has been observed to not respond at all to NAPTR or SRV record queries meaning lookups for
+    ///   them will permanently time out.
+    /// </remarks>
     public class SIPDns
     {
         public const string MDNS_TLD = "local"; // Top Level Domain name for multicast lookups as per RFC6762.
@@ -32,6 +54,18 @@ namespace SIPSorcery.SIP
         public const int DNS_RETRIES_PER_SERVER = 1;
 
         private static readonly ILogger logger = Log.Logger;
+
+        /// <summary>
+        /// Set to true to prefer IPv6 lookups of hostnames. By default IPv4 lookups will be performed.
+        /// </summary>
+        public static bool PreferIPv6NameResolution = false;
+
+        /// <summary>
+        /// Don't use IN_ANY queries by default. These are useful if a DNS server supports them as they can
+        /// return IPv4 and IPv6 results in a single query. For DNS servers that don't support them it means
+        /// an extra delay.
+        /// </summary>
+        public static bool UseANYLookups = false;
 
         private static LookupClient _lookupClient;
         public static LookupClient LookupClient
@@ -55,17 +89,6 @@ namespace SIPSorcery.SIP
             _lookupClient = new LookupClient(clientOptions);
         }
 
-        //private static SIPDns _singleton = null;
-        //public static SIPDns GetSingleton()
-        //{
-        //    if (_singleton == null)
-        //    {
-        //        _singleton = new SIPDns();
-        //    }
-
-        //    return _singleton;
-        //}
-
         /// <summary>
         /// Resolve method that can be used to request an AAAA result and fallback to an A
         /// record lookup if none found.
@@ -75,7 +98,13 @@ namespace SIPSorcery.SIP
         /// <returns>A SIPEndPoint or null.</returns>
         public static Task<SIPEndPoint> Resolve(SIPURI uri, bool preferIPv6 = false)
         {
-            return Resolve(uri, preferIPv6 ? QueryType.AAAA : QueryType.A);
+            var queryType = preferIPv6 || PreferIPv6NameResolution ? QueryType.AAAA : QueryType.A;
+            if(UseANYLookups)
+            {
+                queryType = QueryType.ANY;
+            }
+
+            return Resolve(uri, queryType);
         }
 
         /// <summary>
@@ -100,7 +129,7 @@ namespace SIPSorcery.SIP
             if (IPAddress.TryParse(uri.MAddrOrHostAddress, out var ipAddress))
             {
                 // Target is already an IP address, no DNS lookup required.
-                return Task.FromResult(new SIPEndPoint(uri.Protocol, ipAddress, uri.ToSIPEndPoint().Port));
+                return Task.FromResult(new SIPEndPoint(uri.Protocol, ipAddress, uriPort));
             }
             else
             {
@@ -158,12 +187,14 @@ namespace SIPSorcery.SIP
                 {
                     if (uri.HostPort != null)
                     {
+                        // Explicit port means no SRV lookup.
                         return Task.FromResult(HostQuery(uri.Protocol, uri.MAddrOrHostAddress, uriPort, queryType));
                     }
                     else
                     {
-                        // No explicit port so use a SRV -> (A | AAAA -> A) record lookup.
-                        return _lookupClient.ResolveServiceAsync(uri.MAddrOrHostAddress, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower())
+                        // No explicit port so use a SRV -> (A | AAAA -> A | ANY) record lookup.
+                        var srvProtocol = SIPServices.GetSRVProtocolForSIPURI(uri);
+                        return _lookupClient.ResolveServiceAsync(uri.MAddrOrHostAddress, uri.Scheme.ToString(), srvProtocol.ToString())
                             .ContinueWith<SIPEndPoint>(x =>
                             {
                                 ServiceHostEntry srvResult = null;

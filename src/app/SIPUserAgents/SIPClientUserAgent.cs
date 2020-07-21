@@ -159,14 +159,14 @@ namespace SIPSorcery.SIP.App
                     routeSet.PushRoute(new SIPRoute(sipCallDescriptor.RouteSet, true));
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Route set for call " + routeSet.ToString() + ".", Owner));
                     //lookupResult = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, false);
-                    lookupResult = await m_sipTransport.ResolveSIPUri(routeSet.TopRoute.URI, false).ConfigureAwait(false);
+                    lookupResult = await m_sipTransport.ResolveSIPUri(routeSet.TopRoute.URI).ConfigureAwait(false);
                 }
                 else
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "SIPClientUserAgent attempting to resolve " + callURI.Host + ".", Owner));
                     //lookupResult = m_sipTransport.GetURIEndPoint(callURI, false);
                     DateTime lookupStartedAt = DateTime.Now;
-                    lookupResult = await m_sipTransport.ResolveSIPUri(callURI, false).ConfigureAwait(false);
+                    lookupResult = await m_sipTransport.ResolveSIPUri(callURI).ConfigureAwait(false);
                     lookupDurationMilliseconds = DateTime.Now.Subtract(lookupStartedAt).TotalMilliseconds;
                 }
 

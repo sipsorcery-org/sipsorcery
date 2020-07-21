@@ -146,5 +146,24 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             logger.LogDebug($"resolved to SIP end point {result}.");
         }
+
+        /// <summary>
+        /// Tests that the correct end point is resolved for a known sips URI.
+        /// </summary>
+        [Fact]
+        public void ResolveHostFromSecureSIPURITest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var result = SIPDns.Resolve(new SIPURI(null, "sipsorcery.com", null, SIPSchemesEnum.sips, SIPProtocolsEnum.tls), false).Result;
+
+            Assert.NotNull(result);
+            Assert.Equal("67.222.131.147", result.Address.ToString());
+            Assert.Equal(5061, result.Port);
+            Assert.Equal(SIPProtocolsEnum.tls, result.Protocol);
+
+            logger.LogDebug($"resolved to SIP end point {result}.");
+        }
     }
 }

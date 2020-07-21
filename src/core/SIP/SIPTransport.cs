@@ -32,7 +32,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
-    public delegate Task<SIPEndPoint> ResolveSIPUriDelegate(SIPURI uri, bool preferIPv6);
+    public delegate Task<SIPEndPoint> ResolveSIPUriDelegate(SIPURI uri, bool preferIPv6 = false);
    
     public class SIPTransport : IDisposable
     {
@@ -691,7 +691,7 @@ namespace SIPSorcery.SIP
                 // Initiate the DNS query.
                 sipMessage.DnsLookupStartedAt = DateTime.Now;
 
-                Task.Run(() => ResolveSIPUri(destinationUri, false))
+                Task.Run(() => ResolveSIPUri(destinationUri))
                     .ContinueWith(
                         t =>
                         {
