@@ -280,7 +280,8 @@ namespace SIPSorcery.Examples
                                     {
                                         Console.WriteLine();
                                         Console.WriteLine($"Creating data channel for label {label}.");
-                                        _peerConnection.createDataChannel(label, null);
+                                        var dc = _peerConnection.createDataChannel(label, null);
+                                        dc.onmessage += (msg) => logger.LogDebug($" data channel message received on {label}: {msg}");
                                     }
                                     else
                                     {

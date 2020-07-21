@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -30,6 +31,12 @@ namespace SIPSorcery.Net
         private const int FINGERPRINT_ATTRIBUTE_CRC32_LENGTH = 4;
 
         private static ILogger logger = Log.Logger;
+
+        /// <summary>
+        /// For parsed STUN messages this indicates whether a valid fingerprint
+        /// as attached to the message.
+        /// </summary>
+        public bool isFingerprintValid { get; private set; }  = false;
 
         public STUNHeader Header = new STUNHeader();
         public List<STUNAttribute> Attributes = new List<STUNAttribute>();
@@ -80,6 +87,25 @@ namespace SIPSorcery.Net
                 if (stunMessage.Header.MessageLength > 0)
                 {
                     stunMessage.Attributes = STUNAttribute.ParseMessageAttributes(buffer, STUNHeader.STUN_HEADER_LENGTH, bufferLength);
+                }
+
+                if (stunMessage.Attributes.Last().AttributeType == STUNAttributeTypesEnum.FingerPrint)
+                {
+                    // Check fingerprint.
+                    var fingerprintAttribute = stunMessage.Attributes.Last();
+
+                    var input = buffer.Take(buffer.Length - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH).ToArray();
+                    
+                    uint crc = Crc32.Compute(input) ^ FINGERPRINT_XOR;
+                    byte[] fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
+
+                    //logger.LogDebug($"STUNMessage supplied fingerprint attribute: {fingerprintAttribute.Value.HexStr()}.");
+                    //logger.LogDebug($"STUNMessage calculated fingerprint attribute: {fingerPrint.HexStr()}.");
+
+                    if(fingerprintAttribute.Value.HexStr() == fingerPrint.HexStr())
+                    {
+                        stunMessage.isFingerprintValid = true;
+                    }
                 }
 
                 return stunMessage;
@@ -192,9 +218,7 @@ namespace SIPSorcery.Net
         /// <returns></returns>
         public bool CheckIntegrity(byte[] messageIntegrityKey, string localUser, string remoteUser)
         {
-            // TODO.
-
-            return true;
+            return isFingerprintValid;
         }
     }
 }
