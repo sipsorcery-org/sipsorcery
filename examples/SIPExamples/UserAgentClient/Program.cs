@@ -17,18 +17,15 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery
+namespace demo
 {
     class Program
     {
@@ -64,38 +61,31 @@ namespace SIPSorcery
 
             // Get the IP address the RTP will be sent from. While we can listen on IPAddress.Any | IPv6Any
             // we can't put 0.0.0.0 or [::0] in the SDP or the callee will treat our RTP stream as inactive.
-            var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
-            Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
-            var dstAddress = lookupResult.GetSIPEndPoint().Address;
-            var localOfferAddress = NetServices.GetLocalAddressForRemote(dstAddress);
+            //var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
+            //Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
+            //var dstAddress = lookupResult.GetSIPEndPoint().Address;
+            //var localOfferAddress = NetServices.GetLocalAddressForRemote(dstAddress);
 
-            // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var audioOptions = new AudioOptions
-            {
-                AudioSource = AudioSourcesEnum.CaptureDevice,
-                AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.PCMU },
-                OutputDeviceIndex = AudioOptions.DEFAULT_OUTPUTDEVICE_INDEX
-            };
-            var rtpSession = new RtpAVSession(audioOptions, null);
-            var offerSDP = rtpSession.CreateOffer(localOfferAddress);
+            var rtpSession = new WindowsAudioRtpSession();
+            var offerSDP = rtpSession.CreateOffer(null);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
             uac.CallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-            uac.CallRinging += (uac, resp) =>
+            uac.CallRinging += async (uac, resp) =>
             {
                 Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
                 if (resp.Status == SIPResponseStatusCodesEnum.SessionProgress)
                 {
-                    rtpSession.Start();
+                    await rtpSession.Start();
                 }
             };
             uac.CallFailed += (uac, err, resp) =>
             {
-                Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
+                Log.LogWarning($"Call attempt to {uac.CallDescriptor.To} Failed: {err}");
                 hasCallFailed = true;
             };
-            uac.CallAnswered += (iuac, resp) =>
+            uac.CallAnswered += async (iuac, resp) =>
             {
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
@@ -104,7 +94,7 @@ namespace SIPSorcery
                     var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
                     if(result == SetDescriptionResultEnum.OK)
                     {
-                        rtpSession.Start();
+                        await rtpSession.Start();
                     }
                     else
                     {
@@ -148,7 +138,7 @@ namespace SIPSorcery
                 offerSDP.ToString(),
                 null);
 
-            uac.Call(callDescriptor);
+            uac.Call(callDescriptor, null);
             uac.ServerTransaction.TransactionTraceMessage += (tx, msg) => Log.LogInformation($"UAC tx trace message. {msg}");
 
             // Ctrl-c will gracefully exit the call at any point.
@@ -182,8 +172,6 @@ namespace SIPSorcery
                 Log.LogInformation("Waiting 1s for call to clean up...");
                 Task.Delay(1000).Wait();
             }
-
-            SIPSorcery.Net.DNSManager.Stop();
 
             if (sipTransport != null)
             {

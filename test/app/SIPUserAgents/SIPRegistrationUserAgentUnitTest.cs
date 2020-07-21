@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.SIP;
-using SIPSorcery.SIP.App;
+using SIPSorcery.UnitTests;
 using Xunit;
 
-namespace SIPSorcery.UnitTests.app.SIPUserAgents
+namespace SIPSorcery.SIP.App.UnitTests
 {
     [Trait("Category", "unit")]
     public class SIPRegistrationUserAgentUnitTest
@@ -24,7 +23,7 @@ namespace SIPSorcery.UnitTests.app.SIPUserAgents
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
-            MockSIPChannel channel = new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0));
+            MockSIPChannel channel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
             transport.AddSIPChannel(channel);
             SIPRegistrationUserAgent userAgent = new SIPRegistrationUserAgent(
                 transport,

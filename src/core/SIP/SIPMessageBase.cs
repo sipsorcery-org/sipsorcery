@@ -65,5 +65,9 @@ namespace SIPSorcery.SIP
         /// when sending this request/response.
         /// </summary>
         public string SendFromHintConnectionID;
+
+        internal DateTime DnsLookupStartedAt = DateTime.MinValue;
+        internal DateTime DnsLookupFailedAt = DateTime.MinValue;
+        internal SIPEndPoint DnsResult;
     }
 }

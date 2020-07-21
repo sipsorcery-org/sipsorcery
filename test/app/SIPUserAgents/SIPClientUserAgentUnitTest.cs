@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.SIP;
-using SIPSorcery.SIP.App;
+using SIPSorcery.UnitTests;
 using Xunit;
 
-namespace SIPSorcery.UnitTests.app.SIPUserAgents
+namespace SIPSorcery.SIP.App.UnitTests
 {
     [Trait("Category", "unit")]
     public class SIPClientUserAgentUnitTest

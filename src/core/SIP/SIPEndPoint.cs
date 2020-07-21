@@ -83,6 +83,17 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
+        /// Instantiates a new SIP end point from a network end point. Non specified properties
+        /// will be set to their defaults.
+        /// </summary>
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port)
+        {
+            Protocol =protocol;
+            Address = address;
+            Port = port;
+        }
+
+        /// <summary>
         /// Instantiates a new SIP end point.
         /// </summary>
         /// <param name="protocol">The SIP transport/application protocol used for the transmission.</param>

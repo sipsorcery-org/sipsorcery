@@ -72,7 +72,7 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=rtpmap:101 telepho";
 
             SIPRequest request = SIPRequest.ParseSIPRequest(sipRequestStr);
-            SIPTransport sipTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);
+            SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
             SIPTransaction transaction = new UACInviteTransaction(sipTransport, request, null);
