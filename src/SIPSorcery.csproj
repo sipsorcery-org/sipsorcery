@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-   <PackageReference Include="BouncyCastle" Version="1.8.6.1" />
-   <PackageReference Include="DnsClient" Version="1.3.2" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.6.7" />
+    <PackageReference Include="DnsClient" Version="1.3.2" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions">
       <Version>1.0.0</Version>
@@ -33,31 +33,32 @@
   </ItemGroup>
 
   <PropertyGroup>
-  <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.58-pre</Version>
-	<Authors>Aaron Clauson &amp; Contributors</Authors>
-	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
-	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
-	<Title>SIPSorcery</Title>
-	<Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
-	<Description>This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and related protocols plus experimental support for WebRTC.
-This library is largely a .Net implementation and not a wrapper for a 3rd party library. The exceptions being codec and media device integrations which are in the separate SIPSorceryMedia
-library.
-  </Description>
-	<Company>SIP Sorcery PTY LTD</Company>
-	<Product>SIPSorcery</Product>
-	<PackageId>SIPSorcery</PackageId>
-	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	<PackageProjectUrl>https://sipsorcery.github.io/sipsorcery/</PackageProjectUrl>
-  <!-- Note PackageIcon generates a build warning. Can be removed once Visual Studio supports the nuget "Icon" setting.
+    <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
+    <Version>4.0.58-pre</Version>
+    <Authors>Aaron Clauson &amp; Contributors</Authors>
+    <Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <Title>SIPSorcery</Title>
+    <Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
+    <Description>
+      This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and related protocols plus experimental support for WebRTC.
+      This library is largely a .Net implementation and not a wrapper for a 3rd party library. The exceptions being codec and media device integrations which are in the separate SIPSorceryMedia
+      library.
+    </Description>
+    <Company>SIP Sorcery PTY LTD</Company>
+    <Product>SIPSorcery</Product>
+    <PackageId>SIPSorcery</PackageId>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://sipsorcery.github.io/sipsorcery/</PackageProjectUrl>
+    <!-- Note PackageIcon generates a build warning. Can be removed once Visual Studio supports the nuget "Icon" setting.
        Watch https://github.com/NuGet/Home/issues/8189.-->
-  <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
-	<PackageIcon>icon.png</PackageIcon>
-	<RepositoryUrl>https://github.com/sipsorcery/sipsorcery</RepositoryUrl>
-  <RepositoryType>git</RepositoryType>
-  <RepositoryBranch>master</RepositoryBranch>
-	<PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- v4.0.58-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
+    <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/sipsorcery/sipsorcery</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>master</RepositoryBranch>
+    <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
+    <PackageReleaseNotes>- v4.0.58-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
 - v4.0.55-pre: RtpIceChannel support for TURN relaying.
 - v4.0.53-pre: Add STUN server support for WebRTC connection checks.
 - v4.0.52-pre: Modify RTCPeerConnection so it can be used by SIPUserAgent.
@@ -88,11 +89,12 @@ library.
 - Version 4.0.3 - Refactor of RTPChannel and RTPSession. SIPUserAgent class incorporates RTPSession (much easier to use).
 - Version 4.0.2 - New SIPUserAgent class, combination of client and server user agents. Support for HOMER logging.
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
-</PackageReleaseNotes>
-	<NeutralLanguage>en-GB</NeutralLanguage>
-	<AssemblyVersion>4.0.58.0</AssemblyVersion>
-	<FileVersion>4.0.58.0</FileVersion>
-	<UserSecretsId>fbb23854-472d-4529-a87e-5688407b8d59</UserSecretsId>
-  </PropertyGroup>    
+    </PackageReleaseNotes>
+    <NeutralLanguage>en-GB</NeutralLanguage>
+    <AssemblyVersion>4.0.58.0</AssemblyVersion>
+    <FileVersion>4.0.58.0</FileVersion>
+    <UserSecretsId>fbb23854-472d-4529-a87e-5688407b8d59</UserSecretsId>
+  </PropertyGroup>
+
 
 </Project>

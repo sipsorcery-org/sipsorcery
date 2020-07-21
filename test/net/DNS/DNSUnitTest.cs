@@ -14,7 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Linq;
-using Heijden.DNS;
+using DnsClient;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
@@ -36,24 +36,27 @@ namespace SIPSorcery.Net.UnitTests
         /// Test DNS resolution
         /// also test IPSocket.Parse
         /// </summary>
-        [Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
-        public void LookupAnyRecordTest()
+        //[Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
+        [Fact]
+        public async void LookupAnyRecordTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 100, null, false, false);
+            //DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 100, null, false, false);
+            var result = await SIPDns.LookupClient.QueryAsync("dns.google", QueryType.ANY);
 
             Assert.NotNull(result);
 
-            Assert.NotEmpty(result.RecordsA);
-            var ipv4Addresses = from a in result.RecordsA select a.Address;
+            //Assert.NotEmpty(result.RecordsA);
+            Assert.NotEmpty(result.Answers?.AddressRecords());
+            var ipv4Addresses = from a in result.Answers.AddressRecords() select a.Address;
             Assert.NotEmpty(ipv4Addresses);
             Assert.Contains(IPSocket.ParseSocketString("8.8.8.8").Address, ipv4Addresses);
             Assert.Contains(IPSocket.ParseSocketString("8.8.4.4").Address, ipv4Addresses);
 
-            Assert.NotEmpty(result.RecordsAAAA);
-            var ipv6Addresses = from a in result.RecordsAAAA select a.Address;
+            Assert.NotEmpty(result.Answers?.AaaaRecords());
+            var ipv6Addresses = from a in result.Answers.AaaaRecords() select a.Address;
             Assert.NotEmpty(ipv6Addresses);
             Assert.Contains(IPSocket.ParseSocketString("2001:4860:4860::8888").Address, ipv6Addresses);
             Assert.Contains(IPSocket.ParseSocketString("2001:4860:4860::8844").Address, ipv6Addresses);
@@ -65,31 +68,35 @@ namespace SIPSorcery.Net.UnitTests
         /// 2. check lookup/resolution cache for result
         /// (also test IPSocket.Parse)
         /// </summary>
-        [Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
-        public void LookupAnyRecordAsyncCacheTest()
+        //[Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
+        [Fact]
+        public async void LookupAnyRecordAsyncCacheTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //1.queue dns lookup for async resolution
-            DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 1, null, false, true);
-            Assert.Null(result);
+            //DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 1, null, false, true);
+
+            var nonCacheResult = SIPDns.LookupClient.QueryAsync("dns.google", QueryType.ANY);
+            Assert.False(nonCacheResult.IsCompleted);
 
             System.Threading.Thread.Sleep(500);
 
             //2.check lookup / resolution cache for result
-            result = DNSManager.Lookup("dns.google", QType.ANY, 150, null, true, false);
+            //result = DNSManager.Lookup("dns.google", QType.ANY, 150, null, true, false);
+            var result = await SIPDns.LookupClient.QueryAsync("dns.google", QueryType.ANY);
 
             Assert.NotNull(result);
 
-            Assert.NotEmpty(result.RecordsA);
-            var ipv4Addresses = from a in result.RecordsA select a.Address;
+            Assert.NotEmpty(result.Answers?.AddressRecords());
+            var ipv4Addresses = from a in result.Answers?.AddressRecords() select a.Address;
             Assert.NotEmpty(ipv4Addresses);
             Assert.Contains(IPSocket.ParseSocketString("8.8.8.8").Address, ipv4Addresses);
             Assert.Contains(IPSocket.ParseSocketString("8.8.4.4").Address, ipv4Addresses);
 
-            Assert.NotEmpty(result.RecordsAAAA);
-            var ipv6Addresses = from a in result.RecordsAAAA select a.Address;
+            Assert.NotEmpty(result.Answers?.AaaaRecords());
+            var ipv6Addresses = from a in result.Answers?.AaaaRecords() select a.Address;
             Assert.NotEmpty(ipv6Addresses);
             Assert.Contains(IPSocket.ParseSocketString("2001:4860:4860::8888").Address, ipv6Addresses);
             Assert.Contains(IPSocket.ParseSocketString("2001:4860:4860::8844").Address, ipv6Addresses);
@@ -99,35 +106,38 @@ namespace SIPSorcery.Net.UnitTests
         /// Test that a known A record is resolved.
         /// </summary>
         [Fact]
-        public void LookupARecordMethod()
+        public async void LookupARecordMethod()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DNSResponse result = DNSManager.Lookup("www.sipsorcery.com", QType.A, 10, null, false, false);
+            //DNSResponse result = DNSManager.Lookup("www.sipsorcery.com", QType.A, 10, null, false, false);
+            var result = await SIPDns.LookupClient.QueryAsync("www.sipsorcery.com", QueryType.A);
 
-            Assert.NotEmpty(result.RecordsA);
-            logger.LogDebug($"Lookup result {result.RecordsA[0].Address}.");
+            Assert.NotEmpty(result.Answers?.AddressRecords());
+            logger.LogDebug($"Lookup result {result.Answers.AddressRecords().First().Address}.");
 
-            Assert.Equal("67.222.131.148", result.RecordsA[0].Address.ToString());
+            Assert.Equal("67.222.131.148", result.Answers.AddressRecords().First().Address.ToString());
 
-            result = DNSManager.Lookup("67.222.131.148", QType.A, 10, null, false, false);
-            logger.LogDebug($"Lookup result {result.RecordsA[0].Address}.");
-            Assert.Equal("67.222.131.148", result.RecordsA[0].Address.ToString());
+            //result = DNSManager.Lookup("67.222.131.148", QType.A, 10, null, false, false);
+            result = await SIPDns.LookupClient.QueryAsync("67.222.131.148", QueryType.A);
+            logger.LogDebug($"Lookup result {result.Answers.AddressRecords().First().Address}.");
+            Assert.Equal("67.222.131.148", result.Answers.AddressRecords().First().Address.ToString());
         }
 
         /// <summary>
         /// Test that a known AAAA record is resolved.
         /// </summary>
         [Fact]
-        public void LookupAAAARecordMethod()
+        public async void LookupAAAARecordMethod()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DNSResponse result = DNSManager.Lookup("www.google.com", QType.AAAA, 10, null, false, false);
+            //DNSResponse result = DNSManager.Lookup("www.google.com", QType.AAAA, 10, null, false, false);
+            var result = await SIPDns.LookupClient.QueryAsync("www.google.com", QueryType.AAAA);
 
-            foreach (var aaaaResult in result.RecordsAAAA)
+            foreach (var aaaaResult in result.Answers?.AaaaRecords())
             {
                 logger.LogDebug($"AAAA Lookup result {aaaaResult.ToString()}.");
             }
@@ -155,20 +165,21 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         [Fact]
-        public void LookupSrvRecordMethod()
+        public async void LookupSrvRecordMethod()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DNSResponse result = DNSManager.Lookup(SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX + "sipsorcery.com", QType.SRV, 10, null, false, false);
+            //DNSResponse result = DNSManager.Lookup(SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX + "sipsorcery.com", QType.SRV, 10, null, false, false);
+            var result = await SIPDns.LookupClient.QueryAsync(SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX + "sipsorcery.com", QueryType.SRV);
 
-            foreach (var srvResult in result.RecordSRV)
+            foreach (var srvResult in result.Answers?.SrvRecords())
             {
                 logger.LogDebug($"SRV Lookup result {srvResult.ToString()}.");
             }
 
-            Assert.Single(result.RecordSRV);
-            Assert.Equal("sip.sipsorcery.com.", result.RecordSRV.First().TARGET);
+            Assert.Single(result.Answers?.SrvRecords());
+            Assert.Equal("sip.sipsorcery.com.", result.Answers?.SrvRecords().First().Target);
         }
 
         /// <summary>

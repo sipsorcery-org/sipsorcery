@@ -308,14 +308,16 @@ namespace SIPSorcery.SIP.App
                     SIPEndPoint registrarSIPEndPoint = m_outboundProxy;
                     if (registrarSIPEndPoint == null)
                     {
-                        SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
-                        if (lookupResult.LookupError != null)
+                        //SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
+                        SIPURI uri = SIPURI.ParseSIPURIRelaxed(m_registrarHost);
+                        var lookupResult = m_sipTransport.ResolveSIPUri(uri).Result;
+                        if (lookupResult == null)
                         {
-                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve " + m_registrarHost + ", " + lookupResult.LookupError, null));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve " + m_registrarHost + ".", null));
                         }
                         else
                         {
-                            registrarSIPEndPoint = lookupResult.GetSIPEndPoint();
+                            registrarSIPEndPoint = lookupResult;
                         }
                     }
 
@@ -380,14 +382,16 @@ namespace SIPSorcery.SIP.App
                             SIPEndPoint registrarSIPEndPoint = m_outboundProxy;
                             if (registrarSIPEndPoint == null)
                             {
-                                SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
-                                if (lookupResult.LookupError != null)
+                                //SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
+                                SIPURI uri = SIPURI.ParseSIPURIRelaxed(m_registrarHost);
+                                var lookupResult = m_sipTransport.ResolveSIPUri(uri).Result;
+                                if (lookupResult == null)
                                 {
-                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve " + m_registrarHost + ", " + lookupResult.LookupError, null));
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve " + m_registrarHost + ".", null));
                                 }
                                 else
                                 {
-                                    registrarSIPEndPoint = lookupResult.GetSIPEndPoint();
+                                    registrarSIPEndPoint = lookupResult;
                                 }
                             }
                             if (registrarSIPEndPoint == null)

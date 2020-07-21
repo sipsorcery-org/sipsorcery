@@ -135,9 +135,9 @@ namespace SIPSorcery.Net
         event Action onopen;
 
 
-        event Action onbufferedamountlow;
+        //event Action onbufferedamountlow;
         event Action<string> onerror;
-        event Action onclosing;
+        //event Action onclosing;
         event Action onclose;
         void close();
 
