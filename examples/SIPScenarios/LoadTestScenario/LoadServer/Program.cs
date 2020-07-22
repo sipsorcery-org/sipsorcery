@@ -67,8 +67,6 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            SIPSorcery.Net.DNSManager.Stop();
-
             if (_sipTransport != null)
             {
                 Log.LogInformation("Shutting down SIP transport...");
@@ -180,7 +178,7 @@ namespace SIPSorcery
             var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
 
             // Wire up the event handler for RTP packets received from the remote party.
-            rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);
+            rtpAudioSession.OnRtpPacketReceived += (endPoint, type, rtp) => OnRtpPacketReceived(ua, type, rtp);
             rtpAudioSession.OnTimeout += (mediaType) =>
             {
                 if (ua?.Dialogue != null)

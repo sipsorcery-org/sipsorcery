@@ -86,8 +86,6 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            SIPSorcery.Net.DNSManager.Stop();
-
             #endregion
         }
 
