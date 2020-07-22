@@ -38,7 +38,7 @@ namespace SIPSorcery.Net
 
         public ushort? id { get; set; }
 
-        public RTCDataChannelState readyState { get; set; } = RTCDataChannelState.connecting;
+        public RTCDataChannelState readyState { get; private set; } = RTCDataChannelState.connecting;
 
         public ulong bufferedAmount { get; set; }
 
