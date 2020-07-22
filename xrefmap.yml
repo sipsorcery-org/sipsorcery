@@ -3540,6 +3540,19 @@ references:
   commentId: F:SIPSorcery.Net.ChecklistEntry.LastCheckSentAt
   fullName: SIPSorcery.Net.ChecklistEntry.LastCheckSentAt
   nameWithType: ChecklistEntry.LastCheckSentAt
+- uid: SIPSorcery.Net.ChecklistEntry.LastConnectedResponseAt
+  name: LastConnectedResponseAt
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LastConnectedResponseAt
+  commentId: P:SIPSorcery.Net.ChecklistEntry.LastConnectedResponseAt
+  fullName: SIPSorcery.Net.ChecklistEntry.LastConnectedResponseAt
+  nameWithType: ChecklistEntry.LastConnectedResponseAt
+- uid: SIPSorcery.Net.ChecklistEntry.LastConnectedResponseAt*
+  name: LastConnectedResponseAt
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LastConnectedResponseAt_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.LastConnectedResponseAt
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.LastConnectedResponseAt
+  nameWithType: ChecklistEntry.LastConnectedResponseAt
 - uid: SIPSorcery.Net.ChecklistEntry.LocalCandidate
   name: LocalCandidate
   href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LocalCandidate
@@ -3747,140 +3760,6 @@ references:
   commentId: F:SIPSorcery.Net.ChunkTypeEnum.TimestampSeconds
   fullName: SIPSorcery.Net.ChunkTypeEnum.TimestampSeconds
   nameWithType: ChunkTypeEnum.TimestampSeconds
-- uid: SIPSorcery.Net.DNSManager
-  name: DNSManager
-  href: api/SIPSorcery.Net.DNSManager.html
-  commentId: T:SIPSorcery.Net.DNSManager
-  fullName: SIPSorcery.Net.DNSManager
-  nameWithType: DNSManager
-- uid: SIPSorcery.Net.DNSManager.GetDnsSuffixes
-  name: GetDnsSuffixes()
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_GetDnsSuffixes
-  commentId: M:SIPSorcery.Net.DNSManager.GetDnsSuffixes
-  fullName: SIPSorcery.Net.DNSManager.GetDnsSuffixes()
-  nameWithType: DNSManager.GetDnsSuffixes()
-- uid: SIPSorcery.Net.DNSManager.GetDnsSuffixes*
-  name: GetDnsSuffixes
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_GetDnsSuffixes_
-  commentId: Overload:SIPSorcery.Net.DNSManager.GetDnsSuffixes
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DNSManager.GetDnsSuffixes
-  nameWithType: DNSManager.GetDnsSuffixes
-- uid: SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,System.Collections.Generic.List{System.Net.IPEndPoint})
-  name: Lookup(String, QType, Int32, List<IPEndPoint>)
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Lookup_System_String_Heijden_DNS_QType_System_Int32_System_Collections_Generic_List_System_Net_IPEndPoint__
-  commentId: M:SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,System.Collections.Generic.List{System.Net.IPEndPoint})
-  name.vb: Lookup(String, QType, Int32, List(Of IPEndPoint))
-  fullName: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, System.Collections.Generic.List<System.Net.IPEndPoint>)
-  fullName.vb: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, System.Collections.Generic.List(Of System.Net.IPEndPoint))
-  nameWithType: DNSManager.Lookup(String, QType, Int32, List<IPEndPoint>)
-  nameWithType.vb: DNSManager.Lookup(String, QType, Int32, List(Of IPEndPoint))
-- uid: SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,System.Collections.Generic.List{System.Net.IPEndPoint},System.Boolean,System.Boolean)
-  name: Lookup(String, QType, Int32, List<IPEndPoint>, Boolean, Boolean)
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Lookup_System_String_Heijden_DNS_QType_System_Int32_System_Collections_Generic_List_System_Net_IPEndPoint__System_Boolean_System_Boolean_
-  commentId: M:SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,System.Collections.Generic.List{System.Net.IPEndPoint},System.Boolean,System.Boolean)
-  name.vb: Lookup(String, QType, Int32, List(Of IPEndPoint), Boolean, Boolean)
-  fullName: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, System.Collections.Generic.List<System.Net.IPEndPoint>, System.Boolean, System.Boolean)
-  fullName.vb: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, System.Collections.Generic.List(Of System.Net.IPEndPoint), System.Boolean, System.Boolean)
-  nameWithType: DNSManager.Lookup(String, QType, Int32, List<IPEndPoint>, Boolean, Boolean)
-  nameWithType.vb: DNSManager.Lookup(String, QType, Int32, List(Of IPEndPoint), Boolean, Boolean)
-- uid: SIPSorcery.Net.DNSManager.Lookup*
-  name: Lookup
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Lookup_
-  commentId: Overload:SIPSorcery.Net.DNSManager.Lookup
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DNSManager.Lookup
-  nameWithType: DNSManager.Lookup
-- uid: SIPSorcery.Net.DNSManager.LookupAsync(System.String)
-  name: LookupAsync(String)
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_LookupAsync_System_String_
-  commentId: M:SIPSorcery.Net.DNSManager.LookupAsync(System.String)
-  fullName: SIPSorcery.Net.DNSManager.LookupAsync(System.String)
-  nameWithType: DNSManager.LookupAsync(String)
-- uid: SIPSorcery.Net.DNSManager.LookupAsync(System.String,Heijden.DNS.QType)
-  name: LookupAsync(String, QType)
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_LookupAsync_System_String_Heijden_DNS_QType_
-  commentId: M:SIPSorcery.Net.DNSManager.LookupAsync(System.String,Heijden.DNS.QType)
-  fullName: SIPSorcery.Net.DNSManager.LookupAsync(System.String, Heijden.DNS.QType)
-  nameWithType: DNSManager.LookupAsync(String, QType)
-- uid: SIPSorcery.Net.DNSManager.LookupAsync*
-  name: LookupAsync
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_LookupAsync_
-  commentId: Overload:SIPSorcery.Net.DNSManager.LookupAsync
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DNSManager.LookupAsync
-  nameWithType: DNSManager.LookupAsync
-- uid: SIPSorcery.Net.DNSManager.ReStart
-  name: ReStart()
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_ReStart
-  commentId: M:SIPSorcery.Net.DNSManager.ReStart
-  fullName: SIPSorcery.Net.DNSManager.ReStart()
-  nameWithType: DNSManager.ReStart()
-- uid: SIPSorcery.Net.DNSManager.ReStart*
-  name: ReStart
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_ReStart_
-  commentId: Overload:SIPSorcery.Net.DNSManager.ReStart
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DNSManager.ReStart
-  nameWithType: DNSManager.ReStart
-- uid: SIPSorcery.Net.DNSManager.SetDNSServers(System.Collections.Generic.List{System.Net.IPEndPoint})
-  name: SetDNSServers(List<IPEndPoint>)
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_SetDNSServers_System_Collections_Generic_List_System_Net_IPEndPoint__
-  commentId: M:SIPSorcery.Net.DNSManager.SetDNSServers(System.Collections.Generic.List{System.Net.IPEndPoint})
-  name.vb: SetDNSServers(List(Of IPEndPoint))
-  fullName: SIPSorcery.Net.DNSManager.SetDNSServers(System.Collections.Generic.List<System.Net.IPEndPoint>)
-  fullName.vb: SIPSorcery.Net.DNSManager.SetDNSServers(System.Collections.Generic.List(Of System.Net.IPEndPoint))
-  nameWithType: DNSManager.SetDNSServers(List<IPEndPoint>)
-  nameWithType.vb: DNSManager.SetDNSServers(List(Of IPEndPoint))
-- uid: SIPSorcery.Net.DNSManager.SetDNSServers*
-  name: SetDNSServers
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_SetDNSServers_
-  commentId: Overload:SIPSorcery.Net.DNSManager.SetDNSServers
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DNSManager.SetDNSServers
-  nameWithType: DNSManager.SetDNSServers
-- uid: SIPSorcery.Net.DNSManager.SetDNSSuffixes(System.String[])
-  name: SetDNSSuffixes(String[])
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_SetDNSSuffixes_System_String___
-  commentId: M:SIPSorcery.Net.DNSManager.SetDNSSuffixes(System.String[])
-  name.vb: SetDNSSuffixes(String())
-  fullName: SIPSorcery.Net.DNSManager.SetDNSSuffixes(System.String[])
-  fullName.vb: SIPSorcery.Net.DNSManager.SetDNSSuffixes(System.String())
-  nameWithType: DNSManager.SetDNSSuffixes(String[])
-  nameWithType.vb: DNSManager.SetDNSSuffixes(String())
-- uid: SIPSorcery.Net.DNSManager.SetDNSSuffixes*
-  name: SetDNSSuffixes
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_SetDNSSuffixes_
-  commentId: Overload:SIPSorcery.Net.DNSManager.SetDNSSuffixes
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DNSManager.SetDNSSuffixes
-  nameWithType: DNSManager.SetDNSSuffixes
-- uid: SIPSorcery.Net.DNSManager.Stop
-  name: Stop()
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Stop
-  commentId: M:SIPSorcery.Net.DNSManager.Stop
-  fullName: SIPSorcery.Net.DNSManager.Stop()
-  nameWithType: DNSManager.Stop()
-- uid: SIPSorcery.Net.DNSManager.Stop*
-  name: Stop
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Stop_
-  commentId: Overload:SIPSorcery.Net.DNSManager.Stop
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DNSManager.Stop
-  nameWithType: DNSManager.Stop
-- uid: SIPSorcery.Net.DNSManager.UseDNSSuffixes
-  name: UseDNSSuffixes
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_UseDNSSuffixes
-  commentId: P:SIPSorcery.Net.DNSManager.UseDNSSuffixes
-  fullName: SIPSorcery.Net.DNSManager.UseDNSSuffixes
-  nameWithType: DNSManager.UseDNSSuffixes
-- uid: SIPSorcery.Net.DNSManager.UseDNSSuffixes*
-  name: UseDNSSuffixes
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_UseDNSSuffixes_
-  commentId: Overload:SIPSorcery.Net.DNSManager.UseDNSSuffixes
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DNSManager.UseDNSSuffixes
-  nameWithType: DNSManager.UseDNSSuffixes
 - uid: SIPSorcery.Net.DtlsSrtpClient
   name: DtlsSrtpClient
   href: api/SIPSorcery.Net.DtlsSrtpClient.html
@@ -3893,24 +3772,18 @@ references:
   commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor
   fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient()
   nameWithType: DtlsSrtpClient.DtlsSrtpClient()
-- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Certificate,AsymmetricKeyParameter)
   name: DtlsSrtpClient(Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Certificate_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Certificate,AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Certificate, AsymmetricKeyParameter)
   nameWithType: DtlsSrtpClient.DtlsSrtpClient(Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter,Org.BouncyCastle.Crypto.Tls.UseSrtpData)
+- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Certificate,AsymmetricKeyParameter,UseSrtpData)
   name: DtlsSrtpClient(Certificate, AsymmetricKeyParameter, UseSrtpData)
-  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_Org_BouncyCastle_Crypto_Tls_UseSrtpData_
-  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter,Org.BouncyCastle.Crypto.Tls.UseSrtpData)
-  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter, Org.BouncyCastle.Crypto.Tls.UseSrtpData)
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Certificate_AsymmetricKeyParameter_UseSrtpData_
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Certificate,AsymmetricKeyParameter,UseSrtpData)
+  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Certificate, AsymmetricKeyParameter, UseSrtpData)
   nameWithType: DtlsSrtpClient.DtlsSrtpClient(Certificate, AsymmetricKeyParameter, UseSrtpData)
-- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.UseSrtpData)
-  name: DtlsSrtpClient(UseSrtpData)
-  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Org_BouncyCastle_Crypto_Tls_UseSrtpData_
-  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.UseSrtpData)
-  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Org.BouncyCastle.Crypto.Tls.UseSrtpData)
-  nameWithType: DtlsSrtpClient.DtlsSrtpClient(UseSrtpData)
 - uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2)
   name: DtlsSrtpClient(X509Certificate2)
   href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_
@@ -3932,6 +3805,12 @@ references:
   fullName.vb: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(System.String(), System.String)
   nameWithType: DtlsSrtpClient.DtlsSrtpClient(String[], String)
   nameWithType.vb: DtlsSrtpClient.DtlsSrtpClient(String(), String)
+- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(UseSrtpData)
+  name: DtlsSrtpClient(UseSrtpData)
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_UseSrtpData_
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(UseSrtpData)
+  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(UseSrtpData)
+  nameWithType: DtlsSrtpClient.DtlsSrtpClient(UseSrtpData)
 - uid: SIPSorcery.Net.DtlsSrtpClient.#ctor*
   name: DtlsSrtpClient
   href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_
@@ -4179,11 +4058,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpClient.NotifyHandshakeComplete
   nameWithType: DtlsSrtpClient.NotifyHandshakeComplete
-- uid: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(Org.BouncyCastle.Crypto.Tls.ProtocolVersion)
+- uid: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(ProtocolVersion)
   name: NotifyServerVersion(ProtocolVersion)
-  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_NotifyServerVersion_Org_BouncyCastle_Crypto_Tls_ProtocolVersion_
-  commentId: M:SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(Org.BouncyCastle.Crypto.Tls.ProtocolVersion)
-  fullName: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(Org.BouncyCastle.Crypto.Tls.ProtocolVersion)
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_NotifyServerVersion_ProtocolVersion_
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(ProtocolVersion)
+  fullName: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(ProtocolVersion)
   nameWithType: DtlsSrtpClient.NotifyServerVersion(ProtocolVersion)
 - uid: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion*
   name: NotifyServerVersion
@@ -4249,11 +4128,11 @@ references:
   commentId: M:SIPSorcery.Net.DtlsSrtpServer.#ctor
   fullName: SIPSorcery.Net.DtlsSrtpServer.DtlsSrtpServer()
   nameWithType: DtlsSrtpServer.DtlsSrtpServer()
-- uid: SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsSrtpServer.#ctor(Certificate,AsymmetricKeyParameter)
   name: DtlsSrtpServer(Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsSrtpServer.DtlsSrtpServer(Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer__ctor_Certificate_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsSrtpServer.#ctor(Certificate,AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsSrtpServer.DtlsSrtpServer(Certificate, AsymmetricKeyParameter)
   nameWithType: DtlsSrtpServer.DtlsSrtpServer(Certificate, AsymmetricKeyParameter)
 - uid: SIPSorcery.Net.DtlsSrtpServer.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2)
   name: DtlsSrtpServer(X509Certificate2)
@@ -4582,11 +4461,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpServer.NotifyAlertReceived
   nameWithType: DtlsSrtpServer.NotifyAlertReceived
-- uid: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Crypto.Tls.Certificate)
+- uid: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Certificate)
   name: NotifyClientCertificate(Certificate)
-  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_NotifyClientCertificate_Org_BouncyCastle_Crypto_Tls_Certificate_
-  commentId: M:SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Crypto.Tls.Certificate)
-  fullName: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Crypto.Tls.Certificate)
+  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_NotifyClientCertificate_Certificate_
+  commentId: M:SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Certificate)
+  fullName: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Certificate)
   nameWithType: DtlsSrtpServer.NotifyClientCertificate(Certificate)
 - uid: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate*
   name: NotifyClientCertificate
@@ -5276,17 +5155,17 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.CreatePrivateKeyResource
   nameWithType: DtlsUtils.CreatePrivateKeyResource
-- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(AsymmetricKeyParameter)
   name: CreateSelfSignedCert(AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(AsymmetricKeyParameter)
   nameWithType: DtlsUtils.CreateSelfSignedCert(AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,AsymmetricKeyParameter)
   name: CreateSelfSignedCert(String, String, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String, System.String, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_System_String_System_String_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String, System.String, AsymmetricKeyParameter)
   nameWithType: DtlsUtils.CreateSelfSignedCert(String, String, AsymmetricKeyParameter)
 - uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert*
   name: CreateSelfSignedCert
@@ -5295,13 +5174,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert
   nameWithType: DtlsUtils.CreateSelfSignedCert
-- uid: SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest,System.Byte[])
+- uid: SIPSorcery.Net.DtlsUtils.DigestOf(IDigest,System.Byte[])
   name: DigestOf(IDigest, Byte[])
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_DigestOf_Org_BouncyCastle_Crypto_IDigest_System_Byte___
-  commentId: M:SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest,System.Byte[])
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_DigestOf_IDigest_System_Byte___
+  commentId: M:SIPSorcery.Net.DtlsUtils.DigestOf(IDigest,System.Byte[])
   name.vb: DigestOf(IDigest, Byte())
-  fullName: SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest, System.Byte[])
-  fullName.vb: SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest, System.Byte())
+  fullName: SIPSorcery.Net.DtlsUtils.DigestOf(IDigest, System.Byte[])
+  fullName.vb: SIPSorcery.Net.DtlsUtils.DigestOf(IDigest, System.Byte())
   nameWithType: DtlsUtils.DigestOf(IDigest, Byte[])
   nameWithType.vb: DtlsUtils.DigestOf(IDigest, Byte())
 - uid: SIPSorcery.Net.DtlsUtils.DigestOf*
@@ -5311,17 +5190,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.DigestOf
   nameWithType: DtlsUtils.DigestOf
-- uid: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
-  name: Fingerprint(X509CertificateStructure)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_Org_BouncyCastle_Asn1_X509_X509CertificateStructure_
-  commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
-  fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
-  nameWithType: DtlsUtils.Fingerprint(X509CertificateStructure)
-- uid: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)
+- uid: SIPSorcery.Net.DtlsUtils.Fingerprint(Certificate)
   name: Fingerprint(Certificate)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_Org_BouncyCastle_Crypto_Tls_Certificate_
-  commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)
-  fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_Certificate_
+  commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(Certificate)
+  fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(Certificate)
   nameWithType: DtlsUtils.Fingerprint(Certificate)
 - uid: SIPSorcery.Net.DtlsUtils.Fingerprint(System.Security.Cryptography.X509Certificates.X509Certificate2)
   name: Fingerprint(X509Certificate2)
@@ -5330,17 +5203,23 @@ references:
   fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(System.Security.Cryptography.X509Certificates.X509Certificate2)
   nameWithType: DtlsUtils.Fingerprint(X509Certificate2)
 - uid: SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
-  name: Fingerprint(String, X509CertificateStructure)
+  name: Fingerprint(String, Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_System_String_Org_BouncyCastle_Asn1_X509_X509CertificateStructure_
   commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
   fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(System.String, Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
-  nameWithType: DtlsUtils.Fingerprint(String, X509CertificateStructure)
+  nameWithType: DtlsUtils.Fingerprint(String, Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
 - uid: SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,System.Security.Cryptography.X509Certificates.X509Certificate2)
   name: Fingerprint(String, X509Certificate2)
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_System_String_System_Security_Cryptography_X509Certificates_X509Certificate2_
   commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,System.Security.Cryptography.X509Certificates.X509Certificate2)
   fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(System.String, System.Security.Cryptography.X509Certificates.X509Certificate2)
   nameWithType: DtlsUtils.Fingerprint(String, X509Certificate2)
+- uid: SIPSorcery.Net.DtlsUtils.Fingerprint(X509CertificateStructure)
+  name: Fingerprint(X509CertificateStructure)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_X509CertificateStructure_
+  commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(X509CertificateStructure)
+  fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(X509CertificateStructure)
+  nameWithType: DtlsUtils.Fingerprint(X509CertificateStructure)
 - uid: SIPSorcery.Net.DtlsUtils.Fingerprint*
   name: Fingerprint
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_
@@ -5361,19 +5240,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.IsHashSupported
   nameWithType: DtlsUtils.IsHashSupported
-- uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
   name: LoadAgreementCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_TlsContext_Certificate_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
   nameWithType: DtlsUtils.LoadAgreementCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
+- uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext,System.String[],System.String)
   name: LoadAgreementCredentials(TlsContext, String[], String)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_TlsContext_System_String___System_String_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext,System.String[],System.String)
   name.vb: LoadAgreementCredentials(TlsContext, String(), String)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String[], System.String)
-  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String(), System.String)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext, System.String[], System.String)
+  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext, System.String(), System.String)
   nameWithType: DtlsUtils.LoadAgreementCredentials(TlsContext, String[], String)
   nameWithType.vb: DtlsUtils.LoadAgreementCredentials(TlsContext, String(), String)
 - uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials*
@@ -5433,19 +5312,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.LoadCertificateResource
   nameWithType: DtlsUtils.LoadCertificateResource
-- uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
   name: LoadEncryptionCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_TlsContext_Certificate_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
   nameWithType: DtlsUtils.LoadEncryptionCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
+- uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext,System.String[],System.String)
   name: LoadEncryptionCredentials(TlsContext, String[], String)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_TlsContext_System_String___System_String_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext,System.String[],System.String)
   name.vb: LoadEncryptionCredentials(TlsContext, String(), String)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String[], System.String)
-  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String(), System.String)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext, System.String[], System.String)
+  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext, System.String(), System.String)
   nameWithType: DtlsUtils.LoadEncryptionCredentials(TlsContext, String[], String)
   nameWithType.vb: DtlsUtils.LoadEncryptionCredentials(TlsContext, String(), String)
 - uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials*
@@ -5487,46 +5366,46 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.LoadPrivateKeyResource
   nameWithType: DtlsUtils.LoadPrivateKeyResource
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
   name: LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_Certificate_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,Certificate,AsymmetricKeyParameter,SignatureAndHashAlgorithm)
   name: LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter, SignatureAndHashAlgorithm)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_Org_BouncyCastle_Crypto_Tls_SignatureAndHashAlgorithm_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter, Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_Certificate_AsymmetricKeyParameter_SignatureAndHashAlgorithm_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,Certificate,AsymmetricKeyParameter,SignatureAndHashAlgorithm)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter, SignatureAndHashAlgorithm)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter, SignatureAndHashAlgorithm)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.Collections.IList,System.Byte,Certificate,AsymmetricKeyParameter)
   name: LoadSignerCredentials(TlsContext, IList, Byte, Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_Collections_IList_System_Byte_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.Collections.IList, System.Byte, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_System_Collections_IList_System_Byte_Certificate_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.Collections.IList,System.Byte,Certificate,AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.Collections.IList, System.Byte, Certificate, AsymmetricKeyParameter)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, IList, Byte, Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,System.String,System.String)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.Collections.IList,System.Byte,System.String,System.String)
   name: LoadSignerCredentials(TlsContext, IList, Byte, String, String)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_Collections_IList_System_Byte_System_String_System_String_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,System.String,System.String)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.Collections.IList, System.Byte, System.String, System.String)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_System_Collections_IList_System_Byte_System_String_System_String_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.Collections.IList,System.Byte,System.String,System.String)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.Collections.IList, System.Byte, System.String, System.String)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, IList, Byte, String, String)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.String[],System.String)
   name: LoadSignerCredentials(TlsContext, String[], String)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_System_String___System_String_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.String[],System.String)
   name.vb: LoadSignerCredentials(TlsContext, String(), String)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String[], System.String)
-  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String(), System.String)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.String[], System.String)
+  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.String(), System.String)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, String[], String)
   nameWithType.vb: DtlsUtils.LoadSignerCredentials(TlsContext, String(), String)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.String[],System.String,SignatureAndHashAlgorithm)
   name: LoadSignerCredentials(TlsContext, String[], String, SignatureAndHashAlgorithm)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_Org_BouncyCastle_Crypto_Tls_SignatureAndHashAlgorithm_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_System_String___System_String_SignatureAndHashAlgorithm_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.String[],System.String,SignatureAndHashAlgorithm)
   name.vb: LoadSignerCredentials(TlsContext, String(), String, SignatureAndHashAlgorithm)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String[], System.String, Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
-  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String(), System.String, Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.String[], System.String, SignatureAndHashAlgorithm)
+  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.String(), System.String, SignatureAndHashAlgorithm)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, String[], String, SignatureAndHashAlgorithm)
   nameWithType.vb: DtlsUtils.LoadSignerCredentials(TlsContext, String(), String, SignatureAndHashAlgorithm)
 - uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials*
@@ -5536,11 +5415,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials
   nameWithType: DtlsUtils.LoadSignerCredentials
-- uid: SIPSorcery.Net.DtlsUtils.ToRSA(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
+- uid: SIPSorcery.Net.DtlsUtils.ToRSA(RsaPrivateCrtKeyParameters)
   name: ToRSA(RsaPrivateCrtKeyParameters)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ToRSA_Org_BouncyCastle_Crypto_Parameters_RsaPrivateCrtKeyParameters_
-  commentId: M:SIPSorcery.Net.DtlsUtils.ToRSA(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
-  fullName: SIPSorcery.Net.DtlsUtils.ToRSA(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ToRSA_RsaPrivateCrtKeyParameters_
+  commentId: M:SIPSorcery.Net.DtlsUtils.ToRSA(RsaPrivateCrtKeyParameters)
+  fullName: SIPSorcery.Net.DtlsUtils.ToRSA(RsaPrivateCrtKeyParameters)
   nameWithType: DtlsUtils.ToRSA(RsaPrivateCrtKeyParameters)
 - uid: SIPSorcery.Net.DtlsUtils.ToRSA*
   name: ToRSA
@@ -5549,11 +5428,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.ToRSA
   nameWithType: DtlsUtils.ToRSA
-- uid: SIPSorcery.Net.DtlsUtils.ToRSAParameters(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
+- uid: SIPSorcery.Net.DtlsUtils.ToRSAParameters(RsaPrivateCrtKeyParameters)
   name: ToRSAParameters(RsaPrivateCrtKeyParameters)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ToRSAParameters_Org_BouncyCastle_Crypto_Parameters_RsaPrivateCrtKeyParameters_
-  commentId: M:SIPSorcery.Net.DtlsUtils.ToRSAParameters(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
-  fullName: SIPSorcery.Net.DtlsUtils.ToRSAParameters(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ToRSAParameters_RsaPrivateCrtKeyParameters_
+  commentId: M:SIPSorcery.Net.DtlsUtils.ToRSAParameters(RsaPrivateCrtKeyParameters)
+  fullName: SIPSorcery.Net.DtlsUtils.ToRSAParameters(RsaPrivateCrtKeyParameters)
   nameWithType: DtlsUtils.ToRSAParameters(RsaPrivateCrtKeyParameters)
 - uid: SIPSorcery.Net.DtlsUtils.ToRSAParameters*
   name: ToRSAParameters
@@ -6339,32 +6218,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.MediaStreamTrack.Kind
   nameWithType: MediaStreamTrack.Kind
-- uid: SIPSorcery.Net.MediaStreamTrack.MID
-  name: MID
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_MID
-  commentId: P:SIPSorcery.Net.MediaStreamTrack.MID
-  fullName: SIPSorcery.Net.MediaStreamTrack.MID
-  nameWithType: MediaStreamTrack.MID
-- uid: SIPSorcery.Net.MediaStreamTrack.MID*
-  name: MID
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_MID_
-  commentId: Overload:SIPSorcery.Net.MediaStreamTrack.MID
-  isSpec: "True"
-  fullName: SIPSorcery.Net.MediaStreamTrack.MID
-  nameWithType: MediaStreamTrack.MID
-- uid: SIPSorcery.Net.MediaStreamTrack.MLineIndex
-  name: MLineIndex
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_MLineIndex
-  commentId: P:SIPSorcery.Net.MediaStreamTrack.MLineIndex
-  fullName: SIPSorcery.Net.MediaStreamTrack.MLineIndex
-  nameWithType: MediaStreamTrack.MLineIndex
-- uid: SIPSorcery.Net.MediaStreamTrack.MLineIndex*
-  name: MLineIndex
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_MLineIndex_
-  commentId: Overload:SIPSorcery.Net.MediaStreamTrack.MLineIndex
-  isSpec: "True"
-  fullName: SIPSorcery.Net.MediaStreamTrack.MLineIndex
-  nameWithType: MediaStreamTrack.MLineIndex
 - uid: SIPSorcery.Net.MediaStreamTrack.SdpSsrc
   name: SdpSsrc
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_SdpSsrc
@@ -7404,24 +7257,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCDataChannel.negotiated
   nameWithType: RTCDataChannel.negotiated
-- uid: SIPSorcery.Net.RTCDataChannel.onbufferedamountlow
-  name: onbufferedamountlow
-  href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_onbufferedamountlow
-  commentId: E:SIPSorcery.Net.RTCDataChannel.onbufferedamountlow
-  fullName: SIPSorcery.Net.RTCDataChannel.onbufferedamountlow
-  nameWithType: RTCDataChannel.onbufferedamountlow
 - uid: SIPSorcery.Net.RTCDataChannel.onclose
   name: onclose
   href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_onclose
   commentId: E:SIPSorcery.Net.RTCDataChannel.onclose
   fullName: SIPSorcery.Net.RTCDataChannel.onclose
   nameWithType: RTCDataChannel.onclose
-- uid: SIPSorcery.Net.RTCDataChannel.onclosing
-  name: onclosing
-  href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_onclosing
-  commentId: E:SIPSorcery.Net.RTCDataChannel.onclosing
-  fullName: SIPSorcery.Net.RTCDataChannel.onclosing
-  nameWithType: RTCDataChannel.onclosing
 - uid: SIPSorcery.Net.RTCDataChannel.onerror
   name: onerror
   href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_onerror
@@ -8135,12 +7976,6 @@ references:
   commentId: F:SIPSorcery.Net.RTCIceConnectionState.closed
   fullName: SIPSorcery.Net.RTCIceConnectionState.closed
   nameWithType: RTCIceConnectionState.closed
-- uid: SIPSorcery.Net.RTCIceConnectionState.completed
-  name: completed
-  href: api/SIPSorcery.Net.RTCIceConnectionState.html#SIPSorcery_Net_RTCIceConnectionState_completed
-  commentId: F:SIPSorcery.Net.RTCIceConnectionState.completed
-  fullName: SIPSorcery.Net.RTCIceConnectionState.completed
-  nameWithType: RTCIceConnectionState.completed
 - uid: SIPSorcery.Net.RTCIceConnectionState.connected
   name: connected
   href: api/SIPSorcery.Net.RTCIceConnectionState.html#SIPSorcery_Net_RTCIceConnectionState_connected
@@ -9098,11 +8933,11 @@ references:
   commentId: T:SIPSorcery.Net.RTCPeerSctpAssociation
   fullName: SIPSorcery.Net.RTCPeerSctpAssociation
   nameWithType: RTCPeerSctpAssociation
-- uid: SIPSorcery.Net.RTCPeerSctpAssociation.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,System.Boolean,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.RTCPeerSctpAssociation.#ctor(DatagramTransport,System.Boolean,System.Int32,System.Int32)
   name: RTCPeerSctpAssociation(DatagramTransport, Boolean, Int32, Int32)
-  href: api/SIPSorcery.Net.RTCPeerSctpAssociation.html#SIPSorcery_Net_RTCPeerSctpAssociation__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_System_Boolean_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.RTCPeerSctpAssociation.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,System.Boolean,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.RTCPeerSctpAssociation.RTCPeerSctpAssociation(Org.BouncyCastle.Crypto.Tls.DatagramTransport, System.Boolean, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.RTCPeerSctpAssociation.html#SIPSorcery_Net_RTCPeerSctpAssociation__ctor_DatagramTransport_System_Boolean_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.RTCPeerSctpAssociation.#ctor(DatagramTransport,System.Boolean,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.RTCPeerSctpAssociation.RTCPeerSctpAssociation(DatagramTransport, System.Boolean, System.Int32, System.Int32)
   nameWithType: RTCPeerSctpAssociation.RTCPeerSctpAssociation(DatagramTransport, Boolean, Int32, Int32)
 - uid: SIPSorcery.Net.RTCPeerSctpAssociation.#ctor*
   name: RTCPeerSctpAssociation
@@ -11639,12 +11474,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.IsStarted
   nameWithType: RTPSession.IsStarted
-- uid: SIPSorcery.Net.RTPSession.m_mLineIndex
-  name: m_mLineIndex
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_m_mLineIndex
-  commentId: F:SIPSorcery.Net.RTPSession.m_mLineIndex
-  fullName: SIPSorcery.Net.RTPSession.m_mLineIndex
-  nameWithType: RTPSession.m_mLineIndex
 - uid: SIPSorcery.Net.RTPSession.OnReceive(System.Int32,System.Net.IPEndPoint,System.Byte[])
   name: OnReceive(Int32, IPEndPoint, Byte[])
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceive_System_Int32_System_Net_IPEndPoint_System_Byte___
@@ -13492,17 +13321,17 @@ references:
   commentId: T:SIPSorcery.Net.Sctp.Association
   fullName: SIPSorcery.Net.Sctp.Association
   nameWithType: Association
-- uid: SIPSorcery.Net.Sctp.Association.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.Sctp.Association.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
   name: Association(DatagramTransport, AssociationListener, Boolean, Int32, Int32)
-  href: api/SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.Sctp.Association.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.Sctp.Association.Association(Org.BouncyCastle.Crypto.Tls.DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Boolean, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__ctor_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.Sctp.Association.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.Sctp.Association.Association(DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Boolean, System.Int32, System.Int32)
   nameWithType: Association.Association(DatagramTransport, AssociationListener, Boolean, Int32, Int32)
-- uid: SIPSorcery.Net.Sctp.Association.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.Sctp.Association.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Int32,System.Int32)
   name: Association(DatagramTransport, AssociationListener, Int32, Int32)
-  href: api/SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.Sctp.Association.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.Sctp.Association.Association(Org.BouncyCastle.Crypto.Tls.DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__ctor_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.Sctp.Association.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.Sctp.Association.Association(DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Int32, System.Int32)
   nameWithType: Association.Association(DatagramTransport, AssociationListener, Int32, Int32)
 - uid: SIPSorcery.Net.Sctp.Association.#ctor*
   name: Association
@@ -17852,11 +17681,11 @@ references:
   commentId: T:SIPSorcery.Net.Sctp.ThreadedAssociation
   fullName: SIPSorcery.Net.Sctp.ThreadedAssociation
   nameWithType: ThreadedAssociation
-- uid: SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
   name: ThreadedAssociation(DatagramTransport, AssociationListener, Boolean, Int32, Int32)
-  href: api/SIPSorcery.Net.Sctp.ThreadedAssociation.html#SIPSorcery_Net_Sctp_ThreadedAssociation__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.Sctp.ThreadedAssociation.ThreadedAssociation(Org.BouncyCastle.Crypto.Tls.DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Boolean, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.Sctp.ThreadedAssociation.html#SIPSorcery_Net_Sctp_ThreadedAssociation__ctor_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.Sctp.ThreadedAssociation.ThreadedAssociation(DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Boolean, System.Int32, System.Int32)
   nameWithType: ThreadedAssociation.ThreadedAssociation(DatagramTransport, AssociationListener, Boolean, Int32, Int32)
 - uid: SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor*
   name: ThreadedAssociation
@@ -20511,13 +20340,13 @@ references:
   commentId: T:SIPSorcery.Net.SrtpCipherCTR
   fullName: SIPSorcery.Net.SrtpCipherCTR
   nameWithType: SrtpCipherCTR
-- uid: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Int32,System.Byte[])
+- uid: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(IBlockCipher,System.Byte[],System.Int32,System.Byte[])
   name: GetCipherStream(IBlockCipher, Byte[], Int32, Byte[])
-  href: api/SIPSorcery.Net.SrtpCipherCTR.html#SIPSorcery_Net_SrtpCipherCTR_GetCipherStream_Org_BouncyCastle_Crypto_IBlockCipher_System_Byte___System_Int32_System_Byte___
-  commentId: M:SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Int32,System.Byte[])
+  href: api/SIPSorcery.Net.SrtpCipherCTR.html#SIPSorcery_Net_SrtpCipherCTR_GetCipherStream_IBlockCipher_System_Byte___System_Int32_System_Byte___
+  commentId: M:SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(IBlockCipher,System.Byte[],System.Int32,System.Byte[])
   name.vb: GetCipherStream(IBlockCipher, Byte(), Int32, Byte())
-  fullName: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(Org.BouncyCastle.Crypto.IBlockCipher, System.Byte[], System.Int32, System.Byte[])
-  fullName.vb: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(Org.BouncyCastle.Crypto.IBlockCipher, System.Byte(), System.Int32, System.Byte())
+  fullName: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(IBlockCipher, System.Byte[], System.Int32, System.Byte[])
+  fullName.vb: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(IBlockCipher, System.Byte(), System.Int32, System.Byte())
   nameWithType: SrtpCipherCTR.GetCipherStream(IBlockCipher, Byte[], Int32, Byte[])
   nameWithType.vb: SrtpCipherCTR.GetCipherStream(IBlockCipher, Byte(), Int32, Byte())
 - uid: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream*
@@ -20527,13 +20356,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream
   nameWithType: SrtpCipherCTR.GetCipherStream
-- uid: SIPSorcery.Net.SrtpCipherCTR.Process(Org.BouncyCastle.Crypto.IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[])
+- uid: SIPSorcery.Net.SrtpCipherCTR.Process(IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[])
   name: Process(IBlockCipher, MemoryStream, Int32, Int32, Byte[])
-  href: api/SIPSorcery.Net.SrtpCipherCTR.html#SIPSorcery_Net_SrtpCipherCTR_Process_Org_BouncyCastle_Crypto_IBlockCipher_System_IO_MemoryStream_System_Int32_System_Int32_System_Byte___
-  commentId: M:SIPSorcery.Net.SrtpCipherCTR.Process(Org.BouncyCastle.Crypto.IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[])
+  href: api/SIPSorcery.Net.SrtpCipherCTR.html#SIPSorcery_Net_SrtpCipherCTR_Process_IBlockCipher_System_IO_MemoryStream_System_Int32_System_Int32_System_Byte___
+  commentId: M:SIPSorcery.Net.SrtpCipherCTR.Process(IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[])
   name.vb: Process(IBlockCipher, MemoryStream, Int32, Int32, Byte())
-  fullName: SIPSorcery.Net.SrtpCipherCTR.Process(Org.BouncyCastle.Crypto.IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte[])
-  fullName.vb: SIPSorcery.Net.SrtpCipherCTR.Process(Org.BouncyCastle.Crypto.IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte())
+  fullName: SIPSorcery.Net.SrtpCipherCTR.Process(IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte[])
+  fullName.vb: SIPSorcery.Net.SrtpCipherCTR.Process(IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte())
   nameWithType: SrtpCipherCTR.Process(IBlockCipher, MemoryStream, Int32, Int32, Byte[])
   nameWithType.vb: SrtpCipherCTR.Process(IBlockCipher, MemoryStream, Int32, Int32, Byte())
 - uid: SIPSorcery.Net.SrtpCipherCTR.Process*
@@ -20549,13 +20378,13 @@ references:
   commentId: T:SIPSorcery.Net.SrtpCipherF8
   fullName: SIPSorcery.Net.SrtpCipherF8
   nameWithType: SrtpCipherF8
-- uid: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Byte[])
+- uid: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(IBlockCipher,System.Byte[],System.Byte[])
   name: DeriveForIV(IBlockCipher, Byte[], Byte[])
-  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_DeriveForIV_Org_BouncyCastle_Crypto_IBlockCipher_System_Byte___System_Byte___
-  commentId: M:SIPSorcery.Net.SrtpCipherF8.DeriveForIV(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Byte[])
+  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_DeriveForIV_IBlockCipher_System_Byte___System_Byte___
+  commentId: M:SIPSorcery.Net.SrtpCipherF8.DeriveForIV(IBlockCipher,System.Byte[],System.Byte[])
   name.vb: DeriveForIV(IBlockCipher, Byte(), Byte())
-  fullName: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(Org.BouncyCastle.Crypto.IBlockCipher, System.Byte[], System.Byte[])
-  fullName.vb: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(Org.BouncyCastle.Crypto.IBlockCipher, System.Byte(), System.Byte())
+  fullName: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(IBlockCipher, System.Byte[], System.Byte[])
+  fullName.vb: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(IBlockCipher, System.Byte(), System.Byte())
   nameWithType: SrtpCipherF8.DeriveForIV(IBlockCipher, Byte[], Byte[])
   nameWithType.vb: SrtpCipherF8.DeriveForIV(IBlockCipher, Byte(), Byte())
 - uid: SIPSorcery.Net.SrtpCipherF8.DeriveForIV*
@@ -20589,13 +20418,13 @@ references:
   commentId: F:SIPSorcery.Net.SrtpCipherF8.F8Context.S
   fullName: SIPSorcery.Net.SrtpCipherF8.F8Context.S
   nameWithType: SrtpCipherF8.F8Context.S
-- uid: SIPSorcery.Net.SrtpCipherF8.Process(Org.BouncyCastle.Crypto.IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[],Org.BouncyCastle.Crypto.IBlockCipher)
+- uid: SIPSorcery.Net.SrtpCipherF8.Process(IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[],IBlockCipher)
   name: Process(IBlockCipher, MemoryStream, Int32, Int32, Byte[], IBlockCipher)
-  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_Process_Org_BouncyCastle_Crypto_IBlockCipher_System_IO_MemoryStream_System_Int32_System_Int32_System_Byte___Org_BouncyCastle_Crypto_IBlockCipher_
-  commentId: M:SIPSorcery.Net.SrtpCipherF8.Process(Org.BouncyCastle.Crypto.IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[],Org.BouncyCastle.Crypto.IBlockCipher)
+  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_Process_IBlockCipher_System_IO_MemoryStream_System_Int32_System_Int32_System_Byte___IBlockCipher_
+  commentId: M:SIPSorcery.Net.SrtpCipherF8.Process(IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[],IBlockCipher)
   name.vb: Process(IBlockCipher, MemoryStream, Int32, Int32, Byte(), IBlockCipher)
-  fullName: SIPSorcery.Net.SrtpCipherF8.Process(Org.BouncyCastle.Crypto.IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte[], Org.BouncyCastle.Crypto.IBlockCipher)
-  fullName.vb: SIPSorcery.Net.SrtpCipherF8.Process(Org.BouncyCastle.Crypto.IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte(), Org.BouncyCastle.Crypto.IBlockCipher)
+  fullName: SIPSorcery.Net.SrtpCipherF8.Process(IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte[], IBlockCipher)
+  fullName.vb: SIPSorcery.Net.SrtpCipherF8.Process(IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte(), IBlockCipher)
   nameWithType: SrtpCipherF8.Process(IBlockCipher, MemoryStream, Int32, Int32, Byte[], IBlockCipher)
   nameWithType.vb: SrtpCipherF8.Process(IBlockCipher, MemoryStream, Int32, Int32, Byte(), IBlockCipher)
 - uid: SIPSorcery.Net.SrtpCipherF8.Process*
@@ -20605,11 +20434,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SrtpCipherF8.Process
   nameWithType: SrtpCipherF8.Process
-- uid: SIPSorcery.Net.SrtpCipherF8.ProcessBlock(Org.BouncyCastle.Crypto.IBlockCipher,SIPSorcery.Net.SrtpCipherF8.F8Context,System.IO.MemoryStream,System.Int32,System.IO.MemoryStream,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.SrtpCipherF8.ProcessBlock(IBlockCipher,SIPSorcery.Net.SrtpCipherF8.F8Context,System.IO.MemoryStream,System.Int32,System.IO.MemoryStream,System.Int32,System.Int32)
   name: ProcessBlock(IBlockCipher, SrtpCipherF8.F8Context, MemoryStream, Int32, MemoryStream, Int32, Int32)
-  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_ProcessBlock_Org_BouncyCastle_Crypto_IBlockCipher_SIPSorcery_Net_SrtpCipherF8_F8Context_System_IO_MemoryStream_System_Int32_System_IO_MemoryStream_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.SrtpCipherF8.ProcessBlock(Org.BouncyCastle.Crypto.IBlockCipher,SIPSorcery.Net.SrtpCipherF8.F8Context,System.IO.MemoryStream,System.Int32,System.IO.MemoryStream,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.SrtpCipherF8.ProcessBlock(Org.BouncyCastle.Crypto.IBlockCipher, SIPSorcery.Net.SrtpCipherF8.F8Context, System.IO.MemoryStream, System.Int32, System.IO.MemoryStream, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_ProcessBlock_IBlockCipher_SIPSorcery_Net_SrtpCipherF8_F8Context_System_IO_MemoryStream_System_Int32_System_IO_MemoryStream_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpCipherF8.ProcessBlock(IBlockCipher,SIPSorcery.Net.SrtpCipherF8.F8Context,System.IO.MemoryStream,System.Int32,System.IO.MemoryStream,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.SrtpCipherF8.ProcessBlock(IBlockCipher, SIPSorcery.Net.SrtpCipherF8.F8Context, System.IO.MemoryStream, System.Int32, System.IO.MemoryStream, System.Int32, System.Int32)
   nameWithType: SrtpCipherF8.ProcessBlock(IBlockCipher, SrtpCipherF8.F8Context, MemoryStream, Int32, MemoryStream, Int32, Int32)
 - uid: SIPSorcery.Net.SrtpCipherF8.ProcessBlock*
   name: ProcessBlock
@@ -22244,15 +22073,15 @@ references:
   commentId: F:SIPSorcery.Net.STUNMessage.Attributes
   fullName: SIPSorcery.Net.STUNMessage.Attributes
   nameWithType: STUNMessage.Attributes
-- uid: SIPSorcery.Net.STUNMessage.CheckIntegrity(System.Byte[],System.String,System.String)
-  name: CheckIntegrity(Byte[], String, String)
-  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_CheckIntegrity_System_Byte___System_String_System_String_
-  commentId: M:SIPSorcery.Net.STUNMessage.CheckIntegrity(System.Byte[],System.String,System.String)
-  name.vb: CheckIntegrity(Byte(), String, String)
-  fullName: SIPSorcery.Net.STUNMessage.CheckIntegrity(System.Byte[], System.String, System.String)
-  fullName.vb: SIPSorcery.Net.STUNMessage.CheckIntegrity(System.Byte(), System.String, System.String)
-  nameWithType: STUNMessage.CheckIntegrity(Byte[], String, String)
-  nameWithType.vb: STUNMessage.CheckIntegrity(Byte(), String, String)
+- uid: SIPSorcery.Net.STUNMessage.CheckIntegrity(System.Byte[])
+  name: CheckIntegrity(Byte[])
+  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_CheckIntegrity_System_Byte___
+  commentId: M:SIPSorcery.Net.STUNMessage.CheckIntegrity(System.Byte[])
+  name.vb: CheckIntegrity(Byte())
+  fullName: SIPSorcery.Net.STUNMessage.CheckIntegrity(System.Byte[])
+  fullName.vb: SIPSorcery.Net.STUNMessage.CheckIntegrity(System.Byte())
+  nameWithType: STUNMessage.CheckIntegrity(Byte[])
+  nameWithType.vb: STUNMessage.CheckIntegrity(Byte())
 - uid: SIPSorcery.Net.STUNMessage.CheckIntegrity*
   name: CheckIntegrity
   href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_CheckIntegrity_
@@ -22266,6 +22095,19 @@ references:
   commentId: F:SIPSorcery.Net.STUNMessage.Header
   fullName: SIPSorcery.Net.STUNMessage.Header
   nameWithType: STUNMessage.Header
+- uid: SIPSorcery.Net.STUNMessage.isFingerprintValid
+  name: isFingerprintValid
+  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_isFingerprintValid
+  commentId: P:SIPSorcery.Net.STUNMessage.isFingerprintValid
+  fullName: SIPSorcery.Net.STUNMessage.isFingerprintValid
+  nameWithType: STUNMessage.isFingerprintValid
+- uid: SIPSorcery.Net.STUNMessage.isFingerprintValid*
+  name: isFingerprintValid
+  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_isFingerprintValid_
+  commentId: Overload:SIPSorcery.Net.STUNMessage.isFingerprintValid
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNMessage.isFingerprintValid
+  nameWithType: STUNMessage.isFingerprintValid
 - uid: SIPSorcery.Net.STUNMessage.ParseSTUNMessage(System.Byte[],System.Int32)
   name: ParseSTUNMessage(Byte[], Int32)
   href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_ParseSTUNMessage_System_Byte___System_Int32_
@@ -23322,6 +23164,12 @@ references:
   commentId: M:SIPSorcery.SIP.App.ISIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
   fullName: SIPSorcery.SIP.App.ISIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
   nameWithType: ISIPClientUserAgent.Call(SIPCallDescriptor)
+- uid: SIPSorcery.SIP.App.ISIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.SIPEndPoint)
+  name: Call(SIPCallDescriptor, SIPEndPoint)
+  href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.App.ISIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.App.ISIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: ISIPClientUserAgent.Call(SIPCallDescriptor, SIPEndPoint)
 - uid: SIPSorcery.SIP.App.ISIPClientUserAgent.Call*
   name: Call
   href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_Call_
@@ -24708,12 +24556,6 @@ references:
   commentId: M:SIPSorcery.SIP.App.SIPClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SIPClientUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, System.String, System.String, SIPSorcery.SIP.App.SIPMonitorLogDelegate)
   nameWithType: SIPClientUserAgent.SIPClientUserAgent(SIPTransport, SIPEndPoint, String, String, SIPMonitorLogDelegate)
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.App.RtccGetCustomerDelegate,SIPSorcery.SIP.App.RtccGetRateDelegate,SIPSorcery.SIP.App.RtccGetBalanceDelegate,SIPSorcery.SIP.App.RtccReserveInitialCreditDelegate,SIPSorcery.SIP.App.RtccUpdateCdrDelegate)
-  name: SIPClientUserAgent(SIPTransport, SIPEndPoint, String, String, SIPMonitorLogDelegate, RtccGetCustomerDelegate, RtccGetRateDelegate, RtccGetBalanceDelegate, RtccReserveInitialCreditDelegate, RtccUpdateCdrDelegate)
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_App_SIPMonitorLogDelegate_SIPSorcery_SIP_App_RtccGetCustomerDelegate_SIPSorcery_SIP_App_RtccGetRateDelegate_SIPSorcery_SIP_App_RtccGetBalanceDelegate_SIPSorcery_SIP_App_RtccReserveInitialCreditDelegate_SIPSorcery_SIP_App_RtccUpdateCdrDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.App.RtccGetCustomerDelegate,SIPSorcery.SIP.App.RtccGetRateDelegate,SIPSorcery.SIP.App.RtccGetBalanceDelegate,SIPSorcery.SIP.App.RtccReserveInitialCreditDelegate,SIPSorcery.SIP.App.RtccUpdateCdrDelegate)
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SIPClientUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, System.String, System.String, SIPSorcery.SIP.App.SIPMonitorLogDelegate, SIPSorcery.SIP.App.RtccGetCustomerDelegate, SIPSorcery.SIP.App.RtccGetRateDelegate, SIPSorcery.SIP.App.RtccGetBalanceDelegate, SIPSorcery.SIP.App.RtccReserveInitialCreditDelegate, SIPSorcery.SIP.App.RtccUpdateCdrDelegate)
-  nameWithType: SIPClientUserAgent.SIPClientUserAgent(SIPTransport, SIPEndPoint, String, String, SIPMonitorLogDelegate, RtccGetCustomerDelegate, RtccGetRateDelegate, RtccGetBalanceDelegate, RtccReserveInitialCreditDelegate, RtccUpdateCdrDelegate)
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.#ctor*
   name: SIPClientUserAgent
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent__ctor_
@@ -24721,19 +24563,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SIPClientUserAgent
   nameWithType: SIPClientUserAgent.SIPClientUserAgent
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.AccountCode
-  name: AccountCode
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AccountCode
-  commentId: P:SIPSorcery.SIP.App.SIPClientUserAgent.AccountCode
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.AccountCode
-  nameWithType: SIPClientUserAgent.AccountCode
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.AccountCode*
-  name: AccountCode
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AccountCode_
-  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.AccountCode
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.AccountCode
-  nameWithType: SIPClientUserAgent.AccountCode
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.AdjustInvite
   name: AdjustInvite
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AdjustInvite
@@ -24759,6 +24588,12 @@ references:
   commentId: M:SIPSorcery.SIP.App.SIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
   nameWithType: SIPClientUserAgent.Call(SIPCallDescriptor)
+- uid: SIPSorcery.SIP.App.SIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.SIPEndPoint)
+  name: Call(SIPCallDescriptor, SIPEndPoint)
+  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.App.SIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPClientUserAgent.Call(SIPCallDescriptor, SIPEndPoint)
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.Call*
   name: Call
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_Call_
@@ -24881,45 +24716,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.PrackSupported
   nameWithType: SIPClientUserAgent.PrackSupported
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.Rate
-  name: Rate
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_Rate
-  commentId: P:SIPSorcery.SIP.App.SIPClientUserAgent.Rate
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.Rate
-  nameWithType: SIPClientUserAgent.Rate
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.Rate*
-  name: Rate
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_Rate_
-  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.Rate
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.Rate
-  nameWithType: SIPClientUserAgent.Rate
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.ReservedCredit
-  name: ReservedCredit
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_ReservedCredit
-  commentId: P:SIPSorcery.SIP.App.SIPClientUserAgent.ReservedCredit
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.ReservedCredit
-  nameWithType: SIPClientUserAgent.ReservedCredit
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.ReservedCredit*
-  name: ReservedCredit
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_ReservedCredit_
-  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.ReservedCredit
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.ReservedCredit
-  nameWithType: SIPClientUserAgent.ReservedCredit
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.ReservedSeconds
-  name: ReservedSeconds
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_ReservedSeconds
-  commentId: P:SIPSorcery.SIP.App.SIPClientUserAgent.ReservedSeconds
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.ReservedSeconds
-  nameWithType: SIPClientUserAgent.ReservedSeconds
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.ReservedSeconds*
-  name: ReservedSeconds
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_ReservedSeconds_
-  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.ReservedSeconds
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.ReservedSeconds
-  nameWithType: SIPClientUserAgent.ReservedSeconds
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.ServerTransaction
   name: ServerTransaction
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_ServerTransaction
@@ -24972,184 +24768,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.Update
   nameWithType: SIPClientUserAgent.Update
-- uid: SIPSorcery.SIP.App.SIPDNSManager
-  name: SIPDNSManager
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html
-  commentId: T:SIPSorcery.SIP.App.SIPDNSManager
-  fullName: SIPSorcery.SIP.App.SIPDNSManager
-  nameWithType: SIPDNSManager
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
-  name: DNSAAAARecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSAAAARecordLookup_SIPSorcery_SIP_SIPDNSServiceResult_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult, System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPDNSManager.DNSAAAARecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI)
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult)
-  name: DNSAAAARecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSAAAARecordLookup_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPDNSLookupResult_
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPDNSLookupResult)
-  nameWithType: SIPDNSManager.DNSAAAARecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult)
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup*
-  name: DNSAAAARecordLookup
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSAAAARecordLookup_
-  commentId: Overload:SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup
-  nameWithType: SIPDNSManager.DNSAAAARecordLookup
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
-  name: DNSARecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSARecordLookup_SIPSorcery_SIP_SIPDNSServiceResult_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult, System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPDNSManager.DNSARecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI)
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult)
-  name: DNSARecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSARecordLookup_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPDNSLookupResult_
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPDNSLookupResult)
-  nameWithType: SIPDNSManager.DNSARecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult)
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup*
-  name: DNSARecordLookup
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSARecordLookup_
-  commentId: Overload:SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup
-  nameWithType: SIPDNSManager.DNSARecordLookup
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,System.Nullable{System.Boolean})
-  name: DNSNameRecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI, Nullable<Boolean>)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNameRecordLookup_SIPSorcery_SIP_SIPDNSServiceResult_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_System_Nullable_System_Boolean__
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,System.Nullable{System.Boolean})
-  name.vb: DNSNameRecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI, Nullable(Of Boolean))
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(SIPSorcery.SIP.SIPDNSServiceResult, System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, System.Nullable<System.Boolean>)
-  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(SIPSorcery.SIP.SIPDNSServiceResult, System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, System.Nullable(Of System.Boolean))
-  nameWithType: SIPDNSManager.DNSNameRecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI, Nullable<Boolean>)
-  nameWithType.vb: SIPDNSManager.DNSNameRecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI, Nullable(Of Boolean))
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult,System.Nullable{System.Boolean},System.Int32)
-  name: DNSNameRecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult, Nullable<Boolean>, Int32)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNameRecordLookup_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPDNSLookupResult_System_Nullable_System_Boolean__System_Int32_
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult,System.Nullable{System.Boolean},System.Int32)
-  name.vb: DNSNameRecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult, Nullable(Of Boolean), Int32)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPDNSLookupResult, System.Nullable<System.Boolean>, System.Int32)
-  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPDNSLookupResult, System.Nullable(Of System.Boolean), System.Int32)
-  nameWithType: SIPDNSManager.DNSNameRecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult, Nullable<Boolean>, Int32)
-  nameWithType.vb: SIPDNSManager.DNSNameRecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult, Nullable(Of Boolean), Int32)
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult@,System.Nullable{System.Boolean})
-  name: DNSNameRecordLookup(String, Int32, Boolean, SIPURI, ref SIPDNSLookupResult, Nullable<Boolean>)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNameRecordLookup_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPDNSLookupResult__System_Nullable_System_Boolean__
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult@,System.Nullable{System.Boolean})
-  name.vb: DNSNameRecordLookup(String, Int32, Boolean, SIPURI, ByRef SIPDNSLookupResult, Nullable(Of Boolean))
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, ref SIPSorcery.SIP.SIPDNSLookupResult, System.Nullable<System.Boolean>)
-  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, ByRef SIPSorcery.SIP.SIPDNSLookupResult, System.Nullable(Of System.Boolean))
-  nameWithType: SIPDNSManager.DNSNameRecordLookup(String, Int32, Boolean, SIPURI, ref SIPDNSLookupResult, Nullable<Boolean>)
-  nameWithType.vb: SIPDNSManager.DNSNameRecordLookup(String, Int32, Boolean, SIPURI, ByRef SIPDNSLookupResult, Nullable(Of Boolean))
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup*
-  name: DNSNameRecordLookup
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNameRecordLookup_
-  commentId: Overload:SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup
-  nameWithType: SIPDNSManager.DNSNameRecordLookup
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNAPTRRecordLookup(System.String,System.Boolean,SIPSorcery.SIP.SIPDNSLookupResult@)
-  name: DNSNAPTRRecordLookup(String, Boolean, ref SIPDNSLookupResult)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNAPTRRecordLookup_System_String_System_Boolean_SIPSorcery_SIP_SIPDNSLookupResult__
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSNAPTRRecordLookup(System.String,System.Boolean,SIPSorcery.SIP.SIPDNSLookupResult@)
-  name.vb: DNSNAPTRRecordLookup(String, Boolean, ByRef SIPDNSLookupResult)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNAPTRRecordLookup(System.String, System.Boolean, ref SIPSorcery.SIP.SIPDNSLookupResult)
-  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.DNSNAPTRRecordLookup(System.String, System.Boolean, ByRef SIPSorcery.SIP.SIPDNSLookupResult)
-  nameWithType: SIPDNSManager.DNSNAPTRRecordLookup(String, Boolean, ref SIPDNSLookupResult)
-  nameWithType.vb: SIPDNSManager.DNSNAPTRRecordLookup(String, Boolean, ByRef SIPDNSLookupResult)
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNAPTRRecordLookup*
-  name: DNSNAPTRRecordLookup
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNAPTRRecordLookup_
-  commentId: Overload:SIPSorcery.SIP.App.SIPDNSManager.DNSNAPTRRecordLookup
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNAPTRRecordLookup
-  nameWithType: SIPDNSManager.DNSNAPTRRecordLookup
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSSRVRecordLookup(SIPSorcery.SIP.SIPSchemesEnum,SIPSorcery.SIP.SIPProtocolsEnum,System.String,System.Boolean,SIPSorcery.SIP.SIPDNSLookupResult@)
-  name: DNSSRVRecordLookup(SIPSchemesEnum, SIPProtocolsEnum, String, Boolean, ref SIPDNSLookupResult)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSSRVRecordLookup_SIPSorcery_SIP_SIPSchemesEnum_SIPSorcery_SIP_SIPProtocolsEnum_System_String_System_Boolean_SIPSorcery_SIP_SIPDNSLookupResult__
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSSRVRecordLookup(SIPSorcery.SIP.SIPSchemesEnum,SIPSorcery.SIP.SIPProtocolsEnum,System.String,System.Boolean,SIPSorcery.SIP.SIPDNSLookupResult@)
-  name.vb: DNSSRVRecordLookup(SIPSchemesEnum, SIPProtocolsEnum, String, Boolean, ByRef SIPDNSLookupResult)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSSRVRecordLookup(SIPSorcery.SIP.SIPSchemesEnum, SIPSorcery.SIP.SIPProtocolsEnum, System.String, System.Boolean, ref SIPSorcery.SIP.SIPDNSLookupResult)
-  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.DNSSRVRecordLookup(SIPSorcery.SIP.SIPSchemesEnum, SIPSorcery.SIP.SIPProtocolsEnum, System.String, System.Boolean, ByRef SIPSorcery.SIP.SIPDNSLookupResult)
-  nameWithType: SIPDNSManager.DNSSRVRecordLookup(SIPSchemesEnum, SIPProtocolsEnum, String, Boolean, ref SIPDNSLookupResult)
-  nameWithType.vb: SIPDNSManager.DNSSRVRecordLookup(SIPSchemesEnum, SIPProtocolsEnum, String, Boolean, ByRef SIPDNSLookupResult)
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSSRVRecordLookup*
-  name: DNSSRVRecordLookup
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSSRVRecordLookup_
-  commentId: Overload:SIPSorcery.SIP.App.SIPDNSManager.DNSSRVRecordLookup
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSSRVRecordLookup
-  nameWithType: SIPDNSManager.DNSSRVRecordLookup
-- uid: SIPSorcery.SIP.App.SIPDNSManager.MDNS_TLD
-  name: MDNS_TLD
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_MDNS_TLD
-  commentId: F:SIPSorcery.SIP.App.SIPDNSManager.MDNS_TLD
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.MDNS_TLD
-  nameWithType: SIPDNSManager.MDNS_TLD
-- uid: SIPSorcery.SIP.App.SIPDNSManager.PreferIPv6NameResolution
-  name: PreferIPv6NameResolution
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_PreferIPv6NameResolution
-  commentId: F:SIPSorcery.SIP.App.SIPDNSManager.PreferIPv6NameResolution
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.PreferIPv6NameResolution
-  nameWithType: SIPDNSManager.PreferIPv6NameResolution
-- uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI,System.Nullable{System.Boolean})
-  name: ResolveAsync(SIPURI, Nullable<Boolean>)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveAsync_SIPSorcery_SIP_SIPURI_System_Nullable_System_Boolean__
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI,System.Nullable{System.Boolean})
-  name.vb: ResolveAsync(SIPURI, Nullable(Of Boolean))
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI, System.Nullable<System.Boolean>)
-  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI, System.Nullable(Of System.Boolean))
-  nameWithType: SIPDNSManager.ResolveAsync(SIPURI, Nullable<Boolean>)
-  nameWithType.vb: SIPDNSManager.ResolveAsync(SIPURI, Nullable(Of Boolean))
-- uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync*
-  name: ResolveAsync
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveAsync_
-  commentId: Overload:SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync
-  nameWithType: SIPDNSManager.ResolveAsync
-- uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI,System.Boolean,System.Nullable{System.Boolean})
-  name: ResolveSIPService(SIPURI, Boolean, Nullable<Boolean>)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveSIPService_SIPSorcery_SIP_SIPURI_System_Boolean_System_Nullable_System_Boolean__
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI,System.Boolean,System.Nullable{System.Boolean})
-  name.vb: ResolveSIPService(SIPURI, Boolean, Nullable(Of Boolean))
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI, System.Boolean, System.Nullable<System.Boolean>)
-  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI, System.Boolean, System.Nullable(Of System.Boolean))
-  nameWithType: SIPDNSManager.ResolveSIPService(SIPURI, Boolean, Nullable<Boolean>)
-  nameWithType.vb: SIPDNSManager.ResolveSIPService(SIPURI, Boolean, Nullable(Of Boolean))
-- uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(System.String)
-  name: ResolveSIPService(String)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveSIPService_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(System.String)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(System.String)
-  nameWithType: SIPDNSManager.ResolveSIPService(String)
-- uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService*
-  name: ResolveSIPService
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveSIPService_
-  commentId: Overload:SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService
-  nameWithType: SIPDNSManager.ResolveSIPService
-- uid: SIPSorcery.SIP.App.SIPDNSManager.SIPMonitorLogEvent
-  name: SIPMonitorLogEvent
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_SIPMonitorLogEvent
-  commentId: F:SIPSorcery.SIP.App.SIPDNSManager.SIPMonitorLogEvent
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.SIPMonitorLogEvent
-  nameWithType: SIPDNSManager.SIPMonitorLogEvent
-- uid: SIPSorcery.SIP.App.SIPDNSManager.UseANYLookups
-  name: UseANYLookups
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_UseANYLookups
-  commentId: F:SIPSorcery.SIP.App.SIPDNSManager.UseANYLookups
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.UseANYLookups
-  nameWithType: SIPDNSManager.UseANYLookups
-- uid: SIPSorcery.SIP.App.SIPDNSManager.UseNAPTRLookups
-  name: UseNAPTRLookups
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_UseNAPTRLookups
-  commentId: F:SIPSorcery.SIP.App.SIPDNSManager.UseNAPTRLookups
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.UseNAPTRLookups
-  nameWithType: SIPDNSManager.UseNAPTRLookups
 - uid: SIPSorcery.SIP.App.SIPMonitorAuthenticationDelegate
   name: SIPMonitorAuthenticationDelegate
   href: api/SIPSorcery.SIP.App.SIPMonitorAuthenticationDelegate.html
@@ -27555,12 +27173,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.HTTPDigest.GetMD5HashBinHex
   nameWithType: HTTPDigest.GetMD5HashBinHex
-- uid: SIPSorcery.SIP.ResolveSIPEndPointDelegate
-  name: ResolveSIPEndPointDelegate
-  href: api/SIPSorcery.SIP.ResolveSIPEndPointDelegate.html
-  commentId: T:SIPSorcery.SIP.ResolveSIPEndPointDelegate
-  fullName: SIPSorcery.SIP.ResolveSIPEndPointDelegate
-  nameWithType: ResolveSIPEndPointDelegate
+- uid: SIPSorcery.SIP.ResolveSIPUriDelegate
+  name: ResolveSIPUriDelegate
+  href: api/SIPSorcery.SIP.ResolveSIPUriDelegate.html
+  commentId: T:SIPSorcery.SIP.ResolveSIPUriDelegate
+  fullName: SIPSorcery.SIP.ResolveSIPUriDelegate
+  nameWithType: ResolveSIPUriDelegate
 - uid: SIPSorcery.SIP.SIPAuthenticationHeader
   name: SIPAuthenticationHeader
   href: api/SIPSorcery.SIP.SIPAuthenticationHeader.html
@@ -28972,16 +28590,17 @@ references:
   commentId: F:SIPSorcery.SIP.SIPConstants.SIP_RESPONSE_REGEX
   fullName: SIPSorcery.SIP.SIPConstants.SIP_RESPONSE_REGEX
   nameWithType: SIPConstants.SIP_RESPONSE_REGEX
-- uid: SIPSorcery.SIP.SIPConstants.SIP_SERVER_STRING
-  name: SIP_SERVER_STRING
-  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SIP_SERVER_STRING
-  commentId: F:SIPSorcery.SIP.SIPConstants.SIP_SERVER_STRING
-  fullName: SIPSorcery.SIP.SIPConstants.SIP_SERVER_STRING
-  nameWithType: SIPConstants.SIP_SERVER_STRING
 - uid: SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
   name: SIP_USERAGENT_STRING
   href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SIP_USERAGENT_STRING
-  commentId: F:SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
+  commentId: P:SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
+  fullName: SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
+  nameWithType: SIPConstants.SIP_USERAGENT_STRING
+- uid: SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING*
+  name: SIP_USERAGENT_STRING
+  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SIP_USERAGENT_STRING_
+  commentId: Overload:SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
+  isSpec: "True"
   fullName: SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
   nameWithType: SIPConstants.SIP_USERAGENT_STRING
 - uid: SIPSorcery.SIP.SIPConstants.SIP_VERSION_STRING
@@ -29673,6 +29292,68 @@ references:
   commentId: F:SIPSorcery.SIP.SIPDialogueTransferModesEnum.PassThru
   fullName: SIPSorcery.SIP.SIPDialogueTransferModesEnum.PassThru
   nameWithType: SIPDialogueTransferModesEnum.PassThru
+- uid: SIPSorcery.SIP.SIPDns
+  name: SIPDns
+  href: api/SIPSorcery.SIP.SIPDns.html
+  commentId: T:SIPSorcery.SIP.SIPDns
+  fullName: SIPSorcery.SIP.SIPDns
+  nameWithType: SIPDns
+- uid: SIPSorcery.SIP.SIPDns.DNS_RETRIES_PER_SERVER
+  name: DNS_RETRIES_PER_SERVER
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_DNS_RETRIES_PER_SERVER
+  commentId: F:SIPSorcery.SIP.SIPDns.DNS_RETRIES_PER_SERVER
+  fullName: SIPSorcery.SIP.SIPDns.DNS_RETRIES_PER_SERVER
+  nameWithType: SIPDns.DNS_RETRIES_PER_SERVER
+- uid: SIPSorcery.SIP.SIPDns.DNS_TIMEOUT_SECONDS
+  name: DNS_TIMEOUT_SECONDS
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_DNS_TIMEOUT_SECONDS
+  commentId: F:SIPSorcery.SIP.SIPDns.DNS_TIMEOUT_SECONDS
+  fullName: SIPSorcery.SIP.SIPDns.DNS_TIMEOUT_SECONDS
+  nameWithType: SIPDns.DNS_TIMEOUT_SECONDS
+- uid: SIPSorcery.SIP.SIPDns.LookupClient
+  name: LookupClient
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_LookupClient
+  commentId: P:SIPSorcery.SIP.SIPDns.LookupClient
+  fullName: SIPSorcery.SIP.SIPDns.LookupClient
+  nameWithType: SIPDns.LookupClient
+- uid: SIPSorcery.SIP.SIPDns.LookupClient*
+  name: LookupClient
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_LookupClient_
+  commentId: Overload:SIPSorcery.SIP.SIPDns.LookupClient
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPDns.LookupClient
+  nameWithType: SIPDns.LookupClient
+- uid: SIPSorcery.SIP.SIPDns.MDNS_TLD
+  name: MDNS_TLD
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_MDNS_TLD
+  commentId: F:SIPSorcery.SIP.SIPDns.MDNS_TLD
+  fullName: SIPSorcery.SIP.SIPDns.MDNS_TLD
+  nameWithType: SIPDns.MDNS_TLD
+- uid: SIPSorcery.SIP.SIPDns.PreferIPv6NameResolution
+  name: PreferIPv6NameResolution
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_PreferIPv6NameResolution
+  commentId: F:SIPSorcery.SIP.SIPDns.PreferIPv6NameResolution
+  fullName: SIPSorcery.SIP.SIPDns.PreferIPv6NameResolution
+  nameWithType: SIPDns.PreferIPv6NameResolution
+- uid: SIPSorcery.SIP.SIPDns.Resolve(SIPSorcery.SIP.SIPURI,System.Boolean)
+  name: Resolve(SIPURI, Boolean)
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_Resolve_SIPSorcery_SIP_SIPURI_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPDns.Resolve(SIPSorcery.SIP.SIPURI,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPDns.Resolve(SIPSorcery.SIP.SIPURI, System.Boolean)
+  nameWithType: SIPDns.Resolve(SIPURI, Boolean)
+- uid: SIPSorcery.SIP.SIPDns.Resolve*
+  name: Resolve
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_Resolve_
+  commentId: Overload:SIPSorcery.SIP.SIPDns.Resolve
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPDns.Resolve
+  nameWithType: SIPDns.Resolve
+- uid: SIPSorcery.SIP.SIPDns.UseANYLookups
+  name: UseANYLookups
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_UseANYLookups
+  commentId: F:SIPSorcery.SIP.SIPDns.UseANYLookups
+  fullName: SIPSorcery.SIP.SIPDns.UseANYLookups
+  nameWithType: SIPDns.UseANYLookups
 - uid: SIPSorcery.SIP.SIPDNSConstants
   name: SIPDNSConstants
   href: api/SIPSorcery.SIP.SIPDNSConstants.html
@@ -29745,296 +29426,18 @@ references:
   commentId: F:SIPSorcery.SIP.SIPDNSConstants.SRV_SIPS_WEBSOCKET_QUERY_PREFIX
   fullName: SIPSorcery.SIP.SIPDNSConstants.SRV_SIPS_WEBSOCKET_QUERY_PREFIX
   nameWithType: SIPDNSConstants.SRV_SIPS_WEBSOCKET_QUERY_PREFIX
-- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint
-  name: SIPDNSLookupEndPoint
-  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html
-  commentId: T:SIPSorcery.SIP.SIPDNSLookupEndPoint
-  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint
-  nameWithType: SIPDNSLookupEndPoint
-- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint.#ctor(SIPSorcery.SIP.SIPEndPoint,System.UInt32)
-  name: SIPDNSLookupEndPoint(SIPEndPoint, UInt32)
-  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html#SIPSorcery_SIP_SIPDNSLookupEndPoint__ctor_SIPSorcery_SIP_SIPEndPoint_System_UInt32_
-  commentId: M:SIPSorcery.SIP.SIPDNSLookupEndPoint.#ctor(SIPSorcery.SIP.SIPEndPoint,System.UInt32)
-  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.SIPDNSLookupEndPoint(SIPSorcery.SIP.SIPEndPoint, System.UInt32)
-  nameWithType: SIPDNSLookupEndPoint.SIPDNSLookupEndPoint(SIPEndPoint, UInt32)
-- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint.#ctor*
-  name: SIPDNSLookupEndPoint
-  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html#SIPSorcery_SIP_SIPDNSLookupEndPoint__ctor_
-  commentId: Overload:SIPSorcery.SIP.SIPDNSLookupEndPoint.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.SIPDNSLookupEndPoint
-  nameWithType: SIPDNSLookupEndPoint.SIPDNSLookupEndPoint
-- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint.FailedAt
-  name: FailedAt
-  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html#SIPSorcery_SIP_SIPDNSLookupEndPoint_FailedAt
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupEndPoint.FailedAt
-  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.FailedAt
-  nameWithType: SIPDNSLookupEndPoint.FailedAt
-- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint.FailureReason
-  name: FailureReason
-  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html#SIPSorcery_SIP_SIPDNSLookupEndPoint_FailureReason
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupEndPoint.FailureReason
-  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.FailureReason
-  nameWithType: SIPDNSLookupEndPoint.FailureReason
-- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint.LookupEndPoint
-  name: LookupEndPoint
-  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html#SIPSorcery_SIP_SIPDNSLookupEndPoint_LookupEndPoint
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupEndPoint.LookupEndPoint
-  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.LookupEndPoint
-  nameWithType: SIPDNSLookupEndPoint.LookupEndPoint
-- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint.ResolvedAt
-  name: ResolvedAt
-  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html#SIPSorcery_SIP_SIPDNSLookupEndPoint_ResolvedAt
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupEndPoint.ResolvedAt
-  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.ResolvedAt
-  nameWithType: SIPDNSLookupEndPoint.ResolvedAt
-- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint.TTL
-  name: TTL
-  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html#SIPSorcery_SIP_SIPDNSLookupEndPoint_TTL
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupEndPoint.TTL
-  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.TTL
-  nameWithType: SIPDNSLookupEndPoint.TTL
-- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint.ValidUntil
-  name: ValidUntil
-  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html#SIPSorcery_SIP_SIPDNSLookupEndPoint_ValidUntil
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupEndPoint.ValidUntil
-  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.ValidUntil
-  nameWithType: SIPDNSLookupEndPoint.ValidUntil
-- uid: SIPSorcery.SIP.SIPDNSLookupResult
-  name: SIPDNSLookupResult
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html
-  commentId: T:SIPSorcery.SIP.SIPDNSLookupResult
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult
-  nameWithType: SIPDNSLookupResult
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.#ctor(SIPSorcery.SIP.SIPURI)
-  name: SIPDNSLookupResult(SIPURI)
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult__ctor_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.SIPDNSLookupResult.#ctor(SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.SIPDNSLookupResult(SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPDNSLookupResult.SIPDNSLookupResult(SIPURI)
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.#ctor(SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPEndPoint)
-  name: SIPDNSLookupResult(SIPURI, SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult__ctor_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPDNSLookupResult.#ctor(SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.SIPDNSLookupResult(SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPDNSLookupResult.SIPDNSLookupResult(SIPURI, SIPEndPoint)
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.#ctor(SIPSorcery.SIP.SIPURI,System.String)
-  name: SIPDNSLookupResult(SIPURI, String)
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult__ctor_SIPSorcery_SIP_SIPURI_System_String_
-  commentId: M:SIPSorcery.SIP.SIPDNSLookupResult.#ctor(SIPSorcery.SIP.SIPURI,System.String)
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.SIPDNSLookupResult(SIPSorcery.SIP.SIPURI, System.String)
-  nameWithType: SIPDNSLookupResult.SIPDNSLookupResult(SIPURI, String)
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.#ctor*
-  name: SIPDNSLookupResult
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult__ctor_
-  commentId: Overload:SIPSorcery.SIP.SIPDNSLookupResult.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.SIPDNSLookupResult
-  nameWithType: SIPDNSLookupResult.SIPDNSLookupResult
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.AddLookupResult(SIPSorcery.SIP.SIPDNSLookupEndPoint)
-  name: AddLookupResult(SIPDNSLookupEndPoint)
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_AddLookupResult_SIPSorcery_SIP_SIPDNSLookupEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPDNSLookupResult.AddLookupResult(SIPSorcery.SIP.SIPDNSLookupEndPoint)
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.AddLookupResult(SIPSorcery.SIP.SIPDNSLookupEndPoint)
-  nameWithType: SIPDNSLookupResult.AddLookupResult(SIPDNSLookupEndPoint)
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.AddLookupResult*
-  name: AddLookupResult
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_AddLookupResult_
-  commentId: Overload:SIPSorcery.SIP.SIPDNSLookupResult.AddLookupResult
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.AddLookupResult
-  nameWithType: SIPDNSLookupResult.AddLookupResult
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.AddNAPTRResult(SIPSorcery.SIP.SIPDNSServiceResult)
-  name: AddNAPTRResult(SIPDNSServiceResult)
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_AddNAPTRResult_SIPSorcery_SIP_SIPDNSServiceResult_
-  commentId: M:SIPSorcery.SIP.SIPDNSLookupResult.AddNAPTRResult(SIPSorcery.SIP.SIPDNSServiceResult)
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.AddNAPTRResult(SIPSorcery.SIP.SIPDNSServiceResult)
-  nameWithType: SIPDNSLookupResult.AddNAPTRResult(SIPDNSServiceResult)
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.AddNAPTRResult*
-  name: AddNAPTRResult
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_AddNAPTRResult_
-  commentId: Overload:SIPSorcery.SIP.SIPDNSLookupResult.AddNAPTRResult
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.AddNAPTRResult
-  nameWithType: SIPDNSLookupResult.AddNAPTRResult
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.AddSRVResult(SIPSorcery.SIP.SIPDNSServiceResult)
-  name: AddSRVResult(SIPDNSServiceResult)
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_AddSRVResult_SIPSorcery_SIP_SIPDNSServiceResult_
-  commentId: M:SIPSorcery.SIP.SIPDNSLookupResult.AddSRVResult(SIPSorcery.SIP.SIPDNSServiceResult)
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.AddSRVResult(SIPSorcery.SIP.SIPDNSServiceResult)
-  nameWithType: SIPDNSLookupResult.AddSRVResult(SIPDNSServiceResult)
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.AddSRVResult*
-  name: AddSRVResult
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_AddSRVResult_
-  commentId: Overload:SIPSorcery.SIP.SIPDNSLookupResult.AddSRVResult
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.AddSRVResult
-  nameWithType: SIPDNSLookupResult.AddSRVResult
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.ATimedoutAt
-  name: ATimedoutAt
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_ATimedoutAt
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.ATimedoutAt
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.ATimedoutAt
-  nameWithType: SIPDNSLookupResult.ATimedoutAt
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.EndPointResults
-  name: EndPointResults
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_EndPointResults
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.EndPointResults
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.EndPointResults
-  nameWithType: SIPDNSLookupResult.EndPointResults
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.GetNextUnusedSRV
-  name: GetNextUnusedSRV()
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_GetNextUnusedSRV
-  commentId: M:SIPSorcery.SIP.SIPDNSLookupResult.GetNextUnusedSRV
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.GetNextUnusedSRV()
-  nameWithType: SIPDNSLookupResult.GetNextUnusedSRV()
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.GetNextUnusedSRV*
-  name: GetNextUnusedSRV
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_GetNextUnusedSRV_
-  commentId: Overload:SIPSorcery.SIP.SIPDNSLookupResult.GetNextUnusedSRV
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.GetNextUnusedSRV
-  nameWithType: SIPDNSLookupResult.GetNextUnusedSRV
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.GetSIPEndPoint
-  name: GetSIPEndPoint()
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_GetSIPEndPoint
-  commentId: M:SIPSorcery.SIP.SIPDNSLookupResult.GetSIPEndPoint
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.GetSIPEndPoint()
-  nameWithType: SIPDNSLookupResult.GetSIPEndPoint()
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.GetSIPEndPoint*
-  name: GetSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_GetSIPEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPDNSLookupResult.GetSIPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.GetSIPEndPoint
-  nameWithType: SIPDNSLookupResult.GetSIPEndPoint
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.Inserted
-  name: Inserted
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_Inserted
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.Inserted
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.Inserted
-  nameWithType: SIPDNSLookupResult.Inserted
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.LookupError
-  name: LookupError
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_LookupError
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.LookupError
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.LookupError
-  nameWithType: SIPDNSLookupResult.LookupError
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.NAPTRTimedoutAt
-  name: NAPTRTimedoutAt
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_NAPTRTimedoutAt
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.NAPTRTimedoutAt
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.NAPTRTimedoutAt
-  nameWithType: SIPDNSLookupResult.NAPTRTimedoutAt
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.Pending
-  name: Pending
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_Pending
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.Pending
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.Pending
-  nameWithType: SIPDNSLookupResult.Pending
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.SIPNAPTRResults
-  name: SIPNAPTRResults
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_SIPNAPTRResults
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.SIPNAPTRResults
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.SIPNAPTRResults
-  nameWithType: SIPDNSLookupResult.SIPNAPTRResults
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.SIPSRVResults
-  name: SIPSRVResults
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_SIPSRVResults
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.SIPSRVResults
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.SIPSRVResults
-  nameWithType: SIPDNSLookupResult.SIPSRVResults
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.SRVTimedoutAt
-  name: SRVTimedoutAt
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_SRVTimedoutAt
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.SRVTimedoutAt
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.SRVTimedoutAt
-  nameWithType: SIPDNSLookupResult.SRVTimedoutAt
-- uid: SIPSorcery.SIP.SIPDNSLookupResult.URI
-  name: URI
-  href: api/SIPSorcery.SIP.SIPDNSLookupResult.html#SIPSorcery_SIP_SIPDNSLookupResult_URI
-  commentId: F:SIPSorcery.SIP.SIPDNSLookupResult.URI
-  fullName: SIPSorcery.SIP.SIPDNSLookupResult.URI
-  nameWithType: SIPDNSLookupResult.URI
-- uid: SIPSorcery.SIP.SIPDNSServiceResult
-  name: SIPDNSServiceResult
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html
-  commentId: T:SIPSorcery.SIP.SIPDNSServiceResult
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult
-  nameWithType: SIPDNSServiceResult
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.#ctor(SIPSorcery.SIP.SIPServicesEnum,System.Int32,System.Int32,System.UInt32,System.String,System.Int32,System.DateTime)
-  name: SIPDNSServiceResult(SIPServicesEnum, Int32, Int32, UInt32, String, Int32, DateTime)
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult__ctor_SIPSorcery_SIP_SIPServicesEnum_System_Int32_System_Int32_System_UInt32_System_String_System_Int32_System_DateTime_
-  commentId: M:SIPSorcery.SIP.SIPDNSServiceResult.#ctor(SIPSorcery.SIP.SIPServicesEnum,System.Int32,System.Int32,System.UInt32,System.String,System.Int32,System.DateTime)
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.SIPDNSServiceResult(SIPSorcery.SIP.SIPServicesEnum, System.Int32, System.Int32, System.UInt32, System.String, System.Int32, System.DateTime)
-  nameWithType: SIPDNSServiceResult.SIPDNSServiceResult(SIPServicesEnum, Int32, Int32, UInt32, String, Int32, DateTime)
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.#ctor*
-  name: SIPDNSServiceResult
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult__ctor_
-  commentId: Overload:SIPSorcery.SIP.SIPDNSServiceResult.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.SIPDNSServiceResult
-  nameWithType: SIPDNSServiceResult.SIPDNSServiceResult
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.Data
-  name: Data
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_Data
-  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.Data
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.Data
-  nameWithType: SIPDNSServiceResult.Data
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.EndPointsResolvedAt
-  name: EndPointsResolvedAt
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_EndPointsResolvedAt
-  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.EndPointsResolvedAt
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.EndPointsResolvedAt
-  nameWithType: SIPDNSServiceResult.EndPointsResolvedAt
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.Port
-  name: Port
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_Port
-  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.Port
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.Port
-  nameWithType: SIPDNSServiceResult.Port
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.Priority
-  name: Priority
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_Priority
-  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.Priority
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.Priority
-  nameWithType: SIPDNSServiceResult.Priority
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.ResolvedAt
-  name: ResolvedAt
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_ResolvedAt
-  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.ResolvedAt
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.ResolvedAt
-  nameWithType: SIPDNSServiceResult.ResolvedAt
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.SIPService
-  name: SIPService
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_SIPService
-  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.SIPService
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.SIPService
-  nameWithType: SIPDNSServiceResult.SIPService
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.TTL
-  name: TTL
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_TTL
-  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.TTL
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.TTL
-  nameWithType: SIPDNSServiceResult.TTL
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.ValidUntil
-  name: ValidUntil
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_ValidUntil
-  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.ValidUntil
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.ValidUntil
-  nameWithType: SIPDNSServiceResult.ValidUntil
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.Weight
-  name: Weight
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_Weight
-  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.Weight
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.Weight
-  nameWithType: SIPDNSServiceResult.Weight
 - uid: SIPSorcery.SIP.SIPEndPoint
   name: SIPEndPoint
   href: api/SIPSorcery.SIP.SIPEndPoint.html
   commentId: T:SIPSorcery.SIP.SIPEndPoint
   fullName: SIPSorcery.SIP.SIPEndPoint
   nameWithType: SIPEndPoint
+- uid: SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPAddress,System.Int32)
+  name: SIPEndPoint(SIPProtocolsEnum, IPAddress, Int32)
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPAddress,System.Int32)
+  fullName: SIPSorcery.SIP.SIPEndPoint.SIPEndPoint(SIPSorcery.SIP.SIPProtocolsEnum, System.Net.IPAddress, System.Int32)
+  nameWithType: SIPEndPoint.SIPEndPoint(SIPProtocolsEnum, IPAddress, Int32)
 - uid: SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPAddress,System.Int32,System.String,System.String)
   name: SIPEndPoint(SIPProtocolsEnum, IPAddress, Int32, String, String)
   href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPAddress_System_Int32_System_String_System_String_
@@ -30241,19 +29644,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPEndPoint.Protocol
   nameWithType: SIPEndPoint.Protocol
-- uid: SIPSorcery.SIP.SIPEndPoint.Scheme
-  name: Scheme
-  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_Scheme
-  commentId: P:SIPSorcery.SIP.SIPEndPoint.Scheme
-  fullName: SIPSorcery.SIP.SIPEndPoint.Scheme
-  nameWithType: SIPEndPoint.Scheme
-- uid: SIPSorcery.SIP.SIPEndPoint.Scheme*
-  name: Scheme
-  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_Scheme_
-  commentId: Overload:SIPSorcery.SIP.SIPEndPoint.Scheme
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEndPoint.Scheme
-  nameWithType: SIPEndPoint.Scheme
 - uid: SIPSorcery.SIP.SIPEndPoint.ToString
   name: ToString()
   href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_ToString
@@ -33784,12 +33174,6 @@ references:
   commentId: M:SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
   fullName: SIPSorcery.SIP.SIPResponse.SIPResponse(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String)
   nameWithType: SIPResponse.SIPResponse(SIPResponseStatusCodesEnum, String)
-- uid: SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  name: SIPResponse(SIPResponseStatusCodesEnum, String, SIPEndPoint, SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse__ctor_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPResponse.SIPResponse(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPResponse.SIPResponse(SIPResponseStatusCodesEnum, String, SIPEndPoint, SIPEndPoint)
 - uid: SIPSorcery.SIP.SIPResponse.#ctor*
   name: SIPResponse
   href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse__ctor_
@@ -34739,6 +34123,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPServices.GetService
   nameWithType: SIPServices.GetService
+- uid: SIPSorcery.SIP.SIPServices.GetSRVProtocolForSIPURI(SIPSorcery.SIP.SIPURI)
+  name: GetSRVProtocolForSIPURI(SIPURI)
+  href: api/SIPSorcery.SIP.SIPServices.html#SIPSorcery_SIP_SIPServices_GetSRVProtocolForSIPURI_SIPSorcery_SIP_SIPURI_
+  commentId: M:SIPSorcery.SIP.SIPServices.GetSRVProtocolForSIPURI(SIPSorcery.SIP.SIPURI)
+  fullName: SIPSorcery.SIP.SIPServices.GetSRVProtocolForSIPURI(SIPSorcery.SIP.SIPURI)
+  nameWithType: SIPServices.GetSRVProtocolForSIPURI(SIPURI)
+- uid: SIPSorcery.SIP.SIPServices.GetSRVProtocolForSIPURI*
+  name: GetSRVProtocolForSIPURI
+  href: api/SIPSorcery.SIP.SIPServices.html#SIPSorcery_SIP_SIPServices_GetSRVProtocolForSIPURI_
+  commentId: Overload:SIPSorcery.SIP.SIPServices.GetSRVProtocolForSIPURI
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPServices.GetSRVProtocolForSIPURI
+  nameWithType: SIPServices.GetSRVProtocolForSIPURI
 - uid: SIPSorcery.SIP.SIPServicesEnum
   name: SIPServicesEnum
   href: api/SIPSorcery.SIP.SIPServicesEnum.html
@@ -36152,12 +35549,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTransport.#ctor
   fullName: SIPSorcery.SIP.SIPTransport.SIPTransport()
   nameWithType: SIPTransport.SIPTransport()
-- uid: SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean,SIPSorcery.SIP.ResolveSIPEndPointDelegate)
-  name: SIPTransport(Boolean, ResolveSIPEndPointDelegate)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport__ctor_System_Boolean_SIPSorcery_SIP_ResolveSIPEndPointDelegate_
-  commentId: M:SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean,SIPSorcery.SIP.ResolveSIPEndPointDelegate)
-  fullName: SIPSorcery.SIP.SIPTransport.SIPTransport(System.Boolean, SIPSorcery.SIP.ResolveSIPEndPointDelegate)
-  nameWithType: SIPTransport.SIPTransport(Boolean, ResolveSIPEndPointDelegate)
+- uid: SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean)
+  name: SIPTransport(Boolean)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport__ctor_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTransport.SIPTransport(System.Boolean)
+  nameWithType: SIPTransport.SIPTransport(Boolean)
 - uid: SIPSorcery.SIP.SIPTransport.#ctor*
   name: SIPTransport
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport__ctor_
@@ -36238,32 +35635,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.Dispose
   nameWithType: SIPTransport.Dispose
-- uid: SIPSorcery.SIP.SIPTransport.GetHostEndPoint(System.String,System.Boolean)
-  name: GetHostEndPoint(String, Boolean)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetHostEndPoint_System_String_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetHostEndPoint(System.String,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPTransport.GetHostEndPoint(System.String, System.Boolean)
-  nameWithType: SIPTransport.GetHostEndPoint(String, Boolean)
-- uid: SIPSorcery.SIP.SIPTransport.GetHostEndPoint*
-  name: GetHostEndPoint
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetHostEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.GetHostEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.GetHostEndPoint
-  nameWithType: SIPTransport.GetHostEndPoint
-- uid: SIPSorcery.SIP.SIPTransport.GetRequestEndPoint(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
-  name: GetRequestEndPoint(SIPRequest, SIPEndPoint, Boolean)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetRequestEndPoint_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetRequestEndPoint(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPTransport.GetRequestEndPoint(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPEndPoint, System.Boolean)
-  nameWithType: SIPTransport.GetRequestEndPoint(SIPRequest, SIPEndPoint, Boolean)
-- uid: SIPSorcery.SIP.SIPTransport.GetRequestEndPoint*
-  name: GetRequestEndPoint
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetRequestEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.GetRequestEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.GetRequestEndPoint
-  nameWithType: SIPTransport.GetRequestEndPoint
 - uid: SIPSorcery.SIP.SIPTransport.GetSIPChannels
   name: GetSIPChannels()
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetSIPChannels
@@ -36277,19 +35648,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.GetSIPChannels
   nameWithType: SIPTransport.GetSIPChannels
-- uid: SIPSorcery.SIP.SIPTransport.GetURIEndPoint(SIPSorcery.SIP.SIPURI,System.Boolean)
-  name: GetURIEndPoint(SIPURI, Boolean)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetURIEndPoint_SIPSorcery_SIP_SIPURI_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetURIEndPoint(SIPSorcery.SIP.SIPURI,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPTransport.GetURIEndPoint(SIPSorcery.SIP.SIPURI, System.Boolean)
-  nameWithType: SIPTransport.GetURIEndPoint(SIPURI, Boolean)
-- uid: SIPSorcery.SIP.SIPTransport.GetURIEndPoint*
-  name: GetURIEndPoint
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetURIEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.GetURIEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.GetURIEndPoint
-  nameWithType: SIPTransport.GetURIEndPoint
 - uid: SIPSorcery.SIP.SIPTransport.m_allowedSIPMethods
   name: m_allowedSIPMethods
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_m_allowedSIPMethods
@@ -36338,6 +35696,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.RemoveSIPChannel
   nameWithType: SIPTransport.RemoveSIPChannel
+- uid: SIPSorcery.SIP.SIPTransport.ResolveSIPUri
+  name: ResolveSIPUri
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_ResolveSIPUri
+  commentId: F:SIPSorcery.SIP.SIPTransport.ResolveSIPUri
+  fullName: SIPSorcery.SIP.SIPTransport.ResolveSIPUri
+  nameWithType: SIPTransport.ResolveSIPUri
 - uid: SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])
   name: SendRawAsync(SIPEndPoint, SIPEndPoint, Byte[])
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRawAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___
