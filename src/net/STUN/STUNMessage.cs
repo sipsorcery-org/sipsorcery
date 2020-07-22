@@ -95,7 +95,7 @@ namespace SIPSorcery.Net
                     stunMessage.Attributes = STUNAttribute.ParseMessageAttributes(buffer, STUNHeader.STUN_HEADER_LENGTH, bufferLength);
                 }
 
-                if (stunMessage.Attributes.Last().AttributeType == STUNAttributeTypesEnum.FingerPrint)
+                if (stunMessage.Attributes.Count > 0 && stunMessage.Attributes.Last().AttributeType == STUNAttributeTypesEnum.FingerPrint)
                 {
                     // Check fingerprint.
                     var fingerprintAttribute = stunMessage.Attributes.Last();

@@ -34,16 +34,14 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-    <Version>4.0.58-pre</Version>
+    <Version>4.0.59-pre</Version>
     <Authors>Aaron Clauson &amp; Contributors</Authors>
     <Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorcery</Title>
     <Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
     <Description>
-      This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and related protocols plus experimental support for WebRTC.
-      This library is largely a .Net implementation and not a wrapper for a 3rd party library. The exceptions being codec and media device integrations which are in the separate SIPSorceryMedia
-      library.
+      Real-time communications library with full support for the Session Initiation Protocol (SIP) and WebRTC. No wrappers and no native libraries required.
     </Description>
     <Company>SIP Sorcery PTY LTD</Company>
     <Product>SIPSorcery</Product>
@@ -58,7 +56,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.58-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
+    <PackageReleaseNotes>- v4.0.59-pre: WebRTC data channel support.
+- v4.0.58-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
 - v4.0.55-pre: RtpIceChannel support for TURN relaying.
 - v4.0.53-pre: Add STUN server support for WebRTC connection checks.
 - v4.0.52-pre: Modify RTCPeerConnection so it can be used by SIPUserAgent.
@@ -91,9 +90,8 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <AssemblyVersion>4.0.58.0</AssemblyVersion>
-    <FileVersion>4.0.58.0</FileVersion>
-    <UserSecretsId>fbb23854-472d-4529-a87e-5688407b8d59</UserSecretsId>
+    <AssemblyVersion>4.0.59.0</AssemblyVersion>
+    <FileVersion>4.0.59.0</FileVersion>
   </PropertyGroup>
 
 
