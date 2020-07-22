@@ -212,8 +212,6 @@ namespace SIPSorcery
             Log.LogInformation("Waiting 1s for calls to be cleaned up...");
             Task.Delay(1000).Wait();
 
-            SIPSorcery.Net.DNSManager.Stop();
-
             if (sipTransport != null)
             {
                 Log.LogInformation("Shutting down SIP transport...");

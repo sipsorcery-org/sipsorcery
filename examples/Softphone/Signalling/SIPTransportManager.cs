@@ -67,8 +67,6 @@ namespace SIPSorcery.SoftPhone
             {
                 SIPTransport.Shutdown();
             }
-
-            DNSManager.Stop();
         }
 
         /// <summary>

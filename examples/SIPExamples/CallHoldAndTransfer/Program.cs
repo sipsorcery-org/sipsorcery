@@ -243,8 +243,6 @@ namespace SIPSorcery
                 Task.Delay(1000).Wait();
             }
 
-            SIPSorcery.Net.DNSManager.Stop();
-
             if (sipTransport != null)
             {
                 Log.LogInformation("Shutting down SIP transport...");

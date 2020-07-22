@@ -71,8 +71,6 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            SIPSorcery.Net.DNSManager.Stop();
-
             if (_sipTransport != null)
             {
                 Log.LogInformation("Shutting down SIP transport...");

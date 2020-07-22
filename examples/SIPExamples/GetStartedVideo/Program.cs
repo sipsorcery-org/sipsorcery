@@ -140,7 +140,6 @@ namespace demo
             // Clean up.
             _form.BeginInvoke(new Action(() => _form.Close()));
             _sipTransport.Shutdown();
-            SIPSorcery.Net.DNSManager.Stop();
         }
 
         private static Task OnSIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
