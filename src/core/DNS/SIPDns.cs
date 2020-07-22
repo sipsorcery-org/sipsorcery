@@ -114,7 +114,7 @@ namespace SIPSorcery.SIP
         /// <param name="uri">The SIP URI to lookup.</param>
         /// <param name="queryType">Whether the address lookup should be A or AAAA.</param>
         /// <returns>A SIPEndPoint or null.</returns>
-        private static Task<SIPEndPoint> Resolve(SIPURI uri, QueryType queryType)
+        private static async Task<SIPEndPoint> Resolve(SIPURI uri, QueryType queryType)
         {
             if (uri == null || String.IsNullOrWhiteSpace(uri.MAddrOrHostAddress))
             {
@@ -129,7 +129,7 @@ namespace SIPSorcery.SIP
             if (IPAddress.TryParse(uri.MAddrOrHostAddress, out var ipAddress))
             {
                 // Target is already an IP address, no DNS lookup required.
-                return Task.FromResult(new SIPEndPoint(uri.Protocol, ipAddress, uriPort));
+                return new SIPEndPoint(uri.Protocol, ipAddress, uriPort);
             }
             else
             {
@@ -160,27 +160,27 @@ namespace SIPSorcery.SIP
                         if (addressList?.Length == 0)
                         {
                             logger.LogWarning($"Operating System DNS lookup failed for {uri.MAddrOrHostAddress}.");
-                            return Task.FromResult<SIPEndPoint>(null);
+                            return null;
                         }
                         else
                         {
                             if (addressList.Any(x => x.AddressFamily == family))
                             {
                                 var addressResult = addressList.First(x => x.AddressFamily == family);
-                                return Task.FromResult(new SIPEndPoint(uri.Protocol, addressResult, uriPort));
+                                return new SIPEndPoint(uri.Protocol, addressResult, uriPort);
                             }
                             else
                             {
                                 // Didn't get a result for the preferred address family so just use the 
                                 // first available result.
                                 var addressResult = addressList.First();
-                                return Task.FromResult(new SIPEndPoint(uri.Protocol, addressResult, uriPort));
+                                return new SIPEndPoint(uri.Protocol, addressResult, uriPort);
                             }
                         }
                     }
                     else
                     {
-                        return Task.FromResult<SIPEndPoint>(null);
+                        return null;
                     }
                 }
                 else
@@ -188,43 +188,43 @@ namespace SIPSorcery.SIP
                     if (uri.HostPort != null)
                     {
                         // Explicit port means no SRV lookup.
-                        return Task.FromResult(HostQuery(uri.Protocol, uri.MAddrOrHostAddress, uriPort, queryType));
+                        return HostQuery(uri.Protocol, uri.MAddrOrHostAddress, uriPort, queryType);
                     }
                     else
                     {
                         // No explicit port so use a SRV -> (A | AAAA -> A | ANY) record lookup.
                         var srvProtocol = SIPServices.GetSRVProtocolForSIPURI(uri);
-                        return _lookupClient.ResolveServiceAsync(uri.MAddrOrHostAddress, uri.Scheme.ToString(), srvProtocol.ToString())
-                            .ContinueWith<SIPEndPoint>(x =>
+                        try
+                        {
+                            ServiceHostEntry srvResult = null;
+                            var srvResults = await _lookupClient.ResolveServiceAsync(uri.MAddrOrHostAddress, uri.Scheme.ToString(), srvProtocol.ToString()).ConfigureAwait(false);
+                            if (srvResults == null || srvResults.Count() == 0)
                             {
-                                ServiceHostEntry srvResult = null;
+                                logger.LogWarning($"SIP DNS SRV lookup returned no results for {uri}.");
+                            }
+                            else
+                            {
+                                srvResult = srvResults.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
+                            }
 
-                                if (x.IsFaulted)
-                                {
-                                    logger.LogWarning($"SIP DNS SRV lookup failure for {uri}. {x.Exception?.InnerException?.Message}");
-                                }
-                                else if (x.Result == null || x.Result.Count() == 0)
-                                {
-                                    logger.LogWarning($"SIP DNS SRV lookup returned no results for {uri}.");
-                                }
-                                else
-                                {
-                                    srvResult = x.Result.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
-                                }
+                            string host = uri.MAddrOrHostAddress;       // If no SRV results then fallback is to lookup the hostname directly.
+                            int port = SIPConstants.DEFAULT_SIP_PORT;   // If no SRV results then fallback is to use the default port.
 
-                                string host = uri.MAddrOrHostAddress;       // If no SRV results then fallback is to lookup the hostname directly.
-                                int port = SIPConstants.DEFAULT_SIP_PORT;   // If no SRV results then fallback is to use the default port.
+                            if (srvResult != null)
+                            {
+                                host = srvResult.HostName;
+                                port = srvResult.Port;
+                            }
 
-                                if (srvResult != null)
-                                {
-                                    host = srvResult.HostName;
-                                    port = srvResult.Port;
-                                }
-
-                                return HostQuery(uri.Protocol, host, port, queryType);
-                            });
+                            return HostQuery(uri.Protocol, host, port, queryType);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogWarning($"SIP DNS SRV lookup failure for {uri}. {e?.InnerException?.Message}");
+                        }                               
                     }
                 }
+                return null;
             }
         }
 
