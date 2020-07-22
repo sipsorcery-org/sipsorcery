@@ -203,6 +203,11 @@ namespace SIPSorcery.Net.Sctp
                             ((SCTPByteStreamListener)_li).onMessage(_stream, data);
                             _delivered = true;
                         }
+                        else
+                        {
+                            _li.onDataMessage(_stream, _data);
+                            _delivered = true;
+                        }
                         break;
                     case DataChunk.WEBRTCstringEMPTY:
                         data = new byte[0];
