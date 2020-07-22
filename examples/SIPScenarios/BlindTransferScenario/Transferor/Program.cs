@@ -66,8 +66,6 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            SIPSorcery.Net.DNSManager.Stop();
-
             if (_sipTransport != null)
             {
                 Log.LogInformation("Shutting down SIP transport...");
@@ -246,7 +244,7 @@ namespace SIPSorcery
         /// <summary>
         /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
         /// </summary>
-        private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
+        private static void RtpSession_OnReceiveReport(IPEndPoint endPoint, SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
         {
             Log.LogDebug($"RTCP {mediaType} CNAME {recvRtcpReport.SDesReport.CNAME} SSRC {recvRtcpReport.SDesReport.SSRC}.");
 
