@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SIPDNSManagerUnitTest.cs
+// Filename: SIPDnsUnitTest.cs
 //
 // Description: Unit tests for the SIP specific DNS lookup logic.
 //
@@ -20,11 +20,11 @@ using Xunit;
 namespace SIPSorcery.SIP.App.UnitTests
 {
     [Trait("Category", "dns")]
-    public class SIPDNSManagerUnitTest
+    public class SIPDnsUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;
 
-        public SIPDNSManagerUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        public SIPDnsUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
@@ -38,7 +38,6 @@ namespace SIPSorcery.SIP.App.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            //var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false);
             var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false).Result;
 
             Assert.NotNull(result);
@@ -59,8 +58,6 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             if (hostname.EndsWith(SIPDns.MDNS_TLD))
             {
-                // TODO: Look into why DNS calls on macos cannot resolve domains ending in ".local"
-                // RFC6762 domains.
                 logger.LogWarning("Skipping unit test LookupLocalHostnameTest due to RFC6762 domain.");
             }
             else
