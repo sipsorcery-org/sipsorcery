@@ -127,18 +127,17 @@ namespace SIPSorcery.SoftPhone
 
             StatusMessage(this, $"Starting call to {callURI}.");
 
-            var lookupResult = await Task.Run(() =>
+            var dstEndpoint = await Task.Run(() =>
             {
-                return SIPDNSManager.ResolveSIPService(callURI, false);
+                return SIPDns.Resolve(callURI, false);
             });
 
-            if (lookupResult == null || lookupResult.LookupError != null)
+            if (dstEndpoint == null)
             {
                 StatusMessage(this, $"Call failed, could not resolve {callURI}.");
             }
             else
             {
-                var dstEndpoint = lookupResult.GetSIPEndPoint();
                 StatusMessage(this, $"Call progressing, resolved {callURI} to {dstEndpoint}.");
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);

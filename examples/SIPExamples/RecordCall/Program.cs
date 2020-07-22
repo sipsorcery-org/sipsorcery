@@ -15,7 +15,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
+using System.Net;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
@@ -68,10 +68,9 @@ namespace demo
 
             // Clean up.
             sipTransport.Shutdown();
-            SIPSorcery.Net.DNSManager.Stop();
         }
 
-        private static void OnRtpPacketReceived(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+        private static void OnRtpPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
             if (mediaType == SDPMediaTypesEnum.audio)
             {

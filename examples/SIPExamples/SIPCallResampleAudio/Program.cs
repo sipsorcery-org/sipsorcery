@@ -15,9 +15,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NAudio;
 using NAudio.Wave;
 using Serilog;
 using SIPSorcery.Media;
@@ -79,10 +79,9 @@ namespace demo
 
             // Clean up.
             sipTransport.Shutdown();
-            SIPSorcery.Net.DNSManager.Stop();
         }
 
-        private static void RtpSession_OnRtpPacketReceived(SDPMediaTypesEnum kind, RTPPacket pkt)
+        private static void RtpSession_OnRtpPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum kind, RTPPacket pkt)
         {
             //Log.LogDebug($"{kind} RTP packet received {pkt.Header.SequenceNumber}.");
 

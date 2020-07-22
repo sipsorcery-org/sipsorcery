@@ -155,7 +155,7 @@ namespace SIPSorcery
 
                         rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
                         await userAgent.Answer(incomingCall, rtpAVSession);
-                        rtpAVSession.OnRtpPacketReceived += (mediaType, rtpPacket) => ForwardMedia(mediaType, rtpPacket);
+                        rtpAVSession.OnRtpPacketReceived += (ep, mediaType, rtpPacket) => ForwardMedia(mediaType, rtpPacket);
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
@@ -196,8 +196,6 @@ namespace SIPSorcery
                 Log.LogInformation("Waiting 1s for call to clean up...");
                 Task.Delay(1000).Wait();
             }
-
-            SIPSorcery.Net.DNSManager.Stop();
 
             if (sipTransport != null)
             {
@@ -316,7 +314,7 @@ namespace SIPSorcery
         /// <summary>
         /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
         /// </summary>
-        private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
+        private static void RtpSession_OnReceiveReport(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
         {
             var rr = recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
             if (rr != null)

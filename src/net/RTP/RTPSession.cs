@@ -467,6 +467,10 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
+        /// Parameters are:
+        ///  - Remote endpoint packet was received from,
+        ///  - The media type the packet contains, will be audio or video,
+        ///  - The full RTP packet.
         /// </summary>
         public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
 
