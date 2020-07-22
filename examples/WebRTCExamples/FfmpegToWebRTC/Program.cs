@@ -247,7 +247,7 @@ namespace SIPSorcery.Examples
                 {
                     logger.LogDebug("Creating RTP session to receive ffmpeg stream.");
 
-                    _ffmpegListener.OnRtpPacketReceived += (media, rtpPkt) =>
+                    _ffmpegListener.OnRtpPacketReceived += (endPoint, media, rtpPkt) =>
                     {
                         if (media == SDPMediaTypesEnum.video && pc.VideoDestinationEndPoint != null)
                         {
