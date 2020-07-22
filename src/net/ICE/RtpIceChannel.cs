@@ -628,106 +628,111 @@ namespace SIPSorcery.Net
             // The lock is to ensure the timer callback doesn't run multiple instances in parallel. 
             if (Monitor.TryEnter(_iceServerConnections))
             {
-                if (_activeIceServer == null || _activeIceServer.Error != SocketError.Success)
+                try
                 {
-                    if (_iceServerConnections.Count(x => x.Value.Error == SocketError.Success) == 0)
+                    if (_activeIceServer == null || _activeIceServer.Error != SocketError.Success)
                     {
-                        logger.LogDebug("ICE session all ICE server connection checks failed, stopping ICE servers timer.");
+                        if (_iceServerConnections.Count(x => x.Value.Error == SocketError.Success) == 0)
+                        {
+                            logger.LogDebug("ICE session all ICE server connection checks failed, stopping ICE servers timer.");
+                            _processIceServersTimer.Dispose();
+                        }
+                        else
+                        {
+                            // Select the next server to check.
+                            var entry = _iceServerConnections
+                            .Where(x => x.Value.Error == SocketError.Success)
+                            .OrderByDescending(x => x.Value._uri.Scheme) // TURN serves take priority.
+                            .FirstOrDefault();
+
+                            if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
+                            {
+                                _activeIceServer = entry.Value;
+                            }
+                            else
+                            {
+                                logger.LogDebug("ICE session was not able to set an active ICE server, stopping ICE servers timer.");
+                                _processIceServersTimer.Dispose();
+                            }
+                        }
+                    }
+
+                    // Run a state machine on the active ICE server.
+
+                    // Something went wrong. An active server could not be set.
+                    if (_activeIceServer == null)
+                    {
+                        logger.LogDebug("ICE session was not able to acquire an active ICE server, stopping ICE servers timer.");
                         _processIceServersTimer.Dispose();
+                    }
+                    // If the ICE server hasn't yet been resolved initiate the DNS check.
+                    else if (_activeIceServer.ServerEndPoint == null && _activeIceServer.DnsLookupSentAt == DateTime.MinValue)
+                    {
+                        logger.LogDebug($"Attempting to resolve STUN server URI {_activeIceServer._uri}.");
+
+                        _activeIceServer.DnsLookupSentAt = DateTime.Now;
+
+                        // Don't stop and wait for DNS. Let the timer callback complete and check for the DNS
+                        // result on the next few timer callbacks.
+                        _ = STUNDns.Resolve(_activeIceServer._uri).ContinueWith(y =>
+                        {
+                            if (y.Result != null)
+                            {
+                                logger.LogDebug($"ICE server {_activeIceServer._uri} successfully resolved to {y.Result}.");
+                                _activeIceServer.ServerEndPoint = y.Result;
+                            }
+                            else
+                            {
+                                logger.LogWarning($"Unable to resolve ICE server end point for {_activeIceServer._uri}.");
+                                _activeIceServer.Error = SocketError.HostNotFound;
+                            }
+                        });
+                    }
+                    // Waiting for DNS lookup to complete.
+                    else if (_activeIceServer.ServerEndPoint == null &&
+                        DateTime.Now.Subtract(_activeIceServer.DnsLookupSentAt).TotalSeconds < IceServer.DNS_LOOKUP_TIMEOUT_SECONDS)
+                    {
+                        // Do nothing.
+                    }
+                    // DNS lookup for ICE server host has timed out.
+                    else if (_activeIceServer.ServerEndPoint == null)
+                    {
+                        logger.LogWarning($"ICE server DNS resolution failed for {_activeIceServer._uri}.");
+                        _activeIceServer.Error = SocketError.TimedOut;
+                    }
+                    // Maximum number of requests have been sent to the ICE server without a response.
+                    else if (_activeIceServer.OutstandingRequestsSent >= IceServer.MAX_REQUESTS && _activeIceServer.LastResponseReceivedAt == DateTime.MinValue)
+                    {
+                        logger.LogWarning($"Connection attempt to ICE server {_activeIceServer._uri} timed out after {_activeIceServer.OutstandingRequestsSent} requests.");
+                        _activeIceServer.Error = SocketError.TimedOut;
+                    }
+                    // Maximum number of error response have been received for the requests sent to this ICE server.
+                    else if (_activeIceServer.ErrorResponseCount >= IceServer.MAX_ERRORS)
+                    {
+                        logger.LogWarning($"Connection attempt to ICE server {_activeIceServer._uri} cancelled after {_activeIceServer.ErrorResponseCount} error responses.");
+                        _activeIceServer.Error = SocketError.TimedOut;
+                    }
+                    // Send STUN binding request.
+                    else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.stun)
+                    {
+                        logger.LogDebug($"Sending STUN binding request to ICE server {_activeIceServer._uri}.");
+                        _activeIceServer.Error = SendStunBindingRequest(_activeIceServer);
+                    }
+                    // Send TURN binding request.
+                    else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.turn)
+                    {
+                        logger.LogDebug($"Sending TURN allocate request to ICE server {_activeIceServer._uri}.");
+                        _activeIceServer.Error = SendTurnAllocateRequest(_activeIceServer);
                     }
                     else
                     {
-                        // Select the next server to check.
-                        var entry = _iceServerConnections
-                        .Where(x => x.Value.Error == SocketError.Success)
-                        .OrderByDescending(x => x.Value._uri.Scheme) // TURN serves take priority.
-                        .FirstOrDefault();
-
-                        if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
-                        {
-                            _activeIceServer = entry.Value;
-                        }
-                        else
-                        {
-                            logger.LogDebug("ICE session was not able to set an active ICE server, stopping ICE servers timer.");
-                            _processIceServersTimer.Dispose();
-                        }
+                        logger.LogWarning($"The active ICE server reached an unexpected state {_activeIceServer._uri}.");
                     }
                 }
-
-                // Run a state machine on the active ICE server.
-
-                // Something went wrong. An active server could not be set.
-                if (_activeIceServer == null)
+                finally
                 {
-                    logger.LogDebug("ICE session was not able to acquire an active ICE server, stopping ICE servers timer.");
-                    _processIceServersTimer.Dispose();
+                    Monitor.Exit(_iceServerConnections);
                 }
-                // If the ICE server hasn't yet been resolved initiate the DNS check.
-                else if (_activeIceServer.ServerEndPoint == null && _activeIceServer.DnsLookupSentAt == DateTime.MinValue)
-                {
-                    logger.LogDebug($"Attempting to resolve STUN server URI {_activeIceServer._uri}.");
-
-                    _activeIceServer.DnsLookupSentAt = DateTime.Now;
-
-                    // Don't stop and wait for DNS. Let the timer callback complete and check for the DNS
-                    // result on the next few timer callbacks.
-                    _ = STUNDns.Resolve(_activeIceServer._uri).ContinueWith(y =>
-                    {
-                        if (y.Result != null)
-                        {
-                            logger.LogDebug($"ICE server {_activeIceServer._uri} successfully resolved to {y.Result}.");
-                            _activeIceServer.ServerEndPoint = y.Result;
-                        }
-                        else
-                        {
-                            logger.LogWarning($"Unable to resolve ICE server end point for {_activeIceServer._uri}.");
-                            _activeIceServer.Error = SocketError.HostNotFound;
-                        }
-                    });
-                }
-                // Waiting for DNS lookup to complete.
-                else if (_activeIceServer.ServerEndPoint == null &&
-                    DateTime.Now.Subtract(_activeIceServer.DnsLookupSentAt).TotalSeconds < IceServer.DNS_LOOKUP_TIMEOUT_SECONDS)
-                {
-                    // Do nothing.
-                }
-                // DNS lookup for ICE server host has timed out.
-                else if (_activeIceServer.ServerEndPoint == null)
-                {
-                    logger.LogWarning($"ICE server DNS resolution failed for {_activeIceServer._uri}.");
-                    _activeIceServer.Error = SocketError.TimedOut;
-                }
-                // Maximum number of requests have been sent to the ICE server without a response.
-                else if (_activeIceServer.OutstandingRequestsSent >= IceServer.MAX_REQUESTS && _activeIceServer.LastResponseReceivedAt == DateTime.MinValue)
-                {
-                    logger.LogWarning($"Connection attempt to ICE server {_activeIceServer._uri} timed out after {_activeIceServer.OutstandingRequestsSent} requests.");
-                    _activeIceServer.Error = SocketError.TimedOut;
-                }
-                // Maximum number of error response have been received for the requests sent to this ICE server.
-                else if (_activeIceServer.ErrorResponseCount >= IceServer.MAX_ERRORS)
-                {
-                    logger.LogWarning($"Connection attempt to ICE server {_activeIceServer._uri} cancelled after {_activeIceServer.ErrorResponseCount} error responses.");
-                    _activeIceServer.Error = SocketError.TimedOut;
-                }
-                // Send STUN binding request.
-                else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.stun)
-                {
-                    logger.LogDebug($"Sending STUN binding request to ICE server {_activeIceServer._uri}.");
-                    _activeIceServer.Error = SendStunBindingRequest(_activeIceServer);
-                }
-                // Send TURN binding request.
-                else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.turn)
-                {
-                    logger.LogDebug($"Sending TURN allocate request to ICE server {_activeIceServer._uri}.");
-                    _activeIceServer.Error = SendTurnAllocateRequest(_activeIceServer);
-                }
-                else
-                {
-                    logger.LogWarning($"The active ICE server reached an unexpected state {_activeIceServer._uri}.");
-                }
-
-                Monitor.Exit(_iceServerConnections);
             }
         }
 
