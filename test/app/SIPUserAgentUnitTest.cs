@@ -172,7 +172,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPTransport transport = new SIPTransport(false, MockSIPDNSManager.Resolve);
+            SIPTransport transport = new SIPTransport();
             MockSIPChannel mockChannel = new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0));
             transport.AddSIPChannel(mockChannel);
 

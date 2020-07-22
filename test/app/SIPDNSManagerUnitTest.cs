@@ -4,10 +4,10 @@
 // Description: Unit tests for the SIP specific DNS lookup logic.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 14 OCt 2019	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com).
+// 14 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -29,7 +29,6 @@ namespace SIPSorcery.SIP.App.UnitTests
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
-
         /// <summary>
         /// Tests that an IP address can be resolved when the resolution can only be done via a SRV record.
         /// </summary>
@@ -39,13 +38,12 @@ namespace SIPSorcery.SIP.App.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false);
+            //var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false);
+            var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false).Result;
 
-            SIPEndPoint resultEP = result.GetSIPEndPoint();
+            Assert.NotNull(result);
 
-            Assert.NotNull(resultEP);
-
-            logger.LogDebug($"resolved to SIP end point {resultEP}");
+            logger.LogDebug($"resolved to SIP end point {result}.");
         }
 
         /// <summary>
@@ -59,7 +57,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             string hostname = System.Net.Dns.GetHostName();
 
-            if (hostname.EndsWith(SIPDNSManager.MDNS_TLD))
+            if (hostname.EndsWith(SIPDns.MDNS_TLD))
             {
                 // TODO: Look into why DNS calls on macos cannot resolve domains ending in ".local"
                 // RFC6762 domains.
@@ -67,13 +65,12 @@ namespace SIPSorcery.SIP.App.UnitTests
             }
             else
             {
-                var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed(hostname), false);
+                //var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed(hostname), false);
+                var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed(hostname)).Result;
 
-                SIPEndPoint resultEP = result.GetSIPEndPoint();
+                Assert.NotNull(result);
 
-                Assert.NotNull(resultEP);
-
-                logger.LogDebug($"resolved to SIP end point {resultEP}");
+                logger.LogDebug($"resolved to SIP end point {result}.");
             }
         }
 
@@ -85,25 +82,25 @@ namespace SIPSorcery.SIP.App.UnitTests
                 logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
                 logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                SIPDNSManager.UseNAPTRLookups = true;
+                //SIPDNSManager.UseNAPTRLookups = true;
 
-                var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"), false);
+                //var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"), false);
+                var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp")).Result;
 
-                SIPEndPoint resultEP = result.GetSIPEndPoint();
-                Assert.NotNull(resultEP);
-                logger.LogDebug($"resolved to SIP end point {resultEP}");
-                Assert.NotEmpty(result.SIPNAPTRResults);
-                Assert.NotEmpty(result.SIPSRVResults);
-                Assert.NotEmpty(result.EndPointResults);
+                Assert.NotNull(result);
+                logger.LogDebug($"resolved to SIP end point {result}.");
+                //Assert.NotEmpty(result.SIPNAPTRResults);
+                //Assert.NotEmpty(result.SIPSRVResults);
+                //Assert.NotEmpty(result.EndPointResults);
 
-                result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sip:tel.t-online.de"), false);
-                Assert.NotNull(resultEP);
-                result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sips:hpbxsec.deutschland-lan.de:5061;transport=tls"), false);
-                Assert.NotNull(resultEP);
+                //result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sip:tel.t-online.de"), false);
+                //Assert.NotNull(resultEP);
+                //result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sips:hpbxsec.deutschland-lan.de:5061;transport=tls"), false);
+                //Assert.NotNull(resultEP);
             }
             finally
             {
-                SIPDNSManager.UseNAPTRLookups = false;
+                //SIPDNSManager.UseNAPTRLookups = false;
             }
         }
 
@@ -118,20 +115,20 @@ namespace SIPSorcery.SIP.App.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI lookupURI = SIPURI.ParseSIPURIRelaxed("sip:tel.t-online.de");
-            var result = SIPDNSManager.ResolveSIPService(lookupURI, false);
+            //var result = SIPDNSManager.ResolveSIPService(lookupURI, false);
+            var result = SIPDns.Resolve(lookupURI).Result;
             Assert.NotNull(result);
 
-            SIPEndPoint resultEP = result.GetSIPEndPoint();
-            Assert.NotNull(resultEP);
-            logger.LogDebug($"resolved to SIP end point {resultEP}");
-            Assert.NotEmpty(result.SIPSRVResults);
-            Assert.NotEmpty(result.EndPointResults);
+            //SIPEndPoint resultEP = result.GetSIPEndPoint();
+            Assert.NotNull(result);
+            logger.LogDebug($"resolved to SIP end point {result}.");
+            //Assert.NotEmpty(result.SIPSRVResults);
+            //Assert.NotEmpty(result.EndPointResults);
 
             // Do the same look up again immediately to check the result when it comes from the in-memory cache.
-            var resultCache = SIPDNSManager.ResolveSIPService(lookupURI, false);
+            var resultCache = SIPDns.Resolve(lookupURI).Result;
             Assert.NotNull(resultCache);
-            Assert.NotNull(resultCache.GetSIPEndPoint());
-            logger.LogDebug($"cache resolved to SIP end point {resultCache.GetSIPEndPoint()}");
+            logger.LogDebug($"cache resolved to SIP end point {resultCache}.");
         }
 
         [Fact]
@@ -140,13 +137,33 @@ namespace SIPSorcery.SIP.App.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var result = await SIPDNSManager.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"));
+            //var result = await SIPDNSManager.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"));
+            var result = await SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"));
 
-            SIPEndPoint resultEP = result.GetSIPEndPoint();
+            //SIPEndPoint resultEP = result.GetSIPEndPoint();
 
-            Assert.NotNull(resultEP);
+            Assert.NotNull(result);
 
-            logger.LogDebug($"resolved to SIP end point {resultEP}");
+            logger.LogDebug($"resolved to SIP end point {result}.");
+        }
+
+        /// <summary>
+        /// Tests that the correct end point is resolved for a known sips URI.
+        /// </summary>
+        [Fact]
+        public void ResolveHostFromSecureSIPURITest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var result = SIPDns.Resolve(new SIPURI(null, "sipsorcery.com", null, SIPSchemesEnum.sips, SIPProtocolsEnum.tls), false).Result;
+
+            Assert.NotNull(result);
+            Assert.Equal("67.222.131.147", result.Address.ToString());
+            Assert.Equal(5061, result.Port);
+            Assert.Equal(SIPProtocolsEnum.tls, result.Protocol);
+
+            logger.LogDebug($"resolved to SIP end point {result}.");
         }
     }
 }

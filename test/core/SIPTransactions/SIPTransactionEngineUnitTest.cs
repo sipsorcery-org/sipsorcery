@@ -107,14 +107,14 @@ namespace SIPSorcery.SIP.UnitTests
                 TaskCompletionSource<bool> uasConfirmedTask = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
                 // Client side of the call.
-                clientTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);
+                clientTransport = new SIPTransport();
                 clientTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)));
                 var clientEngine = clientTransport.m_transactionEngine;
                 SetTransportTraceEvents(clientTransport);
 
                 // Server side of the call.
                 UASInviteTransaction serverTransaction = null;
-                serverTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);
+                serverTransport = new SIPTransport();
                 serverTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)));
                 SIPTransactionEngine serverEngine = serverTransport.m_transactionEngine;
                 SetTransportTraceEvents(serverTransport);
@@ -175,7 +175,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPTransport sipTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);
+            SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine engine = sipTransport.m_transactionEngine;     // Client side of the INVITE.
 
             string inviteRequestStr =

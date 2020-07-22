@@ -8,7 +8,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 26 Nov 2010	Aaron Clauson	Create,d Hobart, Australia.
+// 26 Nov 2010	Aaron Clauson	Created, Hobart, Australia.
 //
 // Notes:
 //
@@ -73,7 +73,6 @@
 
 using System;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -133,8 +132,6 @@ namespace SIPSorcery.Net
         public const UInt32 MAGIC_COOKIE = 0x2112A442;
         public const int TRANSACTION_ID_LENGTH = 12;
 
-        private static ILogger logger = Log.Logger;
-
         public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.BindingRequest;
         public STUNClassTypesEnum MessageClass
         {
@@ -143,18 +140,8 @@ namespace SIPSorcery.Net
                 int @class = ((ushort)MessageType >> 8 & 0x01) * 2 | ((ushort)MessageType >> 4 & 0x01);
                 return (STUNClassTypesEnum)@class;
             }
-
-            //return (STUNClassTypesEnum)((ushort)MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK);
-
-            //if (Enum.IsDefined(typeof(STUNClassTypesEnum), (ushort)(MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK)))
-            //{
-            //    return (STUNClassTypesEnum)((ushort)MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK);
-            //}
-            //else
-            //{
-            //    return STUNClassTypesEnum.Request;
-            //}
         }
+
         public UInt16 MessageLength;
         public byte[] TransactionId = new byte[TRANSACTION_ID_LENGTH];
 

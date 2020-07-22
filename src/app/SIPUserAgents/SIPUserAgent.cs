@@ -392,19 +392,12 @@ namespace SIPSorcery.SIP.App
             m_uac.CallFailed += ClientCallFailedHandler;
 
             // Can be DNS lookups involved in getting the call destination.
-            SIPEndPoint serverEndPoint = await Task.Run<SIPEndPoint>(() => { return m_uac.GetCallDestination(sipCallDescriptor); }).ConfigureAwait(false);
+            SIPEndPoint serverEndPoint = await m_uac.GetCallDestination(sipCallDescriptor).ConfigureAwait(false);
 
             if (serverEndPoint != null)
             {
                 MediaSession = mediaSession;
                 MediaSession.OnRtpEvent += OnRemoteRtpEvent;
-                MediaSession.OnRtpClosed += (reason) =>
-                {
-                    if (!MediaSession.IsClosed)
-                    {
-                        logger.LogWarning($"RTP channel was closed with reason {reason}.");
-                    }
-                };
 
                 var sdpAnnounceAddress = NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
@@ -418,7 +411,7 @@ namespace SIPSorcery.SIP.App
                 {
                     sipCallDescriptor.Content = sdp.ToString();
                     // This initiates the call but does not wait for an answer.
-                    m_uac.Call(sipCallDescriptor);
+                    m_uac.Call(sipCallDescriptor, serverEndPoint);
                 }
             }
             else

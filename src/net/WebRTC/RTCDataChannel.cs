@@ -54,9 +54,9 @@ namespace SIPSorcery.Net
         public bool IsOpened { get; private set; } = false;
 
         public event Action onopen;
-        public event Action onbufferedamountlow;
+        //public event Action onbufferedamountlow;
         public event Action<string> onerror;
-        public event Action onclosing;
+        //public event Action onclosing;
         public event Action onclose;
         public event Action<string> onmessage;
 

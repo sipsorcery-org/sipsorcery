@@ -79,30 +79,6 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// SIPResponse Constructor.
-        /// </summary>
-        /// <param name="responseStatus">The status code for the response.</param>
-        /// <param name="reasonPhrase">Optional description for the response. Should be kept short.</param>
-        /// <param name="localSIPEndPoint">The local SIP end point the response was received on or should be sent from.</param>
-        /// <param name="remoteSIPEndPoint">Optional remote SIP end point the response came from or should be sent to.
-        /// If set as null the SIP transport layer will attempt to resolve the remote end point using the response's headers.</param>
-        [Obsolete("The local and remote SIP end points are now only for recording receiving sockets. Use the new send from hint proprties.", true)]
-        public SIPResponse(
-            SIPResponseStatusCodesEnum responseStatus,
-            string reasonPhrase,
-            SIPEndPoint localSIPEndPoint,
-            SIPEndPoint remoteSIPEndPoint)
-        {
-            SIPVersion = m_sipFullVersion;
-            StatusCode = (int)responseStatus;
-            Status = responseStatus;
-            ReasonPhrase = reasonPhrase;
-            ReasonPhrase = responseStatus.ToString();
-            LocalSIPEndPoint = localSIPEndPoint;
-            RemoteSIPEndPoint = remoteSIPEndPoint;
-        }
-
-        /// <summary>
         /// Parses a SIP response from a SIP message object.
         /// </summary>
         /// <param name="sipMessageBuffer">The SIP message to parse a response from.</param>

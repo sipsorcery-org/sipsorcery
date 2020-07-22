@@ -586,7 +586,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             MockSIPChannel mockSIPChannel = new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5062"));
-            SIPTransport mockSIPTransport = new SIPTransport(true, MockSIPDNSManager.Resolve);
+            SIPTransport mockSIPTransport = new SIPTransport(true);
             mockSIPTransport.AddSIPChannel(mockSIPChannel);
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
@@ -619,7 +619,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            SIPTransport mockSIPTransport = new SIPTransport(true, MockSIPDNSManager.Resolve);
+            SIPTransport mockSIPTransport = new SIPTransport(true);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5061")));
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5062")));
 
@@ -653,7 +653,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            SIPTransport mockSIPTransport = new SIPTransport(true, MockSIPDNSManager.Resolve);
+            SIPTransport mockSIPTransport = new SIPTransport(true);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("10.10.10.10:5060")));
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
@@ -685,7 +685,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            SIPTransport mockSIPTransport = new SIPTransport(true, MockSIPDNSManager.Resolve);
+            SIPTransport mockSIPTransport = new SIPTransport(true);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5062")));
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
@@ -722,7 +722,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            SIPTransport mockSIPTransport = new SIPTransport(true, MockSIPDNSManager.Resolve);
+            SIPTransport mockSIPTransport = new SIPTransport(true);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5062")));
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
@@ -760,7 +760,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            SIPTransport mockSIPTransport = new SIPTransport(true, MockSIPDNSManager.Resolve);
+            SIPTransport mockSIPTransport = new SIPTransport(true);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("194.213.29.100:5060")));
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
@@ -871,7 +871,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            SIPTransport mockSIPTransport = new SIPTransport(true, MockSIPDNSManager.Resolve);
+            SIPTransport mockSIPTransport = new SIPTransport(true);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("194.213.29.100:5060")));
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
