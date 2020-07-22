@@ -3772,18 +3772,24 @@ references:
   commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor
   fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient()
   nameWithType: DtlsSrtpClient.DtlsSrtpClient()
-- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Certificate,AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   name: DtlsSrtpClient(Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Certificate_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Certificate,AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Certificate, AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   nameWithType: DtlsSrtpClient.DtlsSrtpClient(Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Certificate,AsymmetricKeyParameter,UseSrtpData)
+- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter,Org.BouncyCastle.Crypto.Tls.UseSrtpData)
   name: DtlsSrtpClient(Certificate, AsymmetricKeyParameter, UseSrtpData)
-  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Certificate_AsymmetricKeyParameter_UseSrtpData_
-  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Certificate,AsymmetricKeyParameter,UseSrtpData)
-  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Certificate, AsymmetricKeyParameter, UseSrtpData)
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_Org_BouncyCastle_Crypto_Tls_UseSrtpData_
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter,Org.BouncyCastle.Crypto.Tls.UseSrtpData)
+  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter, Org.BouncyCastle.Crypto.Tls.UseSrtpData)
   nameWithType: DtlsSrtpClient.DtlsSrtpClient(Certificate, AsymmetricKeyParameter, UseSrtpData)
+- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.UseSrtpData)
+  name: DtlsSrtpClient(UseSrtpData)
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_Org_BouncyCastle_Crypto_Tls_UseSrtpData_
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(Org.BouncyCastle.Crypto.Tls.UseSrtpData)
+  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(Org.BouncyCastle.Crypto.Tls.UseSrtpData)
+  nameWithType: DtlsSrtpClient.DtlsSrtpClient(UseSrtpData)
 - uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2)
   name: DtlsSrtpClient(X509Certificate2)
   href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_
@@ -3805,12 +3811,6 @@ references:
   fullName.vb: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(System.String(), System.String)
   nameWithType: DtlsSrtpClient.DtlsSrtpClient(String[], String)
   nameWithType.vb: DtlsSrtpClient.DtlsSrtpClient(String(), String)
-- uid: SIPSorcery.Net.DtlsSrtpClient.#ctor(UseSrtpData)
-  name: DtlsSrtpClient(UseSrtpData)
-  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_UseSrtpData_
-  commentId: M:SIPSorcery.Net.DtlsSrtpClient.#ctor(UseSrtpData)
-  fullName: SIPSorcery.Net.DtlsSrtpClient.DtlsSrtpClient(UseSrtpData)
-  nameWithType: DtlsSrtpClient.DtlsSrtpClient(UseSrtpData)
 - uid: SIPSorcery.Net.DtlsSrtpClient.#ctor*
   name: DtlsSrtpClient
   href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient__ctor_
@@ -4058,11 +4058,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpClient.NotifyHandshakeComplete
   nameWithType: DtlsSrtpClient.NotifyHandshakeComplete
-- uid: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(ProtocolVersion)
+- uid: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(Org.BouncyCastle.Crypto.Tls.ProtocolVersion)
   name: NotifyServerVersion(ProtocolVersion)
-  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_NotifyServerVersion_ProtocolVersion_
-  commentId: M:SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(ProtocolVersion)
-  fullName: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(ProtocolVersion)
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_NotifyServerVersion_Org_BouncyCastle_Crypto_Tls_ProtocolVersion_
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(Org.BouncyCastle.Crypto.Tls.ProtocolVersion)
+  fullName: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion(Org.BouncyCastle.Crypto.Tls.ProtocolVersion)
   nameWithType: DtlsSrtpClient.NotifyServerVersion(ProtocolVersion)
 - uid: SIPSorcery.Net.DtlsSrtpClient.NotifyServerVersion*
   name: NotifyServerVersion
@@ -4128,11 +4128,11 @@ references:
   commentId: M:SIPSorcery.Net.DtlsSrtpServer.#ctor
   fullName: SIPSorcery.Net.DtlsSrtpServer.DtlsSrtpServer()
   nameWithType: DtlsSrtpServer.DtlsSrtpServer()
-- uid: SIPSorcery.Net.DtlsSrtpServer.#ctor(Certificate,AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   name: DtlsSrtpServer(Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer__ctor_Certificate_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsSrtpServer.#ctor(Certificate,AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsSrtpServer.DtlsSrtpServer(Certificate, AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsSrtpServer.DtlsSrtpServer(Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   nameWithType: DtlsSrtpServer.DtlsSrtpServer(Certificate, AsymmetricKeyParameter)
 - uid: SIPSorcery.Net.DtlsSrtpServer.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2)
   name: DtlsSrtpServer(X509Certificate2)
@@ -4461,11 +4461,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpServer.NotifyAlertReceived
   nameWithType: DtlsSrtpServer.NotifyAlertReceived
-- uid: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Certificate)
+- uid: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Crypto.Tls.Certificate)
   name: NotifyClientCertificate(Certificate)
-  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_NotifyClientCertificate_Certificate_
-  commentId: M:SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Certificate)
-  fullName: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Certificate)
+  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_NotifyClientCertificate_Org_BouncyCastle_Crypto_Tls_Certificate_
+  commentId: M:SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Crypto.Tls.Certificate)
+  fullName: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Crypto.Tls.Certificate)
   nameWithType: DtlsSrtpServer.NotifyClientCertificate(Certificate)
 - uid: SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate*
   name: NotifyClientCertificate
@@ -5155,17 +5155,17 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.CreatePrivateKeyResource
   nameWithType: DtlsUtils.CreatePrivateKeyResource
-- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   name: CreateSelfSignedCert(AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   nameWithType: DtlsUtils.CreateSelfSignedCert(AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   name: CreateSelfSignedCert(String, String, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_System_String_System_String_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String, System.String, AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String, System.String, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   nameWithType: DtlsUtils.CreateSelfSignedCert(String, String, AsymmetricKeyParameter)
 - uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert*
   name: CreateSelfSignedCert
@@ -5174,13 +5174,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert
   nameWithType: DtlsUtils.CreateSelfSignedCert
-- uid: SIPSorcery.Net.DtlsUtils.DigestOf(IDigest,System.Byte[])
+- uid: SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest,System.Byte[])
   name: DigestOf(IDigest, Byte[])
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_DigestOf_IDigest_System_Byte___
-  commentId: M:SIPSorcery.Net.DtlsUtils.DigestOf(IDigest,System.Byte[])
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_DigestOf_Org_BouncyCastle_Crypto_IDigest_System_Byte___
+  commentId: M:SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest,System.Byte[])
   name.vb: DigestOf(IDigest, Byte())
-  fullName: SIPSorcery.Net.DtlsUtils.DigestOf(IDigest, System.Byte[])
-  fullName.vb: SIPSorcery.Net.DtlsUtils.DigestOf(IDigest, System.Byte())
+  fullName: SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest, System.Byte[])
+  fullName.vb: SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest, System.Byte())
   nameWithType: DtlsUtils.DigestOf(IDigest, Byte[])
   nameWithType.vb: DtlsUtils.DigestOf(IDigest, Byte())
 - uid: SIPSorcery.Net.DtlsUtils.DigestOf*
@@ -5190,11 +5190,17 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.DigestOf
   nameWithType: DtlsUtils.DigestOf
-- uid: SIPSorcery.Net.DtlsUtils.Fingerprint(Certificate)
+- uid: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
+  name: Fingerprint(X509CertificateStructure)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_Org_BouncyCastle_Asn1_X509_X509CertificateStructure_
+  commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
+  fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
+  nameWithType: DtlsUtils.Fingerprint(X509CertificateStructure)
+- uid: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)
   name: Fingerprint(Certificate)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_Certificate_
-  commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(Certificate)
-  fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(Certificate)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_Org_BouncyCastle_Crypto_Tls_Certificate_
+  commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)
+  fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)
   nameWithType: DtlsUtils.Fingerprint(Certificate)
 - uid: SIPSorcery.Net.DtlsUtils.Fingerprint(System.Security.Cryptography.X509Certificates.X509Certificate2)
   name: Fingerprint(X509Certificate2)
@@ -5203,23 +5209,17 @@ references:
   fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(System.Security.Cryptography.X509Certificates.X509Certificate2)
   nameWithType: DtlsUtils.Fingerprint(X509Certificate2)
 - uid: SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
-  name: Fingerprint(String, Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
+  name: Fingerprint(String, X509CertificateStructure)
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_System_String_Org_BouncyCastle_Asn1_X509_X509CertificateStructure_
   commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
   fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(System.String, Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
-  nameWithType: DtlsUtils.Fingerprint(String, Org.BouncyCastle.Asn1.X509.X509CertificateStructure)
+  nameWithType: DtlsUtils.Fingerprint(String, X509CertificateStructure)
 - uid: SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,System.Security.Cryptography.X509Certificates.X509Certificate2)
   name: Fingerprint(String, X509Certificate2)
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_System_String_System_Security_Cryptography_X509Certificates_X509Certificate2_
   commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,System.Security.Cryptography.X509Certificates.X509Certificate2)
   fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(System.String, System.Security.Cryptography.X509Certificates.X509Certificate2)
   nameWithType: DtlsUtils.Fingerprint(String, X509Certificate2)
-- uid: SIPSorcery.Net.DtlsUtils.Fingerprint(X509CertificateStructure)
-  name: Fingerprint(X509CertificateStructure)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_X509CertificateStructure_
-  commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(X509CertificateStructure)
-  fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(X509CertificateStructure)
-  nameWithType: DtlsUtils.Fingerprint(X509CertificateStructure)
 - uid: SIPSorcery.Net.DtlsUtils.Fingerprint*
   name: Fingerprint
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_
@@ -5240,19 +5240,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.IsHashSupported
   nameWithType: DtlsUtils.IsHashSupported
-- uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   name: LoadAgreementCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_TlsContext_Certificate_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   nameWithType: DtlsUtils.LoadAgreementCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext,System.String[],System.String)
+- uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
   name: LoadAgreementCredentials(TlsContext, String[], String)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_TlsContext_System_String___System_String_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext,System.String[],System.String)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
   name.vb: LoadAgreementCredentials(TlsContext, String(), String)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext, System.String[], System.String)
-  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(TlsContext, System.String(), System.String)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String[], System.String)
+  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String(), System.String)
   nameWithType: DtlsUtils.LoadAgreementCredentials(TlsContext, String[], String)
   nameWithType.vb: DtlsUtils.LoadAgreementCredentials(TlsContext, String(), String)
 - uid: SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials*
@@ -5312,19 +5312,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.LoadCertificateResource
   nameWithType: DtlsUtils.LoadCertificateResource
-- uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   name: LoadEncryptionCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_TlsContext_Certificate_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   nameWithType: DtlsUtils.LoadEncryptionCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext,System.String[],System.String)
+- uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
   name: LoadEncryptionCredentials(TlsContext, String[], String)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_TlsContext_System_String___System_String_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext,System.String[],System.String)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
   name.vb: LoadEncryptionCredentials(TlsContext, String(), String)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext, System.String[], System.String)
-  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(TlsContext, System.String(), System.String)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String[], System.String)
+  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String(), System.String)
   nameWithType: DtlsUtils.LoadEncryptionCredentials(TlsContext, String[], String)
   nameWithType.vb: DtlsUtils.LoadEncryptionCredentials(TlsContext, String(), String)
 - uid: SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials*
@@ -5366,46 +5366,46 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.LoadPrivateKeyResource
   nameWithType: DtlsUtils.LoadPrivateKeyResource
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   name: LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_Certificate_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,Certificate,AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,Certificate,AsymmetricKeyParameter,SignatureAndHashAlgorithm)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
   name: LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter, SignatureAndHashAlgorithm)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_Certificate_AsymmetricKeyParameter_SignatureAndHashAlgorithm_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,Certificate,AsymmetricKeyParameter,SignatureAndHashAlgorithm)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter, SignatureAndHashAlgorithm)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_Org_BouncyCastle_Crypto_Tls_SignatureAndHashAlgorithm_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter, Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter, SignatureAndHashAlgorithm)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.Collections.IList,System.Byte,Certificate,AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   name: LoadSignerCredentials(TlsContext, IList, Byte, Certificate, AsymmetricKeyParameter)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_System_Collections_IList_System_Byte_Certificate_AsymmetricKeyParameter_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.Collections.IList,System.Byte,Certificate,AsymmetricKeyParameter)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.Collections.IList, System.Byte, Certificate, AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_Collections_IList_System_Byte_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.Collections.IList, System.Byte, Org.BouncyCastle.Crypto.Tls.Certificate, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, IList, Byte, Certificate, AsymmetricKeyParameter)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.Collections.IList,System.Byte,System.String,System.String)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,System.String,System.String)
   name: LoadSignerCredentials(TlsContext, IList, Byte, String, String)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_System_Collections_IList_System_Byte_System_String_System_String_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.Collections.IList,System.Byte,System.String,System.String)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.Collections.IList, System.Byte, System.String, System.String)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_Collections_IList_System_Byte_System_String_System_String_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,System.String,System.String)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.Collections.IList, System.Byte, System.String, System.String)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, IList, Byte, String, String)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.String[],System.String)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
   name: LoadSignerCredentials(TlsContext, String[], String)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_System_String___System_String_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.String[],System.String)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)
   name.vb: LoadSignerCredentials(TlsContext, String(), String)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.String[], System.String)
-  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.String(), System.String)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String[], System.String)
+  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String(), System.String)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, String[], String)
   nameWithType.vb: DtlsUtils.LoadSignerCredentials(TlsContext, String(), String)
-- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.String[],System.String,SignatureAndHashAlgorithm)
+- uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
   name: LoadSignerCredentials(TlsContext, String[], String, SignatureAndHashAlgorithm)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_TlsContext_System_String___System_String_SignatureAndHashAlgorithm_
-  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext,System.String[],System.String,SignatureAndHashAlgorithm)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_Org_BouncyCastle_Crypto_Tls_SignatureAndHashAlgorithm_
+  commentId: M:SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
   name.vb: LoadSignerCredentials(TlsContext, String(), String, SignatureAndHashAlgorithm)
-  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.String[], System.String, SignatureAndHashAlgorithm)
-  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(TlsContext, System.String(), System.String, SignatureAndHashAlgorithm)
+  fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String[], System.String, Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
+  fullName.vb: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext, System.String(), System.String, Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)
   nameWithType: DtlsUtils.LoadSignerCredentials(TlsContext, String[], String, SignatureAndHashAlgorithm)
   nameWithType.vb: DtlsUtils.LoadSignerCredentials(TlsContext, String(), String, SignatureAndHashAlgorithm)
 - uid: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials*
@@ -5415,11 +5415,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.LoadSignerCredentials
   nameWithType: DtlsUtils.LoadSignerCredentials
-- uid: SIPSorcery.Net.DtlsUtils.ToRSA(RsaPrivateCrtKeyParameters)
+- uid: SIPSorcery.Net.DtlsUtils.ToRSA(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
   name: ToRSA(RsaPrivateCrtKeyParameters)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ToRSA_RsaPrivateCrtKeyParameters_
-  commentId: M:SIPSorcery.Net.DtlsUtils.ToRSA(RsaPrivateCrtKeyParameters)
-  fullName: SIPSorcery.Net.DtlsUtils.ToRSA(RsaPrivateCrtKeyParameters)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ToRSA_Org_BouncyCastle_Crypto_Parameters_RsaPrivateCrtKeyParameters_
+  commentId: M:SIPSorcery.Net.DtlsUtils.ToRSA(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
+  fullName: SIPSorcery.Net.DtlsUtils.ToRSA(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
   nameWithType: DtlsUtils.ToRSA(RsaPrivateCrtKeyParameters)
 - uid: SIPSorcery.Net.DtlsUtils.ToRSA*
   name: ToRSA
@@ -5428,11 +5428,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.ToRSA
   nameWithType: DtlsUtils.ToRSA
-- uid: SIPSorcery.Net.DtlsUtils.ToRSAParameters(RsaPrivateCrtKeyParameters)
+- uid: SIPSorcery.Net.DtlsUtils.ToRSAParameters(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
   name: ToRSAParameters(RsaPrivateCrtKeyParameters)
-  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ToRSAParameters_RsaPrivateCrtKeyParameters_
-  commentId: M:SIPSorcery.Net.DtlsUtils.ToRSAParameters(RsaPrivateCrtKeyParameters)
-  fullName: SIPSorcery.Net.DtlsUtils.ToRSAParameters(RsaPrivateCrtKeyParameters)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ToRSAParameters_Org_BouncyCastle_Crypto_Parameters_RsaPrivateCrtKeyParameters_
+  commentId: M:SIPSorcery.Net.DtlsUtils.ToRSAParameters(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
+  fullName: SIPSorcery.Net.DtlsUtils.ToRSAParameters(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)
   nameWithType: DtlsUtils.ToRSAParameters(RsaPrivateCrtKeyParameters)
 - uid: SIPSorcery.Net.DtlsUtils.ToRSAParameters*
   name: ToRSAParameters
@@ -8933,11 +8933,11 @@ references:
   commentId: T:SIPSorcery.Net.RTCPeerSctpAssociation
   fullName: SIPSorcery.Net.RTCPeerSctpAssociation
   nameWithType: RTCPeerSctpAssociation
-- uid: SIPSorcery.Net.RTCPeerSctpAssociation.#ctor(DatagramTransport,System.Boolean,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.RTCPeerSctpAssociation.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,System.Boolean,System.Int32,System.Int32)
   name: RTCPeerSctpAssociation(DatagramTransport, Boolean, Int32, Int32)
-  href: api/SIPSorcery.Net.RTCPeerSctpAssociation.html#SIPSorcery_Net_RTCPeerSctpAssociation__ctor_DatagramTransport_System_Boolean_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.RTCPeerSctpAssociation.#ctor(DatagramTransport,System.Boolean,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.RTCPeerSctpAssociation.RTCPeerSctpAssociation(DatagramTransport, System.Boolean, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.RTCPeerSctpAssociation.html#SIPSorcery_Net_RTCPeerSctpAssociation__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_System_Boolean_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.RTCPeerSctpAssociation.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,System.Boolean,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.RTCPeerSctpAssociation.RTCPeerSctpAssociation(Org.BouncyCastle.Crypto.Tls.DatagramTransport, System.Boolean, System.Int32, System.Int32)
   nameWithType: RTCPeerSctpAssociation.RTCPeerSctpAssociation(DatagramTransport, Boolean, Int32, Int32)
 - uid: SIPSorcery.Net.RTCPeerSctpAssociation.#ctor*
   name: RTCPeerSctpAssociation
@@ -13321,17 +13321,17 @@ references:
   commentId: T:SIPSorcery.Net.Sctp.Association
   fullName: SIPSorcery.Net.Sctp.Association
   nameWithType: Association
-- uid: SIPSorcery.Net.Sctp.Association.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.Sctp.Association.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
   name: Association(DatagramTransport, AssociationListener, Boolean, Int32, Int32)
-  href: api/SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__ctor_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.Sctp.Association.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.Sctp.Association.Association(DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Boolean, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.Sctp.Association.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.Sctp.Association.Association(Org.BouncyCastle.Crypto.Tls.DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Boolean, System.Int32, System.Int32)
   nameWithType: Association.Association(DatagramTransport, AssociationListener, Boolean, Int32, Int32)
-- uid: SIPSorcery.Net.Sctp.Association.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.Sctp.Association.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Int32,System.Int32)
   name: Association(DatagramTransport, AssociationListener, Int32, Int32)
-  href: api/SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__ctor_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.Sctp.Association.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.Sctp.Association.Association(DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.Sctp.Association.html#SIPSorcery_Net_Sctp_Association__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.Sctp.Association.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.Sctp.Association.Association(Org.BouncyCastle.Crypto.Tls.DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Int32, System.Int32)
   nameWithType: Association.Association(DatagramTransport, AssociationListener, Int32, Int32)
 - uid: SIPSorcery.Net.Sctp.Association.#ctor*
   name: Association
@@ -17681,11 +17681,11 @@ references:
   commentId: T:SIPSorcery.Net.Sctp.ThreadedAssociation
   fullName: SIPSorcery.Net.Sctp.ThreadedAssociation
   nameWithType: ThreadedAssociation
-- uid: SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
   name: ThreadedAssociation(DatagramTransport, AssociationListener, Boolean, Int32, Int32)
-  href: api/SIPSorcery.Net.Sctp.ThreadedAssociation.html#SIPSorcery_Net_Sctp_ThreadedAssociation__ctor_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor(DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.Sctp.ThreadedAssociation.ThreadedAssociation(DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Boolean, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.Sctp.ThreadedAssociation.html#SIPSorcery_Net_Sctp_ThreadedAssociation__ctor_Org_BouncyCastle_Crypto_Tls_DatagramTransport_SIPSorcery_Net_Sctp_AssociationListener_System_Boolean_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor(Org.BouncyCastle.Crypto.Tls.DatagramTransport,SIPSorcery.Net.Sctp.AssociationListener,System.Boolean,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.Sctp.ThreadedAssociation.ThreadedAssociation(Org.BouncyCastle.Crypto.Tls.DatagramTransport, SIPSorcery.Net.Sctp.AssociationListener, System.Boolean, System.Int32, System.Int32)
   nameWithType: ThreadedAssociation.ThreadedAssociation(DatagramTransport, AssociationListener, Boolean, Int32, Int32)
 - uid: SIPSorcery.Net.Sctp.ThreadedAssociation.#ctor*
   name: ThreadedAssociation
@@ -20340,13 +20340,13 @@ references:
   commentId: T:SIPSorcery.Net.SrtpCipherCTR
   fullName: SIPSorcery.Net.SrtpCipherCTR
   nameWithType: SrtpCipherCTR
-- uid: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(IBlockCipher,System.Byte[],System.Int32,System.Byte[])
+- uid: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Int32,System.Byte[])
   name: GetCipherStream(IBlockCipher, Byte[], Int32, Byte[])
-  href: api/SIPSorcery.Net.SrtpCipherCTR.html#SIPSorcery_Net_SrtpCipherCTR_GetCipherStream_IBlockCipher_System_Byte___System_Int32_System_Byte___
-  commentId: M:SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(IBlockCipher,System.Byte[],System.Int32,System.Byte[])
+  href: api/SIPSorcery.Net.SrtpCipherCTR.html#SIPSorcery_Net_SrtpCipherCTR_GetCipherStream_Org_BouncyCastle_Crypto_IBlockCipher_System_Byte___System_Int32_System_Byte___
+  commentId: M:SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Int32,System.Byte[])
   name.vb: GetCipherStream(IBlockCipher, Byte(), Int32, Byte())
-  fullName: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(IBlockCipher, System.Byte[], System.Int32, System.Byte[])
-  fullName.vb: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(IBlockCipher, System.Byte(), System.Int32, System.Byte())
+  fullName: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(Org.BouncyCastle.Crypto.IBlockCipher, System.Byte[], System.Int32, System.Byte[])
+  fullName.vb: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream(Org.BouncyCastle.Crypto.IBlockCipher, System.Byte(), System.Int32, System.Byte())
   nameWithType: SrtpCipherCTR.GetCipherStream(IBlockCipher, Byte[], Int32, Byte[])
   nameWithType.vb: SrtpCipherCTR.GetCipherStream(IBlockCipher, Byte(), Int32, Byte())
 - uid: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream*
@@ -20356,13 +20356,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SrtpCipherCTR.GetCipherStream
   nameWithType: SrtpCipherCTR.GetCipherStream
-- uid: SIPSorcery.Net.SrtpCipherCTR.Process(IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[])
+- uid: SIPSorcery.Net.SrtpCipherCTR.Process(Org.BouncyCastle.Crypto.IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[])
   name: Process(IBlockCipher, MemoryStream, Int32, Int32, Byte[])
-  href: api/SIPSorcery.Net.SrtpCipherCTR.html#SIPSorcery_Net_SrtpCipherCTR_Process_IBlockCipher_System_IO_MemoryStream_System_Int32_System_Int32_System_Byte___
-  commentId: M:SIPSorcery.Net.SrtpCipherCTR.Process(IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[])
+  href: api/SIPSorcery.Net.SrtpCipherCTR.html#SIPSorcery_Net_SrtpCipherCTR_Process_Org_BouncyCastle_Crypto_IBlockCipher_System_IO_MemoryStream_System_Int32_System_Int32_System_Byte___
+  commentId: M:SIPSorcery.Net.SrtpCipherCTR.Process(Org.BouncyCastle.Crypto.IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[])
   name.vb: Process(IBlockCipher, MemoryStream, Int32, Int32, Byte())
-  fullName: SIPSorcery.Net.SrtpCipherCTR.Process(IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte[])
-  fullName.vb: SIPSorcery.Net.SrtpCipherCTR.Process(IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte())
+  fullName: SIPSorcery.Net.SrtpCipherCTR.Process(Org.BouncyCastle.Crypto.IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte[])
+  fullName.vb: SIPSorcery.Net.SrtpCipherCTR.Process(Org.BouncyCastle.Crypto.IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte())
   nameWithType: SrtpCipherCTR.Process(IBlockCipher, MemoryStream, Int32, Int32, Byte[])
   nameWithType.vb: SrtpCipherCTR.Process(IBlockCipher, MemoryStream, Int32, Int32, Byte())
 - uid: SIPSorcery.Net.SrtpCipherCTR.Process*
@@ -20378,13 +20378,13 @@ references:
   commentId: T:SIPSorcery.Net.SrtpCipherF8
   fullName: SIPSorcery.Net.SrtpCipherF8
   nameWithType: SrtpCipherF8
-- uid: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(IBlockCipher,System.Byte[],System.Byte[])
+- uid: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Byte[])
   name: DeriveForIV(IBlockCipher, Byte[], Byte[])
-  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_DeriveForIV_IBlockCipher_System_Byte___System_Byte___
-  commentId: M:SIPSorcery.Net.SrtpCipherF8.DeriveForIV(IBlockCipher,System.Byte[],System.Byte[])
+  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_DeriveForIV_Org_BouncyCastle_Crypto_IBlockCipher_System_Byte___System_Byte___
+  commentId: M:SIPSorcery.Net.SrtpCipherF8.DeriveForIV(Org.BouncyCastle.Crypto.IBlockCipher,System.Byte[],System.Byte[])
   name.vb: DeriveForIV(IBlockCipher, Byte(), Byte())
-  fullName: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(IBlockCipher, System.Byte[], System.Byte[])
-  fullName.vb: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(IBlockCipher, System.Byte(), System.Byte())
+  fullName: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(Org.BouncyCastle.Crypto.IBlockCipher, System.Byte[], System.Byte[])
+  fullName.vb: SIPSorcery.Net.SrtpCipherF8.DeriveForIV(Org.BouncyCastle.Crypto.IBlockCipher, System.Byte(), System.Byte())
   nameWithType: SrtpCipherF8.DeriveForIV(IBlockCipher, Byte[], Byte[])
   nameWithType.vb: SrtpCipherF8.DeriveForIV(IBlockCipher, Byte(), Byte())
 - uid: SIPSorcery.Net.SrtpCipherF8.DeriveForIV*
@@ -20418,13 +20418,13 @@ references:
   commentId: F:SIPSorcery.Net.SrtpCipherF8.F8Context.S
   fullName: SIPSorcery.Net.SrtpCipherF8.F8Context.S
   nameWithType: SrtpCipherF8.F8Context.S
-- uid: SIPSorcery.Net.SrtpCipherF8.Process(IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[],IBlockCipher)
+- uid: SIPSorcery.Net.SrtpCipherF8.Process(Org.BouncyCastle.Crypto.IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[],Org.BouncyCastle.Crypto.IBlockCipher)
   name: Process(IBlockCipher, MemoryStream, Int32, Int32, Byte[], IBlockCipher)
-  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_Process_IBlockCipher_System_IO_MemoryStream_System_Int32_System_Int32_System_Byte___IBlockCipher_
-  commentId: M:SIPSorcery.Net.SrtpCipherF8.Process(IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[],IBlockCipher)
+  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_Process_Org_BouncyCastle_Crypto_IBlockCipher_System_IO_MemoryStream_System_Int32_System_Int32_System_Byte___Org_BouncyCastle_Crypto_IBlockCipher_
+  commentId: M:SIPSorcery.Net.SrtpCipherF8.Process(Org.BouncyCastle.Crypto.IBlockCipher,System.IO.MemoryStream,System.Int32,System.Int32,System.Byte[],Org.BouncyCastle.Crypto.IBlockCipher)
   name.vb: Process(IBlockCipher, MemoryStream, Int32, Int32, Byte(), IBlockCipher)
-  fullName: SIPSorcery.Net.SrtpCipherF8.Process(IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte[], IBlockCipher)
-  fullName.vb: SIPSorcery.Net.SrtpCipherF8.Process(IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte(), IBlockCipher)
+  fullName: SIPSorcery.Net.SrtpCipherF8.Process(Org.BouncyCastle.Crypto.IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte[], Org.BouncyCastle.Crypto.IBlockCipher)
+  fullName.vb: SIPSorcery.Net.SrtpCipherF8.Process(Org.BouncyCastle.Crypto.IBlockCipher, System.IO.MemoryStream, System.Int32, System.Int32, System.Byte(), Org.BouncyCastle.Crypto.IBlockCipher)
   nameWithType: SrtpCipherF8.Process(IBlockCipher, MemoryStream, Int32, Int32, Byte[], IBlockCipher)
   nameWithType.vb: SrtpCipherF8.Process(IBlockCipher, MemoryStream, Int32, Int32, Byte(), IBlockCipher)
 - uid: SIPSorcery.Net.SrtpCipherF8.Process*
@@ -20434,11 +20434,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SrtpCipherF8.Process
   nameWithType: SrtpCipherF8.Process
-- uid: SIPSorcery.Net.SrtpCipherF8.ProcessBlock(IBlockCipher,SIPSorcery.Net.SrtpCipherF8.F8Context,System.IO.MemoryStream,System.Int32,System.IO.MemoryStream,System.Int32,System.Int32)
+- uid: SIPSorcery.Net.SrtpCipherF8.ProcessBlock(Org.BouncyCastle.Crypto.IBlockCipher,SIPSorcery.Net.SrtpCipherF8.F8Context,System.IO.MemoryStream,System.Int32,System.IO.MemoryStream,System.Int32,System.Int32)
   name: ProcessBlock(IBlockCipher, SrtpCipherF8.F8Context, MemoryStream, Int32, MemoryStream, Int32, Int32)
-  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_ProcessBlock_IBlockCipher_SIPSorcery_Net_SrtpCipherF8_F8Context_System_IO_MemoryStream_System_Int32_System_IO_MemoryStream_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.SrtpCipherF8.ProcessBlock(IBlockCipher,SIPSorcery.Net.SrtpCipherF8.F8Context,System.IO.MemoryStream,System.Int32,System.IO.MemoryStream,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.SrtpCipherF8.ProcessBlock(IBlockCipher, SIPSorcery.Net.SrtpCipherF8.F8Context, System.IO.MemoryStream, System.Int32, System.IO.MemoryStream, System.Int32, System.Int32)
+  href: api/SIPSorcery.Net.SrtpCipherF8.html#SIPSorcery_Net_SrtpCipherF8_ProcessBlock_Org_BouncyCastle_Crypto_IBlockCipher_SIPSorcery_Net_SrtpCipherF8_F8Context_System_IO_MemoryStream_System_Int32_System_IO_MemoryStream_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpCipherF8.ProcessBlock(Org.BouncyCastle.Crypto.IBlockCipher,SIPSorcery.Net.SrtpCipherF8.F8Context,System.IO.MemoryStream,System.Int32,System.IO.MemoryStream,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.SrtpCipherF8.ProcessBlock(Org.BouncyCastle.Crypto.IBlockCipher, SIPSorcery.Net.SrtpCipherF8.F8Context, System.IO.MemoryStream, System.Int32, System.IO.MemoryStream, System.Int32, System.Int32)
   nameWithType: SrtpCipherF8.ProcessBlock(IBlockCipher, SrtpCipherF8.F8Context, MemoryStream, Int32, MemoryStream, Int32, Int32)
 - uid: SIPSorcery.Net.SrtpCipherF8.ProcessBlock*
   name: ProcessBlock
