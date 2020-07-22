@@ -218,10 +218,9 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Check that the message integrity attribute is correct.
         /// </summary>
-        /// <param name="messageIntegrityKey"></param>
-        /// <param name="localUser"></param>
-        /// <param name="remoteUser"></param>
-        /// <returns></returns>
+        /// <param name="messageIntegrityKey">The message integrity key that was used to generate
+        /// the HMAC for the original message.</param>
+        /// <returns>True if the fingerprint and HMAC of the STUN message are valid. False if not.</returns>
         public bool CheckIntegrity(byte[] messageIntegrityKey)
         {
             bool isHmacValid = false;

@@ -218,7 +218,7 @@ namespace SIPSorcery.Net.Sctp
         private ReConfigChunk makeSSNResets()
         {
             ReConfigChunk reply = new ReConfigChunk(); // create a new thing
-            logger.LogDebug($"SCTP closing {listOfStreamsToReset.Count} stream.");
+            //logger.LogDebug($"SCTP closing {listOfStreamsToReset.Count} stream.");
             List<int> streamsL = new List<int>();
             lock (listOfStreamsToReset)
             {

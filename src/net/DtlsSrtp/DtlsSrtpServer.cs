@@ -461,20 +461,7 @@ namespace SIPSorcery.Net
                 description += cause;
             }
 
-            AlertLevelsEnum level = AlertLevelsEnum.Warning;
-            AlertTypesEnum alertType = AlertTypesEnum.unknown;
-
-            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
-            {
-                level = (AlertLevelsEnum)alertLevel;
-            }
-
-            if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
-            {
-                alertType = (AlertTypesEnum)alertDescription;
-            }
-
-            if (alertType == AlertTypesEnum.close_notify)
+            if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
             {
                 logger.LogDebug($"DTLS server raised close notify: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
             }

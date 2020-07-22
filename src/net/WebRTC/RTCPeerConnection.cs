@@ -345,44 +345,67 @@ namespace SIPSorcery.Net
             {
                 if (state == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
                 {
-                    var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
-                    base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
-
-                    logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
-
-                    _dtlsHandle = new DtlsSrtpTransport(
-                                IceRole == IceRolesEnum.active ?
-                                (IDtlsSrtpPeer)new DtlsSrtpClient(_currentCertificate.Certificate) :
-                                (IDtlsSrtpPeer)new DtlsSrtpServer(_currentCertificate.Certificate));
-
-                    _dtlsHandle.OnAlert += OnDtlsAlert;
-
-                    logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
-                    Task.Run<bool>(() => DoDtlsHandshake(_dtlsHandle))
-                    .ContinueWith(t =>
+                    if (_dtlsHandle != null)
                     {
-                        if (t.IsFaulted)
-                        {
-                            logger.LogWarning($"RTCPeerConnection DTLS handshake task completed in a faulted state. {t.Exception?.Flatten().Message}");
+                        // The ICE connection state change is due to a re-connection.
+                        iceConnectionState = state;
+                        oniceconnectionstatechange?.Invoke(iceConnectionState);
 
-                            connectionState = RTCPeerConnectionState.failed;
-                            onconnectionstatechange?.Invoke(connectionState);
-                        }
-                        else
-                        {
-                            connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
-                            onconnectionstatechange?.Invoke(connectionState);
+                        connectionState = RTCPeerConnectionState.connected;
+                        onconnectionstatechange?.Invoke(connectionState);
+                    }
+                    else
+                    {
+                        var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                        base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
-                            if (connectionState == RTCPeerConnectionState.connected && RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
+                        logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
+
+                        _dtlsHandle = new DtlsSrtpTransport(
+                                    IceRole == IceRolesEnum.active ?
+                                    (IDtlsSrtpPeer)new DtlsSrtpClient(_currentCertificate.Certificate) :
+                                    (IDtlsSrtpPeer)new DtlsSrtpServer(_currentCertificate.Certificate));
+
+                        _dtlsHandle.OnAlert += OnDtlsAlert;
+
+                        logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
+                        Task.Run<bool>(() => DoDtlsHandshake(_dtlsHandle))
+                        .ContinueWith(t =>
+                        {
+                            if (t.IsFaulted)
                             {
-                                InitialiseSctpAssociation();
+                                logger.LogWarning($"RTCPeerConnection DTLS handshake task completed in a faulted state. {t.Exception?.Flatten().Message}");
+
+                                connectionState = RTCPeerConnectionState.failed;
+                                onconnectionstatechange?.Invoke(connectionState);
                             }
-                        }
-                    });
+                            else
+                            {
+                                connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
+                                onconnectionstatechange?.Invoke(connectionState);
+
+                                if (connectionState == RTCPeerConnectionState.connected && RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
+                                {
+                                    InitialiseSctpAssociation();
+                                }
+                            }
+                        });
+                    }
                 }
 
                 iceConnectionState = state;
                 oniceconnectionstatechange?.Invoke(iceConnectionState);
+
+                if(iceConnectionState == RTCIceConnectionState.disconnected)
+                {
+                    connectionState = RTCPeerConnectionState.disconnected;
+                    onconnectionstatechange?.Invoke(connectionState);
+                }
+                else if(iceConnectionState == RTCIceConnectionState.failed)
+                {
+                    connectionState = RTCPeerConnectionState.failed;
+                    onconnectionstatechange?.Invoke(connectionState);
+                }
             };
             _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
             _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
@@ -642,7 +665,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The sample payload.</param>
         public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
         {
-            if (base.AudioDestinationEndPoint != null && IsDtlsNegotiationComplete && connectionState != RTCPeerConnectionState.closed)
+            if (base.AudioDestinationEndPoint != null && IsDtlsNegotiationComplete && connectionState == RTCPeerConnectionState.connected)
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
@@ -1010,11 +1033,20 @@ namespace SIPSorcery.Net
             _rtpIceChannel.Restart();
         }
 
+        /// <summary>
+        /// Gets the initial optional configuration settings this peer connection was created
+        /// with.
+        /// </summary>
+        /// <returns>If available the initial configuration options.</returns>
         public RTCConfiguration getConfiguration()
         {
             return _configuration;
         }
 
+        /// <summary>
+        /// Not implemented. Configuration options cannot currently be changed once the peer
+        /// connection has been initialised.
+        /// </summary>
         public void setConfiguration(RTCConfiguration configuration = null)
         {
             throw new NotImplementedException();
@@ -1146,14 +1178,16 @@ namespace SIPSorcery.Net
         /// <param name="alertDescription">An optional description for the alert.</param>
         private void OnDtlsAlert(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription)
         {
-            logger.LogWarning($"DTLS {alertLevel} alert {alertType}: {alertDescription}");
-
             if (alertType == AlertTypesEnum.close_notify)
             {
-                logger.LogWarning($"SCTP closing association as a result of DTLS transport closure.");
+                logger.LogDebug($"SCTP closing association as a result of DTLS transport closure.");
 
                 // No point keeping the SCTP association open if there is no DTLS transport available.
                 _peerSctpAssociation.Close();
+            }
+            else
+            {
+                logger.LogWarning($"DTLS unexpected {alertLevel} alert {alertType}: {alertDescription}");
             }
         }
 
