@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const url = "ws://localhost:8081/"
+
+        var pcs = [];
+
+        async function start() {
+
+            for (i = 0; i < 9; i++) {
+                let name = `#videoCtl${i}`;
+                let pc = startPeer(document.querySelector(name), name);
+                pcs.push(pc);
+
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
+
+        function startPeer(videoCtl, name) {
+
+            var ws = new WebSocket(url, []);
+            var pc = new RTCPeerConnection(null);
+            var vc = videoCtl;
+            var nm = name;
+
+            console.log(`start peer ${nm}.`);
+
+            ws.onopen = function () {
+                console.log("web socket onopen.");
+
+                pc.ontrack = ({ track, streams: [stream] }) => {
+                    console.log(`pc.ontrack for ${nm}.`);
+                    track.onunmute = () => {
+                        vc.srcObject = stream;
+                    };
+                };
+
+                pc.onicegatheringstatechange = function () {
+                    console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+                }
+
+                pc.oniceconnectionstatechange = function () {
+                    console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+                }
+
+                pc.onsignalingstatechange = function () {
+                    console.log("onsignalingstatechange: " + pc.signalingState);
+                }
+
+                pc.onicecandidate = function (event) {
+                    if (event.candidate) {
+                        ws.send(event.candidate.candidate);
+                    }
+                };
+            };
+
+            ws.onmessage = async function (evt) {
+                // Received SDP offer from the remote web socket server.
+                //console.log("web socket onmessage: " + evt.data + ".");
+                await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+
+                // Now create our offer SDP to send back to the web socket server.
+                pc.createAnswer().then(function (answer) {
+                    return pc.setLocalDescription(answer);
+                }).then(function () {
+                    //console.log("Sending answer SDP.");
+                    //console.log("SDP: " + pc.localDescription.sdp);
+                    ws.send(pc.localDescription.sdp);
+                });
+            };
+
+            return pc;
+        };
+
+        function closePeers() {
+
+            pcs.forEach((pc) => {
+                console.log("close peer");
+                pc.close();
+            });
+        };
+
+    </script>
+</head>
+<body>
+
+    <div>
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeers();">Close</button>
+    </div>
+
+    <video controls autoplay="autoplay" id="videoCtl0" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl1" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl2" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl3" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl4" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl5" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl6" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl7" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl8" width="640" height="480"></video>
+
+
+</body>
