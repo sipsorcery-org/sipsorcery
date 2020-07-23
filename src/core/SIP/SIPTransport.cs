@@ -375,7 +375,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Sends a SIP request asynchronously. This method will attempt to find the most appropriate
+        /// Sends a SIP request. This method will attempt to find the most appropriate
         /// local SIP channel to send the request on.
         /// </summary>
         /// <param name="sipRequest">The SIP request to send.</param>
@@ -514,7 +514,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Asynchronously forwards a SIP response. There are two main cases for a SIP response to be forwarded:
+        /// Forwards a SIP response. There are two main cases for a SIP response to be forwarded:
         /// - First case is when we have processed a request and are returning a response. In this case the response
         ///   should be sent back on exactly the same socket the request came on.
         /// - Second case is when we are acting as a Proxy and the response is on it's way back from the agent
@@ -715,7 +715,7 @@ namespace SIPSorcery.SIP
                                 sipMessage.DnsResult = t.Result;
                             }
                         }
-                    );
+                    ).ConfigureAwait(false);
 
                 return (SocketError.InProgress, null);
             }

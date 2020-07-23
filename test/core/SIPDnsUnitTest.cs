@@ -13,7 +13,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Net;
 using System.Threading.Tasks;
+using DnsClient;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -161,6 +164,55 @@ namespace SIPSorcery.SIP.App.UnitTests
             Assert.Equal(SIPProtocolsEnum.tls, result.Protocol);
 
             logger.LogDebug($"resolved to SIP end point {result}.");
+        }
+
+        /// <summary>
+        /// Tests that attempting to resolve a non-existent hostname is handled gracefully.
+        /// </summary>
+        [Fact]
+        public void ResolveNonExistentServiceTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sipsorceryx.com"), false).Result;
+
+            Assert.Null(result);
+        }
+
+        /// <summary>
+        /// Tests that using a non-responding DNS server is handled gracefully.
+        /// </summary>
+        [Fact]
+        public void NonRespondingDNSServerTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var originalClient = SIPDns.LookupClient;
+
+            try
+            {
+                LookupClientOptions clientOptions = new LookupClientOptions(IPAddress.Loopback)
+                {
+                    Retries = 3,
+                    Timeout = TimeSpan.FromSeconds(1),
+                    UseCache = true,
+                    UseTcpFallback = false
+                };
+
+                SIPDns.PreferIPv6NameResolution = true;
+                SIPDns.LookupClient = new LookupClient(clientOptions);
+
+                var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false).Result;
+
+                Assert.Null(result);
+            }
+            finally
+            {
+                SIPDns.LookupClient = originalClient;
+                SIPDns.PreferIPv6NameResolution = false;
+            }
         }
     }
 }
