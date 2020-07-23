@@ -25,6 +25,7 @@ namespace SIPSorcery.Net.Sctp
     public interface SCTPStreamListener
     {
         void onMessage(SCTPStream s, string message);
+        void onDataMessage(SCTPStream s, byte[] data);
         void close(SCTPStream aThis);
     }
 }
