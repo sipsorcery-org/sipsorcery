@@ -3753,7 +3753,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPDns.html",
-          "hash": "NQGwgsiTsHN/43gaYTVfWg=="
+          "hash": "gk9+wzqJWuvt1j+5Biufgw=="
         }
       },
       "is_incremental": false,
@@ -4545,7 +4545,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransport.html",
-          "hash": "E05si+XMRjr1vrRyB8XcpA=="
+          "hash": "D78PFj4EAGzvYfg2zSHmAw=="
         }
       },
       "is_incremental": false,
