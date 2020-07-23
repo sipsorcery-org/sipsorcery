@@ -7263,6 +7263,28 @@ references:
   commentId: E:SIPSorcery.Net.RTCDataChannel.onclose
   fullName: SIPSorcery.Net.RTCDataChannel.onclose
   nameWithType: RTCDataChannel.onclose
+- uid: SIPSorcery.Net.RTCDataChannel.onDatamessage
+  name: onDatamessage
+  href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_onDatamessage
+  commentId: E:SIPSorcery.Net.RTCDataChannel.onDatamessage
+  fullName: SIPSorcery.Net.RTCDataChannel.onDatamessage
+  nameWithType: RTCDataChannel.onDatamessage
+- uid: SIPSorcery.Net.RTCDataChannel.onDataMessage(SIPSorcery.Net.Sctp.SCTPStream,System.Byte[])
+  name: onDataMessage(SCTPStream, Byte[])
+  href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_onDataMessage_SIPSorcery_Net_Sctp_SCTPStream_System_Byte___
+  commentId: M:SIPSorcery.Net.RTCDataChannel.onDataMessage(SIPSorcery.Net.Sctp.SCTPStream,System.Byte[])
+  name.vb: onDataMessage(SCTPStream, Byte())
+  fullName: SIPSorcery.Net.RTCDataChannel.onDataMessage(SIPSorcery.Net.Sctp.SCTPStream, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTCDataChannel.onDataMessage(SIPSorcery.Net.Sctp.SCTPStream, System.Byte())
+  nameWithType: RTCDataChannel.onDataMessage(SCTPStream, Byte[])
+  nameWithType.vb: RTCDataChannel.onDataMessage(SCTPStream, Byte())
+- uid: SIPSorcery.Net.RTCDataChannel.onDataMessage*
+  name: onDataMessage
+  href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_onDataMessage_
+  commentId: Overload:SIPSorcery.Net.RTCDataChannel.onDataMessage
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCDataChannel.onDataMessage
+  nameWithType: RTCDataChannel.onDataMessage
 - uid: SIPSorcery.Net.RTCDataChannel.onerror
   name: onerror
   href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_onerror
@@ -17476,6 +17498,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.Sctp.SCTPStreamListener.close
   nameWithType: SCTPStreamListener.close
+- uid: SIPSorcery.Net.Sctp.SCTPStreamListener.onDataMessage(SIPSorcery.Net.Sctp.SCTPStream,System.Byte[])
+  name: onDataMessage(SCTPStream, Byte[])
+  href: api/SIPSorcery.Net.Sctp.SCTPStreamListener.html#SIPSorcery_Net_Sctp_SCTPStreamListener_onDataMessage_SIPSorcery_Net_Sctp_SCTPStream_System_Byte___
+  commentId: M:SIPSorcery.Net.Sctp.SCTPStreamListener.onDataMessage(SIPSorcery.Net.Sctp.SCTPStream,System.Byte[])
+  name.vb: onDataMessage(SCTPStream, Byte())
+  fullName: SIPSorcery.Net.Sctp.SCTPStreamListener.onDataMessage(SIPSorcery.Net.Sctp.SCTPStream, System.Byte[])
+  fullName.vb: SIPSorcery.Net.Sctp.SCTPStreamListener.onDataMessage(SIPSorcery.Net.Sctp.SCTPStream, System.Byte())
+  nameWithType: SCTPStreamListener.onDataMessage(SCTPStream, Byte[])
+  nameWithType.vb: SCTPStreamListener.onDataMessage(SCTPStream, Byte())
+- uid: SIPSorcery.Net.Sctp.SCTPStreamListener.onDataMessage*
+  name: onDataMessage
+  href: api/SIPSorcery.Net.Sctp.SCTPStreamListener.html#SIPSorcery_Net_Sctp_SCTPStreamListener_onDataMessage_
+  commentId: Overload:SIPSorcery.Net.Sctp.SCTPStreamListener.onDataMessage
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Sctp.SCTPStreamListener.onDataMessage
+  nameWithType: SCTPStreamListener.onDataMessage
 - uid: SIPSorcery.Net.Sctp.SCTPStreamListener.onMessage(SIPSorcery.Net.Sctp.SCTPStream,System.String)
   name: onMessage(SCTPStream, String)
   href: api/SIPSorcery.Net.Sctp.SCTPStreamListener.html#SIPSorcery_Net_Sctp_SCTPStreamListener_onMessage_SIPSorcery_Net_Sctp_SCTPStream_System_String_
