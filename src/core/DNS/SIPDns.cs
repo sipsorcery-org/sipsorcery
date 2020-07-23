@@ -74,6 +74,12 @@ namespace SIPSorcery.SIP
             {
                 return _lookupClient;
             }
+            internal set
+            {
+                // Intended to allow unit testing with client options that will cause the
+                // lookup logic to execute failure conditions.
+                _lookupClient = value;
+            }
         }
 
         static SIPDns()

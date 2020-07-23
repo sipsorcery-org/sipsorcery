@@ -33,7 +33,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP
 {
     public delegate Task<SIPEndPoint> ResolveSIPUriDelegate(SIPURI uri, bool preferIPv6 = false);
-   
+
     public class SIPTransport : IDisposable
     {
         private const int MAX_QUEUEWAIT_PERIOD = 200;              // Maximum time to wait to check the message received queue if no events are received.
@@ -545,11 +545,11 @@ namespace SIPSorcery.SIP
             {
                 return SendResponseAsync(sipResponse.DnsResult, sipResponse);
             }
-            else if(sipResponse.DnsLookupFailedAt != DateTime.MinValue)
+            else if (sipResponse.DnsLookupFailedAt != DateTime.MinValue)
             {
                 return Task.FromResult(SocketError.HostNotFound);
             }
-            else if(sipResponse.DnsLookupStartedAt != DateTime.MinValue)
+            else if (sipResponse.DnsLookupStartedAt != DateTime.MinValue)
             {
                 return Task.FromResult(SocketError.InProgress);
             }
@@ -675,7 +675,7 @@ namespace SIPSorcery.SIP
         /// end point to forward the SIP response to.</returns>
         private (SocketError status, SIPEndPoint dstEndPoint) GetDestinationForSend(SIPMessageBase sipMessage, SIPURI destinationUri)
         {
-            if(IPAddress.TryParse(destinationUri.MAddrOrHostAddress, out var dstIPAddress))
+            if (IPAddress.TryParse(destinationUri.MAddrOrHostAddress, out var dstIPAddress))
             {
                 // The URI is an IP address, no need for a DNS query.
                 if (!ushort.TryParse(destinationUri.HostPort, out var port))
@@ -691,31 +691,32 @@ namespace SIPSorcery.SIP
                 // Initiate the DNS query.
                 sipMessage.DnsLookupStartedAt = DateTime.Now;
 
-                Task.Run(() => ResolveSIPUri(destinationUri))
-                    .ContinueWith(
-                        t =>
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        var result = await ResolveSIPUri(destinationUri).ConfigureAwait(false);
+
+                        if (result == null)
                         {
-                            if (t.IsFaulted)
-                            {
-                                sipMessage.DnsLookupFailedAt = DateTime.Now;
-                                var duration = sipMessage.DnsLookupFailedAt.Subtract(sipMessage.DnsLookupStartedAt).TotalMilliseconds;
-                                logger.LogWarning($"SIP transport DNS lookup for URI {destinationUri} failed in {duration:0.##}ms. {t.Exception?.InnerException?.Message}");
-                                
-                            }
-                            else if (t.Result == null)
-                            {
-                                sipMessage.DnsLookupFailedAt = DateTime.Now;
-                                var duration = sipMessage.DnsLookupFailedAt.Subtract(sipMessage.DnsLookupStartedAt).TotalMilliseconds;
-                                logger.LogWarning($"SIP transport DNS lookup for URI {destinationUri} did not get a result after {duration:0.##}ms.");
-                            }
-                            else
-                            {
-                                var duration = DateTime.Now.Subtract(sipMessage.DnsLookupStartedAt).TotalMilliseconds;
-                                logger.LogDebug($"SIP transport DNS lookup successful for URI {destinationUri} to {t.Result} in {duration:0.##}ms.");
-                                sipMessage.DnsResult = t.Result;
-                            }
+                            sipMessage.DnsLookupFailedAt = DateTime.Now;
+                            var duration = sipMessage.DnsLookupFailedAt.Subtract(sipMessage.DnsLookupStartedAt).TotalMilliseconds;
+                            logger.LogWarning($"SIP transport DNS lookup for URI {destinationUri} did not get a result after {duration:0.##}ms.");
                         }
-                    ).ConfigureAwait(false);
+                        else
+                        {
+                            var duration = DateTime.Now.Subtract(sipMessage.DnsLookupStartedAt).TotalMilliseconds;
+                            logger.LogDebug($"SIP transport DNS lookup successful for URI {destinationUri} to {result} in {duration:0.##}ms.");
+                            sipMessage.DnsResult = result;
+                        }
+                    }
+                    catch (Exception excp)
+                    {
+                        sipMessage.DnsLookupFailedAt = DateTime.Now;
+                        var duration = sipMessage.DnsLookupFailedAt.Subtract(sipMessage.DnsLookupStartedAt).TotalMilliseconds;
+                        logger.LogWarning($"SIP transport DNS lookup for URI {destinationUri} failed in {duration:0.##}ms. {excp.Message}");
+                    }
+                });
 
                 return (SocketError.InProgress, null);
             }
