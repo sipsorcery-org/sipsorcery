@@ -156,7 +156,7 @@ namespace SIPSorcery.Net
         }
 
         private List<RTCIceCandidate> _candidates = new List<RTCIceCandidate>();
-        private List<RTCIceCandidate> _remoteCandidates = new List<RTCIceCandidate>();
+        internal List<RTCIceCandidate> _remoteCandidates = new List<RTCIceCandidate>();
 
         /// <summary>
         /// A queue of remote ICE candidates that have been added to the session and that
