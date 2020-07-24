@@ -244,6 +244,8 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that two ICE channels with only host candidates are able to successfully
         /// connect.
+        /// 
+        /// NOTE: Another test that fails on macos appveyor CI with for no obvious reason.
         /// </summary>
         [Fact]
         public async void CheckSuccessfulConnectionForHostCandidatesUnitTest()
