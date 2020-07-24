@@ -515,7 +515,7 @@ namespace SIPSorcery.Net.UnitTests
             // This pause is so that channel A can process the new remote candidates supplied by B.
             // These candidates are host candidates and should replace the peer reflexive candidates
             // that were automatically created previously.
-            await Task.Delay(500);
+            await Task.Delay(2000);
 
             rtpIceChannelA.SetRemoteCredentials(rtpIceChannelB.LocalIceUser, rtpIceChannelB.LocalIcePassword);
 
