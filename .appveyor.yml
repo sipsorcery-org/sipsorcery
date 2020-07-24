@@ -19,11 +19,10 @@ build:
   publish_nuget: true
   publish_nuget_symbols: true
   verbosity: quiet
-#test:
-#  categories:
-#    except:
-#    - transport
-#    - txintegration
+test:
+  assemblies:
+    only:
+      - '**\\SIPSorcery.UnitTests.dll'
 on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
