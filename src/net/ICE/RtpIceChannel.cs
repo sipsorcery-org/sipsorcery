@@ -1339,10 +1339,7 @@ namespace SIPSorcery.Net
                 {
                     ChecklistEntry matchingChecklistEntry = null;
 
-                    var matchingCandidate = (_remoteCandidates != null) ?
-                        _remoteCandidates.Where(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)).FirstOrDefault() : null;
-
-                    if (matchingCandidate == null)
+                    if (_remoteCandidates == null || !_remoteCandidates.Any(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)))
                     {
                         // This STUN request has come from a socket not in the remote ICE candidates list. 
                         // Add a new remote peer reflexive candidate. 
@@ -1366,7 +1363,6 @@ namespace SIPSorcery.Net
 
                         AddChecklistEntry(entry);
 
-                        matchingCandidate = peerRflxCandidate;
                         matchingChecklistEntry = entry;
                     }
                     else
@@ -1374,7 +1370,7 @@ namespace SIPSorcery.Net
                         // Find the checklist entry for this remote candidate and update its status.
                         lock (_checklist)
                         {
-                            matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.foundation == matchingCandidate.foundation &&
+                            matchingChecklistEntry = _checklist.Where(x => _remoteCandidates.Any(a=>a.foundation == x.RemoteCandidate.foundation && a.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)) &&
                             (!wasRelayed || (x.LocalCandidate.type == RTCIceCandidateType.relay))).FirstOrDefault();
                         }
                     }
