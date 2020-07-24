@@ -1,13 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: STUNDnsUnitTest.cs
 //
-// Description: Unit tests for the STUNDns class.
+// Description: Integration tests for the STUNDns class.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 09 Jun 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 24 Jul 2020  Aaron Clauson   Moved from unit to integration tests.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -18,7 +19,7 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-namespace SIPSorcery.Net.UnitTests
+namespace SIPSorcery.Net.IntegrationTests
 {
     [Trait("Category", "dns")]
     public class STUNDnsUnitTest
@@ -91,9 +92,7 @@ namespace SIPSorcery.Net.UnitTests
 
             if (localHostname.EndsWith(STUNDns.MDNS_TLD))
             {
-                // TODO: Look into why DNS calls on macos cannot resolve domains ending in ".local"
-                // RFC6762 domains.
-                logger.LogWarning("Skipping unit test LookupPrivateNetworkHostTestMethod due to RFC6762 domain.");
+                logger.LogWarning("Skipping unit test due to RFC6762 domain.");
             }
             else
             {
@@ -121,9 +120,7 @@ namespace SIPSorcery.Net.UnitTests
 
             if (localHostname.EndsWith(STUNDns.MDNS_TLD))
             {
-                // TODO: Look into why DNS calls on macos cannot resolve domains ending in ".local"
-                // RFC6762 domains.
-                logger.LogWarning("Skipping unit test LookupPrivateNetworkHostIPv6TestMethod due to RFC6762 domain.");
+                logger.LogWarning("Skipping unit test due to RFC6762 domain.");
             }
             else
             {
@@ -199,7 +196,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            STUNUri.TryParse("webrtc.sipsorcery.com", out var stunUri);
+            STUNUri.TryParse("www.sipsorcery.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
 
             logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");

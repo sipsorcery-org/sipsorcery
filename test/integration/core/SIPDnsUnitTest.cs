@@ -1,13 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SIPDnsUnitTest.cs
 //
-// Description: Unit tests for the SIP specific DNS lookup logic.
+// Description: Integration tests for the SIP specific DNS lookup logic.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 14 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
+// 24 Jul 2020  Aaron Clauson   Moved from unit to integration tests.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,7 +21,7 @@ using DnsClient;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-namespace SIPSorcery.SIP.App.UnitTests
+namespace SIPSorcery.SIP.IntegrationTests
 {
     [Trait("Category", "dns")]
     public class SIPDnsUnitTest
