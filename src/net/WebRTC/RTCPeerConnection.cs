@@ -887,60 +887,74 @@ namespace SIPSorcery.Net
             {
                 int mindex = RemoteDescription == null ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(track.Kind);
 
-                SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
-                 track.Kind,
-                 SDP.IGNORE_RTP_PORT_NUMBER,
-                 (track.Kind == SDPMediaTypesEnum.video) ? videoCapabilities : audioCapabilities);
-
-                announcement.Transport = RTP_MEDIA_PROFILE;
-                announcement.Connection = new SDPConnectionInformation(IPAddress.Any);
-                announcement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                announcement.AddExtra(RTCP_ATTRIBUTE);
-                announcement.MediaStreamStatus = track.StreamStatus;
-                announcement.MediaID = mindex.ToString();
-                announcement.MLineIndex = mindex;
-
-                announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
-                announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
-                announcement.IceOptions = ICE_OPTIONS;
-                announcement.DtlsFingerprint = offerSdp.DtlsFingerprint;
-
-                if (iceCandidatesAdded == false)
+                if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
-                    AddIceCandidates(announcement);
-                    iceCandidatesAdded = true;
+                    logger.LogWarning($"Media announcement for {track.Kind} omitted due to no reciprocal remote announcement.");
                 }
+                else
+                {
+                    SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
+                     track.Kind,
+                     SDP.IGNORE_RTP_PORT_NUMBER,
+                     (track.Kind == SDPMediaTypesEnum.video) ? videoCapabilities : audioCapabilities);
 
-                offerSdp.Media.Add(announcement);
+                    announcement.Transport = RTP_MEDIA_PROFILE;
+                    announcement.Connection = new SDPConnectionInformation(IPAddress.Any);
+                    announcement.AddExtra(RTCP_MUX_ATTRIBUTE);
+                    announcement.AddExtra(RTCP_ATTRIBUTE);
+                    announcement.MediaStreamStatus = track.StreamStatus;
+                    announcement.MediaID = mindex.ToString();
+                    announcement.MLineIndex = mindex;
+
+                    announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
+                    announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
+                    announcement.IceOptions = ICE_OPTIONS;
+                    announcement.DtlsFingerprint = offerSdp.DtlsFingerprint;
+
+                    if (iceCandidatesAdded == false)
+                    {
+                        AddIceCandidates(announcement);
+                        iceCandidatesAdded = true;
+                    }
+
+                    offerSdp.Media.Add(announcement);
+                }
             }
 
             if (DataChannels.Count > 0 || (RemoteDescription?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
             {
                 int mindex = RemoteDescription == null ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application);
 
-                SDPMediaAnnouncement dataChannelAnnouncement = new SDPMediaAnnouncement(
+                if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
+                {
+                    logger.LogWarning($"Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
+                }
+                else
+                {
+                    SDPMediaAnnouncement dataChannelAnnouncement = new SDPMediaAnnouncement(
                         SDPMediaTypesEnum.application,
                         SDP.IGNORE_RTP_PORT_NUMBER,
                         new List<SDPMediaFormat> { new SDPMediaFormat(SDP_DATACHANNEL_FORMAT_ID) });
-                dataChannelAnnouncement.Transport = RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE;
-                dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
+                    dataChannelAnnouncement.Transport = RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE;
+                    dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
 
-                dataChannelAnnouncement.SctpPort = SCTP_DEFAULT_PORT;
-                dataChannelAnnouncement.MaxMessageSize = SCTP_DEFAULT_MAX_MESSAGE_SIZE;
-                dataChannelAnnouncement.MLineIndex = mindex;
-                dataChannelAnnouncement.MediaID = mindex.ToString();
-                dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
-                dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
-                dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
-                dataChannelAnnouncement.DtlsFingerprint = offerSdp.DtlsFingerprint;
+                    dataChannelAnnouncement.SctpPort = SCTP_DEFAULT_PORT;
+                    dataChannelAnnouncement.MaxMessageSize = SCTP_DEFAULT_MAX_MESSAGE_SIZE;
+                    dataChannelAnnouncement.MLineIndex = mindex;
+                    dataChannelAnnouncement.MediaID = mindex.ToString();
+                    dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
+                    dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
+                    dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
+                    dataChannelAnnouncement.DtlsFingerprint = offerSdp.DtlsFingerprint;
 
-                if (iceCandidatesAdded == false)
-                {
-                    AddIceCandidates(dataChannelAnnouncement);
-                    iceCandidatesAdded = true;
+                    if (iceCandidatesAdded == false)
+                    {
+                        AddIceCandidates(dataChannelAnnouncement);
+                        iceCandidatesAdded = true;
+                    }
+
+                    offerSdp.Media.Add(dataChannelAnnouncement);
                 }
-
-                offerSdp.Media.Add(dataChannelAnnouncement);
             }
 
             // Set the Bundle attribute to indicate all media announcements are being multiplexed.

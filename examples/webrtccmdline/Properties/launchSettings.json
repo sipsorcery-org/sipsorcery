@@ -1,8 +1,7 @@
 {
   "profiles": {
     "webrtccmdline": {
-      "commandName": "Project",
-      "commandLineArgs": "--ws"
+      "commandName": "Project"
     }
   }
 }

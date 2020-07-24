@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection.Emit;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -104,11 +105,13 @@ namespace SIPSorcery.Examples
             Console.WriteLine("WebRTC Console Test Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
+            bool noOptions = args?.Count() == 0;
+
             var result = Parser.Default.ParseArguments<Options>(args)
-                .WithParsed<Options>(opts => RunCommand(opts).Wait());
+                .WithParsed<Options>(opts => RunCommand(opts, noOptions).Wait());
         }
 
-        private static async Task RunCommand(Options options)
+        private static async Task RunCommand(Options options, bool noOptions)
         {
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
@@ -116,7 +119,7 @@ namespace SIPSorcery.Examples
 
             AddConsoleLogger();
 
-            if (options.UseWebSocket || options.UseSecureWebSocket)
+            if (options.UseWebSocket || options.UseSecureWebSocket || noOptions)
             {
                 // Start web socket.
                 Console.WriteLine("Starting web socket server...");
@@ -448,6 +451,9 @@ namespace SIPSorcery.Examples
 
             _peerConnection = new RTCPeerConnection(pcConfiguration);
 
+            _peerConnection.GetRtpChannel().MdnsResolve = (hostname) => Task.FromResult(NetServices.InternetDefaultAddress);
+            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
+
             var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
             dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
 
@@ -458,10 +464,17 @@ namespace SIPSorcery.Examples
             //pc.addTrack(videoTrack);
 
             _peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
-            _peerConnection.onconnectionstatechange += (state) => logger.LogDebug($"Peer connection state changed to {state}.");
+            _peerConnection.onconnectionstatechange += (state) =>
+            {
+                logger.LogDebug($"Peer connection state changed to {state}.");
+
+                if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
+                {
+                    _peerConnection.Close("remote disconnection");
+                }
+            };
             _peerConnection.OnReceiveReport += (ep, type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
             _peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
-            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
             _peerConnection.onicecandidate += (candidate) =>
             {
