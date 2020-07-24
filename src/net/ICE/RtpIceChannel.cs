@@ -837,7 +837,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning($"RTP ICE channel resolved MDNS hostname {remoteCandidate.address} to {remoteCandidateIPAddr}.");
+                            logger.LogDebug($"RTP ICE channel resolved MDNS hostname {remoteCandidate.address} to {remoteCandidateIPAddr}.");
 
                             var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
                             remoteCandidate.SetDestinationEndPoint(remoteEP);
@@ -1407,15 +1407,6 @@ namespace SIPSorcery.Net
 
                         matchingChecklistEntry = entry;
                     }
-                    //else
-                    //{
-                    //    // Find the checklist entry for this remote candidate and update its status.
-                    //    lock (_checklist)
-                    //    {
-                    //        matchingChecklistEntry = _checklist.Where(x => _remoteCandidates.Any(a=>a.foundation == x.RemoteCandidate.foundation && a.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)) &&
-                    //        (!wasRelayed || (x.LocalCandidate.type == RTCIceCandidateType.relay))).FirstOrDefault();
-                    //    }
-                    //}
 
                     if (matchingChecklistEntry == null)
                     {
