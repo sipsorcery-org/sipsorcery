@@ -31,7 +31,7 @@ steps:
 - task: VSTest@2
   inputs:
     testSelector: 'testAssemblies'
-    testAssemblyVer2: **\\SIPSorcery.UnitTests.dll
+    testAssemblyVer2: '**\\SIPSorcery.UnitTests.dll'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     testFiltercriteria: 'Category!=IPv6&Category!=transport&Category!=txintegration'
