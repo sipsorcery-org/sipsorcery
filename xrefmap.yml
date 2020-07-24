@@ -10928,6 +10928,12 @@ references:
   commentId: F:SIPSorcery.Net.RtpIceChannel.LocalIceUser
   fullName: SIPSorcery.Net.RtpIceChannel.LocalIceUser
   nameWithType: RtpIceChannel.LocalIceUser
+- uid: SIPSorcery.Net.RtpIceChannel.MdnsResolve
+  name: MdnsResolve
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_MdnsResolve
+  commentId: F:SIPSorcery.Net.RtpIceChannel.MdnsResolve
+  fullName: SIPSorcery.Net.RtpIceChannel.MdnsResolve
+  nameWithType: RtpIceChannel.MdnsResolve
 - uid: SIPSorcery.Net.RtpIceChannel.NominatedEntry
   name: NominatedEntry
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_NominatedEntry
