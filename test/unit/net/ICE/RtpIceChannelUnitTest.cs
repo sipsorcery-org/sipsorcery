@@ -454,6 +454,11 @@ namespace SIPSorcery.Net.UnitTests
         /// gets overridden by a host candidate. This typically happens if the first STUN
         /// binding request from the remote peer arrives before the ICE candidate signalling
         /// exchange.
+        /// 
+        /// Note: This test fails on macos. Channel A does not get any peer reflexive candidates.
+        /// Attempted diagnosis on appveyor CI did not reveal the cause. It seemed as if Channel
+        /// A was not receiving packets. Will add this test to the exclude list until macos 
+        /// hardware available.
         /// </summary>
         [Fact]
         public async void CheckPeerReflexiveReplacedByHostCandidatesUnitTest()
