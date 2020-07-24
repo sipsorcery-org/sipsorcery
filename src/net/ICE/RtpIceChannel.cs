@@ -1361,6 +1361,7 @@ namespace SIPSorcery.Net
                 if (!result)
                 {
                     // Send STUN error response.
+                    logger.LogWarning($"ICE RTP channel STUN binding request from {remoteEndPoint} failed an integrity check, rejecting.");
                     STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                     stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
                     SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));

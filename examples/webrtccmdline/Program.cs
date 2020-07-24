@@ -20,7 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection.Metadata.Ecma335;
+using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -32,7 +32,6 @@ using Newtonsoft.Json;
 using Serilog;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
 
@@ -55,6 +54,10 @@ namespace SIPSorcery.Examples
         [Option("stun", Required = false,
             HelpText = "STUN or TURN server to use in the peer connection configuration. Format \"(stun|turn):host[:port][;username;password]\".")]
         public string StunServer { get; set; }
+
+        [Option("nodedss", Required = false,
+            HelpText = "Address of node-dss simple signalling server to exchange SDP and ice candidates. Example http://192.168.11.50:3001.")]
+        public string NodeDssServer { get; set; }
     }
 
     public class WebRtcClient : WebSocketBehavior
@@ -94,6 +97,8 @@ namespace SIPSorcery.Examples
 
         private static WebSocketServer _webSocketServer;
         private static RTCIceServer _stunServer;
+        private static Uri _nodeDssUri;
+        private static HttpClient _nodeDssclient;
 
         /// <summary>
         /// For simplicity this program only supports one active peer connection.
@@ -122,6 +127,19 @@ namespace SIPSorcery.Examples
             // Start MDNS server.
             var mdnsServer = new ServiceDiscovery();
 
+            if (options.StunServer != null)
+            {
+                string[] fields = options.StunServer.Split(';');
+
+                _stunServer = new RTCIceServer
+                {
+                    urls = fields[0],
+                    username = fields.Length > 1 ? fields[1] : null,
+                    credential = fields.Length > 2 ? fields[2] : null,
+                    credentialType = RTCIceCredentialType.password
+                };
+            }
+
             if (options.UseWebSocket || options.UseSecureWebSocket || noOptions)
             {
                 // Start web socket.
@@ -149,21 +167,7 @@ namespace SIPSorcery.Examples
 
                 Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
             }
-
-            if (options.StunServer != null)
-            {
-                string[] fields = options.StunServer.Split(';');
-
-                _stunServer = new RTCIceServer
-                {
-                    urls = fields[0],
-                    username = fields.Length > 1 ? fields[1] : null,
-                    credential = fields.Length > 2 ? fields[2] : null,
-                    credentialType = RTCIceCredentialType.password
-                };
-            }
-
-            if (options.CreateJsonOffer)
+            else if (options.CreateJsonOffer)
             {
                 var pc = Createpc(null, _stunServer);
 
@@ -199,6 +203,13 @@ namespace SIPSorcery.Examples
                     pc.Close("failed to set remote sdp");
                 }
             }
+            else if (options.NodeDssServer != null)
+            {
+                _nodeDssUri = new Uri(options.NodeDssServer);
+                _nodeDssclient = new HttpClient();
+
+                Console.WriteLine($"node-dss server successfully set to {_nodeDssUri}.");
+            }
 
             _ = Task.Run(() => ProcessInput(exitCts));
 
@@ -226,7 +237,7 @@ namespace SIPSorcery.Examples
         /// This application spits out a lot of log messages. In an attempt to make command entry slightly more usable
         /// this method attempts to always write the current command input as the bottom line on the console output.
         /// </summary>
-        private static void ProcessInput(CancellationTokenSource cts)
+        private static async Task ProcessInput(CancellationTokenSource cts)
         {
             // Local function to write the current command in the process of being entered.
             Action<int, string> writeCommandPrompt = (lastPromptRow, cmd) =>
@@ -357,6 +368,84 @@ namespace SIPSorcery.Examples
                                 Console.WriteLine();
                                 Console.WriteLine("yep");
                                 Console.Write(COMMAND_PROMPT);
+                                break;
+
+                            case var x when x.StartsWith("node"):
+                                (_, var sdpType, var myUser, string theirUser) = x.Split(" ", 4, StringSplitOptions.None);
+
+                                if (sdpType == "so")
+                                {
+                                    _peerConnection = Createpc(null, _stunServer);
+
+                                    var offerSdp = _peerConnection.createOffer(null);
+                                    await _peerConnection.setLocalDescription(offerSdp);
+
+                                    Console.WriteLine($"Our Offer:\n{offerSdp.sdp}");
+
+                                    var offerJson = JsonConvert.SerializeObject(offerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
+
+                                    var content = new StringContent(offerJson, Encoding.UTF8, "application/json");
+                                    var res = await _nodeDssclient.PostAsync($"{_nodeDssUri}data/{theirUser}", content);
+
+                                    Console.WriteLine($"node-dss POST result {res.StatusCode}.");
+                                }
+                                else if (sdpType == "go")
+                                {
+                                    var res = await _nodeDssclient.GetAsync($"{_nodeDssUri}data/{myUser}");
+
+                                    Console.WriteLine($"node-dss GET result {res.StatusCode}.");
+
+                                    if (res.StatusCode == HttpStatusCode.OK)
+                                    {
+                                        var content = await res.Content.ReadAsStringAsync();
+                                        RTCSessionDescriptionInit offerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(content);
+
+                                        Console.WriteLine($"Remote offer:\n{offerInit.sdp}");
+
+                                        _peerConnection = Createpc(null, _stunServer);
+
+                                        var setRes = _peerConnection.setRemoteDescription(offerInit);
+                                        if (setRes != SetDescriptionResultEnum.OK)
+                                        {
+                                            // No point continuing. Something will need to change and then try again.
+                                            _peerConnection.Close("failed to set remote sdp offer");
+                                        }
+                                        else
+                                        {
+                                            var answer = _peerConnection.createAnswer(null);
+                                            await _peerConnection.setLocalDescription(answer);
+
+                                            Console.WriteLine($"Our answer:\n{answer.sdp}");
+
+                                            var answerJson = JsonConvert.SerializeObject(answer, new Newtonsoft.Json.Converters.StringEnumConverter());
+                                            var answerContent = new StringContent(answerJson, Encoding.UTF8, "application/json");
+                                            var postRes = await _nodeDssclient.PostAsync($"{_nodeDssUri}data/{theirUser}", answerContent);
+
+                                            Console.WriteLine($"node-dss POST result {res.StatusCode}.");
+                                        }
+                                    }
+                                }
+                                else if (sdpType == "ga")
+                                {
+                                    var res = await _nodeDssclient.GetAsync($"{_nodeDssUri}data/{myUser}");
+
+                                    Console.WriteLine($"node-dss GET result {res.StatusCode}.");
+
+                                    if (res.StatusCode == HttpStatusCode.OK)
+                                    {
+                                        var content = await res.Content.ReadAsStringAsync();
+                                        RTCSessionDescriptionInit answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(content);
+
+                                        Console.WriteLine($"Remote answer:\n{answerInit.sdp}");
+
+                                        var setRes = _peerConnection.setRemoteDescription(answerInit);
+                                        if (setRes != SetDescriptionResultEnum.OK)
+                                        {
+                                            // No point continuing. Something will need to change and then try again.
+                                            _peerConnection.Close("failed to set remote sdp answer");
+                                        }
+                                    }
+                                }
                                 break;
 
                             default:
@@ -584,7 +673,7 @@ namespace SIPSorcery.Examples
 
                 logger.LogDebug($"MDNS result {ans}.");
 
-                switch(ans)
+                switch (ans)
                 {
                     case ARecord a:
                         return a.Address;
