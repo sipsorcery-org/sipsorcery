@@ -323,7 +323,7 @@ namespace SIPSorcery.Net.UnitTests
                 Assert.Equal(RTCIceGatheringState.gathering, rtpIceChannel.IceGatheringState);
                 Assert.Equal(RTCIceConnectionState.@new, rtpIceChannel.IceConnectionState);
 
-                await Task.Delay(500);
+                await Task.Delay(2000);
 
                 // The STUN server check should now have completed and a server reflexive candidate
                 // been acquired
@@ -434,6 +434,68 @@ namespace SIPSorcery.Net.UnitTests
                 Assert.NotNull(rtpIceChannelRelay.NominatedEntry);
                 Assert.NotNull(rtpIceChannelHost.NominatedEntry);
             }
+        }
+
+        /// <summary>
+        /// Tests that checklist processing proceeds correctly when a peer reflexive candidate
+        /// gets overridden by a host candidate. This typically happens if the first STUN
+        /// binding request from the remote peer arrives before the ICE candidate signalling
+        /// exchange.
+        /// </summary>
+        [Fact]
+        public async void CheckPeerReflexiveRepalcedByHostCandidatesUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var rtpIceChannelA = new RtpIceChannel();
+            rtpIceChannelA.IsController = true;
+            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannelA.RTPLocalEndPoint}.");
+
+            var rtpIceChannelB = new RtpIceChannel();
+            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannelB.RTPLocalEndPoint}.");
+
+            rtpIceChannelA.StartGathering();
+            rtpIceChannelB.StartGathering();
+
+            Assert.NotEmpty(rtpIceChannelA.Candidates);
+            Assert.NotEmpty(rtpIceChannelB.Candidates);
+
+            // Because there are no ICE servers gathering completes after the host candidates are gathered.
+            Assert.Equal(RTCIceGatheringState.complete, rtpIceChannelA.IceGatheringState);
+            Assert.Equal(RTCIceGatheringState.complete, rtpIceChannelB.IceGatheringState);
+            Assert.Equal(RTCIceConnectionState.@new, rtpIceChannelA.IceConnectionState);
+            Assert.Equal(RTCIceConnectionState.@new, rtpIceChannelB.IceConnectionState);
+
+            // Exchange ICE user and passwords.
+            //rtpIceChannelA.SetRemoteCredentials(rtpIceChannelB.LocalIceUser, rtpIceChannelB.LocalIcePassword);
+            rtpIceChannelB.SetRemoteCredentials(rtpIceChannelA.LocalIceUser, rtpIceChannelA.LocalIcePassword);
+
+            Assert.Equal(RTCIceConnectionState.@new, rtpIceChannelA.IceConnectionState);
+            Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelB.IceConnectionState);
+
+            // Give the RTP channel listeners time to start.
+            await Task.Delay(500);
+
+            // Only give the non-controlling peer the remote candidates. 
+            rtpIceChannelA.Candidates.ForEach(x => rtpIceChannelB.AddRemoteCandidate(x));
+            //rtpIceChannelB.Candidates.ForEach(x => rtpIceChannelA.AddRemoteCandidate(x));
+
+            await Task.Delay(500);
+
+            rtpIceChannelB.Candidates.ForEach(x => rtpIceChannelA.AddRemoteCandidate(x));
+
+            await Task.Delay(500);
+
+            rtpIceChannelA.SetRemoteCredentials(rtpIceChannelB.LocalIceUser, rtpIceChannelB.LocalIcePassword);
+
+            // Give the RTP ICE channel checklists time to send the first few checks.
+            await Task.Delay(4000);
+
+            Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelA.IceConnectionState);
+            Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelB.IceConnectionState);
+            Assert.NotNull(rtpIceChannelA.NominatedEntry);
+            Assert.NotNull(rtpIceChannelB.NominatedEntry);
         }
     }
 }

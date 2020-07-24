@@ -1322,11 +1322,8 @@ namespace SIPSorcery.Net
                                 // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
                                 // For the lack of a more sophisticated approach use whichever pair gets the first successful STUN exchange. If needs be 
                                 // the selection algorithm can improve over time.
-                                if (matchingChecklistEntry.RemoteCandidate.type != RTCIceCandidateType.prflx) // REMOVE IF CONDITION - TESTING ONLY
-                                {
-                                    matchingChecklistEntry.Nominated = true;
-                                    SendConnectivityCheck(matchingChecklistEntry, true);
-                                }
+                                matchingChecklistEntry.Nominated = true;
+                                SendConnectivityCheck(matchingChecklistEntry, true);
                             }
                         }
                     }
@@ -1372,7 +1369,19 @@ namespace SIPSorcery.Net
                 {
                     ChecklistEntry matchingChecklistEntry = null;
 
-                    if (_remoteCandidates == null || !_remoteCandidates.Any(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)))
+                    // Find the checklist entry for this remote candidate and update its status.
+                    lock (_checklist)
+                    {
+                        // The matching checklist entry is chosen as:
+                        // - The entry that has a remote candidate with an end point that matches the endpoint this STUN request came from,
+                        // - And if the STUN request was relayed through a TURN server then only match is the checklist local candidate is 
+                        //   also a relay type. It is possible for the same remote end point to send STUN requests directly and via a TURN server.
+                        matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint) &&
+                         (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay)
+                         ).FirstOrDefault();
+                    }
+
+                    if (matchingChecklistEntry == null && (_remoteCandidates == null || !_remoteCandidates.Any(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint))))
                     {
                         // This STUN request has come from a socket not in the remote ICE candidates list. 
                         // Add a new remote peer reflexive candidate. 
@@ -1398,15 +1407,15 @@ namespace SIPSorcery.Net
 
                         matchingChecklistEntry = entry;
                     }
-                    else
-                    {
-                        // Find the checklist entry for this remote candidate and update its status.
-                        lock (_checklist)
-                        {
-                            matchingChecklistEntry = _checklist.Where(x => _remoteCandidates.Any(a=>a.foundation == x.RemoteCandidate.foundation && a.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)) &&
-                            (!wasRelayed || (x.LocalCandidate.type == RTCIceCandidateType.relay))).FirstOrDefault();
-                        }
-                    }
+                    //else
+                    //{
+                    //    // Find the checklist entry for this remote candidate and update its status.
+                    //    lock (_checklist)
+                    //    {
+                    //        matchingChecklistEntry = _checklist.Where(x => _remoteCandidates.Any(a=>a.foundation == x.RemoteCandidate.foundation && a.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)) &&
+                    //        (!wasRelayed || (x.LocalCandidate.type == RTCIceCandidateType.relay))).FirstOrDefault();
+                    //    }
+                    //}
 
                     if (matchingChecklistEntry == null)
                     {
