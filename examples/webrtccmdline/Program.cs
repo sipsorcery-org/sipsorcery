@@ -20,14 +20,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection.Emit;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
+using Makaretu.Dns;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Serilog;
 using SIPSorcery.Net;
@@ -67,7 +67,7 @@ namespace SIPSorcery.Examples
         public WebRtcClient()
         { }
 
-        protected override void OnMessage(MessageEventArgs e)
+        protected override void OnMessage(WebSocketSharp.MessageEventArgs e)
         {
             OnMessageReceived(this.Context, pc, e.Data);
         }
@@ -88,6 +88,7 @@ namespace SIPSorcery.Examples
         //private const string SIPSORCERY_STUN_SERVER_PASSWORD = "password"; //"stun.sipsorcery.com";
         private const string COMMAND_PROMPT = "Command => ";
         private const string DATA_CHANNEL_LABEL = "dcx";
+        private const int MDNS_TIMEOUT = 2000;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -104,11 +105,13 @@ namespace SIPSorcery.Examples
             Console.WriteLine("WebRTC Console Test Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
+            bool noOptions = args?.Count() == 0;
+
             var result = Parser.Default.ParseArguments<Options>(args)
-                .WithParsed<Options>(opts => RunCommand(opts).Wait());
+                .WithParsed<Options>(opts => RunCommand(opts, noOptions).Wait());
         }
 
-        private static async Task RunCommand(Options options)
+        private static async Task RunCommand(Options options, bool noOptions)
         {
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
@@ -116,7 +119,10 @@ namespace SIPSorcery.Examples
 
             AddConsoleLogger();
 
-            if (options.UseWebSocket || options.UseSecureWebSocket)
+            // Start MDNS server.
+            var mdnsServer = new ServiceDiscovery();
+
+            if (options.UseWebSocket || options.UseSecureWebSocket || noOptions)
             {
                 // Start web socket.
                 Console.WriteLine("Starting web socket server...");
@@ -448,6 +454,10 @@ namespace SIPSorcery.Examples
 
             _peerConnection = new RTCPeerConnection(pcConfiguration);
 
+            //_peerConnection.GetRtpChannel().MdnsResolve = (hostname) => Task.FromResult(NetServices.InternetDefaultAddress);
+            _peerConnection.GetRtpChannel().MdnsResolve = MdnsResolve;
+            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
+
             var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
             dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
 
@@ -458,10 +468,17 @@ namespace SIPSorcery.Examples
             //pc.addTrack(videoTrack);
 
             _peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
-            _peerConnection.onconnectionstatechange += (state) => logger.LogDebug($"Peer connection state changed to {state}.");
+            _peerConnection.onconnectionstatechange += (state) =>
+            {
+                logger.LogDebug($"Peer connection state changed to {state}.");
+
+                if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
+                {
+                    _peerConnection.Close("remote disconnection");
+                }
+            };
             _peerConnection.OnReceiveReport += (ep, type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
             _peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
-            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
             _peerConnection.onicecandidate += (candidate) =>
             {
@@ -547,6 +564,35 @@ namespace SIPSorcery.Examples
             catch (Exception excp)
             {
                 logger.LogError("Exception WebSocketMessageReceived. " + excp.Message);
+            }
+        }
+
+        private static async Task<IPAddress> MdnsResolve(string service)
+        {
+            logger.LogDebug($"MDNS resolve requested for {service}.");
+
+            var query = new Message();
+            query.Questions.Add(new Question { Name = service, Type = DnsType.ANY });
+            var cancellation = new CancellationTokenSource(MDNS_TIMEOUT);
+
+            using (var mdns = new MulticastService())
+            {
+                mdns.Start();
+                var response = await mdns.ResolveAsync(query, cancellation.Token);
+
+                var ans = response.Answers.Where(x => x.Type == DnsType.A || x.Type == DnsType.AAAA).FirstOrDefault();
+
+                logger.LogDebug($"MDNS result {ans}.");
+
+                switch(ans)
+                {
+                    case ARecord a:
+                        return a.Address;
+                    case AAAARecord aaaa:
+                        return aaaa.Address;
+                    default:
+                        return null;
+                };
             }
         }
 
