@@ -19,4 +19,5 @@ jobs:
         dotnet-version: 3.1.100
     - name: Unit tests
       #run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "Category!=IPv6&Category!=transport&Category!=txintegration"
-      run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release
+      #run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release
+      run: dotnet test test/unit/SIPSorcery.UnitTests.csproj

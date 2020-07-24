@@ -1,13 +1,15 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: DNSUnitTest.cs
 //
-// Description: Unit tests for the DNS lookup classes used in the SIPSorcery library.
+// Description: Integration tests for the DNS lookup classes used in the 
+// SIPSorcery library.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 14 Oct 2019	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com).
+// 14 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
+// 24 Jul 2020  Aaron Clauson   Moved from unit to integration tests.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,7 +22,7 @@ using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 using Xunit;
 
-namespace SIPSorcery.Net.UnitTests
+namespace SIPSorcery.Net.IntegrationTests
 {
     [Trait("Category", "dns")]
     public class DNSUnitTest

@@ -19,4 +19,4 @@ build_script:
        wsl sudo apt-get install -y apt-transport-https
        wsl sudo apt-get update -y
        wsl sudo apt-get install -y dotnet-sdk-3.1
-       wsl dotnet test src/SIPSorcery.sln -c Release --framework netcoreapp3.1
+       wsl dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --framework netcoreapp3.1

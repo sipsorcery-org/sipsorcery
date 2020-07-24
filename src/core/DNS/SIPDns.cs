@@ -17,11 +17,14 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using DnsClient;
 using DnsClient.Protocol;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+
+[assembly: InternalsVisibleToAttribute("SIPSorcery.IntegrationTests")]
 
 namespace SIPSorcery.SIP
 {
