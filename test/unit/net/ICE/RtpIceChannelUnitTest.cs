@@ -469,9 +469,6 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannelB.RTPLocalEndPoint}.");
 
             // Set up the triggers so the test can proceed at the right pace.
-            ManualResetEventSlim channelBGatheringComplete = new ManualResetEventSlim();
-            rtpIceChannelB.OnIceGatheringStateChange += (state) => { if (state == RTCIceGatheringState.complete) { channelBGatheringComplete.Set(); } };
-
             ManualResetEventSlim connected = new ManualResetEventSlim();
             rtpIceChannelA.OnIceConnectionStateChange += (state) => { if (state == RTCIceConnectionState.connected) { connected.Set(); } };
 
@@ -492,9 +489,7 @@ namespace SIPSorcery.Net.UnitTests
             rtpIceChannelB.SetRemoteCredentials(rtpIceChannelA.LocalIceUser, rtpIceChannelA.LocalIcePassword);
 
             Assert.Equal(RTCIceConnectionState.@new, rtpIceChannelA.IceConnectionState);
-            Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelB.IceConnectionState);
-
-            Assert.True(channelBGatheringComplete.Wait(3000));          
+            Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelB.IceConnectionState);   
 
             // Only give the non-controlling peer the remote candidates. 
             rtpIceChannelA.Candidates.ForEach(x => rtpIceChannelB.AddRemoteCandidate(x));
@@ -504,18 +499,23 @@ namespace SIPSorcery.Net.UnitTests
             int retries = 0;
             while(rtpIceChannelA._remoteCandidates.Count == 0 && retries < 5)
             {
+                logger.LogDebug("Waiting for channel A to acquire peer reflexive candidates.");
                 retries++;
                 await Task.Delay(500);
             }
 
             Assert.True(rtpIceChannelA._remoteCandidates.Count > 0);
 
+            logger.LogDebug("Adding remote candidates from B to A.");
+
             rtpIceChannelB.Candidates.ForEach(x => rtpIceChannelA.AddRemoteCandidate(x));
 
             // This pause is so that channel A can process the new remote candidates supplied by B.
             // These candidates are host candidates and should replace the peer reflexive candidates
             // that were automatically created previously.
-            await Task.Delay(2000);
+            await Task.Delay(1000);
+
+            logger.LogDebug("Setting remote credentials for channel A.");
 
             rtpIceChannelA.SetRemoteCredentials(rtpIceChannelB.LocalIceUser, rtpIceChannelB.LocalIcePassword);
 
