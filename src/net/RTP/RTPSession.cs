@@ -222,7 +222,10 @@ namespace SIPSorcery.Net
             if (!isRemote)
             {
                 Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
-                SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue)); 
+                //SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue)); 
+
+                // Setting seqnum to start near end of wrap around range to test Chrome bug.
+                SeqNum = 65200;
             }
         }
 
@@ -331,6 +334,8 @@ namespace SIPSorcery.Net
 
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
+
+        private IPEndPoint _rtpDumpEndPoint = new IPEndPoint(IPAddress.Loopback, 33332);
 
         internal Dictionary<SDPMediaTypesEnum, RTPChannel> m_rtpChannels = new Dictionary<SDPMediaTypesEnum, RTPChannel>();
 
@@ -1559,8 +1564,6 @@ namespace SIPSorcery.Net
                 {
                     for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
                     {
-                        videoTrack.SeqNum = (ushort)(videoTrack.SeqNum % (UInt16.MaxValue + 1));
-
                         int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
 
@@ -1573,8 +1576,14 @@ namespace SIPSorcery.Net
 
                         var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
 
-                        SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum++, VideoRtcpSession);
-                        //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
+                        // Skipping RTP packet for seqnum == 65535.
+                        if (videoTrack.SeqNum != UInt16.MaxValue)
+                        {
+                            SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
+                            logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, seqnum {videoTrack.SeqNum}, sample length {payload.Length}.");
+                        }
+
+                        videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
                     }
 
                     videoTrack.Timestamp += duration;
@@ -1605,42 +1614,35 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            try
+            var videoTrack = VideoLocalTrack;
+
+            if (videoTrack == null)
             {
-                var videoTrack = VideoLocalTrack;
-
-                if (videoTrack == null)
-                {
-                    logger.LogWarning("SendJpegFrame was called on an RTP session without a video stream.");
-                }
-                else if (videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
-                {
-                    for (int index = 0; index * RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
-                    {
-                        videoTrack.SeqNum = (ushort)(videoTrack.SeqNum % (UInt16.MaxValue + 1));
-
-                        uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
-                        int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? RTP_MAX_PAYLOAD : jpegBytes.Length - index * RTP_MAX_PAYLOAD;
-                        byte[] jpegHeader = CreateLowQualityRtpJpegHeader(offset, jpegQuality, jpegWidth, jpegHeight);
-
-                        List<byte> packetPayload = new List<byte>();
-                        packetPayload.AddRange(jpegHeader);
-                        packetPayload.AddRange(jpegBytes.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength));
-
-                        int markerBit = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
-                        SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, packetPayload.ToArray(), videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum++, VideoRtcpSession);
-                    }
-
-                    videoTrack.Timestamp += duration;
-                }
+                logger.LogWarning("SendJpegFrame was called on an RTP session without a video stream.");
             }
-            catch (SocketException sockExcp)
+            else if (videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
             {
-                logger.LogError("SocketException SendJpegFrame. " + sockExcp.Message);
+                return;
+            }
+            else
+            {
+                for (int index = 0; index * RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
+                {
+                    videoTrack.SeqNum = (ushort)(videoTrack.SeqNum % (UInt16.MaxValue + 1));
+
+                    uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
+                    int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? RTP_MAX_PAYLOAD : jpegBytes.Length - index * RTP_MAX_PAYLOAD;
+                    byte[] jpegHeader = CreateLowQualityRtpJpegHeader(offset, jpegQuality, jpegWidth, jpegHeight);
+
+                    List<byte> packetPayload = new List<byte>();
+                    packetPayload.AddRange(jpegHeader);
+                    packetPayload.AddRange(jpegBytes.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength));
+
+                    int markerBit = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
+                    SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, packetPayload.ToArray(), videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum++, VideoRtcpSession);
+                }
+
+                videoTrack.Timestamp += duration;
             }
         }
 
@@ -1659,66 +1661,59 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            try
+            var videoTrack = VideoLocalTrack;
+
+            if (videoTrack == null)
             {
-                var videoTrack = VideoLocalTrack;
+                logger.LogWarning("SendH264Frame was called on an RTP session without a video stream.");
+            }
+            else if (videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
+            {
+                return;
+            }
+            else
+            {
+                for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
+                {
+                    videoTrack.SeqNum = (ushort)(videoTrack.SeqNum % (UInt16.MaxValue + 1));
 
-                if (videoTrack == null)
-                {
-                    logger.LogWarning("SendH264Frame was called on an RTP session without a video stream.");
-                }
-                else if (videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
-                {
-                    for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
+                    int offset = index * RTP_MAX_PAYLOAD;
+                    int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
+                    byte[] payload = new byte[payloadLength + H264_RTP_HEADER_LENGTH];
+
+                    // Start RTP packet in frame 0x1c 0x89
+                    // Middle RTP packet in frame 0x1c 0x09
+                    // Last RTP packet in frame 0x1c 0x49
+
+                    int markerBit = 0;
+                    byte[] h264Header = new byte[] { 0x1c, 0x09 };
+
+                    if (index == 0 && frame.Length < RTP_MAX_PAYLOAD)
                     {
-                        videoTrack.SeqNum = (ushort)(videoTrack.SeqNum % (UInt16.MaxValue + 1));
-
-                        int offset = index * RTP_MAX_PAYLOAD;
-                        int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
-                        byte[] payload = new byte[payloadLength + H264_RTP_HEADER_LENGTH];
-
-                        // Start RTP packet in frame 0x1c 0x89
-                        // Middle RTP packet in frame 0x1c 0x09
-                        // Last RTP packet in frame 0x1c 0x49
-
-                        int markerBit = 0;
-                        byte[] h264Header = new byte[] { 0x1c, 0x09 };
-
-                        if (index == 0 && frame.Length < RTP_MAX_PAYLOAD)
-                        {
-                            // First and last RTP packet in the frame.
-                            h264Header = new byte[] { 0x1c, 0x49 };
-                            markerBit = 1;
-                        }
-                        else if (index == 0)
-                        {
-                            h264Header = new byte[] { 0x1c, 0x89 };
-                        }
-                        else if ((index + 1) * RTP_MAX_PAYLOAD > frame.Length)
-                        {
-                            h264Header = new byte[] { 0x1c, 0x49 };
-                            markerBit = 1;
-                        }
-
-                        var h264Stream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
-                        h264Stream.InsertRange(0, h264Header);
-
-                        Buffer.BlockCopy(h264Header, 0, payload, 0, H264_RTP_HEADER_LENGTH);
-                        Buffer.BlockCopy(frame, offset, payload, H264_RTP_HEADER_LENGTH, payloadLength);
-
-                        SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum++, VideoRtcpSession);
+                        // First and last RTP packet in the frame.
+                        h264Header = new byte[] { 0x1c, 0x49 };
+                        markerBit = 1;
+                    }
+                    else if (index == 0)
+                    {
+                        h264Header = new byte[] { 0x1c, 0x89 };
+                    }
+                    else if ((index + 1) * RTP_MAX_PAYLOAD > frame.Length)
+                    {
+                        h264Header = new byte[] { 0x1c, 0x49 };
+                        markerBit = 1;
                     }
 
-                    videoTrack.Timestamp += duration;
+                    var h264Stream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
+                    h264Stream.InsertRange(0, h264Header);
+
+                    Buffer.BlockCopy(h264Header, 0, payload, 0, H264_RTP_HEADER_LENGTH);
+                    Buffer.BlockCopy(frame, offset, payload, H264_RTP_HEADER_LENGTH, payloadLength);
+
+                    SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum++, VideoRtcpSession);
                 }
-            }
-            catch (SocketException sockExcp)
-            {
-                logger.LogError("SocketException SendH264Frame. " + sockExcp.Message);
+
+                videoTrack.Timestamp += duration;
             }
         }
 
@@ -1877,7 +1872,7 @@ namespace SIPSorcery.Net
 
                 if (dstEndPoint != null)
                 {
-                   track.SeqNum = (ushort)(track.SeqNum % (UInt16.MaxValue + 1));
+                    track.SeqNum = (ushort)(track.SeqNum % (UInt16.MaxValue + 1));
 
                     SendRtpPacket(rtpChannel, dstEndPoint, payload, timestamp, markerBit, payloadTypeID, track.Ssrc, track.SeqNum++, rtcpSession);
                 }
@@ -2359,6 +2354,22 @@ namespace SIPSorcery.Net
                 m_lastRtpTimestamp = timestamp;
 
                 rtcpSession?.RecordRtpPacketSend(rtpPacket);
+
+                if (_rtpDumpEndPoint != null)
+                {
+                    RTPPacket rawRtpPacket = new RTPPacket(data.Length);
+                    rawRtpPacket.Header.SyncSource = ssrc;
+                    rawRtpPacket.Header.SequenceNumber = seqNum;
+                    rawRtpPacket.Header.Timestamp = timestamp;
+                    rawRtpPacket.Header.MarkerBit = markerBit;
+                    rawRtpPacket.Header.PayloadType = payloadType;
+
+                    Buffer.BlockCopy(data, 0, rawRtpPacket.Payload, 0, data.Length);
+
+                    var rawRtpBuffer = rawRtpPacket.GetBytes();
+
+                    rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, _rtpDumpEndPoint, rawRtpBuffer.ToArray());
+                }
             }
         }
 
