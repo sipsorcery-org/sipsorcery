@@ -19,6 +19,11 @@
 // - Traversal Using Relays around NAT (TURN): Relay Extensions to 
 //   Session Traversal Utilities for NAT (STUN)
 //   https://tools.ietf.org/html/rfc5766
+// - Using Multicast DNS to protect privacy when exposing ICE candidates
+//   draft-ietf-rtcweb-mdns-ice-candidates-04 [ed. not implemented as of 26 Jul 2020].
+//   https://tools.ietf.org/html/draft-ietf-rtcweb-mdns-ice-candidates-04
+// - Multicast DNS
+//   https://tools.ietf.org/html/rfc6762
 //
 // Notes:
 // The source from Chromium that performs the equivalent of this class
@@ -26,12 +31,18 @@
 // https://chromium.googlesource.com/external/webrtc/+/refs/heads/master/p2p/base/p2p_transport_channel.cc
 //
 // Multicast DNS: Chromium (and possibly other WebRTC stacks) make use of *.local
-// DNS hostnames. Support for such hostnames is currently NOT implemented in
-// this library as it would mean introducing another dependency for what is
-// currently deemed to be a narrow edge case. Windows 10 has recently introduced a level
-// of support for these domains so perhaps it will make it into the .Net Core
-// plumbing in the not too distant future.
-// https://tools.ietf.org/html/rfc6762: Multicast DNS (for ".local" Top Level Domain lookups on macos)
+// DNS hostnames (see Multicast RFC linked above). Support for such hostnames is 
+// not supported directly in this library because there is no underlying support
+// in .NET Core. A callback hook is available so that an application can connect
+// up an MDNS resolver if required.
+// Windows 10 has recently introduced a level of support for MDNS:
+// https://docs.microsoft.com/en-us/uwp/api/windows.networking.servicediscovery.dnssd?view=winrt-19041
+// From a command prompt: 
+// c:\> dns-md -B
+// c:\> dns-sd -G v4 fbba6380-2cc4-41b1-ab0d-61548dd28a29.local
+// c:\> dns-sd -G v6 b1f949b8-5ec9-41a6-b3ef-eb529f217de9.local
+// But it's expected that it's highly unlikely support will be added to .NET Core
+// anytime soon (AC 26 Jul 2020).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
