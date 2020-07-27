@@ -690,14 +690,15 @@ namespace SIPSorcery.Net
 
                         // Don't stop and wait for DNS. Let the timer callback complete and check for the DNS
                         // result on the next few timer callbacks.
-                        _ = STUNDns.Resolve(_activeIceServer._uri).ContinueWith(y =>
+                        Task.Run(async () =>
                         {
-                            if (y.Result != null)
+                            try
                             {
-                                logger.LogDebug($"ICE server {_activeIceServer._uri} successfully resolved to {y.Result}.");
-                                _activeIceServer.ServerEndPoint = y.Result;
+                                var result = await STUNDns.Resolve(_activeIceServer._uri).ConfigureAwait(false);
+                                logger.LogDebug($"ICE server {_activeIceServer._uri} successfully resolved to {result}.");
+                                _activeIceServer.ServerEndPoint = result;
                             }
-                            else
+                            catch
                             {
                                 logger.LogWarning($"Unable to resolve ICE server end point for {_activeIceServer._uri}.");
                                 _activeIceServer.Error = SocketError.HostNotFound;
