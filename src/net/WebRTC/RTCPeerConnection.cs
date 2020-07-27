@@ -229,6 +229,11 @@ namespace SIPSorcery.Net
         public event Action<RTCIceCandidate, string> onicecandidateerror;
 
         /// <summary>
+        /// Plugin library to resolve mDns addresses
+        /// </summary>
+        public event Action<RTCIceCandidate> onresolvemulticastdns;
+
+        /// <summary>
         /// The signaling state has changed. This state change is the result of either setLocalDescription or 
         /// setRemoteDescription being invoked.
         /// </summary>
@@ -409,6 +414,7 @@ namespace SIPSorcery.Net
             };
             _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
             _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
+            _rtpIceChannel.OnResolveMulticastDns += (candidate) => onresolvemulticastdns?.Invoke(candidate);
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;

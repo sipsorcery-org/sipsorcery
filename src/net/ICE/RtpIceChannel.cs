@@ -246,6 +246,7 @@ namespace SIPSorcery.Net
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
         public event Action<RTCIceGatheringState> OnIceGatheringStateChange;
         public event Action<RTCIceCandidate, string> OnIceCandidateError;
+        public event Action<RTCIceCandidate> OnResolveMulticastDns;
 
         /// <summary>
         /// This event gets fired when a STUN message is received by this channel.
@@ -421,12 +422,6 @@ namespace SIPSorcery.Net
                 // This implementation currently only supports UDP for RTP communications.
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported transport protocol {candidate.protocol}.");
             }
-            else if (candidate.address.Trim().ToLower().EndsWith(MDNS_TLD) && MdnsResolve == null)
-            {
-                // Supporting MDNS lookups means an additional nuget dependency. Hopefully
-                // support is coming to .Net Core soon (AC 12 Jun 2020).
-                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
-            }
             else if (IPAddress.TryParse(candidate.address, out var addr) &&
                 (IPAddress.Any.Equals(addr) || IPAddress.IPv6Any.Equals(addr)))
             {
@@ -438,6 +433,18 @@ namespace SIPSorcery.Net
             }
             else
             {
+                if (candidate.address.Trim().ToLower().EndsWith(MDNS_TLD) && MdnsResolve == null)
+                {
+                    OnResolveMulticastDns?.Invoke(candidate);
+                    // Supporting MDNS lookups means an additional nuget dependency. Hopefully
+                    // support is coming to .Net Core soon (AC 12 Jun 2020).
+                    if (candidate.address.Trim().ToLower().EndsWith(MDNS_TLD))
+                    {
+                        OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
+                        return;
+                    }
+                }
+
                 // Have a remote candidate. Connectivity checks can start. Note because we support ICE trickle
                 // we may also still be gathering candidates. Connectivity checks and gathering can be done in parallel.
 

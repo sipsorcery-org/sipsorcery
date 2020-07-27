@@ -335,6 +335,7 @@ namespace SIPSorcery.Net
         event Action<RTCIceConnectionState> oniceconnectionstatechange;
         event Action<RTCIceGatheringState> onicegatheringstatechange;
         event Action<RTCPeerConnectionState> onconnectionstatechange;
+        event Action<RTCIceCandidate> onresolvemulticastdns;
 
         // TODO: Extensions for the RTCMediaAPI
         // https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface-extensions.
