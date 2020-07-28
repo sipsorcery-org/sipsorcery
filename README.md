@@ -13,7 +13,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 ![Real-time Communications Overview](./img/sipsorcery_realtime_overview.png)
 
-**Supports both VoIP ([get started](getting-started-voip)) and WebRTC ([get started](#getting-started-webrtc)).**
+**Supports both VoIP ([get started](#getting-started-voip)) and WebRTC ([get started](#getting-started-webrtc)).**
 
 **Some of the protocols supported:**
 
@@ -35,13 +35,13 @@ The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framewor
 For .NET Core:
 
 ````bash
-dotnet add package SIPSorcery -v 4.0.58-pre
+dotnet add package SIPSorcery -v 4.0.59-pre
 ````
 
 With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](https://www.nuget.org/packages/SIPSorcery/)):
 
 ````ps1
-Install-Package SIPSorcery -v 4.0.58-pre
+Install-Package SIPSorcery -v 4.0.59-pre
 ````
 
 ## Documentation
@@ -96,7 +96,7 @@ namespace SIPGetStarted
 }
 ````
 
-The [GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted) example contains the full source and project file for the example above.
+The [GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/GetStarted) example contains the full source and project file for the example above.
 
 The three key classes in the above example are described in dedicated articles:
 
@@ -108,7 +108,7 @@ The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examp
 
 ## Getting Started WebRTC
 
-The core of the code required to establish a WebRTC connection is demonstrated below. The code shown will build but will not establish a connection due to no mechanism to exchange the SDP offer and answer between peers. A full working example with a web socket signalling mechanism is available in the [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCTestPatternServer) example.
+The core of the code required to establish a WebRTC connection is demonstrated below. The code shown will build but will not establish a connection due to no mechanism to exchange the SDP offer and answer between peers. A full working example with a web socket signalling mechanism is available in the [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCTestPatternServer) example.
 
 If you are familiar with the [WebRTC javascript API](https://www.w3.org/TR/webrtc/) the API in this project aims to be as close to it as possible.
 
