@@ -1499,8 +1499,6 @@ namespace SIPSorcery.Net
                 {
                     for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
                     {
-                        audioTrack.SeqNum = (audioTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(audioTrack.SeqNum + 1);
-
                         int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
                         int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
                         byte[] payload = new byte[payloadLength];
@@ -1513,9 +1511,11 @@ namespace SIPSorcery.Net
                         int markerBit = 0;
 
                         var audioRtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
-                        SendRtpPacket(audioRtpChannel, AudioDestinationEndPoint, payload, audioTrack.Timestamp, markerBit, payloadTypeID, audioTrack.Ssrc, audioTrack.SeqNum++, AudioRtcpSession);
+                        SendRtpPacket(audioRtpChannel, AudioDestinationEndPoint, payload, audioTrack.Timestamp, markerBit, payloadTypeID, audioTrack.Ssrc, audioTrack.SeqNum, AudioRtcpSession);
 
                         //logger.LogDebug($"send audio { audioRtpChannel.RTPLocalEndPoint}->{AudioDestinationEndPoint}.");
+
+                        audioTrack.SeqNum = (audioTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(audioTrack.SeqNum + 1);
                     }
 
                     audioTrack.Timestamp += duration;
@@ -1559,8 +1559,6 @@ namespace SIPSorcery.Net
                 {
                     for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
                     {
-                        videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
-
                         int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
 
@@ -1573,8 +1571,10 @@ namespace SIPSorcery.Net
 
                         var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
 
-                        SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum++, VideoRtcpSession);
+                        SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
                         //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
+
+                        videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
                     }
 
                     videoTrack.Timestamp += duration;
@@ -1621,8 +1621,6 @@ namespace SIPSorcery.Net
                 {
                     for (int index = 0; index * RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
                     {
-                        videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
-
                         uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? RTP_MAX_PAYLOAD : jpegBytes.Length - index * RTP_MAX_PAYLOAD;
                         byte[] jpegHeader = CreateLowQualityRtpJpegHeader(offset, jpegQuality, jpegWidth, jpegHeight);
@@ -1632,7 +1630,9 @@ namespace SIPSorcery.Net
                         packetPayload.AddRange(jpegBytes.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength));
 
                         int markerBit = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
-                        SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, packetPayload.ToArray(), videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum++, VideoRtcpSession);
+                        SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, packetPayload.ToArray(), videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
+
+                        videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
                     }
 
                     videoTrack.Timestamp += duration;
@@ -1675,8 +1675,6 @@ namespace SIPSorcery.Net
                 {
                     for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                     {
-                        videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
-
                         int offset = index * RTP_MAX_PAYLOAD;
                         int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
                         byte[] payload = new byte[payloadLength + H264_RTP_HEADER_LENGTH];
@@ -1710,7 +1708,9 @@ namespace SIPSorcery.Net
                         Buffer.BlockCopy(h264Header, 0, payload, 0, H264_RTP_HEADER_LENGTH);
                         Buffer.BlockCopy(frame, offset, payload, H264_RTP_HEADER_LENGTH, payloadLength);
 
-                        SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum++, VideoRtcpSession);
+                        SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
+
+                        videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
                     }
 
                     videoTrack.Timestamp += duration;
@@ -1791,14 +1791,12 @@ namespace SIPSorcery.Net
                     // Send the start of event packets.
                     for (int i = 0; i < RTPEvent.DUPLICATE_COUNT && !cancellationToken.IsCancellationRequested; i++)
                     {
-                        audioTrack.SeqNum = (audioTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(audioTrack.SeqNum + 1);
-
                         byte[] buffer = rtpEvent.GetEventPayload();
 
                         int markerBit = (i == 0) ? 1 : 0;  // Set marker bit for the first packet in the event.
                         SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, markerBit, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.SeqNum, AudioRtcpSession);
 
-                        audioTrack.SeqNum++;
+                        audioTrack.SeqNum = (audioTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(audioTrack.SeqNum + 1);
                     }
 
                     await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
@@ -1808,14 +1806,12 @@ namespace SIPSorcery.Net
                         // Send the progressive event packets 
                         while ((rtpEvent.Duration + rtpTimestampStep) < rtpEvent.TotalDuration && !cancellationToken.IsCancellationRequested)
                         {
-                            audioTrack.SeqNum = (audioTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(audioTrack.SeqNum + 1);
-
                             rtpEvent.Duration += rtpTimestampStep;
                             byte[] buffer = rtpEvent.GetEventPayload();
 
                             SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.SeqNum, AudioRtcpSession);
 
-                            audioTrack.SeqNum++;
+                            audioTrack.SeqNum = (audioTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(audioTrack.SeqNum + 1);
 
                             await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
                         }
@@ -1823,15 +1819,13 @@ namespace SIPSorcery.Net
                         // Send the end of event packets.
                         for (int j = 0; j < RTPEvent.DUPLICATE_COUNT && !cancellationToken.IsCancellationRequested; j++)
                         {
-                            audioTrack.SeqNum = (audioTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(audioTrack.SeqNum + 1);
-
                             rtpEvent.EndOfEvent = true;
                             rtpEvent.Duration = rtpEvent.TotalDuration;
                             byte[] buffer = rtpEvent.GetEventPayload();
 
                             SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.SeqNum, AudioRtcpSession);
 
-                            audioTrack.SeqNum++;
+                            audioTrack.SeqNum = (audioTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(audioTrack.SeqNum + 1);
                         }
                     }
                 }
@@ -1877,9 +1871,9 @@ namespace SIPSorcery.Net
 
                 if (dstEndPoint != null)
                 {
-                   track.SeqNum = (track.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(track.SeqNum + 1);
+                    SendRtpPacket(rtpChannel, dstEndPoint, payload, timestamp, markerBit, payloadTypeID, track.Ssrc, track.SeqNum, rtcpSession);
 
-                    SendRtpPacket(rtpChannel, dstEndPoint, payload, timestamp, markerBit, payloadTypeID, track.Ssrc, track.SeqNum++, rtcpSession);
+                    track.SeqNum = (track.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(track.SeqNum + 1);
                 }
             }
         }
