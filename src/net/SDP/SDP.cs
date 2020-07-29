@@ -238,7 +238,7 @@ namespace SIPSorcery.Net
                                 {
                                     activeAnnouncement.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLineTrimmed);
                                 }
-                                else if(sdp.Connection == null)
+                                else if (sdp.Connection == null)
                                 {
                                     sdp.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLineTrimmed);
                                 }
@@ -499,7 +499,7 @@ namespace SIPSorcery.Net
 
                                     (var sctpPortStr, _, var maxMessageSizeStr) = activeAnnouncement.SctpMap.Split(' ');
 
-                                    if(ushort.TryParse(sctpPortStr, out var sctpPort))
+                                    if (ushort.TryParse(sctpPortStr, out var sctpPort))
                                     {
                                         activeAnnouncement.SctpPort = sctpPort;
                                     }

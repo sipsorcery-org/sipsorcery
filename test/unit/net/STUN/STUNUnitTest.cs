@@ -10,12 +10,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 using Xunit;
 
@@ -308,7 +306,7 @@ namespace SIPSorcery.Net.UnitTests
         public void CheckCLassForSTUNMessageTypeUnitTest()
         {
             Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.BindingRequest).MessageClass));
-            Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.Allocate).MessageClass)); 
+            Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.Allocate).MessageClass));
             Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.Refresh).MessageClass));
             Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.Send).MessageClass));
             Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.Data).MessageClass));

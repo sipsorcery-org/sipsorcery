@@ -205,7 +205,7 @@ namespace SIPSorcery.Net.Sctp
                     }
 
                     if (remain != null)
-                    { 
+                    {
                         throw new Exception("[IllegalArgumentException] ReconfigurationResponseParameter and " + remain.GetType().Name + " in same Chunk not allowed ");
                     }
                 }

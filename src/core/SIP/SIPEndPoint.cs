@@ -88,7 +88,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port)
         {
-            Protocol =protocol;
+            Protocol = protocol;
             Address = address;
             Port = port;
         }

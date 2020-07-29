@@ -396,12 +396,12 @@ namespace SIPSorcery.Net
                 iceConnectionState = state;
                 oniceconnectionstatechange?.Invoke(iceConnectionState);
 
-                if(iceConnectionState == RTCIceConnectionState.disconnected)
+                if (iceConnectionState == RTCIceConnectionState.disconnected)
                 {
                     connectionState = RTCPeerConnectionState.disconnected;
                     onconnectionstatechange?.Invoke(connectionState);
                 }
-                else if(iceConnectionState == RTCIceConnectionState.failed)
+                else if (iceConnectionState == RTCIceConnectionState.failed)
                 {
                     connectionState = RTCPeerConnectionState.failed;
                     onconnectionstatechange?.Invoke(connectionState);
@@ -442,7 +442,7 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug($"SCTP stream opened for label {stm.getLabel()} and stream ID {stm.getNum()} (is local stream ID {isLocal}).");
 
-                if(!isLocal)
+                if (!isLocal)
                 {
                     // A new data channel that was opened by the remote peer.
                     RTCDataChannel dataChannel = new RTCDataChannel

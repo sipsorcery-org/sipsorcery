@@ -182,8 +182,8 @@ namespace SIPSorcery.Net.IntegrationTests
 
             Assert.NotNull(result);
 
-           // There's no guarantee that a particular DNS server will have AAAA records for
-           // a particular hostname so can't check which result type was returned.
+            // There's no guarantee that a particular DNS server will have AAAA records for
+            // a particular hostname so can't check which result type was returned.
         }
 
         /// <summary>
