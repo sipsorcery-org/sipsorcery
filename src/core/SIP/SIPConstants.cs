@@ -59,7 +59,7 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                if(_userAgentVersion == null)
+                if (_userAgentVersion == null)
                 {
                     _userAgentVersion = $"sipsorcery_v{Assembly.GetExecutingAssembly().GetName().Version.ToString()}";
                 }
@@ -67,7 +67,7 @@ namespace SIPSorcery.SIP
                 return _userAgentVersion;
             }
         }
-        
+
         /// <summary>
         /// Gets the default SIP port for the protocol. 
         /// </summary>

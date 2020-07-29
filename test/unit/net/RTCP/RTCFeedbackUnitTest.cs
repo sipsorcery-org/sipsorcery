@@ -54,6 +54,6 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(senderSsrc, parsedPli.SenderSSRC);
             Assert.Equal(mediaSsrc, parsedPli.MediaSSRC);
             Assert.Equal(2, parsedPli.Header.Length);
-       }
+        }
     }
 }

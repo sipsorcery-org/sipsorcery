@@ -21,7 +21,6 @@
  */
 
 using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using SCTP4CS.Utils;
 using SIPSorcery.Sys;

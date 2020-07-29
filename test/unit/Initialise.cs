@@ -121,7 +121,7 @@ namespace SIPSorcery.UnitTests
     {
         public static Task<SIPEndPoint> ResolveSIPUri(SIPURI uri, bool preferIPv6)
         {
-            if(IPSocket.TryParseIPEndPoint(uri.Host, out var ipEndPoint))
+            if (IPSocket.TryParseIPEndPoint(uri.Host, out var ipEndPoint))
             {
                 return Task.FromResult(new SIPEndPoint(uri.Protocol, ipEndPoint));
             }

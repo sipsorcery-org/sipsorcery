@@ -218,7 +218,7 @@ namespace SIPSorcery.Net
                 logger.LogWarning($"STUNDns lookup failure for {host} and query {queryType}. {excp.Message}");
             }
 
-            if(queryType == QueryType.AAAA)
+            if (queryType == QueryType.AAAA)
             {
                 return HostQuery(host, port, QueryType.A);
             }

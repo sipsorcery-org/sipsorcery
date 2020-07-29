@@ -222,7 +222,7 @@ namespace SIPSorcery.Net
             if (!isRemote)
             {
                 Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
-                SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue)); 
+                SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
             }
         }
 

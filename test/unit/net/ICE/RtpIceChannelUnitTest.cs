@@ -496,7 +496,7 @@ namespace SIPSorcery.Net.UnitTests
             rtpIceChannelB.SetRemoteCredentials(rtpIceChannelA.LocalIceUser, rtpIceChannelA.LocalIcePassword);
 
             Assert.Equal(RTCIceConnectionState.@new, rtpIceChannelA.IceConnectionState);
-            Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelB.IceConnectionState);   
+            Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelB.IceConnectionState);
 
             // Only give the non-controlling peer the remote candidates. 
             rtpIceChannelA.Candidates.ForEach(x => rtpIceChannelB.AddRemoteCandidate(x));
@@ -504,7 +504,7 @@ namespace SIPSorcery.Net.UnitTests
 
             // Want channel B to send checks to A so that it create peer reflexive candidates.
             int retries = 0;
-            while(rtpIceChannelA._remoteCandidates.Count == 0 && retries < 5)
+            while (rtpIceChannelA._remoteCandidates.Count == 0 && retries < 5)
             {
                 logger.LogDebug("Waiting for channel A to acquire peer reflexive candidates.");
                 retries++;

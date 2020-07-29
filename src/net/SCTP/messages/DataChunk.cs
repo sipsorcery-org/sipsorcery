@@ -28,56 +28,57 @@ using SCTP4CS.Utils;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net.Sctp
-{ 
+{
     /// <summary>
     /// 
     /// </summary>
     /// <remarks>
-    /// 
-        /*
-   
-		 0                   1                   2                   3
-		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |   Type = 0    | Reserved|U|B|E|    Length                     |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |                              TSN                              |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |      Stream Identifier S      |   Stream Sequence Number n    |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 |                  Payload Protocol Identifier                  |
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 \                                                               \
-		 /                 User Data (seq n of Stream S)                 /
-		 \                                                               \
-		 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    /// <![CDATA[
+    /*
 
-        Length:
-        This field indicates the length of the DATA chunk in bytes from
-        the beginning of the type field to the end of the User Data field
-        excluding any padding.  A DATA chunk with one byte of user data
-        will have Length set to 17 (indicating 17 bytes).
+     0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |   Type = 0    | Reserved|U|B|E|    Length                     |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                              TSN                              |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |      Stream Identifier S      |   Stream Sequence Number n    |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                  Payload Protocol Identifier                  |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     \                                                               \
+     /                 User Data (seq n of Stream S)                 /
+     \                                                               \
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-        A DATA chunk with a User Data field of length L will have the
-        Length field set to (16 + L) (indicating 16+L bytes) where L MUST
-        be greater than 0.
+    Length:
+    This field indicates the length of the DATA chunk in bytes from
+    the beginning of the type field to the end of the User Data field
+    excluding any padding.  A DATA chunk with one byte of user data
+    will have Length set to 17 (indicating 17 bytes).
 
-       Payload Protocol Identifier:
-       +-------------------------------+----------+-----------+------------+
-	   | Value                         | SCTP     | Reference | Date       |
-	   |                               | PPID     |           |            |
-	   +-------------------------------+----------+-----------+------------+
-	   | WebRTC string                 | 51       | [RFCXXXX] | 2013-09-20 |
-	   | WebRTC Binary Partial         | 52       | [RFCXXXX] | 2013-09-20 |
-	   | (Deprecated)                  |          |           |            |
-	   | WebRTC Binary                 | 53       | [RFCXXXX] | 2013-09-20 |
-	   | WebRTC string Partial         | 54       | [RFCXXXX] | 2013-09-20 |
-	   | (Deprecated)                  |          |           |            |
-	   | WebRTC string Empty           | 56       | [RFCXXXX] | 2014-08-22 |
-	   | WebRTC Binary Empty           | 57       | [RFCXXXX] | 2014-08-22 |
-	   +-------------------------------+----------+-----------+------------+
+    A DATA chunk with a User Data field of length L will have the
+    Length field set to (16 + L) (indicating 16+L bytes) where L MUST
+    be greater than 0.
 
-		 */
+   Payload Protocol Identifier:
+   +-------------------------------+----------+-----------+------------+
+   | Value                         | SCTP     | Reference | Date       |
+   |                               | PPID     |           |            |
+   +-------------------------------+----------+-----------+------------+
+   | WebRTC string                 | 51       | [RFCXXXX] | 2013-09-20 |
+   | WebRTC Binary Partial         | 52       | [RFCXXXX] | 2013-09-20 |
+   | (Deprecated)                  |          |           |            |
+   | WebRTC Binary                 | 53       | [RFCXXXX] | 2013-09-20 |
+   | WebRTC string Partial         | 54       | [RFCXXXX] | 2013-09-20 |
+   | (Deprecated)                  |          |           |            |
+   | WebRTC string Empty           | 56       | [RFCXXXX] | 2014-08-22 |
+   | WebRTC Binary Empty           | 57       | [RFCXXXX] | 2014-08-22 |
+   +-------------------------------+----------+-----------+------------+
+
+     */
+    /// ]]>
     /// </remarks>
     public class DataChunk : Chunk, IComparer<DataChunk>, IComparable<DataChunk>
     {
@@ -281,25 +282,19 @@ namespace SIPSorcery.Net.Sctp
             return res;
         }
 
-        /**
-		 * @param _tsn the _tsn to set
-		 */
+        /// <param name="tsn">the _tsn to set.</param>
         public void setTsn(uint tsn)
         {
             _tsn = tsn;
         }
 
-        /**
-		 * @param _streamId the _streamId to set
-		 */
+        /// <param name="streamId">the _streamId to set.</param>
         public void setStreamId(int streamId)
         {
             _streamId = streamId;
         }
 
-        /**
-		 * @param _sSeqNo the _sSeqNo to set
-		 */
+        /// <param name="sSeqNo">the _sSeqNo to set.</param>
         public void setsSeqNo(int sSeqNo)
         {
             _sSeqNo = sSeqNo;
@@ -360,11 +355,11 @@ namespace SIPSorcery.Net.Sctp
             _dataOffset = 0;
         }
 
-        /**
-		 * Only use this method if you are certain that data won't be reused until
-		 * this chunk is sent and ack'd ie after MessageCompleteHandler has been
-		 * called for the surrounding message
-		 */
+        /// <summary
+        /// Only use this method if you are certain that data won't be reused until
+		/// this chunk is sent and ack'd ie after MessageCompleteHandler has been
+		/// called for the surrounding message
+        /// </summary>
         public void setData(byte[] data, int offs, int len)
         {
             _data = data;

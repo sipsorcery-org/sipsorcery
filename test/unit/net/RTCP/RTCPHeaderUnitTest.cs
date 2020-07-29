@@ -13,7 +13,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using Xunit;

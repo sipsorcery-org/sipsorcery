@@ -106,7 +106,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     else
                     {
-                       //logger.LogDebug("unexpected variable of type: " + v.getName());
+                        //logger.LogDebug("unexpected variable of type: " + v.getName());
                     }
                 }
             }
@@ -121,7 +121,7 @@ namespace SIPSorcery.Net.Sctp
                     + " numInStreams : " + _numInStreams
                     + " initialTSN : " + _initialTSN
                     + " farForwardTSNsupported : " + _farForwardTSNsupported;
-                    //+ ((_farSupportedExtensions == null) ? " no supported extensions" : " supported extensions are: " + chunksToNames(_farSupportedExtensions));
+            //+ ((_farSupportedExtensions == null) ? " no supported extensions" : " supported extensions are: " + chunksToNames(_farSupportedExtensions));
             return ret;
         }
 
