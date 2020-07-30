@@ -5,6 +5,12 @@ VisualStudioVersion = 16.0.29911.98
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sipcmdline", "sipcmdline.csproj", "{14118008-BF73-4534-9B62-1B64F847AB33}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{F4FD7F60-0B1A-4FBD-A24A-28A5EF053D60}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DnsClient", "..\..\..\..\github\sipsorcery_dnsclient\src\DnsClient\DnsClient.csproj", "{C3C7E7DA-2440-41B8-ADF1-C8195E20017A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DnsSipLookups", "..\..\..\Prototypes\DnsSipLookups\DnsSipLookups.csproj", "{FF3ED6DE-80EC-461F-9CD7-CBE056AC7354}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +21,18 @@ Global
 		{14118008-BF73-4534-9B62-1B64F847AB33}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14118008-BF73-4534-9B62-1B64F847AB33}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14118008-BF73-4534-9B62-1B64F847AB33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4FD7F60-0B1A-4FBD-A24A-28A5EF053D60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4FD7F60-0B1A-4FBD-A24A-28A5EF053D60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4FD7F60-0B1A-4FBD-A24A-28A5EF053D60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4FD7F60-0B1A-4FBD-A24A-28A5EF053D60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3C7E7DA-2440-41B8-ADF1-C8195E20017A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3C7E7DA-2440-41B8-ADF1-C8195E20017A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3C7E7DA-2440-41B8-ADF1-C8195E20017A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3C7E7DA-2440-41B8-ADF1-C8195E20017A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF3ED6DE-80EC-461F-9CD7-CBE056AC7354}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF3ED6DE-80EC-461F-9CD7-CBE056AC7354}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF3ED6DE-80EC-461F-9CD7-CBE056AC7354}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF3ED6DE-80EC-461F-9CD7-CBE056AC7354}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -159,14 +159,14 @@ namespace SIPSorcery.SIP.App
                     routeSet.PushRoute(new SIPRoute(sipCallDescriptor.RouteSet, true));
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Route set for call " + routeSet.ToString() + ".", Owner));
                     //lookupResult = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, false);
-                    lookupResult = await m_sipTransport.ResolveSIPUri(routeSet.TopRoute.URI).ConfigureAwait(false);
+                    lookupResult = await m_sipTransport.ResolveSIPUriAsync(routeSet.TopRoute.URI).ConfigureAwait(false);
                 }
                 else
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "SIPClientUserAgent attempting to resolve " + callURI.Host + ".", Owner));
                     //lookupResult = m_sipTransport.GetURIEndPoint(callURI, false);
                     DateTime lookupStartedAt = DateTime.Now;
-                    lookupResult = await m_sipTransport.ResolveSIPUri(callURI).ConfigureAwait(false);
+                    lookupResult = await m_sipTransport.ResolveSIPUriAsync(callURI).ConfigureAwait(false);
                     lookupDurationMilliseconds = DateTime.Now.Subtract(lookupStartedAt).TotalMilliseconds;
                 }
 
@@ -237,7 +237,6 @@ namespace SIPSorcery.SIP.App
                 }
 
                 SIPRequest inviteRequest = GetInviteRequest(m_sipCallDescriptor, m_sipCallDescriptor.BranchId, m_sipCallDescriptor.CallId, routeSet, content, sipCallDescriptor.ContentType);
-                inviteRequest.DnsResult = serverEndPoint;
 
                 // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                 m_serverTransaction = new UACInviteTransaction(m_sipTransport, inviteRequest, m_outboundProxy);

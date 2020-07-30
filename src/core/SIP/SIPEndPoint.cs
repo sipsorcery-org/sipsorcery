@@ -22,7 +22,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP
 {
     /// <summary>
-    /// This class is a more specific versions of the SIPURI class BUT is only concerned with the network and
+    /// This class is a more specific version of the SIPURI class BUT is only concerned with the network and
     /// transport properties. It contains all the information needed to determine the remote end point to
     /// deliver a SIP request or response to.
     /// 
@@ -36,11 +36,7 @@ namespace SIPSorcery.SIP
         private const string CHANNELID_ATTRIBUTE_NAME = "cid";
         private const string CONNECTIONID_ATTRIBUTE_NAME = "xid";
 
-        /// <summary>
-        /// The scheme the SIP end point is using. Note that some schemes and protocols are mutually exclusive.
-        /// For example sips cannot be sent over UDP.
-        /// </summary>
-        //public SIPSchemesEnum Scheme { get; private set; } = SIPSchemesEnum.sip;
+        public static SIPEndPoint Empty { get; } = new SIPEndPoint(SIPProtocolsEnum.udp, null, 0);
 
         /// <summary>
         /// The transport/application layer protocol the SIP end point is using.
@@ -234,11 +230,16 @@ namespace SIPSorcery.SIP
 
         public override string ToString()
         {
-            IPEndPoint ep = new IPEndPoint(Address, Port);
-            string result = Protocol + ":" + ep.ToString();
-            //result += (!String.IsNullOrEmpty(ChannelID) ? ";" + CHANNELID_ATTRIBUTE_NAME + "=" + ChannelID : null);
-            //result += (!String.IsNullOrEmpty(ConnectionID) ? ";" + CONNECTIONID_ATTRIBUTE_NAME + "=" + ConnectionID : null);
-            return result;
+            if (Address == null)
+            {
+                return Protocol + ":empty";
+            }
+            else
+            {
+                IPEndPoint ep = new IPEndPoint(Address, Port);
+                string result = Protocol + ":" + ep.ToString();
+                return result;
+            }
         }
 
         public static bool AreEqual(SIPEndPoint endPoint1, SIPEndPoint endPoint2)

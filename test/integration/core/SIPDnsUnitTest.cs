@@ -16,6 +16,7 @@
 
 using System;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using DnsClient;
 using Microsoft.Extensions.Logging;
@@ -42,7 +43,9 @@ namespace SIPSorcery.SIP.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false).Result;
+            CancellationTokenSource cts = new CancellationTokenSource();
+
+            var result = SIPDns.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false, cts.Token).Result;
 
             Assert.NotNull(result);
 
@@ -58,6 +61,8 @@ namespace SIPSorcery.SIP.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
+            CancellationTokenSource cts = new CancellationTokenSource();
+
             string hostname = System.Net.Dns.GetHostName();
 
             if (hostname.EndsWith(SIPDns.MDNS_TLD))
@@ -67,7 +72,7 @@ namespace SIPSorcery.SIP.IntegrationTests
             else
             {
                 //var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed(hostname), false);
-                var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed(hostname)).Result;
+                var result = SIPDns.ResolveAsync(SIPURI.ParseSIPURIRelaxed(hostname), false, cts.Token).Result;
 
                 Assert.NotNull(result);
 
@@ -85,8 +90,10 @@ namespace SIPSorcery.SIP.IntegrationTests
 
                 //SIPDNSManager.UseNAPTRLookups = true;
 
+                CancellationTokenSource cts = new CancellationTokenSource();
+
                 //var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"), false);
-                var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp")).Result;
+                var result = SIPDns.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"), false, cts.Token).Result;
 
                 Assert.NotNull(result);
                 logger.LogDebug($"resolved to SIP end point {result}.");
@@ -115,20 +122,24 @@ namespace SIPSorcery.SIP.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
+            CancellationTokenSource cts = new CancellationTokenSource();
+
             SIPURI lookupURI = SIPURI.ParseSIPURIRelaxed("sip:tel.t-online.de");
             //var result = SIPDNSManager.ResolveSIPService(lookupURI, false);
-            var result = SIPDns.Resolve(lookupURI).Result;
+            var result = SIPDns.ResolveAsync(lookupURI, false, cts.Token).Result;
             Assert.NotNull(result);
 
             //SIPEndPoint resultEP = result.GetSIPEndPoint();
             Assert.NotNull(result);
+            Assert.NotEqual(SIPEndPoint.Empty, result);
             logger.LogDebug($"resolved to SIP end point {result}.");
             //Assert.NotEmpty(result.SIPSRVResults);
             //Assert.NotEmpty(result.EndPointResults);
 
             // Do the same look up again immediately to check the result when it comes from the in-memory cache.
-            var resultCache = SIPDns.Resolve(lookupURI).Result;
+            var resultCache = SIPDns.ResolveFromCache(lookupURI, false);
             Assert.NotNull(resultCache);
+            Assert.NotEqual(SIPEndPoint.Empty, resultCache);
             logger.LogDebug($"cache resolved to SIP end point {resultCache}.");
         }
 
@@ -138,8 +149,9 @@ namespace SIPSorcery.SIP.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
+            CancellationTokenSource cts = new CancellationTokenSource();
             //var result = await SIPDNSManager.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"));
-            var result = await SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"));
+            var result = await SIPDns.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"), false, cts.Token);
 
             //SIPEndPoint resultEP = result.GetSIPEndPoint();
 
@@ -157,7 +169,9 @@ namespace SIPSorcery.SIP.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var result = SIPDns.Resolve(new SIPURI(null, "sipsorcery.com", null, SIPSchemesEnum.sips, SIPProtocolsEnum.tls), false).Result;
+            CancellationTokenSource cts = new CancellationTokenSource();
+
+            var result = SIPDns.ResolveAsync(new SIPURI(null, "sipsorcery.com", null, SIPSchemesEnum.sips, SIPProtocolsEnum.tls), false, cts.Token).Result;
 
             Assert.NotNull(result);
             Assert.Equal("67.222.131.147", result.Address.ToString());
@@ -176,9 +190,10 @@ namespace SIPSorcery.SIP.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sipsorceryx.com"), false).Result;
+            CancellationTokenSource cts = new CancellationTokenSource();
+            var result = SIPDns.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sipsorceryx.com"), false, cts.Token).Result;
 
-            Assert.Null(result);
+            Assert.Equal(SIPEndPoint.Empty, result);
         }
 
         /// <summary>
@@ -202,17 +217,16 @@ namespace SIPSorcery.SIP.IntegrationTests
                     UseTcpFallback = false
                 };
 
-                SIPDns.PreferIPv6NameResolution = true;
                 SIPDns.LookupClient = new LookupClient(clientOptions);
 
-                var result = SIPDns.Resolve(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false).Result;
+                CancellationTokenSource cts = new CancellationTokenSource();
+                var result = SIPDns.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false, cts.Token).Result;
 
-                Assert.Null(result);
+                Assert.Equal(SIPEndPoint.Empty, result);
             }
             finally
             {
                 SIPDns.LookupClient = originalClient;
-                SIPDns.PreferIPv6NameResolution = false;
             }
         }
     }
