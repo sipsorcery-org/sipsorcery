@@ -82,9 +82,9 @@
 
 using System.IO;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Utilities;
 
@@ -167,10 +167,10 @@ namespace SIPSorcery.Net
          */
         private SrtpPolicy policy;
 
-	/**
-	 * The HMAC object we used to do packet authentication
-	 */
-	private IMac mac;
+        /**
+         * The HMAC object we used to do packet authentication
+         */
+        private IMac mac;
 
         /**
          * The symmetric cipher engines we need here
@@ -259,8 +259,8 @@ namespace SIPSorcery.Net
          *            encryption algorithm, the authentication algorithm, etc
          */
 
-    public SrtpCryptoContext(long ssrcIn, int rocIn, long kdr, byte[] masterK,
-            byte[] masterS, SrtpPolicy policyIn)
+        public SrtpCryptoContext(long ssrcIn, int rocIn, long kdr, byte[] masterK,
+                byte[] masterS, SrtpPolicy policyIn)
         {
             ssrcCtx = ssrcIn;
             mki = null;

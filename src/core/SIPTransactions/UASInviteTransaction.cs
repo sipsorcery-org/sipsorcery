@@ -27,7 +27,7 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class UASInviteTransaction : SIPTransaction
     {
-        private static string m_sipServerAgent = SIPConstants.SIP_SERVER_STRING;
+        private static string m_sipServerAgent = SIPConstants.SIP_USERAGENT_STRING;
 
         /// <summary>
         /// The local tag is set on the To SIP header and forms part of the information used to identify a SIP dialog.

@@ -29,7 +29,7 @@ namespace SIPSorcery.SIP
     public delegate Task SIPTransportResponseAsyncDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse);
     public delegate void SIPTransportSIPBadMessageDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField, string rawMessage);
     public delegate void STUNRequestReceivedDelegate(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength);
-    public delegate SIPDNSLookupResult ResolveSIPEndPointDelegate(SIPURI uri, bool async, bool? preferIPv6);
+    //public delegate SIPDNSLookupResult ResolveSIPEndPointDelegate(SIPURI uri, bool async, bool? preferIPv6);
 
     // SIP Transport Tracing (logging and diagnostics) delegates.
     public delegate void SIPTransportRequestTraceDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);

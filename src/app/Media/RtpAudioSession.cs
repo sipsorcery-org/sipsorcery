@@ -173,8 +173,11 @@ namespace SIPSorcery.Media
         /// and control sockets created. Generally this address does not need to be set. The default behaviour
         /// is to bind to [::] or 0.0.0.0,d depending on system support, which minimises network routing
         /// causing connection issues.</param>
-        public RtpAudioSession(AudioSourceOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs, IPAddress bindAddress = null) :
-            base(false, false, false, bindAddress)
+        /// <param name="bindPort">Optional. If specified the RTP socket will attempt to bind to this port. If the port
+        /// is already in use the RTP channel will not be created. Generally the port should be left as 0 which will
+        /// result in the Operating System choosing an ephemeral port.</param>
+        public RtpAudioSession(AudioSourceOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs, IPAddress bindAddress = null, int bindPort = 0) :
+            base(false, false, false, bindAddress, bindPort)
         {
             if (audioCodecs == null || audioCodecs.Count() == 0)
             {
@@ -310,11 +313,11 @@ namespace SIPSorcery.Media
         /// transmit samples generated from an audio capture device such as a microphone.
         /// </summary>
         /// <param name="sample">The PCM encoded sample to send.</param>
-        public void SendAudioSample(byte[] sample, int sampleLength, int durationMilliseconds)
+        public async Task SendAudioSample(byte[] sample, int sampleLength, int durationMilliseconds)
         {
             if (!_streamSendInProgress)
             {
-                EncodeAndSendAudioSample(sample, sampleLength, _audioOpts.CaptureDeviceSampleRate);
+                await EncodeAndSendAudioSample(sample, sampleLength, _audioOpts.CaptureDeviceSampleRate).ConfigureAwait(false);
             }
         }
 
@@ -398,7 +401,7 @@ namespace SIPSorcery.Media
         /// <param name="sample">The PCM 16 bit *=8KHz sample to send.</param>
         /// <param name="sampleLength">The length of the sample</param>
         /// <param name="sampleRate">The sample rate of either 8 or 16 KHz for the supplied sample.</param>
-        private void EncodeAndSendAudioSample(byte[] sample, int sampleLength, AudioSamplingRatesEnum sampleRate)
+        private async Task EncodeAndSendAudioSample(byte[] sample, int sampleLength, AudioSamplingRatesEnum sampleRate)
         {
             byte[] encodedSample = null;
 
@@ -472,15 +475,16 @@ namespace SIPSorcery.Media
 
             //Log.LogDebug($"send audio frame sample rate {sampleRateTicks}, duration ms {durationMilliseconds}, rtp timestamp duration {rtpTimestampDuration}.");
 
-            SendAudioFrame((uint)rtpTimestampDuration, (int)_sendingFormat.FormatCodec, encodedSample);
+            await SendAudioFrame((uint)rtpTimestampDuration, (int)_sendingFormat.FormatCodec, encodedSample).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Event handler for receiving RTP packets from the remote party.
         /// </summary>
+        /// <param name="remoteEP">The remote end point the RTP was received from.</param>
         /// <param name="mediaType">The media type of the packets.</param>
         /// <param name="rtpPacket">The RTP packet with the media sample.</param>
-        private void RtpPacketReceived(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+        private void RtpPacketReceived(IPEndPoint remoteEP, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
             if (mediaType == SDPMediaTypesEnum.audio)
             {
@@ -586,7 +590,7 @@ namespace SIPSorcery.Media
 
                     if (bytesRead > 0)
                     {
-                        SendAudioFrame((uint)sampleSize, (int)_sendingFormat.FormatCodec, sample);
+                        SendAudioFrame((uint)sampleSize, (int)_sendingFormat.FormatCodec, sample);// ROBS todo make async
                     }
 
                     if (bytesRead == 0 || _audioStreamReader.EndOfStream)
@@ -615,7 +619,7 @@ namespace SIPSorcery.Media
                         short[] silencePcm = new short[inputBufferSize];
                         _g722Codec.Encode(_g722CodecState, encodedSample, silencePcm, inputBufferSize);
 
-                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);
+                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);// ROBS todo make async
                     }
                     else
                     {
@@ -625,7 +629,7 @@ namespace SIPSorcery.Media
                             SetSilenceBuffer(_silenceBuffer, 0);
                         }
 
-                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, _silenceBuffer);
+                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, _silenceBuffer);// ROBS todo make async
                     }
                 }
             }
@@ -668,7 +672,7 @@ namespace SIPSorcery.Media
                         }
                     }
 
-                    SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);
+                    SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);// ROBS todo make async
                 }
             }
         }
@@ -700,7 +704,7 @@ namespace SIPSorcery.Media
                         }
                     }
 
-                    EncodeAndSendAudioSample(sample, sample.Length, _audioPcmSampleRate);
+                    EncodeAndSendAudioSample(sample, sample.Length, _audioPcmSampleRate); // ROBS todo make async
 
                     if (_audioPcmStreamReader.EndOfStream || _audioPcmStreamReader.BaseStream.Position >= _audioPcmStreamReader.BaseStream.Length)
                     {

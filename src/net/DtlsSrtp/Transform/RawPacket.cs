@@ -148,8 +148,7 @@ namespace SIPSorcery.Net
          */
         public bool GetExtensionBit()
         {
-            buffer.Position = 0;
-            return (buffer.ReadByte() & 0x10) == 0x10;
+            return (this.buffer.GetBuffer()[0] & 0x10) == 0x10;
         }
 
         /**
@@ -181,8 +180,7 @@ namespace SIPSorcery.Net
          */
         public int GetCsrcCount()
         {
-            this.buffer.Position = 0;
-            return (this.buffer.ReadByte() & 0x0f);
+            return (this.buffer.GetBuffer()[0] & 0x0f);
         }
 
         /**

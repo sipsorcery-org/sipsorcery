@@ -9,6 +9,9 @@
 // See also:
 // https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-25#section-3.5.4
 //
+// Author(s):
+// Aaron Clauson
+//
 // History:
 // 16 Mar 2020	Aaron Clauson	Created.
 //
@@ -148,14 +151,14 @@ namespace SIPSorcery.Net
         {
             fingerprint = null;
 
-            if(string.IsNullOrEmpty(str))
+            if (string.IsNullOrEmpty(str))
             {
                 return false;
             }
             else
             {
                 int spaceIndex = str.IndexOf(' ');
-                if(spaceIndex == -1)
+                if (spaceIndex == -1)
                 {
                     return false;
                 }
@@ -201,7 +204,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if(Certificate == null)
+                if (Certificate == null)
                 {
                     return 0;
                 }
@@ -305,17 +308,17 @@ namespace SIPSorcery.Net
     interface IRTCPeerConnection
     {
         //IRTCPeerConnection(RTCConfiguration configuration = null);
-        RTCSessionDescriptionInit createOffer(RTCOfferOptions options = null);
-        RTCSessionDescriptionInit createAnswer(RTCAnswerOptions options = null);
+        Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options = null);
+        Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options = null);
         Task setLocalDescription(RTCSessionDescriptionInit description);
         RTCSessionDescription localDescription { get; }
         RTCSessionDescription currentLocalDescription { get; }
         RTCSessionDescription pendingLocalDescription { get; }
-        SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit description);
+        Task<SetDescriptionResultEnum> setRemoteDescription(RTCSessionDescriptionInit description);
         RTCSessionDescription remoteDescription { get; }
         RTCSessionDescription currentRemoteDescription { get; }
         RTCSessionDescription pendingRemoteDescription { get; }
-        void addIceCandidate(RTCIceCandidateInit candidate = null);
+        Task addIceCandidate(RTCIceCandidateInit candidate = null);
         RTCSignalingState signalingState { get; }
         RTCIceGatheringState iceGatheringState { get; }
         RTCIceConnectionState iceConnectionState { get; }

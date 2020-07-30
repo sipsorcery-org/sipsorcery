@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP
         /// The scheme the SIP end point is using. Note that some schemes and protocols are mutually exclusive.
         /// For example sips cannot be sent over UDP.
         /// </summary>
-        public SIPSchemesEnum Scheme { get; private set; } = SIPSchemesEnum.sip;
+        //public SIPSchemesEnum Scheme { get; private set; } = SIPSchemesEnum.sip;
 
         /// <summary>
         /// The transport/application layer protocol the SIP end point is using.
@@ -80,6 +80,17 @@ namespace SIPSorcery.SIP
             Protocol = SIPProtocolsEnum.udp;
             Address = endPoint.Address;
             Port = endPoint.Port;
+        }
+
+        /// <summary>
+        /// Instantiates a new SIP end point from a network end point. Non specified properties
+        /// will be set to their defaults.
+        /// </summary>
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port)
+        {
+            Protocol =protocol;
+            Address = address;
+            Port = port;
         }
 
         /// <summary>
@@ -157,7 +168,7 @@ namespace SIPSorcery.SIP
                 var sipEndPoint = sipUri.ToSIPEndPoint();
                 if (sipEndPoint != null)
                 {
-                    sipEndPoint.Scheme = sipUri.Scheme;
+                    //sipEndPoint.Scheme = sipUri.Scheme;
                     return sipEndPoint;
                 }
                 else

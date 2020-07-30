@@ -15,12 +15,11 @@
 
 using System;
 using System.Collections;
-using Org.BouncyCastle.Asn1.X509;
+using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
-using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -95,6 +94,14 @@ namespace SIPSorcery.Net
         // Policies
         private SrtpPolicy srtpPolicy;
         private SrtpPolicy srtcpPolicy;
+
+        /// <summary>
+        /// Parameters:
+        ///  - alert level,
+        ///  - alert type,
+        ///  - alert description.
+        /// </summary>
+        public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
         public DtlsSrtpClient() :
             this(DtlsUtils.CreateSelfSignedCert())
@@ -331,12 +338,14 @@ namespace SIPSorcery.Net
                 description += cause;
             }
 
-            logger.LogWarning($"DTLS client raised alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");  
-        }
-
-        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
-        {
-            logger.LogWarning($"DTLS client received alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}.");
+            if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
+            {
+                logger.LogDebug($"DTLS client raised close notify: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
+            }
+            else
+            {
+                logger.LogWarning($"DTLS client raised unexpected alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
+            }
         }
 
         public override void NotifyServerVersion(ProtocolVersion serverVersion)
@@ -347,6 +356,35 @@ namespace SIPSorcery.Net
         public Certificate GetRemoteCertificate()
         {
             return ServerCertificate;
+        }
+
+        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
+        {
+            string description = AlertDescription.GetText(alertDescription);
+
+            AlertLevelsEnum level = AlertLevelsEnum.Warning;
+            AlertTypesEnum alertType = AlertTypesEnum.unknown;
+
+            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
+            {
+                level = (AlertLevelsEnum)alertLevel;
+            }
+
+            if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
+            {
+                alertType = (AlertTypesEnum)alertDescription;
+            }
+
+            if (alertType == AlertTypesEnum.close_notify)
+            {
+                logger.LogDebug($"DTLS client received close notification: {AlertLevel.GetText(alertLevel)}, {description}.");
+            }
+            else
+            {
+                logger.LogWarning($"DTLS client received unexpected alert: {AlertLevel.GetText(alertLevel)}, {description}.");
+            }
+
+            OnAlert?.Invoke(level, alertType, description);
         }
     }
 }

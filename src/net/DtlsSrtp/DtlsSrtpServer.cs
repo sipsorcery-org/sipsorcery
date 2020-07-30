@@ -20,14 +20,60 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Utilities;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
+    public enum AlertLevelsEnum : byte
+    {
+        Warning = 1,
+        Fatal = 2
+    }
+
+    public enum AlertTypesEnum : byte
+    {
+        close_notify = 0,
+        unexpected_message = 10,
+        bad_record_mac = 20,
+        decryption_failed = 21,
+        record_overflow = 22,
+        decompression_failure = 30,
+        handshake_failure = 40,
+        no_certificate = 41,
+        bad_certificate = 42,
+        unsupported_certificate = 43,
+        certificate_revoked = 44,
+        certificate_expired = 45,
+        certificate_unknown = 46,
+        illegal_parameter = 47,
+        unknown_ca = 48,
+        access_denied = 49,
+        decode_error = 50,
+        decrypt_error = 51,
+        export_restriction = 60,
+        protocol_version = 70,
+        insufficient_security = 71,
+        internal_error = 80,
+        inappropriate_fallback = 86,
+        user_canceled = 90,
+        no_renegotiation = 100,
+        unsupported_extension = 110,
+        certificate_unobtainable = 111,
+        unrecognized_name = 112,
+        bad_certificate_status_response = 113,
+        bad_certificate_hash_value = 114,
+        unknown_psk_identity = 115,
+        unknown = 255
+    }
+
     public interface IDtlsSrtpPeer
     {
+        event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
+
         SrtpPolicy GetSrtpPolicy();
         SrtpPolicy GetSrtcpPolicy();
         byte[] GetSrtpMasterServerKey();
@@ -40,6 +86,8 @@ namespace SIPSorcery.Net
 
     public class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
     {
+        private static readonly ILogger logger = Log.Logger;
+
         Certificate mCertificateChain = null;
         AsymmetricKeyParameter mPrivateKey = null;
 
@@ -66,6 +114,14 @@ namespace SIPSorcery.Net
 
         private int[] cipherSuites;
 
+        /// <summary>
+        /// Parameters:
+        ///  - alert level,
+        ///  - alert type,
+        ///  - alert description.
+        /// </summary>
+        public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
+
         public DtlsSrtpServer() : this(DtlsUtils.CreateSelfSignedCert())
         {
         }
@@ -78,7 +134,7 @@ namespace SIPSorcery.Net
         {
         }
 
-        public DtlsSrtpServer(string[] certificatesPath, string keyPath) : 
+        public DtlsSrtpServer(string[] certificatesPath, string keyPath) :
             this(DtlsUtils.LoadCertificateChain(certificatesPath), DtlsUtils.LoadPrivateKeyResource(keyPath))
         {
         }
@@ -391,6 +447,71 @@ namespace SIPSorcery.Net
         public Certificate GetRemoteCertificate()
         {
             return ClientCertificate;
+        }
+
+        public override void NotifyAlertRaised(byte alertLevel, byte alertDescription, string message, Exception cause)
+        {
+            string description = null;
+            if (message != null)
+            {
+                description += message;
+            }
+            if (cause != null)
+            {
+                description += cause;
+            }
+
+            if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
+            {
+                logger.LogDebug($"DTLS server raised close notify: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
+            }
+            else
+            {
+                logger.LogWarning($"DTLS server raised unexpected alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
+            }
+        }
+
+        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
+        {
+            string description = AlertDescription.GetText(alertDescription);
+
+            AlertLevelsEnum level = AlertLevelsEnum.Warning;
+            AlertTypesEnum alertType = AlertTypesEnum.unknown;
+
+            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
+            {
+                level = (AlertLevelsEnum)alertLevel;
+            }
+
+            if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
+            {
+                alertType = (AlertTypesEnum)alertDescription;
+            }
+
+            if (alertType == AlertTypesEnum.close_notify)
+            {
+                logger.LogDebug($"DTLS server received close notification: {AlertLevel.GetText(alertLevel)}, {description}.");
+            }
+            else
+            {
+                logger.LogWarning($"DTLS server received unexpected alert: {AlertLevel.GetText(alertLevel)}, {description}.");
+            }
+
+            OnAlert?.Invoke(level, alertType, description);
+        }
+
+        /// <summary>
+        /// This override prevents a TLS fault from being generated if a "Client Hello" is received that
+        /// does not support TLS renegotiation (https://tools.ietf.org/html/rfc5746).
+        /// This override is required to be able to complete a DTLS handshake with the Pion WebRTC library,
+        /// see https://github.com/pion/dtls/issues/274.
+        /// </summary>
+        public override void NotifySecureRenegotiation(bool secureRenegotiation)
+        {
+            if (!secureRenegotiation)
+            {
+                logger.LogWarning($"DTLS server received a client handshake without renegotiation support.");
+            }
         }
     }
 }

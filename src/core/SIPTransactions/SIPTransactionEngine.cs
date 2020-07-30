@@ -455,7 +455,7 @@ namespace SIPSorcery.SIP
                                                 break;
                                         }
 
-                                        if (sendResult != SocketError.Success)
+                                        if (sendResult != SocketError.Success && sendResult != SocketError.InProgress)
                                         {
                                             // Example of failures here are requiring a specific TCP or TLS connection that no longer exists
                                             // or attempting to send to a UDP socket that has previously returned an ICMP error.
@@ -610,14 +610,13 @@ namespace SIPSorcery.SIP
                                 expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
-                        //else if (transaction.HasTimedOut)
-                        //{
-                        //    // For INVITES need to give timed out transactions time to send the reliable responses and receive the ACKs.
-                        //    if (now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
-                        //    {
-                        //        expiredTransactionIds.Add(transaction.TransactionId);
-                        //    }
-                        //}
+                        else if (transaction.DeliveryFailed && transaction.TransactionFinalResponse == null)
+                        {
+                            // This transaction timed out attempting to send the initial request. No
+                            // final response was received so it does not need to be kept alive for ACK 
+                            // re-transmits.
+                            expiredTransactionIds.Add(transaction.TransactionId);
+                        }
                         else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                         {
                             if (now.Subtract(transaction.Created).TotalMilliseconds >= m_maxRingTime)
