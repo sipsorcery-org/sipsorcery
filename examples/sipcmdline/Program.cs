@@ -220,48 +220,20 @@ namespace SIPSorcery
             {
                 DateTime startTime = DateTime.Now;
 
-                (var dstEp, var dstUri) = await ParseDestination(options.Destination);
+               var dstUri = ParseDestination(options.Destination);
 
-                logger.LogDebug($"Destination IP end point {dstEp} and SIP URI {dstUri}");
-
-                //IPAddress localAddress = (dstEp.Address.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
-                //SIPChannel sipChannel = null;
-
-                //switch (dstEp.Protocol)
-                //{
-                //    case SIPProtocolsEnum.tcp:
-                //        sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                //        (sipChannel as SIPTCPChannel).DisableLocalTCPSocketsCheck = true; // Allow sends to listeners on this host.
-                //        break;
-                //    case SIPProtocolsEnum.tls:
-                //        var certificate = new X509Certificate2(@"localhost.pfx", "");
-                //        sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, DEFAULT_SIPS_CLIENT_PORT));
-                //        break;
-                //    case SIPProtocolsEnum.udp:
-                //        sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                //        break;
-                //    case SIPProtocolsEnum.ws:
-                //        sipChannel = new SIPClientWebSocketChannel();
-                //        break;
-                //    case SIPProtocolsEnum.wss:
-                //        sipChannel = new SIPClientWebSocketChannel();
-                //        break;
-                //    default:
-                //        throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
-                //}
-
-                //sipTransport.AddSIPChannel(sipChannel);
+                logger.LogDebug($"Destination SIP URI {dstUri}");
 
                 Task<bool> task = null;
 
                 switch (options.Scenario)
                 {
                     case Scenarios.uac:
-                        task = InitiateCallTaskAsync(sipTransport, dstUri, dstEp);
+                        task = InitiateCallTaskAsync(sipTransport, dstUri);
                         break;
                     case Scenarios.opt:
                     default:
-                        task = SendOptionsTaskAsync(sipTransport, dstUri, dstEp);
+                        task = SendOptionsTaskAsync(sipTransport, dstUri);
                         break;
                 }
 
@@ -272,12 +244,12 @@ namespace SIPSorcery
 
                 if (!task.IsCompleted)
                 {
-                    logger.LogWarning($"=> Request to {dstEp} did not get a response on task {taskNumber} after {duration.TotalMilliseconds.ToString("0")}ms.");
+                    logger.LogWarning($"=> Request to {dstUri} did not get a response on task {taskNumber} after {duration.TotalMilliseconds.ToString("0")}ms.");
                     failed = true;
                 }
                 else if (!task.Result)
                 {
-                    logger.LogWarning($"=> Request to {dstEp} did not get the expected response on task {taskNumber} after {duration.TotalMilliseconds.ToString("0")}ms.");
+                    logger.LogWarning($"=> Request to {dstUri} did not get the expected response on task {taskNumber} after {duration.TotalMilliseconds.ToString("0")}ms.");
                     failed = true;
                 }
                 else
@@ -303,37 +275,22 @@ namespace SIPSorcery
         /// </summary>
         /// <param name="dstn">The destination string to parse.</param>
         /// <returns>The SIPEndPoint and SIPURI parsed from the destination string.</returns>
-        private async static Task<(SIPEndPoint, SIPURI)> ParseDestination(string dst)
+        private static SIPURI ParseDestination(string dst)
         {
-            SIPEndPoint dstEp = null;
-
             SIPURI dstUri = null;
+
             // Don't attempt a SIP URI parse for serialised SIPEndPoints.
             if (Regex.IsMatch(dst, "^(udp|tcp|tls|ws|wss)") == false && SIPURI.TryParse(dst, out var argUri))
             {
                 dstUri = argUri;
-                dstEp = dstUri.ToSIPEndPoint();
             }
             else
             {
-                dstEp = SIPEndPoint.ParseSIPEndPoint(dst);
+                var dstEp = SIPEndPoint.ParseSIPEndPoint(dst);
                 dstUri = new SIPURI(SIPSchemesEnum.sip, dstEp);
             }
 
-            if (dstEp == null)
-            {
-                logger.LogDebug($"Attempting DNS resolve for {dstUri.Host}.");
-                DateTime startedAt = DateTime.Now;
-                var result = await SIPDns.Resolve(dstUri, false);
-                if (result != null)
-                {
-                    int duration = (int)DateTime.Now.Subtract(startedAt).TotalMilliseconds;
-                    logger.LogDebug($"Resolved SIP URI {dstUri} to {result} in {duration:0}ms.");
-                    dstEp = result;
-                }
-            }
-
-            return (dstEp, dstUri);
+            return dstUri;
         }
 
         /// <summary>
@@ -342,7 +299,7 @@ namespace SIPSorcery
         /// <param name="sipTransport">The transport object to use for the send.</param>
         /// <param name="dst">The destination end point to send the request to.</param>
         /// <returns>True if the expected response was received, false otherwise.</returns>
-        private static async Task<bool> SendOptionsTaskAsync(SIPTransport sipTransport, SIPURI dst, SIPEndPoint dstEP)
+        private static async Task<bool> SendOptionsTaskAsync(SIPTransport sipTransport, SIPURI dst)
         {
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
 
@@ -381,7 +338,7 @@ namespace SIPSorcery
                     return Task.FromResult(0);
                 };
 
-                SocketError sendResult = await sipTransport.SendRequestAsync(dstEP, optionsRequest);
+                SocketError sendResult = await sipTransport.SendRequestAsync(optionsRequest, true);
                 if (sendResult != SocketError.Success)
                 {
                     logger.LogWarning($"Attempt to send request failed with {sendResult}.");
@@ -403,7 +360,7 @@ namespace SIPSorcery
         /// <param name="sipTransport">The transport object to use for the send.</param>
         /// <param name="dst">The destination end point to send the request to.</param>
         /// <returns>True if the expected response was received, false otherwise.</returns>
-        private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst, SIPEndPoint dstEP)
+        private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst)
         {
             //UdpClient hepClient = new UdpClient(0, AddressFamily.InterNetwork);
 

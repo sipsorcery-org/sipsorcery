@@ -18,6 +18,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using DnsClient;
 using DnsClient.Protocol;
@@ -59,11 +60,6 @@ namespace SIPSorcery.SIP
         private static readonly ILogger logger = Log.Logger;
 
         /// <summary>
-        /// Set to true to prefer IPv6 lookups of hostnames. By default IPv4 lookups will be performed.
-        /// </summary>
-        public static bool PreferIPv6NameResolution = false;
-
-        /// <summary>
         /// Don't use IN_ANY queries by default. These are useful if a DNS server supports them as they can
         /// return IPv4 and IPv6 results in a single query. For DNS servers that don't support them it means
         /// an extra delay.
@@ -92,38 +88,13 @@ namespace SIPSorcery.SIP
                 Retries = DNS_RETRIES_PER_SERVER,
                 Timeout = TimeSpan.FromSeconds(DNS_TIMEOUT_SECONDS),
                 UseCache = true,
-                //UseTcpFallback = false
+                UseCacheForFailures = true,
             };
 
             _lookupClient = new LookupClient(clientOptions);
         }
 
-        /// <summary>
-        /// Resolve method that can be used to request an AAAA result and fallback to an A
-        /// record lookup if none found.
-        /// </summary>
-        /// <param name="uri">The SIP URI to lookup.</param>
-        /// <param name="preferIPv6">True if IPv6 (AAAA record lookup) is preferred.</param>
-        /// <returns>A SIPEndPoint or null.</returns>
-        public static Task<SIPEndPoint> Resolve(SIPURI uri, bool preferIPv6 = false)
-        {
-            var queryType = preferIPv6 || PreferIPv6NameResolution ? QueryType.AAAA : QueryType.A;
-            if (UseANYLookups)
-            {
-                queryType = QueryType.ANY;
-            }
-
-            return Resolve(uri, queryType);
-        }
-
-        /// <summary>
-        /// Resolve method that performs either an A or AAAA record lookup. If required
-        /// a SRV record lookup will be performed prior to the A or AAAA lookup.
-        /// </summary>
-        /// <param name="uri">The SIP URI to lookup.</param>
-        /// <param name="queryType">Whether the address lookup should be A or AAAA.</param>
-        /// <returns>A SIPEndPoint or null.</returns>
-        private static async Task<SIPEndPoint> Resolve(SIPURI uri, QueryType queryType)
+        public static SIPEndPoint ResolveFromCache(SIPURI uri, bool preferIPv6)
         {
             if (uri == null || String.IsNullOrWhiteSpace(uri.MAddrOrHostAddress))
             {
@@ -140,131 +111,285 @@ namespace SIPSorcery.SIP
                 // Target is already an IP address, no DNS lookup required.
                 return new SIPEndPoint(uri.Protocol, ipAddress, uriPort);
             }
+            else if (!uri.MAddrOrHostAddress.Contains(".") || uri.MAddrOrHostAddress.EndsWith(MDNS_TLD))
+            {
+                // No caching for local network hostnames.
+                return null;
+            }
+            else
+            {
+                if (uri.HostPort != null)
+                {
+                    // Explicit port means no SRV lookup.
+                    return SIPLookupFromCache(uri, preferIPv6 ? QueryType.AAAA : QueryType.A, preferIPv6);
+                }
+                else
+                {
+                    return SIPLookupFromCache(uri, QueryType.SRV, preferIPv6);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Resolve method that performs either an A or AAAA record lookup. If required
+        /// a SRV record lookup will be performed prior to the A or AAAA lookup.
+        /// </summary>
+        /// <param name="uri">The SIP URI to lookup.</param>
+        /// <param name="preferIPv6">Whether the address lookup would prefer to have an IPv6 address
+        /// returned.</param>
+        /// <returns>A SIPEndPoint or null.</returns>
+        public static Task<SIPEndPoint> ResolveAsync(SIPURI uri, bool preferIPv6, CancellationToken ct)
+        {
+            if (uri == null || String.IsNullOrWhiteSpace(uri.MAddrOrHostAddress))
+            {
+                throw new ArgumentNullException("uri", "SIP DNS resolve was supplied an empty input.");
+            }
+
+            if (!ushort.TryParse(uri.HostPort, out var uriPort))
+            {
+                uriPort = SIPConstants.DEFAULT_SIP_PORT;
+            }
+
+            if (IPAddress.TryParse(uri.MAddrOrHostAddress, out var ipAddress))
+            {
+                // Target is already an IP address, no DNS lookup required.
+                return Task.FromResult(new SIPEndPoint(uri.Protocol, ipAddress, uriPort));
+            }
             else
             {
                 if (!uri.MAddrOrHostAddress.Contains(".") || uri.MAddrOrHostAddress.EndsWith(MDNS_TLD))
                 {
-                    AddressFamily family = (queryType == QueryType.AAAA) ? AddressFamily.InterNetworkV6 :
-                        AddressFamily.InterNetwork;
-
-                    // The lookup is for a local network host. Use the OS DNS logic as the 
-                    // main DNS client can be configured to use external DNS servers that won't
-                    // be able to lookup this hostname.
-
-                    IPHostEntry hostEntry = null;
-
-                    try
-                    {
-                        hostEntry = Dns.GetHostEntry(uri.MAddrOrHostAddress);
-                    }
-                    catch (SocketException)
-                    {
-                        // Socket exception gets thrown for failed lookups,
-                    }
-
-                    if (hostEntry != null)
-                    {
-                        var addressList = hostEntry.AddressList;
-
-                        if (addressList?.Length == 0)
-                        {
-                            logger.LogWarning($"Operating System DNS lookup failed for {uri.MAddrOrHostAddress}.");
-                            return null;
-                        }
-                        else
-                        {
-                            if (addressList.Any(x => x.AddressFamily == family))
-                            {
-                                var addressResult = addressList.First(x => x.AddressFamily == family);
-                                return new SIPEndPoint(uri.Protocol, addressResult, uriPort);
-                            }
-                            else
-                            {
-                                // Didn't get a result for the preferred address family so just use the 
-                                // first available result.
-                                var addressResult = addressList.First();
-                                return new SIPEndPoint(uri.Protocol, addressResult, uriPort);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        return null;
-                    }
+                    return Task.FromResult(ResolveLocalHostname(uri, preferIPv6));
                 }
                 else
                 {
                     if (uri.HostPort != null)
                     {
                         // Explicit port means no SRV lookup.
-                        return HostQuery(uri.Protocol, uri.MAddrOrHostAddress, uriPort, queryType);
+                        return SIPLookupAsync(uri, preferIPv6 ? QueryType.AAAA : QueryType.A, preferIPv6, ct);
                     }
                     else
                     {
-                        // No explicit port so use a SRV -> (A | AAAA -> A | ANY) record lookup.
-                        var srvProtocol = SIPServices.GetSRVProtocolForSIPURI(uri);
-                        try
-                        {
-                            ServiceHostEntry srvResult = null;
-                            var srvResults = await _lookupClient.ResolveServiceAsync(uri.MAddrOrHostAddress, uri.Scheme.ToString(), srvProtocol.ToString()).ConfigureAwait(false);
-                            if (srvResults == null || srvResults.Count() == 0)
-                            {
-                                logger.LogWarning($"SIP DNS SRV lookup returned no results for {uri}.");
-                            }
-                            else
-                            {
-                                srvResult = srvResults.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
-                            }
-
-                            string host = uri.MAddrOrHostAddress;       // If no SRV results then fallback is to lookup the hostname directly.
-                            int port = SIPConstants.DEFAULT_SIP_PORT;   // If no SRV results then fallback is to use the default port.
-
-                            if (srvResult != null)
-                            {
-                                host = srvResult.HostName;
-                                port = srvResult.Port;
-                            }
-
-                            return HostQuery(uri.Protocol, host, port, queryType);
-                        }
-                        catch (Exception e)
-                        {
-                            logger.LogWarning($"SIP DNS SRV lookup failure for {uri}. {e?.InnerException?.Message}");
-                        }
+                        return SIPLookupAsync(uri, QueryType.SRV, preferIPv6, ct);
                     }
                 }
-                return null;
             }
         }
 
         /// <summary>
-        /// Attempts to resolve a hostname.
+        /// Attempts a lookup from cache.
         /// </summary>
-        /// <param name="host">The hostname to resolve.</param>
-        /// <param name="port">The service port to use in the end pint result (not used for the lookup).</param>
-        /// <param name="queryType">The lookup query type, either A or AAAA.</param>
-        /// <returns>If successful an IPEndPoint or null if not.</returns>
-        private static SIPEndPoint HostQuery(SIPProtocolsEnum protocol, string host, int port, QueryType queryType)
+        /// <param name="uri"></param>
+        /// <param name="startQuery"></param>
+        /// <param name="preferIPv6"></param>
+        /// <returns></returns>
+        private static SIPEndPoint SIPLookupFromCache(
+            SIPURI uri,
+            QueryType startQuery,
+            bool preferIPv6)
         {
-            try
+            SIPEndPoint result = null;
+            QueryType queryType = startQuery;
+
+            string host = uri.MAddrOrHostAddress;
+            int port = SIPConstants.GetDefaultPort(uri.Protocol);
+            if (ushort.TryParse(uri.HostPort, out var uriPort))
             {
-                var addrRecord = _lookupClient.Query(host, queryType).Answers.FirstOrDefault();
-                if (addrRecord != null)
+                port = uriPort;
+            }
+
+            bool isDone = false;
+
+            while (!isDone)
+            {
+                switch (queryType)
                 {
-                    return GetFromLookupResult(protocol, addrRecord, port);
+                    case QueryType.SRV:
+
+                        var srvProtocol = SIPServices.GetSRVProtocolForSIPURI(uri);
+                        string serviceHost = DnsQueryExtensions.ConcatResolveServiceName(uri.MAddrOrHostAddress, uri.Scheme.ToString(), srvProtocol.ToString());
+                        var srvResult = _lookupClient.QueryCache(serviceHost, QueryType.SRV);
+                        (var srvHost, var srvPort) = GetHostAndPortFromSrvResult(srvResult);
+                        if (srvHost != null)
+                        {
+                            host = srvHost;
+                            port = srvPort != 0 ? srvPort : port;
+                        }
+                        queryType = preferIPv6 ? QueryType.AAAA : QueryType.A;
+
+                        break;
+
+                    case QueryType.AAAA:
+
+                        var aaaaResult = _lookupClient.QueryCache(host, UseANYLookups ? QueryType.ANY : QueryType.AAAA, QueryClass.IN);
+                        if (aaaaResult?.Answers?.Count > 0)
+                        {
+                            result = GetFromLookupResult(uri.Protocol, aaaaResult.Answers.OrderByDescending(x => x.RecordType).First(), port);
+                            isDone = true;
+                        }
+                        else
+                        {
+                            queryType = QueryType.A;
+                        }
+
+                        break;
+
+                    default:
+                        // A record lookup.
+
+                        var aResult = _lookupClient.QueryCache(host, QueryType.A, QueryClass.IN);
+                        if (aResult != null)
+                        {
+                            if (aResult.Answers?.Count > 0)
+                            {
+                                result = GetFromLookupResult(uri.Protocol, aResult.Answers.First(), port);
+                            }
+                            else
+                            {
+                                // We got a result back but it was empty indicating an unresolvable host or
+                                // some other DNS error condition.
+                                result = SIPEndPoint.Empty;
+                            }
+                        }
+
+                        isDone = true;
+                        break;
                 }
             }
-            catch (Exception excp)
+
+            return result;
+        }
+
+        /// <summary>
+        /// Attempts a lookup from DNS.
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="startQuery"></param>
+        /// <param name="preferIPv6"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        private static async Task<SIPEndPoint> SIPLookupAsync(
+            SIPURI uri,
+            QueryType startQuery,
+            bool preferIPv6,
+            CancellationToken ct)
+        {
+            SIPEndPoint result = null;
+            QueryType queryType = startQuery;
+
+            string host = uri.MAddrOrHostAddress;
+            int port = SIPConstants.GetDefaultPort(uri.Protocol);
+            if (ushort.TryParse(uri.HostPort, out var uriPort))
             {
-                logger.LogWarning($"SIP DNS lookup failure for {host} and query {queryType}. {excp.Message}");
+                port = uriPort;
             }
 
-            if (queryType == QueryType.AAAA)
+            bool isDone = false;
+
+            while (!isDone && !ct.IsCancellationRequested)
             {
-                return HostQuery(protocol, host, port, QueryType.A);
+                switch (queryType)
+                {
+                    case QueryType.SRV:
+
+                        try
+                        {
+                            var srvProtocol = SIPServices.GetSRVProtocolForSIPURI(uri);
+                            string serviceHost = DnsQueryExtensions.ConcatResolveServiceName(uri.MAddrOrHostAddress, uri.Scheme.ToString(), srvProtocol.ToString());
+                            var srvResult = await _lookupClient.QueryAsync(serviceHost, QueryType.SRV, QueryClass.IN, ct).ConfigureAwait(false);
+                            (var srvHost, var srvPort) = GetHostAndPortFromSrvResult(srvResult);
+                            if (srvHost != null)
+                            {
+                                host = srvHost;
+                                port = srvPort != 0 ? srvPort : port;
+                            }
+                        }
+                        catch (Exception srvExcp)
+                        {
+                            logger.LogWarning($"SIPDNS exception on SRV lookup. {srvExcp.Message}.");
+                        }
+                        queryType = preferIPv6 ? QueryType.AAAA : QueryType.A;
+
+                        break;
+
+                    case QueryType.AAAA:
+
+                        try
+                        {
+                            var aaaaResult = await _lookupClient.QueryAsync(host, UseANYLookups ? QueryType.ANY : QueryType.AAAA, QueryClass.IN, ct).ConfigureAwait(false);
+                            if (aaaaResult?.Answers?.Count > 0)
+                            {
+                                result = GetFromLookupResult(uri.Protocol, aaaaResult.Answers.OrderByDescending(x => x.RecordType).First(), port);
+                                isDone = true;
+                            }
+                            else
+                            {
+                                queryType = QueryType.A;
+                            }
+                        }
+                        catch (Exception srvExcp)
+                        {
+                            logger.LogWarning($"SIPDNS exception on AAAA lookup. {srvExcp.Message}.");
+                            queryType = QueryType.A;
+                        }
+
+                        break;
+
+                    default:
+                        // A record lookup.
+                        try
+                        {
+                            var aResult = await _lookupClient.QueryAsync(host, QueryType.A, QueryClass.IN, ct).ConfigureAwait(false);
+                            if (aResult != null)
+                            {
+                                if (aResult.Answers?.Count > 0)
+                                {
+                                    result = GetFromLookupResult(uri.Protocol, aResult.Answers.First(), port);
+                                }
+                                else
+                                {
+                                    // We got a result back but it was empty indicating an unresolvable host or
+                                    // some other DNS error condition.
+                                    result = SIPEndPoint.Empty;
+                                }
+                            }
+
+                        }
+                        catch (Exception srvExcp)
+                        {
+                            logger.LogWarning($"SIPDNS exception on A lookup. {srvExcp.Message}.");
+                            result = SIPEndPoint.Empty;
+                        }
+
+                        isDone = true;
+                        break;
+                }
             }
 
-            return null;
+            return result;
+        }
+
+        /// <summary>
+        /// Extracts the server hostname and port from a SRV lookup.
+        /// </summary>
+        /// <param name="srvResult">The DNS response from an SRV lookup.</param>
+        /// <returns>The hostname and port for the chosen SRV result record.</returns>
+        private static (string, int) GetHostAndPortFromSrvResult(IDnsQueryResponse srvResult)
+        {
+            if (srvResult != null)
+            {
+                if (srvResult.Answers.Count() > 0)
+                {
+                    var serviceHostEntries = DnsQueryExtensions.ResolveServiceProcessResult(srvResult);
+
+                    // TODO: Should be applying some randomisation logic here to take advantage if there are multiple SRV records.
+                    var srvEntry = serviceHostEntries.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
+
+                    return (srvEntry.HostName, srvEntry.Port);
+                }
+            }
+
+            return (null, 0);
         }
 
         /// <summary>
@@ -284,6 +409,66 @@ namespace SIPSorcery.SIP
             else if (addrRecord is ARecord)
             {
                 return new SIPEndPoint(protocol, (addrRecord as ARecord).Address, port);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// The lookup is for a local network host. Use the OS DNS logic as the 
+        /// main DNS client can be configured to use external DNS servers that won't
+        /// be able to lookup this hostname.
+        /// </summary>
+        /// <param name="uri">The SIP URI to lookup.</param>
+        /// <param name="queryType">Whether the lookup should prefer an IPv6 result.</param>
+        /// <returns>A SIP end point for the host or null if the URI cannot be resolved.</returns>
+        private static SIPEndPoint ResolveLocalHostname(SIPURI uri, bool preferIPv6)
+        {
+            AddressFamily family = preferIPv6 ? AddressFamily.InterNetworkV6 :
+                       AddressFamily.InterNetwork;
+
+            if (!ushort.TryParse(uri.HostPort, out var uriPort))
+            {
+                uriPort = SIPConstants.DEFAULT_SIP_PORT;
+            }
+
+            IPHostEntry hostEntry = null;
+
+            try
+            {
+                hostEntry = Dns.GetHostEntry(uri.MAddrOrHostAddress);
+            }
+            catch (SocketException)
+            {
+                // Socket exception gets thrown for failed lookups,
+            }
+
+            if (hostEntry != null)
+            {
+                var addressList = hostEntry.AddressList;
+
+                if (addressList?.Length == 0)
+                {
+                    logger.LogWarning($"Operating System DNS lookup failed for {uri.MAddrOrHostAddress}.");
+                    return null;
+                }
+                else
+                {
+                    if (addressList.Any(x => x.AddressFamily == family))
+                    {
+                        var addressResult = addressList.First(x => x.AddressFamily == family);
+                        return new SIPEndPoint(uri.Protocol, addressResult, uriPort);
+                    }
+                    else
+                    {
+                        // Didn't get a result for the preferred address family so just use the 
+                        // first available result.
+                        var addressResult = addressList.First();
+                        return new SIPEndPoint(uri.Protocol, addressResult, uriPort);
+                    }
+                }
             }
             else
             {
