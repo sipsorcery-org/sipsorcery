@@ -344,7 +344,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        internal virtual SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        internal virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
             if (m_isClosed)
             {
@@ -352,15 +352,15 @@ namespace SIPSorcery.Net
             }
             else if (dstEndPoint == null)
             {
-                throw new ArgumentException("dstEndPoint", "An empty destination was specified to SendAsync in RTPChannel.");
+                throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
             }
             else if (buffer == null || buffer.Length == 0)
             {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for SendAsync in RTPChannel.");
+                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
             }
             else if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
             {
-                logger.LogWarning($"The destination address for SendAsync in RTPChannel cannot be {dstEndPoint.Address}.");
+                logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
                 return SocketError.DestinationAddressRequired;
             }
             else
@@ -398,7 +398,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError($"Exception RTPChannel.SendAsync. {excp}");
+                    logger.LogError($"Exception RTPChannel.Send. {excp}");
                     return SocketError.Fault;
                 }
             }

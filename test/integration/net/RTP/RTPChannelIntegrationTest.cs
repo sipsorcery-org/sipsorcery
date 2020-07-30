@@ -79,7 +79,7 @@ namespace SIPSorcery.Net.UnitTests
 
                     logger.LogDebug($"Attempting to send packet from {channel1.RTPLocalEndPoint} to {channel2Dst}.");
 
-                    var sendResult = channel1.SendAsync(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[PACKET_LENGTH]);
+                    var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[PACKET_LENGTH]);
 
                     logger.LogDebug($"Send result {sendResult}.");
 
