@@ -15,7 +15,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
+using System.Net;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
@@ -28,7 +28,8 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
+        //private static string DESTINATION = "time@sipsorcery.com";
+        private static string DESTINATION = "*66@192.168.11.48";
 
         private static readonly WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);
         private static WaveFileWriter _waveFile;
@@ -43,7 +44,13 @@ namespace demo
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
+            userAgent.ClientCallFailed += (uac, err, resp) =>
+            {
+                Console.WriteLine($"Call failed {err}");
+                _waveFile?.Close();
+            };
             userAgent.OnCallHungup += (dialog) => _waveFile?.Close();
+
             var rtpSession = new RtpAVSession(
                 new AudioOptions
                 {
@@ -52,6 +59,23 @@ namespace demo
                 },
                 null);
             rtpSession.OnRtpPacketReceived += OnRtpPacketReceived;
+
+            // Ctrl-c will gracefully exit the call at any point.
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            {
+                e.Cancel = true;
+
+                if (userAgent.IsCallActive)
+                {
+                    Console.WriteLine("Hanging up.");
+                    userAgent.Hangup();
+                }
+                else
+                {
+                    Console.WriteLine("Cancelling call");
+                    userAgent.Cancel();
+                }
+            };
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
@@ -68,10 +92,9 @@ namespace demo
 
             // Clean up.
             sipTransport.Shutdown();
-            SIPSorcery.Net.DNSManager.Stop();
         }
 
-        private static void OnRtpPacketReceived(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+        private static void OnRtpPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
             if (mediaType == SDPMediaTypesEnum.audio)
             {

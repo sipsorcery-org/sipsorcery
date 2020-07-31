@@ -31,7 +31,7 @@ namespace SIPSorcery.Net.Sctp
     /// 
     /// </summary>
     /// <remarks>
-    /// 
+    /// <![CDATA[
     /*
     * https://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-09
     5.1.  DATA_CHANNEL_OPEN Message
@@ -72,6 +72,7 @@ namespace SIPSorcery.Net.Sctp
     | Unassigned                                     | rest |           |
     +------------------------------------------------+------+-----------+
     */
+    /// ]]>
     /// </remarks>
     public class DataChannelOpen
     {

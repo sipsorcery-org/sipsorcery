@@ -379,7 +379,7 @@ namespace SIPSorcery.Net
                 pkt.ReadRegionToBuff(pkt.GetLength() - tagLength, tagLength, tempStore);
 
                 // Shrink packet to remove the authentication tag and index
-                // because this is part of authenicated data
+                // because this is part of authenticated data
                 pkt.shrink(tagLength + 4);
 
                 // compute, then save authentication in tagStore
@@ -525,7 +525,7 @@ namespace SIPSorcery.Net
         /**
          * Checks if a packet is a replayed on based on its sequence number.
          * 
-         * This method supports a 64 packet history relative the the given
+         * This method supports a 64 packet history relative to the given
          * sequence number.
          *
          * Sequence Number is guaranteed to be real (not faked) through 

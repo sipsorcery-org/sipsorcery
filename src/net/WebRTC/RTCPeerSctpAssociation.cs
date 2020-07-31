@@ -69,7 +69,7 @@ namespace SIPSorcery.Net
         {
             logger.LogDebug($"SCTP creating association is client {isClient} {srcPort}:{dstPort}.");
             _isClient = isClient;
-           _sctpAssociation = new ThreadedAssociation(dtlsTransport, this, isClient, srcPort, dstPort);
+            _sctpAssociation = new ThreadedAssociation(dtlsTransport, this, isClient, srcPort, dstPort);
         }
 
         /// <summary>

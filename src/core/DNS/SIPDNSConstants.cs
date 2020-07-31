@@ -77,7 +77,7 @@ namespace SIPSorcery.SIP
         /// <returns>The protocol to use in a SRV record lookup.</returns>
         public static SIPProtocolsEnum GetSRVProtocolForSIPURI(SIPURI uri)
         {
-            if(uri.Scheme == SIPSchemesEnum.sips)
+            if (uri.Scheme == SIPSchemesEnum.sips)
             {
                 if (uri.Protocol == SIPProtocolsEnum.wss)
                 {

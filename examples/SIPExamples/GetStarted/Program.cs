@@ -58,7 +58,6 @@ namespace demo
 
             // Clean up.
             sipTransport.Shutdown();
-            SIPSorcery.Net.DNSManager.Stop();
         }
 
         /// <summary>

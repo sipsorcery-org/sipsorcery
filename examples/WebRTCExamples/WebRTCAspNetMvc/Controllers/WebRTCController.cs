@@ -53,7 +53,7 @@ namespace WebRTCAspNetMvc.Controllers
             {
                 return BadRequest("The id cannot be empty in SetAnswer.");
             }
-            else if(string.IsNullOrWhiteSpace(answer?.sdp))
+            else if (string.IsNullOrWhiteSpace(answer?.sdp))
             {
                 return BadRequest("The SDP answer cannot be empty in SetAnswer.");
             }
@@ -77,15 +77,7 @@ namespace WebRTCAspNetMvc.Controllers
                 return BadRequest("The candidate field cannot be empty in AddIceCandidate.");
             }
 
-            // TODO: Handle .local addresses.
-            if (iceCandidate.candidate.Contains(".local"))
-            {
-                _logger.LogWarning("ICE candidates with .local addresses are currently not supported, coming soon.");
-            }
-            else
-            {
-                _webRTCServer.AddIceCandidate(id, iceCandidate);
-            }
+            _webRTCServer.AddIceCandidate(id, iceCandidate);
 
             return Ok();
         }

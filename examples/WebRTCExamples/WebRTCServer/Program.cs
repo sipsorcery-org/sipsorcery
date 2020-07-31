@@ -66,9 +66,7 @@ namespace WebRTCServer
         private const int VP8_TIMESTAMP_SPACING = 3000;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
-        private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const int WEBSOCKET_PORT = 8081;
-        private const int TEST_DTLS_HANDSHAKE_TIMEOUT = 10000;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -99,12 +97,20 @@ namespace WebRTCServer
             }
             else if (!File.Exists(LOCALHOST_CERTIFICATE_PATH))
             {
-                throw new ApplicationException($"The localhost certificate file for teh web socket server could not be found at {LOCALHOST_CERTIFICATE_PATH }.");
+                throw new ApplicationException($"The localhost certificate file for the web socket server could not be found at {LOCALHOST_CERTIFICATE_PATH }.");
             }
 
+            // The MediaSource class is a prototype class that wraps some basic Windows Media Foundation API's.
+            // It has not been extensively tested and your mileage may vary with different file sources and
+            // webcams.
             _mediaSource = new MediaSource();
+
+            // To use the mp4 file media source uncomment the line below:
             _mediaSource.Init(MP4_FILE_PATH, true);
-            //_mediaSource.Init(0, 0, VideoSubTypesEnum.I420, 640, 480);
+
+            // To use a webcam as the media source uncomment the line below and adjust the
+            // pixel format and dimensions to a mode supported by your webcam.
+            //_mediaSource.Init(0, 0, VideoSubTypesEnum.YUY2, 640, 480);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -339,7 +345,7 @@ namespace WebRTCServer
         /// <summary>
         /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
         /// </summary>
-        private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
+        private static void RtpSession_OnReceiveReport(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
         {
             var rr = recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
             if (rr != null)

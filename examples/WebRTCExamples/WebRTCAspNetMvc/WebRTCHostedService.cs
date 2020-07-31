@@ -3,7 +3,7 @@
 //
 // Description: This class is designed to act as a singleton in an ASP.Net
 // server application to handle WebRTC peer connections. Currently it does
-// not server or process any media. The main point is as a proof of concept
+// not serve or process any media. The main point is as a proof of concept
 // to be able to negotiate the ICE checks, DTLS handshake and then receive
 // RTP & RTCP packets.
 //
@@ -20,12 +20,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorceryMedia;
 
 namespace WebRTCAspNetMvc
 {
@@ -66,7 +66,7 @@ namespace WebRTCAspNetMvc
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
 
-            peerConnection.OnRtpPacketReceived += (SDPMediaTypesEnum media, RTPPacket rtpPkt) => _logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, SeqNum {rtpPkt.Header.SequenceNumber}.");
+            peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) => _logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, SeqNum {rtpPkt.Header.SequenceNumber}.");
             //peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             //peerConnection.OnSendReport += RtpSession_OnSendReport;
 

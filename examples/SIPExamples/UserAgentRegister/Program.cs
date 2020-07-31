@@ -68,7 +68,6 @@ namespace SIPSorcery.Register
 
             regUserAgent.Stop();
             sipTransport.Shutdown();
-            SIPSorcery.Net.DNSManager.Stop();
         }
 
         /// <summary>

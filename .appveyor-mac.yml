@@ -18,7 +18,7 @@ test_script:
 # TODO: Track down why macos throws an exception when attempting to load the X509 certificates.
 # TODO: Track down why macos fails to determine the local interface for IPv6 destinations on approx. every second test run.
 #       possibly to do with different vm configs but same thing is happening on both appveyor and GitHub Actions CI's.
-- dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv4TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv6TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.Sys.UnitTests.NetServicesUnitTest.GetLocalForInternetIPv6AdressUnitTest&FullyQualifiedName!=SIPSorcery.Net.UnitTests.DtlsUtilsUnitTest.LoadSecretFromArchiveUnitTest"
+- dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework netcoreapp3.1 -c Release --filter "FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv4TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv6TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.Sys.UnitTests.NetServicesUnitTest.GetLocalForInternetIPv6AdressUnitTest&FullyQualifiedName!=SIPSorcery.Net.UnitTests.DtlsUtilsUnitTest.LoadSecretFromArchiveUnitTest&FullyQualifiedName!=SIPSorcery.Net.UnitTests.RtpIceChannelUnitTest.CheckPeerReflexiveReplacedByHostCandidatesUnitTest&FullyQualifiedName!=CheckSuccessfulConnectionForHostCandidatesUnitTest"
 #on_finish:
 #  - sh: export APPVEYOR_SSH_BLOCK=true
 #  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -

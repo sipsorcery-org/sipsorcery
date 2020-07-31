@@ -171,3 +171,5 @@ bower_components
 
 docfx/*
 **/.vscode*
+*.sdp
+**/.ionide

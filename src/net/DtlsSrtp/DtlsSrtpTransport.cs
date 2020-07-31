@@ -445,7 +445,7 @@ namespace SIPSorcery.Net
                     logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
                     throw new TimeoutException();
                 }
-                else if(!_isClosed)
+                else if (!_isClosed)
                 {
                     waitMillis = (int)System.Math.Min(waitMillis, millisecondsRemaining);
                     return _inStream.Read(buf, off, len, waitMillis);
@@ -455,7 +455,7 @@ namespace SIPSorcery.Net
                     return DTLS_RECEIVE_ERROR_CODE;
                 }
             }
-            else if(!_isClosed)
+            else if (!_isClosed)
             {
                 return _inStream.Read(buf, off, len, waitMillis);
             }

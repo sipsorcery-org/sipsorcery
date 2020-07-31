@@ -108,7 +108,7 @@ namespace SIPSorcery.SIP
         public static Task<SIPEndPoint> Resolve(SIPURI uri, bool preferIPv6 = false)
         {
             var queryType = preferIPv6 || PreferIPv6NameResolution ? QueryType.AAAA : QueryType.A;
-            if(UseANYLookups)
+            if (UseANYLookups)
             {
                 queryType = QueryType.ANY;
             }
@@ -230,7 +230,7 @@ namespace SIPSorcery.SIP
                         catch (Exception e)
                         {
                             logger.LogWarning($"SIP DNS SRV lookup failure for {uri}. {e?.InnerException?.Message}");
-                        }                               
+                        }
                     }
                 }
                 return null;

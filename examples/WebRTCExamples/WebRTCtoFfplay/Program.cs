@@ -101,18 +101,14 @@ namespace SIPSorcery.Examples
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            _webSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
-            _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            //_webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
+            //_webSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
+            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
             //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
-            _webSocketServer.AddWebSocketService<WebRtcClient>("/sendoffer", (client) =>
+            _webSocketServer.AddWebSocketService<WebRtcClient>("/", (client) =>
             {
                 client.WebSocketOpened += SendOffer;
-                client.OnMessageReceived += WebSocketMessageReceived;
-            });
-            _webSocketServer.AddWebSocketService<WebRtcClient>("/receiveoffer", (client) =>
-            {
-                client.WebSocketOpened += ReceiveOffer;
                 client.OnMessageReceived += WebSocketMessageReceived;
             });
             _webSocketServer.Start();
@@ -153,20 +149,13 @@ namespace SIPSorcery.Examples
             return Task.CompletedTask;
         }
 
-        private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
-        {
-            logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
-            var pc = Createpc(context);
-            return Task.FromResult(pc);
-        }
-
         private static async Task<RTCPeerConnection> SendOffer(WebSocketContext context)
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
 
             var pc = Createpc(context);
 
-             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, AudioOfferFormats, MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, AudioOfferFormats, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(audioTrack);
             MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, VideoOfferFormats, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(videoTrack);
@@ -203,19 +192,19 @@ namespace SIPSorcery.Examples
             {
                 logger.LogDebug($"Peer connection state changed to {state}.");
 
-                if(state == RTCPeerConnectionState.connected)
+                if (state == RTCPeerConnectionState.connected)
                 {
                     logger.LogDebug("Creating RTP session for ffplay.");
 
-                    var rtpSession = CreateRtpSession(pc.AudioLocalTrack?.Capabilities, pc.VideoLocalTrack?.Capabilities );
-                    pc.OnRtpPacketReceived += (media, rtpPkt) =>
+                    var rtpSession = CreateRtpSession(pc.AudioLocalTrack?.Capabilities, pc.VideoLocalTrack?.Capabilities);
+                    pc.OnRtpPacketReceived += (rep, media, rtpPkt) =>
                     {
                         if (media == SDPMediaTypesEnum.audio && rtpSession.AudioDestinationEndPoint != null)
                         {
                             //logger.LogDebug($"Forwarding {media} RTP packet to ffplay timestamp {rtpPkt.Header.Timestamp}.");
                             rtpSession.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
                         }
-                        else if(media == SDPMediaTypesEnum.video && rtpSession.VideoDestinationEndPoint != null)
+                        else if (media == SDPMediaTypesEnum.video && rtpSession.VideoDestinationEndPoint != null)
                         {
                             //logger.LogDebug($"Forwarding {media} RTP packet to ffplay timestamp {rtpPkt.Header.Timestamp}.");
                             rtpSession.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
@@ -223,7 +212,7 @@ namespace SIPSorcery.Examples
                     };
                     pc.OnRtpClosed += (reason) => rtpSession.Close(reason);
                 }
-                
+
             };
 
             _activePeerConnection = pc;
@@ -266,14 +255,15 @@ namespace SIPSorcery.Examples
             }
 
             Console.WriteLine(sdpOffer);
-            
-            using(StreamWriter sw = new StreamWriter(FFPLAY_DEFAULT_SDP_PATH))
+
+            using (StreamWriter sw = new StreamWriter(FFPLAY_DEFAULT_SDP_PATH))
             {
                 sw.Write(sdpOffer);
             }
 
             string ffplayCommand = String.Format(FFPLAY_DEFAULT_COMMAND, FFPLAY_DEFAULT_SDP_PATH);
-            Console.WriteLine($"Start ffplay using:{ffplayCommand}");
+            Console.WriteLine($"Start ffplay using the command below:");
+            Console.WriteLine(ffplayCommand);
             Console.WriteLine($"To request the remote peer to send a video key frame press 'k'");
 
             rtpSession.Start();
@@ -296,7 +286,7 @@ namespace SIPSorcery.Examples
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.
                     SDP remoteSdp = SDP.ParseSDPDescription(message);
 
-                    foreach(var ann in remoteSdp.Media)
+                    foreach (var ann in remoteSdp.Media)
                     {
                         var capbilities = FilterCodecs(ann.Media, ann.MediaFormats);
                         MediaStreamTrack track = new MediaStreamTrack(ann.Media, false, capbilities, MediaStreamStatusEnum.RecvOnly);

@@ -59,7 +59,7 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                if(_userAgentVersion == null)
+                if (_userAgentVersion == null)
                 {
                     _userAgentVersion = $"sipsorcery_v{Assembly.GetExecutingAssembly().GetName().Version.ToString()}";
                 }
@@ -67,7 +67,7 @@ namespace SIPSorcery.SIP
                 return _userAgentVersion;
             }
         }
-        
+
         /// <summary>
         /// Gets the default SIP port for the protocol. 
         /// </summary>
@@ -102,10 +102,29 @@ namespace SIPSorcery.SIP
 
     public class SIPTimings
     {
-        public const int T1 = 500;                      // Value of the SIP defined timer T1 in milliseconds and is the time for the first retransmit.
-        public const int T2 = 4000;                     // Value of the SIP defined timer T2 in milliseconds and is the maximum time between retransmits.
-        public const int T6 = 64 * T1;                  // Value of the SIP defined timer T6 in milliseconds and is the period after which a transaction has timed out.
-        public const int MAX_RING_TIME = 180000;        // The number of milliseconds a transaction can stay in the proceeding state (i.e. an INVITE will ring for) before the call is given up and timed out.     
+        /// <summary>
+        /// Value of the SIP defined timer T1 in milliseconds and is the time for the first retransmit.
+        /// Should not need to be adjusted in normal circumstances.
+        /// </summary>
+        public static int T1 = 500;
+
+        /// <summary>
+        /// Value of the SIP defined timer T2 in milliseconds and is the maximum time between retransmits.
+        /// Should not need to be adjusted in normal circumstances.
+        /// </summary>
+        public static int T2 = 4000;
+
+        /// <summary>
+        /// Value of the SIP defined timer T6 in milliseconds and is the period after which a transaction 
+        /// has timed out. Should not need to be adjusted in normal circumstances.
+        /// </summary>
+        public static int T6 = 64 * T1;
+
+        /// <summary>
+        /// The number of milliseconds a transaction can stay in the proceeding state 
+        /// (i.e. an INVITE will ring for) before the call is given up and timed out.     
+        /// </summary>
+        public static int MAX_RING_TIME = 180000;
     }
 
     public enum SIPSchemesEnum

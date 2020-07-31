@@ -107,6 +107,7 @@ namespace SIPSorcery
             // Set up a default SIP transport.
             _sipTransport = new SIPTransport();
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
+            _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, SIP_LISTEN_PORT)));
             // If it's desired to listen on a single IP address use the equivalent of:
             //_sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Parse("192.168.11.50"), SIP_LISTEN_PORT)));
             EnableTraceLogs(_sipTransport, true);
@@ -120,8 +121,6 @@ namespace SIPSorcery
             await Task.Run(() => OnKeyPress(exitCts.Token));
 
             Log.LogInformation("Exiting...");
-
-            SIPSorcery.Net.DNSManager.Stop();
 
             if (_sipTransport != null)
             {
@@ -316,7 +315,7 @@ namespace SIPSorcery
             var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
 
             // Wire up the event handler for RTP packets received from the remote party.
-            rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);
+            rtpAudioSession.OnRtpPacketReceived += (ep, type, rtp) => OnRtpPacketReceived(ua, type, rtp);
             rtpAudioSession.OnTimeout += (mediaType) =>
             {
                 if (ua?.Dialogue != null)

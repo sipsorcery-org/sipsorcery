@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const receiveOfferUrl = "ws://localhost:8081/";
+
+        var pc;
+        var ws;
+
+        async function start(url) {
+
+            console.log(`start ${url}.`);
+
+            closePeer();
+
+            let videoControl = document.querySelector('#videoCtl');
+
+            ws = new WebSocket(url, []);
+
+            ws.onopen = async function () {
+                console.log("web socket onopen.");
+
+                pc = new RTCPeerConnection();
+
+                pc.ontrack = ({ track, streams: [stream] }) => {
+                    track.onunmute = () => {
+                        console.log("Adding track to video control.");
+                        videoControl.srcObject = stream;
+                    };
+                };
+
+                pc.onicecandidate = function (event) {
+                    if (event.candidate) {
+                        console.log('new-ice-candidate:');
+                        console.log(event.candidate.candidate);
+                        console.log(event.candidate);
+                        console.log("JSON: " + JSON.stringify(event.candidate.toJSON()))
+                        ws.send(JSON.stringify(event.candidate.toJSON()));
+                    }
+                };
+
+                pc.onicegatheringstatechange = function () {
+                    console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+                }
+
+                pc.oniceconnectionstatechange = function () {
+                    console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+                }
+
+                //pc.ontrack = async function (event) {
+                //    console.log('Remote ' + event.track.kind + ' stream available.');
+                //    console.log(event);
+                //    //	remoteStream.addTrack(event.track, remoteStream);
+                //};
+            };
+
+            ws.onmessage = async function (evt) {
+
+                if (!evt.data.startsWith("v=")) {
+                    console.log("Remote ICE candidate received.");
+                    console.log(evt.data);
+                    await pc.addIceCandidate({ candidate: evt.data, sdpMid: "0", sdpMLineIndex: 0 });
+                }
+                else {
+                    // Received SDP offer from the remote web socket server.
+                    console.log("Offer SDP received:");
+                    console.log(evt.data);
+
+                    await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+
+                    // Now create our offer SDP to send back to the web socket server.
+                    pc.createAnswer().then(function (answer) {
+                        return pc.setLocalDescription(answer);
+                    }).then(function () {
+                        console.log("Sending answer SDP:");
+                        console.log(pc.localDescription.sdp);
+                        ws.send(pc.localDescription.sdp);
+                    });
+                }
+            };
+        };
+
+        function closePeer() {
+            console.log("close peer");
+            if (ws != null) {
+                ws.close();
+            }
+
+            if (pc != null) {
+                pc.close();
+            }
+        };
+
+    </script>
+</head>
+<body>
+
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+
+    <div>
+        <!--<button type="button" class="btn btn-success" onclick="start(sendOfferUrl);">Start Send Offer</button>-->
+        <button type="button" class="btn btn-success" onclick="start(receiveOfferUrl);">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+</body>
