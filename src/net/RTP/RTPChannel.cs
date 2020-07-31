@@ -20,6 +20,8 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -33,6 +35,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public sealed class UdpReceiver
     {
+        TaskFactory factory = new TaskFactory();
         private const int RECEIVE_BUFFER_SIZE = 2048;   // MTU is 1452 bytes so this should be heaps.
 
         private static ILogger logger = Log.Logger;
@@ -65,12 +68,64 @@ namespace SIPSorcery.Net
         /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
         /// return any data received.
         /// </summary>
-        public void BeginReceiveFrom()
+        public async Task ReceiveAsync()
         {
             try
             {
                 EndPoint recvEndPoint = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
+                await factory.FromAsync(m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, null, null), ar =>
+                {
+                    try
+                    {
+                        if (!m_isClosed)
+                        {
+                            int bytesRead = m_udpSocket.EndReceiveFrom(ar, ref recvEndPoint);
+
+                            if (bytesRead > 0)
+                            {
+                                // During experiments IPPacketInformation wasn't getting set on Linux. Without it the local IP address
+                                // cannot be determined when a listener was bound to IPAddress.Any (or IPv6 equivalent). If the caller
+                                // is relying on getting the local IP address on Linux then something may fail.
+                                //if (packetInfo != null && packetInfo.Address != null)
+                                //{
+                                //    localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
+                                //}
+
+                                byte[] packetBuffer = new byte[bytesRead];
+                                Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
+                                OnPacketReceived?.Invoke(this, m_localPort, recvEndPoint as IPEndPoint, packetBuffer);
+                            }
+                        }
+                    }
+                    catch (SocketException)
+                    {
+                        // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
+                        // normal RTP operation. For example:
+                        // - the RTP connection may start sending before the remote socket starts listening,
+                        // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
+                        //   or new socket during the transition.
+                        // It also seems that once a UDP socket pair have exchanged packets and the remote party closes the socket exception will occur
+                        // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
+                        // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
+                        // error since the remote party may not have initialised their socket yet.
+                        //logger.LogWarning($"SocketException UdpReceiver.EndReceiveMessage. {sockExcp}");
+                    }
+                    catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
+                    { }
+                    catch (Exception excp)
+                    {
+                        logger.LogError($"Exception UdpReceiver.EndReceiveMessage. {excp}");
+                        Close(excp.Message);
+                    }
+                    finally
+                    {
+                        if (!m_isClosed)
+                        {
+                            ReceiveAsync().ConfigureAwait(false);
+                        }
+                    }
+                }).ConfigureAwait(false);
+
             }
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
             // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
@@ -88,65 +143,6 @@ namespace SIPSorcery.Net
                 // case the socket can be considered to be unusable and there's no point trying another receive.
                 logger.LogError($"Exception UdpReceiver.BeginReceive. {excp.Message}");
                 Close(excp.Message);
-            }
-        }
-
-        /// <summary>
-        /// Handler for end of the begin receive call.
-        /// </summary>
-        /// <param name="ar">Contains the results of the receive.</param>
-        private void EndReceiveFrom(IAsyncResult ar)
-        {
-            try
-            {
-                // When socket is closed the object will be disposed of in the middle of a receive.
-                if (!m_isClosed)
-                {
-                    EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                    int bytesRead = m_udpSocket.EndReceiveFrom(ar, ref remoteEP);
-
-                    if (bytesRead > 0)
-                    {
-                        // During experiments IPPacketInformation wasn't getting set on Linux. Without it the local IP address
-                        // cannot be determined when a listener was bound to IPAddress.Any (or IPv6 equivalent). If the caller
-                        // is relying on getting the local IP address on Linux then something may fail.
-                        //if (packetInfo != null && packetInfo.Address != null)
-                        //{
-                        //    localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
-                        //}
-
-                        byte[] packetBuffer = new byte[bytesRead];
-                        Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
-                        OnPacketReceived?.Invoke(this, m_localPort, remoteEP as IPEndPoint, packetBuffer);
-                    }
-                }
-            }
-            catch (SocketException)
-            {
-                // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-                // normal RTP operation. For example:
-                // - the RTP connection may start sending before the remote socket starts listening,
-                // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-                //   or new socket during the transition.
-                // It also seems that once a UDP socket pair have exchanged packets and the remote party closes the socket exception will occur
-                // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
-                // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
-                // error since the remote party may not have initialised their socket yet.
-                //logger.LogWarning($"SocketException UdpReceiver.EndReceiveMessage. {sockExcp}");
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception UdpReceiver.EndReceiveMessage. {excp}");
-                Close(excp.Message);
-            }
-            finally
-            {
-                if (!m_isClosed)
-                {
-                    BeginReceiveFrom();
-                }
             }
         }
 
@@ -183,8 +179,8 @@ namespace SIPSorcery.Net
         private Socket m_controlSocket;
         protected UdpReceiver m_controlReceiver;
         private bool m_started = false;
-        private bool m_isClosed;
 
+        static TaskFactory factory = new TaskFactory();
         public Socket RtpSocket { get; private set; }
 
         /// <summary>
@@ -238,10 +234,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public bool IsClosed
-        {
-            get { return m_isClosed; }
-        }
+        public bool IsClosed { get; private set; }
 
         public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
         public event Action<int, IPEndPoint, byte[]> OnControlDataReceived;
@@ -280,7 +273,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Starts listening on the RTP and control ports.
         /// </summary>
-        public void Start()
+        public async Task Start()
         {
             if (!m_started)
             {
@@ -291,14 +284,14 @@ namespace SIPSorcery.Net
                 m_rtpReceiver = new UdpReceiver(RtpSocket);
                 m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
                 m_rtpReceiver.OnClosed += Close;
-                m_rtpReceiver.BeginReceiveFrom();
+                await m_rtpReceiver.ReceiveAsync().ConfigureAwait(false);
 
                 if (m_controlSocket != null)
                 {
                     m_controlReceiver = new UdpReceiver(m_controlSocket);
                     m_controlReceiver.OnPacketReceived += OnControlPacketReceived;
                     m_controlReceiver.OnClosed += Close;
-                    m_controlReceiver.BeginReceiveFrom();
+                    await m_controlReceiver.ReceiveAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -308,7 +301,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Close(string reason)
         {
-            if (!m_isClosed)
+            if (!IsClosed)
             {
                 try
                 {
@@ -323,7 +316,7 @@ namespace SIPSorcery.Net
                         logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}, Control receiver on port {ControlPort}. Reason: {closeReason}.");
                     }
 
-                    m_isClosed = true;
+                    IsClosed = true;
                     m_rtpReceiver?.Close(null);
                     m_controlReceiver?.Close(null);
 
@@ -344,92 +337,64 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        internal virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        internal virtual async Task<SocketError> SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
-            if (m_isClosed)
+            if (IsClosed)
             {
                 return SocketError.Disconnecting;
             }
-            else if (dstEndPoint == null)
+             if (dstEndPoint == null)
             {
-                throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
+                throw new ArgumentException("dstEndPoint", "An empty destination was specified to SendAsync in RTPChannel.");
             }
-            else if (buffer == null || buffer.Length == 0)
+             if (buffer == null || buffer.Length == 0)
             {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
+                throw new ArgumentException("buffer", "The buffer must be set and non empty for SendAsync in RTPChannel.");
             }
-            else if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
+             if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
             {
-                logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
+                logger.LogWarning($"The destination address for SendAsync in RTPChannel cannot be {dstEndPoint.Address}.");
                 return SocketError.DestinationAddressRequired;
             }
-            else
+       
+            try
             {
-                try
+                Socket sendSocket = RtpSocket;
+                if (sendOn == RTPChannelSocketsEnum.Control)
                 {
-                    Socket sendSocket = RtpSocket;
-                    if (sendOn == RTPChannelSocketsEnum.Control)
+                    LastControlDestination = dstEndPoint;
+                    if (m_controlSocket == null)
                     {
-                        LastControlDestination = dstEndPoint;
-                        if (m_controlSocket == null)
-                        {
-                            throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
-                        }
-                        else
-                        {
-                            sendSocket = m_controlSocket;
-                        }
+                        throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
                     }
                     else
                     {
-                        LastRtpDestination = dstEndPoint;
+                        sendSocket = m_controlSocket;
                     }
-
-                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
-                    return SocketError.Success;
                 }
-                catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
+                else
                 {
-                    return SocketError.Disconnecting;
+                    LastRtpDestination = dstEndPoint;
                 }
-                catch (SocketException sockExcp)
+                await factory.FromAsync(sendSocket.BeginSendTo(buffer, 0, buffer.Length, 0, dstEndPoint, null, null), ar =>
                 {
-                    return sockExcp.SocketErrorCode;
-                }
-                catch (Exception excp)
-                {
-                    logger.LogError($"Exception RTPChannel.Send. {excp}");
-                    return SocketError.Fault;
-                }
+                  sendSocket.EndSendTo(ar);
+                }).ConfigureAwait(false);
+                return SocketError.Success;
             }
-        }
-
-        /// <summary>
-        /// Ends an async send on one of the channel's sockets.
-        /// </summary>
-        /// <param name="ar">The async result to complete the send with.</param>
-        private void EndSendTo(IAsyncResult ar)
-        {
-            try
+            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             {
-                Socket sendSocket = (Socket)ar.AsyncState;
-                int bytesSent = sendSocket.EndSendTo(ar);
+                return SocketError.Disconnecting;
             }
             catch (SocketException sockExcp)
             {
-                // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-                // normal RTP operation. For example:
-                // - the RTP connection may start sending before the remote socket starts listening,
-                // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-                //   or new socket during the transition.
-                logger.LogWarning($"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                return sockExcp.SocketErrorCode;
             }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { }
             catch (Exception excp)
             {
-                logger.LogError($"Exception RTPChannel EndSendTo. {excp.Message}");
-            }
+                logger.LogError($"Exception RTPChannel.SendAsync. {excp}");
+                return SocketError.Fault;
+            }          
         }
 
         /// <summary>
@@ -463,12 +428,15 @@ namespace SIPSorcery.Net
 
         protected virtual void Dispose(bool disposing)
         {
-            Close(null);
+            if (disposing)
+            {
+                Close(null);
+            }
         }
 
         public void Dispose()
         {
-            Close(null);
+            Dispose(true);
         }
     }
 }

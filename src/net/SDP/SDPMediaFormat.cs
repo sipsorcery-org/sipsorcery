@@ -97,6 +97,27 @@ namespace SIPSorcery.Net
                     return GetClockRate(payloadType);
             }
         }
+
+        public static bool EncodingParameterMandatory(SDPMediaFormatsEnum payloadType)
+        {
+            switch (payloadType)
+            {
+                case SDPMediaFormatsEnum.OPUS:
+                    return true;
+            }
+            return false;
+        }
+
+        public static string EncodingParameterDefault(SDPMediaFormatsEnum formatCodec)
+        {
+            switch (formatCodec)
+            {
+                case SDPMediaFormatsEnum.OPUS:
+                    return "2"; // assume 2 channels
+
+            }
+            throw new ArgumentOutOfRangeException(nameof(formatCodec));
+        }
     }
 
     /// <summary>
@@ -141,7 +162,29 @@ namespace SIPSorcery.Net
         /// a=fmtp:101 0-16
         /// </code>
         /// </summary>
-        public string FormatAttribute { get; set; }
+        public string FormatAttribute
+        {
+            get
+            {
+                var result = Name;
+                if (ClockRate != 0)
+                {
+                    result += "/" + ClockRate;
+                    if (!string.IsNullOrEmpty(EncodingParameter))
+                    {
+                        result += "/" + EncodingParameter;
+                    }
+                    else
+                    {
+                        if (SDPMediaFormatInfo.EncodingParameterMandatory(FormatCodec))
+                        {
+                            result += "/" + SDPMediaFormatInfo.EncodingParameterDefault(FormatCodec);
+                        }
+                    }
+                }
+                return result;
+            }
+        }
 
         /// <summary>
         /// The optional format parameter attribute for the media format. For standard media types this is not necessary.
@@ -182,6 +225,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool IsStandardAttribute { get; set; }
 
+        public string EncodingParameter { get; set; }
+
         public SDPMediaFormat(int formatID)
         {
             FormatID = formatID.ToString();
@@ -192,7 +237,6 @@ namespace SIPSorcery.Net
                 ClockRate = SDPMediaFormatInfo.GetRtpClockRate(FormatCodec);
                 //IsStandardAttribute = (formatID < DYNAMIC_ATTRIBUTES_START);
             }
-            FormatAttribute = (ClockRate == 0) ? Name : Name + "/" + ClockRate;
         }
 
         public SDPMediaFormat(string formatID)
@@ -205,15 +249,14 @@ namespace SIPSorcery.Net
         {
             Name = name;
             FormatCodec = GetFormatCodec(Name);
-            FormatAttribute = (ClockRate == 0) ? Name : Name + "/" + ClockRate;
         }
 
-        public SDPMediaFormat(int formatID, string name, int clockRate) : this(formatID)
+        public SDPMediaFormat(int formatID, string name, int clockRate, string encodingParameter) : this(formatID)
         {
             Name = name;
             FormatCodec = GetFormatCodec(Name);
             ClockRate = clockRate;
-            FormatAttribute = (ClockRate == 0) ? Name : Name + "/" + ClockRate;
+            EncodingParameter = encodingParameter;
         }
 
         public SDPMediaFormat(SDPMediaFormatsEnum format) : this((int)format)
@@ -223,18 +266,19 @@ namespace SIPSorcery.Net
 
         public void SetFormatAttribute(string attribute)
         {
-            FormatAttribute = attribute;
-
-            Match attributeMatch = Regex.Match(attribute, @"(?<name>\w+)/(?<clockrate>\d+)\s*");
+            Match attributeMatch = Regex.Match(attribute, @"(?<name>\w+)/(?<clockrate>\d+)/(?<EncodingParameter>\d+)\s*");
             if (attributeMatch.Success)
             {
                 Name = attributeMatch.Result("${name}");
                 FormatCodec = GetFormatCodec(Name);
-                int clockRate;
-                if (Int32.TryParse(attributeMatch.Result("${clockrate}"), out clockRate))
+
+                if (Int32.TryParse(attributeMatch.Result("${clockrate}"), out int clockRate))
                 {
                     ClockRate = clockRate;
                 }
+
+                EncodingParameter = attributeMatch.Result("${EncodingParameter}");
+
             }
         }
 
@@ -270,7 +314,7 @@ namespace SIPSorcery.Net
         {
             foreach (SDPMediaFormatsEnum format in Enum.GetValues(typeof(SDPMediaFormatsEnum)))
             {
-                if (name.ToLower() == format.ToString().ToLower())
+                if (name.Equals(format.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
                     return format;
                 }
@@ -309,7 +353,7 @@ namespace SIPSorcery.Net
                 // TODO: Need to compare all aspects of the format not just the codec.
                 if (format.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) != true
                     && b.Any(x => (x.FormatCodec != SDPMediaFormatsEnum.Unknown && x.FormatCodec == format.FormatCodec)
-                    || (x.Name != null && format.Name != null && x.Name.ToLower() == format.Name.ToLower())))
+                    || (x.Name != null && format.Name != null && x.Name.Equals(format.Name, StringComparison.OrdinalIgnoreCase))))
                 {
                     compatible.Add(format);
                 }

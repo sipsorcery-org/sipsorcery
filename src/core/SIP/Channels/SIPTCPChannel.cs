@@ -526,7 +526,7 @@ namespace SIPSorcery.SIP
                     }
                 }
 
-                return Task.CompletedTask;
+                return Task.FromResult(0);
             }
             catch (SocketException sockExcp)
             {

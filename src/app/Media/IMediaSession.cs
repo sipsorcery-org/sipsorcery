@@ -82,7 +82,7 @@ namespace SIPSorcery.SIP.App
         /// as the Connection address in the SDP offer. If not set an attempt will be 
         /// made to determine the best matching address.</param>
         /// <returns>A new SDP offer representing the session's local media tracks.</returns>
-        SDP CreateOffer(IPAddress connectionAddress);
+        Task<SDP> CreateOffer(IPAddress connectionAddress);
 
         /// <summary>
         /// Sets the remote description. Calling this method can result in the local
@@ -93,7 +93,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="sdp">The SDP description from the remote party.</param>
         /// <returns>If successful an OK enum result. If not an enum result indicating the 
         /// failure cause.</returns>
-        SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP sessionDescription);
+        Task<SetDescriptionResultEnum> SetRemoteDescription(SdpType sdpType, SDP sessionDescription);
 
         /// <summary>
         /// Generates an SDP answer to an offer based on the local media tracks. Calling
@@ -106,7 +106,7 @@ namespace SIPSorcery.SIP.App
         /// from the remote offer.</param>
         /// <returns>An SDP answer matching the offer and the local media tracks contained
         /// in the session.</returns>
-        SDP CreateAnswer(IPAddress connectionAddress);
+        Task<SDP> CreateAnswer(IPAddress connectionAddress);
 
         /// <summary>
         /// Needs to be called prior to sending media. Performs any set up tasks such as 

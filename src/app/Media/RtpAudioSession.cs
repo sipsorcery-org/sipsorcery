@@ -313,11 +313,11 @@ namespace SIPSorcery.Media
         /// transmit samples generated from an audio capture device such as a microphone.
         /// </summary>
         /// <param name="sample">The PCM encoded sample to send.</param>
-        public void SendAudioSample(byte[] sample, int sampleLength, int durationMilliseconds)
+        public async Task SendAudioSample(byte[] sample, int sampleLength, int durationMilliseconds)
         {
             if (!_streamSendInProgress)
             {
-                EncodeAndSendAudioSample(sample, sampleLength, _audioOpts.CaptureDeviceSampleRate);
+                await EncodeAndSendAudioSample(sample, sampleLength, _audioOpts.CaptureDeviceSampleRate).ConfigureAwait(false);
             }
         }
 
@@ -401,7 +401,7 @@ namespace SIPSorcery.Media
         /// <param name="sample">The PCM 16 bit *=8KHz sample to send.</param>
         /// <param name="sampleLength">The length of the sample</param>
         /// <param name="sampleRate">The sample rate of either 8 or 16 KHz for the supplied sample.</param>
-        private void EncodeAndSendAudioSample(byte[] sample, int sampleLength, AudioSamplingRatesEnum sampleRate)
+        private async Task EncodeAndSendAudioSample(byte[] sample, int sampleLength, AudioSamplingRatesEnum sampleRate)
         {
             byte[] encodedSample = null;
 
@@ -475,7 +475,7 @@ namespace SIPSorcery.Media
 
             //Log.LogDebug($"send audio frame sample rate {sampleRateTicks}, duration ms {durationMilliseconds}, rtp timestamp duration {rtpTimestampDuration}.");
 
-            SendAudioFrame((uint)rtpTimestampDuration, (int)_sendingFormat.FormatCodec, encodedSample);
+            await SendAudioFrame((uint)rtpTimestampDuration, (int)_sendingFormat.FormatCodec, encodedSample).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -590,7 +590,7 @@ namespace SIPSorcery.Media
 
                     if (bytesRead > 0)
                     {
-                        SendAudioFrame((uint)sampleSize, (int)_sendingFormat.FormatCodec, sample);
+                        SendAudioFrame((uint)sampleSize, (int)_sendingFormat.FormatCodec, sample);// ROBS todo make async
                     }
 
                     if (bytesRead == 0 || _audioStreamReader.EndOfStream)
@@ -619,7 +619,7 @@ namespace SIPSorcery.Media
                         short[] silencePcm = new short[inputBufferSize];
                         _g722Codec.Encode(_g722CodecState, encodedSample, silencePcm, inputBufferSize);
 
-                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);
+                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);// ROBS todo make async
                     }
                     else
                     {
@@ -629,7 +629,7 @@ namespace SIPSorcery.Media
                             SetSilenceBuffer(_silenceBuffer, 0);
                         }
 
-                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, _silenceBuffer);
+                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, _silenceBuffer);// ROBS todo make async
                     }
                 }
             }
@@ -672,7 +672,7 @@ namespace SIPSorcery.Media
                         }
                     }
 
-                    SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);
+                    SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);// ROBS todo make async
                 }
             }
         }
@@ -704,7 +704,7 @@ namespace SIPSorcery.Media
                         }
                     }
 
-                    EncodeAndSendAudioSample(sample, sample.Length, _audioPcmSampleRate);
+                    EncodeAndSendAudioSample(sample, sample.Length, _audioPcmSampleRate); // ROBS todo make async
 
                     if (_audioPcmStreamReader.EndOfStream || _audioPcmStreamReader.BaseStream.Position >= _audioPcmStreamReader.BaseStream.Length)
                     {

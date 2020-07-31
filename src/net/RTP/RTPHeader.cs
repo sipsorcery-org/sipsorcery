@@ -31,24 +31,17 @@ namespace SIPSorcery.Net
         public int CSRCCount = 0;                               // 4 bits
         public int MarkerBit = 0;                               // 1 bit.
         public int PayloadType = (int)SDPMediaFormatsEnum.PCMU; // 7 bits.
-        public UInt16 SequenceNumber;                           // 16 bits.
+        public ushort SequenceNumber;                           // 16 bits.
         public uint Timestamp;                                  // 32 bits.
         public uint SyncSource;                                 // 32 bits.
         public int[] CSRCList;                                  // 32 bits.
-        public UInt16 ExtensionProfile;                         // 16 bits.
-        public UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
+        public ushort ExtensionProfile;                         // 16 bits.
+        public ushort ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
         public byte[] ExtensionPayload;
 
         public int Length
         {
             get { return MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4)); }
-        }
-
-        public RTPHeader()
-        {
-            SequenceNumber = Crypto.GetRandomUInt16();
-            SyncSource = Crypto.GetRandomUInt();
-            Timestamp = Crypto.GetRandomUInt();
         }
 
         /// <summary>
@@ -57,6 +50,7 @@ namespace SIPSorcery.Net
         /// <param name="packet"></param>
         public RTPHeader(byte[] packet)
         {
+            if (packet == null) { return; }
             if (packet.Length < MIN_HEADER_LEN)
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTP header packet.");
@@ -108,7 +102,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public byte[] GetHeader(UInt16 sequenceNumber, uint timestamp, uint syncSource)
+        public byte[] GetHeader(ushort sequenceNumber, uint timestamp, uint syncSource)
         {
             SequenceNumber = sequenceNumber;
             Timestamp = timestamp;
@@ -121,7 +115,7 @@ namespace SIPSorcery.Net
         {
             byte[] header = new byte[Length];
 
-            UInt16 firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
+            ushort firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
 
             if (BitConverter.IsLittleEndian)
             {

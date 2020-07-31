@@ -37,6 +37,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
@@ -199,11 +200,24 @@ namespace SIPSorcery.Net
 
         private RTCConfiguration _configuration;
 
+        private static X509Certificate2 selfSignedCert = null;
+        
+        private static X509Certificate2 SelfSignedCert
+        {
+            get
+            {
+                if (selfSignedCert == null)
+                {
+                    selfSignedCert = DtlsUtils.CreateSelfSignedCert();
+                }
+                return selfSignedCert;
+            }
+        }
         /// <summary>
         /// The certificate being used to negotiate the DTLS handshake with the 
         /// remote peer.
         /// </summary>
-        private RTCCertificate _currentCertificate;
+        private  RTCCertificate _currentCertificate = null;
         public RTCCertificate CurrentCertificate
         {
             get
@@ -327,8 +341,12 @@ namespace SIPSorcery.Net
             // No certificate was provided so create a new self signed one.
             if (_configuration.certificates == null || _configuration.certificates.Count == 0)
             {
-                _currentCertificate = new RTCCertificate { Certificate = DtlsUtils.CreateSelfSignedCert() };
-                _configuration.certificates = new List<RTCCertificate> { _currentCertificate };
+                // Since it's a self signed certificate, reuse it
+                if (_currentCertificate == null)
+                {
+                    _currentCertificate = new RTCCertificate { Certificate = SelfSignedCert };
+                    _configuration.certificates = new List<RTCCertificate> { _currentCertificate };
+                }
             }
 
             SessionID = Guid.NewGuid().ToString();
@@ -529,7 +547,7 @@ namespace SIPSorcery.Net
         /// <param name="sdpType">Whether the remote SDP is an offer or answer.</param>
         /// <param name="sessionDescription">The SDP from the remote party.</param>
         /// <returns>The result of attempting to set the remote description.</returns>
-        public override SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP sessionDescription)
+        public override async Task<SetDescriptionResultEnum> SetRemoteDescription(SdpType sdpType, SDP sessionDescription)
         {
             RTCSessionDescriptionInit init = new RTCSessionDescriptionInit
             {
@@ -537,8 +555,9 @@ namespace SIPSorcery.Net
                 type = (sdpType == SdpType.answer) ? RTCSdpType.answer : RTCSdpType.offer
             };
 
-            return setRemoteDescription(init);
-        }
+            var result = await setRemoteDescription(init).ConfigureAwait(false);
+            return result;
+        } 
 
         /// <summary>
         /// Updates the session after receiving the remote SDP.
@@ -548,7 +567,7 @@ namespace SIPSorcery.Net
         /// If they are not available there's no point carrying on.
         /// </summary>
         /// <param name="sessionDescription">The answer/offer SDP from the remote party.</param>
-        public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
+        public async Task<SetDescriptionResultEnum> setRemoteDescription(RTCSessionDescriptionInit init)
         {
             RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
             remoteDescription = description;
@@ -556,7 +575,7 @@ namespace SIPSorcery.Net
             SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
             SdpType sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
-            var setResult = base.SetRemoteDescription(sdpType, remoteSdp);
+            var setResult = await base.SetRemoteDescription(sdpType, remoteSdp).ConfigureAwait(false);
 
             if (setResult == SetDescriptionResultEnum.OK)
             {
@@ -635,7 +654,7 @@ namespace SIPSorcery.Net
                 {
                     foreach (var iceCandidate in remoteSdp.IceCandidates)
                     {
-                        addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                        await addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate }).ConfigureAwait(false);
                     }
                 }
 
@@ -645,7 +664,7 @@ namespace SIPSorcery.Net
                     {
                         foreach (var iceCandidate in media.IceCandidates)
                         {
-                            addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                            await addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate }).ConfigureAwait(false);
                         }
                     }
                 }
@@ -663,19 +682,21 @@ namespace SIPSorcery.Net
         /// <param name="mediaType">Whether the sample is audio or video.</param>
         /// <param name="sampleTimestamp">The RTP timestamp for the sample.</param>
         /// <param name="sample">The sample payload.</param>
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
+        public async Task SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
         {
             if (base.AudioDestinationEndPoint != null && IsDtlsNegotiationComplete && connectionState == RTCPeerConnectionState.connected)
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
                     int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
-                    SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
+                    await SendVp8Frame(sampleTimestamp, vp8PayloadID, sample).ConfigureAwait(false);
+                    return;
                 }
-                else if (mediaType == SDPMediaTypesEnum.audio)
+                if (mediaType == SDPMediaTypesEnum.audio)
                 {
                     int pcmuPayloadID = Convert.ToInt32(AudioLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
-                    SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample);
+                    await SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample).ConfigureAwait(false);
+                    return;
                 }
             }
         }
@@ -717,7 +738,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be sued to apply additional
         /// controls over the generated offer SDP.</param>
-        public RTCSessionDescriptionInit createOffer(RTCOfferOptions options)
+        public async Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options)
         {
             try
             {
@@ -725,7 +746,7 @@ namespace SIPSorcery.Net
                 var videoCapabilities = VideoLocalTrack?.Capabilities;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
-                var offerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities);
+                var offerSdp = await createBaseSdp(localTracks, audioCapabilities, videoCapabilities).ConfigureAwait(false);
 
                 foreach (var ann in offerSdp.Media)
                 {
@@ -753,9 +774,9 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="connectionAddress">Not used.</param>
         /// <returns>An SDP payload to answer an offer from the remote party.</returns>
-        public override SDP CreateAnswer(IPAddress connectionAddress)
+        public override async Task<SDP> CreateAnswer(IPAddress connectionAddress)
         {
-            var result = createAnswer(null);
+            var result = await createAnswer(null).ConfigureAwait(false);
 
             if (result?.sdp != null)
             {
@@ -774,7 +795,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be used to apply additional
         /// controls over the generated answer SDP.</param>
-        public RTCSessionDescriptionInit createAnswer(RTCAnswerOptions options)
+        public async Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
         {
             if (remoteDescription == null)
             {
@@ -788,7 +809,7 @@ namespace SIPSorcery.Net
                     SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities) : null;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
-                var answerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities);
+                var answerSdp = await createBaseSdp(localTracks, audioCapabilities, videoCapabilities).ConfigureAwait(false);
 
                 if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
@@ -852,7 +873,7 @@ namespace SIPSorcery.Net
         ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
         ///   agent and the ICE processing MUST continue as usual."
         /// </remarks>
-        private SDP createBaseSdp(List<MediaStreamTrack> tracks, List<SDPMediaFormat> audioCapabilities, List<SDPMediaFormat> videoCapabilities)
+        private async Task<SDP> createBaseSdp(List<MediaStreamTrack> tracks, List<SDPMediaFormat> audioCapabilities, List<SDPMediaFormat> videoCapabilities)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
@@ -966,7 +987,7 @@ namespace SIPSorcery.Net
                     offerSdp.Group += $" {ann.MediaID}";
                 }
             }
-
+            await Task.CompletedTask;
             return offerSdp;
         }
 
@@ -1025,13 +1046,13 @@ namespace SIPSorcery.Net
         /// Adds a remote ICE candidate to the list this peer is attempting to connect against.
         /// </summary>
         /// <param name="candidateInit">The remote candidate to add.</param>
-        public void addIceCandidate(RTCIceCandidateInit candidateInit)
+        public async Task addIceCandidate(RTCIceCandidateInit candidateInit)
         {
             RTCIceCandidate candidate = new RTCIceCandidate(candidateInit);
 
             if (_rtpIceChannel.Component == candidate.component)
             {
-                _rtpIceChannel.AddRemoteCandidate(candidate);
+                await _rtpIceChannel.AddRemoteCandidate(candidate).ConfigureAwait(false);
             }
             else
             {
@@ -1138,20 +1159,20 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="dtlsHandle">The DTLS transport handle to perform the handshake with.</param>
         /// <returns></returns>
-        private bool DoDtlsHandshake(DtlsSrtpTransport dtlsHandle)
+        private async Task<bool> DoDtlsHandshake(DtlsSrtpTransport dtlsHandle)
         {
             logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
 
             var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
 
-            dtlsHandle.OnDataReady += (buf) =>
+            dtlsHandle.OnDataReady += async (buf) =>
             {
                 //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-                rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
+                await rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf).ConfigureAwait(false);
             };
 
             var handshakeResult = dtlsHandle.DoHandshake();
-
+            await Task.CompletedTask;
             if (!handshakeResult)
             {
                 logger.LogWarning($"RTCPeerConnection DTLS handshake failed.");
@@ -1210,15 +1231,11 @@ namespace SIPSorcery.Net
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            Close("disposed");
+            if (disposing)
+            {
+                Close("disposed");
+            }
         }
 
-        /// <summary>
-        /// Close the session if the instance is out of scope.
-        /// </summary>
-        public override void Dispose()
-        {
-            Close("disposed");
-        }
     }
 }
