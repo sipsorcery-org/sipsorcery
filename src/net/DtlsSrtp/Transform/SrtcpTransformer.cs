@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SrtcpTransformer.cs
 //
-// Description: Encapsulates the encryption/decryption logic for SRTCP packets.
+// Description: Encapsulates the encryption / decryption logic for SRTCP packets.
 //
 // Derived From:
 // https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/SRTCPTransformer.java
@@ -51,11 +51,12 @@ namespace SIPSorcery.Net
             this.contexts = new Dictionary<long, SrtcpCryptoContext>();
         }
 
-        /// <summary>
-        /// Encrypts a SRTCP packet
-        /// </summary>
-        /// <param name="pkt">plain SRTCP packet to be encrypted.</param>
-        /// <returns>encrypted SRTCP packet.</returns>
+        /**
+         * Encrypts a SRTCP packet
+         * 
+         * @param pkt plain SRTCP packet to be encrypted
+         * @return encrypted SRTCP packet
+         */
         public byte[] Transform(byte[] pkt)
         {
             return Transform(pkt, 0, pkt.Length);
@@ -114,11 +115,12 @@ namespace SIPSorcery.Net
             return null;
         }
 
-        /// <summary>
-        /// Close the transformer and underlying transform engine.
-        /// The close functions closes all stored crypto contexts. This deletes key data
-        /// and forces a cleanup of the crypto contexts.
-        /// </summary>
+        /**
+         * Close the transformer and underlying transform engine.
+         * 
+         * The close functions closes all stored crypto contexts. This deletes key data 
+         * and forces a cleanup of the crypto contexts.
+         */
         public void Close()
         {
             forwardEngine.Close();

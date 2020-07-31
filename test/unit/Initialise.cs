@@ -153,7 +153,7 @@ namespace SIPSorcery.UnitTests
             IsClosed = true;
         }
 
-        public SDP CreateAnswer(IPAddress connectionAddress)
+        public Task<SDP> CreateAnswer(IPAddress connectionAddress)
         {
             SDP answerSdp = new SDP(IPAddress.Loopback);
             answerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -169,10 +169,10 @@ namespace SIPSorcery.UnitTests
 
             answerSdp.Media.Add(audioAnnouncement);
 
-            return answerSdp;
+            return Task.FromResult(answerSdp);
         }
 
-        public SDP CreateOffer(IPAddress connectionAddress)
+        public Task<SDP> CreateOffer(IPAddress connectionAddress)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -188,13 +188,13 @@ namespace SIPSorcery.UnitTests
 
             offerSdp.Media.Add(audioAnnouncement);
 
-            return offerSdp;
+            return Task.FromResult(offerSdp);
         }
 
-        public SetDescriptionResultEnum SetRemoteDescription(SdpType type, SDP sessionDescription)
+        public Task<SetDescriptionResultEnum> SetRemoteDescription(SdpType type, SDP sessionDescription)
         {
             RemoteDescription = sessionDescription;
-            return SetDescriptionResultEnum.OK;
+            return Task.FromResult(SetDescriptionResultEnum.OK);
         }
 
         public Task Start()

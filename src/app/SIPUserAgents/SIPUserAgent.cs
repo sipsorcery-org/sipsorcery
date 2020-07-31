@@ -549,7 +549,7 @@ namespace SIPSorcery.SIP.App
                 {
                     // The SDP offer was included in the INVITE request.
                     SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
-                    var setRemoteResult = MediaSession.SetRemoteDescription(SdpType.offer, remoteSdp);
+                    var setRemoteResult = await MediaSession.SetRemoteDescription(SdpType.offer, remoteSdp).ConfigureAwait(false);
 
                     if (setRemoteResult != SetDescriptionResultEnum.OK)
                     {
@@ -595,7 +595,7 @@ namespace SIPSorcery.SIP.App
                     {
                         // If the initial INVITE did not contain an offer then the remote description will not yet be set.
                         var remoteSDP = SDP.ParseSDPDescription(m_sipDialogue.RemoteSDP);
-                        var setRemoteResult = MediaSession.SetRemoteDescription(SdpType.offer, remoteSDP);
+                        var setRemoteResult = await MediaSession.SetRemoteDescription(SdpType.offer, remoteSDP).ConfigureAwait(false);
 
                         if (setRemoteResult != SetDescriptionResultEnum.OK)
                         {
@@ -697,29 +697,29 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Send a re-INVITE request to put the remote call party on hold.
         /// </summary>
-        public void PutOnHold()
+        public async Task PutOnHold()
         {
             IsOnLocalHold = true;
 
             // The action we take to put a call on hold is to switch the media status
             // to send only and change the audio input from a capture device to on hold
             // music.
-            ApplyHoldAndReinvite();
+            await ApplyHoldAndReinvite().ConfigureAwait(false);
         }
 
         /// <summary>
         /// Send a re-INVITE request to take the remote call party on hold.
         /// </summary>
-        public void TakeOffHold()
+        public async Task TakeOffHold()
         {
             IsOnLocalHold = false;
-            ApplyHoldAndReinvite();
+            await ApplyHoldAndReinvite().ConfigureAwait(false);
         }
 
         /// <summary>
         /// Updates the stream status of the RTP session and sends the re-INVITE request.
         /// </summary>
-        private void ApplyHoldAndReinvite()
+        private async Task ApplyHoldAndReinvite()
         {
             var streamStatus = GetStreamStatusForOnHoldState();
 
@@ -733,8 +733,8 @@ namespace SIPSorcery.SIP.App
                 MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, streamStatus);
             }
 
-            var sdp = MediaSession.CreateOffer(null);
-            SendReInviteRequest(sdp);
+            var sdp = await MediaSession.CreateOffer(null).ConfigureAwait(false);
+            await SendReInviteRequest(sdp).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -832,7 +832,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        var setRemoteResult = MediaSession.SetRemoteDescription(SdpType.offer, offer);
+                        var setRemoteResult = await MediaSession.SetRemoteDescription(SdpType.offer, offer).ConfigureAwait(false);
 
                         if (setRemoteResult != SetDescriptionResultEnum.OK)
                         {
@@ -893,7 +893,7 @@ namespace SIPSorcery.SIP.App
             }
             else if (sipRequest.Method == SIPMethodsEnum.REFER)
             {
-                ProcessTransferRequest(sipRequest);
+                await ProcessTransferRequest(sipRequest).ConfigureAwait(false);
             }
             else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
             {
@@ -910,7 +910,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Processes transfer (REFER) requests from the remote call party.
         /// </summary>
-        private void ProcessTransferRequest(SIPRequest referRequest)
+        private async Task ProcessTransferRequest(SIPRequest referRequest)
         {
             // We use a reliable response to make sure that duplicate REFER requests are ignored.
             SIPNonInviteTransaction referResponseTx = new SIPNonInviteTransaction(m_transport, referRequest, null);
@@ -969,7 +969,7 @@ namespace SIPSorcery.SIP.App
                     {
                         // Put the remote party (who has just requested we call a new destination) on hold while we
                         // attempt a call to the referred destination.
-                        PutOnHold();
+                        await PutOnHold().ConfigureAwait(false);
                     }
 
                     if (MediaSession.HasAudio)
@@ -986,7 +986,7 @@ namespace SIPSorcery.SIP.App
                     // TODO: Add support for the event subscription for cases where norefersub is not applicable.
                     // Need to create an implicit subscription to keep the remote party that requested the transfer up to date with the 
                     // status and outcome of the REFER request
-                    _ = Task.Run(async () =>
+                    _ = Task.Run(async () => // ROBS is this necessary?
                     {
                         try
                         {
@@ -1033,7 +1033,7 @@ namespace SIPSorcery.SIP.App
                             {
                                 _oldCallID = null;
                                 OnTransferToTargetFailed?.Invoke(referToUserField);
-                                TakeOffHold();
+                                await TakeOffHold().ConfigureAwait(false);
                             }
                             else
                             {
@@ -1058,7 +1058,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Sends a re-INVITE request to the remote call party with the supplied SDP.
         /// </summary>
-        private void SendReInviteRequest(SDP sdp)
+        private async Task SendReInviteRequest(SDP sdp)
         {
             if (m_sipDialogue == null)
             {
@@ -1093,6 +1093,7 @@ namespace SIPSorcery.SIP.App
                 reinviteTransaction.SendInviteRequest();
                 reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
             }
+            await Task.CompletedTask;
         }
 
         /// <summary>
@@ -1206,7 +1207,7 @@ namespace SIPSorcery.SIP.App
             if (!IsOnLocalHold)
             {
                 logger.LogDebug("Current call placed on hold.");
-                PutOnHold();
+                await PutOnHold().ConfigureAwait(false);
 
                 // Pause to give the hold request time to get processed. Otherwise the BYE request can get sent
                 // before the hold request which will be interpreted as an missing dialog on the transferor and
@@ -1241,7 +1242,7 @@ namespace SIPSorcery.SIP.App
             {
                 _oldCallID = null;
                 logger.LogDebug("Attended transfer answer failed, taking original call off hold.");
-                TakeOffHold();
+                await TakeOffHold().ConfigureAwait(false);
             }
         }
 
@@ -1322,7 +1323,7 @@ namespace SIPSorcery.SIP.App
             if (sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress &&
                 sipResponse.Body != null)
             {
-                var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
+                var setDescriptionResult = await MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body)).ConfigureAwait(false);
                 logger.LogDebug($"Set remote description for early media result {setDescriptionResult}.");
 
                 if (setDescriptionResult == SetDescriptionResultEnum.OK)
@@ -1362,7 +1363,7 @@ namespace SIPSorcery.SIP.App
         {
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
-                var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
+                var setDescriptionResult = await MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body)).ConfigureAwait(false);
 
                 if (setDescriptionResult == SetDescriptionResultEnum.OK)
                 {
