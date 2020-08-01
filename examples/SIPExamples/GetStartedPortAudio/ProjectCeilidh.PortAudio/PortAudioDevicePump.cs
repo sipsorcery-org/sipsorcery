@@ -283,9 +283,9 @@ namespace ProjectCeilidh.PortAudio
             if (!disposing) return;
 
             _processingThreadCancel?.Cancel();
-            _threadEndEvent.Wait();
-            _threadEndEvent.Dispose();
-            _processingThreadCancel.Dispose();
+            _threadEndEvent?.Wait();
+            _threadEndEvent?.Dispose();
+            _processingThreadCancel?.Dispose();
             _queueCount?.Dispose();
             _poolCount?.Dispose();
 
