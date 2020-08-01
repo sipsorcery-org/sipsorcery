@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using ProjectCeilidh.PortAudio;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
@@ -30,11 +31,15 @@ namespace demo
     {
         private const int AUDIO_SAMPLING_RATE = 8000;
         private const int SAMPLING_PERIOD_MILLISECONDS = 20;
+        private const int AUDIO_CHANNEL_COUNT = 1;
+        private const int AUDIO_BYTES_PER_SAMPLE = 2; // 16 bit samples.
 
-        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+        private static ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        private PortAudioDevice _outputDevice;
+        private PortAudioDevice _portAudioOutputDevice;
+        private PortAudioDevice _portAudioInputDevice;
         private PortAudioDevicePump _outputDevicePump;
+        private PortAudioDevicePump _inputDevicePump;
 
         private List<byte> _pendingRemoteSamples = new List<byte>();
         private ManualResetEventSlim _remoteSampleReady = new ManualResetEventSlim();
@@ -45,7 +50,7 @@ namespace demo
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
         public PortAudioRtpSession()
-            : base(new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence }, new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU })
+            : base(new AudioSourceOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU })
         {
             base.OnRemoteAudioSampleReady += PortAudioRtpSession_OnRemoteAudioSampleReady;
         }
@@ -76,31 +81,20 @@ namespace demo
                     apiType = PortAudioHostApiType.Alsa;
                 }
 
-                _outputDevice = PortAudioHostApi.SupportedHostApis.Where(x => x.HostApiType == apiType).First().DefaultOutputDevice;
+                _portAudioOutputDevice = PortAudioHostApi.SupportedHostApis.Where(x => x.HostApiType == apiType).First().DefaultOutputDevice;
 
-                _outputDevicePump = new PortAudioDevicePump(_outputDevice, 1,
-                                new PortAudioSampleFormat(PortAudioSampleFormat.PortAudioNumberFormat.Signed, 2),
+                _outputDevicePump = new PortAudioDevicePump(_portAudioOutputDevice, AUDIO_CHANNEL_COUNT,
+                                new PortAudioSampleFormat(PortAudioSampleFormat.PortAudioNumberFormat.Signed, AUDIO_BYTES_PER_SAMPLE),
                                 TimeSpan.FromMilliseconds(SAMPLING_PERIOD_MILLISECONDS), AUDIO_SAMPLING_RATE, ReadAudioDataCalback);
 
+                _portAudioInputDevice = PortAudioHostApi.SupportedHostApis.Where(x => x.HostApiType == apiType).First().DefaultInputDevice;
+
+                _inputDevicePump = new PortAudioDevicePump(_portAudioInputDevice, 1,
+                                new PortAudioSampleFormat(PortAudioSampleFormat.PortAudioNumberFormat.Signed, AUDIO_BYTES_PER_SAMPLE),
+                                TimeSpan.FromMilliseconds(SAMPLING_PERIOD_MILLISECONDS), AUDIO_SAMPLING_RATE, WriteDataCallback);
+
                 _outputDevicePump.Start();
-
-                //PortAudio.Initialize();
-
-                //var outputDevice = PortAudio.DefaultOutputDevice;
-                //if (outputDevice == PortAudio.NoDevice)
-                //{
-                //    throw new ApplicationException("No audio output device available.");
-                //}
-                //else
-                //{
-                //    StreamParameters stmInParams = new StreamParameters { device = 0, channelCount = 2, sampleFormat = SampleFormat.Float32 };
-                //    StreamParameters stmOutParams = new StreamParameters { device = outputDevice, channelCount = 2, sampleFormat = SampleFormat.Float32 };
-
-                //    // Combined audio capture and render.
-                //    _audioIOStream = new Stream(stmInParams, stmOutParams, AUDIO_SAMPLING_RATE, AUDIO_SAMPLE_BUFFER_LENGTH, StreamFlags.NoFlag, AudioSampleAvailable, null);
-                //    _audioIOStream.Start();
-                //}
-
+                _inputDevicePump.Start();
             }
         }
 
@@ -139,6 +133,11 @@ namespace demo
             }
         }
 
+        void WriteDataCallback(byte[] buffer, int offset, int count)
+        {
+            base.SendAudioSample(buffer, offset, count);
+        }
+
         /// <summary>
         /// Closes the session.
         /// </summary>
@@ -150,7 +149,9 @@ namespace demo
                 base.Close(reason);
                 base.OnRemoteAudioSampleReady -= PortAudioRtpSession_OnRemoteAudioSampleReady;
                 _outputDevicePump?.Dispose();
-                _outputDevice?.Dispose();
+                _inputDevicePump?.Dispose();
+                _portAudioOutputDevice?.Dispose();
+                _portAudioInputDevice?.Dispose();
             }
         }
     }

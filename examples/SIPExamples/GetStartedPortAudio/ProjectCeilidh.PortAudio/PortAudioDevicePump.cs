@@ -282,7 +282,7 @@ namespace ProjectCeilidh.PortAudio
             ReleaseUnmanagedResources();
             if (!disposing) return;
 
-            _processingThreadCancel.Cancel();
+            _processingThreadCancel?.Cancel();
             _threadEndEvent.Wait();
             _threadEndEvent.Dispose();
             _processingThreadCancel.Dispose();
