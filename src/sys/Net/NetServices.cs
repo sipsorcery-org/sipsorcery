@@ -304,8 +304,14 @@ namespace SIPSorcery.Sys
         {
             var sock = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
             sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, true);
-            sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
-
+            try
+            {
+                sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
+            }
+            catch
+            {
+                // does nothing - NoDelay is apparently not supported
+            }
             if (addressFamily == AddressFamily.InterNetworkV6)
             {
                 if (!useDualMode)
