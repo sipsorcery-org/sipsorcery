@@ -18,11 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ProjectCeilidh.PortAudio;
-using ProjectCeilidh.PortAudio.Native;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 
@@ -30,24 +28,16 @@ namespace demo
 {
     public class PortAudioRtpSession : RtpAudioSession
     {
-        private const int AUDIO_SAMPLE_BUFFER_LENGTH = 160;   // At 8Khz buffer of 160 corresponds to 20ms samples.
         private const int AUDIO_SAMPLING_RATE = 8000;
-        private const float NORMALISE_FACTOR = 32768f;
         private const int SAMPLING_PERIOD_MILLISECONDS = 20;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        /// <summary>
-        /// Combined audio capture and render stream.
-        /// </summary>
-        //private PortAudioSharp.Stream _audioIOStream;
         private PortAudioDevice _outputDevice;
         private PortAudioDevicePump _outputDevicePump;
 
         private List<byte> _pendingRemoteSamples = new List<byte>();
         private ManualResetEventSlim _remoteSampleReady = new ManualResetEventSlim();
-        private uint _rtpAudioTimestampPeriod = 0;
-        private SDPMediaFormat _sendingAudioFormat = null;
         private bool _isStarted = false;
         private bool _isClosed = false;
 
@@ -79,7 +69,14 @@ namespace demo
             {
                 await base.Start();
 
-                _outputDevice = PortAudioHostApi.SupportedHostApis.Where(x => x.HostApiType == PortAudioHostApiType.Mme).First().DefaultOutputDevice;
+                var apiType = PortAudioHostApiType.DirectSound;
+
+                if(Environment.OSVersion.Platform == PlatformID.Unix)
+                {
+                    apiType = PortAudioHostApiType.Alsa;
+                }
+
+                _outputDevice = PortAudioHostApi.SupportedHostApis.Where(x => x.HostApiType == apiType).First().DefaultOutputDevice;
 
                 _outputDevicePump = new PortAudioDevicePump(_outputDevice, 1,
                                 new PortAudioSampleFormat(PortAudioSampleFormat.PortAudioNumberFormat.Signed, 2),
