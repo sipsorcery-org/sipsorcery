@@ -41,8 +41,8 @@ namespace demo
 {
     class Program
     {
-        //private static string DESTINATION = "time@sipsorcery.com";
-        private static string DESTINATION = "*61@192.168.11.48";
+        private static string DESTINATION = "time@sipsorcery.com";
+        //private static string DESTINATION = "*61@192.168.11.48";
 
         static async Task Main()
         {
@@ -69,7 +69,6 @@ namespace demo
 
             // Clean up.
             sipTransport.Shutdown();
-            SIPSorcery.Net.DNSManager.Stop();
         }
 
         /// <summary>

@@ -2,7 +2,7 @@
   "profiles": {
     "webrtccmdline": {
       "commandName": "Project",
-      "commandLineArgs": "--nodedss http://192.168.11.50:3000"
+      "commandLineArgs": "--ws"
     }
   }
 }
