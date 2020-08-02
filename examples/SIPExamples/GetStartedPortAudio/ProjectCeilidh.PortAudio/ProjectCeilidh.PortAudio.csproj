@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.1</Version>
+    <Authors>Olivia Trewin</Authors>
+    <Company>Project Ceilidh</Company>
+    <Description>C# bindings for PortAudio, targeting .NET Standard 2.1</Description>
+    <Copyright>Olivia Trewin 2018</Copyright>
+    <RepositoryUrl>https://github.com/Ceilidh-Team/PortAudio</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>PortAudio</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
+    <None Update="lib\*.dll" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

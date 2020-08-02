@@ -9,6 +9,8 @@
 //
 // History:
 // 17 Apr 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 01 Aug 2020  Aaron Clauson   Switched from PortAudioSharp to 
+//                              ProjectCeilidh.PortAudio.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -16,20 +18,20 @@
 
 //-----------------------------------------------------------------------------
 // Usage on Linux:
-// The PortAduioSharp package DOES NOT install the required native libraries on
+// This project DOES NOT install the required native libraries on
 // Linux.
 //
 // The approach I used to install the PortAudio library on Linux was:
-// - Install Microsoft's C++ pakcage manager (yes it works on Linux) from
+// - Install Microsoft's C++ package manager (yes it works on Linux) from
 //   https://github.com/microsoft/vcpkg,
 // - Use vcpkg to install PortAudio: ./vcpkg install portaudio,
-// - Build this app using "dotnet run" in the same directory as the project file. It's
-//   expected to build successfully but fail at runtime with an error that it cannot
-//   locate the portaudio library.
-// - Copy the portaudio.so from <vcpkg dir>/installed/x64-linux/lib/portaudio.so to
-//   the bin directory, for example:
-//   aaron@pcdodo:~/src/sipsorcery/examples/GetStartedPortAudio/bin/Debug/netcoreapp3.1$ cp ~/src/vcpkg/installed/x64-linux/lib/libportaudio.so .
-// - Retry "dotnet run". Please report success or failure at https://github.com/sipsorcery/sipsorcery/issues/196.
+// - Run this app using "dotnet run" in the same directory as the project file.
+// 
+// Port Audio ALSA devices:
+// You may need to adjust your default sounds device. To list devices use:
+// pactl list short sources
+// To set a new default device use:
+// pactl list short sinks alsa_output.pci-0000_01_00.1.hdmi-stereo-extra1
 
 using System;
 using System.Threading.Tasks;
@@ -42,7 +44,8 @@ namespace demo
     class Program
     {
         //private static string DESTINATION = "time@sipsorcery.com";
-        private static string DESTINATION = "*61@192.168.11.48";
+        //private static string DESTINATION = "*61@192.168.11.48";
+        private static string DESTINATION = "aaron@192.168.11.50:6060";
 
         static async Task Main()
         {
@@ -65,11 +68,12 @@ namespace demo
             {
                 Console.WriteLine("Hanging up.");
                 userAgent.Hangup();
+
+                await Task.Delay(1000);
             }
 
             // Clean up.
             sipTransport.Shutdown();
-            SIPSorcery.Net.DNSManager.Stop();
         }
 
         /// <summary>

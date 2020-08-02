@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30002.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GetStartedPortAudio", "GetStartedPortAudio.csproj", "{A299A24A-C934-4865-A210-44E26B1B84C6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProjectCeilidh.PortAudio", "ProjectCeilidh.PortAudio\ProjectCeilidh.PortAudio.csproj", "{94171789-BA9D-456F-AE50-C3A2BDA5E265}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetStartedPortAudio", "GetStartedPortAudio\GetStartedPortAudio.csproj", "{D308B076-FB1E-4898-BC24-222F7D6D371F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A299A24A-C934-4865-A210-44E26B1B84C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A299A24A-C934-4865-A210-44E26B1B84C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A299A24A-C934-4865-A210-44E26B1B84C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A299A24A-C934-4865-A210-44E26B1B84C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94171789-BA9D-456F-AE50-C3A2BDA5E265}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94171789-BA9D-456F-AE50-C3A2BDA5E265}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94171789-BA9D-456F-AE50-C3A2BDA5E265}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94171789-BA9D-456F-AE50-C3A2BDA5E265}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D308B076-FB1E-4898-BC24-222F7D6D371F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D308B076-FB1E-4898-BC24-222F7D6D371F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D308B076-FB1E-4898-BC24-222F7D6D371F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D308B076-FB1E-4898-BC24-222F7D6D371F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
