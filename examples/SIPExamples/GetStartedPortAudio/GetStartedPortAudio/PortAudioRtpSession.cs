@@ -135,7 +135,7 @@ namespace demo
 
         void WriteDataCallback(byte[] buffer, int offset, int count)
         {
-            base.SendAudioSample(buffer, offset, count);
+            base.SendAudioSample(buffer, count - offset, SAMPLING_PERIOD_MILLISECONDS);
         }
 
         /// <summary>

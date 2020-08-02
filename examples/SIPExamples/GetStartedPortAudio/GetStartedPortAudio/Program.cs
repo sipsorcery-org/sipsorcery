@@ -68,6 +68,8 @@ namespace demo
             {
                 Console.WriteLine("Hanging up.");
                 userAgent.Hangup();
+
+                await Task.Delay(1000);
             }
 
             // Clean up.
