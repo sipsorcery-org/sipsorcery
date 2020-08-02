@@ -1,15 +1,16 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: PortAudioRtpSession.cs
 //
-// Description: Example of an RTP session that uses PortAUdio for audio
-// capture and rendering. This class is a cut, paste and strip job from
-// the RtpAvSession class in the SIPSorceryMedia library.
+// Description: Example of an RTP session that uses PortAudio for audio
+// capture and rendering.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 17 Apr 2020 Aaron Clauson	Created, Dublin, Ireland.
+// 01 Aug 2020  Aaron Clauson   Switched from PortAudioSharp to 
+//                              ProjectCeilidh.PortAudio.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,7 +21,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using ProjectCeilidh.PortAudio;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
@@ -33,8 +33,6 @@ namespace demo
         private const int SAMPLING_PERIOD_MILLISECONDS = 20;
         private const int AUDIO_CHANNEL_COUNT = 1;
         private const int AUDIO_BYTES_PER_SAMPLE = 2; // 16 bit samples.
-
-        private static ILogger Log = SIPSorcery.Sys.Log.Logger;
 
         private PortAudioDevice _portAudioOutputDevice;
         private PortAudioDevice _portAudioInputDevice;
@@ -89,7 +87,7 @@ namespace demo
 
                 _portAudioInputDevice = PortAudioHostApi.SupportedHostApis.Where(x => x.HostApiType == apiType).First().DefaultInputDevice;
 
-                _inputDevicePump = new PortAudioDevicePump(_portAudioInputDevice, 1,
+                _inputDevicePump = new PortAudioDevicePump(_portAudioInputDevice, AUDIO_CHANNEL_COUNT,
                                 new PortAudioSampleFormat(PortAudioSampleFormat.PortAudioNumberFormat.Signed, AUDIO_BYTES_PER_SAMPLE),
                                 TimeSpan.FromMilliseconds(SAMPLING_PERIOD_MILLISECONDS), AUDIO_SAMPLING_RATE, WriteDataCallback);
 
