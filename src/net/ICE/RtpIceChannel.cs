@@ -294,7 +294,15 @@ namespace SIPSorcery.Net
         {
             if (_dnsLookupClient == null)
             {
-                _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers?.ToArray());
+                if(DefaultNameServers != null)
+                {
+                    _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers.ToArray());
+                }
+                else
+                {
+                    _dnsLookupClient = new DnsClient.LookupClient();
+                }
+               
             }
 
             _bindAddress = bindAddress;
