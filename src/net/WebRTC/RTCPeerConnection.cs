@@ -37,6 +37,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
@@ -199,11 +200,24 @@ namespace SIPSorcery.Net
 
         private RTCConfiguration _configuration;
 
+        private static X509Certificate2 selfSignedCert = null;
+        
+        private static X509Certificate2 SelfSignedCert
+        {
+            get
+            {
+                if (selfSignedCert == null)
+                {
+                    selfSignedCert = DtlsUtils.CreateSelfSignedCert();
+                }
+                return selfSignedCert;
+            }
+        }
         /// <summary>
         /// The certificate being used to negotiate the DTLS handshake with the 
         /// remote peer.
         /// </summary>
-        private RTCCertificate _currentCertificate;
+        private  RTCCertificate _currentCertificate = null;
         public RTCCertificate CurrentCertificate
         {
             get
@@ -327,8 +341,12 @@ namespace SIPSorcery.Net
             // No certificate was provided so create a new self signed one.
             if (_configuration.certificates == null || _configuration.certificates.Count == 0)
             {
-                _currentCertificate = new RTCCertificate { Certificate = DtlsUtils.CreateSelfSignedCert() };
-                _configuration.certificates = new List<RTCCertificate> { _currentCertificate };
+                // Since it's a self signed certificate, reuse it
+                if (_currentCertificate == null)
+                {
+                    _currentCertificate = new RTCCertificate { Certificate = SelfSignedCert };
+                    _configuration.certificates = new List<RTCCertificate> { _currentCertificate };
+                }
             }
 
             SessionID = Guid.NewGuid().ToString();
@@ -663,19 +681,21 @@ namespace SIPSorcery.Net
         /// <param name="mediaType">Whether the sample is audio or video.</param>
         /// <param name="sampleTimestamp">The RTP timestamp for the sample.</param>
         /// <param name="sample">The sample payload.</param>
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
+        public async Task SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
         {
             if (base.AudioDestinationEndPoint != null && IsDtlsNegotiationComplete && connectionState == RTCPeerConnectionState.connected)
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
                     int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
-                    SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
+                    await SendVp8Frame(sampleTimestamp, vp8PayloadID, sample).ConfigureAwait(false);
+                    return;
                 }
-                else if (mediaType == SDPMediaTypesEnum.audio)
+                if (mediaType == SDPMediaTypesEnum.audio)
                 {
                     int pcmuPayloadID = Convert.ToInt32(AudioLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
-                    SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample);
+                    await SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample).ConfigureAwait(false);
+                    return;
                 }
             }
         }
@@ -1138,16 +1158,16 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="dtlsHandle">The DTLS transport handle to perform the handshake with.</param>
         /// <returns></returns>
-        private bool DoDtlsHandshake(DtlsSrtpTransport dtlsHandle)
+        private async Task<bool> DoDtlsHandshake(DtlsSrtpTransport dtlsHandle)
         {
             logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
 
             var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
 
-            dtlsHandle.OnDataReady += (buf) =>
+            dtlsHandle.OnDataReady += async (buf) =>
             {
                 //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-                rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
+                await rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf).ConfigureAwait(false);
             };
 
             var handshakeResult = dtlsHandle.DoHandshake();
@@ -1210,15 +1230,10 @@ namespace SIPSorcery.Net
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            Close("disposed");
-        }
-
-        /// <summary>
-        /// Close the session if the instance is out of scope.
-        /// </summary>
-        public override void Dispose()
-        {
-            Close("disposed");
+            if (disposing)
+            {
+                Close("disposed");
+            }
         }
     }
 }

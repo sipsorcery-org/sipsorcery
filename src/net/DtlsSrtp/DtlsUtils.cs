@@ -381,14 +381,20 @@ namespace SIPSorcery.Net
 
             return x509;
         }
+        const int keyStrength = 2048;
+        static CryptoApiRandomGenerator randomGenerator = new CryptoApiRandomGenerator();
+        static SecureRandom random = new SecureRandom(randomGenerator);
+
+        static KeyGenerationParameters keyGenerationParameters = new KeyGenerationParameters(random, keyStrength);
+        static RsaKeyPairGenerator keyPairGenerator = null;
 
         public static AsymmetricKeyParameter CreatePrivateKeyResource(string subjectName = "CN=root")
         {
-            const int keyStrength = 2048;
+
 
             // Generating Random Numbers
-            var randomGenerator = new CryptoApiRandomGenerator();
-            var random = new SecureRandom(randomGenerator);
+            //  var randomGenerator = new CryptoApiRandomGenerator();
+            //  var random = new SecureRandom(randomGenerator);
 
             // The Certificate Generator
             var certificateGenerator = new X509V3CertificateGenerator();
@@ -411,9 +417,14 @@ namespace SIPSorcery.Net
             certificateGenerator.SetNotAfter(notAfter);
 
             // Subject Public Key
-            var keyGenerationParameters = new KeyGenerationParameters(random, keyStrength);
-            var keyPairGenerator = new RsaKeyPairGenerator();
-            keyPairGenerator.Init(keyGenerationParameters);
+            //   var keyGenerationParameters = new KeyGenerationParameters(random, keyStrength);
+            //   var keyPairGenerator = new RsaKeyPairGenerator();
+            //    keyPairGenerator.Init(keyGenerationParameters);
+            if (keyPairGenerator == null)
+            {
+                keyPairGenerator = new RsaKeyPairGenerator();
+                keyPairGenerator.Init(keyGenerationParameters);
+            }
             var subjectKeyPair = keyPairGenerator.GenerateKeyPair();
 
             return subjectKeyPair.Private;

@@ -40,6 +40,7 @@ namespace SIPSorcery.Sys
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
 
         private static ILogger logger = Log.Logger;
+        private static NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces(); // Assume this will not change while the program runs
 
         /// <summary>
         /// Doing the same check as here https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/SocketPal.Unix.cs#L19.
@@ -303,7 +304,14 @@ namespace SIPSorcery.Sys
         {
             var sock = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
             sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, true);
-
+            try
+            {
+                sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, true);
+            }
+            catch
+            {
+                // does nothing - NoDelay is apparently not supported
+            }
             if (addressFamily == AddressFamily.InterNetworkV6)
             {
                 if (!useDualMode)
@@ -544,8 +552,6 @@ namespace SIPSorcery.Sys
             IPAddress localAddress = GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS));
 
             List<IPAddress> localAddresses = new List<IPAddress>();
-
-            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
             foreach (NetworkInterface n in adapters)
             {
                 // AC 5 Jun 2020: Network interface status is reported as Unknown on WSL.
@@ -576,8 +582,6 @@ namespace SIPSorcery.Sys
         private static List<IPAddress> GetAllLocalIPAddresses()
         {
             List<IPAddress> localAddresses = new List<IPAddress>();
-
-            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
             foreach (NetworkInterface n in adapters)
             {
                 // AC 5 Jun 2020: Network interface status is reported as Unknown on WSL.
