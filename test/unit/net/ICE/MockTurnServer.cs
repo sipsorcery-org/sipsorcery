@@ -56,7 +56,7 @@ namespace SIPSorcery.Net.UnitTests
             _listener = new UdpReceiver(_clientSocket);
             _listener.OnPacketReceived += OnPacketReceived;
             _listener.OnClosed += (reason) => logger.LogDebug($"MockTurnServer on {ListeningEndPoint} closed.");
-            _listener.BeginReceiveFrom();
+            _listener.ReceiveAsync();
         }
 
         private void OnPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
@@ -83,7 +83,7 @@ namespace SIPSorcery.Net.UnitTests
                         _relayListener = new UdpReceiver(_relaySocket);
                         _relayListener.OnPacketReceived += OnRelayPacketReceived;
                         _relayListener.OnClosed += (reason) => logger.LogDebug($"MockTurnServer relay on {_relayEndPoint} closed.");
-                        _relayListener.BeginReceiveFrom();
+                        _relayListener.ReceiveAsync();
                     }
 
                     STUNMessage allocateResponse = new STUNMessage(STUNMessageTypesEnum.AllocateSuccessResponse);

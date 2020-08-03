@@ -31,7 +31,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            RTPHeader rtpHeader = new RTPHeader();
+            RTPHeader rtpHeader = new RTPHeader(null);
             byte[] headerBuffer = rtpHeader.GetHeader(1, 0, 1);
 
             int byteNum = 1;
@@ -48,7 +48,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            RTPHeader src = new RTPHeader();
+            RTPHeader src = new RTPHeader(null);
             byte[] headerBuffer = src.GetHeader(1, 0, 1);
             RTPHeader dst = new RTPHeader(headerBuffer);
 
@@ -81,7 +81,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            RTPHeader src = new RTPHeader();
+            RTPHeader src = new RTPHeader(null);
             src.Version = 3;
             src.PaddingFlag = 1;
             src.HeaderExtensionFlag = 1;
