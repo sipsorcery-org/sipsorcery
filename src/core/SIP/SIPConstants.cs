@@ -32,6 +32,7 @@ namespace SIPSorcery.SIP
         public const int NONCE_TIMEOUT_MINUTES = 5;                         // Length of time an issued nonce is valid for.
         public const int SIP_MAXIMUM_RECEIVE_LENGTH = 65535;                // Any SIP messages over this size will generate an error.
         public const int SIP_MAXIMUM_UDP_SEND_LENGTH = 1300;                // Any SIP messages over this size should be prevented from using a UDP transport.
+
         public const string SIP_REQUEST_REGEX = @"^\w+ .* SIP/.*";          // bnf:	Request-Line = Method SP Request-URI SP SIP-Version CRLF
         public const string SIP_RESPONSE_REGEX = @"^SIP/.* \d{3}";          // bnf: Status-Line = SIP-Version SP Status-Code SP Reason-Phrase CRLF
         public const string SIP_BRANCH_MAGICCOOKIE = "z9hG4bK";
