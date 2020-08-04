@@ -77,7 +77,7 @@ namespace SIPSorcery.SIP
                 Port = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;
             }
 
-            m_recvBuffer = new byte[SIPConstants.SIP_MAXIMUM_UDP_SEND_LENGTH * 2];
+            m_recvBuffer = new byte[SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH];
 
             logger.LogInformation($"SIP UDP Channel created for {ListeningEndPoint}.");
 
@@ -119,6 +119,11 @@ namespace SIPSorcery.SIP
                     SocketFlags flags = SocketFlags.None;
 
                     int bytesRead = m_udpSocket.EndReceiveMessageFrom(ar, ref flags, ref remoteEP, out var packetInfo);
+
+                    if (flags == SocketFlags.Truncated)
+                    {
+                        logger.LogWarning($"The message was too large to fit into the specified buffer and was truncated.");
+                    }
 
                     if (bytesRead > 0)
                     {
