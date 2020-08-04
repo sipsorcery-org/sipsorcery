@@ -25,10 +25,12 @@
                 pc = new RTCPeerConnection({
                     iceServers: [
                         {
-                            urls: "stun:stun.sipsorcery.com"
+                            urls: "turn:stun.sipsorcery.com",
+                            username: "aaron",
+                            credential: "password"
                         }
                     ],
-                    iceTransportPolicy: "all"
+                    iceTransportPolicy: "relay"
                 });
 
                 if (url == sendOfferUrl) {
