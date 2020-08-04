@@ -325,7 +325,7 @@ namespace SIPSorcery.SIP
                                     {
                                         throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "Non-numeric port for IP address.");
                                     }
-                                    else if (viaHeader.Port > SIPConstants.MAX_SIP_PORT)
+                                    else if (viaHeader.Port > IPEndPoint.MaxPort)
                                     {
                                         throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "The port specified in a Via header exceeded the maximum allowed.");
                                     }
