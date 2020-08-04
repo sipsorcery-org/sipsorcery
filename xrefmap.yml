@@ -28538,12 +28538,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPConstants.HEADER_DELIMITER_CHAR
   fullName: SIPSorcery.SIP.SIPConstants.HEADER_DELIMITER_CHAR
   nameWithType: SIPConstants.HEADER_DELIMITER_CHAR
-- uid: SIPSorcery.SIP.SIPConstants.MAX_SIP_PORT
-  name: MAX_SIP_PORT
-  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_MAX_SIP_PORT
-  commentId: F:SIPSorcery.SIP.SIPConstants.MAX_SIP_PORT
-  fullName: SIPSorcery.SIP.SIPConstants.MAX_SIP_PORT
-  nameWithType: SIPConstants.MAX_SIP_PORT
 - uid: SIPSorcery.SIP.SIPConstants.NAT_SENDKEEPALIVES_VALUE
   name: NAT_SENDKEEPALIVES_VALUE
   href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_NAT_SENDKEEPALIVES_VALUE
@@ -28598,12 +28592,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH
   fullName: SIPSorcery.SIP.SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH
   nameWithType: SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH
-- uid: SIPSorcery.SIP.SIPConstants.SIP_MAXIMUM_UDP_SEND_LENGTH
-  name: SIP_MAXIMUM_UDP_SEND_LENGTH
-  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SIP_MAXIMUM_UDP_SEND_LENGTH
-  commentId: F:SIPSorcery.SIP.SIPConstants.SIP_MAXIMUM_UDP_SEND_LENGTH
-  fullName: SIPSorcery.SIP.SIPConstants.SIP_MAXIMUM_UDP_SEND_LENGTH
-  nameWithType: SIPConstants.SIP_MAXIMUM_UDP_SEND_LENGTH
 - uid: SIPSorcery.SIP.SIPConstants.SIP_MINOR_VERSION
   name: SIP_MINOR_VERSION
   href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SIP_MINOR_VERSION
