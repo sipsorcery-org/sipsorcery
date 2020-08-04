@@ -22,7 +22,14 @@
             ws.onopen = async function () {
                 console.log("web socket onopen.");
 
-                pc = new RTCPeerConnection();
+                pc = new RTCPeerConnection({
+                    iceServers: [
+                        {
+                            urls: "stun:stun.sipsorcery.com"
+                        }
+                    ],
+                    iceTransportPolicy: "all"
+                });
 
                 if (url == sendOfferUrl) {
                     openDataChannel();

@@ -537,7 +537,8 @@ namespace SIPSorcery.Examples
                 certificates = presetCertificates,
                 X_RemoteSignallingAddress = (context != null) ? context.UserEndPoint.Address : null,
                 iceServers = stunServer != null ? new List<RTCIceServer> { stunServer } : null,
-                iceTransportPolicy = RTCIceTransportPolicy.all,
+                //iceTransportPolicy = RTCIceTransportPolicy.all,
+                iceTransportPolicy = RTCIceTransportPolicy.relay,
                 //X_BindAddress = IPAddress.Any, // NOTE: Not reqd. Using this to filter out IPv6 addresses so can test with Pion.
             };
 
@@ -545,7 +546,7 @@ namespace SIPSorcery.Examples
 
             //_peerConnection.GetRtpChannel().MdnsResolve = (hostname) => Task.FromResult(NetServices.InternetDefaultAddress);
             _peerConnection.GetRtpChannel().MdnsResolve = MdnsResolve;
-            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
+            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message type {msg.Header.MessageType}.");
 
             var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
             dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
