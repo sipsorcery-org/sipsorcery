@@ -287,9 +287,19 @@ namespace SIPSorcery.Net.Sctp
             {
                 while (queue.TryTake(out var pbb, 1000))
                 {
-                    Packet rec = new Packet(pbb);
-                    deal(rec);
-                    bufferQueue.Enqueue(pbb.Data);
+                    try
+                    {
+                        Packet rec = new Packet(pbb);
+                        deal(rec);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.LogDebug($"Exception Process Datagramtransport queue. {e}");
+                    }
+                    finally
+                    {
+                        bufferQueue.Enqueue(pbb.Data);
+                    }
                 }
             }
         }
