@@ -3534,6 +3534,12 @@ references:
   commentId: F:SIPSorcery.Net.ChecklistEntry.Default
   fullName: SIPSorcery.Net.ChecklistEntry.Default
   nameWithType: ChecklistEntry.Default
+- uid: SIPSorcery.Net.ChecklistEntry.FirstCheckSentAt
+  name: FirstCheckSentAt
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_FirstCheckSentAt
+  commentId: F:SIPSorcery.Net.ChecklistEntry.FirstCheckSentAt
+  fullName: SIPSorcery.Net.ChecklistEntry.FirstCheckSentAt
+  nameWithType: ChecklistEntry.FirstCheckSentAt
 - uid: SIPSorcery.Net.ChecklistEntry.LastCheckSentAt
   name: LastCheckSentAt
   href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LastCheckSentAt
@@ -10877,6 +10883,31 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RtpIceChannel.Component
   nameWithType: RtpIceChannel.Component
+- uid: SIPSorcery.Net.RtpIceChannel.DefaultNameServers
+  name: DefaultNameServers
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_DefaultNameServers
+  commentId: P:SIPSorcery.Net.RtpIceChannel.DefaultNameServers
+  fullName: SIPSorcery.Net.RtpIceChannel.DefaultNameServers
+  nameWithType: RtpIceChannel.DefaultNameServers
+- uid: SIPSorcery.Net.RtpIceChannel.DefaultNameServers*
+  name: DefaultNameServers
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_DefaultNameServers_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.DefaultNameServers
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.DefaultNameServers
+  nameWithType: RtpIceChannel.DefaultNameServers
+- uid: SIPSorcery.Net.RtpIceChannel.DISCONNECTED_TIMEOUT_PERIOD
+  name: DISCONNECTED_TIMEOUT_PERIOD
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_DISCONNECTED_TIMEOUT_PERIOD
+  commentId: F:SIPSorcery.Net.RtpIceChannel.DISCONNECTED_TIMEOUT_PERIOD
+  fullName: SIPSorcery.Net.RtpIceChannel.DISCONNECTED_TIMEOUT_PERIOD
+  nameWithType: RtpIceChannel.DISCONNECTED_TIMEOUT_PERIOD
+- uid: SIPSorcery.Net.RtpIceChannel.FAILED_TIMEOUT_PERIOD
+  name: FAILED_TIMEOUT_PERIOD
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_FAILED_TIMEOUT_PERIOD
+  commentId: F:SIPSorcery.Net.RtpIceChannel.FAILED_TIMEOUT_PERIOD
+  fullName: SIPSorcery.Net.RtpIceChannel.FAILED_TIMEOUT_PERIOD
+  nameWithType: RtpIceChannel.FAILED_TIMEOUT_PERIOD
 - uid: SIPSorcery.Net.RtpIceChannel.IceConnectionState
   name: IceConnectionState
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_IceConnectionState
@@ -21706,12 +21737,12 @@ references:
   commentId: F:SIPSorcery.Net.STUNClassTypesEnum.Request
   fullName: SIPSorcery.Net.STUNClassTypesEnum.Request
   nameWithType: STUNClassTypesEnum.Request
-- uid: SIPSorcery.Net.STUNClassTypesEnum.SuccesResponse
-  name: SuccesResponse
-  href: api/SIPSorcery.Net.STUNClassTypesEnum.html#SIPSorcery_Net_STUNClassTypesEnum_SuccesResponse
-  commentId: F:SIPSorcery.Net.STUNClassTypesEnum.SuccesResponse
-  fullName: SIPSorcery.Net.STUNClassTypesEnum.SuccesResponse
-  nameWithType: STUNClassTypesEnum.SuccesResponse
+- uid: SIPSorcery.Net.STUNClassTypesEnum.SuccessResponse
+  name: SuccessResponse
+  href: api/SIPSorcery.Net.STUNClassTypesEnum.html#SIPSorcery_Net_STUNClassTypesEnum_SuccessResponse
+  commentId: F:SIPSorcery.Net.STUNClassTypesEnum.SuccessResponse
+  fullName: SIPSorcery.Net.STUNClassTypesEnum.SuccessResponse
+  nameWithType: STUNClassTypesEnum.SuccessResponse
 - uid: SIPSorcery.Net.STUNClient
   name: STUNClient
   href: api/SIPSorcery.Net.STUNClient.html
