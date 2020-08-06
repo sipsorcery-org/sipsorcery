@@ -169,11 +169,11 @@ namespace SIPSorcery.Net
 
                                 if (x.IsFaulted)
                                 {
-                                    logger.LogWarning($"STUNDns SRV lookup failure for {uri}. {x.Exception?.InnerException?.Message}");
+                                    logger.LogDebug($"STUNDns SRV lookup failure for {uri}. {x.Exception?.InnerException?.Message}");
                                 }
                                 else if (x.Result == null || x.Result.Count() == 0)
                                 {
-                                    logger.LogWarning($"STUNDns SRV lookup returned no results for {uri}.");
+                                    logger.LogDebug($"STUNDns SRV lookup returned no results for {uri}.");
                                 }
                                 else
                                 {

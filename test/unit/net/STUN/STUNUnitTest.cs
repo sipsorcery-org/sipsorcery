@@ -313,9 +313,9 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.CreatePermission).MessageClass));
             Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.ChannelBind).MessageClass));
 
-            Assert.Equal(STUNClassTypesEnum.SuccesResponse, (new STUNHeader(STUNMessageTypesEnum.BindingSuccessResponse).MessageClass));
-            Assert.Equal(STUNClassTypesEnum.SuccesResponse, (new STUNHeader(STUNMessageTypesEnum.AllocateSuccessResponse).MessageClass));
-            Assert.Equal(STUNClassTypesEnum.SuccesResponse, (new STUNHeader(STUNMessageTypesEnum.CreatePermissionSuccessResponse).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.SuccessResponse, (new STUNHeader(STUNMessageTypesEnum.BindingSuccessResponse).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.SuccessResponse, (new STUNHeader(STUNMessageTypesEnum.AllocateSuccessResponse).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.SuccessResponse, (new STUNHeader(STUNMessageTypesEnum.CreatePermissionSuccessResponse).MessageClass));
 
             Assert.Equal(STUNClassTypesEnum.ErrorResponse, (new STUNHeader(STUNMessageTypesEnum.BindingErrorResponse).MessageClass));
             Assert.Equal(STUNClassTypesEnum.ErrorResponse, (new STUNHeader(STUNMessageTypesEnum.AllocateErrorResponse).MessageClass));

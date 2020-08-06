@@ -10,6 +10,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -233,8 +234,11 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"ICE session retry interval {rtpIceChannel.RTO}ms.");
 
-            // The defaults are 5 STUN requests and for a checklist with one entry they will be 500ms apart.
-            await Task.Delay(4000);
+            await Task.Delay(1000);
+
+            rtpIceChannel._checklist.Single().FirstCheckSentAt = DateTime.Now.Subtract(TimeSpan.FromSeconds(RtpIceChannel.FAILED_TIMEOUT_PERIOD));
+
+            await Task.Delay(1000);
 
             Assert.Equal(ChecklistEntryState.Failed, rtpIceChannel._checklist.Single().State);
             Assert.Equal(ChecklistState.Failed, rtpIceChannel._checklistState);
