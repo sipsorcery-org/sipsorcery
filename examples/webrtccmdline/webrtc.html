@@ -7,7 +7,6 @@
         const sendOfferUrl = "ws://localhost:8081/receiveoffer";
         const receiveOfferUrl = "ws://localhost:8081/sendoffer";
         const stunUrl = "stun:stun.sipsorcery.com"
-        const turnUrl = "turn:67.222.131.149"
 
         var pc;
         var ws;
@@ -27,14 +26,13 @@
 
                 pc = new RTCPeerConnection(
                     {
-                    //iceServers: [
-                    //    {
-                    //        //urls: stunUrl,
-                    //        urls: turnUrl,
-                    //        username: "aaron",
-                    //        credential: "password"
-                    //    }
-                    //],
+                    iceServers: [
+                        {
+                            urls: stunUrl,
+                            username: "aaron",
+                            credential: "password"
+                        }
+                    ],
                     //iceTransportPolicy: "relay"
                     iceTransportPolicy: "all"
                 });

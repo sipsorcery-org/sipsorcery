@@ -112,7 +112,7 @@ namespace SIPSorcery.Net
     {
         Request = 0,
         Indication = 1,
-        SuccesResponse = 2,
+        SuccessResponse = 2,
         ErrorResponse = 3,
     }
 

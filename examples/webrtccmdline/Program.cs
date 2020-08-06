@@ -52,11 +52,15 @@ namespace SIPSorcery.Examples
         public bool CreateJsonOffer { get; set; }
 
         [Option("stun", Required = false,
-            HelpText = "STUN or TURN server to use in the peer connection configuration. Format \"(stun|turn):host[:port][;username;password]\".")]
+            HelpText = "STUN or TURN server to use in the peer connection configuration. Format \"--stun=(stun|turn):host[:port][;username;password]\".")]
         public string StunServer { get; set; }
 
+        [Option("relayonly", Required = false,
+            HelpText = "Only TURN servers will be included in the ICE candidates supplied to the remote peer. Format \"--relayonly\".")]
+        public bool RelayOnly { get; set; }
+
         [Option("nodedss", Required = false,
-            HelpText = "Address of node-dss simple signalling server to exchange SDP and ice candidates. Example http://192.168.11.50:3001.")]
+            HelpText = "Address of node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://192.168.11.50:3001\".")]
         public string NodeDssServer { get; set; }
     }
 
@@ -99,6 +103,7 @@ namespace SIPSorcery.Examples
         private static RTCIceServer _stunServer;
         private static Uri _nodeDssUri;
         private static HttpClient _nodeDssclient;
+        private static bool _relayOnly;
 
         /// <summary>
         /// For simplicity this program only supports one active peer connection.
@@ -140,6 +145,8 @@ namespace SIPSorcery.Examples
                 };
             }
 
+            _relayOnly = options.RelayOnly;
+
             if (options.UseWebSocket || options.UseSecureWebSocket || noOptions)
             {
                 // Start web socket.
@@ -169,7 +176,7 @@ namespace SIPSorcery.Examples
             }
             else if (options.CreateJsonOffer)
             {
-                var pc = Createpc(null, _stunServer);
+                var pc = Createpc(null, _stunServer, _relayOnly);
 
                 var offerSdp = pc.createOffer(null);
                 await pc.setLocalDescription(offerSdp);
@@ -375,7 +382,7 @@ namespace SIPSorcery.Examples
 
                                 if (sdpType == "so")
                                 {
-                                    _peerConnection = Createpc(null, _stunServer);
+                                    _peerConnection = Createpc(null, _stunServer, _relayOnly);
 
                                     var offerSdp = _peerConnection.createOffer(null);
                                     await _peerConnection.setLocalDescription(offerSdp);
@@ -402,7 +409,7 @@ namespace SIPSorcery.Examples
 
                                         Console.WriteLine($"Remote offer:\n{offerInit.sdp}");
 
-                                        _peerConnection = Createpc(null, _stunServer);
+                                        _peerConnection = Createpc(null, _stunServer, _relayOnly);
 
                                         var setRes = _peerConnection.setRemoteDescription(offerInit);
                                         if (setRes != SetDescriptionResultEnum.OK)
@@ -498,7 +505,7 @@ namespace SIPSorcery.Examples
         private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
-            var pc = Createpc(context, _stunServer);
+            var pc = Createpc(context, _stunServer, _relayOnly);
             return Task.FromResult(pc);
         }
 
@@ -506,7 +513,7 @@ namespace SIPSorcery.Examples
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
 
-            var pc = Createpc(context, _stunServer);
+            var pc = Createpc(context, _stunServer, _relayOnly);
 
             var offerInit = pc.createOffer(null);
             await pc.setLocalDescription(offerInit);
@@ -518,7 +525,7 @@ namespace SIPSorcery.Examples
             return pc;
         }
 
-        private static RTCPeerConnection Createpc(WebSocketContext context, RTCIceServer stunServer)
+        private static RTCPeerConnection Createpc(WebSocketContext context, RTCIceServer stunServer, bool relayOnly)
         {
             if (_peerConnection != null)
             {
@@ -537,7 +544,8 @@ namespace SIPSorcery.Examples
                 certificates = presetCertificates,
                 X_RemoteSignallingAddress = (context != null) ? context.UserEndPoint.Address : null,
                 iceServers = stunServer != null ? new List<RTCIceServer> { stunServer } : null,
-                iceTransportPolicy = RTCIceTransportPolicy.all,
+                //iceTransportPolicy = RTCIceTransportPolicy.all,
+                iceTransportPolicy = relayOnly ? RTCIceTransportPolicy.relay : RTCIceTransportPolicy.all,
                 //X_BindAddress = IPAddress.Any, // NOTE: Not reqd. Using this to filter out IPv6 addresses so can test with Pion.
             };
 
@@ -545,7 +553,7 @@ namespace SIPSorcery.Examples
 
             //_peerConnection.GetRtpChannel().MdnsResolve = (hostname) => Task.FromResult(NetServices.InternetDefaultAddress);
             _peerConnection.GetRtpChannel().MdnsResolve = MdnsResolve;
-            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
+            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message type {msg.Header.MessageType}.");
 
             var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
             dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
