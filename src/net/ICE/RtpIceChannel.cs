@@ -112,8 +112,8 @@ namespace SIPSorcery.Net
         private const int MAX_CHECKLIST_ENTRIES = 25;       // Maximum number of entries that can be added to the checklist of candidate pairs.
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
         private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
-        private const int DISCONNECTED_TIMEOUT_PERIOD = 8;  // The period in seconds after which a connection will be flagged as disconnected.
-        private const int FAILED_TIMEOUT_PERIOD = 16;       // The period in seconds after which a connection will be flagged as failed.
+        public const int DISCONNECTED_TIMEOUT_PERIOD = 8;  // The period in seconds after which a connection will be flagged as disconnected.
+        public const int FAILED_TIMEOUT_PERIOD = 16;       // The period in seconds after which a connection will be flagged as failed.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
