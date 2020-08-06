@@ -142,6 +142,11 @@ namespace SIPSorcery.Net
         public ulong Priority { get; private set; }
 
         /// <summary>
+        /// Timestamp the first connectivity check (STUN binding request) was sent at.
+        /// </summary>
+        public DateTime FirstCheckSentAt = DateTime.MinValue;
+
+        /// <summary>
         /// Timestamp the last connectivity check (STUN binding request) was sent at.
         /// </summary>
         public DateTime LastCheckSentAt = DateTime.MinValue;

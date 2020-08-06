@@ -125,11 +125,6 @@ namespace SIPSorcery.Net
         /// </remarks>
         private const int Ta = 50;
 
-        /// <summary>
-        /// The number of connectivity checks to carry out.
-        /// </summary>
-        private const int N = 5;
-
         private static readonly ILogger logger = Log.Logger;
 
         private IPAddress _bindAddress;
@@ -228,7 +223,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    return Math.Max(500, Ta * N * (_checklist.Count(x => x.State == ChecklistEntryState.Waiting) + _checklist.Count(x => x.State == ChecklistEntryState.InProgress)));
+                    return Math.Max(500, Ta * (_checklist.Count(x => x.State == ChecklistEntryState.Waiting) + _checklist.Count(x => x.State == ChecklistEntryState.InProgress)));
                 }
             }
         }
@@ -681,6 +676,11 @@ namespace SIPSorcery.Net
                         logger.LogDebug("RTP ICE Channel was not able to acquire an active ICE server, stopping ICE servers timer.");
                         _processIceServersTimer.Dispose();
                     }
+                    else if((_activeIceServer._uri.Scheme == STUNSchemesEnum.turn && _activeIceServer.RelayEndPoint != null) ||
+                        (_activeIceServer._uri.Scheme == STUNSchemesEnum.stun && _activeIceServer.ServerReflexiveEndPoint != null))
+                    {
+                        // Successfully set up the ICE server. Do nothing.
+                    }
                     // If the ICE server hasn't yet been resolved initiate the DNS check.
                     else if (_activeIceServer.ServerEndPoint == null && _activeIceServer.DnsLookupSentAt == DateTime.MinValue)
                     {
@@ -1059,8 +1059,7 @@ namespace SIPSorcery.Net
 
                                 // Do a check for any timed out entries.
                                 var failedEntries = _checklist.Where(x => x.State == ChecklistEntryState.InProgress
-                                       && DateTime.Now.Subtract(x.LastCheckSentAt).TotalMilliseconds > RTO
-                                       && x.ChecksSent >= N).ToList();
+                                       && DateTime.Now.Subtract(x.FirstCheckSentAt).TotalSeconds > FAILED_TIMEOUT_PERIOD).ToList();
 
                                 foreach (var failedEntry in failedEntries)
                                 {
@@ -1139,7 +1138,12 @@ namespace SIPSorcery.Net
         /// </remarks>
         private void SendConnectivityCheck(ChecklistEntry candidatePair, bool setUseCandidate)
         {
-            candidatePair.State = ChecklistEntryState.InProgress;
+            if(candidatePair.FirstCheckSentAt == DateTime.MinValue)
+            {
+                candidatePair.FirstCheckSentAt = DateTime.Now;
+                candidatePair.State = ChecklistEntryState.InProgress;
+            }
+
             candidatePair.LastCheckSentAt = DateTime.Now;
             candidatePair.ChecksSent++;
             candidatePair.RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
@@ -1306,7 +1310,7 @@ namespace SIPSorcery.Net
                     GotStunBindingRequest(stunMessage, remoteEndPoint, wasRelayed);
                 }
                 else if (stunMessage.Header.MessageClass == STUNClassTypesEnum.ErrorResponse ||
-                         stunMessage.Header.MessageClass == STUNClassTypesEnum.SuccesResponse)
+                         stunMessage.Header.MessageClass == STUNClassTypesEnum.SuccessResponse)
                 {
                     // Correlate with request using transaction ID as per https://tools.ietf.org/html/rfc8445#section-7.2.5.
                     var matchingChecklistEntry = GetChecklistEntryForStunResponse(stunMessage.Header.TransactionId);

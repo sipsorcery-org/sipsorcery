@@ -308,7 +308,7 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
-                if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
                 {
                     ErrorResponseCount = 0;
 
@@ -336,7 +336,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogWarning($"An unrecognised STUN message for an ICE server check was received from {remoteEndPoint}.");
+                    logger.LogWarning($"An unrecognised STUN {stunResponse.Header.MessageType} response for an ICE server check was received from {remoteEndPoint}.");
                     ErrorResponseCount++;
                 }
             }
