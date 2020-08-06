@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using SIPSorcery.Net;
 using Serilog;
 
 namespace SIPSorcery.Demo
@@ -40,17 +41,32 @@ namespace SIPSorcery.Demo
 
             AddConsoleLogger();
 
-            var peerA = new WebRTCPeer("dcx");
-            peerA.Name = "ClientA";
-            var peerB = new WebRTCPeer("dcy");
-            peerB.Name = "ClientB";
+            var peerA = new WebRTCPeer("PeerA", "dcx");
+            var peerB = new WebRTCPeer("PeerB", "dcy");
 
-            peerA.OnOffer += async (sdp) => await peerB.ProcessAnswer(sdp);
-            peerB.OnAnswer += async (sdp) => await peerA.ProcessAnswer(sdp);
-            peerA.OnIce += (ice) => peerB.ProcessIce(ice);
-            peerB.OnIce += (ice) => peerA.ProcessIce(ice);
-            await peerA.Connect();
-            await peerB.AwaitConnection();
+            // Exchange the SDP offer/answers. ICE Host candidates are included in the SDP.
+            var offer = peerA.PeerConnection.createOffer(null);
+            await peerA.PeerConnection.setLocalDescription(offer);
+
+            if(peerB.PeerConnection.setRemoteDescription(offer) != SetDescriptionResultEnum.OK)
+            {
+                throw new ApplicationException("Couldn't set remote description.");
+            }
+            var answer = peerB.PeerConnection.createAnswer(null);
+            await peerB.PeerConnection.setLocalDescription(answer);
+
+            if(peerA.PeerConnection.setRemoteDescription(answer) != SetDescriptionResultEnum.OK)
+            {
+                throw new ApplicationException("Couldn't set remote description.");
+            }
+
+            // Wait for the peers to connect. Should take <1s if the peers are on the same host.
+            while(peerA.PeerConnection.connectionState != RTCPeerConnectionState.connected &&
+                peerB.PeerConnection.connectionState != RTCPeerConnectionState.connected)
+            {
+                Console.WriteLine("Waiting for WebRTC peers to connect...");
+                await Task.Delay(1000);
+            }
 
             var taskList = new List<Task>();
 
@@ -70,7 +86,7 @@ namespace SIPSorcery.Demo
                     {
                         Console.WriteLine($"Data channel send {i} on {sendLabel}.");
 
-                        var data = new byte[2048];
+                        var data = new byte[4];
                         var num = BitConverter.GetBytes(i);
                         Buffer.BlockCopy(num, 0, data, 0, num.Length);
                         peerA.Send(sendLabel, data);

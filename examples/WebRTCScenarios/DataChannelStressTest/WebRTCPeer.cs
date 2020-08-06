@@ -15,14 +15,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Makaretu.Dns;
@@ -35,39 +32,24 @@ namespace SIPSorcery.Demo
     {
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
-        private RTCPeerConnection _peerConnection = null;
+        public RTCPeerConnection PeerConnection { get; private set; }
         private const int MDNS_TIMEOUT = 2000;
         private string _dataChannelLabel;
-        public event Action<RTCSessionDescriptionInit> OnOffer;
-        public event Action<RTCSessionDescriptionInit> OnAnswer;
-        public event Action<RTCIceCandidateInit> OnIce;
-        private TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
-        public string Name;
+        public event Action<RTCIceCandidateInit> OnIceCandidateAvailable;
+        public string _peerName;
 
         private Dictionary<string, RTCDataChannel> _dataChannels = new Dictionary<string, RTCDataChannel>();
 
-        public WebRTCPeer(string dataChannelLabel)
+        public WebRTCPeer(string peerName, string dataChannelLabel)
         {
+            _peerName = peerName;
             _dataChannelLabel = dataChannelLabel;
+
+            PeerConnection = Createpc();
         }
 
-        public async Task<bool> Connect()
-        {
-            Createpc(null);
-
-            var offerSdp = _peerConnection.createOffer(null);
-            await _peerConnection.setLocalDescription(offerSdp);
-            OnOffer.Invoke(offerSdp);
-            return await tcs.Task;
-        }
-
-        private void Createpc(RTCIceServer stunServer)
-        {
-            if (_peerConnection != null)
-            {
-                _peerConnection.Close("normal");
-            }
-
+        private RTCPeerConnection Createpc()
+        {           
             List<RTCCertificate> presetCertificates = null;
             if (File.Exists(LOCALHOST_CERTIFICATE_PATH))
             {
@@ -78,41 +60,35 @@ namespace SIPSorcery.Demo
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
                 certificates = presetCertificates,
-                X_RemoteSignallingAddress = null,
-                iceServers = stunServer != null ? new List<RTCIceServer> { stunServer } : null,
-                iceTransportPolicy = RTCIceTransportPolicy.all,
-                //X_BindAddress = IPAddress.Any, // NOTE: Not reqd. Using this to filter out IPv6 addresses so can test with Pion.
             };
 
-            _peerConnection = new RTCPeerConnection(pcConfiguration);
+            var pc = new RTCPeerConnection(pcConfiguration);
 
-            //_peerConnection.GetRtpChannel().MdnsResolve = (hostname) => Task.FromResult(NetServices.InternetDefaultAddress);
-            _peerConnection.GetRtpChannel().MdnsResolve = MdnsResolve;
-            //_peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message class {msg.Header.MessageClass}.");
+            pc.GetRtpChannel().MdnsResolve = MdnsResolve;
+            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"{_peerName}: STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
-            var dataChannel = _peerConnection.createDataChannel(_dataChannelLabel, null);
+            var dataChannel = pc.createDataChannel(_dataChannelLabel, null);
             dataChannel.onDatamessage += DataChannel_onDatamessage;
             _dataChannels.Add(_dataChannelLabel, dataChannel);
 
-            _peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
-            _peerConnection.onconnectionstatechange += (state) =>
+            pc.onicecandidateerror += (candidate, error) => logger.LogWarning($"{_peerName}: Error adding remote ICE candidate. {error} {candidate}");
+            pc.oniceconnectionstatechange += (state) => logger.LogDebug($"{_peerName}: ICE connection state change to {state}.");
+            pc.onconnectionstatechange += (state) =>
             {
-                logger.LogDebug($"Peer connection state changed to {state}.");
+                logger.LogDebug($"{_peerName}: Peer connection state changed to {state}.");
 
                 if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
-                    _peerConnection.Close("remote disconnection");
+                    pc.Close("remote disconnection");
                 }
             };
-            _peerConnection.OnReceiveReport += (ep, type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
-            _peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
 
-            _peerConnection.onicecandidate += (candidate) =>
+            pc.onicecandidate += (candidate) =>
             {
-                if (_peerConnection.signalingState == RTCSignalingState.have_local_offer ||
-                    _peerConnection.signalingState == RTCSignalingState.have_remote_offer)
+                if (pc.signalingState == RTCSignalingState.have_local_offer ||
+                    pc.signalingState == RTCSignalingState.have_remote_offer)
                 {
-                    OnIce?.Invoke(new RTCIceCandidateInit()
+                    OnIceCandidateAvailable?.Invoke(new RTCIceCandidateInit()
                     {
                         candidate = candidate.ToString(),
                         sdpMid = candidate.sdpMid,
@@ -121,36 +97,22 @@ namespace SIPSorcery.Demo
                 }
             };
 
-            // Peer ICE connection state changes are for ICE events such as the STUN checks completing.
-            _peerConnection.oniceconnectionstatechange += (state) =>
+            pc.ondatachannel += (dc) =>
             {
-                logger.LogDebug($"ICE connection state change to {state}.");
-            };
-
-            _peerConnection.ondatachannel += (dc) =>
-            {
-                dc.onopen += DataChannel_onopen;
+                dc.onopen += () => logger.LogDebug($"{_peerName}: Data channel now open label {dc.label}, stream ID {dc.id}.");
                 dc.onDatamessage += DataChannel_onDatamessage;
-                logger.LogDebug($"Data channel opened by remote peer, label {dc.label}, stream ID {dc.id}.");
+                logger.LogDebug($"{_peerName}: Data channel created by remote peer, label {dc.label}, stream ID {dc.id}.");
                 _dataChannels.Add(dc.label, dc);
             };
-        }
 
-        private void DataChannel_onopen()
-        {
-            tcs.TrySetResult(true);
+            return pc;
         }
 
         private void DataChannel_onDatamessage(byte[] obj)
         {
             var pieceNum = BitConverter.ToInt32(obj, 0);
             //logger.LogDebug($"{Name}: data channel ({_dataChannel.label}:{_dataChannel.id}): {pieceNum}.");
-            logger.LogDebug($"Data channel receive: {pieceNum}.");
-        }
-
-        public void ProcessIce(RTCIceCandidateInit ice)
-        {
-            _peerConnection.addIceCandidate(ice);
+            logger.LogDebug($"{_peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
         }
 
         public bool IsDataChannelReady(string label)
@@ -174,38 +136,9 @@ namespace SIPSorcery.Demo
                 }
                 else
                 {
-                    logger.LogWarning($"Data channel {label} not yet open.");
+                    logger.LogWarning($"{_peerName}: Data channel {label} not yet open.");
                 }
             }
-        }
-
-        public async Task ProcessAnswer(RTCSessionDescriptionInit answerInit)
-        {
-            bool isNew = false;
-            if (_peerConnection == null)
-            {
-                Createpc(null);
-                isNew = true;
-            }
-
-            var res = _peerConnection.setRemoteDescription(answerInit);
-            if (res != SetDescriptionResultEnum.OK)
-            {
-                // No point continuing. Something will need to change and then try again.
-                _peerConnection.Close("failed to set remote sdp");
-            }
-
-            if (isNew)
-            {
-                var answerSdp = _peerConnection.createAnswer(null);
-                await _peerConnection.setLocalDescription(answerSdp);
-                OnAnswer.Invoke(answerSdp);
-            }
-        }
-
-        public Task AwaitConnection()
-        {
-            return tcs.Task;
         }
 
         private static async Task<IPAddress> MdnsResolve(string service)
