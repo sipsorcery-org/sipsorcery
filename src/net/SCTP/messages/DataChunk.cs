@@ -90,6 +90,7 @@ namespace SIPSorcery.Net.Sctp
         public const int WEBRTCstringEMPTY = 56;
         public const int WEBRTCBINARYEMPTY = 57;
 
+        public const int CONTINUEFLAG = 0;
         public const int BEGINFLAG = 2;
         public const int ENDFLAG = 1;
         public const int SINGLEFLAG = 3;
