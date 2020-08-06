@@ -242,6 +242,8 @@ namespace SIPSorcery.Net
         public event Action<RTCIceGatheringState> OnIceGatheringStateChange;
         public event Action<RTCIceCandidate, string> OnIceCandidateError;
 
+        public static List<DnsClient.NameServer> DefaultNameServers { get; set; }
+
         /// <summary>
         /// This event gets fired when a STUN message is received by this channel.
         /// The event is for diagnostic purposes only.
@@ -287,7 +289,15 @@ namespace SIPSorcery.Net
         {
             if (_dnsLookupClient == null)
             {
-                _dnsLookupClient = new DnsClient.LookupClient();
+                if(DefaultNameServers != null)
+                {
+                    _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers.ToArray());
+                }
+                else
+                {
+                    _dnsLookupClient = new DnsClient.LookupClient();
+                }
+               
             }
 
             _bindAddress = bindAddress;
