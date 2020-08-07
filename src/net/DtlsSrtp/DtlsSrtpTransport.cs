@@ -43,7 +43,6 @@ namespace SIPSorcery.Net
         private IPacketTransformer srtcpDecoder;
         IDtlsSrtpPeer connection = null;
 
-        //private PipedMemoryStream _inStream = new PipedMemoryStream();
         /// <summary>The collection of chunks to be written.</summary>
         private BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>();
 
@@ -480,16 +479,21 @@ namespace SIPSorcery.Net
 
         public void Send(byte[] buf, int off, int len)
         {
-            var tempBuf = new byte[len];
-            Buffer.BlockCopy(buf, off, tempBuf, 0, len);
-            OnDataReady?.Invoke(tempBuf);
+            if (len != buf.Length)
+            {
+                // Only create a new buffer and copy bytes if the length is different
+                var tempBuf = new byte[len];
+                Buffer.BlockCopy(buf, off, tempBuf, 0, len);
+                buf = tempBuf;
+            }
+            OnDataReady?.Invoke(buf);
         }
 
         public virtual void Close()
         {
             _isClosed = true;
             this.startTime = System.DateTime.MinValue;
-            //_inStream.Close();
+            this._chunks?.Dispose();
         }
 
         /// <summary>

@@ -37,7 +37,6 @@ namespace SIPSorcery.Net.Sctp
 {
     public abstract class Association
     {
-        protected object myLock = new object();
         private bool _even;
 
         public abstract void associate();
