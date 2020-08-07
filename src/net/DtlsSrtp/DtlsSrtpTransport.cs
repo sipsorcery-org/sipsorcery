@@ -436,7 +436,7 @@ namespace SIPSorcery.Net
 
         public int Read(byte[] buffer, int offset, int count, int timeout)
         {
-            if (_chunks.TryTake(out var item, 1000))
+            if (_chunks.TryTake(out var item, timeout))
             {
                 Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
                 return item.Length;
