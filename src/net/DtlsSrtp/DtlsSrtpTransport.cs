@@ -44,7 +44,7 @@ namespace SIPSorcery.Net
         IDtlsSrtpPeer connection = null;
 
         /// <summary>The collection of chunks to be written.</summary>
-        private BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>();
+        private BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
 
         public DtlsTransport Transport { get; private set; }
 
@@ -436,11 +436,15 @@ namespace SIPSorcery.Net
 
         public int Read(byte[] buffer, int offset, int count, int timeout)
         {
-            if (_chunks.TryTake(out var item, timeout))
+            try
             {
-                Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
-                return item.Length;
+                if (_chunks.TryTake(out var item, timeout))
+                {
+                    Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
+                    return item.Length;
+                }
             }
+            catch (ObjectDisposedException) { }
             return 0;
         }
 
