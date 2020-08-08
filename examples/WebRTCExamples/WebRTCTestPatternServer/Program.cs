@@ -24,10 +24,12 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using FFmpeg.AutoGen;
+using FfmpegInterop;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
-using SIPSorceryMedia;
+//using SIPSorceryMedia;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -65,6 +67,7 @@ namespace WebRTCServer
     class Program
     {
         private static string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
+        private const int FRAMES_PER_SECOND = 30;
         private const int TEST_PATTERN_SPACING_MILLISECONDS = 33;
         private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
         private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
@@ -78,8 +81,10 @@ namespace WebRTCServer
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static WebSocketServer _webSocketServer;
-        private static SIPSorceryMedia.VpxEncoder _vpxEncoder;
-        private static SIPSorceryMedia.ImageConvert _colorConverter;
+        //private static SIPSorceryMedia.VpxEncoder _vpxEncoder;
+        //private static SIPSorceryMedia.ImageConvert _colorConverter;
+        private static VideoEncoder _videoEncoder;
+        private static VideoFrameConverter _videoFrameConverter;
         private static Bitmap _testPattern;
         private static int _stride;
         private static Timer _sendTestPatternTimer;
@@ -96,6 +101,8 @@ namespace WebRTCServer
             ManualResetEvent exitMre = new ManualResetEvent(false);
 
             AddConsoleLogger();
+
+            FfmpegInit.Initialise();
 
             InitialiseTestPattern();
 
@@ -145,7 +152,7 @@ namespace WebRTCServer
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
 
-                if(state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
+                if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
                     pc.Close("remote disconnection");
                 }
@@ -216,10 +223,16 @@ namespace WebRTCServer
             _testPattern.UnlockBits(bmpData);
 
             // Initialise the video codec and color converter.
-            _vpxEncoder = new VpxEncoder();
-            _vpxEncoder.InitEncoder((uint)_testPattern.Width, (uint)_testPattern.Height, (uint)_stride);
+            //_vpxEncoder = new VpxEncoder();
+            //_vpxEncoder.InitEncoder((uint)_testPattern.Width, (uint)_testPattern.Height, (uint)_stride);
+            //_colorConverter = new ImageConvert();
 
-            _colorConverter = new ImageConvert();
+            _videoEncoder = new VideoEncoder(FFmpeg.AutoGen.AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            _videoFrameConverter = new VideoFrameConverter(
+                new Size(_testPattern.Width, _testPattern.Height),
+                FFmpeg.AutoGen.AVPixelFormat.AV_PIX_FMT_RGB24,
+                new Size(_testPattern.Width, _testPattern.Height),
+                FFmpeg.AutoGen.AVPixelFormat.AV_PIX_FMT_YUV420P);
         }
 
         private static void SendTestPattern(object state)
@@ -230,37 +243,49 @@ namespace WebRTCServer
                 {
                     unsafe
                     {
-                        byte[] sampleBuffer = null;
-                        byte[] encodedBuffer = null;
+                        //byte[] sampleBuffer = null;
+                        //byte[] encodedBuffer = null;
 
                         if (OnTestPatternSampleReady != null)
                         {
                             var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
-                            AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-                            sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
-
-                            fixed (byte* p = sampleBuffer)
+                            try
                             {
-                                byte[] convertedFrame = null;
-                                _colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, _testPattern.Width, _testPattern.Height, _stride, VideoSubTypesEnum.I420, ref convertedFrame);
+                                AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
+                                byte[] bmpBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
 
-                                fixed (byte* q = convertedFrame)
+                                //fixed (byte* p = sampleBuffer)
+                                //{
+                                //    byte[] convertedFrame = null;
+
+                                //_colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, _testPattern.Width, _testPattern.Height, _stride, VideoSubTypesEnum.I420, ref convertedFrame);
+
+                                //fixed (byte* q = convertedFrame)
+                                //{
+                                //    int encodeResult = _vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
+
+                                //    if (encodeResult != 0)
+                                //    {
+                                //        logger.LogWarning("VPX encode of video sample failed.");
+                                //    }
+                                //}
+                                //}
+
+                                var i420Frame = _videoFrameConverter.Convert(bmpBuffer);
+
+                                byte[] encodedFrame = _videoEncoder.Encode(&i420Frame);
+
+                                if (encodedFrame != null)
                                 {
-                                    int encodeResult = _vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
-
-                                    if (encodeResult != 0)
-                                    {
-                                        logger.LogWarning("VPX encode of video sample failed.");
-                                    }
+                                    OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VP8_TIMESTAMP_SPACING, encodedFrame);
                                 }
                             }
+                            finally
+                            {
+                                stampedTestPattern.Dispose();
+                            }
 
-                            stampedTestPattern.Dispose();
-                            stampedTestPattern = null;
-
-                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VP8_TIMESTAMP_SPACING, encodedBuffer);
-
-                            encodedBuffer = null;
+                            //encodedBuffer = null;
                         }
                         else
                         {
