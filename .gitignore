@@ -173,3 +173,4 @@ docfx/*
 **/.vscode*
 *.sdp
 **/.ionide
+examples/WebRTCExamples/FFmpeg/
