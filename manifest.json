@@ -3225,7 +3225,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPClientUserAgent.html",
-          "hash": "YDFMngh4zwW5RckMhYmmVw=="
+          "hash": "hg9I1vdggx3ewE+yAHqW7w=="
         }
       },
       "is_incremental": false,
@@ -3581,11 +3581,23 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.ResolveSIPUriDelegate.yml",
+      "source_relative_path": "api/SIPSorcery.SIP.ResolveSIPUriDelegateAsync.yml",
       "output": {
         ".html": {
-          "relative_path": "api/SIPSorcery.SIP.ResolveSIPUriDelegate.html",
-          "hash": "aIIWiqyHz08C3/kpo+kjsA=="
+          "relative_path": "api/SIPSorcery.SIP.ResolveSIPUriDelegateAsync.html",
+          "hash": "+5a9DsTHiZqSqGiwoBQIyw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.ResolveSIPUriFromCacheDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.ResolveSIPUriFromCacheDelegate.html",
+          "hash": "CbLZLHy0saRv4DH+fpjcSQ=="
         }
       },
       "is_incremental": false,
@@ -3753,7 +3765,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPDns.html",
-          "hash": "/+pQp8WYHVHFXU5Gd4RUew=="
+          "hash": "J9gxGwZVRNgoYPWP/baH0w=="
         }
       },
       "is_incremental": false,
@@ -3765,7 +3777,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPEndPoint.html",
-          "hash": "fKAHXQugthqiEwJpWdbYiA=="
+          "hash": "CbFc11R6duRfKW6ec6ASCg=="
         }
       },
       "is_incremental": false,
@@ -4545,7 +4557,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransport.html",
-          "hash": "WmM77HtPFXckCNEsmOjCcQ=="
+          "hash": "GHLag3Fa44/Q7DWHvvRv9w=="
         }
       },
       "is_incremental": false,
@@ -4797,7 +4809,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.html",
-          "hash": "WxU5twOpdR5HMoqrffor8A=="
+          "hash": "kZT7wVEuIhvffJPSOJy4PA=="
         }
       },
       "is_incremental": false,
@@ -5097,7 +5109,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "/o6Kitx0y7VPyyQx7elzIA=="
+          "hash": "bKW2RQFqBe4yvAwbzD/43w=="
         }
       },
       "is_incremental": false,
@@ -5350,7 +5362,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 423,
+          "total_file_count": 424,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {

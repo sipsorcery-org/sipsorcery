@@ -27340,12 +27340,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.HTTPDigest.GetMD5HashBinHex
   nameWithType: HTTPDigest.GetMD5HashBinHex
-- uid: SIPSorcery.SIP.ResolveSIPUriDelegate
-  name: ResolveSIPUriDelegate
-  href: api/SIPSorcery.SIP.ResolveSIPUriDelegate.html
-  commentId: T:SIPSorcery.SIP.ResolveSIPUriDelegate
-  fullName: SIPSorcery.SIP.ResolveSIPUriDelegate
-  nameWithType: ResolveSIPUriDelegate
+- uid: SIPSorcery.SIP.ResolveSIPUriDelegateAsync
+  name: ResolveSIPUriDelegateAsync
+  href: api/SIPSorcery.SIP.ResolveSIPUriDelegateAsync.html
+  commentId: T:SIPSorcery.SIP.ResolveSIPUriDelegateAsync
+  fullName: SIPSorcery.SIP.ResolveSIPUriDelegateAsync
+  nameWithType: ResolveSIPUriDelegateAsync
+- uid: SIPSorcery.SIP.ResolveSIPUriFromCacheDelegate
+  name: ResolveSIPUriFromCacheDelegate
+  href: api/SIPSorcery.SIP.ResolveSIPUriFromCacheDelegate.html
+  commentId: T:SIPSorcery.SIP.ResolveSIPUriFromCacheDelegate
+  fullName: SIPSorcery.SIP.ResolveSIPUriFromCacheDelegate
+  nameWithType: ResolveSIPUriFromCacheDelegate
 - uid: SIPSorcery.SIP.SIPAuthenticationHeader
   name: SIPAuthenticationHeader
   href: api/SIPSorcery.SIP.SIPAuthenticationHeader.html
@@ -29484,25 +29490,32 @@ references:
   commentId: F:SIPSorcery.SIP.SIPDns.MDNS_TLD
   fullName: SIPSorcery.SIP.SIPDns.MDNS_TLD
   nameWithType: SIPDns.MDNS_TLD
-- uid: SIPSorcery.SIP.SIPDns.PreferIPv6NameResolution
-  name: PreferIPv6NameResolution
-  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_PreferIPv6NameResolution
-  commentId: F:SIPSorcery.SIP.SIPDns.PreferIPv6NameResolution
-  fullName: SIPSorcery.SIP.SIPDns.PreferIPv6NameResolution
-  nameWithType: SIPDns.PreferIPv6NameResolution
-- uid: SIPSorcery.SIP.SIPDns.Resolve(SIPSorcery.SIP.SIPURI,System.Boolean)
-  name: Resolve(SIPURI, Boolean)
-  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_Resolve_SIPSorcery_SIP_SIPURI_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPDns.Resolve(SIPSorcery.SIP.SIPURI,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPDns.Resolve(SIPSorcery.SIP.SIPURI, System.Boolean)
-  nameWithType: SIPDns.Resolve(SIPURI, Boolean)
-- uid: SIPSorcery.SIP.SIPDns.Resolve*
-  name: Resolve
-  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_Resolve_
-  commentId: Overload:SIPSorcery.SIP.SIPDns.Resolve
+- uid: SIPSorcery.SIP.SIPDns.ResolveAsync(SIPSorcery.SIP.SIPURI,System.Boolean,System.Threading.CancellationToken)
+  name: ResolveAsync(SIPURI, Boolean, CancellationToken)
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_ResolveAsync_SIPSorcery_SIP_SIPURI_System_Boolean_System_Threading_CancellationToken_
+  commentId: M:SIPSorcery.SIP.SIPDns.ResolveAsync(SIPSorcery.SIP.SIPURI,System.Boolean,System.Threading.CancellationToken)
+  fullName: SIPSorcery.SIP.SIPDns.ResolveAsync(SIPSorcery.SIP.SIPURI, System.Boolean, System.Threading.CancellationToken)
+  nameWithType: SIPDns.ResolveAsync(SIPURI, Boolean, CancellationToken)
+- uid: SIPSorcery.SIP.SIPDns.ResolveAsync*
+  name: ResolveAsync
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_ResolveAsync_
+  commentId: Overload:SIPSorcery.SIP.SIPDns.ResolveAsync
   isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDns.Resolve
-  nameWithType: SIPDns.Resolve
+  fullName: SIPSorcery.SIP.SIPDns.ResolveAsync
+  nameWithType: SIPDns.ResolveAsync
+- uid: SIPSorcery.SIP.SIPDns.ResolveFromCache(SIPSorcery.SIP.SIPURI,System.Boolean)
+  name: ResolveFromCache(SIPURI, Boolean)
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_ResolveFromCache_SIPSorcery_SIP_SIPURI_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPDns.ResolveFromCache(SIPSorcery.SIP.SIPURI,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPDns.ResolveFromCache(SIPSorcery.SIP.SIPURI, System.Boolean)
+  nameWithType: SIPDns.ResolveFromCache(SIPURI, Boolean)
+- uid: SIPSorcery.SIP.SIPDns.ResolveFromCache*
+  name: ResolveFromCache
+  href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_ResolveFromCache_
+  commentId: Overload:SIPSorcery.SIP.SIPDns.ResolveFromCache
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPDns.ResolveFromCache
+  nameWithType: SIPDns.ResolveFromCache
 - uid: SIPSorcery.SIP.SIPDns.UseANYLookups
   name: UseANYLookups
   href: api/SIPSorcery.SIP.SIPDns.html#SIPSorcery_SIP_SIPDns_UseANYLookups
@@ -29695,6 +29708,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPEndPoint.CopyOf
   nameWithType: SIPEndPoint.CopyOf
+- uid: SIPSorcery.SIP.SIPEndPoint.Empty
+  name: Empty
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_Empty
+  commentId: P:SIPSorcery.SIP.SIPEndPoint.Empty
+  fullName: SIPSorcery.SIP.SIPEndPoint.Empty
+  nameWithType: SIPEndPoint.Empty
+- uid: SIPSorcery.SIP.SIPEndPoint.Empty*
+  name: Empty
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_Empty_
+  commentId: Overload:SIPSorcery.SIP.SIPEndPoint.Empty
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPEndPoint.Empty
+  nameWithType: SIPEndPoint.Empty
 - uid: SIPSorcery.SIP.SIPEndPoint.Equals(System.Object)
   name: Equals(Object)
   href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_Equals_System_Object_
@@ -35809,6 +35835,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransport.m_allowedSIPMethods
   fullName: SIPSorcery.SIP.SIPTransport.m_allowedSIPMethods
   nameWithType: SIPTransport.m_allowedSIPMethods
+- uid: SIPSorcery.SIP.SIPTransport.PreferIPv6NameResolution
+  name: PreferIPv6NameResolution
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_PreferIPv6NameResolution
+  commentId: F:SIPSorcery.SIP.SIPTransport.PreferIPv6NameResolution
+  fullName: SIPSorcery.SIP.SIPTransport.PreferIPv6NameResolution
+  nameWithType: SIPTransport.PreferIPv6NameResolution
 - uid: SIPSorcery.SIP.SIPTransport.PreProcessRouteInfo(SIPSorcery.SIP.SIPRequest)
   name: PreProcessRouteInfo(SIPRequest)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_PreProcessRouteInfo_SIPSorcery_SIP_SIPRequest_
@@ -35851,12 +35883,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.RemoveSIPChannel
   nameWithType: SIPTransport.RemoveSIPChannel
-- uid: SIPSorcery.SIP.SIPTransport.ResolveSIPUri
-  name: ResolveSIPUri
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_ResolveSIPUri
-  commentId: F:SIPSorcery.SIP.SIPTransport.ResolveSIPUri
-  fullName: SIPSorcery.SIP.SIPTransport.ResolveSIPUri
-  nameWithType: SIPTransport.ResolveSIPUri
+- uid: SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync(SIPSorcery.SIP.SIPURI)
+  name: ResolveSIPUriAsync(SIPURI)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_ResolveSIPUriAsync_SIPSorcery_SIP_SIPURI_
+  commentId: M:SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync(SIPSorcery.SIP.SIPURI)
+  fullName: SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync(SIPSorcery.SIP.SIPURI)
+  nameWithType: SIPTransport.ResolveSIPUriAsync(SIPURI)
+- uid: SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync*
+  name: ResolveSIPUriAsync
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_ResolveSIPUriAsync_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync
+  nameWithType: SIPTransport.ResolveSIPUriAsync
 - uid: SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])
   name: SendRawAsync(SIPEndPoint, SIPEndPoint, Byte[])
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRawAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___
@@ -35885,6 +35924,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest)
   fullName: SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest)
   nameWithType: SIPTransport.SendRequestAsync(SIPRequest)
+- uid: SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest,System.Boolean)
+  name: SendRequestAsync(SIPRequest, Boolean)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPRequest_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest, System.Boolean)
+  nameWithType: SIPTransport.SendRequestAsync(SIPRequest, Boolean)
 - uid: SIPSorcery.SIP.SIPTransport.SendRequestAsync*
   name: SendRequestAsync
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRequestAsync_
@@ -35904,6 +35949,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse)
   fullName: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse)
   nameWithType: SIPTransport.SendResponseAsync(SIPResponse)
+- uid: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse,System.Boolean)
+  name: SendResponseAsync(SIPResponse, Boolean)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPResponse_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse, System.Boolean)
+  nameWithType: SIPTransport.SendResponseAsync(SIPResponse, Boolean)
 - uid: SIPSorcery.SIP.SIPTransport.SendResponseAsync*
   name: SendResponseAsync
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendResponseAsync_
