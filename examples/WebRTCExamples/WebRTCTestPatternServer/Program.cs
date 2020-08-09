@@ -25,11 +25,10 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using FFmpeg.AutoGen;
-using FfmpegInterop;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SIPSorcery.Ffmpeg;
 using SIPSorcery.Net;
-//using SIPSorceryMedia;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -74,19 +73,15 @@ namespace WebRTCServer
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
         private const int VP8_TIMESTAMP_SPACING = 3000;
-        private const int VP8_PAYLOAD_TYPE_ID = 100;
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static WebSocketServer _webSocketServer;
-        //private static SIPSorceryMedia.VpxEncoder _vpxEncoder;
-        //private static SIPSorceryMedia.ImageConvert _colorConverter;
         private static VideoEncoder _videoEncoder;
         private static VideoFrameConverter _videoFrameConverter;
         private static Bitmap _testPattern;
-        private static int _stride;
         private static Timer _sendTestPatternTimer;
 
         private static event Action<SDPMediaTypesEnum, uint, byte[]> OnTestPatternSampleReady;
@@ -211,28 +206,13 @@ namespace WebRTCServer
         {
             _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
 
-            // Get the stride.
-            Rectangle rect = new Rectangle(0, 0, _testPattern.Width, _testPattern.Height);
-            System.Drawing.Imaging.BitmapData bmpData =
-                _testPattern.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite,
-                _testPattern.PixelFormat);
-
-            // Get the address of the first line.
-            _stride = bmpData.Stride;
-
-            _testPattern.UnlockBits(bmpData);
-
             // Initialise the video codec and color converter.
-            //_vpxEncoder = new VpxEncoder();
-            //_vpxEncoder.InitEncoder((uint)_testPattern.Width, (uint)_testPattern.Height, (uint)_stride);
-            //_colorConverter = new ImageConvert();
-
-            _videoEncoder = new VideoEncoder(FFmpeg.AutoGen.AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            _videoEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
             _videoFrameConverter = new VideoFrameConverter(
                 new Size(_testPattern.Width, _testPattern.Height),
-                FFmpeg.AutoGen.AVPixelFormat.AV_PIX_FMT_RGB24,
+                AVPixelFormat.AV_PIX_FMT_BGR24,
                 new Size(_testPattern.Width, _testPattern.Height),
-                FFmpeg.AutoGen.AVPixelFormat.AV_PIX_FMT_YUV420P);
+                AVPixelFormat.AV_PIX_FMT_YUV420P);
         }
 
         private static void SendTestPattern(object state)
@@ -243,9 +223,6 @@ namespace WebRTCServer
                 {
                     unsafe
                     {
-                        //byte[] sampleBuffer = null;
-                        //byte[] encodedBuffer = null;
-
                         if (OnTestPatternSampleReady != null)
                         {
                             var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
@@ -253,23 +230,6 @@ namespace WebRTCServer
                             {
                                 AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
                                 byte[] bmpBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
-
-                                //fixed (byte* p = sampleBuffer)
-                                //{
-                                //    byte[] convertedFrame = null;
-
-                                //_colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, _testPattern.Width, _testPattern.Height, _stride, VideoSubTypesEnum.I420, ref convertedFrame);
-
-                                //fixed (byte* q = convertedFrame)
-                                //{
-                                //    int encodeResult = _vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
-
-                                //    if (encodeResult != 0)
-                                //    {
-                                //        logger.LogWarning("VPX encode of video sample failed.");
-                                //    }
-                                //}
-                                //}
 
                                 var i420Frame = _videoFrameConverter.Convert(bmpBuffer);
 
@@ -284,8 +244,6 @@ namespace WebRTCServer
                             {
                                 stampedTestPattern.Dispose();
                             }
-
-                            //encodedBuffer = null;
                         }
                         else
                         {
@@ -303,23 +261,16 @@ namespace WebRTCServer
 
         private static byte[] BitmapToRGB24(Bitmap bitmap)
         {
-            try
-            {
-                BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                var length = bitmapData.Stride * bitmapData.Height;
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var length = bitmapData.Stride * bitmapData.Height;
 
-                byte[] bytes = new byte[length];
+            byte[] bytes = new byte[length];
 
-                // Copy bitmap to byte[]
-                Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
-                bitmap.UnlockBits(bitmapData);
+            // Copy bitmap to byte[]
+            Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
+            bitmap.UnlockBits(bitmapData);
 
-                return bytes;
-            }
-            catch (Exception)
-            {
-                return new byte[] { };
-            }
+            return bytes;
         }
 
         private static void AddTimeStampAndLocation(System.Drawing.Image image, string timeStamp, string locationText)

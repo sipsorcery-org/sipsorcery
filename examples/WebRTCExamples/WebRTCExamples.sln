@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfmpegToWebRTC", "FfmpegToW
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCSendAudio", "WebRTCTestSendAudio\WebRTCSendAudio.csproj", "{A2EE7458-FAFC-4C84-AD71-22EDF4CF84DC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfmpegInterop", "..\..\..\sipsorcery-prototypes\FfmpegInterop\FfmpegInterop.csproj", "{FA9A07FB-ACDD-4D23-8775-66462FCC460F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{BBBA7931-3610-49CF-8177-B48B892E00E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -155,18 +155,18 @@ Global
 		{A2EE7458-FAFC-4C84-AD71-22EDF4CF84DC}.Release|x64.Build.0 = Release|Any CPU
 		{A2EE7458-FAFC-4C84-AD71-22EDF4CF84DC}.Release|x86.ActiveCfg = Release|Any CPU
 		{A2EE7458-FAFC-4C84-AD71-22EDF4CF84DC}.Release|x86.Build.0 = Release|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Debug|x64.Build.0 = Debug|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Debug|x86.Build.0 = Debug|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Release|x64.ActiveCfg = Release|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Release|x64.Build.0 = Release|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Release|x86.ActiveCfg = Release|Any CPU
-		{FA9A07FB-ACDD-4D23-8775-66462FCC460F}.Release|x86.Build.0 = Release|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Debug|x64.Build.0 = Debug|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Debug|x86.Build.0 = Debug|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Release|x64.ActiveCfg = Release|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Release|x64.Build.0 = Release|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Release|x86.ActiveCfg = Release|Any CPU
+		{BBBA7931-3610-49CF-8177-B48B892E00E1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
