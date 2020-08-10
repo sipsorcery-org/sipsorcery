@@ -120,8 +120,8 @@ namespace SIPSorcery.Examples
             Console.WriteLine("WebRTC Console Test Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
-            var cert = DtlsUtils.CreateSelfSignedCert();
-            Console.WriteLine(Convert.ToBase64String(cert.Export(X509ContentType.Pfx)));
+            //var cert = DtlsUtils.CreateSelfSignedCert();
+            //Console.WriteLine(Convert.ToBase64String(cert.Export(X509ContentType.Pfx)));
 
             bool noOptions = args?.Count() == 0;
 
