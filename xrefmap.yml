@@ -4967,6 +4967,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP
   nameWithType: DtlsSrtpTransport.ProtectRTP
+- uid: SIPSorcery.Net.DtlsSrtpTransport.Read(System.Byte[],System.Int32,System.Int32,System.Int32)
+  name: Read(Byte[], Int32, Int32, Int32)
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_Read_System_Byte___System_Int32_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.DtlsSrtpTransport.Read(System.Byte[],System.Int32,System.Int32,System.Int32)
+  name.vb: Read(Byte(), Int32, Int32, Int32)
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.Read(System.Byte[], System.Int32, System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Net.DtlsSrtpTransport.Read(System.Byte(), System.Int32, System.Int32, System.Int32)
+  nameWithType: DtlsSrtpTransport.Read(Byte[], Int32, Int32, Int32)
+  nameWithType.vb: DtlsSrtpTransport.Read(Byte(), Int32, Int32, Int32)
+- uid: SIPSorcery.Net.DtlsSrtpTransport.Read*
+  name: Read
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_Read_
+  commentId: Overload:SIPSorcery.Net.DtlsSrtpTransport.Read
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.Read
+  nameWithType: DtlsSrtpTransport.Read
 - uid: SIPSorcery.Net.DtlsSrtpTransport.Receive(System.Byte[],System.Int32,System.Int32,System.Int32)
   name: Receive(Byte[], Int32, Int32, Int32)
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_Receive_System_Byte___System_Int32_System_Int32_System_Int32_
@@ -16248,6 +16264,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.AddToList
   nameWithType: OrderedMessage.AddToList
+- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.Finish(System.Action)
+  name: Finish(Action)
+  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_Finish_System_Action_
+  commentId: M:SIPSorcery.net.SCTP.messages.OrderedMessage.Finish(System.Action)
+  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.Finish(System.Action)
+  nameWithType: OrderedMessage.Finish(Action)
+- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.Finish*
+  name: Finish
+  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_Finish_
+  commentId: Overload:SIPSorcery.net.SCTP.messages.OrderedMessage.Finish
+  isSpec: "True"
+  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.Finish
+  nameWithType: OrderedMessage.Finish
 - uid: SIPSorcery.net.SCTP.messages.OrderedMessage.IsReady
   name: IsReady
   href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_IsReady
