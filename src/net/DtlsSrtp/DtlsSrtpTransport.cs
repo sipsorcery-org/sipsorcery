@@ -17,6 +17,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
@@ -42,7 +43,8 @@ namespace SIPSorcery.Net
         private IPacketTransformer srtcpDecoder;
         IDtlsSrtpPeer connection = null;
 
-        private PipedMemoryStream _inStream = new PipedMemoryStream();
+        /// <summary>The collection of chunks to be written.</summary>
+        private BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
 
         public DtlsTransport Transport { get; private set; }
 
@@ -429,7 +431,22 @@ namespace SIPSorcery.Net
 
         public void WriteToRecvStream(byte[] buf)
         {
-            _inStream.Write(buf, 0, buf.Length);
+            _chunks.Add(buf);
+        }
+
+        public int Read(byte[] buffer, int offset, int count, int timeout)
+        {
+            try
+            {
+                if (_chunks.TryTake(out var item, timeout))
+                {
+                    Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
+                    return item.Length;
+                }
+            }
+            catch (ObjectDisposedException) { }
+            catch (ArgumentNullException) { }
+            return 0;
         }
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
@@ -448,7 +465,7 @@ namespace SIPSorcery.Net
                 else if (!_isClosed)
                 {
                     waitMillis = (int)System.Math.Min(waitMillis, millisecondsRemaining);
-                    return _inStream.Read(buf, off, len, waitMillis);
+                    return Read(buf, off, len, waitMillis);
                 }
                 else
                 {
@@ -457,7 +474,7 @@ namespace SIPSorcery.Net
             }
             else if (!_isClosed)
             {
-                return _inStream.Read(buf, off, len, waitMillis);
+                return Read(buf, off, len, waitMillis);
             }
             else
             {
@@ -467,14 +484,21 @@ namespace SIPSorcery.Net
 
         public void Send(byte[] buf, int off, int len)
         {
-            OnDataReady?.Invoke(buf.Skip(off).Take(len).ToArray());
+            if (len != buf.Length)
+            {
+                // Only create a new buffer and copy bytes if the length is different
+                var tempBuf = new byte[len];
+                Buffer.BlockCopy(buf, off, tempBuf, 0, len);
+                buf = tempBuf;
+            }
+            OnDataReady?.Invoke(buf);
         }
 
         public virtual void Close()
         {
             _isClosed = true;
             this.startTime = System.DateTime.MinValue;
-            _inStream.Close();
+            this._chunks?.Dispose();
         }
 
         /// <summary>

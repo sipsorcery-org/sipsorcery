@@ -17,6 +17,7 @@
 // Original Source: AGPL-3.0 License
 //-----------------------------------------------------------------------------
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace SIPSorcery.Net
@@ -36,7 +37,7 @@ namespace SIPSorcery.Net
         private SrtpTransformEngine reverseEngine;
 
         /** All the known SSRC's corresponding SRTCPCryptoContexts */
-        private Dictionary<long, SrtcpCryptoContext> contexts;
+        private ConcurrentDictionary<long, SrtcpCryptoContext> contexts;
 
         public SrtcpTransformer(SrtpTransformEngine engine) : this(engine, engine)
         {
@@ -48,7 +49,7 @@ namespace SIPSorcery.Net
             this.packet = new RawPacket();
             this.forwardEngine = forwardEngine;
             this.reverseEngine = reverseEngine;
-            this.contexts = new Dictionary<long, SrtcpCryptoContext>();
+            this.contexts = new ConcurrentDictionary<long, SrtcpCryptoContext>();
         }
 
         /// <summary>
@@ -75,7 +76,7 @@ namespace SIPSorcery.Net
             {
                 context = forwardEngine.GetDefaultContextControl().DeriveContext(ssrc);
                 context.DeriveSrtcpKeys();
-                contexts[ssrc] = context;
+                contexts.AddOrUpdate(ssrc, context, (a, b) => context);
             }
 
             // Secure packet into SRTCP format
@@ -130,11 +131,8 @@ namespace SIPSorcery.Net
             var keys = new List<long>(contexts.Keys);
             foreach (var ssrc in keys)
             {
-                var context = contexts[ssrc];
-
-                contexts.Remove(ssrc);
-                if (context != null)
-                {
+                if (contexts.TryRemove(ssrc, out var context))
+                { 
                     context.Close();
                 }
             }

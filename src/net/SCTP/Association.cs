@@ -278,57 +278,37 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        private BlockingCollection<ByteBuffer> queue = new BlockingCollection<ByteBuffer>();
-        private ConcurrentQueue<byte[]> bufferQueue = new ConcurrentQueue<byte[]>();
-
-        private void ProcessQueue(CancellationToken token)
-        {
-            while (!token.IsCancellationRequested)
-            {
-                while (queue.TryTake(out var pbb, 1000))
-                {
-                    try
-                    {
-                        Packet rec = new Packet(pbb);
-                        deal(rec);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.LogDebug($"Exception Process Datagramtransport queue. {e}");
-                    }
-                    finally
-                    {
-                        bufferQueue.Enqueue(pbb.Data);
-                    }
-                }
-            }
-        }
-
         void startRcv()
         {
             Association me = this;
-            var cts = new CancellationTokenSource();
             _rcv = new Thread(() =>
             {
                 try
                 {
+                    byte[] buf = new byte[_transp.GetReceiveLimit()];
                     while (_rcv != null)
                     {
                         try
                         {
-                            if (!bufferQueue.TryDequeue(out var buf))
+                            var length = _transp.Receive(buf, 0, buf.Length, TICK);
+                            if (length > 0)
                             {
-                                buf = new byte[_transp.GetReceiveLimit()];
+                                //var b = Packet.getHex(buf, 0, length);
+                                //logger.LogInformation($"DTLS message recieved\n{b}");   
+                                ByteBuffer pbb = new ByteBuffer(buf);
+                                pbb.Limit = length;
+                                Packet rec = new Packet(pbb);
+                                deal(rec);
                             }
-                            int length = _transp.Receive(buf, 0, buf.Length, TICK);
-                            if (length == DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE)
+                            else if (length == DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE)
                             {
                                 // The DTLS transport has been closed or i no longer available.
                                 break;
                             }
-                            ByteBuffer pbb = new ByteBuffer(buf);
-                            pbb.Limit = length;
-                            queue.Add(pbb);
+                            else
+                            {
+                                logger.LogInformation("Timeout -> short packet " + length);
+                            }
                         }
                         catch (SocketException e)
                         {
@@ -356,16 +336,10 @@ namespace SIPSorcery.Net.Sctp
                 {
                     logger.LogDebug("Association receive failed " + ex.GetType().Name + " " + ex.ToString());
                 }
-                finally
-                {
-                    cts.Cancel();
-                }
             });
-            _rcv.Priority = ThreadPriority.AboveNormal;
+            _rcv.Priority = ThreadPriority.Highest;
             _rcv.Name = "AssocRcv" + __assocNo;
             _rcv.Start();
-
-            Task.Run(() => ProcessQueue(cts.Token));
         }
 
         /**
@@ -1100,7 +1074,7 @@ namespace SIPSorcery.Net.Sctp
 
         public int maxMessageSize()
         {
-            return 1 << 16; // shrug - I don't know 
+            return 1 << 20; // shrug - I don't know 
         }
 
         public bool canSend()

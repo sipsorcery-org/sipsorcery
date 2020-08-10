@@ -461,9 +461,9 @@ namespace SIPSorcery.Net
             // Reset the session state.
             _connectivityChecksTimer?.Dispose();
             _processIceServersTimer?.Dispose();
-            _candidates.Clear();
-            _checklist.Clear();
-            _iceServerConnections.Clear();
+            _candidates?.Clear();
+            _checklist?.Clear();
+            _iceServerConnections?.Clear();
             IceGatheringState = RTCIceGatheringState.@new;
             IceConnectionState = RTCIceConnectionState.@new;
 
