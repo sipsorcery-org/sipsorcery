@@ -33,7 +33,7 @@ namespace SIPSorcery.Net.Sctp
 {
     public class ThreadedAssociation : Association
     {
-        static int MAXBLOCKS = 10; // some number....
+        static int MAXBLOCKS = 100; // some number....
         private Queue<DataChunk> _freeBlocks;
         private Dictionary<long, DataChunk> _inFlight;
         private long _lastCumuTSNAck;

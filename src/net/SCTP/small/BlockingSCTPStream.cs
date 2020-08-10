@@ -16,8 +16,10 @@
  */
 // Modified by Andrés Leone Gámez
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -29,7 +31,7 @@ namespace SIPSorcery.Net.Sctp
 {
     public class BlockingSCTPStream : SCTPStream
     {
-        private Dictionary<int, SCTPMessage> undeliveredOutboundMessages = new Dictionary<int, SCTPMessage>();
+        private ConcurrentDictionary<int, SCTPMessage> undeliveredOutboundMessages = new ConcurrentDictionary<int, SCTPMessage>();
 
         private static ILogger logger = Log.Logger;
 
@@ -44,6 +46,7 @@ namespace SIPSorcery.Net.Sctp
                 if (m == null)
                 {
                     logger.LogError("SCTPMessage cannot be null, but it is");
+                    return;
                 }
                 a.sendAndBlock(m);
             }
@@ -55,14 +58,14 @@ namespace SIPSorcery.Net.Sctp
             {
                 Association a = base.getAssociation();
                 SCTPMessage m = a.makeMessage(message, this);
-                undeliveredOutboundMessages.Add(m.getSeq(), m);
+                undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id,b) => m);
                 a.sendAndBlock(m);
             }
         }
 
         internal override void deliverMessage(SCTPMessage message)
         {
-            ThreadPool.QueueUserWorkItem((obj) => { message.run(); });
+            message.run();
         }
 
         public override void delivered(DataChunk d)
@@ -72,9 +75,8 @@ namespace SIPSorcery.Net.Sctp
             {
                 int ssn = d.getSSeqNo();
                 SCTPMessage st;
-                if (undeliveredOutboundMessages.TryGetValue(ssn, out st))
+                if (undeliveredOutboundMessages.TryRemove(ssn, out st))
                 {
-                    undeliveredOutboundMessages.Remove(ssn);
                     st.acked();
                 }
             }
