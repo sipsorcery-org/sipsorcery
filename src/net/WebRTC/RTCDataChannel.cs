@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net.Sctp;
 using SIPSorcery.Sys;
@@ -103,6 +104,32 @@ namespace SIPSorcery.Net
             else
             {
                 _sctpStream.send(data);
+            }
+        }
+
+        public Task sendasync(string data)
+        {
+            if (!IsOpened)
+            {
+                logger.LogWarning("An attempt was made to send on a closed data channel.");
+                return Task.CompletedTask;
+            }
+            else
+            {
+                return _sctpStream.sendasync(data);
+            }
+        }
+
+        public Task sendasync(byte[] data)
+        {
+            if (!IsOpened)
+            {
+                logger.LogWarning("An attempt was made to send on a closed data channel.");
+                return Task.CompletedTask;
+            }
+            else
+            {
+                return _sctpStream.sendasync(data);
             }
         }
 
