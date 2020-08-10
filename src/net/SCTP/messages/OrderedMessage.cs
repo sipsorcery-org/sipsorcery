@@ -15,6 +15,8 @@ namespace SIPSorcery.net.SCTP.messages
         private ConcurrentDictionary<uint, DataChunk> Chunks = new ConcurrentDictionary<uint, DataChunk>();
         private DataChunk start;
         private DataChunk end;
+        private object myLock = new object();
+        private bool isDone;
         public int Number;
         public OrderedMessage(int num)
         {
@@ -84,6 +86,24 @@ namespace SIPSorcery.net.SCTP.messages
                 list.Add(Chunks[i]);
             }
             return list;
+        }
+
+        public void Finish(Action action)
+        {
+            if (isDone)
+            {
+                return;
+            }
+
+            lock(myLock)
+            {
+                if (isDone)
+                {
+                    return;
+                }
+                isDone = true;
+                action.Invoke();
+            }
         }
     }
 }

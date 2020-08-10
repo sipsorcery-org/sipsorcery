@@ -445,6 +445,7 @@ namespace SIPSorcery.Net
                 }
             }
             catch (ObjectDisposedException) { }
+            catch (ArgumentNullException) { }
             return 0;
         }
 
