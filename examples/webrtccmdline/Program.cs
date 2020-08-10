@@ -62,6 +62,10 @@ namespace SIPSorcery.Examples
         [Option("nodedss", Required = false,
             HelpText = "Address of node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://192.168.11.50:3001\".")]
         public string NodeDssServer { get; set; }
+
+        [Option("json", Required = false,
+    HelpText = "If true web socket messages will be sent and received as JSON.. Format \"--json\".")]
+        public bool JsonSerialisation { get; set; }
     }
 
     public class WebRtcClient : WebSocketBehavior
@@ -104,6 +108,7 @@ namespace SIPSorcery.Examples
         private static Uri _nodeDssUri;
         private static HttpClient _nodeDssclient;
         private static bool _relayOnly;
+        private static bool _jsonSerialisation;
 
         /// <summary>
         /// For simplicity this program only supports one active peer connection.
@@ -114,6 +119,9 @@ namespace SIPSorcery.Examples
         {
             Console.WriteLine("WebRTC Console Test Program");
             Console.WriteLine("Press ctrl-c to exit.");
+
+            var cert = DtlsUtils.CreateSelfSignedCert();
+            Console.WriteLine(Convert.ToBase64String(cert.Export(X509ContentType.Pfx)));
 
             bool noOptions = args?.Count() == 0;
 
@@ -146,6 +154,7 @@ namespace SIPSorcery.Examples
             }
 
             _relayOnly = options.RelayOnly;
+            _jsonSerialisation = options.JsonSerialisation;
 
             if (options.UseWebSocket || options.UseSecureWebSocket || noOptions)
             {
@@ -520,7 +529,14 @@ namespace SIPSorcery.Examples
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
-            context.WebSocket.Send(offerInit.sdp);
+            if (_jsonSerialisation)
+            {
+                context.WebSocket.Send(JsonConvert.SerializeObject(offerInit, new Newtonsoft.Json.Converters.StringEnumConverter()));
+            }
+            else
+            {
+                context.WebSocket.Send(offerInit.sdp);
+            }
 
             return pc;
         }
@@ -630,13 +646,32 @@ namespace SIPSorcery.Examples
                         var answer = pc.createAnswer(null);
                         await pc.setLocalDescription(answer);
 
-                        context.WebSocket.Send(answer.sdp);
+                        if (_jsonSerialisation)
+                        {
+                            context.WebSocket.Send(JsonConvert.SerializeObject(answer, new Newtonsoft.Json.Converters.StringEnumConverter()));
+                        }
+                        else
+                        {
+                            context.WebSocket.Send(answer.sdp);
+                        }
                     }
                 }
                 else if (pc.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+
+                    RTCSessionDescriptionInit answerInit = null;
+
+                    if (_jsonSerialisation)
+                    {
+                        answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
+                    }
+                    else
+                    {
+                        answerInit = new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer };
+                    }
+
+                    var res = pc.setRemoteDescription(answerInit);
                     if (res != SetDescriptionResultEnum.OK)
                     {
                         // No point continuing. Something will need to change and then try again.
