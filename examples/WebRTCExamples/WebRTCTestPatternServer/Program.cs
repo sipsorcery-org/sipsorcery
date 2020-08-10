@@ -59,7 +59,7 @@ namespace WebRTCServer
         protected override void OnClose(CloseEventArgs e)
         {
             base.OnClose(e);
-            PeerConnection.Close("remote party close");
+            PeerConnection?.Close("remote party close");
         }
     }
 
@@ -72,7 +72,7 @@ namespace WebRTCServer
         private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
-        private const int VP8_TIMESTAMP_SPACING = 3000;
+        private const int FRAME_TIMESTAMP_SPACING = 3000;
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
 
@@ -97,9 +97,12 @@ namespace WebRTCServer
 
             AddConsoleLogger();
 
-            FfmpegInit.Initialise();
+            FfmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_DEBUG);
 
             InitialiseTestPattern();
+
+            // The time callback periods will be adjusted when it's required.
+            _sendTestPatternTimer = new Timer(SendTestPattern, null, Timeout.Infinite, Timeout.Infinite);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -151,22 +154,16 @@ namespace WebRTCServer
                 {
                     pc.Close("remote disconnection");
                 }
-
-                if (state == RTCPeerConnectionState.closed)
+                else if (state == RTCPeerConnectionState.closed)
                 {
                     OnTestPatternSampleReady -= pc.SendMedia;
                     pc.OnReceiveReport -= RtpSession_OnReceiveReport;
                     pc.OnSendReport -= RtpSession_OnSendReport;
-                    _sendTestPatternTimer?.Dispose();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
                     OnTestPatternSampleReady += pc.SendMedia;
-
-                    if (_sendTestPatternTimer == null)
-                    {
-                        _sendTestPatternTimer = new Timer(SendTestPattern, null, 0, TEST_PATTERN_SPACING_MILLISECONDS);
-                    }
+                    _sendTestPatternTimer.Change(0, TEST_PATTERN_SPACING_MILLISECONDS);
                 }
             };
 
@@ -217,45 +214,38 @@ namespace WebRTCServer
 
         private static void SendTestPattern(object state)
         {
-            try
+            if (OnTestPatternSampleReady != null)
             {
                 lock (_sendTestPatternTimer)
                 {
-                    unsafe
+                    var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
+                    try
                     {
-                        if (OnTestPatternSampleReady != null)
+                        AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
+                        byte[] bmpBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
+
+                        var i420Frame = _videoFrameConverter.Convert(bmpBuffer);
+                        i420Frame.key_frame = 1;
+
+                        unsafe
                         {
-                            var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
-                            try
+                            byte[] encodedFrame = _videoEncoder.Encode(&i420Frame);
+
+                            if (encodedFrame != null)
                             {
-                                AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-                                byte[] bmpBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
-
-                                var i420Frame = _videoFrameConverter.Convert(bmpBuffer);
-
-                                byte[] encodedFrame = _videoEncoder.Encode(&i420Frame);
-
-                                if (encodedFrame != null)
-                                {
-                                    OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VP8_TIMESTAMP_SPACING, encodedFrame);
-                                }
-                            }
-                            finally
-                            {
-                                stampedTestPattern.Dispose();
+                                OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, FRAME_TIMESTAMP_SPACING, encodedFrame);
                             }
                         }
-                        else
-                        {
-                            _sendTestPatternTimer?.Dispose();
-                            _sendTestPatternTimer = null;
-                        }
+                    }
+                    finally
+                    {
+                        stampedTestPattern.Dispose();
                     }
                 }
             }
-            catch (Exception excp)
+            else
             {
-                logger.LogError("Exception SendTestPattern. " + excp);
+                _sendTestPatternTimer.Change(Timeout.Infinite, Timeout.Infinite);
             }
         }
 

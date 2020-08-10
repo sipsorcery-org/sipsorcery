@@ -2,19 +2,37 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Ffmpeg
 {
+    public enum FfmpegLogLevelEnum
+    {
+        AV_LOG_PANIC = 0,
+        AV_LOG_FATAL = 8,
+        AV_LOG_ERROR = 16,
+        AV_LOG_WARNING = 24,
+        AV_LOG_INFO = 32,
+        AV_LOG_VERBOSE = 40,
+        AV_LOG_DEBUG = 48,
+        AV_LOG_TRACE = 56,
+    }
+
     public static class FfmpegInit
     {
-        public static void Initialise()
+        private static Microsoft.Extensions.Logging.ILogger logger = Log.Logger;
+
+        public static void Initialise(FfmpegLogLevelEnum? logLevel = null)
         {
             RegisterFFmpegBinaries();
 
-            Console.WriteLine($"FFmpeg version info: {ffmpeg.av_version_info()}");
+            logger.LogInformation($"FFmpeg version info: {ffmpeg.av_version_info()}");
 
-            //ffmpeg.avcodec_register_all();
-            ffmpeg.av_log_set_level(ffmpeg.AV_LOG_VERBOSE);
+            if (logLevel.HasValue)
+            {
+                ffmpeg.av_log_set_level((int)logLevel.Value);
+            }
         }
 
         internal static void RegisterFFmpegBinaries()
@@ -26,7 +44,7 @@ namespace SIPSorcery.Ffmpeg
                 var ffmpegBinaryPath = Path.Combine(current, probe);
                 if (Directory.Exists(ffmpegBinaryPath))
                 {
-                    Console.WriteLine($"FFmpeg binaries found in: {ffmpegBinaryPath}");
+                    logger.LogInformation($"FFmpeg binaries found in: {ffmpegBinaryPath}");
                     ffmpeg.RootPath = ffmpegBinaryPath;
                     return;
                 }
@@ -46,7 +64,10 @@ namespace SIPSorcery.Ffmpeg
 
         public static int ThrowExceptionIfError(this int error)
         {
-            if (error < 0) throw new ApplicationException(av_strerror(error));
+            if (error < 0)
+            {
+                throw new ApplicationException(av_strerror(error));
+            }
             return error;
         }
     }

@@ -2,11 +2,15 @@
 using System.Drawing;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Ffmpeg
 {
     public sealed unsafe class VideoFrameConverter : IDisposable
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = Log.Logger;
+
         private readonly IntPtr _convertedFrameBufferPtr;
         private readonly Size _srcSize;
         private readonly Size _dstSize;
@@ -39,6 +43,8 @@ namespace SIPSorcery.Ffmpeg
             _dstLinesize = new int_array4();
 
             ffmpeg.av_image_fill_arrays(ref _dstData, ref _dstLinesize, (byte*)_convertedFrameBufferPtr, destinationPixelFormat, destinationSize.Width, destinationSize.Height, 1);
+
+            logger.LogDebug($"Successfully initialised ffmpeg based image converted for {sourceSize}:{sourcePixelFormat}->{_dstSize}:{_dstPixelFormat}.");
         }
 
         public void Dispose()
