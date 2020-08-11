@@ -33,7 +33,11 @@ namespace SIPSorcery.Net
     /// </summary>
     public sealed class UdpReceiver
     {
-        private const int RECEIVE_BUFFER_SIZE = 2048;   // MTU is 1452 bytes so this should be heaps.
+        /// <summary>
+        /// MTU is 1452 bytes so this should be heaps.
+        /// TODO: What about fragmented UDP packets that are put back together by the OS?
+        /// </summary>
+        private const int RECEIVE_BUFFER_SIZE = 2048;
 
         private static ILogger logger = Log.Logger;
 
