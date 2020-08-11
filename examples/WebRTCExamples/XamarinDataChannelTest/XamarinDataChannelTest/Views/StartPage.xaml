@@ -19,10 +19,23 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Button Text="Start" 
+        
+        <StackLayout>
+
+        <Button x:Name="_connectButton" Text="Connect" 
                 VerticalOptions="Start"
-                 Clicked="OnStartButtonClicked"/>
+                 Clicked="OnConnectButtonClicked" IsVisible="True"/>
+            <Button x:Name="_closeButton" Text="Close" 
+                VerticalOptions="Start"
+                 Clicked="OnCloseButtonClicked" IsVisible="False"/>
+        <Label Text="Web Socket URL" />
+        <Entry x:Name="_webSocketURL" Text="ws://192.168.11.50:8081/sendoffer" />
+
+        </StackLayout>
+        
+        <Label x:Name="_status"  Text="Ready" VerticalOptions="End" />
     </Grid>
+
 
    
 </ContentPage>

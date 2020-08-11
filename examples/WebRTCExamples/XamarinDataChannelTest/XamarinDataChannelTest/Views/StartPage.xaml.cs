@@ -15,6 +15,7 @@ using XamarinDataChannelTest.Models;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using Xamarin.Forms.PlatformConfiguration;
 
 namespace XamarinDataChannelTest.Views
 {
@@ -24,64 +25,87 @@ namespace XamarinDataChannelTest.Views
     public partial class StartPage : ContentPage
     {
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private WebRTCPeer _peer;
 
         public StartPage()
         {
             InitializeComponent();
         }
 
-        async void OnStartButtonClicked(object sender, EventArgs args)
+        void OnCloseButtonClicked(object sender, EventArgs args)
         {
-            (sender as Button).IsEnabled = false;
-            await RunDataChannelTest();
-            //await RunUdpSendReceiveTest();
-            //await ConnectToPeerTest();
-            (sender as Button).IsEnabled = true;
+            _peer?.PeerConnection.Close("user initiated");
+
+            this._closeButton.IsVisible = false;
+            this._connectButton.IsVisible = true;
+
+            this._status.Text = "Ready";
         }
 
-        async Task ConnectToPeerTest()
+        async void OnConnectButtonClicked(object sender, EventArgs args)
         {
+            logger.LogDebug($"Attempting to connection to web socket at {this._webSocketURL.Text}.");
+
             var clientWebSocket = new ClientWebSocket();
-            var uri = new Uri("ws://192.168.11.50:8081/sendoffer");
-            await clientWebSocket.ConnectAsync(uri, CancellationToken.None);
 
-            var buffer = WebSocket.CreateClientBuffer(8192, 8192);
-            int attempts = 0;
-
-            while (true && attempts < 10)
+            if (!Uri.TryCreate(this._webSocketURL.Text, UriKind.Absolute, out var uri))
             {
-                WebSocketReceiveResult response = await clientWebSocket.ReceiveAsync(buffer, CancellationToken.None);
+                this._status.Text = "Invalid web socket URI.";
+            }
+            else
+            {
+                this._connectButton.IsVisible = false;
+                this._closeButton.IsVisible = true;
 
-                if (response.EndOfMessage)
+                this._status.Text = "Attempting to connect to web socket server.";
+
+                await clientWebSocket.ConnectAsync(uri, CancellationToken.None);
+
+                var buffer = WebSocket.CreateClientBuffer(8192, 8192);
+                int attempts = 0;
+
+                while (true && attempts < 10)
                 {
-                    var peer = new WebRTCPeer("peer1", "dc1");
+                    WebSocketReceiveResult response = await clientWebSocket.ReceiveAsync(buffer, CancellationToken.None);
 
-                    var options = new JsonSerializerOptions();
-                    options.Converters.Add(new JsonStringEnumConverter());
-                    var init = JsonSerializer.Deserialize<RTCSessionDescriptionInit>(buffer.Take(response.Count).ToArray(), options);
-                    peer.PeerConnection.setRemoteDescription(init);
-
-                    var answer = peer.PeerConnection.createAnswer(null);
-                    await peer.PeerConnection.setLocalDescription(answer);
-
-                    var answerJson = JsonSerializer.Serialize<RTCSessionDescriptionInit>(answer, options);
-                    await clientWebSocket.SendAsync(
-                        new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(answerJson)),
-                        WebSocketMessageType.Text, true, CancellationToken.None);
-
-                    while(peer.PeerConnection.connectionState == RTCPeerConnectionState.connecting)
+                    if (response.EndOfMessage)
                     {
-                        await Task.Delay(1000);
+                        _peer = new WebRTCPeer("peer1", "dc1");
+                       
+                        _peer.PeerConnection.oniceconnectionstatechange += (state) => Device.BeginInvokeOnMainThread(() => this._status.Text = $"ICE connection state {state}.");
+                        _peer.PeerConnection.onconnectionstatechange += (state) => Device.BeginInvokeOnMainThread(() => this._status.Text = $"Peer connection state {state}.");
+
+                        var options = new JsonSerializerOptions();
+                        options.Converters.Add(new JsonStringEnumConverter());
+                        var init = JsonSerializer.Deserialize<RTCSessionDescriptionInit>(buffer.Take(response.Count).ToArray(), options);
+                        _peer.PeerConnection.setRemoteDescription(init);
+
+                        var answer = _peer.PeerConnection.createAnswer(null);
+                        await _peer.PeerConnection.setLocalDescription(answer);
+
+                        var answerJson = JsonSerializer.Serialize<RTCSessionDescriptionInit>(answer, options);
+                        await clientWebSocket.SendAsync(
+                            new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(answerJson)),
+                            WebSocketMessageType.Text, true, CancellationToken.None);
+
+                        attempts = 10;
+                        while (_peer.PeerConnection.connectionState == RTCPeerConnectionState.connecting && attempts < 10)
+                        {
+                            await Task.Delay(1000);
+                            attempts++;
+                        }
+
+                        break;
+                    }
+                    else
+                    {
+                        logger.LogWarning("Failed to get full web socket message from server.");
+
+                        this._status.Text = "Web socket message exchange failed.";
                     }
 
-                    break;
+                    attempts++;
                 }
-                else
-                {
-                    logger.LogWarning("Failed to get full web socket message from server.");
-                }
-
-                attempts++;
             }
         }
 
@@ -121,7 +145,7 @@ namespace XamarinDataChannelTest.Views
                 {
                     IPEndPoint dstEndPoint = dstEndPoint4;
 
-                   if(i % 2 == 0)
+                    if (i % 2 == 0)
                     {
                         dstEndPoint = dstEndPoint6;
                     }
