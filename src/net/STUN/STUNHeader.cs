@@ -183,10 +183,5 @@ namespace SIPSorcery.Net
 
             return null;
         }
-
-        public string GetTransactionId()
-        {
-            return BitConverter.ToString(TransactionId);
-        }
     }
 }
