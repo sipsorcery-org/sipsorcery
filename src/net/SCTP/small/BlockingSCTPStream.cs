@@ -32,35 +32,33 @@ namespace SIPSorcery.Net.Sctp
     public class BlockingSCTPStream : SCTPStream
     {
         private ConcurrentDictionary<int, SCTPMessage> undeliveredOutboundMessages = new ConcurrentDictionary<int, SCTPMessage>();
-
         private static ILogger logger = Log.Logger;
 
         public BlockingSCTPStream(Association a, int id) : base(a, id) { }
 
         public override void send(string message)
         {
-            lock (this)
+            Association a = base.getAssociation();
+            SCTPMessage m = a.makeMessage(message, this);
+            if (m == null)
             {
-                Association a = base.getAssociation();
-                SCTPMessage m = a.makeMessage(message, this);
-                if (m == null)
-                {
-                    logger.LogError("SCTPMessage cannot be null, but it is");
-                    return;
-                }
-                a.sendAndBlock(m);
+                logger.LogError("SCTPMessage cannot be null, but it is");
+                return;
             }
+            a.sendAndBlock(m);
         }
 
         public override void send(byte[] message)
         {
-            lock (this)
+            Association a = base.getAssociation();
+            SCTPMessage m = a.makeMessage(message, this);
+            if (m == null)
             {
-                Association a = base.getAssociation();
-                SCTPMessage m = a.makeMessage(message, this);
-                undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id,b) => m);
-                a.sendAndBlock(m);
+                logger.LogError("SCTPMessage cannot be null, but it is");
+                return;
             }
+            undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
+            a.sendAndBlock(m);
         }
 
         internal override void deliverMessage(SCTPMessage message)
