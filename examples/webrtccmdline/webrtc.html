@@ -99,7 +99,7 @@
                         case "answer":
                             console.log("Answer SDP received:");
                             console.log(evt.data);
-                            await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: evt.data }));
+                            await pc.setRemoteDescription(obj);
                             break;
                     }
                 }

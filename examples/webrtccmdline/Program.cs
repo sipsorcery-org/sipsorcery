@@ -62,10 +62,6 @@ namespace SIPSorcery.Examples
         [Option("nodedss", Required = false,
             HelpText = "Address of node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://192.168.11.50:3001\".")]
         public string NodeDssServer { get; set; }
-
-        [Option("json", Required = false,
-    HelpText = "If true web socket messages will be sent and received as JSON.. Format \"--json\".")]
-        public bool JsonSerialisation { get; set; }
     }
 
     public class WebRtcClient : WebSocketBehavior
@@ -108,7 +104,6 @@ namespace SIPSorcery.Examples
         private static Uri _nodeDssUri;
         private static HttpClient _nodeDssclient;
         private static bool _relayOnly;
-        private static bool _jsonSerialisation;
 
         /// <summary>
         /// For simplicity this program only supports one active peer connection.
@@ -154,7 +149,6 @@ namespace SIPSorcery.Examples
             }
 
             _relayOnly = options.RelayOnly;
-            _jsonSerialisation = options.JsonSerialisation;
 
             if (options.UseWebSocket || options.UseSecureWebSocket || noOptions)
             {
@@ -529,14 +523,7 @@ namespace SIPSorcery.Examples
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
-            if (_jsonSerialisation)
-            {
-                context.WebSocket.Send(JsonConvert.SerializeObject(offerInit, new Newtonsoft.Json.Converters.StringEnumConverter()));
-            }
-            else
-            {
-                context.WebSocket.Send(offerInit.sdp);
-            }
+            context.WebSocket.Send(JsonConvert.SerializeObject(offerInit, new Newtonsoft.Json.Converters.StringEnumConverter()));
 
             return pc;
         }
@@ -634,8 +621,13 @@ namespace SIPSorcery.Examples
 
                     // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.
-                    SDP remoteSdp = SDP.ParseSDPDescription(message);
-                    var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+                    var offerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
+
+                    //SDP remoteSdp = SDP.ParseSDPDescription(message);
+                    //var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+
+                    var res = pc.setRemoteDescription(offerInit);
+
                     if (res != SetDescriptionResultEnum.OK)
                     {
                         // No point continuing. Something will need to change and then try again.
@@ -646,30 +638,14 @@ namespace SIPSorcery.Examples
                         var answer = pc.createAnswer(null);
                         await pc.setLocalDescription(answer);
 
-                        if (_jsonSerialisation)
-                        {
-                            context.WebSocket.Send(JsonConvert.SerializeObject(answer, new Newtonsoft.Json.Converters.StringEnumConverter()));
-                        }
-                        else
-                        {
-                            context.WebSocket.Send(answer.sdp);
-                        }
+                        context.WebSocket.Send(JsonConvert.SerializeObject(answer, new Newtonsoft.Json.Converters.StringEnumConverter()));
                     }
                 }
                 else if (pc.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
 
-                    RTCSessionDescriptionInit answerInit = null;
-
-                    if (_jsonSerialisation)
-                    {
-                        answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
-                    }
-                    else
-                    {
-                        answerInit = new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer };
-                    }
+                    var answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
 
                     var res = pc.setRemoteDescription(answerInit);
                     if (res != SetDescriptionResultEnum.OK)
