@@ -663,7 +663,10 @@ namespace SIPSorcery.Net.Sctp
             if (!maysend)
             {
                 maysend = (sz <= _cwnd);
-                _cwnd -= sz;
+                if (maysend)
+                {
+                    _cwnd -= sz;
+                }
             }
             //logger.LogDebug("MaySend " + maysend + " rwnd = " + _rwnd + " cwnd = " + _cwnd + " sz = " + sz);
             return maysend;

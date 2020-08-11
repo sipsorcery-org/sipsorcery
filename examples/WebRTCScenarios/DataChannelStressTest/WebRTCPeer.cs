@@ -37,6 +37,21 @@ namespace SIPSorcery.Demo
         private string _dataChannelLabel;
         public event Action<RTCIceCandidateInit> OnIceCandidateAvailable;
         public string _peerName;
+        private Action<WebRTCPeer, byte[]> _onData;
+        public Action<WebRTCPeer, byte[]> OnData
+        {
+            get
+            {
+                return _onData;
+            }
+            set
+            {
+                if (_onData != value)
+                {
+                    _onData = value;
+                }
+            }
+        }
 
         private Dictionary<string, RTCDataChannel> _dataChannels = new Dictionary<string, RTCDataChannel>();
 
@@ -110,9 +125,7 @@ namespace SIPSorcery.Demo
 
         private void DataChannel_onDatamessage(byte[] obj)
         {
-            var pieceNum = BitConverter.ToInt32(obj, 0);
-            //logger.LogDebug($"{Name}: data channel ({_dataChannel.label}:{_dataChannel.id}): {pieceNum}.");
-            logger.LogDebug($"{_peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
+            OnData?.Invoke(this, obj);
         }
 
         public bool IsDataChannelReady(string label)
@@ -133,6 +146,22 @@ namespace SIPSorcery.Demo
                 if (dc.IsOpened)
                 {
                     _dataChannels[label].send(data);
+                }
+                else
+                {
+                    logger.LogWarning($"{_peerName}: Data channel {label} not yet open.");
+                }
+            }
+        }
+
+        public async Task SendAsync(string label, byte[] data)
+        {
+            if (_dataChannels.ContainsKey(label))
+            {
+                var dc = _dataChannels[label];
+                if (dc.IsOpened)
+                {
+                    await _dataChannels[label].sendasync(data).ConfigureAwait(false);
                 }
                 else
                 {
