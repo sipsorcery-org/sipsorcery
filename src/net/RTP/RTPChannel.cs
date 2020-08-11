@@ -31,6 +31,14 @@ namespace SIPSorcery.Net
     /// A basic UDP socket manager. The RTP channel may need both an RTP and Control socket. This class encapsulates
     /// the common logic for UDP socket management.
     /// </summary>
+    /// <remarks>
+    /// .NET Framework Socket source:
+    /// https://referencesource.microsoft.com/#system/net/system/net/Sockets/Socket.cs
+    /// .NET Core Socket source:
+    /// https://github.com/dotnet/runtime/blob/master/src/libraries/System.Net.Sockets/src/System/Net/Sockets/Socket.cs
+    /// Mono Socket source:
+    /// https://github.com/mono/mono/blob/master/mcs/class/System/System.Net.Sockets/Socket.cs
+    /// </remarks>
     public sealed class UdpReceiver
     {
         /// <summary>
