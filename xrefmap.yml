@@ -22003,19 +22003,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNHeader.STUNHeader
   nameWithType: STUNHeader.STUNHeader
-- uid: SIPSorcery.Net.STUNHeader.GetTransactionId
-  name: GetTransactionId()
-  href: api/SIPSorcery.Net.STUNHeader.html#SIPSorcery_Net_STUNHeader_GetTransactionId
-  commentId: M:SIPSorcery.Net.STUNHeader.GetTransactionId
-  fullName: SIPSorcery.Net.STUNHeader.GetTransactionId()
-  nameWithType: STUNHeader.GetTransactionId()
-- uid: SIPSorcery.Net.STUNHeader.GetTransactionId*
-  name: GetTransactionId
-  href: api/SIPSorcery.Net.STUNHeader.html#SIPSorcery_Net_STUNHeader_GetTransactionId_
-  commentId: Overload:SIPSorcery.Net.STUNHeader.GetTransactionId
-  isSpec: "True"
-  fullName: SIPSorcery.Net.STUNHeader.GetTransactionId
-  nameWithType: STUNHeader.GetTransactionId
 - uid: SIPSorcery.Net.STUNHeader.MAGIC_COOKIE
   name: MAGIC_COOKIE
   href: api/SIPSorcery.Net.STUNHeader.html#SIPSorcery_Net_STUNHeader_MAGIC_COOKIE
