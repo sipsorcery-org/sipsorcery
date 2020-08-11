@@ -172,10 +172,8 @@ namespace SIPSorcery.Net.Sctp
         }
 
         abstract public void send(string message);
-        abstract public Task sendasync(string message);
 
         abstract public void send(byte[] message);
-        abstract public Task sendasync(byte[] message);
 
         public Association getAssociation()
         {

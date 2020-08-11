@@ -107,32 +107,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        public Task sendasync(string data)
-        {
-            if (!IsOpened)
-            {
-                logger.LogWarning("An attempt was made to send on a closed data channel.");
-                return Task.CompletedTask;
-            }
-            else
-            {
-                return _sctpStream.sendasync(data);
-            }
-        }
-
-        public Task sendasync(byte[] data)
-        {
-            if (!IsOpened)
-            {
-                logger.LogWarning("An attempt was made to send on a closed data channel.");
-                return Task.CompletedTask;
-            }
-            else
-            {
-                return _sctpStream.sendasync(data);
-            }
-        }
-
         public void send(byte[] data)
         {
             if (!IsOpened)
