@@ -115,6 +115,9 @@ namespace SIPSorcery.Examples
             Console.WriteLine("WebRTC Console Test Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
+            //var cert = DtlsUtils.CreateSelfSignedCert();
+            //Console.WriteLine(Convert.ToBase64String(cert.Export(X509ContentType.Pfx)));
+
             bool noOptions = args?.Count() == 0;
 
             var result = Parser.Default.ParseArguments<Options>(args)
@@ -520,7 +523,7 @@ namespace SIPSorcery.Examples
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
-            context.WebSocket.Send(offerInit.sdp);
+            context.WebSocket.Send(JsonConvert.SerializeObject(offerInit, new Newtonsoft.Json.Converters.StringEnumConverter()));
 
             return pc;
         }
@@ -618,8 +621,13 @@ namespace SIPSorcery.Examples
 
                     // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.
-                    SDP remoteSdp = SDP.ParseSDPDescription(message);
-                    var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+                    var offerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
+
+                    //SDP remoteSdp = SDP.ParseSDPDescription(message);
+                    //var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+
+                    var res = pc.setRemoteDescription(offerInit);
+
                     if (res != SetDescriptionResultEnum.OK)
                     {
                         // No point continuing. Something will need to change and then try again.
@@ -630,13 +638,16 @@ namespace SIPSorcery.Examples
                         var answer = pc.createAnswer(null);
                         await pc.setLocalDescription(answer);
 
-                        context.WebSocket.Send(answer.sdp);
+                        context.WebSocket.Send(JsonConvert.SerializeObject(answer, new Newtonsoft.Json.Converters.StringEnumConverter()));
                     }
                 }
                 else if (pc.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+
+                    var answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
+
+                    var res = pc.setRemoteDescription(answerInit);
                     if (res != SetDescriptionResultEnum.OK)
                     {
                         // No point continuing. Something will need to change and then try again.

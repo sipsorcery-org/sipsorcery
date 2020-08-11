@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="XamarinDataChannelTest.Views.StartPage"
+             Title="{Binding Title}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="NoOp" />
+    </ContentPage.ToolbarItems>
+    
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <StackLayout>
+
+        <Button x:Name="_connectButton" Text="Connect" 
+                VerticalOptions="Start"
+                 Clicked="OnConnectButtonClicked" IsVisible="True"/>
+            <Button x:Name="_closeButton" Text="Close" 
+                VerticalOptions="Start"
+                 Clicked="OnCloseButtonClicked" IsVisible="False"/>
+        <Label Text="Web Socket URL" />
+        <Entry x:Name="_webSocketURL" Text="ws://192.168.11.50:8081/sendoffer" />
+
+        </StackLayout>
+        
+        <Label x:Name="_status"  Text="Ready" VerticalOptions="End" />
+    </Grid>
+
+
+   
+</ContentPage>

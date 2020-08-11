@@ -64,6 +64,7 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -297,7 +298,6 @@ namespace SIPSorcery.Net
                 {
                     _dnsLookupClient = new DnsClient.LookupClient();
                 }
-
             }
 
             _bindAddress = bindAddress;
@@ -322,6 +322,24 @@ namespace SIPSorcery.Net
                 RTCIceCandidateType.host,
                 null,
                 0);
+
+            if (iceServers != null)
+            {
+                InitialiseIceServers(_iceServers);
+
+                // DNS is only needed if there are ICE server hostnames to lookup.
+                if (_dnsLookupClient == null && _iceServerConnections.Any( x => !IPAddress.TryParse(x.Key.Host, out _)))
+                {
+                    if (DefaultNameServers != null)
+                    {
+                        _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers.ToArray());
+                    }
+                    else
+                    {
+                        _dnsLookupClient = new DnsClient.LookupClient();
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -349,7 +367,7 @@ namespace SIPSorcery.Net
 
                 logger.LogDebug($"RTP ICE Channel discovered {_candidates.Count} local candidates.");
 
-                if (_iceServers != null)
+                if (_iceServerConnections?.Count > 0)
                 {
                     InitialiseIceServers(_iceServers);
                     _processIceServersTimer = new Timer(CheckIceServers, null, 0, Ta);
