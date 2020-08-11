@@ -70,8 +70,7 @@ namespace XamarinDataChannelTest.Models
 
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
-                certificates = presetCertificates,
-                   X_BindAddress = IPAddress.Any
+                certificates = presetCertificates
             };
 
             var pc = new RTCPeerConnection(pcConfiguration);

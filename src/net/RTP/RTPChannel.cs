@@ -40,7 +40,7 @@ namespace SIPSorcery.Net
         private readonly Socket m_udpSocket;
         private byte[] m_recvBuffer;
         private bool m_isClosed;
-        private int m_localPort;
+        private IPEndPoint m_localEndPoint;
         private AddressFamily m_addressFamily;
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace SIPSorcery.Net
         public UdpReceiver(Socket udpSocket)
         {
             m_udpSocket = udpSocket;
-            m_localPort = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;
+            m_localEndPoint = m_udpSocket.LocalEndPoint as IPEndPoint;
             m_recvBuffer = new byte[RECEIVE_BUFFER_SIZE];
             m_addressFamily = m_udpSocket.LocalEndPoint.AddressFamily;
         }
@@ -69,7 +69,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                EndPoint recvEndPoint = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+                EndPoint recvEndPoint = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                 m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
             }
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
@@ -117,7 +117,7 @@ namespace SIPSorcery.Net
 
                         byte[] packetBuffer = new byte[bytesRead];
                         Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
-                        OnPacketReceived?.Invoke(this, m_localPort, remoteEP as IPEndPoint, packetBuffer);
+                        OnPacketReceived?.Invoke(this, m_localEndPoint.Port, remoteEP as IPEndPoint, packetBuffer);
                     }
                 }
             }
