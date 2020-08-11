@@ -360,7 +360,10 @@ namespace SIPSorcery.Net.Sctp
             {
                 ByteBuffer obb = mkPkt(c);
                 //logger.LogDebug($"SCTP packet send: {Packet.getHex(obb)}");
-                _transp.Send(obb.Data, obb.offset, obb.Limit);
+                lock (this)
+                {
+                    _transp.Send(obb.Data, obb.offset, obb.Limit);
+                }
             }
             //else
             //{

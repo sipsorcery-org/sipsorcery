@@ -20,6 +20,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
 using Serilog;
+using Microsoft.Extensions.Logging;
+using System.Runtime.InteropServices;
 
 namespace SIPSorcery.Demo
 {
@@ -42,7 +44,9 @@ namespace SIPSorcery.Demo
             AddConsoleLogger();
 
             var peerA = new WebRTCPeer("PeerA", "dcx");
+            peerA.OnData = OnData;
             var peerB = new WebRTCPeer("PeerB", "dcy");
+            peerB.OnData = OnData;
 
             // Exchange the SDP offer/answers. ICE Host candidates are included in the SDP.
             var offer = peerA.PeerConnection.createOffer(null);
@@ -80,17 +84,14 @@ namespace SIPSorcery.Demo
                     await Task.Delay(1000);
                 }
 
-                for (int i = 0; i < 30; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     try
                     {
                         Console.WriteLine($"Data channel send {i} on {sendLabel}.");
 
-                        var data = new byte[4];
                         var num = BitConverter.GetBytes(i);
-                        Buffer.BlockCopy(num, 0, data, 0, num.Length);
-                        peerA.Send(sendLabel, data);
-                        //await Task.Delay(50);
+                        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -99,27 +100,102 @@ namespace SIPSorcery.Demo
                 }
             }));
 
-            //taskList.Add(Task.Run(() =>
-            //{
-            //    for (int i = 0; i < 1000; i++)
-            //    {
-            //        try
-            //        {
-            //            var data = new byte[2048];
-            //            var num = BitConverter.GetBytes(i);
-            //            Buffer.BlockCopy(num, 0, data, 0, num.Length);
-            //            clientB.Send(data);
-            //        }
-            //        catch (Exception ex)
-            //        {
-            //            Console.WriteLine("ClientB:" + ex.ToString());
-            //        }
-            //    }
-            //}));
+            string[] queueNames = new string[] { "ThreadA", "ThreadB", "ThreadC" };
+
+            foreach (var queueName in queueNames)
+            {
+                var name = queueName;
+                taskList.Add(Task.Run(async () =>
+                {
+                    string sendLabel = "dcx";
+
+                    while (!peerA.IsDataChannelReady(sendLabel))
+                    {
+                        Console.WriteLine($"Waiting 1s for data channel {sendLabel} {name} to open.");
+                        await Task.Delay(1000);
+                    }
+
+                    for (int i = 0; i < 100; i++)
+                    {
+                        try
+                        {
+                            Console.WriteLine($"Data channel send {i} on {sendLabel} {name}.");
+
+                            var packetNum = new Message();
+                            packetNum.Num = i;
+                            packetNum.QueueName = $"{peerA._peerName} {sendLabel} {name}";
+                            packetNum.Data = new byte[64000];
+                            await peerA.SendAsync(sendLabel, packetNum.ToData()).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("ClientA:" + ex.ToString());
+                        }
+                    }
+                }));
+            }
+
+            taskList.Add(Task.Run(async () =>
+            {
+                string sendLabel = "dcx";
+
+                while (!peerA.IsDataChannelReady(sendLabel))
+                {
+                    Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
+                    await Task.Delay(1000);
+                }
+
+                for (int i = 100; i < 200; i++)
+                {
+                    try
+                    {
+                        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
+
+                        var num = BitConverter.GetBytes(i);
+                        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("ClientA:" + ex.ToString());
+                    }
+                }
+            }));
 
             await Task.WhenAll(taskList.ToArray());
         }
 
+        private static void OnData(WebRTCPeer peer, byte[] obj)
+        {
+            if (obj.Length < IntPtr.Size)
+            {
+                var pieceNum = BitConverter.ToInt32(obj, 0);
+                //logger.LogDebug($"{Name}: data channel ({_dataChannel.label}:{_dataChannel.id}): {pieceNum}.");
+                logger.LogDebug($"{peer._peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
+            }
+            else
+            {
+                var packet = BytesToStructure<Message>(obj);
+                logger.LogDebug($"{peer._peerName}: Data channel receive: {packet.QueueName} Num: {packet.Num}.");
+            }
+        }
+
+        static T BytesToStructure<T>(byte[] bytes)
+        {
+            int size = Marshal.SizeOf(typeof(T));
+            if (bytes.Length < size)
+                throw new Exception("Invalid parameter");
+
+            IntPtr ptr = Marshal.AllocHGlobal(size);
+            try
+            {
+                Marshal.Copy(bytes, 0, ptr, size);
+                return (T)Marshal.PtrToStructure(ptr, typeof(T));
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+        }
 
         /// <summary>
         ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
@@ -134,6 +210,26 @@ namespace SIPSorcery.Demo
                 .CreateLogger();
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        struct Message
+        {
+            public int Num;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+            public string QueueName;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64000)]
+            public byte[] Data;
+            public byte[] ToData()
+            {
+                int total = Marshal.SizeOf(typeof(Message));//Get size of struct data
+                byte[] buf = new byte[total];//byte array & its size
+                IntPtr ptr = Marshal.AllocHGlobal(total);//pointer to byte array
+                Marshal.StructureToPtr(this, ptr, true);
+                Marshal.Copy(ptr, buf, 0, total);
+                Marshal.FreeHGlobal(ptr);
+                return buf;
+            }
         }
     }
 }

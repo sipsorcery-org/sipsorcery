@@ -33,32 +33,59 @@ namespace SIPSorcery.Net.Sctp
     {
         private ConcurrentDictionary<int, SCTPMessage> undeliveredOutboundMessages = new ConcurrentDictionary<int, SCTPMessage>();
         private static ILogger logger = Log.Logger;
+        private SemaphoreSlim semaphore = new SemaphoreSlim(1);
 
         public BlockingSCTPStream(Association a, int id) : base(a, id) { }
 
         public override void send(string message)
         {
-            Association a = base.getAssociation();
-            SCTPMessage m = a.makeMessage(message, this);
-            if (m == null)
-            {
-                logger.LogError("SCTPMessage cannot be null, but it is");
-                return;
-            }
-            a.sendAndBlock(m);
+            sendasync(message).GetAwaiter().GetResult();
         }
 
         public override void send(byte[] message)
         {
-            Association a = base.getAssociation();
-            SCTPMessage m = a.makeMessage(message, this);
-            if (m == null)
+            sendasync(message).GetAwaiter().GetResult();
+        }
+
+        public override async Task sendasync(byte[] message)
+        {
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
             {
-                logger.LogError("SCTPMessage cannot be null, but it is");
-                return;
+                Association a = base.getAssociation();
+                SCTPMessage m = a.makeMessage(message, this);
+                if (m == null)
+                {
+                    logger.LogError("SCTPMessage cannot be null, but it is");
+                    return;
+                }
+                undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
+                a.sendAndBlock(m);
             }
-            undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
-            a.sendAndBlock(m);
+            finally
+            {
+                semaphore.Release();
+            }
+        }
+
+        public override async Task sendasync(string message)
+        {
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                Association a = base.getAssociation();
+                SCTPMessage m = a.makeMessage(message, this);
+                if (m == null)
+                {
+                    logger.LogError("SCTPMessage cannot be null, but it is");
+                    return;
+                }
+                a.sendAndBlock(m);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         internal override void deliverMessage(SCTPMessage message)
