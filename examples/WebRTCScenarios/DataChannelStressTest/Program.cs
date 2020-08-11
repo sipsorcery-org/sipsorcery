@@ -74,6 +74,32 @@ namespace SIPSorcery.Demo
 
             var taskList = new List<Task>();
 
+            taskList.Add(Task.Run(async () =>
+            {
+                string sendLabel = "dcx";
+
+                while (!peerA.IsDataChannelReady(sendLabel))
+                {
+                    Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
+                    await Task.Delay(1000);
+                }
+
+                for (int i = 0; i < 100; i++)
+                {
+                    try
+                    {
+                        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
+
+                        var num = BitConverter.GetBytes(i);
+                        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("ClientA:" + ex.ToString());
+                    }
+                }
+            }));
+
             string[] queueNames = new string[] { "ThreadA", "ThreadB", "ThreadC" };
 
             foreach (var queueName in queueNames)
@@ -89,7 +115,7 @@ namespace SIPSorcery.Demo
                         await Task.Delay(1000);
                     }
 
-                    for (int i = 0; i < 30; i++)
+                    for (int i = 0; i < 100; i++)
                     {
                         try
                         {
@@ -109,13 +135,48 @@ namespace SIPSorcery.Demo
                 }));
             }
 
+            taskList.Add(Task.Run(async () =>
+            {
+                string sendLabel = "dcx";
+
+                while (!peerA.IsDataChannelReady(sendLabel))
+                {
+                    Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
+                    await Task.Delay(1000);
+                }
+
+                for (int i = 100; i < 200; i++)
+                {
+                    try
+                    {
+                        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
+
+                        var num = BitConverter.GetBytes(i);
+                        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("ClientA:" + ex.ToString());
+                    }
+                }
+            }));
+
             await Task.WhenAll(taskList.ToArray());
         }
 
         private static void OnData(WebRTCPeer peer, byte[] obj)
         {
-            var packet = BytesToStructure<Message>(obj);
-            logger.LogDebug($"{peer._peerName}: Data channel receive: {packet.QueueName} Num: {packet.Num}.");
+            if (obj.Length < IntPtr.Size)
+            {
+                var pieceNum = BitConverter.ToInt32(obj, 0);
+                //logger.LogDebug($"{Name}: data channel ({_dataChannel.label}:{_dataChannel.id}): {pieceNum}.");
+                logger.LogDebug($"{peer._peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
+            }
+            else
+            {
+                var packet = BytesToStructure<Message>(obj);
+                logger.LogDebug($"{peer._peerName}: Data channel receive: {packet.QueueName} Num: {packet.Num}.");
+            }
         }
 
         static T BytesToStructure<T>(byte[] bytes)
