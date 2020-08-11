@@ -7399,6 +7399,28 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCDataChannel.send
   nameWithType: RTCDataChannel.send
+- uid: SIPSorcery.Net.RTCDataChannel.sendasync(System.Byte[])
+  name: sendasync(Byte[])
+  href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_sendasync_System_Byte___
+  commentId: M:SIPSorcery.Net.RTCDataChannel.sendasync(System.Byte[])
+  name.vb: sendasync(Byte())
+  fullName: SIPSorcery.Net.RTCDataChannel.sendasync(System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTCDataChannel.sendasync(System.Byte())
+  nameWithType: RTCDataChannel.sendasync(Byte[])
+  nameWithType.vb: RTCDataChannel.sendasync(Byte())
+- uid: SIPSorcery.Net.RTCDataChannel.sendasync(System.String)
+  name: sendasync(String)
+  href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_sendasync_System_String_
+  commentId: M:SIPSorcery.Net.RTCDataChannel.sendasync(System.String)
+  fullName: SIPSorcery.Net.RTCDataChannel.sendasync(System.String)
+  nameWithType: RTCDataChannel.sendasync(String)
+- uid: SIPSorcery.Net.RTCDataChannel.sendasync*
+  name: sendasync
+  href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_sendasync_
+  commentId: Overload:SIPSorcery.Net.RTCDataChannel.sendasync
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCDataChannel.sendasync
+  nameWithType: RTCDataChannel.sendasync
 - uid: SIPSorcery.Net.RTCDataChannelInit
   name: RTCDataChannelInit
   href: api/SIPSorcery.Net.RTCDataChannelInit.html
@@ -13960,6 +13982,28 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.Sctp.BlockingSCTPStream.send
   nameWithType: BlockingSCTPStream.send
+- uid: SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync(System.Byte[])
+  name: sendasync(Byte[])
+  href: api/SIPSorcery.Net.Sctp.BlockingSCTPStream.html#SIPSorcery_Net_Sctp_BlockingSCTPStream_sendasync_System_Byte___
+  commentId: M:SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync(System.Byte[])
+  name.vb: sendasync(Byte())
+  fullName: SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync(System.Byte[])
+  fullName.vb: SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync(System.Byte())
+  nameWithType: BlockingSCTPStream.sendasync(Byte[])
+  nameWithType.vb: BlockingSCTPStream.sendasync(Byte())
+- uid: SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync(System.String)
+  name: sendasync(String)
+  href: api/SIPSorcery.Net.Sctp.BlockingSCTPStream.html#SIPSorcery_Net_Sctp_BlockingSCTPStream_sendasync_System_String_
+  commentId: M:SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync(System.String)
+  fullName: SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync(System.String)
+  nameWithType: BlockingSCTPStream.sendasync(String)
+- uid: SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync*
+  name: sendasync
+  href: api/SIPSorcery.Net.Sctp.BlockingSCTPStream.html#SIPSorcery_Net_Sctp_BlockingSCTPStream_sendasync_
+  commentId: Overload:SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Sctp.BlockingSCTPStream.sendasync
+  nameWithType: BlockingSCTPStream.sendasync
 - uid: SIPSorcery.Net.Sctp.Chunk
   name: Chunk
   href: api/SIPSorcery.Net.Sctp.Chunk.html
@@ -17546,6 +17590,28 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.Sctp.SCTPStream.send
   nameWithType: SCTPStream.send
+- uid: SIPSorcery.Net.Sctp.SCTPStream.sendasync(System.Byte[])
+  name: sendasync(Byte[])
+  href: api/SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_sendasync_System_Byte___
+  commentId: M:SIPSorcery.Net.Sctp.SCTPStream.sendasync(System.Byte[])
+  name.vb: sendasync(Byte())
+  fullName: SIPSorcery.Net.Sctp.SCTPStream.sendasync(System.Byte[])
+  fullName.vb: SIPSorcery.Net.Sctp.SCTPStream.sendasync(System.Byte())
+  nameWithType: SCTPStream.sendasync(Byte[])
+  nameWithType.vb: SCTPStream.sendasync(Byte())
+- uid: SIPSorcery.Net.Sctp.SCTPStream.sendasync(System.String)
+  name: sendasync(String)
+  href: api/SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_sendasync_System_String_
+  commentId: M:SIPSorcery.Net.Sctp.SCTPStream.sendasync(System.String)
+  fullName: SIPSorcery.Net.Sctp.SCTPStream.sendasync(System.String)
+  nameWithType: SCTPStream.sendasync(String)
+- uid: SIPSorcery.Net.Sctp.SCTPStream.sendasync*
+  name: sendasync
+  href: api/SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_sendasync_
+  commentId: Overload:SIPSorcery.Net.Sctp.SCTPStream.sendasync
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Sctp.SCTPStream.sendasync
+  nameWithType: SCTPStream.sendasync
 - uid: SIPSorcery.Net.Sctp.SCTPStream.setClosing(System.Boolean)
   name: setClosing(Boolean)
   href: api/SIPSorcery.Net.Sctp.SCTPStream.html#SIPSorcery_Net_Sctp_SCTPStream_setClosing_System_Boolean_
