@@ -33,7 +33,6 @@ namespace SIPSorcery.Net.Sctp
     {
         private ConcurrentDictionary<int, SCTPMessage> undeliveredOutboundMessages = new ConcurrentDictionary<int, SCTPMessage>();
         private static ILogger logger = Log.Logger;
-        private SemaphoreSlim semaphore = new SemaphoreSlim(1);
 
         public BlockingSCTPStream(Association a, int id) : base(a, id) { }
 
