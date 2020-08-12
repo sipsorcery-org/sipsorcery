@@ -556,7 +556,7 @@ namespace SIPSorcery.Examples
 
             //_peerConnection.GetRtpChannel().MdnsResolve = (hostname) => Task.FromResult(NetServices.InternetDefaultAddress);
             _peerConnection.GetRtpChannel().MdnsResolve = MdnsResolve;
-            _peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message type {msg.Header.MessageType}.");
+            //_peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message type {msg.Header.MessageType}.");
 
             var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
             dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
@@ -593,10 +593,7 @@ namespace SIPSorcery.Examples
             };
 
             // Peer ICE connection state changes are for ICE events such as the STUN checks completing.
-            _peerConnection.oniceconnectionstatechange += (state) =>
-            {
-                logger.LogDebug($"ICE connection state change to {state}.");
-            };
+            _peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
             _peerConnection.ondatachannel += (dc) =>
             {

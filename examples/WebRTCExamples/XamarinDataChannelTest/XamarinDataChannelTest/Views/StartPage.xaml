@@ -18,9 +18,11 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
+            <RowDefinition Height="110" />
+            <RowDefinition Height="20" />
         </Grid.RowDefinitions>
-        
-        <StackLayout>
+
+        <StackLayout  Grid.Row="0">
 
         <Button x:Name="_connectButton" Text="Connect" 
                 VerticalOptions="Start"
@@ -28,12 +30,28 @@
             <Button x:Name="_closeButton" Text="Close" 
                 VerticalOptions="Start"
                  Clicked="OnCloseButtonClicked" IsVisible="False"/>
-        <Label Text="Web Socket URL" />
+            <Label Text="Web Socket URL:" FontAttributes="Bold" FontSize="Large" TextDecorations="Underline" />
         <Entry x:Name="_webSocketURL" Text="ws://192.168.11.50:8081/sendoffer" />
 
+        <Label Text="Data Channel Messages:" FontAttributes="Bold" FontSize="Large" TextDecorations="Underline" />
+            <Editor x:Name="_dataChannelMessages" IsReadOnly="True" Text="" HeightRequest="200" VerticalOptions="Start">
+                <Editor.BackgroundColor>
+                    <OnPlatform x:TypeArguments="d:Color">
+                        <On Platform="iOS, Android, UWP" Value="#a4eaff" />
+                    </OnPlatform>
+                </Editor.BackgroundColor>
+            </Editor>
+
         </StackLayout>
-        
-        <Label x:Name="_status"  Text="Ready" VerticalOptions="End" />
+
+        <StackLayout Grid.Row="1">
+            <Entry x:Name="_sendMessage" Text="" />
+            <Button x:Name="_sendMessageButton" Text="Send Message" 
+                VerticalOptions="Start"
+                 Clicked="OnSendMessageButtonClicked" IsVisible="True"/>
+        </StackLayout>
+
+        <Label Grid.Row="2" x:Name="_status" Text="Ready" VerticalOptions="End" />
     </Grid>
 
 
