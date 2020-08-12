@@ -24,6 +24,8 @@ namespace XamarinDataChannelTest.Views
     [DesignTimeVisible(false)]
     public partial class StartPage : ContentPage
     {
+        public const string DATA_CHANNEL_LABEL = "xdc";
+
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
         private WebRTCPeer _peer;
 
@@ -70,10 +72,11 @@ namespace XamarinDataChannelTest.Views
 
                     if (response.EndOfMessage)
                     {
-                        _peer = new WebRTCPeer("peer1", "dc1");
+                        _peer = new WebRTCPeer("peer1", DATA_CHANNEL_LABEL);
                        
                         _peer.PeerConnection.oniceconnectionstatechange += (state) => Device.BeginInvokeOnMainThread(() => this._status.Text = $"ICE connection state {state}.");
                         _peer.PeerConnection.onconnectionstatechange += (state) => Device.BeginInvokeOnMainThread(() => this._status.Text = $"Peer connection state {state}.");
+                        _peer.OnDataChannelMessage += (msg_) => Device.BeginInvokeOnMainThread(() => this._dataChannelMessages.Text += $"\n{msg_}");
 
                         var options = new JsonSerializerOptions();
                         options.Converters.Add(new JsonStringEnumConverter());
@@ -109,150 +112,9 @@ namespace XamarinDataChannelTest.Views
             }
         }
 
-        async Task RunUdpSendReceiveTest()
+        async void OnSendMessageButtonClicked(object sender, EventArgs args)
         {
-            IPEndPoint listenEP = new IPEndPoint(IPAddress.IPv6Any, 13333);
-
-            var sock1 = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-            sock1.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, true);
-            sock1.DualMode = true;
-            sock1.Bind(listenEP);
-
-            UdpReceiver receiver1 = new UdpReceiver(sock1);
-
-            receiver1.OnPacketReceived += (recv, port, rep, pkt) => logger.LogDebug($"UdpReceiver data received on {port} from {rep} data {Encoding.ASCII.GetString(pkt)}.");
-            receiver1.BeginReceiveFrom();
-
-            var sock2 = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-            sock2.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, true);
-            sock2.DualMode = true;
-            //var sock2 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            //sock2.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, true);
-
-            //IPEndPoint sendToEP1 = new IPEndPoint(IPAddress.Loopback, listenEP.Port);
-            //IPEndPoint sendToEP2 = new IPEndPoint(IPAddress.IPv6Loopback, listenEP.Port);
-
-            IPEndPoint sendToEP1 = new IPEndPoint(IPAddress.Parse("fe80::15:b2ff:fe00:0%3"), listenEP.Port);
-            IPEndPoint sendToEP2 = new IPEndPoint(IPAddress.Parse("192.168.232.2"), listenEP.Port);
-
-            _ = Task.Run(async () =>
-            {
-                var buffer = Encoding.ASCII.GetBytes("sendsendsend");
-                IPEndPoint dstEndPoint4 = new IPEndPoint(IPAddress.Parse("192.168.232.2"), listenEP.Port + 1);
-                IPEndPoint dstEndPoint6 = new IPEndPoint(IPAddress.Parse("fe80::15:b2ff:fe00:0%3"), listenEP.Port + 1);
-
-                for (int i = 0; i < 1000; i++)
-                {
-                    IPEndPoint dstEndPoint = dstEndPoint4;
-
-                    if (i % 2 == 0)
-                    {
-                        dstEndPoint = dstEndPoint6;
-                    }
-
-                    logger.LogDebug($"Attempting socket send to from s1 to {dstEndPoint}.");
-
-                    sock1.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sock1);
-
-                    await Task.Delay(10);
-                }
-            });
-
-            logger.LogDebug($"Attempting socket send to {sendToEP1}.");
-            sock2.SendTo(Encoding.ASCII.GetBytes("hello1"), sendToEP1);
-            await Task.Delay(1000);
-
-            logger.LogDebug($"Attempting socket send to {sendToEP2}.");
-            sock2.SendTo(Encoding.ASCII.GetBytes("hello2"), sendToEP2);
-            await Task.Delay(1000);
-
-            logger.LogDebug($"Attempting socket send to {sendToEP1}.");
-            sock2.SendTo(Encoding.ASCII.GetBytes("hello3"), sendToEP1);
-            await Task.Delay(1000);
-
-            logger.LogDebug("Test complete.");
-        }
-
-        async Task RunDataChannelTest()
-        {
-            var peerA = new WebRTCPeer("PeerA", "dcx");
-            var peerB = new WebRTCPeer("PeerB", "dcy");
-
-            // Exchange the SDP offer/answers. ICE Host candidates are included in the SDP.
-            var offer = peerA.PeerConnection.createOffer(null);
-            await peerA.PeerConnection.setLocalDescription(offer);
-
-            if (peerB.PeerConnection.setRemoteDescription(offer) != SetDescriptionResultEnum.OK)
-            {
-                throw new ApplicationException("Couldn't set remote description.");
-            }
-            var answer = peerB.PeerConnection.createAnswer(null);
-            await peerB.PeerConnection.setLocalDescription(answer);
-
-            if (peerA.PeerConnection.setRemoteDescription(answer) != SetDescriptionResultEnum.OK)
-            {
-                throw new ApplicationException("Couldn't set remote description.");
-            }
-
-            // Wait for the peers to connect. Should take <1s if the peers are on the same host.
-            while (peerA.PeerConnection.connectionState != RTCPeerConnectionState.connected &&
-                peerB.PeerConnection.connectionState != RTCPeerConnectionState.connected)
-            {
-                logger.LogDebug("Waiting for WebRTC peers to connect...");
-                await Task.Delay(1000);
-            }
-
-            var taskList = new List<Task>();
-
-            taskList.Add(Task.Run(async () =>
-            {
-                string sendLabel = "dcx";
-
-                while (!peerA.IsDataChannelReady(sendLabel))
-                {
-                    Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
-                    await Task.Delay(1000);
-                }
-
-                try
-                {
-                    logger.LogDebug($"Data channel send on {sendLabel}.");
-
-                    var data = new byte[4];
-                    var num = BitConverter.GetBytes(1);
-                    Buffer.BlockCopy(num, 0, data, 0, num.Length);
-                    peerA.Send(sendLabel, data);
-                    //await Task.Delay(50);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError("ClientA:" + ex.ToString());
-                }
-            }));
-        }
-
-        private void EndSendTo(IAsyncResult ar)
-        {
-            try
-            {
-                Socket sendSocket = (Socket)ar.AsyncState;
-                int bytesSent = sendSocket.EndSendTo(ar);
-            }
-            catch (SocketException sockExcp)
-            {
-                // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-                // normal RTP operation. For example:
-                // - the RTP connection may start sending before the remote socket starts listening,
-                // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-                //   or new socket during the transition.
-                logger.LogWarning($"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception RTPChannel EndSendTo. {excp.Message}");
-            }
+            await _peer.Send(DATA_CHANNEL_LABEL, _sendMessage.Text);
         }
     }
 }

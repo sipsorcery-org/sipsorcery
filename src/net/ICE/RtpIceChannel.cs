@@ -288,18 +288,6 @@ namespace SIPSorcery.Net
             RTCIceTransportPolicy policy = RTCIceTransportPolicy.all) :
             base(false, bindAddress)
         {
-            if (_dnsLookupClient == null)
-            {
-                if (DefaultNameServers != null)
-                {
-                    _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers.ToArray());
-                }
-                else
-                {
-                    _dnsLookupClient = new DnsClient.LookupClient();
-                }
-            }
-
             _bindAddress = bindAddress;
             Component = component;
             _iceServers = iceServers;
