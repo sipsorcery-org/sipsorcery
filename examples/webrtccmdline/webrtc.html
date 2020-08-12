@@ -10,6 +10,7 @@
 
         var pc;
         var ws;
+        var dc;
 
         async function start(url) {
 
@@ -37,7 +38,7 @@
                         iceTransportPolicy: "all"
                     });
 
-                pc.createDataChannel("dc1");
+                dc = pc.createDataChannel("dc1");
 
                 //localStream.getTracks().forEach(track => {
                 //    console.log('add local track ' + track.kind + ' to peer connection.');

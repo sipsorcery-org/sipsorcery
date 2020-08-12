@@ -1,10 +1,21 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
-using SIPSorcery.Net.Sctp;
+﻿//-----------------------------------------------------------------------------
+// Filename: OrderedMessageHandler.cs
+//
+// Description: Handler for an SCTP stream using ordered messages.
+//
+// Author(s):
+// @Terricide
+//
+// History:
+// 12 Aug 2020	@Terricide	Created.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
 
-namespace SIPSorcery.net.SCTP.messages
+using System.Collections.Concurrent;
+
+namespace SIPSorcery.Net.Sctp
 {
     class OrderedMessageHandler
     {

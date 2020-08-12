@@ -983,8 +983,8 @@ namespace SIPSorcery.Net.Sctp
             {
                 //logger.LogDebug("due to reconfig stream " + st);
                 cs[0] = reconfigState.makeClose(st);
+                this.send(cs);
             }
-            this.send(cs);
         }
 
         public SCTPStream mkStream(string label)
