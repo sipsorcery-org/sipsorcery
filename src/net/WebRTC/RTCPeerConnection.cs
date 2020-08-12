@@ -1073,7 +1073,7 @@ namespace SIPSorcery.Net
         /// <returns>The data channel created.</returns>
         public RTCDataChannel createDataChannel(string label, RTCDataChannelInit init)
         {
-            logger.LogDebug($"Attempting to create data channel for label {label}.");
+            logger.LogDebug($"Data channel create request for label {label}.");
 
             RTCDataChannel channel = new RTCDataChannel
             {

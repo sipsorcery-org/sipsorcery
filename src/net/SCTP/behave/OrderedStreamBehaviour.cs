@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SCTP4CS.Utils;
-using SIPSorcery.net.SCTP.messages;
 using SIPSorcery.Sys;
 
 /**
