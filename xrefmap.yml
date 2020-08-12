@@ -16254,104 +16254,98 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.Sctp.KnownParam.ToString
   nameWithType: KnownParam.ToString
-- uid: SIPSorcery.net.SCTP.messages
-  name: SIPSorcery.net.SCTP.messages
-  href: api/SIPSorcery.net.SCTP.messages.html
-  commentId: N:SIPSorcery.net.SCTP.messages
-  fullName: SIPSorcery.net.SCTP.messages
-  nameWithType: SIPSorcery.net.SCTP.messages
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage
+- uid: SIPSorcery.Net.Sctp.OrderedMessage
   name: OrderedMessage
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html
-  commentId: T:SIPSorcery.net.SCTP.messages.OrderedMessage
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html
+  commentId: T:SIPSorcery.Net.Sctp.OrderedMessage
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage
   nameWithType: OrderedMessage
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.#ctor(System.Int32)
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.#ctor(System.Int32)
   name: OrderedMessage(Int32)
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage__ctor_System_Int32_
-  commentId: M:SIPSorcery.net.SCTP.messages.OrderedMessage.#ctor(System.Int32)
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.OrderedMessage(System.Int32)
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage__ctor_System_Int32_
+  commentId: M:SIPSorcery.Net.Sctp.OrderedMessage.#ctor(System.Int32)
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.OrderedMessage(System.Int32)
   nameWithType: OrderedMessage.OrderedMessage(Int32)
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.#ctor*
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.#ctor*
   name: OrderedMessage
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage__ctor_
-  commentId: Overload:SIPSorcery.net.SCTP.messages.OrderedMessage.#ctor
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage__ctor_
+  commentId: Overload:SIPSorcery.Net.Sctp.OrderedMessage.#ctor
   isSpec: "True"
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.OrderedMessage
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.OrderedMessage
   nameWithType: OrderedMessage.OrderedMessage
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.Add(SIPSorcery.Net.Sctp.DataChunk,System.Int32)
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.Add(SIPSorcery.Net.Sctp.DataChunk,System.Int32)
   name: Add(DataChunk, Int32)
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_Add_SIPSorcery_Net_Sctp_DataChunk_System_Int32_
-  commentId: M:SIPSorcery.net.SCTP.messages.OrderedMessage.Add(SIPSorcery.Net.Sctp.DataChunk,System.Int32)
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.Add(SIPSorcery.Net.Sctp.DataChunk, System.Int32)
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_Add_SIPSorcery_Net_Sctp_DataChunk_System_Int32_
+  commentId: M:SIPSorcery.Net.Sctp.OrderedMessage.Add(SIPSorcery.Net.Sctp.DataChunk,System.Int32)
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.Add(SIPSorcery.Net.Sctp.DataChunk, System.Int32)
   nameWithType: OrderedMessage.Add(DataChunk, Int32)
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.Add*
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.Add*
   name: Add
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_Add_
-  commentId: Overload:SIPSorcery.net.SCTP.messages.OrderedMessage.Add
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_Add_
+  commentId: Overload:SIPSorcery.Net.Sctp.OrderedMessage.Add
   isSpec: "True"
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.Add
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.Add
   nameWithType: OrderedMessage.Add
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.AddToList(System.Collections.Generic.List{SIPSorcery.Net.Sctp.DataChunk})
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.AddToList(System.Collections.Generic.List{SIPSorcery.Net.Sctp.DataChunk})
   name: AddToList(List<DataChunk>)
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_AddToList_System_Collections_Generic_List_SIPSorcery_Net_Sctp_DataChunk__
-  commentId: M:SIPSorcery.net.SCTP.messages.OrderedMessage.AddToList(System.Collections.Generic.List{SIPSorcery.Net.Sctp.DataChunk})
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_AddToList_System_Collections_Generic_List_SIPSorcery_Net_Sctp_DataChunk__
+  commentId: M:SIPSorcery.Net.Sctp.OrderedMessage.AddToList(System.Collections.Generic.List{SIPSorcery.Net.Sctp.DataChunk})
   name.vb: AddToList(List(Of DataChunk))
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.AddToList(System.Collections.Generic.List<SIPSorcery.Net.Sctp.DataChunk>)
-  fullName.vb: SIPSorcery.net.SCTP.messages.OrderedMessage.AddToList(System.Collections.Generic.List(Of SIPSorcery.Net.Sctp.DataChunk))
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.AddToList(System.Collections.Generic.List<SIPSorcery.Net.Sctp.DataChunk>)
+  fullName.vb: SIPSorcery.Net.Sctp.OrderedMessage.AddToList(System.Collections.Generic.List(Of SIPSorcery.Net.Sctp.DataChunk))
   nameWithType: OrderedMessage.AddToList(List<DataChunk>)
   nameWithType.vb: OrderedMessage.AddToList(List(Of DataChunk))
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.AddToList*
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.AddToList*
   name: AddToList
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_AddToList_
-  commentId: Overload:SIPSorcery.net.SCTP.messages.OrderedMessage.AddToList
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_AddToList_
+  commentId: Overload:SIPSorcery.Net.Sctp.OrderedMessage.AddToList
   isSpec: "True"
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.AddToList
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.AddToList
   nameWithType: OrderedMessage.AddToList
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.Finish(System.Action)
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.Finish(System.Action)
   name: Finish(Action)
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_Finish_System_Action_
-  commentId: M:SIPSorcery.net.SCTP.messages.OrderedMessage.Finish(System.Action)
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.Finish(System.Action)
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_Finish_System_Action_
+  commentId: M:SIPSorcery.Net.Sctp.OrderedMessage.Finish(System.Action)
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.Finish(System.Action)
   nameWithType: OrderedMessage.Finish(Action)
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.Finish*
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.Finish*
   name: Finish
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_Finish_
-  commentId: Overload:SIPSorcery.net.SCTP.messages.OrderedMessage.Finish
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_Finish_
+  commentId: Overload:SIPSorcery.Net.Sctp.OrderedMessage.Finish
   isSpec: "True"
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.Finish
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.Finish
   nameWithType: OrderedMessage.Finish
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.IsReady
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.IsReady
   name: IsReady
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_IsReady
-  commentId: P:SIPSorcery.net.SCTP.messages.OrderedMessage.IsReady
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.IsReady
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_IsReady
+  commentId: P:SIPSorcery.Net.Sctp.OrderedMessage.IsReady
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.IsReady
   nameWithType: OrderedMessage.IsReady
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.IsReady*
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.IsReady*
   name: IsReady
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_IsReady_
-  commentId: Overload:SIPSorcery.net.SCTP.messages.OrderedMessage.IsReady
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_IsReady_
+  commentId: Overload:SIPSorcery.Net.Sctp.OrderedMessage.IsReady
   isSpec: "True"
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.IsReady
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.IsReady
   nameWithType: OrderedMessage.IsReady
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.Number
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.Number
   name: Number
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_Number
-  commentId: F:SIPSorcery.net.SCTP.messages.OrderedMessage.Number
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.Number
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_Number
+  commentId: F:SIPSorcery.Net.Sctp.OrderedMessage.Number
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.Number
   nameWithType: OrderedMessage.Number
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.ToArray
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.ToArray
   name: ToArray()
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_ToArray
-  commentId: M:SIPSorcery.net.SCTP.messages.OrderedMessage.ToArray
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.ToArray()
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_ToArray
+  commentId: M:SIPSorcery.Net.Sctp.OrderedMessage.ToArray
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.ToArray()
   nameWithType: OrderedMessage.ToArray()
-- uid: SIPSorcery.net.SCTP.messages.OrderedMessage.ToArray*
+- uid: SIPSorcery.Net.Sctp.OrderedMessage.ToArray*
   name: ToArray
-  href: api/SIPSorcery.net.SCTP.messages.OrderedMessage.html#SIPSorcery_net_SCTP_messages_OrderedMessage_ToArray_
-  commentId: Overload:SIPSorcery.net.SCTP.messages.OrderedMessage.ToArray
+  href: api/SIPSorcery.Net.Sctp.OrderedMessage.html#SIPSorcery_Net_Sctp_OrderedMessage_ToArray_
+  commentId: Overload:SIPSorcery.Net.Sctp.OrderedMessage.ToArray
   isSpec: "True"
-  fullName: SIPSorcery.net.SCTP.messages.OrderedMessage.ToArray
+  fullName: SIPSorcery.Net.Sctp.OrderedMessage.ToArray
   nameWithType: OrderedMessage.ToArray
 - uid: SIPSorcery.Net.Sctp.OutgoingSSNResetRequestParameter
   name: OutgoingSSNResetRequestParameter
