@@ -843,9 +843,19 @@ namespace SIPSorcery.SIP.App
                         }
                         else
                         {
-                            var answerSdp = MediaSession.CreateAnswer(null);
-
                             CheckRemotePartyHoldCondition(MediaSession.RemoteDescription);
+
+                            if (MediaSession.HasAudio)
+                            {
+                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, GetStreamStatusForOnHoldState());
+                            }
+
+                            if (MediaSession.HasVideo)
+                            {
+                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, GetStreamStatusForOnHoldState());
+                            }
+
+                            var answerSdp = MediaSession.CreateAnswer(null);
 
                             m_sipDialogue.RemoteSDP = sipRequest.Body;
                             m_sipDialogue.SDP = answerSdp.ToString();
