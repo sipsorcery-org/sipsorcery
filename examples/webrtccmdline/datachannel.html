@@ -4,20 +4,19 @@
 
     <script type="text/javascript">
 
-        const sendOfferUrl = "ws://localhost:8081/receiveoffer";
-        const receiveOfferUrl = "ws://localhost:8081/sendoffer";
+        const wsUrl = "ws://localhost:8081/sendoffer";
 
         var pc;
         var ws;
         var dc;
 
-        async function start(url) {
+        async function start() {
 
-            console.log(`start ${url}.`);
+            console.log(`start ${wsUrl}.`);
 
             closePeer();
 
-            ws = new WebSocket(url, []);
+            ws = new WebSocket(wsUrl, []);
 
             ws.onopen = async function () {
                 console.log("web socket onopen.");
@@ -30,30 +29,28 @@
                             credential: "password"
                         }
                     ],
-                    iceTransportPolicy: "relay"
+                    iceTransportPolicy: "all"
                 });
 
-                if (url == sendOfferUrl) {
-                    openDataChannel();
-                }
-
-                pc.onicecandidate = function (event) {
-                    if (event.candidate) {
+                pc.onicecandidate = (e) => {
+                    console.log(`onicecandidate ${e}.`);
+                    if (e.candidate) {
                         console.log('new-ice-candidate:');
-                        console.log(event.candidate.candidate);
-                        console.log(event.candidate);
-                        //console.log(pc.localDescription.sdp);
-                        //ws.send(event.candidate.candidate);
-                        //console.log("JSON: " + event.candidate.toJSON().stringify())
-                        console.log("JSON: " + JSON.stringify(event.candidate.toJSON()))
-                        //ws.send(event.candidate.toJSON().stringify());
-                        ws.send(JSON.stringify(event.candidate.toJSON()));
+                        console.log(e.candidate.candidate);
+                        console.log(e.candidate);
+                        ws.send(JSON.stringify(e.candidate));
                     }
                 };
 
                 pc.onicegatheringstatechange = () => console.log("ICE gathering state change to " + pc.iceGatheringState);
                 pc.oniceconnectionstatechange = () => console.log("ICE connection state change to " + pc.iceConnectionState);
-                pc.onconnectionstatechange = () => console.log("Peer connection state change to " + pc.connectionState);
+                pc.onconnectionstatechange = () => {
+                    console.log("Peer connection state change to " + pc.connectionState);
+
+                    if (pc.connectionState == "connected") {
+                        openDataChannel();
+                    }
+                }
 
                 pc.onnegotiationneeded = e => pc.createOffer().then(d => {
                     //console.log(`${JSON.stringify(d)}`);
@@ -63,11 +60,11 @@
                     if (url == sendOfferUrl) {
                         console.log("Sending offer SDP:");
                         console.log(d.sdp);
-                        ws.send(d.sdp);
+                        ws.send(JSON.stringify(d));
                     }
                 });
                 //pc.onnegotiationneeded = e => console.log(`negotiation needed ${JSON.stringify(e)}.`);
-                pc.onsignalingstatechange = e => console.log(`signalling state change ${JSON.stringify(e)}.`);
+                pc.onsignalingstatechange = e => console.log(`signalling state change ${e}.`);
 
                 pc.ontrack = async function (event) {
                     console.log(`Remote ${event.track.kind} stream available.`);
@@ -86,33 +83,43 @@
 
             ws.onmessage = async function (evt) {
 
-                if (!evt.data.startsWith("v=")) {
-                    console.log("Remote ICE candidate received.");
-                    console.log(evt.data);
-                    await pc.addIceCandidate({ candidate: evt.data, sdpMid: "0", sdpMLineIndex: 0 });
+                var obj = JSON.parse(evt.data);
+
+                console.log(obj);
+
+                if (typeof obj.candidate === "undefined") {
+
+                    switch (obj.type) {
+                        case "offer":
+                            // Received SDP offer from the remote web socket server.
+                            console.log("Offer SDP received:");
+                            console.log(obj.sdp);
+
+                            //await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+                            await pc.setRemoteDescription(obj);
+
+                            // Now create our offer SDP to send back to the web socket server.
+                            pc.createAnswer().then(function (answer) {
+                                return pc.setLocalDescription(answer);
+                            }).then(function () {
+                                console.log("Sending answer SDP:");
+                                console.log(pc.localDescription.sdp);
+                                ws.send(JSON.stringify(pc.localDescription));
+                            });
+                            break;
+
+                        case "answer":
+                            console.log("Answer SDP received:");
+                            console.log(obj.sdp);
+                            await pc.setRemoteDescription(obj);
+                            break;
+                    }
                 }
                 else {
-                    if (url == sendOfferUrl) {
-                        console.log("Answer SDP received:");
-                        console.log(evt.data);
-                        await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: evt.data }));
-                    }
-                    else {
-                        // Received SDP offer from the remote web socket server.
-                        console.log("Offer SDP received:");
-                        console.log(evt.data);
-
-                        await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
-
-                        // Now create our offer SDP to send back to the web socket server.
-                        pc.createAnswer().then(function (answer) {
-                            return pc.setLocalDescription(answer);
-                        }).then(function () {
-                            console.log("Sending answer SDP:");
-                            console.log(pc.localDescription.sdp);
-                            ws.send(pc.localDescription.sdp);
-                        });
-                    }
+                    console.log("Remote ICE candidate received.");
+                    console.log(evt.data);
+                    //await pc.addIceCandidate({ candidate: evt.data, sdpMid: "0", sdpMLineIndex: 0 });
+                    await pc.addIceCandidate(obj);
                 }
             };
         };
@@ -166,8 +173,7 @@
 <body>
 
     <div>
-        <button type="button" class="btn btn-success" onclick="start(sendOfferUrl);">Start Send Offer</button>
-        <button type="button" class="btn btn-success" onclick="start(receiveOfferUrl);">Start Receive Offer</button>
+        <button type="button" class="btn btn-success" onclick="start();">Open</button>
         <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
     </div>
 
