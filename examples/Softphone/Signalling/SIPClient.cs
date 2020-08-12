@@ -266,23 +266,12 @@ namespace SIPSorcery.SoftPhone
 
             if (hasVideo)
             {
-                //if (bmpSource != null)
-                //{
-                //    videoOnHold = new VideoOptions
-                //    {
-                //        VideoSource = VideoSourcesEnum.ExternalBitmap,
-                //        BitmapSource = bmpSource
-                //    };
-                //}
-                //else
-                //{
                 videoOnHold = new VideoOptions
                 {
                     VideoSource = VideoSourcesEnum.TestPattern,
                     SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
                     SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
                 };
-                //}
             }
 
             await MediaSession.SetSources(audioOnHold, videoOnHold);

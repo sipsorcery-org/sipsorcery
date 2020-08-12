@@ -1,44 +1,27 @@
 ## Usage
 
-The programs in this directory perform a SIP Attended Transfer test scenario.
-
-An Attended Transfer is described in [Section 7.3. Attended Transfer](https://tools.ietf.org/html/rfc5589#section-7.3) of the [Session Initiation Protocol (SIP) Call Control - Transfer](https://tools.ietf.org/html/rfc5589) RFC.
+The programs in this directory perform a SIP On Hold test scenario.
 
 You will need `.Net Core` and optionally, if you wish to view a SIP trace, [sngrep](https://github.com/irontec/sngrep), installed.
 
-- Start the three programs:
+- Start the two programs:
 
-`Transferor$ dotnet run`
+`Caller$ dotnet run`
 
-`Transferee$ dotnet run`
-
-`Target$ dotnet run`
+`Callee$ dotnet run`
 
 - Optionally start `sngrep` to view a live SIP trace:
 
-`sudo sngrep -r -d lo portrange 6070-6072 or portrange 49000-65535`
+`sudo sngrep -r -d lo portrange 6070-6071 or portrange 49000-65535`
 
-- On the `Transferor` console press `c` to create a call between the `Transferor` and the `Transferee`.
+- On the `Caller` console press `c` to create a call between the `Caller` and the `Callee`.
 
-  - When the call is answered the `Transferee` sends a DTMF sequence of 6071 to the `Transferor` to verify that the RTP connection is correct. The DTMF sequence should appear on the `Transferor` console.
+  - When the call is answered the `Callee` sends a DTMF sequence of 6071 to the `Caller` to verify that the RTP connection is correct. The DTMF sequence should appear on the `Caller` console.
 
-- On the `Transferor` console press `c` again to create a call between the `Transferor` and the `Target`.
+- On the `Caller` console press `h` to place the call on hold. Press again to take off hold.
 
-  - When the call is answered the `Target` sends a DTMF sequence of 6072 to the `Transferor` to verify that the RTP connection is correct. The DTMF sequence should appear on the `Transferor` console.
+- On the `Caller` or `Callee` console press `b` to hangup the call.
 
-- On the `Transferor` console press `t` to initiate the Attended Transfer.
-
-  - When the call is answered the `Target` sends a DTMF sequence of 6071 to the `Transferee` to verify that the RTP connection is correct. The DTMF sequence should appear on the `Transferee` console.
-
-- On the `Transferee` or `Target` console press `h` to hangup the call.
-
-#### Screenshot of sngrep call list when the initial two calls are established
-
-![sngrep call list](attended_xfer_callsestablished.png)
-
-#### Screenshot of sngrep call list after the attended transfer has completed
-![sngreppost post transfer](attended_xfer_postxfer.png)
-
-#### Screenshot of sngrep SIP flow for the Transferee <-> Target call after the transfer has completed
-![sngrep sipl flow post transfer](attended_xfer_postxfer_sipflow.png)
+#### Screenshot of sngrep SIP flow for the call being placed on and off hold
+![sngrep sip call flow](onhold_sipcallflow.png)
 
