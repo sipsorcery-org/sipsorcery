@@ -7002,6 +7002,12 @@ references:
   commentId: T:SIPSorcery.Net.RTCAnswerOptions
   fullName: SIPSorcery.Net.RTCAnswerOptions
   nameWithType: RTCAnswerOptions
+- uid: SIPSorcery.Net.RTCAnswerOptions.X_ExcludeIceCandidates
+  name: X_ExcludeIceCandidates
+  href: api/SIPSorcery.Net.RTCAnswerOptions.html#SIPSorcery_Net_RTCAnswerOptions_X_ExcludeIceCandidates
+  commentId: F:SIPSorcery.Net.RTCAnswerOptions.X_ExcludeIceCandidates
+  fullName: SIPSorcery.Net.RTCAnswerOptions.X_ExcludeIceCandidates
+  nameWithType: RTCAnswerOptions.X_ExcludeIceCandidates
 - uid: SIPSorcery.Net.RTCBundlePolicy
   name: RTCBundlePolicy
   href: api/SIPSorcery.Net.RTCBundlePolicy.html
@@ -8198,6 +8204,12 @@ references:
   commentId: T:SIPSorcery.Net.RTCOfferOptions
   fullName: SIPSorcery.Net.RTCOfferOptions
   nameWithType: RTCOfferOptions
+- uid: SIPSorcery.Net.RTCOfferOptions.X_ExcludeIceCandidates
+  name: X_ExcludeIceCandidates
+  href: api/SIPSorcery.Net.RTCOfferOptions.html#SIPSorcery_Net_RTCOfferOptions_X_ExcludeIceCandidates
+  commentId: F:SIPSorcery.Net.RTCOfferOptions.X_ExcludeIceCandidates
+  fullName: SIPSorcery.Net.RTCOfferOptions.X_ExcludeIceCandidates
+  nameWithType: RTCOfferOptions.X_ExcludeIceCandidates
 - uid: SIPSorcery.Net.RTCPBye
   name: RTCPBye
   href: api/SIPSorcery.Net.RTCPBye.html

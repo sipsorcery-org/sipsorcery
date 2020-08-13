@@ -645,7 +645,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IRTCRtpReceiver.html",
-          "hash": "WCAifouaE7tjSzMXQ3Dv6w=="
+          "hash": "qTggi0LU//ITLp0uxfS2yQ=="
         }
       },
       "is_incremental": false,
@@ -657,7 +657,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IRTCRtpSender.html",
-          "hash": "W5sbtjhJqRuwRUV44FtcPQ=="
+          "hash": "5QGQeUBL9ZVp++mV+kchmA=="
         }
       },
       "is_incremental": false,
@@ -801,7 +801,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCAnswerOptions.html",
-          "hash": "fDckrDbXKCIjYi0BE5raSA=="
+          "hash": "MgO/ba/q0tvbrOuE5/pocw=="
         }
       },
       "is_incremental": false,
@@ -813,7 +813,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCBundlePolicy.html",
-          "hash": "4WM6RQ00p/NGj4tHFPzzaA=="
+          "hash": "bIFBO9bO/+2rhzCoNbiRgw=="
         }
       },
       "is_incremental": false,
@@ -825,7 +825,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCCertificate.html",
-          "hash": "psm6qLl6QQbVuCpNISb/Vg=="
+          "hash": "sdS6maEqRfhwBo8HhLUW7g=="
         }
       },
       "is_incremental": false,
@@ -837,7 +837,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCConfiguration.html",
-          "hash": "gZggLQWudnnJPGjmZGd4+g=="
+          "hash": "XerFA3gDeRql/p5OnkRBCA=="
         }
       },
       "is_incremental": false,
@@ -885,7 +885,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCDtlsFingerprint.html",
-          "hash": "5CoYYjqjD2UOnk+hFubd9w=="
+          "hash": "AgEG//MSAoB3Nr1qQO22ag=="
         }
       },
       "is_incremental": false,
@@ -957,7 +957,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceCredentialType.html",
-          "hash": "rOo1+e9b+5Cz9Ta4U6MW7A=="
+          "hash": "057BxJbyzcI0Br+b75FSHw=="
         }
       },
       "is_incremental": false,
@@ -993,7 +993,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceServer.html",
-          "hash": "kBTr6f7BvyfM+ExQVPJVPQ=="
+          "hash": "qQ/P8Iyx1H1l0rwQLrjp2Q=="
         }
       },
       "is_incremental": false,
@@ -1017,7 +1017,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceTransportPolicy.html",
-          "hash": "2IWmXzKE0QahOoMCFqXZjQ=="
+          "hash": "u+DeFfLwi8idMcpJnzytmw=="
         }
       },
       "is_incremental": false,
@@ -1029,7 +1029,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCOfferOptions.html",
-          "hash": "fauXc5jvEMZat/W1Gjtfzw=="
+          "hash": "YKFEtp7b4Edp8fbcwvR0zw=="
         }
       },
       "is_incremental": false,
@@ -1173,7 +1173,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "q0mqbAG4oS+jlGTZHz7T7Q=="
+          "hash": "/g+//rkmducw/XXlhNCPTw=="
         }
       },
       "is_incremental": false,
@@ -1185,7 +1185,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnectionState.html",
-          "hash": "GBsDtt/4Hv/ViWzeFhx44A=="
+          "hash": "g0t2lPfZqa3c7Lp0V0KbxQ=="
         }
       },
       "is_incremental": false,
@@ -1209,7 +1209,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCRtcpMuxPolicy.html",
-          "hash": "TMkivPi5M5E3emD+fH/XCA=="
+          "hash": "z8pr5hWfyrUarnIflwuwBQ=="
         }
       },
       "is_incremental": false,
@@ -1257,7 +1257,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCSessionDescription.html",
-          "hash": "o/C7SSLT+oEhbW52dAt7Yw=="
+          "hash": "6kC14hKnoW0cyl48bMvQFw=="
         }
       },
       "is_incremental": false,
@@ -1281,7 +1281,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCSignalingState.html",
-          "hash": "jjgdt/LpMTj7lb/2cSxk3A=="
+          "hash": "6eeOOmBSAfByqC4UTpwWUA=="
         }
       },
       "is_incremental": false,
@@ -1617,7 +1617,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RtpIceChannel.html",
-          "hash": "wJcggUJfAMaUpCcJwf6Isg=="
+          "hash": "qVvn3o+iIbTwcsCpWDvGOg=="
         }
       },
       "is_incremental": false,
