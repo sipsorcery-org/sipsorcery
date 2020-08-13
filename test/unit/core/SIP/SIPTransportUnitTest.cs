@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -300,6 +301,10 @@ serverReadyEvent);
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate TLS IPv6 sockets using the loopback address.
         /// </summary>
+        /// <remarks>
+        /// Fails on macosx, see https://github.com/dotnet/runtime/issues/23635. Fixed in .NET Core 5, 
+        /// see https://github.com/dotnet/corefx/pull/42226.
+        /// </remarks>
         [Fact]
         [Trait("Category", "IPv6")]
         public void IPv6TlsLoopbackSendReceiveTest()
@@ -310,6 +315,10 @@ serverReadyEvent);
             if (!Socket.OSSupportsIPv6)
             {
                 logger.LogDebug("Test skipped as OS does not support IPv6.");
+            }
+            else if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                logger.LogDebug("Test skipped as MacOS is not able to load certificates from a .pfx file pre .NET Core 5.0.");
             }
             else
             {
@@ -359,52 +368,63 @@ serverReadyEvent);
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv4 TLS sockets using the loopback address.
         /// </summary>
+        /// <remarks>
+        /// Fails on macosx, see https://github.com/dotnet/runtime/issues/23635. Fixed in .NET Core 5, 
+        /// see https://github.com/dotnet/corefx/pull/42226.
+        /// </remarks>
         [Fact]
         public void IPv4TlsLoopbackSendReceiveTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
-            CancellationTokenSource cancelServer = new CancellationTokenSource();
-            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
-
-            var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
-            var verifyCert = serverCertificate.Verify();
-            logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
-
-            var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
-            serverChannel.DisableLocalTCPSocketsCheck = true;
-            var clientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.Loopback, 0));
-            clientChannel.DisableLocalTCPSocketsCheck = true;
-
-            var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () =>
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                await RunClient(
-clientChannel,
-serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.Loopback, 0))),
-testComplete,
-cancelServer,
-serverReadyEvent);
-            });
-
-            if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
-            {
-                logger.LogWarning($"Tasks timed out");
+                logger.LogDebug("Test skipped as MacOS is not able to load certificates from a .pfx file pre .NET Core 5.0.");
             }
-
-            if (testComplete.Task.IsCompleted == false)
+            else
             {
-                // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
-                testComplete.SetResult(false);
+                ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
+                CancellationTokenSource cancelServer = new CancellationTokenSource();
+                TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+
+                var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
+                var verifyCert = serverCertificate.Verify();
+                logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
+
+                var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
+                serverChannel.DisableLocalTCPSocketsCheck = true;
+                var clientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.Loopback, 0));
+                clientChannel.DisableLocalTCPSocketsCheck = true;
+
+                var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
+                var clientTask = Task.Run(async () =>
+                {
+                    await RunClient(
+    clientChannel,
+    serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.Loopback, 0))),
+    testComplete,
+    cancelServer,
+    serverReadyEvent);
+                });
+
+                if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
+                {
+                    logger.LogWarning($"Tasks timed out");
+                }
+
+                if (testComplete.Task.IsCompleted == false)
+                {
+                    // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
+                    testComplete.SetResult(false);
+                }
+
+                Assert.True(testComplete.Task.Result);
+
+                cancelServer.Cancel();
             }
-
-            Assert.True(testComplete.Task.Result);
-
-            cancelServer.Cancel();
         }
 
         /// <summary>

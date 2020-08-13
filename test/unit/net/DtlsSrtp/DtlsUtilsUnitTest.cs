@@ -10,6 +10,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -61,19 +62,30 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that the secret key can be loaded from a pfx certificate archive file.
         /// </summary>
+        /// <remarks>
+        /// Fails on macosx, see https://github.com/dotnet/runtime/issues/23635. Fixed in .NET Core 5, 
+        /// see https://github.com/dotnet/corefx/pull/42226.
+        /// </remarks>
         [Fact]
         public void LoadSecretFromArchiveUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var cert = new X509Certificate2("certs/localhost.pfx", (string)null, X509KeyStorageFlags.Exportable);
-            Assert.NotNull(cert);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                logger.LogDebug("Test skipped as MacOS is not able to load certificates from a .pfx file pre .NET Core 5.0.");
+            }
+            else
+            {
+                var cert = new X509Certificate2("certs/localhost.pfx", (string)null, X509KeyStorageFlags.Exportable);
+                Assert.NotNull(cert);
 
-            //var rsaParams = ((RSA)cert.PrivateKey).ExportParameters(true);
+                //var rsaParams = ((RSA)cert.PrivateKey).ExportParameters(true);
 
-            var key = DtlsUtils.LoadPrivateKeyResource(cert);
-            Assert.NotNull(key);
+                var key = DtlsUtils.LoadPrivateKeyResource(cert);
+                Assert.NotNull(key);
+            }
         }
     }
 }
