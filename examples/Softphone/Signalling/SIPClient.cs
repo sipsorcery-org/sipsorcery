@@ -195,9 +195,17 @@ namespace SIPSorcery.SoftPhone
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
 
-                SDP offerSDP = SDP.ParseSDPDescription(sipRequest.Body);
-                bool hasAudio = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
-                bool hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
+                // Assume that if the INVITE request does not contain an SDP offer that it will be an 
+                // audio only call.
+                bool hasAudio = true;
+                bool hasVideo = false;
+
+                if (sipRequest.Body != null)
+                {
+                    SDP offerSDP = SDP.ParseSDPDescription(sipRequest.Body);
+                    hasAudio = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
+                    hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
+                }
 
                 AudioOptions audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.None };
                 if (hasAudio)
@@ -206,7 +214,7 @@ namespace SIPSorcery.SoftPhone
                     {
                         AudioSource = AudioSourcesEnum.CaptureDevice,
                         OutputDeviceIndex = m_audioOutDeviceIndex,
-                        AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA  }
+                        AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
                     };
                 }
 
