@@ -82,7 +82,7 @@
                         case "offer":
                             // Received SDP offer from the remote web socket server.
                             console.log("Offer SDP received:");
-                            console.log(evt.data);
+                            console.log(obj.sdp);
 
                             //await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
                             await pc.setRemoteDescription(obj);
@@ -99,7 +99,7 @@
 
                         case "answer":
                             console.log("Answer SDP received:");
-                            console.log(evt.data);
+                            console.log(obj.sdp);
                             await pc.setRemoteDescription(obj);
                             break;
                     }

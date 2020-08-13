@@ -1,7 +1,8 @@
 {
   "profiles": {
     "webrtccmdline": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "--ws --stun=\"stun:stun.l.google.com:19302\""
     }
   }
 }

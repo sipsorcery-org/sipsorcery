@@ -37,7 +37,14 @@ namespace SIPSorcery.Net
     }
 
     public class RTCOfferOptions
-    { }
+    {
+        /// <summary>
+        /// If set it indicates that any available ICE candidates should NOT be added
+        /// to the offer SDP. By default "host" candidates should always be available
+        /// and will be added to the offer SDP.
+        /// </summary>
+        public bool X_ExcludeIceCandidates;
+    }
 
     /// <summary>
     /// Options for creating an SDP answer.
@@ -47,7 +54,11 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCAnswerOptions
     {
-        // Note: At the time of writing there are no answer options in the WebRTC specification.
+        /// If set it indicates that any available ICE candidates should NOT be added
+        /// to the offer SDP. By default "host" candidates should always be available
+        /// and will be added to the offer SDP.
+        /// </summary>
+        public bool X_ExcludeIceCandidates;
     }
 
     public class RTCSessionDescription
