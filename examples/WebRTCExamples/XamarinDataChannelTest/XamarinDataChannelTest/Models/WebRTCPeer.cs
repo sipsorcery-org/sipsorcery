@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
@@ -86,7 +87,8 @@ namespace XamarinDataChannelTest.Models
             {
                 certificates = presetCertificates,
                 //iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "stun:stun.l.google.com:19302" } }
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "stun:108.177.15.127:19302" } }
+                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "stun:108.177.15.127:19302" } },
+                X_BindAddress = IPAddress.Any
             };
 
             var pc = new RTCPeerConnection(pcConfiguration);
