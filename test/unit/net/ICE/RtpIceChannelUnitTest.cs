@@ -539,5 +539,52 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(RTCIceCandidateType.host, rtpIceChannelA.NominatedEntry.LocalCandidate.type);
             Assert.Equal(RTCIceCandidateType.host, rtpIceChannelB.NominatedEntry.LocalCandidate.type);
         }
+
+        /// <summary>
+        /// Tests that an RTP ICE channel can use STUN server with an IP address for the host name
+        /// without needing to use DNS.
+        /// </summary>
+        [Fact]
+        public async void CheckIPAddressOnlyStunServerUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            using (MockTurnServer mockStunServer = new MockTurnServer())
+            {
+                // Give the TURN server socket receive tasks time to fire up.
+                await Task.Delay(1000);
+
+                var iceServers = new List<RTCIceServer> {
+                new RTCIceServer
+                    {
+                        urls = $"stun:{mockStunServer.ListeningEndPoint}",
+                    }
+                };
+                var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, iceServers);
+                logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannel.RTPLocalEndPoint}.");
+
+                ManualResetEventSlim gatheringCompleted = new ManualResetEventSlim();
+                rtpIceChannel.OnIceGatheringStateChange += (state) => { if (state == RTCIceGatheringState.complete) { gatheringCompleted.Set(); } };
+
+                rtpIceChannel.StartGathering();
+
+                Assert.NotEmpty(rtpIceChannel.Candidates);
+
+                // Because there is an ICE server gathering should still be in progress.
+                Assert.Equal(RTCIceGatheringState.gathering, rtpIceChannel.IceGatheringState);
+                Assert.Equal(RTCIceConnectionState.@new, rtpIceChannel.IceConnectionState);
+
+                Assert.True(gatheringCompleted.Wait(3000));
+
+                // The STUN server check should now have completed and a server reflexive candidate
+                // been acquired
+
+                Assert.Equal(RTCIceGatheringState.complete, rtpIceChannel.IceGatheringState);
+                // The connection state stays in "new" because no remote ICE user and password has been set.
+                Assert.Equal(RTCIceConnectionState.@new, rtpIceChannel.IceConnectionState);
+                Assert.Contains(rtpIceChannel.Candidates, x => x.type == RTCIceCandidateType.srflx);
+            }
+        }
     }
 }

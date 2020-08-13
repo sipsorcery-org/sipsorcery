@@ -55,6 +55,18 @@ namespace XamarinDataChannelTest.Models
 
         public event Action<string> OnDataChannelMessage;
 
+        static WebRTCPeer()
+        {
+            // DNS lookups on Xamarin don't seem to work. The reason to add the hard coded
+            // DNS servers is to prevent he exception when the DnsClient attempts to find
+            // /etc/resolv.conf.
+            RtpIceChannel.DefaultNameServers = new List<DnsClient.NameServer> {
+                DnsClient.NameServer.GooglePublicDnsIPv6,
+                DnsClient.NameServer.GooglePublicDns2IPv6,
+                DnsClient.NameServer.GooglePublicDns,
+                DnsClient.NameServer.GooglePublicDns2 };
+        }
+
         public WebRTCPeer(string peerName, string dataChannelLabel)
         {
             _peerName = peerName;
@@ -73,7 +85,8 @@ namespace XamarinDataChannelTest.Models
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
                 certificates = presetCertificates,
-                iceServers = new List<RTCIceServer> { new RTCIceServer {  urls = "stun:stun.l.google.com:19302" } }
+                //iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "stun:stun.l.google.com:19302" } }
+                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "stun:108.177.15.127:19302" } }
             };
 
             var pc = new RTCPeerConnection(pcConfiguration);
