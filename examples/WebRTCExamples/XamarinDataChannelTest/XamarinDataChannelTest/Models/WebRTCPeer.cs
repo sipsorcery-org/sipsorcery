@@ -72,7 +72,8 @@ namespace XamarinDataChannelTest.Models
 
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
-                certificates = presetCertificates
+                certificates = presetCertificates,
+                iceServers = new List<RTCIceServer> { new RTCIceServer {  urls = "stun:stun.l.google.com:19302" } }
             };
 
             var pc = new RTCPeerConnection(pcConfiguration);

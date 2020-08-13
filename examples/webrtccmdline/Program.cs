@@ -62,6 +62,14 @@ namespace SIPSorcery.Examples
         [Option("nodedss", Required = false,
             HelpText = "Address of node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://192.168.11.50:3001\".")]
         public string NodeDssServer { get; set; }
+
+        [Option("icetypes", Required = false,
+            HelpText = "Only generate ICE candidates of these types. Format \"--icetypes=(host|srflx|relay)\".")]
+        public string IceTypes { get; set; }
+
+        [Option("accepticetypes", Required = false,
+            HelpText = "Only accept ICE candidates of these types from the remote peer and ignore any others. Format \"--accepticetypes=(host|srflx|relay)\".")]
+        public string AcceptIceTypes { get; set; }
     }
 
     public class WebRtcClient : WebSocketBehavior
@@ -106,9 +114,23 @@ namespace SIPSorcery.Examples
         private static bool _relayOnly;
 
         /// <summary>
+        /// If non-empty means only transmit ICE candidates if they have a type matching this list.
+        /// </summary>
+        private static List<RTCIceCandidateType> _iceTypes = new List<RTCIceCandidateType>();
+
+        /// <summary>
+        /// If non-empty means only accept ICE candidates from the remote peer if they have a type 
+        /// matching this list.
+        /// </summary>
+        private static List<RTCIceCandidateType> _acceptIceTypes = new List<RTCIceCandidateType>();
+
+        /// <summary>
         /// For simplicity this program only supports one active peer connection.
         /// </summary>
         private static RTCPeerConnection _peerConnection;
+
+        private static RTCOfferOptions _offerOptions;
+        private static RTCAnswerOptions _answerOptions;
 
         static void Main(string[] args)
         {
@@ -149,6 +171,32 @@ namespace SIPSorcery.Examples
             }
 
             _relayOnly = options.RelayOnly;
+
+            if(!string.IsNullOrEmpty(options.IceTypes))
+            {
+                options.IceTypes.Split().ToList().ForEach(x => {
+                    if (Enum.TryParse<RTCIceCandidateType>(x, out var iceType)) 
+                    {
+                        _iceTypes.Add(iceType);
+                    }
+                });
+
+                if(!_iceTypes.Any( x=> x == RTCIceCandidateType.host))
+                {
+                    _offerOptions = new RTCOfferOptions { X_ExcludeIceCandidates = true };
+                    _answerOptions = new RTCAnswerOptions { X_ExcludeIceCandidates = true };
+                }
+            }
+
+            if (!string.IsNullOrEmpty(options.AcceptIceTypes))
+            {
+                options.AcceptIceTypes.Split().ToList().ForEach(x => {
+                    if (Enum.TryParse<RTCIceCandidateType>(x, out var iceType))
+                    {
+                        _acceptIceTypes.Add(iceType);
+                    }
+                });
+            }
 
             if (options.UseWebSocket || options.UseSecureWebSocket || noOptions)
             {
@@ -518,7 +566,7 @@ namespace SIPSorcery.Examples
 
             var pc = Createpc(context, _stunServer, _relayOnly);
 
-            var offerInit = pc.createOffer(null);
+            var offerInit = pc.createOffer(_offerOptions);
             await pc.setLocalDescription(offerInit);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
@@ -545,7 +593,7 @@ namespace SIPSorcery.Examples
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
                 certificates = presetCertificates,
-                X_RemoteSignallingAddress = (context != null) ? context.UserEndPoint.Address : null,
+                //X_RemoteSignallingAddress = (context != null) ? context.UserEndPoint.Address : null,
                 iceServers = stunServer != null ? new List<RTCIceServer> { stunServer } : null,
                 //iceTransportPolicy = RTCIceTransportPolicy.all,
                 iceTransportPolicy = relayOnly ? RTCIceTransportPolicy.relay : RTCIceTransportPolicy.all,
@@ -585,9 +633,18 @@ namespace SIPSorcery.Examples
                 if (_peerConnection.signalingState == RTCSignalingState.have_local_offer ||
                     _peerConnection.signalingState == RTCSignalingState.have_remote_offer)
                 {
-                    if (context != null)
+                    if (context != null &&
+                    (_iceTypes.Count == 0 || _iceTypes.Any(x => x == candidate.type)))
                     {
-                        context.WebSocket.Send($"candidate:{candidate}");
+                        var candidateInit = new RTCIceCandidateInit
+                        {
+                            sdpMid = candidate.sdpMid,
+                            sdpMLineIndex = candidate.sdpMLineIndex,
+                            usernameFragment = candidate.usernameFragment,
+                            candidate = "candidate:" + candidate.ToString()
+                        };
+                        
+                        context.WebSocket.Send(JsonConvert.SerializeObject(candidateInit));
                     }
                 }
             };
@@ -620,8 +677,7 @@ namespace SIPSorcery.Examples
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.
                     var offerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
 
-                    //SDP remoteSdp = SDP.ParseSDPDescription(message);
-                    //var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+                    logger.LogDebug(SDP.ParseSDPDescription(offerInit.sdp).ToString());
 
                     var res = pc.setRemoteDescription(offerInit);
 
@@ -632,7 +688,7 @@ namespace SIPSorcery.Examples
                     }
                     else
                     {
-                        var answer = pc.createAnswer(null);
+                        var answer = pc.createAnswer(_answerOptions);
                         await pc.setLocalDescription(answer);
 
                         context.WebSocket.Send(JsonConvert.SerializeObject(answer, new Newtonsoft.Json.Converters.StringEnumConverter()));
@@ -640,9 +696,11 @@ namespace SIPSorcery.Examples
                 }
                 else if (pc.remoteDescription == null)
                 {
-                    logger.LogDebug("Answer SDP: " + message);
+                    logger.LogDebug("Answer SDP received:");
 
                     var answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
+
+                    logger.LogDebug(SDP.ParseSDPDescription(answerInit.sdp).ToString());
 
                     var res = pc.setRemoteDescription(answerInit);
                     if (res != SetDescriptionResultEnum.OK)
@@ -662,7 +720,15 @@ namespace SIPSorcery.Examples
                     else
                     {
                         var candInit = Newtonsoft.Json.JsonConvert.DeserializeObject<RTCIceCandidateInit>(message);
-                        pc.addIceCandidate(candInit);
+
+                        if (_acceptIceTypes.Count > 0 && !_acceptIceTypes.Any(x => x == RTCIceCandidate.Parse(candInit.candidate).type))
+                        {
+                            logger.LogDebug($"Ignoring remote ICE candidate as type not in accept list.");
+                        }
+                        else
+                        {
+                            pc.addIceCandidate(candInit);
+                        }
                     }
                 }
             }

@@ -112,9 +112,7 @@ namespace SIPSorcery.Net
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;       // Maximum number of entries that can be added to the checklist of candidate pairs.
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
-        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
-        public const int DISCONNECTED_TIMEOUT_PERIOD = 8;  // The period in seconds after which a connection will be flagged as disconnected.
-        public const int FAILED_TIMEOUT_PERIOD = 16;       // The period in seconds after which a connection will be flagged as failed.
+        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected. 
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -127,6 +125,16 @@ namespace SIPSorcery.Net
         private const int Ta = 50;
 
         private static readonly ILogger logger = Log.Logger;
+
+        /// <summary>
+        /// The period in seconds after which a connection will be flagged as disconnected.
+        /// </summary>
+        public static int DISCONNECTED_TIMEOUT_PERIOD = 8;
+
+        /// <summary>
+        /// The period in seconds after which a connection will be flagged as failed.
+        /// </summary>
+        public static int FAILED_TIMEOUT_PERIOD = 16;
 
         private IPAddress _bindAddress;
         private List<RTCIceServer> _iceServers;
@@ -237,6 +245,7 @@ namespace SIPSorcery.Net
         private bool _closed = false;
         private Timer _connectivityChecksTimer;
         private Timer _processIceServersTimer;
+        private DateTime _checlistStartedAt = DateTime.MinValue;
 
         public event Action<RTCIceCandidate> OnIceCandidate;
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
@@ -383,6 +392,8 @@ namespace SIPSorcery.Net
 
             RemoteIceUser = username;
             RemoteIcePassword = password;
+
+            _checlistStartedAt = DateTime.Now;
 
             // Once the remote party's ICE credentials are known connection checking can 
             // commence immediately as candidates trickle in.
@@ -1116,6 +1127,15 @@ namespace SIPSorcery.Net
                                 }
                             }
                         }
+                    }
+                    else if(_checlistStartedAt != DateTime.MinValue &&
+                        DateTime.Now.Subtract(_checlistStartedAt).TotalSeconds > FAILED_TIMEOUT_PERIOD)
+                    {
+                        // No checklist entries were made available before the failed timeout.
+
+                        _checklistState = ChecklistState.Failed;
+                        IceConnectionState = RTCIceConnectionState.disconnected;
+                        OnIceConnectionStateChange?.Invoke(IceConnectionState);
                     }
                 }
             }

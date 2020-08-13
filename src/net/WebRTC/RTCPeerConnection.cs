@@ -396,10 +396,23 @@ namespace SIPSorcery.Net
                 iceConnectionState = state;
                 oniceconnectionstatechange?.Invoke(iceConnectionState);
 
-                if (iceConnectionState == RTCIceConnectionState.disconnected)
+                if(iceConnectionState == RTCIceConnectionState.checking)
                 {
-                    connectionState = RTCPeerConnectionState.disconnected;
+                    connectionState = RTCPeerConnectionState.connecting;
                     onconnectionstatechange?.Invoke(connectionState);
+                }
+                else if (iceConnectionState == RTCIceConnectionState.disconnected)
+                {
+                    if (connectionState == RTCPeerConnectionState.connected)
+                    {
+                        connectionState = RTCPeerConnectionState.disconnected;
+                        onconnectionstatechange?.Invoke(connectionState);
+                    }
+                    else
+                    {
+                        connectionState = RTCPeerConnectionState.failed;
+                        onconnectionstatechange?.Invoke(connectionState);
+                    }
                 }
                 else if (iceConnectionState == RTCIceConnectionState.failed)
                 {
@@ -725,7 +738,8 @@ namespace SIPSorcery.Net
                 var videoCapabilities = VideoLocalTrack?.Capabilities;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
-                var offerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities);
+                bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
+                var offerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities, excludeIceCandidates);
 
                 foreach (var ann in offerSdp.Media)
                 {
@@ -788,7 +802,8 @@ namespace SIPSorcery.Net
                     SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities) : null;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
-                var answerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities);
+                bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
+                var answerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities, excludeIceCandidates);
 
                 if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
@@ -845,6 +860,8 @@ namespace SIPSorcery.Net
         /// <param name="videoCapabilities">Optional. The video formats to support in the SDP. This list can differ from
         /// the local video track if an answer is being generated and only mutually supported formats are being
         /// used.</param>
+        /// <param name="excludeIceCandidates">If true it indicates the caller does not want ICE candidates added
+        /// to the SDP.</param>
         /// <remarks>
         /// From https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-4.2.5:
         ///   "The transport address from the peer for the default destination
@@ -852,7 +869,10 @@ namespace SIPSorcery.Net
         ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
         ///   agent and the ICE processing MUST continue as usual."
         /// </remarks>
-        private SDP createBaseSdp(List<MediaStreamTrack> tracks, List<SDPMediaFormat> audioCapabilities, List<SDPMediaFormat> videoCapabilities)
+        private SDP createBaseSdp(List<MediaStreamTrack> tracks, 
+            List<SDPMediaFormat> audioCapabilities, 
+            List<SDPMediaFormat> videoCapabilities,
+            bool excludeIceCandidates = false)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
@@ -911,7 +931,7 @@ namespace SIPSorcery.Net
                     announcement.IceOptions = ICE_OPTIONS;
                     announcement.DtlsFingerprint = offerSdp.DtlsFingerprint;
 
-                    if (iceCandidatesAdded == false)
+                    if (iceCandidatesAdded == false && !excludeIceCandidates)
                     {
                         AddIceCandidates(announcement);
                         iceCandidatesAdded = true;
@@ -947,7 +967,7 @@ namespace SIPSorcery.Net
                     dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
                     dataChannelAnnouncement.DtlsFingerprint = offerSdp.DtlsFingerprint;
 
-                    if (iceCandidatesAdded == false)
+                    if (iceCandidatesAdded == false && !excludeIceCandidates)
                     {
                         AddIceCandidates(dataChannelAnnouncement);
                         iceCandidatesAdded = true;
