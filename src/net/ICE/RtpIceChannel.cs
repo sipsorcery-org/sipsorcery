@@ -628,6 +628,14 @@ namespace SIPSorcery.Net
                                 logger.LogDebug($"Adding ICE server for {stunUri}.");
 
                                 var iceServerState = new IceServer(stunUri, iceServerID, iceServer.username, iceServer.credential);
+
+                                // Check whether the server end point can be set. IF it can't a DNS lookup will be required.
+                                if(IPAddress.TryParse(iceServerState._uri.Host, out var serverIPAddress))
+                                {
+                                    iceServerState.ServerEndPoint = new IPEndPoint(serverIPAddress, iceServerState._uri.Port);
+                                    logger.LogDebug($"ICE server end point for {iceServerState._uri} set to {iceServerState.ServerEndPoint}.");
+                                }
+
                                 _iceServerConnections.TryAdd(stunUri, iceServerState);
 
                                 iceServerID++;
