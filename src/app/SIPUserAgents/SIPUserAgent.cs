@@ -323,6 +323,11 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The RTP session for the call.</param>
         public Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession)
         {
+            if(mediaSession == null)
+            {
+                throw new ArgumentNullException("mediaSession", "A media session must be supplied when placing a call.");
+            }
+            
             if (!SIPURI.TryParse(dst, out var dstUri))
             {
                 throw new ApplicationException("The destination was not recognised as a valid SIP URI.");
@@ -385,7 +390,7 @@ namespace SIPSorcery.SIP.App
 
             m_callDescriptor = sipCallDescriptor;
 
-            m_uac = new SIPClientUserAgent(m_transport);
+            m_uac = new SIPClientUserAgent(m_transport, m_outboundProxy, null, null, null);
             m_uac.CallTrying += ClientCallTryingHandler;
             m_uac.CallRinging += ClientCallRingingHandler;
             m_uac.CallAnswered += ClientCallAnsweredHandler;
