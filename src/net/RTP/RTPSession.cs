@@ -466,6 +466,14 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// If set to true RTP will be accepted from ANY remote end point. If false
+        /// certain rules are used to determine whether RTP should be accepted for 
+        /// a particular audio or video stream. It is recommended to leave the
+        /// value to false unless a specific need exists.
+        /// </summary>
+        public bool AcceptRtpFromAny { get; set; } = false;
+
+        /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
         /// Parameters are:
         ///  - Remote endpoint packet was received from,
@@ -509,6 +517,18 @@ namespace SIPSorcery.Net
         /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
         /// </summary>
         public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReport;
+
+        /// <summary>
+        /// Gets fired when the start method is called on the session. This is the point
+        /// audio and video sources should commence generating samples.
+        /// </summary>
+        public event Action OnStarted;
+
+        /// <summary>
+        /// Gets fired when the session is closed. This is the point audio and video
+        /// source should stop generating samples.
+        /// </summary>
+        public event Action OnClosed;
 
         /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
@@ -1417,6 +1437,8 @@ namespace SIPSorcery.Net
                     // the remote party.
                     VideoRtcpSession.Start();
                 }
+
+                OnStarted?.Invoke();
             }
 
             return Task.CompletedTask;
@@ -1910,6 +1932,8 @@ namespace SIPSorcery.Net
                 }
 
                 OnRtpClosed?.Invoke(reason);
+
+                OnClosed?.Invoke();
             }
         }
 
@@ -2017,8 +2041,9 @@ namespace SIPSorcery.Net
                                 rtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
                                 OnReceiveReport?.Invoke(remoteEndPoint, rtcpSession.MediaType, rtcpPkt);
                             }
-                            else
+                            else if(AudioRtcpSession?.PacketsReceivedCount > 0 || VideoRtcpSession?.PacketsReceivedCount > 0)
                             {
+                                // Only give this warning if we've received at least one RTP packet.
                                 logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
                             }
                         }
@@ -2143,19 +2168,21 @@ namespace SIPSorcery.Net
                 // Exact match on actual and expected destination.
                 isValidSource = true;
             }
-            else if ((expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate())
+            else if (AcceptRtpFromAny || (expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate())
                //|| (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address
                )
             {
-                // The end point doesn't match BUT we were supplied a private address and the remote source is a public address
+                // The end point doesn't match BUT we were supplied a private address in the SDP and the remote source is a public address
                 // so high probability there's a NAT on the network path. Switch to the remote end point (note this can only happen once
-                // and only if the SSRV is 0, i.e. this is the first packet.
-                // AC 12 Jul 2020: Commented out the expression that allows the end point to be change just because it's a loopback address.
-                // Need to determine the use case as to why I added that. A breaking case is doing an attended transfer test where
-                // two different agents are using loopback addresses. The expression allows an older session to override the destination
-                // set by a newer remote SDP.
+                // and only if the SSRV is 0, i.e. this is the first RTP packet.
                 // If the remote end point is a loopback address then it's likely that this is a test/development 
                 // scenario and the source can be trusted.
+                // AC 12 Jul 2020: Commented out the expression that allows the end point to be change just because it's a loopback address.
+                // A breaking case is doing an attended transfer test where two different agents are using loopback addresses. 
+                // The expression allows an older session to override the destination set by a newer remote SDP.
+                // AC 18 Aug 2020: Despite the carefully crafted rules below and https://github.com/sipsorcery/sipsorcery/issues/197
+                // there are still cases that were a problem in one scenario but acceptable in another. To accommodate a new property
+                // was added to allow the application to decide whether the RTP end point switches should be liberal or not.
                 logger.LogDebug($"{mediaType} end point switched for RTP ssrc {ssrc} from {expectedEndPoint} to {receivedOnEndPoint}.");
 
                 if (mediaType == SDPMediaTypesEnum.audio)

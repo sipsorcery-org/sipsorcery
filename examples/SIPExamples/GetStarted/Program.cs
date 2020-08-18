@@ -17,44 +17,72 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using Serilog.Core;
+using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Windows;
 
 namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
+        //private static string DESTINATION = "time@sipsorcery.com";
+        private static string DESTINATION = "sip:pcdodo@192.168.0.50;user=phone";
+        private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
 
         static async Task Main()
         {
             Console.WriteLine("SIPSorcery Getting Started Demo");
 
             AddConsoleLogger();
+            CancellationTokenSource exitCts = new CancellationTokenSource();
 
             var sipTransport = new SIPTransport();
 
             EnableTraceLogs(sipTransport);
 
-            var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new WindowsAudioRtpSession();
+            var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
+            userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
+
+            //var audioSession = new WindowsAudioSession();
+            //var rtpAudioVideoSession = new RtpAudioVideoSession(audioSession);
+            //rtpAudioVideoSession.AcceptRtpFromAny = true;
+            var rtpAudioSession = new RtpAudioSession(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise }, new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA });
+            rtpAudioSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.
-            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
+            //bool callResult = await userAgent.Call(DESTINATION, null, null, rtpAudioVideoSession);
+            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpAudioSession);
             Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
-
-            Console.WriteLine("press any key to exit...");
-            Console.Read();
 
             if (userAgent.IsCallActive)
             {
-                Console.WriteLine("Hanging up.");
-                userAgent.Hangup();
+                Console.WriteLine("press ctrl-c to hangup and exit...");
 
-                Task.Delay(1000).Wait();
+                Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+                {
+                    e.Cancel = true;
+                    exitCts.Cancel();
+                };
+
+                exitCts.Token.WaitHandle.WaitOne();
+
+                if (userAgent.IsCallActive)
+                {
+                    Console.WriteLine("Hanging up...");
+                    userAgent.Hangup();
+
+                    Task.Delay(1000).Wait();
+                }
             }
+
+            Console.WriteLine("Exiting...");
 
             // Clean up.
             sipTransport.Shutdown();

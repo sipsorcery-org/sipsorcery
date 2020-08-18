@@ -70,15 +70,6 @@ namespace SIPSorcery.Media
         CaptureDevice = 6,
     }
 
-    /// <summary>
-    /// The supported sampling rates for externally generated audio sources
-    /// such as a microphone.
-    /// </summary>
-    public enum AudioSamplingRatesEnum
-    {
-        SampleRate8KHz = 0,
-        SampleRate16KHz = 1
-    }
 
     public class AudioSourceOptions
     {
