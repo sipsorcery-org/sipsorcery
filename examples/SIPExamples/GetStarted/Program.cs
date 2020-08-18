@@ -50,14 +50,14 @@ namespace demo
             var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
-            //var audioSession = new WindowsAudioSession();
-            //var rtpAudioVideoSession = new RtpAudioVideoSession(audioSession);
-            //rtpAudioVideoSession.AcceptRtpFromAny = true;
-            var rtpAudioSession = new RtpAudioSession(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise }, new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA });
+            var audioSession = new WindowsAudioSession();
+            var rtpAudioSession = new RtpAudioVideoSession(audioSession);
             rtpAudioSession.AcceptRtpFromAny = true;
+            
+            //var rtpAudioSession = new RtpAudioSession(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise }, new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA });
+            //rtpAudioSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.
-            //bool callResult = await userAgent.Call(DESTINATION, null, null, rtpAudioVideoSession);
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpAudioSession);
             Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
 
