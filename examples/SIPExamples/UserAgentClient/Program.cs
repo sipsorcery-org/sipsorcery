@@ -63,7 +63,7 @@ namespace demo
 
             //var rtpSession = new WindowsAudioRtpSession();
             var audioSession = new WindowsAudioSession();
-            var rtpSession = new RtpAudioVideoSession(audioSession);
+            var rtpSession = new PlatformMediaSession(audioSession);
 
             var offerSDP = rtpSession.CreateOffer(null);
 
