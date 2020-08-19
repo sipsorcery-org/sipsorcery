@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
-    <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <!--<PackageReference Include="SIPSorcery" Version="4.0.60-pre" />-->
@@ -17,7 +16,7 @@
     <ProjectReference Include="..\..\..\..\SIPSorceryMedia.Windows\src\SIPSorceryMedia.Windows.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <None Update="Sounds\goodbye16k.raw">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

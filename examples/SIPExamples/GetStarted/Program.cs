@@ -48,8 +48,8 @@ namespace demo
             userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
-            var audioSession = new WindowsAudioSession();
-            var rtpAudioSession = new RtpAudioVideoSession(audioSession);
+            var windowsAudio = new WindowsAudioSession();
+            var rtpAudioSession = new RtpAudioVideoSession(windowsAudio);
             rtpAudioSession.AcceptRtpFromAny = true;
             
             // Place the call and wait for the result.

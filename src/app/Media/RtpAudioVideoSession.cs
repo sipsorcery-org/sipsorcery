@@ -32,6 +32,12 @@ namespace SIPSorcery.Media
                     case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
                         sdpAudioFormat = SDPMediaFormatsEnum.PCMU;
                         break;
+                    case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
+                        sdpAudioFormat = SDPMediaFormatsEnum.PCMA;
+                        break;
+                    case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
+                        sdpAudioFormat = SDPMediaFormatsEnum.G722;
+                        break;
                     default:
                         Log.LogWarning("Audio format not recognised.");
                         break;
@@ -52,10 +58,10 @@ namespace SIPSorcery.Media
         /// </summary>
         /// <param name="durationMilliseconds"></param>
         /// <param name="pcmSample"></param>
-        protected void RawAudioSampleReady(int durationMilliseconds, byte[] pcmSample)
+        protected void RawAudioSampleReady(int durationMilliseconds, byte[] pcmSample, AudioSamplingRatesEnum samplingRate)
         {
             var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
-            var encodedSample = _audioEncoder.EncodeAudio(pcmSample, sendingFormat, AudioSamplingRatesEnum.SampleRate8KHz);
+            var encodedSample = _audioEncoder.EncodeAudio(pcmSample, sendingFormat, samplingRate);
 
             // int sampleRateTicks = (sampleRate == AudioSamplingRatesEnum.SampleRate8KHz) ? 8000 : 16000;
             // int durationMilliseconds = (sample.Length * 1000) / (sampleRateTicks * 2);
@@ -64,16 +70,15 @@ namespace SIPSorcery.Media
             base.SendAudioFrame((uint)rtpTimestampDuration, (int)sendingFormat.FormatCodec, encodedSample);
         }
 
-
         /// <summary>
         /// Handler for a PCM audio sample getting generated from the local audio source.
         /// </summary>
         /// <param name="durationMilliseconds"></param>
         /// <param name="pcmSample"></param>
-        protected void RawAudioSampleReady(int durationMilliseconds, short[] pcmSample)
+        protected void RawAudioSampleReady(int durationMilliseconds, short[] pcmSample, AudioSamplingRatesEnum samplingRate)
         {
             var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
-            var encodedSample = _audioEncoder.EncodeAudio(pcmSample, sendingFormat, AudioSamplingRatesEnum.SampleRate8KHz);
+            var encodedSample = _audioEncoder.EncodeAudio(pcmSample, sendingFormat, samplingRate);
 
             // int sampleRateTicks = (sampleRate == AudioSamplingRatesEnum.SampleRate8KHz) ? 8000 : 16000;
             // int durationMilliseconds = (sample.Length * 1000) / (sampleRateTicks * 2);
@@ -87,7 +92,7 @@ namespace SIPSorcery.Media
             if (mediaType == SDPMediaTypesEnum.audio)
             {
                 var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
-                var decodedSample = _audioEncoder.DecodeAudio(rtpPacket.Payload, sendingFormat, AudioSamplingRatesEnum.SampleRate8KHz);
+                var decodedSample = _audioEncoder.DecodeAudio(rtpPacket.Payload, sendingFormat, AudioSamplingRatesEnum.Rate8KHz);
 
                 PlatformMediaSession.ProcessRemoteAudioSample(decodedSample);
             }
