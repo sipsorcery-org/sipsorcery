@@ -218,10 +218,29 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action onnegotiationneeded;
 
+        private event Action<RTCIceCandidate> _onIceCandidate;
         /// <summary>
         /// A new ICE candidate is available for the Peer Connection.
         /// </summary>
-        public event Action<RTCIceCandidate> onicecandidate;
+        public event Action<RTCIceCandidate> onicecandidate
+        {
+            add
+            {
+                var notifyIce = _onIceCandidate == null && value != null;
+                _onIceCandidate += value;
+                if (notifyIce)
+                {
+                    foreach (var ice in _rtpIceChannel.Candidates)
+                    {
+                        _onIceCandidate?.Invoke(ice);
+                    }
+                }
+            }
+            remove
+            {
+                _onIceCandidate -= value;
+            }
+        }
 
         /// <summary>
         /// A failure occurred when gathering ICE candidates.
@@ -340,7 +359,7 @@ namespace SIPSorcery.Net
 
             _rtpIceChannel = GetRtpChannel();
 
-            _rtpIceChannel.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
+            _rtpIceChannel.OnIceCandidate += (candidate) => _onIceCandidate?.Invoke(candidate);
             _rtpIceChannel.OnIceConnectionStateChange += (state) =>
             {
                 if (state == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
@@ -465,7 +484,6 @@ namespace SIPSorcery.Net
                     };
                     dataChannel.SetStream(stm);
                     DataChannels.Add(dataChannel);
-
                     ondatachannel?.Invoke(dataChannel);
                 }
             };
