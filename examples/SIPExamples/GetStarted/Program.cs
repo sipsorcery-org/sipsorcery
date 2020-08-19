@@ -17,13 +17,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
-using Serilog.Core;
 using SIPSorcery.Media;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Windows;
@@ -33,7 +30,7 @@ namespace demo
     class Program
     {
         //private static string DESTINATION = "time@sipsorcery.com";
-        private static string DESTINATION = "sip:pcdodo@192.168.0.50;user=phone";
+        private static string DESTINATION = "sip:pcdodo@192.168.0.50";
         private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
 
         static async Task Main()
@@ -48,41 +45,58 @@ namespace demo
             EnableTraceLogs(sipTransport);
 
             var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
+            userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var audioSession = new WindowsAudioSession();
             var rtpAudioSession = new RtpAudioVideoSession(audioSession);
             rtpAudioSession.AcceptRtpFromAny = true;
             
-            //var rtpAudioSession = new RtpAudioSession(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise }, new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA });
-            //rtpAudioSession.AcceptRtpFromAny = true;
-
             // Place the call and wait for the result.
-            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpAudioSession);
-            Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
+            var callTask = userAgent.Call(DESTINATION, null, null, rtpAudioSession);
 
-            if (userAgent.IsCallActive)
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
-                Console.WriteLine("press ctrl-c to hangup and exit...");
+                e.Cancel = true;
 
-                Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+                if (userAgent != null)
                 {
-                    e.Cancel = true;
-                    exitCts.Cancel();
+                    if (userAgent.IsCalling || userAgent.IsRinging)
+                    {
+                        Console.WriteLine("Cancelling in progress call.");
+                        userAgent.Cancel();
+                    }
+                    else if (userAgent.IsCallActive)
+                    {
+                        Console.WriteLine("Hanging up established call.");
+                        userAgent.Hangup();
+                    }
                 };
 
+                exitCts.Cancel();
+            };
+
+            Console.WriteLine("press ctrl-c to exit...");
+
+            bool callResult = await callTask;
+
+            if (callResult)
+            {
+                Console.WriteLine($"Call to {DESTINATION} succeeded.");
                 exitCts.Token.WaitHandle.WaitOne();
-
-                if (userAgent.IsCallActive)
-                {
-                    Console.WriteLine("Hanging up...");
-                    userAgent.Hangup();
-
-                    Task.Delay(1000).Wait();
-                }
+            }
+            else
+            {
+                Console.WriteLine($"Call to {DESTINATION} failed.");
             }
 
             Console.WriteLine("Exiting...");
+
+            if(userAgent?.IsHangingUp == true)
+            {
+                Console.WriteLine("Waiting 1s for the call hangup or cancel to complete...");
+                await Task.Delay(1000);
+            }
 
             // Clean up.
             sipTransport.Shutdown();

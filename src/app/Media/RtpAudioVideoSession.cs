@@ -12,19 +12,19 @@ namespace SIPSorcery.Media
     {
         private static ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        public IAudioVideoSession AudioVideoSession { get; private set; }
+        public IPlatformMediaSession PlatformMediaSession { get; private set; }
 
         private AudioEncoder _audioEncoder;
 
-        public RtpAudioVideoSession(IAudioVideoSession audioVideoSession) : base(false, false, false)
+        public RtpAudioVideoSession(IPlatformMediaSession platformMediaSession) : base(false, false, false)
         {
-            AudioVideoSession = audioVideoSession;
+            PlatformMediaSession = platformMediaSession;
             _audioEncoder = new AudioEncoder();
-            base.OnRtpPacketReceived += OnRtpMediaPacketReceived;
-            AudioVideoSession.OnRawAudioSampleReady += OnRawAudioSampleReady;
+            base.OnRtpPacketReceived += RtpMediaPacketReceived;
+            PlatformMediaSession.OnRawAudioSampleReady += RawAudioSampleReady;
 
             List<SDPMediaFormat> audioTrackFormats = new List<SDPMediaFormat>();
-            foreach (var audioFormat in AudioVideoSession.GetAudioFormats())
+            foreach (var audioFormat in PlatformMediaSession.GetAudioFormats())
             {
                 SDPMediaFormatsEnum sdpAudioFormat = SDPMediaFormatsEnum.Unknown;
                 switch (audioFormat.Codec)
@@ -40,8 +40,8 @@ namespace SIPSorcery.Media
                 audioTrackFormats.Add(new SDPMediaFormat(sdpAudioFormat));
             }
 
-            base.OnStarted += async () => await AudioVideoSession.Start();
-            base.OnClosed += async () => await AudioVideoSession.Close();
+            base.OnStarted += async () => await PlatformMediaSession.Start();
+            base.OnClosed += async () => await PlatformMediaSession.Close();
 
             var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, audioTrackFormats);
             base.addTrack(audioTrack);
@@ -52,7 +52,7 @@ namespace SIPSorcery.Media
         /// </summary>
         /// <param name="durationMilliseconds"></param>
         /// <param name="pcmSample"></param>
-        private void OnRawAudioSampleReady(int durationMilliseconds, byte[] pcmSample)
+        protected void RawAudioSampleReady(int durationMilliseconds, byte[] pcmSample)
         {
             var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
             var encodedSample = _audioEncoder.EncodeAudio(pcmSample, sendingFormat, AudioSamplingRatesEnum.SampleRate8KHz);
@@ -64,14 +64,32 @@ namespace SIPSorcery.Media
             base.SendAudioFrame((uint)rtpTimestampDuration, (int)sendingFormat.FormatCodec, encodedSample);
         }
 
-        private void OnRtpMediaPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+
+        /// <summary>
+        /// Handler for a PCM audio sample getting generated from the local audio source.
+        /// </summary>
+        /// <param name="durationMilliseconds"></param>
+        /// <param name="pcmSample"></param>
+        protected void RawAudioSampleReady(int durationMilliseconds, short[] pcmSample)
+        {
+            var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
+            var encodedSample = _audioEncoder.EncodeAudio(pcmSample, sendingFormat, AudioSamplingRatesEnum.SampleRate8KHz);
+
+            // int sampleRateTicks = (sampleRate == AudioSamplingRatesEnum.SampleRate8KHz) ? 8000 : 16000;
+            // int durationMilliseconds = (sample.Length * 1000) / (sampleRateTicks * 2);
+            int rtpTimestampDuration = 8000 / 1000 * durationMilliseconds;
+
+            base.SendAudioFrame((uint)rtpTimestampDuration, (int)sendingFormat.FormatCodec, encodedSample);
+        }
+
+        protected void RtpMediaPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
             if (mediaType == SDPMediaTypesEnum.audio)
             {
                 var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
                 var decodedSample = _audioEncoder.DecodeAudio(rtpPacket.Payload, sendingFormat, AudioSamplingRatesEnum.SampleRate8KHz);
 
-                AudioVideoSession.ProcessRemoteAudioSample(decodedSample);
+                PlatformMediaSession.ProcessRemoteAudioSample(decodedSample);
             }
         }
     }

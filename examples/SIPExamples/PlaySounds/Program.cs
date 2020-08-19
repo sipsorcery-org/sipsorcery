@@ -18,18 +18,22 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Windows;
 
 namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "1@127.0.0.1";
+        //private static string DESTINATION = "1@127.0.0.1";
+        private static string DESTINATION = "sip:pcdodo@192.168.0.50";
+        private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
 
         //private static string WELCOME_8K = "Sounds/hellowelcome8k.raw";
         private static string WELCOME_16K = "Sounds/hellowelcome16k.raw";
@@ -45,19 +49,23 @@ namespace demo
 
             EnableTraceLogs(sipTransport);
 
-            var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new WindowsAudioRtpSession();
+            var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
+
+            var audioSession = new WindowsAudioSession();
+            var rtpEnhancedAudioSession = new RtpEnhancedAudioSession(
+                new AudioSourceOptions { AudioSource = AudioSourcesEnum.CaptureDevice },
+                audioSession);
 
             // Place the call and wait for the result.
-            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
+            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpEnhancedAudioSession);
             Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
 
             if (callResult)
             {
                 await Task.Delay(1000);
-                await rtpSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
+                await rtpEnhancedAudioSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
                 await Task.Delay(1000);
-                await rtpSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
+                await rtpEnhancedAudioSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
             }
 
             Console.WriteLine("press any key to exit...");

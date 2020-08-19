@@ -26,8 +26,6 @@ namespace SIPSorcery.Media
 
         public byte[] EncodeAudio(byte[] pcm, SDPMediaFormat format, AudioSamplingRatesEnum sampleRate)
         {
-            byte[] encodedSample = null;
-
             // Convert buffer into a PCM sample (array of signed shorts) that's
             // suitable for input into the chosen encoder.
             short[] pcmSigned = new short[pcm.Length / 2];
@@ -36,9 +34,16 @@ namespace SIPSorcery.Media
                 pcmSigned[i] = BitConverter.ToInt16(pcm, i * 2);
             }
 
+            return EncodeAudio(pcmSigned, format, sampleRate);
+        }
+
+        public byte[] EncodeAudio(short[] pcm, SDPMediaFormat format, AudioSamplingRatesEnum sampleRate)
+        {
+            byte[] encodedSample = null;
+
             if (format.FormatCodec == SDPMediaFormatsEnum.G722)
             {
-                if(_g722Codec == null)
+                if (_g722Codec == null)
                 {
                     _g722Codec = new G722Codec();
                     _g722CodecState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
@@ -47,21 +52,21 @@ namespace SIPSorcery.Media
                 if (sampleRate == AudioSamplingRatesEnum.SampleRate16KHz)
                 {
                     // No up sampling required.
-                    int outputBufferSize = pcmSigned.Length / 2;
+                    int outputBufferSize = pcm.Length / 2;
                     encodedSample = new byte[outputBufferSize];
-                    int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcmSigned, pcmSigned.Length);
+                    int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
                 }
                 else
                 {
                     // Up sample the supplied PCM signal by doubling each sample.
-                    int outputBufferSize = pcmSigned.Length;
+                    int outputBufferSize = pcm.Length;
                     encodedSample = new byte[outputBufferSize];
 
-                    short[] pcmUpsampled = new short[pcmSigned.Length * 2];
-                    for (int i = 0; i < pcmSigned.Length; i++)
+                    short[] pcmUpsampled = new short[pcm.Length * 2];
+                    for (int i = 0; i < pcm.Length; i++)
                     {
-                        pcmUpsampled[i * 2] = pcmSigned[i];
-                        pcmUpsampled[i * 2 + 1] = pcmSigned[i];
+                        pcmUpsampled[i * 2] = pcm[i];
+                        pcmUpsampled[i * 2 + 1] = pcm[i];
                     }
 
                     _g722Codec.Encode(_g722CodecState, encodedSample, pcmUpsampled, pcmUpsampled.Length);
@@ -78,25 +83,25 @@ namespace SIPSorcery.Media
                 if (sampleRate == AudioSamplingRatesEnum.SampleRate8KHz)
                 {
                     // No down sampling required.
-                    int outputBufferSize = pcmSigned.Length;
+                    int outputBufferSize = pcm.Length;
                     encodedSample = new byte[outputBufferSize];
 
-                    for (int index = 0; index < pcmSigned.Length; index++)
+                    for (int index = 0; index < pcm.Length; index++)
                     {
-                        encodedSample[index] = encode(pcmSigned[index]);
+                        encodedSample[index] = encode(pcm[index]);
                     }
                 }
                 else
                 {
                     // Down sample the supplied PCM signal by skipping every second sample.
-                    int outputBufferSize = pcmSigned.Length / 2;
+                    int outputBufferSize = pcm.Length / 2;
                     encodedSample = new byte[outputBufferSize];
                     int encodedIndex = 0;
 
                     // Skip every second sample.
-                    for (int index = 0; index < pcmSigned.Length; index += 2)
+                    for (int index = 0; index < pcm.Length; index += 2)
                     {
-                        encodedSample[encodedIndex++] = encode(pcmSigned[index]);
+                        encodedSample[encodedIndex++] = encode(pcm[index]);
                     }
                 }
 

@@ -89,6 +89,12 @@ namespace SIPSorcery.SIP.App
         private SIPDialogue m_sipDialogue;
 
         /// <summary>
+        /// When a call is hungup a reference is kept to the BYE transaction so it can
+        /// be monitored for delivery.
+        /// </summary>
+        private SIPNonInviteTransaction m_byeTransaction;
+
+        /// <summary>
         /// Holds the call descriptor for an in progress client (outbound) call.
         /// </summary>
         private SIPCallDescriptor m_callDescriptor;
@@ -127,6 +133,66 @@ namespace SIPSorcery.SIP.App
             get
             {
                 return m_sipDialogue?.DialogueState == SIPDialogueStateEnum.Confirmed;
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether a call initiated by this user agent is in progress but is yet
+        /// to get a ring or progress response.
+        /// </summary>
+        public bool IsCalling
+        {
+            get
+            {
+                if (!IsCallActive && m_uac != null && m_uac.ServerTransaction != null)
+                {
+                    return m_uac.ServerTransaction.TransactionState == SIPTransactionStatesEnum.Calling ||
+                    m_uac.ServerTransaction.TransactionState == SIPTransactionStatesEnum.Trying;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether a call initiated by this user agent has received a ringing or progress response.
+        /// </summary>
+        public bool IsRinging
+        {
+            get
+            {
+                if (!IsCallActive && m_uac != null && m_uac.ServerTransaction != null)
+                {
+                    return m_uac.ServerTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether the user agent is in the process of hanging up or cancelling a call.
+        /// </summary>
+        public bool IsHangingUp
+        {
+            get
+            {
+                if (m_uac != null && m_uac.m_cancelTransaction != null && m_uac.m_cancelTransaction.DeliveryPending)
+                {
+                    return true;
+                }
+                else if(m_byeTransaction != null && m_byeTransaction.DeliveryPending)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
 
@@ -323,11 +389,11 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The RTP session for the call.</param>
         public Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession)
         {
-            if(mediaSession == null)
+            if (mediaSession == null)
             {
                 throw new ArgumentNullException("mediaSession", "A media session must be supplied when placing a call.");
             }
-            
+
             if (!SIPURI.TryParse(dst, out var dstUri))
             {
                 throw new ApplicationException("The destination was not recognised as a valid SIP URI.");
@@ -375,7 +441,7 @@ namespace SIPSorcery.SIP.App
             ClientCallAnswered += (uac, resp) => callResult.TrySetResult(true);
             ClientCallFailed += (uac, errorMessage, result) => callResult.TrySetResult(false);
 
-            return callResult.Task.Result;
+            return await callResult.Task.ConfigureAwait(false);
         }
 
         /// <summary>
@@ -463,7 +529,8 @@ namespace SIPSorcery.SIP.App
 
             if (m_sipDialogue?.DialogueState != SIPDialogueStateEnum.Terminated)
             {
-                m_sipDialogue?.Hangup(m_transport, m_outboundProxy);
+                m_sipDialogue.Hangup(m_transport, m_outboundProxy);
+                m_byeTransaction = m_sipDialogue.m_byeTransaction;
             }
 
             IsOnLocalHold = false;
