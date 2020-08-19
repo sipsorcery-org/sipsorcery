@@ -33,12 +33,15 @@ namespace demo
     class Program
     {
         //private static string DESTINATION = "1@127.0.0.1";
-        private static string DESTINATION = "sip:pcdodo@192.168.0.50";
-        private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
+        //private static string DESTINATION = "sip:pcdodo@192.168.0.50";
+        //private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
+        //private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
+        private static string DESTINATION = "sip:aaron@192.168.0.50:7060";
+        private static SIPEndPoint OUTBOUND_PROXY = null;
 
-        //private static string WELCOME_8K = "Sounds/hellowelcome8k.raw";
-        private static string WELCOME_16K = "Sounds/hellowelcome16k.raw";
-        private static string GOODBYE_16K = "Sounds/goodbye16k.raw";
+        private static string WELCOME_8K = "Sounds/hellowelcome8k.raw";
+        //private const string WELCOME_16K = "Sounds/hellowelcome16k.raw";
+        private const string GOODBYE_16K = "Sounds/goodbye16k.raw";
 
         static async Task Main()
         {
@@ -52,34 +55,87 @@ namespace demo
             EnableTraceLogs(sipTransport);
 
             var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
+            userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
+            userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioSession();
-            var rtpEnhancedAudioSession = new RtpEnhancedAudioSession(
-                new AudioSourceOptions { AudioSource = AudioSourcesEnum.CaptureDevice },
+            var multiSourceAudioSession = new MultiSourceAudioSession(
+                new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
                windowsAudio);
-            rtpEnhancedAudioSession.AcceptRtpFromAny = true;
+            multiSourceAudioSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.
-            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpEnhancedAudioSession);
-            Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
+            var callTask = userAgent.Call(DESTINATION, null, null, multiSourceAudioSession);
+
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            {
+                e.Cancel = true;
+
+                if (userAgent != null)
+                {
+                    if (userAgent.IsCalling || userAgent.IsRinging)
+                    {
+                        Console.WriteLine("Cancelling in progress call.");
+                        userAgent.Cancel();
+                    }
+                    else if (userAgent.IsCallActive)
+                    {
+                        Console.WriteLine("Hanging up established call.");
+                        userAgent.Hangup();
+                    }
+                };
+
+                exitCts.Cancel();
+            };
+
+            Console.WriteLine("press ctrl-c to exit...");
+
+            bool callResult = await callTask;
 
             if (callResult)
             {
-                await Task.Delay(1000);
-                await rtpEnhancedAudioSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
-                await Task.Delay(1000);
-                await rtpEnhancedAudioSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
-            }
+                Console.WriteLine($"Call to {DESTINATION} succeeded.");
 
-            // Console.WriteLine("press any key to exit...");
-            //Console.Read();
+                windowsAudio.PauseAudioSource();
 
-            if (userAgent.IsCallActive)
-            {
+                //await multiSourceAudioSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+                await multiSourceAudioSession.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
+
+                //multiSourceAudioSession.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+
+                windowsAudio.ResumeAudioSource();
+
+                await Task.Delay(500);
+
+                await userAgent.SendDtmf(0x01);
+                await userAgent.SendDtmf(0x02);
+                await userAgent.SendDtmf(0x03);
+                await userAgent.SendDtmf(0x04);
+
+                //multiSourceAudioSession.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.WhiteNoise });
+                //await Task.Delay(5000);
+
+                //multiSourceAudioSession.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise });
+                //await Task.Delay(5000);
+
+                windowsAudio.PauseAudioSource();
+
+                await Task.Delay(500);
+
+                await multiSourceAudioSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+
+                multiSourceAudioSession.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.None });
+
+                windowsAudio.ResumeAudioSource();
+
                 exitCts.Token.WaitHandle.WaitOne();
-                Console.WriteLine("Hanging up.");
-                userAgent.Hangup();
             }
+            else
+            {
+                Console.WriteLine($"Call to {DESTINATION} failed.");
+            }
+
+            Console.WriteLine("Exiting...");
 
             if (userAgent?.IsHangingUp == true)
             {

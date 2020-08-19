@@ -164,6 +164,12 @@ namespace SIPSorcery.Net
         public bool IsRemote { get; set; }
 
         /// <summary>
+        /// By default audio channels will support DTMF via telephone events. To opt
+        /// out of DTMF support set this property to true.
+        /// </summary>
+        public bool NoDtmfSupport { get; set; }
+
+        /// <summary>
         /// The media capabilities supported by this track.
         /// </summary>
         public List<SDPMediaFormat> Capabilities { get; internal set; }
@@ -1070,6 +1076,15 @@ namespace SIPSorcery.Net
                     // Need to create a sending SSRC and set it on the RTCP session. 
                     AudioRtcpSession.Ssrc = track.Ssrc;
                     AudioLocalTrack = track;
+
+                    if (AudioLocalTrack.Capabilities != null && !AudioLocalTrack.NoDtmfSupport &&
+                        !AudioLocalTrack.Capabilities.Any(x => x.FormatID == DTMF_EVENT_PAYLOAD_ID.ToString()))
+                    {
+                        SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
+                        rtpEventFormat.SetFormatAttribute($"{SDP.TELEPHONE_EVENT_ATTRIBUTE}/{DEFAULT_AUDIO_CLOCK_RATE}");
+                        rtpEventFormat.SetFormatParameterAttribute("0-16");
+                        AudioLocalTrack.Capabilities.Add(rtpEventFormat);
+                    }
                 }
                 else if (track.Kind == SDPMediaTypesEnum.video)
                 {
@@ -2129,9 +2144,15 @@ namespace SIPSorcery.Net
                                 }
                             }
 
-                            SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
+                            if (RemoteDescription != null)
+                            {
+                                // Don't hand RTP packets to the application until the remote description has been set. Without it
+                                // things like the common codec, DTMF support etc. are not known.
 
-                            OnRtpPacketReceived?.Invoke(remoteEndPoint, mediaType, rtpPacket);
+                                SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
+
+                                OnRtpPacketReceived?.Invoke(remoteEndPoint, mediaType, rtpPacket);
+                            }
 
                             // Used for reporting purposes.
                             if (rtpMediaType == SDPMediaTypesEnum.audio && AudioRtcpSession != null)

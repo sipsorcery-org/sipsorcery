@@ -49,7 +49,7 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioSession();
-            var rtpAudioSession = new RtpAudioVideoSession(windowsAudio);
+            var rtpAudioSession = new PlatformMediaSession(windowsAudio);
             rtpAudioSession.AcceptRtpFromAny = true;
             
             // Place the call and wait for the result.
