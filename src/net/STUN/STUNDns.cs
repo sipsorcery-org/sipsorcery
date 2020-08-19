@@ -23,7 +23,7 @@
 // https://tools.ietf.org/html/rfc7064: URI Scheme for the Session Traversal Utilities for NAT (STUN) Protocol
 // https://tools.ietf.org/html/rfc7065: Traversal Using Relays around NAT (TURN) Uniform Resource Identifiers
 // https://tools.ietf.org/html/rfc5389#section-9: Session Traversal Utilities for NAT (STUN)
-// https://tools.ietf.org/html/rfc6762: Multicast DNS (for ".local" Top Level Domain lookups on macos)
+// https://tools.ietf.org/html/rfc6762: Multicast DNS (for ".local" Top Level Domain lookups)
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)

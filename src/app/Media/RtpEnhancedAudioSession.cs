@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
 {
@@ -70,7 +71,6 @@ namespace SIPSorcery.Media
         CaptureDevice = 6,
     }
 
-
     public class AudioSourceOptions
     {
         /// <summary>
@@ -93,7 +93,7 @@ namespace SIPSorcery.Media
     /// An audio only RTP session that can supply an audio stream to the caller. Any incoming audio stream is 
     /// ignored and this class does NOT use any audio devices on the system for capture or playback.
     /// </summary>
-    public class RtpAudioSession : RTPSession, IMediaSession
+    public class RtpEnhancedAudioSession : RtpAudioVideoSession
     {
         private const int RTP_TIMESTAMP_RATE = 8000;         // G711 and G722 use an 8KHz for RTP timestamps clock.
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
@@ -102,6 +102,7 @@ namespace SIPSorcery.Media
         private static readonly byte PCMU_SILENCE_BYTE_ONE = 0xFF;
         private static readonly byte PCMA_SILENCE_BYTE_ZERO = 0x55;
         private static readonly byte PCMA_SILENCE_BYTE_ONE = 0xD5;
+        private static float LINEAR_MAXIMUM = 32767f;
 
         private static ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -109,7 +110,6 @@ namespace SIPSorcery.Media
         private SignalGenerator _signalGenerator;
         private Timer _audioStreamTimer;
         private AudioSourceOptions _audioOpts;
-        private List<SDPMediaFormatsEnum> _audioCodecs; // The list of supported audio codecs.
         private SDPMediaFormat _sendingFormat;          // The codec that we've selected to send with (must be supported by remote party).
         private int _sendingAudioSampleRate;            // 8KHz for G711, 16KHz for G722.
         private int _sendingAudioRtpRate;               // 8Khz for both G711 and G722. Calculation included for clarity.
@@ -118,11 +118,6 @@ namespace SIPSorcery.Media
         private StreamReader _audioPcmStreamReader;
         private Timer _audioPcmStreamTimer;
         private AudioSamplingRatesEnum _audioPcmSampleRate;
-
-        private G722Codec _g722Codec;
-        private G722CodecState _g722CodecState;
-        private G722Codec _g722Decoder;
-        private G722CodecState _g722DecoderState;
 
         public uint RtpPacketsSent
         {
@@ -167,36 +162,14 @@ namespace SIPSorcery.Media
         /// <param name="bindPort">Optional. If specified the RTP socket will attempt to bind to this port. If the port
         /// is already in use the RTP channel will not be created. Generally the port should be left as 0 which will
         /// result in the Operating System choosing an ephemeral port.</param>
-        public RtpAudioSession(AudioSourceOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs, IPAddress bindAddress = null, int bindPort = 0) :
-            base(false, false, false, bindAddress, bindPort)
+        public RtpEnhancedAudioSession(
+            AudioSourceOptions audioOptions, 
+            IPlatformMediaSession platformMediaSession,
+            IPAddress bindAddress = null,
+            int bindPort = 0) :
+            base(platformMediaSession)
         {
-            if (audioCodecs == null || audioCodecs.Count() == 0)
-            {
-                _audioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
-            }
-            else if (audioCodecs.Any(x => !(x == SDPMediaFormatsEnum.PCMU || x == SDPMediaFormatsEnum.PCMA || x == SDPMediaFormatsEnum.G722)))
-            {
-                throw new ApplicationException("Only PCMA, PCMU and G722 audio codecs are supported.");
-            }
-
             _audioOpts = audioOptions;
-            _audioCodecs = audioCodecs ?? _audioCodecs;
-
-            var audioCapabilities = new List<SDPMediaFormat>();
-            foreach (var codec in _audioCodecs)
-            {
-                audioCapabilities.Add(new SDPMediaFormat(codec));
-            }
-
-            // RTP event support.
-            SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
-            rtpEventFormat.SetFormatAttribute($"{SDP.TELEPHONE_EVENT_ATTRIBUTE}/{RTP_TIMESTAMP_RATE}");
-            rtpEventFormat.SetFormatParameterAttribute("0-16");
-            audioCapabilities.Add(rtpEventFormat);
-
-            // Add a local audio track to the RTP session.
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, audioCapabilities);
-            base.addTrack(audioTrack);
         }
 
         public override void Close(string reason)
@@ -231,14 +204,6 @@ namespace SIPSorcery.Media
                     _sendingAudioRtpRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat.FormatCodec);
 
                     Log.LogDebug($"RTP audio session selected sending codec {_sendingFormat.FormatCodec}.");
-
-                    if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.G722)
-                    {
-                        _g722Codec = new G722Codec();
-                        _g722CodecState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
-                        _g722Decoder = new G722Codec();
-                        _g722DecoderState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
-                    }
 
                     // If required start the audio source.
                     if (_audioOpts != null && _audioOpts.AudioSource != AudioSourcesEnum.None)
@@ -291,24 +256,9 @@ namespace SIPSorcery.Media
                             }
                         }
                     }
-
-                    base.OnRtpPacketReceived += RtpPacketReceived;
                 }
 
                 return base.Start();
-            }
-        }
-
-        /// <summary>
-        /// Sends the an externally supplied audio sample. This is the method to call to
-        /// transmit samples generated from an audio capture device such as a microphone.
-        /// </summary>
-        /// <param name="sample">The PCM encoded sample to send.</param>
-        public void SendAudioSample(byte[] sample, int sampleLength, int durationMilliseconds)
-        {
-            if (!_streamSendInProgress)
-            {
-                EncodeAndSendAudioSample(sample, sampleLength, _audioOpts.CaptureDeviceSampleRate);
             }
         }
 
@@ -387,184 +337,6 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// Encodes a 16 bit PCM sample and sends to the remote party.
-        /// </summary>
-        /// <param name="sample">The PCM 16 bit *=8KHz sample to send.</param>
-        /// <param name="sampleLength">The length of the sample</param>
-        /// <param name="sampleRate">The sample rate of either 8 or 16 KHz for the supplied sample.</param>
-        private void EncodeAndSendAudioSample(byte[] sample, int sampleLength, AudioSamplingRatesEnum sampleRate)
-        {
-            byte[] encodedSample = null;
-
-            // Convert buffer into a PCM sample (array of signed shorts) that's
-            // suitable for input into the chosen encoder.
-            short[] pcm = new short[sampleLength / 2];
-            for (int i = 0; i < pcm.Length; i++)
-            {
-                pcm[i] = BitConverter.ToInt16(sample, i * 2);
-            }
-
-            if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.G722)
-            {
-                if (sampleRate == AudioSamplingRatesEnum.SampleRate16KHz)
-                {
-                    // No up sampling required.
-                    int outputBufferSize = pcm.Length / 2;
-                    encodedSample = new byte[outputBufferSize];
-                    int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
-                }
-                else
-                {
-                    // Up sample the supplied PCM signal by doubling each sample.
-                    int outputBufferSize = pcm.Length;
-                    encodedSample = new byte[outputBufferSize];
-
-                    short[] pcmUpsampled = new short[pcm.Length * 2];
-                    for (int i = 0; i < pcm.Length; i++)
-                    {
-                        pcmUpsampled[i * 2] = pcm[i];
-                        pcmUpsampled[i * 2 + 1] = pcm[i];
-                    }
-
-                    _g722Codec.Encode(_g722CodecState, encodedSample, pcmUpsampled, pcmUpsampled.Length);
-                }
-            }
-            else
-            {
-                Func<short, byte> encode = (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA) ?
-                       (Func<short, byte>)ALawEncoder.LinearToALawSample : MuLawEncoder.LinearToMuLawSample;
-
-                if (sampleRate == AudioSamplingRatesEnum.SampleRate8KHz)
-                {
-                    // No down sampling required.
-                    int outputBufferSize = pcm.Length;
-                    encodedSample = new byte[outputBufferSize];
-
-                    for (int index = 0; index < pcm.Length; index++)
-                    {
-                        encodedSample[index] = encode(pcm[index]);
-                    }
-                }
-                else
-                {
-                    // Down sample the supplied PCM signal by skipping every second sample.
-                    int outputBufferSize = pcm.Length / 2;
-                    encodedSample = new byte[outputBufferSize];
-                    int encodedIndex = 0;
-
-                    // Skip every second sample.
-                    for (int index = 0; index < pcm.Length; index += 2)
-                    {
-                        encodedSample[encodedIndex++] = encode(pcm[index]);
-                    }
-                }
-            }
-
-            int sampleRateTicks = (sampleRate == AudioSamplingRatesEnum.SampleRate8KHz) ? 8000 : 16000;
-            int durationMilliseconds = (sample.Length * 1000) / (sampleRateTicks * 2);
-            int rtpTimestampDuration = _sendingAudioRtpRate / 1000 * durationMilliseconds;
-
-            //Log.LogDebug($"send audio frame sample rate {sampleRateTicks}, duration ms {durationMilliseconds}, rtp timestamp duration {rtpTimestampDuration}.");
-
-            SendAudioFrame((uint)rtpTimestampDuration, (int)_sendingFormat.FormatCodec, encodedSample);
-        }
-
-        /// <summary>
-        /// Event handler for receiving RTP packets from the remote party.
-        /// </summary>
-        /// <param name="remoteEP">The remote end point the RTP was received from.</param>
-        /// <param name="mediaType">The media type of the packets.</param>
-        /// <param name="rtpPacket">The RTP packet with the media sample.</param>
-        private void RtpPacketReceived(IPEndPoint remoteEP, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
-        {
-            if (mediaType == SDPMediaTypesEnum.audio)
-            {
-                bool wants8kSamples = OnRemoteAudioSampleReady != null;
-                bool wants16kSamples = OnRemote16KHzPcmSampleReady != null;
-
-                if (wants8kSamples || wants16kSamples)
-                {
-                    var sample = rtpPacket.Payload;
-
-                    if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.G722)
-                    {
-                        short[] decodedPcm16k = new short[sample.Length * 2];
-                        int decodedSampleCount = _g722Decoder.Decode(_g722DecoderState, decodedPcm16k, sample, sample.Length);
-
-                        // The decoder provides short samples but streams and devices generally seem to want
-                        // byte samples so convert them.
-                        byte[] pcm8kBuffer = (wants8kSamples) ? new byte[decodedSampleCount] : null;
-                        byte[] pcm16kBuffer = (wants16kSamples) ? new byte[decodedSampleCount * 2] : null;
-
-                        for (int i = 0; i < decodedSampleCount; i++)
-                        {
-                            var bufferSample = BitConverter.GetBytes(decodedPcm16k[i]);
-
-                            // For 8K samples the crude re-sampling to get from 16K to 8K is to skip 
-                            // every second sample.
-                            if (pcm8kBuffer != null && i % 2 == 0)
-                            {
-                                pcm8kBuffer[(i / 2) * 2] = bufferSample[0];
-                                pcm8kBuffer[(i / 2) * 2 + 1] = bufferSample[1];
-                            }
-
-                            // G722 provides 16k samples.
-                            if (pcm16kBuffer != null)
-                            {
-                                pcm16kBuffer[i * 2] = bufferSample[0];
-                                pcm16kBuffer[i * 2 + 1] = bufferSample[1];
-                            }
-                        }
-
-                        OnRemoteAudioSampleReady?.Invoke(pcm8kBuffer);
-                        OnRemote16KHzPcmSampleReady?.Invoke(pcm16kBuffer);
-                    }
-                    else if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA ||
-                        _sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMU)
-                    {
-                        Func<byte, short> decode = (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA) ?
-                            (Func<byte, short>)ALawDecoder.ALawToLinearSample : MuLawDecoder.MuLawToLinearSample;
-
-                        byte[] pcm8kBuffer = (wants8kSamples) ? new byte[sample.Length * 2] : null;
-                        byte[] pcm16kBuffer = (wants16kSamples) ? new byte[sample.Length * 4] : null;
-
-                        for (int i = 0; i < sample.Length; i++)
-                        {
-                            var bufferSample = BitConverter.GetBytes(decode(sample[i]));
-
-                            // G711 samples at 8KHz.
-                            if (pcm8kBuffer != null)
-                            {
-                                pcm8kBuffer[i * 2] = bufferSample[0];
-                                pcm8kBuffer[i * 2 + 1] = bufferSample[1];
-                            }
-
-                            // The crude up-sampling approach to get 16K samples from G711 is to
-                            // duplicate each 8K sample.
-                            // TODO: This re-sampling approach introduces artifacts. Applying a low pass
-                            // filter seems to be recommended.
-                            if (pcm16kBuffer != null)
-                            {
-                                pcm16kBuffer[i * 4] = bufferSample[0];
-                                pcm16kBuffer[i * 4 + 1] = bufferSample[1];
-                                pcm16kBuffer[i * 4 + 2] = bufferSample[0];
-                                pcm16kBuffer[i * 4 + 3] = bufferSample[1];
-                            }
-                        }
-
-                        OnRemoteAudioSampleReady?.Invoke(pcm8kBuffer);
-                        OnRemote16KHzPcmSampleReady?.Invoke(pcm16kBuffer);
-                    }
-                    else
-                    {
-                        // Ignore the sample. It's for an unsupported codec. It will be up to the application
-                        // to decode.
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Sends audio samples read from a file.
         /// </summary>
         private void SendMusicSample(object state)
@@ -606,11 +378,9 @@ namespace SIPSorcery.Media
                     if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.G722)
                     {
                         int inputBufferSize = _sendingAudioSampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
-                        byte[] encodedSample = new byte[outputBufferSize];
                         short[] silencePcm = new short[inputBufferSize];
-                        _g722Codec.Encode(_g722CodecState, encodedSample, silencePcm, inputBufferSize);
 
-                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);
+                        RawAudioSampleReady(AUDIO_SAMPLE_PERIOD_MILLISECONDS, silencePcm);
                     }
                     else
                     {
@@ -644,26 +414,7 @@ namespace SIPSorcery.Media
                     _signalGenerator.Read(linear, 0, inputBufferSize);
                     short[] pcm = linear.Select(x => (short)(x * 32767f)).ToArray();
 
-                    // Both G711 (lossless) and G722 (lossy) encode to 64Kbps (unless the 
-                    // hard coded G722 rate of 64000 is changed).
-                    byte[] encodedSample = new byte[outputBufferSize];
-
-                    if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.G722)
-                    {
-                        _g722Codec.Encode(_g722CodecState, encodedSample, pcm, inputBufferSize);
-                    }
-                    else
-                    {
-                        Func<short, byte> encode = (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA) ?
-                               (Func<short, byte>)ALawEncoder.LinearToALawSample : MuLawEncoder.LinearToMuLawSample;
-
-                        for (int index = 0; index < inputBufferSize; index++)
-                        {
-                            encodedSample[index] = encode(pcm[index]);
-                        }
-                    }
-
-                    SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);
+                    RawAudioSampleReady(AUDIO_SAMPLE_PERIOD_MILLISECONDS, pcm);
                 }
             }
         }
@@ -695,7 +446,7 @@ namespace SIPSorcery.Media
                         }
                     }
 
-                    EncodeAndSendAudioSample(sample, sample.Length, _audioPcmSampleRate);
+                    RawAudioSampleReady(AUDIO_SAMPLE_PERIOD_MILLISECONDS, sample);
 
                     if (_audioPcmStreamReader.EndOfStream || _audioPcmStreamReader.BaseStream.Position >= _audioPcmStreamReader.BaseStream.Length)
                     {

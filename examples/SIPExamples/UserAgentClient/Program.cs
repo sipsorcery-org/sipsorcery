@@ -21,9 +21,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Windows;
 
 namespace demo
 {
@@ -59,14 +61,10 @@ namespace demo
             var sipTransport = new SIPTransport();
             EnableTraceLogs(sipTransport);
 
-            // Get the IP address the RTP will be sent from. While we can listen on IPAddress.Any | IPv6Any
-            // we can't put 0.0.0.0 or [::0] in the SDP or the callee will treat our RTP stream as inactive.
-            //var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
-            //Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
-            //var dstAddress = lookupResult.GetSIPEndPoint().Address;
-            //var localOfferAddress = NetServices.GetLocalAddressForRemote(dstAddress);
+            //var rtpSession = new WindowsAudioRtpSession();
+            var audioSession = new WindowsAudioSession();
+            var rtpSession = new RtpAudioVideoSession(audioSession);
 
-            var rtpSession = new WindowsAudioRtpSession();
             var offerSDP = rtpSession.CreateOffer(null);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
