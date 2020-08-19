@@ -1,20 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
 {
-    /// <summary>
-    /// The supported sampling rates for externally generated audio sources
-    /// such as a microphone.
-    /// </summary>
-    public enum AudioSamplingRatesEnum
-    {
-        SampleRate8KHz = 0,
-        SampleRate16KHz = 1
-    }
-
     public class AudioEncoder
     {
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
@@ -49,7 +38,7 @@ namespace SIPSorcery.Media
                     _g722CodecState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
                 }
 
-                if (sampleRate == AudioSamplingRatesEnum.SampleRate16KHz)
+                if (sampleRate == AudioSamplingRatesEnum.Rate16KHz)
                 {
                     // No up sampling required.
                     int outputBufferSize = pcm.Length / 2;
@@ -80,7 +69,7 @@ namespace SIPSorcery.Media
                 Func<short, byte> encode = (format.FormatCodec == SDPMediaFormatsEnum.PCMA) ?
                        (Func<short, byte>)ALawEncoder.LinearToALawSample : MuLawEncoder.LinearToMuLawSample;
 
-                if (sampleRate == AudioSamplingRatesEnum.SampleRate8KHz)
+                if (sampleRate == AudioSamplingRatesEnum.Rate8KHz)
                 {
                     // No down sampling required.
                     int outputBufferSize = pcm.Length;
@@ -121,8 +110,8 @@ namespace SIPSorcery.Media
         /// <param name="rtpPacket">The RTP packet with the media sample.</param>
         public byte[] DecodeAudio(byte[] encodedSample, SDPMediaFormat format, AudioSamplingRatesEnum sampleRate)
         {
-            bool wants8kSamples = sampleRate == AudioSamplingRatesEnum.SampleRate8KHz;
-            bool wants16kSamples = sampleRate == AudioSamplingRatesEnum.SampleRate16KHz;
+            bool wants8kSamples = sampleRate == AudioSamplingRatesEnum.Rate8KHz;
+            bool wants16kSamples = sampleRate == AudioSamplingRatesEnum.Rate16KHz;
 
             if (format.FormatCodec == SDPMediaFormatsEnum.G722)
             {

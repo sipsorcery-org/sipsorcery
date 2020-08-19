@@ -18,14 +18,15 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Windows;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace demo
 {
@@ -44,6 +45,7 @@ namespace demo
             Console.WriteLine("SIPSorcery Play Sounds Demo");
 
             AddConsoleLogger();
+            CancellationTokenSource exitCts = new CancellationTokenSource();
 
             var sipTransport = new SIPTransport();
 
@@ -51,10 +53,11 @@ namespace demo
 
             var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
 
-            var audioSession = new WindowsAudioSession();
+            var windowsAudio = new WindowsAudioSession();
             var rtpEnhancedAudioSession = new RtpEnhancedAudioSession(
                 new AudioSourceOptions { AudioSource = AudioSourcesEnum.CaptureDevice },
-                audioSession);
+               windowsAudio);
+            rtpEnhancedAudioSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpEnhancedAudioSession);
@@ -63,22 +66,26 @@ namespace demo
             if (callResult)
             {
                 await Task.Delay(1000);
-                await rtpEnhancedAudioSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
+                await rtpEnhancedAudioSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
                 await Task.Delay(1000);
-                await rtpEnhancedAudioSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
+                await rtpEnhancedAudioSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
             }
 
-            Console.WriteLine("press any key to exit...");
-            Console.Read();
+            // Console.WriteLine("press any key to exit...");
+            //Console.Read();
 
             if (userAgent.IsCallActive)
             {
+                exitCts.Token.WaitHandle.WaitOne();
                 Console.WriteLine("Hanging up.");
                 userAgent.Hangup();
             }
 
-            // Give the hangup a chance to complete.
-            await Task.Delay(1000);
+            if (userAgent?.IsHangingUp == true)
+            {
+                Console.WriteLine("Waiting 1s for the call hangup or cancel to complete...");
+                await Task.Delay(1000);
+            }
 
             // Clean up.
             sipTransport.Shutdown();
