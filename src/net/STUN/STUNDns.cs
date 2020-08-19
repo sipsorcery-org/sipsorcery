@@ -89,7 +89,7 @@ namespace SIPSorcery.Net
         /// <param name="uri">The STUN uri to lookup.</param>
         /// <param name="queryType">Whether the address lookup should be A or AAAA.</param>
         /// <returns>An IPEndPoint or null.</returns>
-        private static Task<IPEndPoint> Resolve(STUNUri uri, QueryType queryType)
+        private static async Task<IPEndPoint> Resolve(STUNUri uri, QueryType queryType)
         {
             if (uri == null || String.IsNullOrWhiteSpace(uri.Host))
             {
@@ -99,7 +99,7 @@ namespace SIPSorcery.Net
             if (IPAddress.TryParse(uri.Host, out var ipAddress))
             {
                 // Target is already an IP address, no DNS lookup required.
-                return Task.FromResult(new IPEndPoint(ipAddress, uri.Port));
+                return new IPEndPoint(ipAddress, uri.Port);
             }
             else
             {
@@ -130,67 +130,67 @@ namespace SIPSorcery.Net
                         if (addressList?.Length == 0)
                         {
                             logger.LogWarning($"Operating System DNS lookup failed for {uri.Host}.");
-                            return Task.FromResult<IPEndPoint>(null);
+                            return null;
                         }
                         else
                         {
                             if (addressList.Any(x => x.AddressFamily == family))
                             {
                                 var addressResult = addressList.First(x => x.AddressFamily == family);
-                                return Task.FromResult(new IPEndPoint(addressResult, uri.Port));
+                                return new IPEndPoint(addressResult, uri.Port);
                             }
                             else
                             {
                                 // Didn't get a result for the preferred address family so just use the 
                                 // first available result.
                                 var addressResult = addressList.First();
-                                return Task.FromResult(new IPEndPoint(addressResult, uri.Port));
+                                return new IPEndPoint(addressResult, uri.Port);
                             }
                         }
                     }
                     else
                     {
-                        return Task.FromResult<IPEndPoint>(null);
+                        return null;
                     }
                 }
                 else
                 {
                     if (uri.ExplicitPort)
                     {
-                        return Task.FromResult(HostQuery(uri.Host, uri.Port, queryType));
+                        return HostQuery(uri.Host, uri.Port, queryType);
                     }
                     else
                     {
-                        // No explicit port so use a SRV -> (A | AAAA -> A) record lookup.
-                        return _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower())
-                            .ContinueWith<IPEndPoint>(x =>
+                        try
+                        {
+                            ServiceHostEntry srvResult = null;
+                            // No explicit port so use a SRV -> (A | AAAA -> A) record lookup.
+                            var result = await _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower()).ConfigureAwait(false);
+                            if (result == null || result.Count() == 0)
                             {
-                                ServiceHostEntry srvResult = null;
+                                logger.LogDebug($"STUNDns SRV lookup returned no results for {uri}.");
+                            }
+                            else
+                            {
+                                srvResult = result.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
+                            }
 
-                                if (x.IsFaulted)
-                                {
-                                    logger.LogDebug($"STUNDns SRV lookup failure for {uri}. {x.Exception?.InnerException?.Message}");
-                                }
-                                else if (x.Result == null || x.Result.Count() == 0)
-                                {
-                                    logger.LogDebug($"STUNDns SRV lookup returned no results for {uri}.");
-                                }
-                                else
-                                {
-                                    srvResult = x.Result.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
-                                }
+                            string host = uri.Host; // If no SRV results then fallback is to lookup the hostname directly.
+                            int port = uri.Port;    // If no SRV results then fallback is to use the default port.
 
-                                string host = uri.Host; // If no SRV results then fallback is to lookup the hostname directly.
-                                int port = uri.Port;    // If no SRV results then fallback is to use the default port.
+                            if (srvResult != null)
+                            {
+                                host = srvResult.HostName;
+                                port = srvResult.Port;
+                            }
 
-                                if (srvResult != null)
-                                {
-                                    host = srvResult.HostName;
-                                    port = srvResult.Port;
-                                }
-
-                                return HostQuery(host, port, queryType);
-                            });
+                            return HostQuery(host, port, queryType);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogDebug($"STUNDns SRV lookup failure for {uri}. {e?.InnerException?.Message}");
+                            return null;
+                        }
                     }
                 }
             }
