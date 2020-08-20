@@ -23,10 +23,11 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Windows;
 
 namespace demo
 {
@@ -80,7 +81,7 @@ namespace demo
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
-            var audioSrcOpts = new AudioOptions
+            var audioSrcOpts = new AudioSourceOptions
             {
                 AudioSource = AudioSourcesEnum.Music,
                 SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
@@ -89,7 +90,8 @@ namespace demo
                 }
             };
             var videoSrcOpts = new VideoOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
-            var rtpSession = new RtpAVSession(audioSrcOpts, videoSrcOpts);
+
+            var rtpSession = new PlatformMediaSession(audioSrcOpts, videoSrcOpts);
 
             // Place the call and wait for the result.
             Task<bool> callTask = userAgent.Call(DESTINATION, null, null, rtpSession);
