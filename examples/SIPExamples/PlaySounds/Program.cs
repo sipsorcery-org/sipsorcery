@@ -35,11 +35,11 @@ namespace demo
         //private static string DESTINATION = "1@127.0.0.1";
         //private static string DESTINATION = "sip:pcdodo@192.168.0.50";
         //private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
-        //private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
-        private static string DESTINATION = "sip:aaron@192.168.0.50:7060";
+        private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
+        //private static string DESTINATION = "sip:aaron@192.168.0.50:7060";
         private static SIPEndPoint OUTBOUND_PROXY = null;
 
-        private static string WELCOME_8K = "Sounds/hellowelcome8k.raw";
+        private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
         //private const string WELCOME_16K = "Sounds/hellowelcome16k.raw";
         private const string GOODBYE_16K = "Sounds/goodbye16k.raw";
 
