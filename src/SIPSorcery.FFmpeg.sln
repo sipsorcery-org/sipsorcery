@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30320.27
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery.FFmpeg", "SIPSorcery.FFmpeg.csproj", "{AB2B4EE9-76FE-4160-8F9F-CE561356E066}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AB2B4EE9-76FE-4160-8F9F-CE561356E066}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB2B4EE9-76FE-4160-8F9F-CE561356E066}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB2B4EE9-76FE-4160-8F9F-CE561356E066}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB2B4EE9-76FE-4160-8F9F-CE561356E066}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8476DD5B-15BB-4770-A727-42C54B0648F8}
+	EndGlobalSection
+EndGlobal
