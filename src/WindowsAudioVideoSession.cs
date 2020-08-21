@@ -20,129 +20,51 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Windows.Codecs;
 
 namespace SIPSorceryMedia.Windows
 {
+    public delegate void OnVideoSampleReadyDelegate(byte[] bmp, uint width, uint height, int stride);
+
+    public enum VideoSourcesEnum
+    {
+        None = 0,
+        Webcam = 1,
+        TestPattern = 2,
+        ExternalBitmap = 3, // For example audio scope visualisations.
+    }
+
+    public class VideoSourceOptions
+    {
+        public const int DEFAULT_FRAME_RATE = 30;
+
+        /// <summary>
+        /// The type of video source to use.
+        /// </summary>
+        public VideoSourcesEnum VideoSource;
+
+        /// <summary>
+        /// IF using a video test pattern this is the base image source file.
+        /// </summary>
+        public string SourceFile;
+
+        /// <summary>
+        /// The frame rate to apply to request for the video source. May not be
+        /// applied for certain sources such as a live webcam feed.
+        /// </summary>
+        public int SourceFramesPerSecond = DEFAULT_FRAME_RATE;
+
+        //public IBitmapSource BitmapSource;
+    }
+
     public class WindowsAudioVideoSession : WindowsAudioSession
     {
+        public event OnVideoSampleReadyDelegate OnVideoSampleReady;
+
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
         public WindowsAudioVideoSession()
         { }
-
-        /// <summary>
-        /// Starts the media capturing/source devices.
-        /// </summary>
-        public Task Start()
-        {
-            if (!_isStarted)
-            {
-               
-                }
-                else
-                {
-                    Log.LogWarning("No audio capture devices are available. No audio stream will be sent.");
-                }
-            }
-
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Event handler for audio sample being supplied by local capture device.
-        /// </summary>
-        private void LocalAudioSampleAvailable(object sender, WaveInEventArgs args)
-        {
-            OnRawAudioSampleReady?.Invoke(AUDIO_SAMPLE_PERIOD_MILLISECONDS, args.Buffer.Take(args.BytesRecorded).ToArray(), AudioSamplingRatesEnum.Rate8KHz);
-        }
-
-        /// <summary>
-        /// Closes the session.
-        /// </summary>
-        public Task Close()
-        {
-            if (!_isClosed)
-            {
-                _waveOutEvent?.Stop();
-
-                if (_waveInEvent != null)
-                {
-                    _waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
-                    _waveInEvent.StopRecording();
-                }
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public List<AudioFormat> GetAudioFormats()
-        {
-            var formats = new List<AudioFormat>{
-                //new AudioFormat { Codec = AudioCodecsEnum.PCMU, PayloadID = (int)AudioCodecsEnum.PCMU },
-                //new AudioFormat { Codec = AudioCodecsEnum.PCMA, PayloadID = (int)AudioCodecsEnum.PCMA },
-                new AudioFormat { Codec = AudioCodecsEnum.G722, PayloadID = (int)AudioCodecsEnum.G722 } };
-
-            return formats;
-        }
-
-        public void SetAudioSendingFormat(AudioFormat audioFormat)
-        {
-            _selectedAudioFormat = audioFormat;
-        }
-
-        /// <summary>
-        /// Event handler for playing audio samples received from the remote call party.
-        /// </summary>
-        /// <param name="pcmSample"></param>
-        public void ProcessRemoteAudioSample(byte[] pcmSample)
-        {
-            _waveProvider?.AddSamples(pcmSample, 0, pcmSample.Length);
-        }
-
-        public List<VideoFormat> GetVideoFormats()
-        {
-            return null;
-        }
-
-        public void ProcessRemoteRtpAudioFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void ProcessRemoteRtpVideoFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void ProcessRemoteVideoSample(int pixelFormat, byte[] bmpSample)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void SetVideoSendingFormat(VideoFormat videoFormat)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void PauseAudioSource()
-        {
-            _waveInEvent?.StopRecording();
-        }
-
-        public void ResumeAudioSource()
-        {
-            _waveInEvent?.StartRecording();
-        }
-
-        public void PauseVideoSource()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void ResumeVideoSource()
-        {
-            throw new System.NotImplementedException();
-        }
     }
 }

@@ -162,7 +162,7 @@ namespace SIPSorceryMedia.Windows
         /// Event handler for playing audio samples received from the remote call party.
         /// </summary>
         /// <param name="pcmSample"></param>
-        public void ProcessRemoteAudioSample(byte[] pcmSample)
+        public void GotRemoteAudioSample(byte[] pcmSample)
         {
             _waveProvider?.AddSamples(pcmSample, 0, pcmSample.Length);
         }
@@ -172,17 +172,17 @@ namespace SIPSorceryMedia.Windows
             return null;
         }
 
-        public void ProcessRemoteRtpAudioFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
+        public void GotRemoteAudioFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
         {
             throw new System.NotImplementedException();
         }
 
-        public void ProcessRemoteRtpVideoFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
+        public void GotRemoteVideoFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
         {
             throw new System.NotImplementedException();
         }
 
-        public void ProcessRemoteVideoSample(int pixelFormat, byte[] bmpSample)
+        public void GotRemoteVideoSample(int pixelFormat, byte[] bmpSample)
         {
             throw new System.NotImplementedException();
         }
