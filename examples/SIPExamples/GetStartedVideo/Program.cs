@@ -28,6 +28,7 @@ using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Windows;
+using SIPSorceryMedia.Windows.Codecs;
 
 namespace demo
 {
@@ -45,6 +46,27 @@ namespace demo
         private static PictureBox _picBox;
 
         static void Main()
+        {
+            Console.WriteLine("SIPSorcery Getting Started Video Call Demo");
+            Console.WriteLine("Press ctrl-c to exit.");
+
+            AddConsoleLogger();
+
+            var windowsAVSession = new WindowsAudioVideoSession();
+
+            Console.WriteLine($"VP8 encoder version {Vp8Encoder.GetCodecVersion()}.");
+            Console.WriteLine($"VP8 encoder version string {Vp8Encoder.GetCodecVersionStr()}.");
+            Console.WriteLine($"VP8 encoder version string extra {Vp8Encoder.GetCodecVersionExtraStr()}.");
+
+            Vp8Encoder vp8Encoder = new Vp8Encoder();
+            vp8Encoder.InitialiseEncoder(640, 480, 2560);
+
+            vp8Encoder.Dispose();
+
+            Console.WriteLine("Finished.");
+        }
+
+        static void MainX()
         {
             Console.WriteLine("SIPSorcery Getting Started Video Call Demo");
             Console.WriteLine("Press ctrl-c to exit.");
@@ -89,9 +111,10 @@ namespace demo
                     { SDPMediaFormatsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
                 }
             };
-            var videoSrcOpts = new VideoOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
+            var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
 
-            var rtpSession = new PlatformMediaSession(audioSrcOpts, videoSrcOpts);
+            var windowsAVSession = new WindowsAudioVideoSession();
+            var rtpSession = new PlatformMediaSession(windowsAVSession);
 
             // Place the call and wait for the result.
             Task<bool> callTask = userAgent.Call(DESTINATION, null, null, rtpSession);
@@ -102,7 +125,7 @@ namespace demo
             if (callTask.Result)
             {
                 Log.LogInformation("Call attempt successful.");
-                rtpSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =>
+                windowsAVSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =>
                 {
                     _picBox.BeginInvoke(new Action(() =>
                     {

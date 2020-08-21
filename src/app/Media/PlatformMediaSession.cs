@@ -91,7 +91,11 @@ namespace SIPSorcery.Media
                 var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
                 var decodedSample = _audioEncoder.DecodeAudio(rtpPacket.Payload, sendingFormat, AudioSamplingRatesEnum.Rate8KHz);
 
-                OSMediaSession.ProcessRemoteAudioSample(decodedSample);
+                OSMediaSession.GotRemoteAudioSample(decodedSample);
+            }
+            else if(mediaType == SDPMediaTypesEnum.video)
+            {
+                //OSMediaSession.GotRemoteVideoSample()
             }
         }
     }
