@@ -136,31 +136,10 @@ namespace SIPSorcery.SIP
         public static int MAX_RING_TIME = 180000;
     }
 
-    public enum SIPSchemesEnum
+    public class SIPSchemes
     {
-        sip = 1,
-        sips = 2,
-    }
-
-    public class SIPSchemesType
-    {
-        public static SIPSchemesEnum GetSchemeType(string schemeType)
-        {
-            return (SIPSchemesEnum)Enum.Parse(typeof(SIPSchemesEnum), schemeType, true);
-        }
-
-        public static bool IsAllowedScheme(string schemeType)
-        {
-            try
-            {
-                Enum.Parse(typeof(SIPSchemesEnum), schemeType, true);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        public const string SIP = "sip";
+        public const string SIPS = "sips";
     }
 
     /// <summary>

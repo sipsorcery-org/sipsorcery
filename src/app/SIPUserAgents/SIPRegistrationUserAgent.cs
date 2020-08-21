@@ -113,7 +113,7 @@ namespace SIPSorcery.SIP.App
             int maxRegisterAttempts = DEFAULT_MAX_REGISTER_ATTEMPTS)
         {
             m_sipTransport = sipTransport;
-            m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemes.SIP, SIPProtocolsEnum.udp);
             m_authUsername = username;
             m_password = password;
             m_registrarHost = server;

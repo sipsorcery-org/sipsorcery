@@ -28,12 +28,12 @@ namespace SIPSorcery.SIP.App.UnitTests
             SIPRegistrationUserAgent userAgent = new SIPRegistrationUserAgent(
                 transport,
                 null,
-                new SIPURI("alice", "192.168.11.50", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
+                new SIPURI("alice", "192.168.11.50", null, SIPSchemes.SIP, SIPProtocolsEnum.udp),
                 "alice",
                 "password123",
                 null,
                 "192.168.11.50",
-                new SIPURI(SIPSchemesEnum.sip, IPAddress.Any, 0),
+                new SIPURI(SIPSchemes.SIP, IPAddress.Any, 0),
                 120,
                 null,
                 new[] { "My-Header: value" });
@@ -58,12 +58,12 @@ namespace SIPSorcery.SIP.App.UnitTests
             SIPRegistrationUserAgent userAgent = new SIPRegistrationUserAgent(
                 transport,
                 null,
-                new SIPURI("alice", "192.168.11.50", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
+                new SIPURI("alice", "192.168.11.50", null, SIPSchemes.SIP, SIPProtocolsEnum.udp),
                 "alice",
                 "password123",
                 null,
                 "192.168.11.50",
-                new SIPURI(SIPSchemesEnum.sip, IPAddress.Any, 0),
+                new SIPURI(SIPSchemes.SIP, IPAddress.Any, 0),
                 120,
                 null,
                 new[] { "My-Header: value" });

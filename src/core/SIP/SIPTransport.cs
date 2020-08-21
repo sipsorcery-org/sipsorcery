@@ -577,7 +577,7 @@ namespace SIPSorcery.SIP
             // will be used on the next SIP retransmit.
 
             var topViaHeader = sipResponse.Header.Vias.TopViaHeader;
-            SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
+            SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemes.SIP, topViaHeader.Transport);
 
             var cacheResult = ResolveSIPUriFromCacheInternal(topViaUri, PreferIPv6NameResolution);
 
@@ -639,7 +639,7 @@ namespace SIPSorcery.SIP
                 else
                 {
                     var topViaHeader = sipResponse.Header.Vias.TopViaHeader;
-                    SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
+                    SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemes.SIP, topViaHeader.Transport);
 
                     var lookupResult = await ResolveSIPUriInternalAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
 
@@ -742,7 +742,7 @@ namespace SIPSorcery.SIP
                     }
                 }
 
-                if (header.Contact.Single().ContactURI.Scheme == SIPSchemesEnum.sip && sendFromSIPEndPoint.Protocol != SIPProtocolsEnum.udp)
+                if (header.Contact.Single().ContactURI.Scheme == SIPSchemes.SIP && sendFromSIPEndPoint.Protocol != SIPProtocolsEnum.udp)
                 {
                     header.Contact.Single().ContactURI.Protocol = sendFromSIPEndPoint.Protocol;
                 }

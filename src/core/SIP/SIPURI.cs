@@ -42,12 +42,12 @@ namespace SIPSorcery.SIP
         private static char[] m_invalidSIPHostChars = new char[] { ',', '"' };
 
         private static SIPProtocolsEnum m_defaultSIPTransport = SIPProtocolsEnum.udp;
-        private static SIPSchemesEnum m_defaultSIPScheme = SIPSchemesEnum.sip;
+        private static string m_defaultSIPScheme = SIPSchemes.SIP;
         private static string m_sipRegisterRemoveAll = SIPConstants.SIP_REGISTER_REMOVEALL;
         private static string m_uriParamTransportKey = SIPHeaderAncillary.SIP_HEADERANC_TRANSPORT;
 
         [DataMember]
-        public SIPSchemesEnum Scheme = m_defaultSIPScheme;
+        public string Scheme = m_defaultSIPScheme;
 
         [DataMember]
         public string User;
@@ -71,7 +71,7 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                if (Scheme == SIPSchemesEnum.sips)
+                if (Scheme == SIPSchemes.SIPS)
                 {
                     return SIPProtocolsEnum.tls;
                 }
@@ -92,7 +92,7 @@ namespace SIPSorcery.SIP
             {
                 if (value == SIPProtocolsEnum.udp)
                 {
-                    Scheme = SIPSchemesEnum.sip;
+                    Scheme = SIPSchemes.SIP;
                     if (Parameters != null && Parameters.Has(m_uriParamTransportKey))
                     {
                         Parameters.Remove(m_uriParamTransportKey);
@@ -225,7 +225,7 @@ namespace SIPSorcery.SIP
             ParseParamsAndHeaders(paramsAndHeaders);
         }
 
-        public SIPURI(string user, string host, string paramsAndHeaders, SIPSchemesEnum scheme)
+        public SIPURI(string user, string host, string paramsAndHeaders, string scheme)
         {
             User = user;
             Host = host;
@@ -233,31 +233,31 @@ namespace SIPSorcery.SIP
             Scheme = scheme;
         }
 
-        public SIPURI(string user, string host, string paramsAndHeaders, SIPSchemesEnum scheme, SIPProtocolsEnum protocol)
+        public SIPURI(string user, string host, string paramsAndHeaders, string scheme, SIPProtocolsEnum protocol)
         {
             User = user;
             Host = host;
             ParseParamsAndHeaders(paramsAndHeaders);
             Scheme = scheme;
 
-            if (protocol != SIPProtocolsEnum.udp && scheme != SIPSchemesEnum.sips)
+            if (protocol != SIPProtocolsEnum.udp && scheme != SIPSchemes.SIPS)
             {
                 Parameters.Set(m_uriParamTransportKey, protocol.ToString());
             }
         }
 
-        public SIPURI(SIPSchemesEnum scheme, SIPEndPoint sipEndPoint)
+        public SIPURI(string scheme, SIPEndPoint sipEndPoint)
         {
             Scheme = scheme;
             Host = sipEndPoint.GetIPEndPoint().ToString();
 
-            if (sipEndPoint.Protocol != SIPProtocolsEnum.udp && scheme != SIPSchemesEnum.sips)
+            if (sipEndPoint.Protocol != SIPProtocolsEnum.udp && scheme != SIPSchemes.SIPS)
             {
                 Parameters.Set(m_uriParamTransportKey, sipEndPoint.Protocol.ToString());
             }
         }
 
-        public SIPURI(SIPSchemesEnum scheme, IPAddress address, int port)
+        public SIPURI(string scheme, IPAddress address, int port)
         {
             Scheme = scheme;
             if (address != null)
@@ -294,7 +294,7 @@ namespace SIPSorcery.SIP
                         {
                             try
                             {
-                                sipURI.Scheme = SIPSchemesType.GetSchemeType(uri.Substring(0, colonPosn));
+                                sipURI.Scheme = uri.Substring(0, colonPosn);
                             }
                             catch
                             {
@@ -392,7 +392,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                string regexSchemePattern = "^(" + SIPSchemesEnum.sip + "|" + SIPSchemesEnum.sips + "):";
+                string regexSchemePattern = "^(" + SIPSchemes.SIP + "|" + SIPSchemes.SIPS + "):";
 
                 if (Regex.Match(partialURI, regexSchemePattern + @"\S+").Success)
                 {
@@ -435,7 +435,7 @@ namespace SIPSorcery.SIP
                 }
 
                 // If the URI's protocol is not implied already set the transport parameter.
-                if (Scheme != SIPSchemesEnum.sips && Protocol != SIPProtocolsEnum.udp && !Parameters.Has(m_uriParamTransportKey))
+                if (Scheme != SIPSchemes.SIPS && Protocol != SIPProtocolsEnum.udp && !Parameters.Has(m_uriParamTransportKey))
                 {
                     uriStr += PARAM_TAG_DELIMITER + m_uriParamTransportKey + TAG_NAME_VALUE_SEPERATOR + Protocol.ToString();
                 }
@@ -470,7 +470,7 @@ namespace SIPSorcery.SIP
                 uriStr = (User != null) ? uriStr + User + USER_HOST_SEPARATOR + Host : uriStr + Host;
 
                 // If the URI's protocol is not implied already set the transport parameter.
-                if (Scheme != SIPSchemesEnum.sips && Protocol != SIPProtocolsEnum.udp && !Parameters.Has(m_uriParamTransportKey))
+                if (Scheme != SIPSchemes.SIPS && Protocol != SIPProtocolsEnum.udp && !Parameters.Has(m_uriParamTransportKey))
                 {
                     uriStr += PARAM_TAG_DELIMITER + m_uriParamTransportKey + TAG_NAME_VALUE_SEPERATOR + Protocol.ToString();
                 }

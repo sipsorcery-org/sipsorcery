@@ -268,7 +268,7 @@ namespace SIPSorcery.SIP
             {
                 SIPResponse response = new SIPResponse(responseCode, reasonPhrase);
                 response.SetSendFromHints(localSIPEndPoint);
-                SIPSchemesEnum sipScheme = (localSIPEndPoint.Protocol == SIPProtocolsEnum.tls) ? SIPSchemesEnum.sips : SIPSchemesEnum.sip;
+                string sipScheme = (localSIPEndPoint.Protocol == SIPProtocolsEnum.tls) ? SIPSchemes.SIPS : SIPSchemes.SIP;
                 SIPFromHeader from = new SIPFromHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
                 SIPToHeader to = new SIPToHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
                 int cSeq = 1;

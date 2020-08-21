@@ -252,7 +252,7 @@ namespace SIPSorcery.SIP.App
                         subscribeRequest.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, contactURI) };
                     }
 
-                    subscribeRequest.Header.From = new SIPFromHeader(null, new SIPURI(m_authUsername, m_authDomain, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp), m_subscriptionFromTag);
+                    subscribeRequest.Header.From = new SIPFromHeader(null, new SIPURI(m_authUsername, m_authDomain, null, SIPSchemes.SIP, SIPProtocolsEnum.udp), m_subscriptionFromTag);
                     subscribeRequest.Header.CSeq = m_localCSeq;
                     subscribeRequest.Header.Expires = expiry;
                     subscribeRequest.Header.Event = sipEventPackage.ToString();

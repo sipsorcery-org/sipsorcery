@@ -287,7 +287,7 @@ namespace SIPSorcery
             else
             {
                 var dstEp = SIPEndPoint.ParseSIPEndPoint(dst);
-                dstUri = new SIPURI(SIPSchemesEnum.sip, dstEp);
+                dstUri = new SIPURI(SIPSchemes.SIP , dstEp);
             }
 
             return dstUri;

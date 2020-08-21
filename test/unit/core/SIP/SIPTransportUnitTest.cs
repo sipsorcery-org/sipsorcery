@@ -69,7 +69,7 @@ namespace SIPSorcery.SIP.UnitTests
                 {
                     await RunClient(
     clientChannel,
-    serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
+    serverChannel.GetContactURI(SIPSchemes.SIP, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
     testComplete,
     cancelServer,
     serverReadyEvent);
@@ -114,7 +114,7 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 await RunClient(
 clientChannel,
-serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0))),
+serverChannel.GetContactURI(SIPSchemes.SIP, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0))),
 testComplete,
 cancelServer,
 serverReadyEvent);
@@ -168,7 +168,7 @@ serverReadyEvent);
                 {
                     await RunClient(
     clientChannel,
-    serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
+    serverChannel.GetContactURI(SIPSchemes.SIP, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
     testComplete,
     cancelServer,
     serverReadyEvent);
@@ -215,7 +215,7 @@ serverReadyEvent);
             {
                 await RunClient(
 clientChannel,
-serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0))),
+serverChannel.GetContactURI(SIPSchemes.SIP, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0))),
 testComplete,
 cancelServer,
 serverReadyEvent);
@@ -269,7 +269,7 @@ serverReadyEvent);
 
                     var clientChannel = new SIPTCPChannel(IPAddress.Loopback, 0);
                     clientChannel.DisableLocalTCPSocketsCheck = true;
-                    SIPURI serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0)));
+                    SIPURI serverUri = serverChannel.GetContactURI(SIPSchemes.SIP, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0)));
 
                     logger.LogDebug($"Server URI {serverUri.ToString()}.");
 
@@ -342,7 +342,7 @@ serverReadyEvent);
                 {
                     await RunClient(
     clientChannel,
-    serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
+    serverChannel.GetContactURI(SIPSchemes.SIPS, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
     testComplete,
     cancelServer,
     serverReadyEvent);
@@ -404,7 +404,7 @@ serverReadyEvent);
                 {
                     await RunClient(
     clientChannel,
-    serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.Loopback, 0))),
+    serverChannel.GetContactURI(SIPSchemes.SIPS, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.Loopback, 0))),
     testComplete,
     cancelServer,
     serverReadyEvent);
@@ -472,7 +472,7 @@ serverReadyEvent);
                     {
                         logger.LogDebug($"Sending request {i}.");
 
-                        var req = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, new SIPURI(SIPSchemesEnum.sip, tcpChannel.ListeningSIPEndPoint));
+                        var req = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, new SIPURI(SIPSchemes.SIP, tcpChannel.ListeningSIPEndPoint));
                         byte[] reqBytes = Encoding.UTF8.GetBytes(req.ToString());
 
                         tcpClient.GetStream().Write(reqBytes, 0, reqBytes.Length);
@@ -572,7 +572,7 @@ serverReadyEvent);
                 return Task.CompletedTask;
             };
 
-            var serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, clientChannel.ListeningSIPEndPoint);
+            var serverUri = serverChannel.GetContactURI(SIPSchemes.SIP, clientChannel.ListeningSIPEndPoint);
             var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
             await sipTransport.SendRequestAsync(optionsRequest);
 
@@ -623,7 +623,7 @@ serverReadyEvent);
                 return Task.CompletedTask;
             };
 
-            var serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, clientChannel.ListeningSIPEndPoint);
+            var serverUri = serverChannel.GetContactURI(SIPSchemes.SIP, clientChannel.ListeningSIPEndPoint);
             var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
             optionsRequest.Header.UnknownHeaders.Add($"X-Request-Random:{Crypto.GetRandomString(1000)}");
             optionsRequest.Header.UnknownHeaders.Add("X-Request-Final: TheEnd");

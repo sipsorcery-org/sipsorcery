@@ -1030,7 +1030,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemes.SIP, SIPProtocolsEnum.udp);
             SIPRequest registerRequest = SIPRequest.GetRequest(SIPMethodsEnum.REGISTER, uri);
             registerRequest.Header.Vias.TopViaHeader.Branch = "z9hG4bKb4313133e5fe42da87034c2b22ac2aab";
             registerRequest.Header.From.FromTag = "OLBDXPNBTJ";
@@ -1061,7 +1061,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemes.SIP, SIPProtocolsEnum.udp);
             SIPRequest registerRequest = SIPRequest.GetRequest(SIPMethodsEnum.REGISTER, uri);
             registerRequest.Header.Vias.TopViaHeader.Branch = "z9hG4bKb4313133e5fe42da87034c2b22ac2aab";
             registerRequest.Header.From.FromTag = "OLBDXPNBTJ";

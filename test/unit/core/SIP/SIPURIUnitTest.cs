@@ -327,7 +327,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("tel:1234565"));
+            Assert.Equal("tel", SIPURI.ParseSIPURI("tel:1234565").Scheme);
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -383,7 +383,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("sip.domain.com");
 
-            Assert.True(sipURI.Scheme == SIPSchemesEnum.sip, "The SIP URI scheme was not parsed correctly.");
+            Assert.True(sipURI.Scheme == SIPSchemes.SIP, "The SIP URI scheme was not parsed correctly.");
             Assert.True(sipURI.User == null, "The SIP URI User was not parsed correctly.");
             Assert.True(sipURI.Host == "sip.domain.com", "The SIP URI Host was not parsed correctly.");
             Assert.True(sipURI.Protocol == SIPProtocolsEnum.udp, "The SIP URI protocol was not parsed correctly.");
@@ -399,7 +399,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("sips:sip.domain.com:1234");
 
-            Assert.True(sipURI.Scheme == SIPSchemesEnum.sips, "The SIP URI scheme was not parsed correctly.");
+            Assert.True(sipURI.Scheme == SIPSchemes.SIPS, "The SIP URI scheme was not parsed correctly.");
             Assert.True(sipURI.User == null, "The SIP URI User was not parsed correctly.");
             Assert.True(sipURI.Host == "sip.domain.com:1234", "The SIP URI Host was not parsed correctly.");
 
@@ -414,7 +414,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("sip:joe.bloggs@sip.domain.com:1234;transport=tcp");
 
-            Assert.True(sipURI.Scheme == SIPSchemesEnum.sip, "The SIP URI scheme was not parsed correctly.");
+            Assert.True(sipURI.Scheme == SIPSchemes.SIP, "The SIP URI scheme was not parsed correctly.");
             Assert.True(sipURI.User == "joe.bloggs", "The SIP URI User was not parsed correctly.");
             Assert.True(sipURI.Host == "sip.domain.com:1234", "The SIP URI Host was not parsed correctly.");
             Assert.True(sipURI.Protocol == SIPProtocolsEnum.tcp, "The SIP URI protocol was not parsed correctly.");
@@ -442,7 +442,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPURI sipURI = new SIPURI(SIPSchemesEnum.sip, SIPEndPoint.ParseSIPEndPoint("127.0.0.1"));
+            SIPURI sipURI = new SIPURI(SIPSchemes.SIP, SIPEndPoint.ParseSIPEndPoint("127.0.0.1"));
             logger.LogDebug(sipURI.ToString());
             Assert.True(sipURI.ToString() == "sip:127.0.0.1:5060", "The SIP URI was not ToString'ed correctly.");
             logger.LogDebug("-----------------------------------------");
@@ -510,7 +510,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:[::1]");
 
-            Assert.True(sipURI.Scheme == SIPSchemesEnum.sip, "The SIP URI scheme was not parsed correctly.");
+            Assert.True(sipURI.Scheme == SIPSchemes.SIP, "The SIP URI scheme was not parsed correctly.");
             Assert.True(sipURI.Host == "[::1]", "The SIP URI host was not parsed correctly.");
             Assert.True(sipURI.ToSIPEndPoint() == new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.IPv6Loopback, 5060, null, null), "The SIP URI end point details were not parsed correctly.");
 
@@ -537,7 +537,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:[::1]:6060");
 
-            Assert.True(sipURI.Scheme == SIPSchemesEnum.sip, "The SIP URI scheme was not parsed correctly.");
+            Assert.True(sipURI.Scheme == SIPSchemes.SIP, "The SIP URI scheme was not parsed correctly.");
             Assert.True(sipURI.Host == "[::1]:6060", "The SIP URI host was not parsed correctly.");
             Assert.True(sipURI.ToSIPEndPoint() == new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.IPv6Loopback, 6060, null, null), "The SIP URI end point details were not parsed correctly.");
 
@@ -599,7 +599,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
+            SIPURI ipv6Uri = new SIPURI(SIPSchemes.SIP, IPAddress.IPv6Loopback, 6060);
 
             Assert.Equal("sip:[::1]:6060", ipv6Uri.ToString());
 
@@ -615,7 +615,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
+            SIPURI ipv6Uri = new SIPURI(SIPSchemes.SIP, IPAddress.IPv6Loopback, 6060);
 
             Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:user1@2a00:1450:4005:800::2004"));
             Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:user1@:::ffff:127.0.0.1"));
@@ -632,7 +632,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
+            SIPURI ipv6Uri = new SIPURI(SIPSchemes.SIP, IPAddress.IPv6Loopback, 6060);
 
             var uri = SIPURI.ParseSIPURI("sip:[::ffff:127.0.0.1]");
 

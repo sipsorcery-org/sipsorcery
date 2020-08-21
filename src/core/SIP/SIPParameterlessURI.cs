@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public SIPSchemesEnum Scheme
+        public string Scheme
         {
             get { return m_uri.Scheme; }
             set { m_uri.Scheme = value; }
@@ -66,7 +66,7 @@ namespace SIPSorcery.SIP
             m_uri = sipURI;
         }
 
-        public SIPParameterlessURI(SIPSchemesEnum scheme, string host, string user)
+        public SIPParameterlessURI(string scheme, string host, string user)
         {
             m_uri = new SIPURI(user, host, null);
             m_uri.Scheme = scheme;

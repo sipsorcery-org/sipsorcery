@@ -385,7 +385,7 @@ namespace SIPSorcery.SIP
         /// Special SIP From header that is recognised by the SIP transport classes Send methods. At send time this header will be replaced by 
         /// one with IP end point details that reflect the socket the request or response was sent from.
         /// </summary>
-        public static SIPFromHeader GetDefaultSIPFromHeader(SIPSchemesEnum scheme)
+        public static SIPFromHeader GetDefaultSIPFromHeader(string scheme)
         {
             return new SIPFromHeader(null, new SIPURI(scheme, IPAddress.Any, 0), CallProperties.CreateNewTag());
         }
@@ -610,7 +610,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public static SIPContactHeader GetDefaultSIPContactHeader()
         {
-            return new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, IPAddress.Any, 0));
+            return new SIPContactHeader(null, new SIPURI(SIPSchemes.SIP, IPAddress.Any, 0));
         }
 
         public string RawHeader;
@@ -1097,7 +1097,7 @@ namespace SIPSorcery.SIP
             m_sipRoutes.Insert(0, new SIPRoute(host, true));
         }
 
-        public void PushRoute(IPEndPoint socket, SIPSchemesEnum scheme, SIPProtocolsEnum protcol)
+        public void PushRoute(IPEndPoint socket, string scheme, SIPProtocolsEnum protcol)
         {
             m_sipRoutes.Insert(0, new SIPRoute(scheme + ":" + socket.ToString(), true));
         }

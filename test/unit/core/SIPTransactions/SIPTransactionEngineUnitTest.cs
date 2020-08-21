@@ -145,7 +145,7 @@ namespace SIPSorcery.SIP.UnitTests
                     return Task.FromResult(0);
                 };
 
-                SIPURI dummyURI = new SIPURI("dummy", serverTransport.GetSIPChannels().First().ListeningEndPoint.ToString(), null, SIPSchemesEnum.sip);
+                SIPURI dummyURI = new SIPURI("dummy", serverTransport.GetSIPChannels().First().ListeningEndPoint.ToString(), null, SIPSchemes.SIP);
                 SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
 
                 // Send the invite to the server side.

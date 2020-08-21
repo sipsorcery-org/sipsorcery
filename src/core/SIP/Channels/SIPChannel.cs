@@ -282,7 +282,7 @@ namespace SIPSorcery.SIP
         /// <param name="scheme">The SIP scheme to use for the Contact URI.</param>
         /// <param name="dstEndPoint">The destination SIP end point the Contact URI is for. For a SIPChannel using
         /// IPAddress.Any the destination needs to be known so it can select the correct local address.</param>
-        public SIPURI GetContactURI(SIPSchemesEnum scheme, SIPEndPoint dstEndPoint)
+        public SIPURI GetContactURI(string scheme, SIPEndPoint dstEndPoint)
         {
             return new SIPURI(scheme, GetLocalSIPEndPointForDestination(dstEndPoint));
         }

@@ -409,7 +409,7 @@ a=sendrecv";
                 Assert.True(answerResult);
             };
 
-            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+            var dstUri = udpChannel.GetContactURI(SIPSchemes.SIP, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
             logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
 
@@ -457,7 +457,7 @@ a=sendrecv";
                 Assert.False(answerResult);
             };
 
-            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+            var dstUri = udpChannel.GetContactURI(SIPSchemes.SIP, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
             logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
 
@@ -617,7 +617,7 @@ a=sendrecv";
                 MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
                 rtpSession.addTrack(audioTrack);
 
-                SIPURI dstUri = new SIPURI(SIPSchemesEnum.sip, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);
+                SIPURI dstUri = new SIPURI(SIPSchemes.SIP, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);
                 var result = await userAgent.Call(dstUri.ToString(), null, null, rtpSession);
                 Assert.True(result);
             }
@@ -682,7 +682,7 @@ a=sendrecv";
                 MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
                 rtpSession.addTrack(audioTrack);
 
-                SIPURI dstUri = new SIPURI(SIPSchemesEnum.sip, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);
+                SIPURI dstUri = new SIPURI(SIPSchemes.SIP, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);
                 var result = await userAgent.Call(dstUri.ToString(), null, null, rtpSession);
                 Assert.False(result);
             }
@@ -747,14 +747,14 @@ a=sendrecv";
             }
 
             // Place the two calls from A to C and B to D.
-            var dstUriC = sipTransportC.GetSIPChannels()[0].GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+            var dstUriC = sipTransportC.GetSIPChannels()[0].GetContactURI(SIPSchemes.SIP, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
             logger.LogDebug($"UA-A attempting call UA-C on {dstUriC}.");
             var callResultAtoC = await userAgentA.Call(dstUriC.ToString(), null, null, CreateMediaSession());
             logger.LogDebug($"Client agent answer result for A to C {callResultAtoC}.");
 
             Assert.True(callResultAtoC);
 
-            var dstUriD = sipTransportD.GetSIPChannels()[0].GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+            var dstUriD = sipTransportD.GetSIPChannels()[0].GetContactURI(SIPSchemes.SIP, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
             logger.LogDebug($"UA-B attempting call UA-D on {dstUriD}.");
             var callResultBtoD = await userAgentB.Call(dstUriD.ToString(), null, null, CreateMediaSession());
             logger.LogDebug($"Client agent answer result for B to D {callResultBtoD}.");

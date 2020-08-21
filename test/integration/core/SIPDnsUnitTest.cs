@@ -171,7 +171,7 @@ namespace SIPSorcery.SIP.IntegrationTests
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            var result = SIPDns.ResolveAsync(new SIPURI(null, "sipsorcery.com", null, SIPSchemesEnum.sips, SIPProtocolsEnum.tls), false, cts.Token).Result;
+            var result = SIPDns.ResolveAsync(new SIPURI(null, "sipsorcery.com", null, SIPSchemes.SIPS, SIPProtocolsEnum.tls), false, cts.Token).Result;
 
             Assert.NotNull(result);
             Assert.Equal("67.222.131.147", result.Address.ToString());
