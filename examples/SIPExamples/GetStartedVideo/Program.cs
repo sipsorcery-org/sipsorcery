@@ -111,6 +111,7 @@ namespace demo
                     { SDPMediaFormatsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
                 }
             };
+
             var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
 
             var windowsAVSession = new WindowsAudioVideoSession();
