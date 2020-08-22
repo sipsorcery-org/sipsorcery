@@ -59,6 +59,8 @@ namespace SIPSorceryMedia.Windows
 
     public class WindowsAudioVideoSession : WindowsAudioSession
     {
+        private Vp8Codec _vp8Codec;
+
         public event OnVideoSampleReadyDelegate OnVideoSampleReady;
 
         /// <summary>
@@ -66,5 +68,49 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public WindowsAudioVideoSession()
         { }
+
+        public override void GotRemoteVideoFrame(int payloadID, int timestampDuration, byte[] frame)
+        {
+            //RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(frame);
+
+            unsafe
+            {
+                fixed (byte* p = frame)
+                {
+                    uint width = 0, height = 0;
+                    byte[] i420 = null;
+
+                    //Console.WriteLine($"Attempting vpx decode {_currVideoFramePosn} bytes.");
+
+                    //int decodeResult = _vpxDecoder.Decode(p, 0, ref i420, ref width, ref height);
+
+                    //if (decodeResult != 0)
+                    //{
+                    //    Log.LogWarning("VPX decode of video sample failed.");
+                    //}
+                    //else
+                    //{
+                    //    if (OnVideoSampleReady != null)
+                    //    {
+                    //        fixed (byte* r = i420)
+                    //        {
+                    //            byte[] bmp = null;
+                    //            int stride = 0;
+                    //            int convRes = _imgConverter.ConvertYUVToRGB(r, VideoSubTypesEnum.I420, (int)width, (int)height, VideoSubTypesEnum.BGR24, ref bmp, ref stride);
+
+                    //            if (convRes == 0)
+                    //            {
+                    //                OnVideoSampleReady?.Invoke(bmp, width, height, stride);
+                    //            }
+                    //            else
+                    //            {
+                    //                Log.LogWarning("Pixel format conversion of decoded sample failed.");
+                    //            }
+                    //        }
+                    //    }
+                    //}
+                }
+            }
+        }
     }
 }

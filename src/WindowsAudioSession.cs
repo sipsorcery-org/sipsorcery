@@ -36,7 +36,7 @@ namespace SIPSorceryMedia.Windows
         private const int AUDIO_INPUTDEVICE_INDEX = -1;
         private const int AUDIO_OUTPUTDEVICE_INDEX = -1;
 
-        private static ILogger Log = NullLogger.Instance;
+        protected static ILogger Log = NullLogger.Instance;
 
         private static readonly WaveFormat _waveFormat = new WaveFormat(
             DEVICE_SAMPLING_RATE,
@@ -177,7 +177,7 @@ namespace SIPSorceryMedia.Windows
             throw new System.NotImplementedException();
         }
 
-        public void GotRemoteVideoFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
+        public virtual void GotRemoteVideoFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
         {
             throw new System.NotImplementedException();
         }
