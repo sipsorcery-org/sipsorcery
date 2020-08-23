@@ -73,7 +73,7 @@ namespace WebRTCServer
         private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
-        private const int VP8_TIMESTAMP_SPACING = 3000;
+        private const int VIDEO_TIMESTAMP_SPACING = 3000;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
@@ -84,6 +84,7 @@ namespace WebRTCServer
         private static Bitmap _testPattern;
         private static Timer _sendTestPatternTimer;
         private static bool _forceKeyFrame = false;
+        private static long _presentationTimestamp = 0;
 
         private static Vp8Codec _vp8Codec;
         private static VideoEncoder _ffmpegEncoder;
@@ -138,7 +139,15 @@ namespace WebRTCServer
 
             var pc = new RTCPeerConnection(null);
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendOnly);
+            //MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, 
+                new List<SDPMediaFormat> 
+                { 
+                    new SDPMediaFormat(SDPMediaFormatsEnum.H264)
+                    {
+                        FormatParameterAttribute = $"level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f",
+                    }
+                }, MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
 
             //pc.OnReceiveReport += RtpSession_OnReceiveReport;
@@ -213,10 +222,11 @@ namespace WebRTCServer
             _vp8Codec.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
             _sendTestPatternTimer = new Timer(SendTestPattern, null, Timeout.Infinite, Timeout.Infinite);
 
-            _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+
             _videoFrameConverter = new VideoFrameConverter(
                 new Size(_testPattern.Width, _testPattern.Height),
-                //AVPixelFormat.AV_PIX_FMT_BGR24,
                 AVPixelFormat.AV_PIX_FMT_BGRA,
                 new Size(_testPattern.Width, _testPattern.Height),
                 AVPixelFormat.AV_PIX_FMT_YUV420P);
@@ -233,27 +243,22 @@ namespace WebRTCServer
                         var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
                         AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
                         var sampleBuffer = PixelConverter.BitmapToRGBA(stampedTestPattern as System.Drawing.Bitmap, _testPattern.Width, _testPattern.Height);
-                        
-                        //byte[] bmpBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
-                        var i420Frame = _videoFrameConverter.Convert(sampleBuffer);
-  
-                        //byte[] i420Buffer = PixelConverter.RGBAtoYUV420Planar(sampleBuffer, _testPattern.Width, _testPattern.Height);
-                        //AVFrame i420Frame = _ffmpegEncoder.MakeFrame(i420Buffer, _testPattern.Width, _testPattern.Height);
 
+                        var i420Frame = _videoFrameConverter.Convert(sampleBuffer);
+
+                        //byte[] i420Buffer = PixelConverter.RGBAtoYUV420Planar(sampleBuffer, _testPattern.Width, _testPattern.Height);
                         //var encodedBuffer = _vp8Codec.Encode(i420, _forceKeyFrame);
-                        //var encodedBuffer = _ffmpegEncoder.Encode(i420Buffer);
+
+                        _presentationTimestamp += VIDEO_TIMESTAMP_SPACING;
 
                         i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
-
+                        i420Frame.pts = _presentationTimestamp;
+                        
                         var encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
 
-                        if (encodedBuffer == null)
+                        if (encodedBuffer != null)
                         {
-                            logger.LogWarning("VPX encode of video sample failed.");
-                        }
-                        else
-                        {
-                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VP8_TIMESTAMP_SPACING, encodedBuffer);
+                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer);
                         }
 
                         if (_forceKeyFrame)
@@ -266,20 +271,6 @@ namespace WebRTCServer
                 }
             }
         }
-
-        //private static byte[] BitmapToRGB24(Bitmap bitmap)
-        //{
-        //    BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-        //    var length = bitmapData.Stride * bitmapData.Height;
-
-        //    byte[] bytes = new byte[length];
-
-        //    // Copy bitmap to byte[]
-        //    Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
-        //    bitmap.UnlockBits(bitmapData);
-
-        //    return bytes;
-        //}
 
         private static void AddTimeStampAndLocation(System.Drawing.Image image, string timeStamp, string locationText)
         {

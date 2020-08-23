@@ -700,8 +700,21 @@ namespace SIPSorcery.Net
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
-                    int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
-                    SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
+                    var videoSendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.video);
+
+                    switch (videoSendingFormat.FormatCodec)
+                    {
+                        case SDPMediaFormatsEnum.VP8:
+                            int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
+                            SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
+                            break;
+                        case SDPMediaFormatsEnum.H264:
+                            int h264PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.H264).FormatID);
+                            SendH264Frame(sampleTimestamp, h264PayloadID, sample);
+                            break;
+                        default:
+                            throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.FormatCodec}.");
+                    }
                 }
                 else if (mediaType == SDPMediaTypesEnum.audio)
                 {

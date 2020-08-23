@@ -1686,6 +1686,10 @@ namespace SIPSorcery.Net
         /// <param name="frame">The H264 encoded frame to transmit.</param>
         /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
         /// <param name="payloadType">The payload type to set on the RTP packet.</param>
+        /// <remarks>
+        /// RTP Payload Format for H.264 Video:
+        /// https://tools.ietf.org/html/rfc6184
+        /// </remarks>
         public void SendH264Frame(uint duration, int payloadTypeID, byte[] frame)
         {
             var dstEndPoint = m_isMediaMultiplexed ? AudioDestinationEndPoint : VideoDestinationEndPoint;
@@ -1744,7 +1748,10 @@ namespace SIPSorcery.Net
                         Buffer.BlockCopy(h264Header, 0, payload, 0, H264_RTP_HEADER_LENGTH);
                         Buffer.BlockCopy(frame, offset, payload, H264_RTP_HEADER_LENGTH, payloadLength);
 
-                        SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
+                        var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
+
+                        SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
+                        logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
 
                         videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
                     }
