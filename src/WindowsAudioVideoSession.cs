@@ -16,6 +16,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -69,13 +70,13 @@ namespace SIPSorceryMedia.Windows
         public WindowsAudioVideoSession()
         { }
 
-        public override void GotRemoteVideoFrame(int payloadID, int timestampDuration, byte[] frame)
+        public override void GotVideoRtp(IPEndPoint remoteEndPoint, int ssrc, int seqnum, int timestamp, int payloadID, bool marker, byte[] payload)
         {
             //RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(frame);
 
             unsafe
             {
-                fixed (byte* p = frame)
+                fixed (byte* p = payload)
                 {
                     uint width = 0, height = 0;
                     byte[] i420 = null;

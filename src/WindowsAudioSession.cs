@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -172,12 +173,12 @@ namespace SIPSorceryMedia.Windows
             return null;
         }
 
-        public void GotRemoteAudioFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
+        public virtual void GotAudioRtp(IPEndPoint remoteEndPoint, int ssrc, int seqnum, int timestamp, int payloadID, bool marker, byte[] payload)
         {
             throw new System.NotImplementedException();
         }
 
-        public virtual void GotRemoteVideoFrame(int payloadID, int timestampDuration, byte[] encodedFrame)
+        public virtual void GotVideoRtp(IPEndPoint remoteEndPoint, int ssrc, int seqnum, int timestamp, int payloadID, bool marker, byte[] payload)
         {
             throw new System.NotImplementedException();
         }
