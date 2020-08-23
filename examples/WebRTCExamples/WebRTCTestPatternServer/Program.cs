@@ -27,10 +27,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
-using SIPSorceryMedia;
+using SIPSorcery.FFmpeg;
+using SIPSorceryMedia.Windows.Codecs;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
+using FFmpeg.AutoGen;
 
 namespace WebRTCServer
 {
@@ -65,6 +67,7 @@ namespace WebRTCServer
     class Program
     {
         private static string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
+        private const int FRAMES_PER_SECOND = 30;
         private const int TEST_PATTERN_SPACING_MILLISECONDS = 33;
         private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
         private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
@@ -78,11 +81,13 @@ namespace WebRTCServer
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static WebSocketServer _webSocketServer;
-        private static SIPSorceryMedia.VpxEncoder _vpxEncoder;
-        private static SIPSorceryMedia.ImageConvert _colorConverter;
         private static Bitmap _testPattern;
-        private static int _stride;
         private static Timer _sendTestPatternTimer;
+        private static bool _forceKeyFrame = false;
+
+        private static Vp8Codec _vp8Codec;
+        private static VideoEncoder _ffmpegEncoder;
+        private static VideoFrameConverter _videoFrameConverter;
 
         private static event Action<SDPMediaTypesEnum, uint, byte[]> OnTestPatternSampleReady;
 
@@ -136,8 +141,8 @@ namespace WebRTCServer
             MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
 
-            pc.OnReceiveReport += RtpSession_OnReceiveReport;
-            pc.OnSendReport += RtpSession_OnSendReport;
+            //pc.OnReceiveReport += RtpSession_OnReceiveReport;
+            //pc.OnSendReport += RtpSession_OnSendReport;
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
@@ -145,7 +150,7 @@ namespace WebRTCServer
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
 
-                if(state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
+                if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
                     pc.Close("remote disconnection");
                 }
@@ -155,16 +160,17 @@ namespace WebRTCServer
                     OnTestPatternSampleReady -= pc.SendMedia;
                     pc.OnReceiveReport -= RtpSession_OnReceiveReport;
                     pc.OnSendReport -= RtpSession_OnSendReport;
-                    _sendTestPatternTimer?.Dispose();
+
+                    if (OnTestPatternSampleReady == null)
+                    {
+                        _sendTestPatternTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                    }
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
                     OnTestPatternSampleReady += pc.SendMedia;
-
-                    if (_sendTestPatternTimer == null)
-                    {
-                        _sendTestPatternTimer = new Timer(SendTestPattern, null, 0, TEST_PATTERN_SPACING_MILLISECONDS);
-                    }
+                    _forceKeyFrame = true;
+                    _sendTestPatternTimer.Change(0, TEST_PATTERN_SPACING_MILLISECONDS);
                 }
             };
 
@@ -203,99 +209,77 @@ namespace WebRTCServer
         private static void InitialiseTestPattern()
         {
             _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
+            _vp8Codec = new Vp8Codec();
+            _vp8Codec.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
+            _sendTestPatternTimer = new Timer(SendTestPattern, null, Timeout.Infinite, Timeout.Infinite);
 
-            // Get the stride.
-            Rectangle rect = new Rectangle(0, 0, _testPattern.Width, _testPattern.Height);
-            System.Drawing.Imaging.BitmapData bmpData =
-                _testPattern.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite,
-                _testPattern.PixelFormat);
-
-            // Get the address of the first line.
-            _stride = bmpData.Stride;
-
-            _testPattern.UnlockBits(bmpData);
-
-            // Initialise the video codec and color converter.
-            _vpxEncoder = new VpxEncoder();
-            _vpxEncoder.InitEncoder((uint)_testPattern.Width, (uint)_testPattern.Height, (uint)_stride);
-
-            _colorConverter = new ImageConvert();
+            _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            _videoFrameConverter = new VideoFrameConverter(
+                new Size(_testPattern.Width, _testPattern.Height),
+                //AVPixelFormat.AV_PIX_FMT_BGR24,
+                AVPixelFormat.AV_PIX_FMT_BGRA,
+                new Size(_testPattern.Width, _testPattern.Height),
+                AVPixelFormat.AV_PIX_FMT_YUV420P);
         }
 
         private static void SendTestPattern(object state)
         {
-            try
+            lock (_sendTestPatternTimer)
             {
-                lock (_sendTestPatternTimer)
+                unsafe
                 {
-                    unsafe
+                    if (OnTestPatternSampleReady != null)
                     {
-                        byte[] sampleBuffer = null;
-                        byte[] encodedBuffer = null;
+                        var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
+                        AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
+                        var sampleBuffer = PixelConverter.BitmapToRGBA(stampedTestPattern as System.Drawing.Bitmap, _testPattern.Width, _testPattern.Height);
+                        
+                        //byte[] bmpBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
+                        var i420Frame = _videoFrameConverter.Convert(sampleBuffer);
+  
+                        //byte[] i420Buffer = PixelConverter.RGBAtoYUV420Planar(sampleBuffer, _testPattern.Width, _testPattern.Height);
+                        //AVFrame i420Frame = _ffmpegEncoder.MakeFrame(i420Buffer, _testPattern.Width, _testPattern.Height);
 
-                        if (OnTestPatternSampleReady != null)
+                        //var encodedBuffer = _vp8Codec.Encode(i420, _forceKeyFrame);
+                        //var encodedBuffer = _ffmpegEncoder.Encode(i420Buffer);
+
+                        i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
+
+                        var encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
+
+                        if (encodedBuffer == null)
                         {
-                            var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
-                            AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-                            sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
-
-                            fixed (byte* p = sampleBuffer)
-                            {
-                                byte[] convertedFrame = null;
-                                _colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, _testPattern.Width, _testPattern.Height, _stride, VideoSubTypesEnum.I420, ref convertedFrame);
-
-                                fixed (byte* q = convertedFrame)
-                                {
-                                    int encodeResult = _vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
-
-                                    if (encodeResult != 0)
-                                    {
-                                        logger.LogWarning("VPX encode of video sample failed.");
-                                    }
-                                }
-                            }
-
-                            stampedTestPattern.Dispose();
-                            stampedTestPattern = null;
-
-                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VP8_TIMESTAMP_SPACING, encodedBuffer);
-
-                            encodedBuffer = null;
+                            logger.LogWarning("VPX encode of video sample failed.");
                         }
                         else
                         {
-                            _sendTestPatternTimer?.Dispose();
-                            _sendTestPatternTimer = null;
+                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VP8_TIMESTAMP_SPACING, encodedBuffer);
                         }
+
+                        if (_forceKeyFrame)
+                        {
+                            _forceKeyFrame = false;
+                        }
+
+                        stampedTestPattern.Dispose();
                     }
                 }
             }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SendTestPattern. " + excp);
-            }
         }
 
-        private static byte[] BitmapToRGB24(Bitmap bitmap)
-        {
-            try
-            {
-                BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                var length = bitmapData.Stride * bitmapData.Height;
+        //private static byte[] BitmapToRGB24(Bitmap bitmap)
+        //{
+        //    BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+        //    var length = bitmapData.Stride * bitmapData.Height;
 
-                byte[] bytes = new byte[length];
+        //    byte[] bytes = new byte[length];
 
-                // Copy bitmap to byte[]
-                Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
-                bitmap.UnlockBits(bitmapData);
+        //    // Copy bitmap to byte[]
+        //    Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
+        //    bitmap.UnlockBits(bitmapData);
 
-                return bytes;
-            }
-            catch (Exception)
-            {
-                return new byte[] { };
-            }
-        }
+        //    return bytes;
+        //}
 
         private static void AddTimeStampAndLocation(System.Drawing.Image image, string timeStamp, string locationText)
         {

@@ -102,7 +102,6 @@ namespace SIPSorcery.Net
         /// SCTP over DTLS is supported, no TCP option).
         /// </summary>
         DataChannelTransportNotSupported,
-
     }
 
     /// <summary>

@@ -52,16 +52,19 @@ namespace demo
 
             AddConsoleLogger();
 
-            var windowsAVSession = new WindowsAudioVideoSession();
+            Console.WriteLine($"VP8 encoder version {Vp8Codec.GetCodecVersion()}.");
+            Console.WriteLine($"VP8 encoder version string {Vp8Codec.GetCodecVersionStr()}.");
 
-            Console.WriteLine($"VP8 encoder version {Vp8Encoder.GetCodecVersion()}.");
-            Console.WriteLine($"VP8 encoder version string {Vp8Encoder.GetCodecVersionStr()}.");
-            Console.WriteLine($"VP8 encoder version string extra {Vp8Encoder.GetCodecVersionExtraStr()}.");
+            Vp8Codec vp8Codec = new Vp8Codec();
+            vp8Codec.InitialiseEncoder(640, 480);
 
-            Vp8Encoder vp8Encoder = new Vp8Encoder();
-            vp8Encoder.InitialiseEncoder(640, 480, 2560);
+            byte[] dummyI420 = new byte[640 * 480 * 2];
 
-            vp8Encoder.Dispose();
+            var encoded = vp8Codec.Encode(dummyI420);
+
+            Console.WriteLine($"Encoded frame size {encoded.Length}.");
+
+            vp8Codec.Dispose();
 
             Console.WriteLine("Finished.");
         }
@@ -114,8 +117,8 @@ namespace demo
 
             var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
 
-            var windowsAVSession = new WindowsAudioVideoSession();
-            var rtpSession = new PlatformMediaSession(windowsAVSession);
+            var winAVSession = new WindowsAudioVideoSession();
+            var rtpSession = new PlatformMediaSession(winAVSession);
 
             // Place the call and wait for the result.
             Task<bool> callTask = userAgent.Call(DESTINATION, null, null, rtpSession);
@@ -126,7 +129,7 @@ namespace demo
             if (callTask.Result)
             {
                 Log.LogInformation("Call attempt successful.");
-                windowsAVSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =>
+                winAVSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =>
                 {
                     _picBox.BeginInvoke(new Action(() =>
                     {
