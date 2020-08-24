@@ -12,11 +12,13 @@ namespace SIPSorcery.FFmpeg
         private readonly AVCodecContext* _videoCodecContext;
         private readonly int _frameWidth;
         private readonly int _frameHeight;
+        private readonly AVCodecID _codecID;
 
         private static ILogger logger = NullLogger.Instance;
 
         public VideoEncoder(AVCodecID codecID, int frameWidth, int frameHeight, int framesPerSecond)
         {
+            _codecID = codecID;
             _frameWidth = frameWidth;
             _frameHeight = frameHeight;
 
@@ -38,7 +40,27 @@ namespace SIPSorcery.FFmpeg
             _videoCodecContext->time_base.num = 1;
             _videoCodecContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
 
+            if(codecID == AVCodecID.AV_CODEC_ID_H264)
+            {
+                _videoCodecContext->gop_size = 30; // Key frame interval.
+
+                //_videoCodecContext->profile = ffmpeg.FF_PROFILE_H264_CONSTRAINED_BASELINE;
+                ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
+                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();
+                //ffmpeg.av_opt_set(_pCodecContext->priv_data, "preset", "veryslow", 0);
+                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
+            }
+
             ffmpeg.avcodec_open2(_videoCodecContext, _videoCodec, null).ThrowExceptionIfError();
+
+            //Console.WriteLine($"H264 encoding profile {_videoCodecContext->profile}.");
+
+            //byte[] optBuffer = new byte[2048];
+            //fixed(byte* pOptBuffer = optBuffer)
+            //{
+            //    ffmpeg.av_opt_get(_videoCodecContext, "profile", 0, &pOptBuffer).ThrowExceptionIfError();
+            //    Console.WriteLine($"H264 encoding profile {Marshal.PtrToStringAnsi((IntPtr)pOptBuffer)}.");
+            //}
         }
 
         public void Dispose()
@@ -48,18 +70,10 @@ namespace SIPSorcery.FFmpeg
             ffmpeg.av_free(_videoCodec);
         }
 
-        public string GetDecoderName()
+        public string GetCodecName()
         {
             var namePtr = _videoCodec->name;
-
-            string name = string.Empty;
-
-            while (*namePtr != 0x00)
-            {
-                name += (char)*namePtr++;
-            }
-
-            return name;
+            return Marshal.PtrToStringAnsi((IntPtr)namePtr);
         }
 
         public AVFrame MakeFrame(byte[] i420Buffer, int width, int height)
@@ -112,9 +126,19 @@ namespace SIPSorcery.FFmpeg
 
                 if (error == 0)
                 {
-                    byte[] arr = new byte[pPacket->size];
-                    Marshal.Copy((IntPtr)pPacket->data, arr, 0, pPacket->size);
-                    return arr;
+                    if (_codecID == AVCodecID.AV_CODEC_ID_H264)
+                    {
+                        // The libx264 logic in ffmpeg writes a 4 byte prefix to indicate the number of NALs that were returned.
+                        byte[] arr = new byte[pPacket->size - 4];
+                        Marshal.Copy((IntPtr)pPacket->data + 4, arr, 0, pPacket->size - 4);
+                        return arr;
+                    }
+                    else
+                    {
+                        byte[] arr = new byte[pPacket->size];
+                        Marshal.Copy((IntPtr)pPacket->data, arr, 0, pPacket->size);
+                        return arr;
+                    }
                 }
                 else if (error == ffmpeg.AVERROR(ffmpeg.EAGAIN))
                 {
