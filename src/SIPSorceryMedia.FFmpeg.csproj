@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <NativeLibs Include="$(MSBuildThisFileDirectory)\lib\x86\*.dll" Condition="'$(Platform)' == 'x86'" />
-    <NativeLibs Include="$(MSBuildThisFileDirectory)\lib\x64\*.dll" Condition="'$(Platform)' == 'x64' or '$(Platform)' == 'AnyCPU'" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\..\lib\x86\*.dll" Condition="'$(Platform)' == 'x86'" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\..\lib\x64\*.dll" Condition="'$(Platform)' == 'x64' or '$(Platform)' == 'AnyCPU'" />
     <ContentWithTargetPath Include="@(NativeLibs)">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <TargetPath>%(Filename)%(Extension)</TargetPath>

@@ -5,7 +5,7 @@ using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace SIPSorcery.FFmpeg
+namespace SIPSorceryMedia.FFmpeg
 {
     public sealed unsafe class VideoFrameConverter : IDisposable
     {

@@ -348,3 +348,6 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+test/ffmpeg-20200807-fab00b0-win64-dev/*
+test/ffmpeg-20200807-fab00b0-win64-shared/*
