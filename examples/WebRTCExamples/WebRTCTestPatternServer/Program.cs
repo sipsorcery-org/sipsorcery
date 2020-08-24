@@ -33,6 +33,7 @@ using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
 using FFmpeg.AutoGen;
+using SIPSorcery.Sys;
 
 namespace WebRTCServer
 {
@@ -86,8 +87,9 @@ namespace WebRTCServer
         private static bool _forceKeyFrame = false;
         private static long _presentationTimestamp = 0;
 
-        private static Vp8Codec _vp8Codec;
+        //private static Vp8Codec _vp8Codec;
         private static VideoEncoder _ffmpegEncoder;
+        //private static OpenH264Encoder _openH264Encoder;
         private static VideoFrameConverter _videoFrameConverter;
 
         private static event Action<SDPMediaTypesEnum, uint, byte[]> OnTestPatternSampleReady;
@@ -145,7 +147,7 @@ namespace WebRTCServer
                 { 
                     new SDPMediaFormat(SDPMediaFormatsEnum.H264)
                     {
-                        FormatParameterAttribute = $"level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f",
+                        FormatParameterAttribute = $"packetization-mode=1",
                     }
                 }, MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
@@ -218,18 +220,26 @@ namespace WebRTCServer
         private static void InitialiseTestPattern()
         {
             _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
-            _vp8Codec = new Vp8Codec();
-            _vp8Codec.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
             _sendTestPatternTimer = new Timer(SendTestPattern, null, Timeout.Infinite, Timeout.Infinite);
 
-            //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            //_vp8Codec = new Vp8Codec();
+            //_vp8Codec.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
+
+            _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
             _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            Console.WriteLine($"Codec name {_ffmpegEncoder.GetCodecName()}.");
 
             _videoFrameConverter = new VideoFrameConverter(
                 new Size(_testPattern.Width, _testPattern.Height),
                 AVPixelFormat.AV_PIX_FMT_BGRA,
                 new Size(_testPattern.Width, _testPattern.Height),
                 AVPixelFormat.AV_PIX_FMT_YUV420P);
+
+
+            //_openH264Encoder = new OpenH264Encoder("OpenH264lib", _testPattern.Width, _testPattern.Height, 50000, 30, 100);
+            //_openH264Encoder = new OpenH264Encoder("openh264-2.1.1-win64.dll", _testPattern.Width, _testPattern.Height, 50000, 30, 100);
+
+            //Console.WriteLine($"OpneH264 version {Marshal.PtrToStringUni(OpenH264Encoder.GetCodecVersion())}.");
         }
 
         private static void SendTestPattern(object state)
@@ -253,12 +263,13 @@ namespace WebRTCServer
 
                         i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
                         i420Frame.pts = _presentationTimestamp;
-                        
-                        var encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
+
+                        byte[] encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
 
                         if (encodedBuffer != null)
                         {
-                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer);
+                            logger.LogDebug($"h264 nal {encodedBuffer.Take(64).ToArray().HexStr()}.");
+                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer.ToArray());
                         }
 
                         if (_forceKeyFrame)
