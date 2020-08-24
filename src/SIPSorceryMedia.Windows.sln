@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vpx.AutoGen", "..\autogen\V
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VpxCppTest", "..\test\VpxCppTest\VpxCppTest.vcxproj", "{BE7CF335-177E-45E5-A632-E40C68570F21}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenH264.AutoGen", "..\autogen\OpenH264.Autogen\OpenH264.AutoGen.csproj", "{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,6 +56,18 @@ Global
 		{BE7CF335-177E-45E5-A632-E40C68570F21}.Release|x64.Build.0 = Release|x64
 		{BE7CF335-177E-45E5-A632-E40C68570F21}.Release|x86.ActiveCfg = Release|Win32
 		{BE7CF335-177E-45E5-A632-E40C68570F21}.Release|x86.Build.0 = Release|Win32
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Debug|x64.ActiveCfg = Debug|x64
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Debug|x64.Build.0 = Debug|x64
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Debug|x86.ActiveCfg = Debug|x86
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Debug|x86.Build.0 = Debug|x86
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Release|x64.ActiveCfg = Release|x64
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Release|x64.Build.0 = Release|x64
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Release|x86.ActiveCfg = Release|x86
+		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
