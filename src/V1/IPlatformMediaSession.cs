@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions.V1
@@ -84,12 +85,12 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         void ResumeVideoSource();
 
-        void ProcessRemoteRtpAudioFrame(int payloadID, int timestampDuration, byte[] encodedFrame);
+        void GotAudioRtp(IPEndPoint remoteEndPoint, int ssrc, int seqnum, int timestamp, int payloadID, bool marker, byte[] payload);
 
-        void ProcessRemoteRtpVideoFrame(int payloadID, int timestampDuration, byte[] encodedFrame);
+        void GotVideoRtp(IPEndPoint remoteEndPoint, int ssrc, int seqnum, int timestamp, int payloadID, bool marker, byte[] payload);
 
-        void ProcessRemoteAudioSample(byte[] pcmSample);
+        void GotRemoteAudioSample(byte[] pcmSample);
 
-        void ProcessRemoteVideoSample(int pixelFormat, byte[] bmpSample);
+        void GotRemoteVideoSample(int pixelFormat, byte[] bmpSample);
     }
 }
