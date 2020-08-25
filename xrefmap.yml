@@ -34341,6 +34341,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPSchemesEnum.sips
   fullName: SIPSorcery.SIP.SIPSchemesEnum.sips
   nameWithType: SIPSchemesEnum.sips
+- uid: SIPSorcery.SIP.SIPSchemesEnum.tel
+  name: tel
+  href: api/SIPSorcery.SIP.SIPSchemesEnum.html#SIPSorcery_SIP_SIPSchemesEnum_tel
+  commentId: F:SIPSorcery.SIP.SIPSchemesEnum.tel
+  fullName: SIPSorcery.SIP.SIPSchemesEnum.tel
+  nameWithType: SIPSchemesEnum.tel
 - uid: SIPSorcery.SIP.SIPSchemesType
   name: SIPSchemesType
   href: api/SIPSorcery.SIP.SIPSchemesType.html
