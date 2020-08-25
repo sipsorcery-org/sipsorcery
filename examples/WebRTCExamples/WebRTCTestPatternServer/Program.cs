@@ -18,16 +18,14 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
-using SIPSorcery.FFmpeg;
+using SIPSorceryMedia.FFmpeg;
 using SIPSorceryMedia.Windows.Codecs;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
@@ -225,7 +223,7 @@ namespace WebRTCServer
             //_vp8Codec = new Vp8Codec();
             //_vp8Codec.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
 
-            _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
             _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
             Console.WriteLine($"Codec name {_ffmpegEncoder.GetCodecName()}.");
 
@@ -265,11 +263,51 @@ namespace WebRTCServer
                         i420Frame.pts = _presentationTimestamp;
 
                         byte[] encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
-
                         if (encodedBuffer != null)
                         {
-                            logger.LogDebug($"h264 nal {encodedBuffer.Take(64).ToArray().HexStr()}.");
-                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer.ToArray());
+                            //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
+                            Console.WriteLine($"H264 encoded buffer length {encodedBuffer.Length}.");
+
+                            int zeroes = 0;
+
+                            // Parse NALs from H264 bitstream.
+                            int currPosn = 0;
+                            for (int i = 0; i < encodedBuffer.Length; i++)
+                            {
+                                if (encodedBuffer[i] == 0x00)
+                                {
+                                    zeroes++;
+                                }
+                                else if (encodedBuffer[i] == 0x01 && zeroes >= 2)
+                                {
+                                    // This is a NAL start sequence.
+                                    int nalStart = i + 1;
+                                    if (nalStart - currPosn > 4)
+                                    {
+                                        int endPosn = nalStart - ((zeroes == 2) ? 3 : 4);
+                                        int nalSize = endPosn - currPosn;
+
+                                        //Console.WriteLine($"nal: {encodedBuffer.Skip(currPosn).Take(nalSize).ToArray().HexStr()}");
+                                        Console.WriteLine($"sending nal length {nalSize}.");
+
+                                        OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer.Skip(currPosn).Take(nalSize).ToArray());
+                                    }
+
+                                    currPosn = nalStart;
+                                }
+                                else
+                                {
+                                    zeroes = 0;
+                                }
+                            }
+
+                            if (currPosn < encodedBuffer.Length)
+                            {
+                                //Console.WriteLine($"last nal: {encodedBuffer.Skip(currPosn).ToArray().HexStr()}");
+                                Console.WriteLine($"sending last nal length {encodedBuffer.Length - currPosn}.");
+
+                                OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer.Skip(currPosn).ToArray());
+                            }
                         }
 
                         if (_forceKeyFrame)
