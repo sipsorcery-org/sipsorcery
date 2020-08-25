@@ -129,8 +129,8 @@ namespace SIPSorceryMedia.FFmpeg
                     if (_codecID == AVCodecID.AV_CODEC_ID_H264)
                     {
                         // The libx264 logic in ffmpeg writes a 4 byte prefix to indicate the number of NALs that were returned.
-                        byte[] arr = new byte[pPacket->size - 4];
-                        Marshal.Copy((IntPtr)pPacket->data + 4, arr, 0, pPacket->size - 4);
+                        byte[] arr = new byte[pPacket->size];
+                        Marshal.Copy((IntPtr)pPacket->data, arr, 0, pPacket->size);
                         return arr;
                     }
                     else

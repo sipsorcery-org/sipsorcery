@@ -4,6 +4,6 @@ s=-
 c=IN IP4 127.0.0.1
 t=0 0
 m=video 5024 RTP/AVP 96
-a=rtpmap:102 H264/90000
+a=rtpmap:96 H264/90000
 a=fmtp:96 packetization-mode=1
 a=sendonly

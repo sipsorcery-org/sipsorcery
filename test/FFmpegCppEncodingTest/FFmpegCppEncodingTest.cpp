@@ -210,8 +210,8 @@ int main()
         break;
       }
 
-      //std::cout << "press any key to continue..." << std::endl;
-      //getchar();
+      std::cout << "press any key to continue..." << std::endl;
+      getchar();
     }
 
     av_usleep(1000000 / FRAMES_PER_SECOND);
