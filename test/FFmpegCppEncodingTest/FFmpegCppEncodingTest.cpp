@@ -4,14 +4,16 @@
 #include <string>
 #include <sstream>
 
+#include "strutils.h"
+
 extern "C"
 {
-#include <libavcodec\avcodec.h>
-#include <libavformat\avformat.h>
-#include <libavformat\avio.h>
-#include <libavutil\imgutils.h>
-#include <libswscale\swscale.h>
-#include <libavutil\time.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavformat/avio.h>
+#include <libavutil/imgutils.h>
+#include <libswscale/swscale.h>
+#include <libavutil/time.h>
 }
 
 #define WIDTH 640
@@ -28,7 +30,8 @@ AVCodecContext* _codecCtx;
 AVFormatContext* _formatContext;
 AVStream* _rtpOutStream;
 char _errorLog[ERROR_LEN];
-AVCodecParserContext* _codecParserCtx;
+AVCodecParserContext* _parserCtx;
+AVCodecContext* _parserCodecCtx;
 
 int main()
 {
@@ -59,11 +62,6 @@ int main()
   int res = avcodec_open2(_codecCtx, _codec, NULL);
   if (res < 0) {
     std::cerr << "Failed to open codec: " << av_make_error_string(_errorLog, ERROR_LEN, res) << std::endl;
-  }
-
-  _codecParserCtx = av_parser_init(codecID);
-  if (!_codecParserCtx) {
-    std::cerr << "Failed to initialise codec parser." << std::endl;
   }
 
   // Initialise RTP output stream.
@@ -98,6 +96,25 @@ int main()
   }
 
   av_dump_format(_formatContext, 0, RTP_URL, 1);
+
+  // Set up a parser to extract NAL's from the H264 bit stream.
+  // Note this is not needed for sending the RTP (I need to separate the NALs for another reason).
+  _parserCtx = av_parser_init(codecID);
+  if (!_parserCtx) {
+    std::cerr << "Failed to initialise codec parser." << std::endl;
+  }
+
+  _parserCodecCtx = avcodec_alloc_context3(NULL);
+  if (!_parserCodecCtx) {
+    std::cerr << "Failed to initialise parser codec context." << std::endl;
+  }
+
+  res = avcodec_parameters_to_context(_parserCodecCtx, _rtpOutStream->codecpar);
+  if (res < 0) {
+    std::cerr << "Failed to copy codec parameters tp parser: " << av_make_error_string(_errorLog, ERROR_LEN, res) << std::endl;
+  }
+
+  //_parserCtx->flags = PARSER_FLAG_COMPLETE_FRAMES;
 
   // Set a dummy frame with a YUV420 image.
   AVFrame* frame = av_frame_alloc();
@@ -134,8 +151,9 @@ int main()
 
   // Start the loop to encode the static dummy frame and output on the RTP stream.
   AVPacket* pkt = av_packet_alloc();
+  //uint8_t data[20000];
   uint8_t* data{ nullptr };
-  int dataSize;
+  int dataSize = 0;
 
   while (true) {
     int sendres = avcodec_send_frame(_codecCtx, frame);
@@ -146,6 +164,7 @@ int main()
     // Read encoded packets.
     int ret = 0;
     while (ret >= 0) {
+
       ret = avcodec_receive_packet(_codecCtx, pkt);
 
       if (ret == AVERROR(EAGAIN)) {
@@ -158,13 +177,15 @@ int main()
       }
       else {
         std::cout << "Encoded packet pts " << pkt->pts << ", size " << pkt->size << "." << std::endl;
+        std::cout << toHex(pkt->data, pkt->data + pkt->size) << std::endl;
 
-        pkt->stream_index = 0;
         int pktOffset = 0;
 
         // TODO: Find a way to separate the NALs from the Annex B H264 byte stream in the AVPacket data.
+        //AVBitStreamFilter 
+        
         while (pkt->size > pktOffset) {
-          int bytesRead = av_parser_parse2(_codecParserCtx, _codecCtx, &data, &dataSize, pkt->data + pktOffset, pkt->size - pktOffset, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
+          int bytesRead = av_parser_parse2(_parserCtx, _parserCodecCtx, &data, &dataSize, pkt->data + pktOffset, pkt->size - pktOffset, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
 
           if (bytesRead == 0) {
             std::cout << "Failed to parse data from packet." << std::endl;
@@ -175,8 +196,9 @@ int main()
             break;
           }
           else {
-            std::cout << "Codec parser bytes read " << bytesRead << "." << std::endl;
+            std::cout << "Codec parser bytes read " << bytesRead << ", data size " << dataSize << "." << std::endl;
             pktOffset += bytesRead;
+            std::cout << "nal: " << toHex(data, data + dataSize) << "." << std::endl;
           }
         }
       }
@@ -187,6 +209,9 @@ int main()
         std::cerr << "Failed to write frame to output stream: " << av_make_error_string(_errorLog, ERROR_LEN, sendres) << std::endl;
         break;
       }
+
+      //std::cout << "press any key to continue..." << std::endl;
+      //getchar();
     }
 
     av_usleep(1000000 / FRAMES_PER_SECOND);
