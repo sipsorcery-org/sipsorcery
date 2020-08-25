@@ -1681,12 +1681,87 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// H264 frames need a two byte header when transmitted over RTP.
+        /// Sends a H264 frame, represented by an Access Unit, to the remote party.
         /// </summary>
-        /// <param name="frame">The H264 encoded frame to transmit.</param>
-        /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
-        /// <param name="payloadType">The payload type to set on the RTP packet.</param>
+        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
+        /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
+        /// <param name="accessUnit">The encoded H264 access unit to transmit. An access unit can contain one or more
+        /// NAL's.</param>
         /// <remarks>
+        /// An Access Unit can contain one or more NAL's. The NAL's have to be parsed in order to be able to package 
+        /// in RTP packets.
+        /// 
+        /// See https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201602-S!!PDF-E&type=items Annex B for byte stream specification.
+        /// </remarks>
+        public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit)
+        {
+            var dstEndPoint = m_isMediaMultiplexed ? AudioDestinationEndPoint : VideoDestinationEndPoint;
+
+            if (IsClosed || m_rtpEventInProgress || dstEndPoint == null)
+            {
+                return;
+            }
+
+            var videoTrack = VideoLocalTrack;
+
+            if (videoTrack == null)
+            {
+                logger.LogWarning("SendH264Frame was called on an RTP session without a video stream.");
+            }
+            else if (videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
+            {
+                return;
+            }
+            else
+            {
+                int zeroes = 0;
+
+                // Parse NALs from H264 access unit, encoded as an Annex B bitstream.
+                // NALs are delimited by 0x000001 or 0x00000001.
+                int currPosn = 0;
+                for (int i = 0; i < accessUnit.Length; i++)
+                {
+                    if (accessUnit[i] == 0x00)
+                    {
+                        zeroes++;
+                    }
+                    else if (accessUnit[i] == 0x01 && zeroes >= 2)
+                    {
+                        // This is a NAL start sequence.
+                        int nalStart = i + 1;
+                        if (nalStart - currPosn > 4)
+                        {
+                            int endPosn = nalStart - ((zeroes == 2) ? 3 : 4);
+                            int nalSize = endPosn - currPosn;
+
+                            SendH264Nal(duration, payloadTypeID, accessUnit.Skip(currPosn).Take(nalSize).ToArray(), dstEndPoint, videoTrack);
+                        }
+
+                        currPosn = nalStart;
+                    }
+                    else
+                    {
+                        zeroes = 0;
+                    }
+                }
+
+                if (currPosn < accessUnit.Length)
+                {
+                    SendH264Nal(duration, payloadTypeID, accessUnit.Skip(currPosn).ToArray(), dstEndPoint, videoTrack);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a single H264 NAL to the remote party.
+        /// </summary>
+        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
+        /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
+        /// <param name="nal">The buffer containing the NAL to send.</param>
+        /// <param name="dstEndPoint">The destination end point to send to.</param>
+        /// <param name="videoTrack">The video track to send on.</param>
+        /// <remarks>
+        /// /// <remarks>
         /// RTP Payload Format for H.264 Video:
         /// https://tools.ietf.org/html/rfc6184
         /// 
@@ -1749,109 +1824,80 @@ namespace SIPSorcery.Net
         /// E: Set to 1 for the end of the NAL FU (i.e. the last packet in the frame).
         /// R: Reserved bit must be 0.
         /// Type: The NAL unit payload type, comes from NAL packet (NOTE: this IS the type of the NAL message).
-        /// 
-        /// See file:///C:/Users/aaron/Downloads/T-REC-H.264-201602-S!!PDF-E.pdf for byte stream specification.
         /// </remarks>
-        public void SendH264Frame(uint duration, int payloadTypeID, byte[] nal)
+        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, IPEndPoint dstEndPoint, MediaStreamTrack videoTrack)
         {
-            var dstEndPoint = m_isMediaMultiplexed ? AudioDestinationEndPoint : VideoDestinationEndPoint;
+            //logger.LogDebug($"Send NAL {nal.Length}.");
 
-            if (IsClosed || m_rtpEventInProgress || dstEndPoint == null)
+            byte nalType = (byte)(nal[0] & 0x1F);
+            byte nalNri = (byte)((nal[0] >> 5) & 0x03);
+
+            byte firstHdrByte = (byte)(nal[0] & 0xE0); // Has either 24 (STAP-A) or 28 (FU-A) added to it.
+
+            //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
+
+            if (nal.Length <= RTP_MAX_PAYLOAD)
             {
-                return;
+                // Send as Single-Time Aggregation Packet (STAP-A).
+                //byte[] payload = new byte[nal.Length + 3];
+                byte[] payload = new byte[nal.Length];
+
+                //byte stapAByte = (byte)(firstHdrByte + 24);
+                //byte[] h264RtpHdr = new byte[] { stapAByte, (byte)(nal.Length >> 8 & 0xff), (byte)(nal.Length & 0xff) };
+                int markerBit = 1;   // There is only ever one packet in a STAP-A.
+
+                //Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, 3);
+                Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
+
+                var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
+
+                SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
+                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+
+                videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
             }
-
-            try
+            else
             {
-                var videoTrack = VideoLocalTrack;
+                nal = nal.Skip(1).ToArray();
 
-                if (videoTrack == null)
+                // Send as Fragmentation Unit A (FU-A):
+                for (int index = 0; index * RTP_MAX_PAYLOAD < nal.Length; index++)
                 {
-                    logger.LogWarning("SendH264Frame was called on an RTP session without a video stream.");
-                }
-                else if (videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
-                {
-                    logger.LogDebug($"Send NAL {nal.Length}.");
+                    int offset = index * RTP_MAX_PAYLOAD;
+                    int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < nal.Length) ? RTP_MAX_PAYLOAD : nal.Length - index * RTP_MAX_PAYLOAD;
 
-                    byte nalType = (byte)(nal[0] & 0x1F);
-                    byte nalNri = (byte)((nal[0] >> 5) & 0x03);
+                    byte[] payload = new byte[payloadLength + H264_RTP_HEADER_LENGTH];
 
-                    byte firstHdrByte = (byte)(nal[0] & 0xE0); // Has either 24 (STAP-A) or 28 (FU-A) added to it.
+                    bool isFirstPacket = index == 0;
+                    bool isFinalPacket = (index + 1) * RTP_MAX_PAYLOAD >= nal.Length;
+                    int markerBit = (isFinalPacket) ? 1 : 0;
 
-                    logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
-
-                    if (nal.Length <= RTP_MAX_PAYLOAD)
+                    byte fuIndicator = (byte)(firstHdrByte + 28);
+                    byte fuHeader = nalType;
+                    if (isFirstPacket)
                     {
-                        // Send as Single-Time Aggregation Packet (STAP-A).
-                        //byte[] payload = new byte[nal.Length + 3];
-                        byte[] payload = new byte[nal.Length];
-
-                        //byte stapAByte = (byte)(firstHdrByte + 24);
-                        //byte[] h264RtpHdr = new byte[] { stapAByte, (byte)(nal.Length >> 8 & 0xff), (byte)(nal.Length & 0xff) };
-                        int markerBit = 1;   // There is only ever one packet in a STAP-A.
-
-                        //Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, 3);
-                        Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
-
-                        var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
-
-                        SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
-                        logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
-                        //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
-
-                        videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
+                        fuHeader += 0x80;
                     }
-                    else
+                    else if (isFinalPacket)
                     {
-                        nal = nal.Skip(1).ToArray();
-
-                        // Send as Fragmentation Unit A (FU-A):
-                        for (int index = 0; index * RTP_MAX_PAYLOAD < nal.Length; index++)
-                        {
-                            int offset = index * RTP_MAX_PAYLOAD;
-                            int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < nal.Length) ? RTP_MAX_PAYLOAD : nal.Length - index * RTP_MAX_PAYLOAD;
-
-                            byte[] payload = new byte[payloadLength + H264_RTP_HEADER_LENGTH];
-
-                            bool isFirstPacket = index == 0;
-                            bool isFinalPacket = (index + 1) * RTP_MAX_PAYLOAD >= nal.Length;
-                            int markerBit = (isFinalPacket) ? 1 : 0;
-
-                            byte fuIndicator = (byte)(firstHdrByte + 28);
-                            byte fuHeader = nalType;
-                            if(isFirstPacket)
-                            {
-                                fuHeader += 0x80;
-                            }
-                            else if(isFinalPacket)
-                            {
-                                fuHeader += 0x40;
-                            }
-                            byte[] h264RtpHdr = new byte[] { fuIndicator, fuHeader };
-
-                            Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, H264_RTP_HEADER_LENGTH);
-                            Buffer.BlockCopy(nal, offset, payload, H264_RTP_HEADER_LENGTH, payloadLength);
-
-                            var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
-
-                            SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
-                            logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
-
-                            videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
-                        }
+                        fuHeader += 0x40;
                     }
+                    byte[] h264RtpHdr = new byte[] { fuIndicator, fuHeader };
 
-                    videoTrack.Timestamp += duration;
+                    Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, H264_RTP_HEADER_LENGTH);
+                    Buffer.BlockCopy(nal, offset, payload, H264_RTP_HEADER_LENGTH, payloadLength);
+
+                    var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
+
+                    SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
+                    //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+
+                    videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
                 }
             }
-            catch (SocketException sockExcp)
-            {
-                logger.LogError("SocketException SendH264Frame. " + sockExcp.Message);
-            }
+
+            videoTrack.Timestamp += duration;
         }
 
         /// <summary>
@@ -2151,7 +2197,7 @@ namespace SIPSorcery.Net
                                 rtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
                                 OnReceiveReport?.Invoke(remoteEndPoint, rtcpSession.MediaType, rtcpPkt);
                             }
-                            else if(AudioRtcpSession?.PacketsReceivedCount > 0 || VideoRtcpSession?.PacketsReceivedCount > 0)
+                            else if (AudioRtcpSession?.PacketsReceivedCount > 0 || VideoRtcpSession?.PacketsReceivedCount > 0)
                             {
                                 // Only give this warning if we've received at least one RTP packet.
                                 logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");

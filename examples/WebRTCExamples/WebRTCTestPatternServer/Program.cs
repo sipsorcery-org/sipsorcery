@@ -140,9 +140,9 @@ namespace WebRTCServer
             var pc = new RTCPeerConnection(null);
 
             //MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendOnly);
-            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, 
-                new List<SDPMediaFormat> 
-                { 
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
+                new List<SDPMediaFormat>
+                {
                     new SDPMediaFormat(SDPMediaFormatsEnum.H264)
                     {
                         FormatParameterAttribute = $"packetization-mode=1",
@@ -266,48 +266,7 @@ namespace WebRTCServer
                         if (encodedBuffer != null)
                         {
                             //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
-                            Console.WriteLine($"H264 encoded buffer length {encodedBuffer.Length}.");
-
-                            int zeroes = 0;
-
-                            // Parse NALs from H264 bitstream.
-                            int currPosn = 0;
-                            for (int i = 0; i < encodedBuffer.Length; i++)
-                            {
-                                if (encodedBuffer[i] == 0x00)
-                                {
-                                    zeroes++;
-                                }
-                                else if (encodedBuffer[i] == 0x01 && zeroes >= 2)
-                                {
-                                    // This is a NAL start sequence.
-                                    int nalStart = i + 1;
-                                    if (nalStart - currPosn > 4)
-                                    {
-                                        int endPosn = nalStart - ((zeroes == 2) ? 3 : 4);
-                                        int nalSize = endPosn - currPosn;
-
-                                        //Console.WriteLine($"nal: {encodedBuffer.Skip(currPosn).Take(nalSize).ToArray().HexStr()}");
-                                        Console.WriteLine($"sending nal length {nalSize}.");
-
-                                        OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer.Skip(currPosn).Take(nalSize).ToArray());
-                                    }
-
-                                    currPosn = nalStart;
-                                }
-                                else
-                                {
-                                    zeroes = 0;
-                                }
-                            }
-
-                            if (currPosn < encodedBuffer.Length)
-                            {
-                                //Console.WriteLine($"last nal: {encodedBuffer.Skip(currPosn).ToArray().HexStr()}");
-                                Console.WriteLine($"sending last nal length {encodedBuffer.Length - currPosn}.");
-
-                                OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer.Skip(currPosn).ToArray());
-                            }
+                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer);
                         }
 
                         if (_forceKeyFrame)
