@@ -73,9 +73,10 @@ namespace WebRTCServer
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
         private const int VIDEO_TIMESTAMP_SPACING = 3000;
-        private const int VP8_PAYLOAD_TYPE_ID = 100;
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
+
+        private static SDPMediaFormatsEnum VIDEO_CODEC = SDPMediaFormatsEnum.VP8;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -85,17 +86,35 @@ namespace WebRTCServer
         private static bool _forceKeyFrame = false;
         private static long _presentationTimestamp = 0;
 
-        //private static Vp8Codec _vp8Codec;
+        private static Vp8Codec _vp8Codec;
         private static VideoEncoder _ffmpegEncoder;
-        //private static OpenH264Encoder _openH264Encoder;
         private static VideoFrameConverter _videoFrameConverter;
 
         private static event Action<SDPMediaTypesEnum, uint, byte[]> OnTestPatternSampleReady;
 
-        static void Main()
+        static void Main(string[] args)
         {
-            Console.WriteLine("WebRTC Server Sample Program");
+            Console.WriteLine("WebRTC Test Pattern Server Demo");
             Console.WriteLine("Press ctrl-c to exit.");
+
+            if(args?.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
+            {
+                string arg0 = args[0];
+                if (arg0.ToLower() == "vp8")
+                {
+                    VIDEO_CODEC = SDPMediaFormatsEnum.VP8;
+                }
+                else if(arg0.ToLower() == "h264")
+                {
+                    VIDEO_CODEC = SDPMediaFormatsEnum.H264;
+                }
+                else
+                {
+                    Console.WriteLine($"Codec option {arg0} not recognised.");
+                }
+            }
+
+            Console.WriteLine($"Selected video codec {VIDEO_CODEC}.");
 
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
@@ -139,17 +158,31 @@ namespace WebRTCServer
 
             var pc = new RTCPeerConnection(null);
 
-            //MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendOnly);
-            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
+            if (VIDEO_CODEC == SDPMediaFormatsEnum.VP8)
+            {
+                MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, 
+                    new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, 
+                    MediaStreamStatusEnum.SendOnly);
+                pc.addTrack(videoTrack);
+            }
+            else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
+            {
+                MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
                 new List<SDPMediaFormat>
                 {
                     new SDPMediaFormat(SDPMediaFormatsEnum.H264)
                     {
                         FormatParameterAttribute = $"packetization-mode=1",
                     }
-                }, MediaStreamStatusEnum.SendOnly);
-            pc.addTrack(videoTrack);
-
+                }, 
+                MediaStreamStatusEnum.SendOnly);
+                pc.addTrack(videoTrack);
+            }
+            else
+            {
+                throw new ApplicationException($"Video codec {VIDEO_CODEC} is not supported.");
+            }
+            
             //pc.OnReceiveReport += RtpSession_OnReceiveReport;
             //pc.OnSendReport += RtpSession_OnSendReport;
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
@@ -220,24 +253,27 @@ namespace WebRTCServer
             _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
             _sendTestPatternTimer = new Timer(SendTestPattern, null, Timeout.Infinite, Timeout.Infinite);
 
-            //_vp8Codec = new Vp8Codec();
-            //_vp8Codec.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
+            if (VIDEO_CODEC == SDPMediaFormatsEnum.VP8)
+            {
+                _vp8Codec = new Vp8Codec();
+                _vp8Codec.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
 
-            //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
-            _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
-            Console.WriteLine($"Codec name {_ffmpegEncoder.GetCodecName()}.");
-
-            _videoFrameConverter = new VideoFrameConverter(
-                new Size(_testPattern.Width, _testPattern.Height),
-                AVPixelFormat.AV_PIX_FMT_BGRA,
-                new Size(_testPattern.Width, _testPattern.Height),
-                AVPixelFormat.AV_PIX_FMT_YUV420P);
-
-
-            //_openH264Encoder = new OpenH264Encoder("OpenH264lib", _testPattern.Width, _testPattern.Height, 50000, 30, 100);
-            //_openH264Encoder = new OpenH264Encoder("openh264-2.1.1-win64.dll", _testPattern.Width, _testPattern.Height, 50000, 30, 100);
-
-            //Console.WriteLine($"OpneH264 version {Marshal.PtrToStringUni(OpenH264Encoder.GetCodecVersion())}.");
+                // Can also use FFmpeg which wraps libvpx.
+                //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            }
+            else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
+            {
+                _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+                _videoFrameConverter = new VideoFrameConverter(
+                    new Size(_testPattern.Width, _testPattern.Height),
+                    AVPixelFormat.AV_PIX_FMT_BGRA,
+                    new Size(_testPattern.Width, _testPattern.Height),
+                    AVPixelFormat.AV_PIX_FMT_YUV420P);
+            }
+            else
+            {
+                throw new ApplicationException($"Video codec {VIDEO_CODEC} is not supported.");
+            }
         }
 
         private static void SendTestPattern(object state)
@@ -252,17 +288,30 @@ namespace WebRTCServer
                         AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
                         var sampleBuffer = PixelConverter.BitmapToRGBA(stampedTestPattern as System.Drawing.Bitmap, _testPattern.Width, _testPattern.Height);
 
-                        var i420Frame = _videoFrameConverter.Convert(sampleBuffer);
+                        byte[] encodedBuffer = null;
 
-                        //byte[] i420Buffer = PixelConverter.RGBAtoYUV420Planar(sampleBuffer, _testPattern.Width, _testPattern.Height);
-                        //var encodedBuffer = _vp8Codec.Encode(i420, _forceKeyFrame);
+                        if (VIDEO_CODEC == SDPMediaFormatsEnum.VP8)
+                        {
+                            byte[] i420Buffer = PixelConverter.RGBAtoYUV420Planar(sampleBuffer, _testPattern.Width, _testPattern.Height);
+                            encodedBuffer = _vp8Codec.Encode(i420Buffer, _forceKeyFrame);
+                        }
+                        else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
+                        {
+                            var i420Frame = _videoFrameConverter.Convert(sampleBuffer);
 
-                        _presentationTimestamp += VIDEO_TIMESTAMP_SPACING;
+                            _presentationTimestamp += VIDEO_TIMESTAMP_SPACING;
 
-                        i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
-                        i420Frame.pts = _presentationTimestamp;
+                            i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
+                            i420Frame.pts = _presentationTimestamp;
 
-                        byte[] encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
+                            encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
+                        }
+                        else
+                        {
+                            _sendTestPatternTimer.Dispose();
+                            throw new ApplicationException($"Video codec is not supported.");
+                        }
+                                                
                         if (encodedBuffer != null)
                         {
                             //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
