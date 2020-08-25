@@ -140,6 +140,7 @@ namespace SIPSorcery.SIP
     {
         sip = 1,
         sips = 2,
+        tel = 3,
     }
 
     public class SIPSchemesType

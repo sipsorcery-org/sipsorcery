@@ -327,7 +327,21 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("tel:1234565"));
+            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("mailto:1234565"));
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void KnownSchemesUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            foreach (var value in System.Enum.GetValues(typeof(SIPSchemesEnum)))
+            {
+                Assert.True(SIPURI.ParseSIPURI(value.ToString() + ":1234565").Scheme == (SIPSchemesEnum)value);
+            }
 
             logger.LogDebug("-----------------------------------------");
         }
