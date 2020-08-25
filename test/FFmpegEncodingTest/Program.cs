@@ -26,7 +26,7 @@ namespace FFmpegEncodingTest
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
         private const int VIDEO_TIMESTAMP_SPACING = 3000;
-        private const int FFPLAY_DEFAULT_VIDEO_PORT = 5022;
+        private const int FFPLAY_DEFAULT_VIDEO_PORT = 5024;
 
         private static Bitmap _testPattern;
         private static Timer _sendTestPatternTimer;
@@ -47,7 +47,7 @@ namespace FFmpegEncodingTest
                     //new SDPMediaFormat(SDPMediaFormatsEnum.VP8)
                     new SDPMediaFormat(SDPMediaFormatsEnum.H264)
                     {
-                        FormatID = "102"
+                        FormatID = "96"
                     }
                     //new SDPMediaFormat(SDPMediaFormatsEnum.H264)
                     //{
@@ -61,6 +61,9 @@ namespace FFmpegEncodingTest
             OnTestPatternSampleReady += (media, duration, payload) => rtpSession.SendH264Frame(duration, payloadID, payload);
             rtpSession.Start();
 
+            Console.WriteLine("press any key to start...");
+            Console.ReadKey();
+
             _sendTestPatternTimer = new Timer(SendTestPattern, null, 0, TEST_PATTERN_SPACING_MILLISECONDS);
 
             Console.WriteLine("Press any key to exit...");
@@ -70,6 +73,8 @@ namespace FFmpegEncodingTest
         private static void InitialiseTestPattern()
         {
             _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
+
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_DEBUG);
 
             //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
             _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);

@@ -19,7 +19,7 @@ namespace SIPSorceryMedia.FFmpeg
         AV_LOG_TRACE = 56,
     }
 
-    public static class FfmpegInit
+    public static class FFmpegInit
     {
         private static ILogger logger = NullLogger.Instance;
 

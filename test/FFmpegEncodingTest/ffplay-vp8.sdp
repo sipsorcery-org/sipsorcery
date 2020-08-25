@@ -3,6 +3,6 @@ o=- 1012165843 0 IN IP4 127.0.0.1
 s=-
 c=IN IP4 127.0.0.1
 t=0 0
-m=video 5022 RTP/AVP 100
+m=video 5024 RTP/AVP 100
 a=rtpmap:100 VP8/90000
 a=sendonly

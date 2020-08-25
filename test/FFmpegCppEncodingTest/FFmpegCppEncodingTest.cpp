@@ -17,44 +17,104 @@ extern "C"
 #define WIDTH 640
 #define HEIGHT 480
 #define FRAMES_PER_SECOND 30
+#define RTP_OUTPUT_FORMAT "rtp"
+#define RTP_URL "rtp://127.0.0.1:5024"
+#define ERROR_LEN 128
+#define codecID AVCodecID::AV_CODEC_ID_H264 // AVCodecID::AV_CODEC_ID_VP8;
 
 SwsContext* _swsContext;
 AVCodec* _codec;
 AVCodecContext* _codecCtx;
-
-void InitEncoder(AVCodecID codecID, int width, int height, int fps);
-//void GetTestImage(AVFrame* imgframe, int frame_index, int width, int height);
+AVFormatContext* _formatContext;
+AVStream* _rtpOutStream;
+char _errorLog[ERROR_LEN];
+AVCodecParserContext* _codecParserCtx;
 
 int main()
 {
-  std::cout << "Ffmpeg VP8 Encode Test" << std::endl;
+  std::cout << "FFmpeg Encoder and RTP Stream Test" << std::endl;
 
-  //av_log_set_level(AV_LOG_DEBUG);
-  av_log_set_level(AV_LOG_INFO);
-  //av_log_set_callback(av_log_default_callback);
+  av_log_set_level(AV_LOG_DEBUG);
 
-  InitEncoder(AVCodecID::AV_CODEC_ID_VP8, WIDTH, HEIGHT, FRAMES_PER_SECOND);
-  //InitEncoder(AVCodecID::AV_CODEC_ID_H264, WIDTH, HEIGHT, FRAMES_PER_SECOND);
-  //InitEncoder(AVCodecID::AV_CODEC_ID_MJPEG, WIDTH, HEIGHT, FRAMES_PER_SECOND);
+  // Initialise codec context.
+  _codec = avcodec_find_encoder(codecID);
+  if (_codec == NULL) {
+    throw std::runtime_error("Could not find codec for ID " + std::to_string(codecID) + ".");
+  }
 
-  //auto avc_class = avcodec_get_class();
-  //av_log(&avc_class, AV_LOG_ERROR, "%s");
+  _codecCtx = avcodec_alloc_context3(_codec);
+  if (!_codecCtx) {
+    std::cerr << "Failed to initialise codec context." << std::endl;;
+  }
 
-  int linesz = av_image_get_linesize(AVPixelFormat::AV_PIX_FMT_YUV420P, WIDTH, 0);
+  _codecCtx->width = WIDTH;
+  _codecCtx->height = HEIGHT;
+  //_codecCtx->bit_rate = 500000;
+  _codecCtx->time_base.den = FRAMES_PER_SECOND;
+  _codecCtx->time_base.num = 1;
+  //_codecCtx->gop_size = 10;
+  //_codecCtx->max_b_frames = 1;
+  _codecCtx->pix_fmt = AVPixelFormat::AV_PIX_FMT_YUV420P;
 
+  int res = avcodec_open2(_codecCtx, _codec, NULL);
+  if (res < 0) {
+    std::cerr << "Failed to open codec: " << av_make_error_string(_errorLog, ERROR_LEN, res) << std::endl;
+  }
+
+  _codecParserCtx = av_parser_init(codecID);
+  if (!_codecParserCtx) {
+    std::cerr << "Failed to initialise codec parser." << std::endl;
+  }
+
+  // Initialise RTP output stream.
+  AVOutputFormat* fmt = av_guess_format(RTP_OUTPUT_FORMAT, NULL, NULL);
+  if (!fmt) {
+    std::cerr << "Failed to guess output format for " << RTP_OUTPUT_FORMAT << "." << std::endl;
+  }
+
+  res = avformat_alloc_output_context2(&_formatContext, fmt, fmt->name, RTP_URL);
+  if (res < 0) {
+    std::cerr << "Failed to allocate output context: " << av_make_error_string(_errorLog, ERROR_LEN, res) << std::endl;
+  }
+
+  _rtpOutStream = avformat_new_stream(_formatContext, _codec);
+  if (!_rtpOutStream) {
+    std::cerr << "Failed to allocate output stream." << std::endl;
+  }
+
+  res = avio_open(&_formatContext->pb, _formatContext->url, AVIO_FLAG_WRITE);
+  if (res < 0) {
+    std::cerr << "Failed to open RTP output context for writing: " << av_make_error_string(_errorLog, ERROR_LEN, res) << std::endl;
+  }
+
+  res = avcodec_parameters_from_context(_rtpOutStream->codecpar, _codecCtx);
+  if (res < 0) {
+    std::cerr << "Failed to copy codec parameters to stream: " << av_make_error_string(_errorLog, ERROR_LEN, res) << std::endl;
+  }
+
+  res = avformat_write_header(_formatContext, NULL);
+  if (res < 0) {
+    std::cerr << "Failed to write output header: " << av_make_error_string(_errorLog, ERROR_LEN, res) << std::endl;
+  }
+
+  av_dump_format(_formatContext, 0, RTP_URL, 1);
+
+  // Set a dummy frame with a YUV420 image.
   AVFrame* frame = av_frame_alloc();
   frame->format = AVPixelFormat::AV_PIX_FMT_YUV420P;
   frame->width = WIDTH;
   frame->height = HEIGHT;
   frame->pts = 0;
 
-  int getbufferRes = av_frame_get_buffer(frame, 0);
-  std::cout << "av_frame_get_buffer result " << getbufferRes << "." << std::endl;
+  res = av_frame_get_buffer(frame, 0);
+  if (res < 0) {
+    std::cerr << "Failed on av_frame_get_buffer: " << av_make_error_string(_errorLog, ERROR_LEN, res) << std::endl;
+  }
 
-  int makeWritableResult = av_frame_make_writable(frame);
-  std::cout << "av_frame_make_writable result " << makeWritableResult << "." << std::endl;
-
-  //GetTestImage(frame, 0, WIDTH, HEIGHT);
+  res = av_frame_make_writable(frame);
+  if (res < 0) {
+    std::cerr << "Failed on av_frame_make_writable: " << av_make_error_string(_errorLog, ERROR_LEN, res) << std::endl;
+  }
 
   for (int y = 0; y < HEIGHT; y++) {
     for (int x = 0; x < WIDTH; x++) {
@@ -69,110 +129,76 @@ int main()
     }
   }
 
-  int sendres = avcodec_send_frame(_codecCtx, frame);
-  if (sendres != 0)
-  {
-    char errBuf[2048];
-    av_strerror(sendres, errBuf, 2048);
+  std::cout << "press any key to start the stream..." << std::endl;
+  getchar();
 
-    std::cout << "avcodec_send_frame result " << sendres << ", " << errBuf << "." << std::endl;
-  }
-
+  // Start the loop to encode the static dummy frame and output on the RTP stream.
   AVPacket* pkt = av_packet_alloc();
+  uint8_t* data{ nullptr };
+  int dataSize;
 
-  int ret = 0;
-  while (ret >= 0) {
-    ret = avcodec_receive_packet(_codecCtx, pkt);
-    if (ret == AVERROR(EAGAIN)) {
-      std::cout << "avcodec_receive_packet more data required " << ret << "." << std::endl;
+  while (true) {
+    int sendres = avcodec_send_frame(_codecCtx, frame);
+    if (sendres != 0) {
+      std::cerr << "avcodec_send_frame error: " << av_make_error_string(_errorLog, ERROR_LEN, sendres) << std::endl;
     }
-    else if (ret < 0) {
-      fprintf(stderr, "Error during encoding\n");
-      break;
+
+    // Read encoded packets.
+    int ret = 0;
+    while (ret >= 0) {
+      ret = avcodec_receive_packet(_codecCtx, pkt);
+
+      if (ret == AVERROR(EAGAIN)) {
+        // Encoder needs more data.
+        break;
+      }
+      else if (ret < 0) {
+        std::cerr << "Failed to encode frame: " << av_make_error_string(_errorLog, ERROR_LEN, sendres) << std::endl;
+        break;
+      }
+      else {
+        std::cout << "Encoded packet pts " << pkt->pts << ", size " << pkt->size << "." << std::endl;
+
+        pkt->stream_index = 0;
+        int pktOffset = 0;
+
+        // TODO: Find a way to separate the NALs from the Annex B H264 byte stream in the AVPacket data.
+        while (pkt->size > pktOffset) {
+          int bytesRead = av_parser_parse2(_codecParserCtx, _codecCtx, &data, &dataSize, pkt->data + pktOffset, pkt->size - pktOffset, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
+
+          if (bytesRead == 0) {
+            std::cout << "Failed to parse data from packet." << std::endl;
+            break;
+          }
+          else if (bytesRead < 0) {
+            std::cerr << "av_parser_parse2 error: " << av_make_error_string(_errorLog, ERROR_LEN, bytesRead) << std::endl;
+            break;
+          }
+          else {
+            std::cout << "Codec parser bytes read " << bytesRead << "." << std::endl;
+            pktOffset += bytesRead;
+          }
+        }
+      }
+
+      // Write the encoded packet to the RTP stream.
+      int sendRes = av_write_frame(_formatContext, pkt);
+      if (sendRes < 0) {
+        std::cerr << "Failed to write frame to output stream: " << av_make_error_string(_errorLog, ERROR_LEN, sendres) << std::endl;
+        break;
+      }
     }
-    else {
-      std::cout << "Write packet pts " << pkt->pts << ", size " << pkt->size << "." << std::endl;
-      av_packet_unref(pkt);
-    }
+
+    av_usleep(1000000 / FRAMES_PER_SECOND);
 
     frame->pts++;
-    sendres = avcodec_send_frame(_codecCtx, frame);
-    if (sendres != 0)
-    {
-      char errBuf[2048];
-      av_strerror(sendres, errBuf, 2048);
-      std::cout << "avcodec_send_frame result " << sendres << ", " << errBuf << "." << std::endl;
-      break;
-    }
   }
 
   av_packet_free(&pkt);
   av_frame_free(&frame);
+  avcodec_close(_codecCtx);
   avcodec_free_context(&_codecCtx);
+  avformat_free_context(_formatContext);
 
   return 0;
 }
-
-//void log_callback(void* avcl, int level, const char* fmt, va_list vl)
-//{
-//	std::cout << "log_callback" << "." << std::endl;
-//}
-
-void InitEncoder(AVCodecID codecID, int width, int height, int fps)
-{
-  _codec = avcodec_find_encoder(codecID);
-  if (_codec == NULL) {
-    throw std::runtime_error("Could not find codec for ID " + std::to_string(codecID) + ".");
-  }
-
-  _codecCtx = avcodec_alloc_context3(_codec);
-  _codecCtx->width = width;
-  _codecCtx->height = height;
-  //_codecCtx->bit_rate = 500000;
-  _codecCtx->time_base.den = fps;
-  _codecCtx->time_base.num = 1;
-  //_codecCtx->framerate.num = fps;
-  //_codecCtx->time_base.den = 1;
-  //_codecCtx->gop_size = 10;
-  //_codecCtx->max_b_frames = 1;
-
-#pragma warning(suppress : 26812)
-  _codecCtx->pix_fmt = AVPixelFormat::AV_PIX_FMT_YUV420P;
-
-  int res = avcodec_open2(_codecCtx, _codec, NULL);
-
-  std::cout << "avcodec_open2 result " << res << "." << std::endl;
-}
-
-
-//void GetTestImage(AVFrame* dstframe, int frame_index, int width, int height)
-//{
-//	static const int RANDOM_SQUARE_SIZE = 50;
-//	static const int RANDOM_SQUARE_BOTTOM_RIGHT_OFFSET = 5;
-//	static const float FONT_SCALE = 2.0;
-//
-//	cv::Mat m = cv::Mat(height, width, CV_8UC3, cv::Scalar(0, 255, 0));
-//	cv::Mat randSq = m.colRange(width - RANDOM_SQUARE_SIZE - RANDOM_SQUARE_BOTTOM_RIGHT_OFFSET, width - RANDOM_SQUARE_BOTTOM_RIGHT_OFFSET).rowRange(height - RANDOM_SQUARE_SIZE - RANDOM_SQUARE_BOTTOM_RIGHT_OFFSET, height - RANDOM_SQUARE_BOTTOM_RIGHT_OFFSET);
-//	cv::randu(randSq, cv::Scalar::all(0), cv::Scalar::all(255));
-//
-//	auto t = std::time(nullptr);
-//	tm localTime;
-//	localtime_s(&localTime, const_cast<const time_t *>(&t));
-//	std::ostringstream oss;
-//	oss << std::put_time(&localTime, "%d-%m-%Y %H-%M-%S");
-//	auto str = oss.str();
-//
-//	cv::putText(m, str.c_str(), { 0, 50 }, cv::HersheyFonts::FONT_HERSHEY_SIMPLEX, FONT_SCALE, CV_RGB(0, 0, 0));
-//	cv::putText(m, std::to_string(frame_index), { 100, 200 }, cv::HersheyFonts::FONT_HERSHEY_COMPLEX, FONT_SCALE, CV_RGB(0, 0, 0));
-//
-//	_swsContext = sws_getCachedContext(_swsContext, width, height, AVPixelFormat::AV_PIX_FMT_BGR24, width, height, AVPixelFormat::AV_PIX_FMT_YUV420P, SWS_FAST_BILINEAR, NULL, NULL, NULL);
-//
-//	AVFrame * src = av_frame_alloc();
-//	src->data[0] = (uint8_t*)m.data;
-//	src->linesize[0] = av_image_get_linesize(AVPixelFormat::AV_PIX_FMT_BGR24, width, 0);
-//
-//	sws_scale(_swsContext, src->data, src->linesize, 0, height, dstframe->data, dstframe->linesize);
-//
-//	av_frame_free(&src);
-//}
-
