@@ -44,7 +44,6 @@ namespace SIPSorceryMedia.Windows.Codecs
                     buffer[cnt + 2] = b; // b
                     buffer[cnt + 3] = 0x00;         // a
                     cnt += 4;
-
                 }
             }
 
