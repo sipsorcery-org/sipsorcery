@@ -64,7 +64,6 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -143,7 +142,7 @@ namespace SIPSorcery.Net
         private DateTime _startedGatheringAt = DateTime.MinValue;
         private DateTime _connectedAt = DateTime.MinValue;
 
-        private ConcurrentDictionary<STUNUri, IceServer> _iceServerConnections;
+        internal ConcurrentDictionary<STUNUri, IceServer> _iceServerConnections;
 
         private IceServer _activeIceServer;
 
@@ -606,12 +605,13 @@ namespace SIPSorcery.Net
         {
             _iceServerConnections = new ConcurrentDictionary<STUNUri, IceServer>();
 
+            int iceServerID = IceServer.MINIMUM_ICE_SERVER_ID;
+
             // Add each of the ICE servers to the list. Ideally only one will be used but add 
             // all in case backups are needed.
             foreach (var iceServer in iceServers)
             {
                 string[] urls = iceServer.urls.Split(',');
-                int iceServerID = IceServer.MINIMUM_ICE_SERVER_ID;
 
                 foreach (string url in urls)
                 {

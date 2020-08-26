@@ -586,5 +586,32 @@ namespace SIPSorcery.Net.UnitTests
                 Assert.Contains(rtpIceChannel.Candidates, x => x.type == RTCIceCandidateType.srflx);
             }
         }
+
+        /// <summary>
+        /// Checks that adding multiple ICE servers results in each being allocated a unique
+        /// transaction ID.
+        /// </summary>
+        [Fact]
+        public void AddMulitpleIceServersTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var iceServers = new List<RTCIceServer> 
+            {
+                new RTCIceServer {  urls = $"stun:127.0.0.1:3478,stun:[::1]:3478"},
+                new RTCIceServer {  urls = $"turn:turn:127.0.0.1:3478,stun:[::1]:3479"},
+            };
+
+            var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, iceServers);
+            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannel.RTPLocalEndPoint}.");
+
+            foreach(var pair in rtpIceChannel._iceServerConnections)
+            {
+                logger.LogDebug($"ICE server {pair.Key}, tx ID {pair.Value._id}");
+
+                Assert.Equal(1, rtpIceChannel._iceServerConnections.Values.Count(x => x._id == pair.Value._id));
+            }
+        }
     }
 }
