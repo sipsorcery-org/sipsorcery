@@ -17,9 +17,12 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+
+[assembly: InternalsVisibleToAttribute("SIPSorcery.UnitTests")]
 
 namespace SIPSorcery.Net
 {
@@ -61,7 +64,7 @@ namespace SIPSorcery.Net
         /// The maximum number of requests to send to an ICE server without getting 
         /// a response.
         /// </summary>
-        internal const int MAX_REQUESTS = 6;
+        internal const int MAX_REQUESTS = 25;
 
         /// <summary>
         /// The maximum number of error responses before failing the ICE server checks.
