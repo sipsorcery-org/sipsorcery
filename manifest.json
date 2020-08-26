@@ -693,7 +693,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IceServer.html",
-          "hash": "+2deH3FQXQzkGgu0Fb+3Mg=="
+          "hash": "LxlpxP0KTRO6YAL7PP4M3g=="
         }
       },
       "is_incremental": false,
@@ -1617,7 +1617,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RtpIceChannel.html",
-          "hash": "wwxZpN4RI+iXq16eW3rvlA=="
+          "hash": "jiYGDXtkpfra53JGOHxVDA=="
         }
       },
       "is_incremental": false,
