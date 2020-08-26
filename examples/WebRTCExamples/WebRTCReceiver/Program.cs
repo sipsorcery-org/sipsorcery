@@ -24,7 +24,7 @@ using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using SIPSorceryMedia;
+using SIPSorceryMedia.Windows.Codecs;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -65,8 +65,9 @@ namespace TestConsole
         private const int WEBSOCKET_PORT = 8081;
 
         private static WebSocketServer _webSocketServer;
-        private static VpxEncoder _vpxEncoder;
-        private static ImageConvert _imgConverter;
+        //private static VpxEncoder _vpxEncoder;
+        //private static ImageConvert _imgConverter;
+        private static Vp8Codec _vp8Codec;
         private static byte[] _currVideoFrame = new byte[65536];
         private static int _currVideoFramePosn = 0;
         private static Form _form;
@@ -77,14 +78,8 @@ namespace TestConsole
         {
             AddConsoleLogger();
 
-            _vpxEncoder = new VpxEncoder();
-            int res = _vpxEncoder.InitDecoder();
-            if (res != 0)
-            {
-                throw new ApplicationException("VPX decoder initialisation failed.");
-            }
-
-            _imgConverter = new ImageConvert();
+            _vp8Codec = new Vp8Codec();
+            _vp8Codec.InitialiseDecoder();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -129,6 +124,11 @@ namespace TestConsole
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
+            peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) =>
+            {
+                bool hasUseCandidate = msg.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.UseCandidate);
+                Console.WriteLine($"STUN {msg.Header.MessageType} received from {ep}, use candidate {hasUseCandidate}.");
+            };
             peerConnection.oniceconnectionstatechange += (state) => Console.WriteLine($"ICE connection state changed to {state}.");
             peerConnection.onconnectionstatechange += (state) =>
             {
@@ -138,7 +138,7 @@ namespace TestConsole
                 {
                     peerConnection.OnRtpPacketReceived -= RtpSession_OnRtpPacketReceived;
                 }
-                else if(state == RTCPeerConnectionState.connected)
+                else if (state == RTCPeerConnectionState.connected)
                 {
                     peerConnection.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
                 }
@@ -198,47 +198,45 @@ namespace TestConsole
                     {
                         unsafe
                         {
-                            fixed (byte* p = _currVideoFrame)
+                            //fixed (byte* p = _currVideoFrame)
+                            //{
+                            int width = 0, height = 0;
+                            byte[] i420 = null;
+
+                            //Console.WriteLine($"Attempting vpx decode {_currVideoFramePosn} bytes.");
+
+                            i420 = _vp8Codec.Decode(_currVideoFrame, _currVideoFramePosn, out width, out height);
+
+                            if (i420 != null)
                             {
-                                uint width = 0, height = 0;
-                                byte[] i420 = null;
+                                Console.WriteLine("VPX decode of video sample failed.");
+                            }
+                            else
+                            {
+                                //Console.WriteLine($"Video frame ready {width}x{height}.");
 
-                                //Console.WriteLine($"Attempting vpx decode {_currVideoFramePosn} bytes.");
-
-                                int decodeResult = _vpxEncoder.Decode(p, _currVideoFramePosn, ref i420, ref width, ref height);
-
-                                if (decodeResult != 0)
+                                fixed (byte* r = i420)
                                 {
-                                    Console.WriteLine("VPX decode of video sample failed.");
-                                }
-                                else
-                                {
-                                    //Console.WriteLine($"Video frame ready {width}x{height}.");
+                                    byte[] bmp = PixelConverter.YUV420PlanarToRGB(i420, width, height, out int stride);
 
-                                    fixed (byte* r = i420)
+                                    if (bmp != null)
                                     {
-                                        byte[] bmp = null;
-                                        int stride = 0;
-                                        int convRes = _imgConverter.ConvertYUVToRGB(r, VideoSubTypesEnum.I420, (int)width, (int)height, VideoSubTypesEnum.BGR24, ref bmp, ref stride);
-
-                                        if (convRes == 0)
+                                        _form.BeginInvoke(new Action(() =>
                                         {
-                                            _form.BeginInvoke(new Action(() =>
+                                            fixed (byte* s = bmp)
                                             {
-                                                fixed (byte* s = bmp)
-                                                {
-                                                    System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                                    _picBox.Image = bmpImage;
-                                                }
-                                            }));
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine("Pixel format conversion of decoded sample failed.");
-                                        }
+                                                System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                                _picBox.Image = bmpImage;
+                                            }
+                                        }));
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Pixel format conversion of decoded sample failed.");
                                     }
                                 }
                             }
+                            //}
                         }
 
                         _currVideoFramePosn = 0;

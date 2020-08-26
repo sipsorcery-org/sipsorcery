@@ -325,7 +325,7 @@ namespace SIPSorcery.Net
                 InitialiseIceServers(_iceServers);
 
                 // DNS is only needed if there are ICE server hostnames to lookup.
-                if (_dnsLookupClient == null && _iceServerConnections.Any( x => !IPAddress.TryParse(x.Key.Host, out _)))
+                if (_dnsLookupClient == null && _iceServerConnections.Any(x => !IPAddress.TryParse(x.Key.Host, out _)))
                 {
                     if (DefaultNameServers != null)
                     {
@@ -360,7 +360,7 @@ namespace SIPSorcery.Net
                 if (_policy == RTCIceTransportPolicy.all)
                 {
                     _candidates = new ConcurrentBag<RTCIceCandidate>();
-                    foreach(var iceCandidate in GetHostCandidates())
+                    foreach (var iceCandidate in GetHostCandidates())
                     {
                         _candidates.Add(iceCandidate);
                     }
@@ -451,7 +451,7 @@ namespace SIPSorcery.Net
             {
                 // Supporting MDNS lookups means an additional nuget dependency. Hopefully
                 // support is coming to .Net Core soon (AC 12 Jun 2020).
-                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");                
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
             }
             else if (IPAddress.TryParse(candidate.address, out var addr) &&
                 (IPAddress.Any.Equals(addr) || IPAddress.IPv6Any.Equals(addr)))
@@ -634,7 +634,7 @@ namespace SIPSorcery.Net
                                 var iceServerState = new IceServer(stunUri, iceServerID, iceServer.username, iceServer.credential);
 
                                 // Check whether the server end point can be set. IF it can't a DNS lookup will be required.
-                                if(IPAddress.TryParse(iceServerState._uri.Host, out var serverIPAddress))
+                                if (IPAddress.TryParse(iceServerState._uri.Host, out var serverIPAddress))
                                 {
                                     iceServerState.ServerEndPoint = new IPEndPoint(serverIPAddress, iceServerState._uri.Port);
                                     logger.LogDebug($"ICE server end point for {iceServerState._uri} set to {iceServerState.ServerEndPoint}.");
@@ -1140,7 +1140,7 @@ namespace SIPSorcery.Net
                             }
                         }
                     }
-                    else if(_checlistStartedAt != DateTime.MinValue &&
+                    else if (_checlistStartedAt != DateTime.MinValue &&
                         DateTime.Now.Subtract(_checlistStartedAt).TotalSeconds > FAILED_TIMEOUT_PERIOD)
                     {
                         // No checklist entries were made available before the failed timeout.
@@ -1160,18 +1160,31 @@ namespace SIPSorcery.Net
         /// <param name="entry">The checklist entry that was nominated.</param>
         private void SetNominatedEntry(ChecklistEntry entry)
         {
-            _connectedAt = DateTime.Now;
-            int duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
+            if (NominatedEntry == null)
+            {
+                _connectedAt = DateTime.Now;
+                int duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
 
-            logger.LogInformation($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
+                logger.LogInformation($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
 
-            entry.Nominated = true;
-            entry.LastConnectedResponseAt = DateTime.Now;
-            _checklistState = ChecklistState.Completed;
-            _connectivityChecksTimer.Change(CONNECTED_CHECK_PERIOD * 1000, CONNECTED_CHECK_PERIOD * 1000);
-            NominatedEntry = entry;
-            IceConnectionState = RTCIceConnectionState.connected;
-            OnIceConnectionStateChange?.Invoke(RTCIceConnectionState.connected);
+                entry.Nominated = true;
+                entry.LastConnectedResponseAt = DateTime.Now;
+                _checklistState = ChecklistState.Completed;
+                _connectivityChecksTimer.Change(CONNECTED_CHECK_PERIOD * 1000, CONNECTED_CHECK_PERIOD * 1000);
+                NominatedEntry = entry;
+                IceConnectionState = RTCIceConnectionState.connected;
+                OnIceConnectionStateChange?.Invoke(RTCIceConnectionState.connected);
+            }
+            else
+            {
+                // The nominated entry has been changed.
+                logger.LogInformation($"ICE RTP channel remote nominated candidate changed from {NominatedEntry.RemoteCandidate.ToShortString()} to {entry.RemoteCandidate.ToShortString()}.");
+
+                entry.Nominated = true;
+                entry.LastConnectedResponseAt = DateTime.Now;
+                NominatedEntry = entry;
+                OnIceConnectionStateChange?.Invoke(RTCIceConnectionState.connected);
+            }
         }
 
         /// <summary>
@@ -1489,13 +1502,21 @@ namespace SIPSorcery.Net
                         // The UseCandidate attribute is only meant to be set by the "Controller" peer. This implementation
                         // will accept it irrespective of the peer roles. If the remote peer wants us to use a certain remote
                         // end point then so be it.
-                        if (bindingRequest.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.UseCandidate) &&
-                            IceConnectionState != RTCIceConnectionState.connected)
+                        if (bindingRequest.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.UseCandidate))
                         {
-                            // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
-                            // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
-                            logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding request: {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
-                            SetNominatedEntry(matchingChecklistEntry);
+                            if (IceConnectionState != RTCIceConnectionState.connected)
+                            {
+                                // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
+                                // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
+                                logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding request: {matchingChecklistEntry.RemoteCandidate.ToShortString()}.");
+                                SetNominatedEntry(matchingChecklistEntry);
+                            }
+                            else if(matchingChecklistEntry.RemoteCandidate.ToString() != NominatedEntry.RemoteCandidate.ToString())
+                            {
+                                // The remote peer is changing the nominated candidate.
+                                logger.LogDebug($"ICE RTP channel remote peer nominated a new candidate: {matchingChecklistEntry.RemoteCandidate.ToShortString()}.");
+                                SetNominatedEntry(matchingChecklistEntry);
+                            }
                         }
 
                         STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
