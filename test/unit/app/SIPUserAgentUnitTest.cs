@@ -23,14 +23,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-
-/* Unmerged change from project 'SIPSorcery.UnitTests (net46)'
-Before:
-using System.Net.Sockets;
-After:
 using SIPSorcery.UnitTests;
-*/
-using SIPSorcery.UnitTests;
+using SIPSorceryMedia.Abstractions.V1;
 using Xunit;
 
 namespace SIPSorcery.SIP.App.UnitTests
@@ -262,8 +256,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             var uas = userAgent.AcceptCall(inviteReq);
-            var mediaSession = CreateMediaSession();
-            await userAgent.Answer(uas, mediaSession);
+            await userAgent.Answer(uas, CreateMockVoIPMediaEndPoint());
 
             // The call attempt should timeout while waiting for the ACK request with the SDP answer.
             Assert.False(userAgent.IsCallActive);
@@ -399,10 +392,8 @@ a=sendrecv";
                 logger.LogDebug("Request received: " + req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
-                RtpAudioSession serverAudioSession = new RtpAudioSession(
-                    new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
-                    new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
-                var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
+                var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
+                var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
 
                 logger.LogDebug($"Server agent answer result {answerResult}.");
 
@@ -413,10 +404,8 @@ a=sendrecv";
 
             logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
 
-            RtpAudioSession clientAudioSession = new RtpAudioSession(
-                new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
-                new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
-            var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientAudioSession);
+            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
+            var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
 
             logger.LogDebug($"Client agent answer result {callResult }.");
 
@@ -447,9 +436,8 @@ a=sendrecv";
                 logger.LogDebug("Request received: " + req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
-                RtpAudioSession serverAudioSession = new RtpAudioSession(
-                    new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
-                    new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
+                var serverAudioSession = CreateMockVoIPMediaEndPoint(new List<AudioFormat> { new AudioFormat { Codec = AudioCodecsEnum.PCMU } });
+
                 var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
 
                 logger.LogDebug($"Server agent answer result {answerResult}.");
@@ -461,10 +449,8 @@ a=sendrecv";
 
             logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
 
-            RtpAudioSession clientAudioSession = new RtpAudioSession(
-                new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
-                new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.G722 });
-            var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientAudioSession);
+            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint(new List<AudioFormat> { new AudioFormat { Codec = AudioCodecsEnum.G722 } });
+            var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
 
             logger.LogDebug($"Client agent answer result {callResult }.");
 
@@ -794,6 +780,17 @@ a=sendrecv";
         private IMediaSession CreateMediaSession()
         {
             return new MockMediaSession();
+        }
+
+        private VoIPMediaEndPoint CreateMockVoIPMediaEndPoint(List<AudioFormat> supportedFormats = null)
+        {
+            MediaEndPoint dummyEndPoint = new MediaEndPoint
+            {
+                AudioSource = new AudioDiverseSource(
+                    new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
+                    supportedFormats)
+            };
+            return new VoIPMediaEndPoint(dummyEndPoint);
         }
     }
 }

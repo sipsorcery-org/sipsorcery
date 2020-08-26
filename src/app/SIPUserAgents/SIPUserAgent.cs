@@ -527,7 +527,7 @@ namespace SIPSorcery.SIP.App
                 MediaSession?.Close("call hungup");
             }
 
-            if (m_sipDialogue?.DialogueState != SIPDialogueStateEnum.Terminated)
+            if (m_sipDialogue != null && m_sipDialogue.DialogueState != SIPDialogueStateEnum.Terminated)
             {
                 m_sipDialogue.Hangup(m_transport, m_outboundProxy);
                 m_byeTransaction = m_sipDialogue.m_byeTransaction;

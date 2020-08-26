@@ -8,52 +8,55 @@ using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
 {
-    public class PlatformMediaSession : RTPSession, IMediaSession
+    public class VoIPMediaEndPoint : RTPSession, IMediaSession
     {
         public const int RTP_TIMESTAMP_RATE = 8000;         // G711 and G722 use an 8KHz for RTP timestamps clock.
 
         private static ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        public IPlatformMediaSession OSMediaSession { get; private set; }
-
         private AudioEncoder _audioEncoder;
 
-        public PlatformMediaSession(IPlatformMediaSession osMediaSession, IPAddress bindAddress = null, int bindPort = 0) 
+        public VoIPMediaEndPoint(
+            MediaEndPoint mediaEndPoint,
+            IPAddress bindAddress = null, 
+            int bindPort = 0) 
             : base(false, false, false, bindAddress, bindPort)
         {
-            OSMediaSession = osMediaSession;
             _audioEncoder = new AudioEncoder();
             base.OnRtpPacketReceived += RtpMediaPacketReceived;
-            OSMediaSession.OnRawAudioSampleReady += RawAudioSampleReady;
+            //OSMediaSession.OnRawAudioSampleReady += RawAudioSampleReady;
 
-            List<SDPMediaFormat> audioTrackFormats = new List<SDPMediaFormat>();
-            foreach (var audioFormat in OSMediaSession.GetAudioFormats())
+            if (mediaEndPoint.AudioSource != null)
             {
-                SDPMediaFormatsEnum sdpAudioFormat = SDPMediaFormatsEnum.Unknown;
-                switch (audioFormat.Codec)
+                List<SDPMediaFormat> audioTrackFormats = new List<SDPMediaFormat>();
+                foreach (var audioFormat in mediaEndPoint.AudioSource.GetAudioSourceFormats())
                 {
-                    case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
-                        sdpAudioFormat = SDPMediaFormatsEnum.PCMU;
-                        break;
-                    case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
-                        sdpAudioFormat = SDPMediaFormatsEnum.PCMA;
-                        break;
-                    case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
-                        sdpAudioFormat = SDPMediaFormatsEnum.G722;
-                        break;
-                    default:
-                        Log.LogWarning("Audio format not recognised.");
-                        break;
+                    SDPMediaFormatsEnum sdpAudioFormat = SDPMediaFormatsEnum.Unknown;
+                    switch (audioFormat.Codec)
+                    {
+                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
+                            sdpAudioFormat = SDPMediaFormatsEnum.PCMU;
+                            break;
+                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
+                            sdpAudioFormat = SDPMediaFormatsEnum.PCMA;
+                            break;
+                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
+                            sdpAudioFormat = SDPMediaFormatsEnum.G722;
+                            break;
+                        default:
+                            Log.LogWarning("Audio format not recognised.");
+                            break;
+                    }
+
+                    audioTrackFormats.Add(new SDPMediaFormat(sdpAudioFormat));
                 }
 
-                audioTrackFormats.Add(new SDPMediaFormat(sdpAudioFormat));
+                var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, audioTrackFormats);
+                base.addTrack(audioTrack);
             }
 
-            base.OnStarted += async () => await OSMediaSession.Start();
-            base.OnClosed += async () => await OSMediaSession.Close();
-
-            var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, audioTrackFormats);
-            base.addTrack(audioTrack);
+            //base.OnStarted += async () => await OSMediaSession.Start();
+            //base.OnClosed += async () => await OSMediaSession.Close();
         }
 
         /// <summary>
@@ -91,7 +94,7 @@ namespace SIPSorcery.Media
                 var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
                 var decodedSample = _audioEncoder.DecodeAudio(rtpPacket.Payload, sendingFormat, AudioSamplingRatesEnum.Rate8KHz);
 
-                OSMediaSession.GotRemoteAudioSample(decodedSample);
+               // OSMediaSession.GotRemoteAudioSample(decodedSample);
             }
             else if(mediaType == SDPMediaTypesEnum.video)
             {

@@ -28,7 +28,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
@@ -63,14 +62,9 @@ namespace SIPSorcery.Media
         PinkNoise = 4,
 
         /// <summary>
-        /// Don't send audio RTP packets.
+        /// Don't generate any audio samples.
         /// </summary>
         None = 5,
-
-        /// <summary>
-        /// Use this option for audio capture devices such as a microphone.
-        /// </summary>
-        CaptureDevice = 6,
     }
 
     public class AudioSourceOptions
@@ -83,7 +77,7 @@ namespace SIPSorcery.Media
         /// <summary>
         /// If using a pre-recorded audio source this is the audio source file.
         /// </summary>
-        public Dictionary<SDPMediaFormatsEnum, string> SourceFiles;
+        public Dictionary<AudioCodecsEnum, string> SourceFiles;
 
         /// <summary>
         /// The sampling rate for the audio capture device.
@@ -92,10 +86,10 @@ namespace SIPSorcery.Media
     }
 
     /// <summary>
-    /// An audio only RTP session that can supply an audio stream to the caller. Any incoming audio stream is 
-    /// ignored and this class does NOT use any audio devices on the system for capture or playback.
+    /// An audio source implementation that provides a diverse range of audio source options.
+    /// The available options encompass signal generation, playback from file and more.
     /// </summary>
-    public class MultiSourceAudioSession : PlatformMediaSession
+    public class AudioDiverseSource : IAudioSource
     {
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
@@ -111,45 +105,21 @@ namespace SIPSorcery.Media
         private SignalGenerator _signalGenerator;
         private Timer _audioStreamTimer;
         private AudioSourceOptions _audioOpts;
-        private SDPMediaFormat _sendingFormat;          // The codec that we've selected to send with (must be supported by remote party).
+        private AudioFormat _sendingFormat;             // The codec that we've selected to send with (must be supported by remote party).
         private int _sendingAudioSampleRate;            // 8KHz for G711, 16KHz for G722.
         private int _sendingAudioRtpRate;               // 8Khz for both G711 and G722. Future codecs could have different values.
         private bool _streamSendInProgress;             // When a send for stream is in progress it takes precedence over the existing audio source.
         private byte[] _silenceBuffer;                  // PCMU and PCMA have a standardised silence format. When using these codecs the buffer can be constructed.  
-
-
-        private StreamReader _streamSourceReader;
-
-
+        private BinaryReader _streamSourceReader;
         private Timer _streamSourceTimer;
+        private bool _isStarted = false;
+        private bool _isClosed = false;
+        private List<AudioFormat> _supportedFormats;
 
         /// <summary>
         /// The sample rate of the source stream.
         /// </summary>
         private AudioSamplingRatesEnum _streamSourceSampleRate;
-
-        public uint RtpPacketsSent
-        {
-            get { return base.AudioRtcpSession.PacketsSentCount; }
-        }
-
-        public uint RtpPacketsReceived
-        {
-            get { return base.AudioRtcpSession.PacketsReceivedCount; }
-        }
-
-        /// <summary>
-        /// Fires when an audio sample from the remote party has been decoded into a buffer
-        /// of the default 8KHz PCM.
-        /// </summary>
-        //public event Action<byte[]> OnRemoteAudioSampleReady;
-
-        /// <summary>
-        /// Fires when an audio sample from the remote party has been decoded into an
-        /// 16KHz PCM buffer. The 8KHz and 16KHz events originate from the same RTP stream
-        /// so only one or the other should be handled.
-        /// </summary>
-        //public event Action<byte[]> OnRemote16KHzPcmSampleReady;
 
         /// <summary>
         /// Fires when the current send audio from stream operation completes. Send from
@@ -157,6 +127,12 @@ namespace SIPSorcery.Media
         /// as interruptions to the primary audio stream.
         /// </summary>
         public event Action OnSendFromAudioStreamComplete;
+
+        public event SourceErrorDelegate OnAudioSourceFailure;
+
+        public event AudioEncodedSampleDelegate OnAudioSourceEncodedSample;
+
+        public event RawAudioSampleDelegate OnAudioSourceRawSample;
 
         /// <summary>
         /// Creates an audio only RTP session that can supply an audio stream to the caller.
@@ -171,51 +147,97 @@ namespace SIPSorcery.Media
         /// <param name="bindPort">Optional. If specified the RTP socket will attempt to bind to this port. If the port
         /// is already in use the RTP channel will not be created. Generally the port should be left as 0 which will
         /// result in the Operating System choosing an ephemeral port.</param>
-        public MultiSourceAudioSession(
+        public AudioDiverseSource(
             AudioSourceOptions audioOptions,
-            IPlatformMediaSession platformMediaSession,
-            IPAddress bindAddress = null,
-            int bindPort = 0) :
-            base(platformMediaSession, bindAddress, bindPort)
+            List<AudioFormat> supportedFormats = null)
         {
             _audioOpts = audioOptions;
+
+            if (supportedFormats == null || supportedFormats.Count == 0)
+            {
+                _supportedFormats = new List<AudioFormat>
+                {
+                    new AudioFormat{ Codec = AudioCodecsEnum.PCMU },
+                    new AudioFormat{ Codec = AudioCodecsEnum.PCMA },
+                    new AudioFormat{ Codec = AudioCodecsEnum.G722 }
+                };
+            }
+            else
+            {
+                _supportedFormats = supportedFormats;
+            }
         }
 
-        public override void Close(string reason)
+        public List<AudioFormat> GetAudioSourceFormats()
         {
-            base.Close(reason);
+            return _supportedFormats;
+        }
 
-            _audioStreamTimer?.Dispose();
-            _audioStreamReader?.Close();
-            StopSendFromAudioStream();
+        public void SetAudioSourceFormat(AudioFormat audioFormat)
+        {
+            _sendingFormat = audioFormat;
+
+            //_sendingAudioSampleRate = SDPMediaFormatInfo.GetClockRate(_sendingFormat.FormatCodec);
+            //_sendingAudioRtpRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat.FormatCodec);
+        }
+
+        public Task CloseAudio()
+        {
+            if (!_isClosed)
+            {
+                _isClosed = true;
+                _audioStreamTimer?.Dispose();
+                _audioStreamReader?.Close();
+                StopSendFromAudioStream();
+            }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
         /// Initialises the audio source as required.
         /// </summary>
-        public override async Task Start()
+        public Task StartAudio()
         {
-            if (!IsStarted)
+            if (!_isStarted)
             {
-                await base.Start();
+                _isStarted = true;
 
-                if (AudioLocalTrack == null || AudioLocalTrack.Capabilities == null || AudioLocalTrack.Capabilities.Count == 0)
-                {
-                    throw new ApplicationException("Cannot start audio session without a local audio track being available.");
-                }
-                else if (AudioRemoteTrack == null || AudioRemoteTrack.Capabilities == null || AudioRemoteTrack.Capabilities.Count == 0)
-                {
-                    throw new ApplicationException("Cannot start audio session without a remote audio track being available.");
-                }
+                //await base.Start();
 
-                _sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
-                _sendingAudioSampleRate = SDPMediaFormatInfo.GetClockRate(_sendingFormat.FormatCodec);
-                _sendingAudioRtpRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat.FormatCodec);
+                //if (AudioLocalTrack == null || AudioLocalTrack.Capabilities == null || AudioLocalTrack.Capabilities.Count == 0)
+                //{
+                //    throw new ApplicationException("Cannot start audio session without a local audio track being available.");
+                //}
+                //else if (AudioRemoteTrack == null || AudioRemoteTrack.Capabilities == null || AudioRemoteTrack.Capabilities.Count == 0)
+                //{
+                //    throw new ApplicationException("Cannot start audio session without a remote audio track being available.");
+                //}
 
-                Log.LogDebug($"RTP audio session selected sending codec {_sendingFormat.FormatCodec}.");
+                //_sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
+                //_sendingAudioSampleRate = SDPMediaFormatInfo.GetClockRate(_sendingFormat.FormatCodec);
+                //_sendingAudioRtpRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat.FormatCodec);
+
+                Log.LogDebug($"RTP audio session selected sending codec {_sendingFormat.Codec}.");
 
                 SetSource(_audioOpts);
             }
+
+            return Task.CompletedTask;
+        }
+
+        public Task PauseAudio()
+        {
+            // TODO.
+
+            return Task.CompletedTask;
+        }
+
+        public Task ResumeAudio()
+        {
+            // TODO.
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -303,13 +325,13 @@ namespace SIPSorcery.Media
                 }
                 else if (sourceOptions.AudioSource == AudioSourcesEnum.Music)
                 {
-                    if (sourceOptions.SourceFiles == null || !sourceOptions.SourceFiles.ContainsKey(_sendingFormat.FormatCodec))
+                    if (sourceOptions.SourceFiles == null || !sourceOptions.SourceFiles.ContainsKey(_sendingFormat.Codec))
                     {
-                        Log.LogWarning($"Source file not set for codec {_sendingFormat.FormatCodec}.");
+                        Log.LogWarning($"Source file not set for codec {_sendingFormat.Codec}.");
                     }
                     else
                     {
-                        string sourceFile = sourceOptions.SourceFiles[_sendingFormat.FormatCodec];
+                        string sourceFile = sourceOptions.SourceFiles[_sendingFormat.Codec];
 
                         if (String.IsNullOrEmpty(sourceFile) || !File.Exists(sourceFile))
                         {
@@ -326,7 +348,6 @@ namespace SIPSorcery.Media
 
             _audioOpts = sourceOptions;
         }
-
 
         /// <summary>
         /// Sends a stream containing 16 bit PCM audio to the remote party. Calling this method
@@ -345,7 +366,7 @@ namespace SIPSorcery.Media
                 _streamSendInProgress = true;
 
                 _streamSourceSampleRate = streamSampleRate;
-                _streamSourceReader = new StreamReader(audioStream);
+                _streamSourceReader = new BinaryReader(audioStream);
                 _streamSourceTimer = new Timer(SendStreamSample, null, Timeout.Infinite, Timeout.Infinite);
             }
         }
@@ -359,7 +380,7 @@ namespace SIPSorcery.Media
             {
                 lock (_audioStreamTimer)
                 {
-                    int sampleRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat.FormatCodec);
+                    int sampleRate = SDPMediaFormatInfo.GetRtpDefaultClockRate(_sendingFormat.Codec);
                     int sampleSize = sampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
                     byte[] sample = new byte[sampleSize];
 
@@ -367,7 +388,7 @@ namespace SIPSorcery.Media
 
                     if (bytesRead > 0)
                     {
-                        SendAudioFrame((uint)sampleSize, (int)_sendingFormat.FormatCodec, sample);
+                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, sampleSize, sample);
                     }
 
                     if (bytesRead == 0 || _audioStreamReader.EndOfStream)
@@ -389,15 +410,15 @@ namespace SIPSorcery.Media
                 {
                     int outputBufferSize = _sendingAudioRtpRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
 
-                    if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.G722)
+                    if (_sendingFormat.Codec == AudioCodecsEnum.G722)
                     {
                         int inputBufferSize = _sendingAudioSampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
                         short[] silencePcm = new short[inputBufferSize];
 
-                        RawAudioSampleReady(AUDIO_SAMPLE_PERIOD_MILLISECONDS, silencePcm, AudioSamplingRatesEnum.Rate8KHz);
+                        OnAudioSourceRawSample?.Invoke(AudioSamplingRatesEnum.Rate8KHz, AUDIO_SAMPLE_PERIOD_MILLISECONDS, silencePcm);
                     }
-                    else if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMU
-                            || _sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA)
+                    else if (_sendingFormat.Codec == AudioCodecsEnum.PCMU
+                            || _sendingFormat.Codec == AudioCodecsEnum.PCMA)
                     {
                         if (_silenceBuffer == null || _silenceBuffer.Length != outputBufferSize)
                         {
@@ -406,11 +427,11 @@ namespace SIPSorcery.Media
                         }
 
                         // No encoding required for PCMU/PCMA silence.
-                        SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, _silenceBuffer);
+                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, outputBufferSize, _silenceBuffer);
                     }
                     else
                     {
-                        Log.LogWarning($"SendSilenceSample does not know how to encode {_sendingFormat.FormatCodec}.");
+                        Log.LogWarning($"SendSilenceSample does not know how to encode {_sendingFormat.Codec}.");
                     }
                 }
             }
@@ -434,7 +455,7 @@ namespace SIPSorcery.Media
                     _signalGenerator.Read(linear, 0, inputBufferSize);
                     short[] pcm = linear.Select(x => (short)(x * LINEAR_MAXIMUM)).ToArray();
 
-                    RawAudioSampleReady(AUDIO_SAMPLE_PERIOD_MILLISECONDS, pcm, AudioSamplingRatesEnum.Rate8KHz);
+                    OnAudioSourceRawSample?.Invoke(AudioSamplingRatesEnum.Rate8KHz, AUDIO_SAMPLE_PERIOD_MILLISECONDS, pcm);
                 }
             }
         }
@@ -449,28 +470,32 @@ namespace SIPSorcery.Media
                 if (_streamSourceReader?.BaseStream?.CanRead == true)
                 {
                     int sampleRate = (_streamSourceSampleRate == AudioSamplingRatesEnum.Rate8KHz) ? 8000 : 16000;
-                    int sampleSize = sampleRate * 2 / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
-                    byte[] sample = new byte[sampleSize];
+                    int sampleSize = sampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                    short[] sample = new short[sampleSize];
+                    int samplesRead = 0;
 
-                    int bytesRead = _streamSourceReader.BaseStream.Read(sample, 0, sample.Length);
+                    for (int i = 0; i < sampleSize && _streamSourceReader.BaseStream.Position < _streamSourceReader.BaseStream.Length; i++)
+                    {
+                        sample[samplesRead++] = _streamSourceReader.ReadInt16();
+                    }
 
-                    if (bytesRead > 0)
+                    if (samplesRead > 0)
                     {
                         //Log.LogDebug($"Audio stream reader bytes read {bytesRead}, position {_audioPcmStreamReader.BaseStream.Position}, length {_audioPcmStreamReader.BaseStream.Length}.");
 
-                        if (bytesRead < sample.Length)
+                        if (samplesRead < sample.Length)
                         {
                             // If the sending codec supports it fill up any short samples with silence.
-                            if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA ||
-                                _sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMU)
+                            if (_sendingFormat.Codec == AudioCodecsEnum.PCMU ||
+                                _sendingFormat.Codec == AudioCodecsEnum.PCMU)
                             {
-                                SetSilenceBuffer(sample, bytesRead);
+                                SetSilenceBuffer(sample, samplesRead);
                             }
                         }
 
-                        RawAudioSampleReady(AUDIO_SAMPLE_PERIOD_MILLISECONDS, sample, _streamSourceSampleRate);
+                        OnAudioSourceRawSample?.Invoke(_streamSourceSampleRate, AUDIO_SAMPLE_PERIOD_MILLISECONDS, sample);
 
-                        if (_streamSourceReader.EndOfStream || _streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
+                        if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
                         {
                             Log.LogDebug("Send audio from stream completed.");
                             StopSendFromAudioStream();
@@ -506,21 +531,41 @@ namespace SIPSorcery.Media
         /// Fills up the silence buffer for the sending format and period.
         /// </summary>
         /// <param name="length">The required length for the silence buffer.</param>
+        private void SetSilenceBuffer(short[] buffer, int startPosn)
+        {
+            for (int index = startPosn; index < buffer.Length - 1; index++)
+            {
+                if (_sendingFormat.Codec == AudioCodecsEnum.PCMA)
+                {
+                    buffer[index] = (short)(PCMA_SILENCE_BYTE_ONE << 8 & 0xff00 + PCMA_SILENCE_BYTE_ZERO & 0x00ff);
+                }
+                else if (_sendingFormat.Codec == AudioCodecsEnum.PCMU)
+                {
+                    buffer[index] = (short)(PCMU_SILENCE_BYTE_ONE << 8 & 0xff00 + PCMU_SILENCE_BYTE_ZERO & 0x00ff);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fills up the silence buffer for the sending format and period.
+        /// </summary>
+        /// <param name="length">The required length for the silence buffer.</param>
         private void SetSilenceBuffer(byte[] buffer, int startPosn)
         {
             for (int index = startPosn; index < buffer.Length - 1; index += 2)
             {
-                if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA)
+                if (_sendingFormat.Codec == AudioCodecsEnum.PCMA)
                 {
                     buffer[index] = PCMA_SILENCE_BYTE_ZERO;
                     buffer[index + 1] = PCMA_SILENCE_BYTE_ONE;
                 }
-                else if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMU)
+                else if (_sendingFormat.Codec == AudioCodecsEnum.PCMU)
                 {
                     buffer[index] = PCMU_SILENCE_BYTE_ZERO;
                     buffer[index + 1] = PCMU_SILENCE_BYTE_ONE;
                 }
             }
+
         }
     }
 }
