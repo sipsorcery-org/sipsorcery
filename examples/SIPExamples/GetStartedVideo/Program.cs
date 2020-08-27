@@ -28,7 +28,6 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
-using SIPSorceryMedia.Windows.Codecs;
 
 namespace demo
 {

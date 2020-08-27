@@ -23,8 +23,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia;
+using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -79,11 +81,6 @@ namespace WebRTCServer
 
             AddConsoleLogger();
 
-            // Initialise OpenSSL & libsrtp, saves a couple of seconds for the first client connection.
-            Console.WriteLine("Initialising OpenSSL and libsrtp...");
-            DtlsHandshake.InitialiseOpenSSL();
-            Srtp.InitialiseLibSrtp();
-
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
             _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
@@ -114,6 +111,9 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
+            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint();
+            AudioEncoder audioEncoder = new AudioEncoder();
+
             var peerConnection = new RTCPeerConnection(null);
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
@@ -135,6 +135,12 @@ namespace WebRTCServer
                 else if (state == RTCPeerConnectionState.connected)
                 {
                     peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) => logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
+                    peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+                    {
+                        var sendingFormat = peerConnection.GetSendingFormat(SDPMediaTypesEnum.audio);
+                        var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, sendingFormat, windowsAudioEP.AudioPlaybackRate);
+                        windowsAudioEP.GotAudioSample(decodedSample);
+                    };
                 }
             };
 
