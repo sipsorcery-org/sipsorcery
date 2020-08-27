@@ -27,6 +27,7 @@ using SIPSorcery.Net;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
 using SIPSorceryMedia.Windows.Codecs;
 
@@ -109,16 +110,16 @@ namespace demo
             var audioSrcOpts = new AudioSourceOptions
             {
                 AudioSource = AudioSourcesEnum.Music,
-                SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
+                SourceFiles = new Dictionary<AudioCodecsEnum, string>
                 {
-                    { SDPMediaFormatsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
+                    { AudioCodecsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
                 }
             };
 
             var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
 
             var winAVSession = new WindowsAudioVideoSession();
-            var rtpSession = new PlatformMediaSession(winAVSession);
+            var rtpSession = new VoIPMediaSession(winAVSession);
 
             // Place the call and wait for the result.
             Task<bool> callTask = userAgent.Call(DESTINATION, null, null, rtpSession);

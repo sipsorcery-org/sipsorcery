@@ -1,8 +1,9 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: MultiSourceAudioSession.cs
+// Filename: AudioExtrasSource.cs
 //
-// Description: A lightweight audio only RTP session suitable for testing.
-// No rendering or capturing capabilities.
+// Description: Implements an audio source that can generate samples from a
+// variety of non-live sources. For examples signal generators or reading
+// samples from files.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -13,7 +14,7 @@
 // 31 May 2020  Aaron Clauson   Refactored codecs and signal generator to 
 //                              separate class files.
 // 19 Aug 2020  Aaron Clauson   Renamed from RtpAudioSession to
-//                              MultiSourceAudioSession.
+//                              AudioExtrasSource.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -23,7 +24,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -89,15 +89,18 @@ namespace SIPSorcery.Media
     /// An audio source implementation that provides a diverse range of audio source options.
     /// The available options encompass signal generation, playback from file and more.
     /// </summary>
-    public class AudioDiverseSource : IAudioSource
+    public class AudioExtrasSource : IAudioSource
     {
-        private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
+        private const int DEFAULT_AUDIO_SAMPLE_RATE = 8000;
+        private const int DEFAULT_RTP_TIMESTAMP_RATE = 8000;
+
         private static readonly byte PCMU_SILENCE_BYTE_ZERO = 0x7F;
         private static readonly byte PCMU_SILENCE_BYTE_ONE = 0xFF;
         private static readonly byte PCMA_SILENCE_BYTE_ZERO = 0x55;
         private static readonly byte PCMA_SILENCE_BYTE_ONE = 0xD5;
         private static float LINEAR_MAXIMUM = 32767f;
+        private static AudioFormat DEFAULT_SENDING_FORMAT = new AudioFormat { Codec = AudioCodecsEnum.PCMU };
 
         private static ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -105,9 +108,9 @@ namespace SIPSorcery.Media
         private SignalGenerator _signalGenerator;
         private Timer _audioStreamTimer;
         private AudioSourceOptions _audioOpts;
-        private AudioFormat _sendingFormat;             // The codec that we've selected to send with (must be supported by remote party).
-        private int _sendingAudioSampleRate;            // 8KHz for G711, 16KHz for G722.
-        private int _sendingAudioRtpRate;               // 8Khz for both G711 and G722. Future codecs could have different values.
+        private AudioFormat _sendingFormat = DEFAULT_SENDING_FORMAT;        // The codec that was selected to send with during the SDP negotiation.
+        private int _sendingAudioSampleRate = DEFAULT_AUDIO_SAMPLE_RATE;    // 8KHz for G711, 16KHz for G722.
+        private int _sendingAudioRtpRate = DEFAULT_RTP_TIMESTAMP_RATE;      // 8Khz for both G711 and G722. Future codecs could have different values.
         private bool _streamSendInProgress;             // When a send for stream is in progress it takes precedence over the existing audio source.
         private byte[] _silenceBuffer;                  // PCMU and PCMA have a standardised silence format. When using these codecs the buffer can be constructed.  
         private BinaryReader _streamSourceReader;
@@ -135,23 +138,18 @@ namespace SIPSorcery.Media
         public event RawAudioSampleDelegate OnAudioSourceRawSample;
 
         /// <summary>
-        /// Creates an audio only RTP session that can supply an audio stream to the caller.
+        /// Instantiates an audio source that can generate output samples from a variety of different
+        /// non-live sources.
         /// </summary>
-        /// <param name="audioOptions">The options that determine the type of audio to stream to the remote party. Example
-        /// type of audio sources are music, silence, white noise etc.</param>
-        /// <param name="audioCodecs">The audio codecs to support.</param>
-        /// <param name="bindAddress">Optional. If specified this address will be used as the bind address for any RTP
-        /// and control sockets created. Generally this address does not need to be set. The default behaviour
-        /// is to bind to [::] or 0.0.0.0,d depending on system support, which minimises network routing
-        /// causing connection issues.</param>
-        /// <param name="bindPort">Optional. If specified the RTP socket will attempt to bind to this port. If the port
-        /// is already in use the RTP channel will not be created. Generally the port should be left as 0 which will
-        /// result in the Operating System choosing an ephemeral port.</param>
-        public AudioDiverseSource(
-            AudioSourceOptions audioOptions,
+        /// <param name="audioOptions">Optional. The options that determine the type of audio to stream to the remote party. 
+        /// Example type of audio sources are music, silence, white noise etc.</param>
+        /// <param name="supportedFormats">Optional. The audio codecs to support. Can only be a combination of 
+        /// PCMU, PCMA and G722. Set as null to use the default option and support all three.</param>
+        public AudioExtrasSource(
+            AudioSourceOptions audioOptions = null,
             List<AudioFormat> supportedFormats = null)
         {
-            _audioOpts = audioOptions;
+            _audioOpts = audioOptions ?? new AudioSourceOptions { AudioSource = AudioSourcesEnum.None };
 
             if (supportedFormats == null || supportedFormats.Count == 0)
             {
@@ -161,6 +159,13 @@ namespace SIPSorcery.Media
                     new AudioFormat{ Codec = AudioCodecsEnum.PCMA },
                     new AudioFormat{ Codec = AudioCodecsEnum.G722 }
                 };
+            }
+            else if(!supportedFormats.Any(x => 
+                x.Codec != AudioCodecsEnum.G722 ||
+                x.Codec != AudioCodecsEnum.PCMA ||
+                x.Codec != AudioCodecsEnum.PCMU))
+            {
+                throw new ApplicationException("The only supported codecs are PCMU, PCMA and G722.");
             }
             else
             {
@@ -176,9 +181,6 @@ namespace SIPSorcery.Media
         public void SetAudioSourceFormat(AudioFormat audioFormat)
         {
             _sendingFormat = audioFormat;
-
-            //_sendingAudioSampleRate = SDPMediaFormatInfo.GetClockRate(_sendingFormat.FormatCodec);
-            //_sendingAudioRtpRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat.FormatCodec);
         }
 
         public Task CloseAudio()
@@ -202,24 +204,6 @@ namespace SIPSorcery.Media
             if (!_isStarted)
             {
                 _isStarted = true;
-
-                //await base.Start();
-
-                //if (AudioLocalTrack == null || AudioLocalTrack.Capabilities == null || AudioLocalTrack.Capabilities.Count == 0)
-                //{
-                //    throw new ApplicationException("Cannot start audio session without a local audio track being available.");
-                //}
-                //else if (AudioRemoteTrack == null || AudioRemoteTrack.Capabilities == null || AudioRemoteTrack.Capabilities.Count == 0)
-                //{
-                //    throw new ApplicationException("Cannot start audio session without a remote audio track being available.");
-                //}
-
-                //_sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
-                //_sendingAudioSampleRate = SDPMediaFormatInfo.GetClockRate(_sendingFormat.FormatCodec);
-                //_sendingAudioRtpRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat.FormatCodec);
-
-                Log.LogDebug($"RTP audio session selected sending codec {_sendingFormat.Codec}.");
-
                 SetSource(_audioOpts);
             }
 
@@ -291,11 +275,13 @@ namespace SIPSorcery.Media
             // If required start the audio source.
             if (sourceOptions != null)
             {
+                _audioStreamTimer?.Dispose();
+                _audioStreamReader?.Close();
+                StopSendFromAudioStream();
+
                 if (sourceOptions.AudioSource == AudioSourcesEnum.None)
                 {
-                    _audioStreamTimer?.Dispose();
-                    _audioStreamReader?.Close();
-                    StopSendFromAudioStream();
+                    // Do nothing, all other sources have already been stopped.
                 }
                 else if (sourceOptions.AudioSource == AudioSourcesEnum.Silence)
                 {
@@ -328,6 +314,7 @@ namespace SIPSorcery.Media
                     if (sourceOptions.SourceFiles == null || !sourceOptions.SourceFiles.ContainsKey(_sendingFormat.Codec))
                     {
                         Log.LogWarning($"Source file not set for codec {_sendingFormat.Codec}.");
+                        OnAudioSourceFailure?.Invoke($"Music source file not set for codec {_sendingFormat.Codec}.");
                     }
                     else
                     {
@@ -335,7 +322,8 @@ namespace SIPSorcery.Media
 
                         if (String.IsNullOrEmpty(sourceFile) || !File.Exists(sourceFile))
                         {
-                            Log.LogWarning("Could not start audio music source as the source file does not exist.");
+                            Log.LogWarning($"Could not start audio music source as the file {sourceFile} does not exist.");
+                            OnAudioSourceFailure?.Invoke($"Could not start audio music source as the file {sourceFile} does not exist.");
                         }
                         else
                         {
@@ -344,9 +332,9 @@ namespace SIPSorcery.Media
                         }
                     }
                 }
-            }
 
-            _audioOpts = sourceOptions;
+                _audioOpts = sourceOptions;
+            }
         }
 
         /// <summary>
@@ -381,7 +369,7 @@ namespace SIPSorcery.Media
                 lock (_audioStreamTimer)
                 {
                     int sampleRate = SDPMediaFormatInfo.GetRtpDefaultClockRate(_sendingFormat.Codec);
-                    int sampleSize = sampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                    uint sampleSize = (uint)(sampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS);
                     byte[] sample = new byte[sampleSize];
 
                     int bytesRead = _audioStreamReader.BaseStream.Read(sample, 0, sample.Length);
@@ -408,7 +396,7 @@ namespace SIPSorcery.Media
             {
                 lock (_audioStreamTimer)
                 {
-                    int outputBufferSize = _sendingAudioRtpRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                    uint outputBufferSize = (uint)(_sendingAudioRtpRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS);
 
                     if (_sendingFormat.Codec == AudioCodecsEnum.G722)
                     {
@@ -565,7 +553,6 @@ namespace SIPSorcery.Media
                     buffer[index + 1] = PCMU_SILENCE_BYTE_ONE;
                 }
             }
-
         }
     }
 }

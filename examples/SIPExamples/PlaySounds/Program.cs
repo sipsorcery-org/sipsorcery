@@ -33,11 +33,11 @@ namespace demo
     class Program
     {
         //private static string DESTINATION = "1@127.0.0.1";
-        //private static string DESTINATION = "sip:pcdodo@192.168.0.50";
-        //private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
-        private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
+        private static string DESTINATION = "sip:pcdodo@192.168.0.50";
+        private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
+        //private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
         //private static string DESTINATION = "sip:aaron@192.168.0.50:7060";
-        private static SIPEndPoint OUTBOUND_PROXY = null;
+        //private static SIPEndPoint OUTBOUND_PROXY = null;
 
         private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
         //private const string WELCOME_16K = "Sounds/hellowelcome16k.raw";
@@ -58,14 +58,14 @@ namespace demo
             userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
-            var windowsAudio = new WindowsAudioSession();
-            var multiSourceAudioSession = new MultiSourceAudioSession(
-                new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
-               windowsAudio);
-            multiSourceAudioSession.AcceptRtpFromAny = true;
+            var windowsAudio = new WindowsAudioSession();   // Using the sink (speaker playback).
+            var audioExtrasSource = new AudioExtrasSource();
+            MediaEndPoints mediaEndPoints = new MediaEndPoints { AudioSource = audioExtrasSource, AudioSink = windowsAudio };
+            var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+            voipMediaSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.
-            var callTask = userAgent.Call(DESTINATION, null, null, multiSourceAudioSession);
+            var callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
 
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
@@ -96,39 +96,39 @@ namespace demo
             {
                 Console.WriteLine($"Call to {DESTINATION} succeeded.");
 
-                windowsAudio.PauseAudioSource();
+                Console.WriteLine("Sending welcome message from 8KHz sample.");
+                await audioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
 
-                //await multiSourceAudioSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
-                await multiSourceAudioSession.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
+                Console.WriteLine("Sending sine wave.");
+                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
 
-                //multiSourceAudioSession.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+                await Task.Delay(2000);
 
-                windowsAudio.ResumeAudioSource();
-
-                await Task.Delay(500);
-
+                Console.WriteLine("Sending DTMF.");
                 await userAgent.SendDtmf(0x01);
                 await userAgent.SendDtmf(0x02);
                 await userAgent.SendDtmf(0x03);
                 await userAgent.SendDtmf(0x04);
 
-                //multiSourceAudioSession.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.WhiteNoise });
-                //await Task.Delay(5000);
+                Console.WriteLine("Sending white noise signal.");
+                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.WhiteNoise });
+                await Task.Delay(2000);
 
-                //multiSourceAudioSession.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise });
-                //await Task.Delay(5000);
+                Console.WriteLine("Sending pink noise signal.");
+                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise });
+                await Task.Delay(2000);
 
-                windowsAudio.PauseAudioSource();
+                Console.WriteLine("Sending silence.");
+                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
 
-                await Task.Delay(500);
+                await Task.Delay(2000);
 
-                await multiSourceAudioSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+                Console.WriteLine("Sending goodbye message from 16KHz sample.");
+                await audioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
 
-                multiSourceAudioSession.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.None });
+                await Task.Delay(200);
 
-                windowsAudio.ResumeAudioSource();
-
-                exitCts.Token.WaitHandle.WaitOne();
+                userAgent.Hangup();
             }
             else
             {

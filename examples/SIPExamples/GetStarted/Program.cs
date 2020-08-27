@@ -23,6 +23,7 @@ using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
 
 namespace demo
@@ -49,7 +50,8 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioSession();
-            var rtpAudioSession = new PlatformMediaSession(windowsAudio);
+            MediaEndPoints mediaEndPoints = new MediaEndPoints { AudioSource = windowsAudio, AudioSink = windowsAudio };
+            var rtpAudioSession = new VoIPMediaSession(mediaEndPoints);
             rtpAudioSession.AcceptRtpFromAny = true;
             
             // Place the call and wait for the result.
