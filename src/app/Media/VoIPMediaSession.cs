@@ -30,8 +30,9 @@ namespace SIPSorcery.Media
             Media = mediaEndPoint; 
 
             _audioEncoder = new AudioEncoder();
-            
-            if (mediaEndPoint.AudioSource != null)
+
+            // Wire up the audio and video sample event handlers.
+            if (Media.AudioSource != null)
             {
                 List<SDPMediaFormat> audioTrackFormats = new List<SDPMediaFormat>();
                 foreach (var audioFormat in mediaEndPoint.AudioSource.GetAudioSourceFormats())
@@ -58,11 +59,7 @@ namespace SIPSorcery.Media
 
                 var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, audioTrackFormats);
                 base.addTrack(audioTrack);
-            }
 
-            // Wire up the audio and video sample event handlers.
-            if (Media.AudioSource != null)
-            {
                 // Example being a microphone.
                 Media.AudioSource.OnAudioSourceRawSample += OnAudioSourceRawSample;
                 Media.AudioSource.OnAudioSourceEncodedSample += OnAudioSourceEncodedSample;
@@ -70,6 +67,29 @@ namespace SIPSorcery.Media
 
             if(Media.VideoSource != null)
             {
+                List<SDPMediaFormat> videoTrackFormats = new List<SDPMediaFormat>();
+                foreach (var videoFormat in mediaEndPoint.VideoSource.GetVideoSourceFormats())
+                {
+                    SDPMediaFormatsEnum sdpVideoFormat = SDPMediaFormatsEnum.Unknown;
+                    switch (videoFormat.Codec)
+                    {
+                        case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.VP8:
+                            sdpVideoFormat = SDPMediaFormatsEnum.VP8;
+                            break;
+                        case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264:
+                            sdpVideoFormat = SDPMediaFormatsEnum.H264;
+                            break;
+                        default:
+                            logger.LogWarning("Video format not recognised.");
+                            break;
+                    }
+
+                    videoTrackFormats.Add(new SDPMediaFormat(sdpVideoFormat));
+                }
+
+                var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, videoTrackFormats);
+                base.addTrack(videoTrack);
+
                 // An example video source could be a webcam.
                 Media.VideoSource.OnVideoSourceEncodedSample += OnVideoSourceEncodedSample;
             }
@@ -102,6 +122,8 @@ namespace SIPSorcery.Media
         {
             if (!base.IsClosed)
             {
+                base.Close(reason);
+
                 if (Media.AudioSource != null)
                 {
                     await Media.AudioSource.CloseAudio();

@@ -23,7 +23,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using SIPSorcery.Net;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -38,13 +37,37 @@ namespace demo
         private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
         private const string VIDEO_TEST_PATTERN_FILE = "media/testpattern.jpeg";
         private static string DESTINATION = "aaron@127.0.0.1:6060"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
-        private static int CALL_IMTEOUT_SECONDS = 20;
+        private static int CALL_TIMEOUT_SECONDS = 20;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
         private static SIPTransport _sipTransport;
         private static Form _form;
         private static PictureBox _picBox;
+
+        //static void Main()
+        //{
+        //    Console.WriteLine("SIPSorcery Getting Started Video Call Demo");
+        //    Console.WriteLine("Press ctrl-c to exit.");
+
+        //    AddConsoleLogger();
+
+        //    Console.WriteLine($"VP8 encoder version {Vp8Codec.GetCodecVersion()}.");
+        //    Console.WriteLine($"VP8 encoder version string {Vp8Codec.GetCodecVersionStr()}.");
+
+        //    Vp8Codec vp8Codec = new Vp8Codec();
+        //    vp8Codec.InitialiseEncoder(640, 480);
+
+        //    byte[] dummyI420 = new byte[640 * 480 * 2];
+
+        //    var encoded = vp8Codec.Encode(dummyI420);
+
+        //    Console.WriteLine($"Encoded frame size {encoded.Length}.");
+
+        //    vp8Codec.Dispose();
+
+        //    Console.WriteLine("Finished.");
+        //}
 
         static void Main()
         {
@@ -53,29 +76,7 @@ namespace demo
 
             AddConsoleLogger();
 
-            Console.WriteLine($"VP8 encoder version {Vp8Codec.GetCodecVersion()}.");
-            Console.WriteLine($"VP8 encoder version string {Vp8Codec.GetCodecVersionStr()}.");
-
-            Vp8Codec vp8Codec = new Vp8Codec();
-            vp8Codec.InitialiseEncoder(640, 480);
-
-            byte[] dummyI420 = new byte[640 * 480 * 2];
-
-            var encoded = vp8Codec.Encode(dummyI420);
-
-            Console.WriteLine($"Encoded frame size {encoded.Length}.");
-
-            vp8Codec.Dispose();
-
-            Console.WriteLine("Finished.");
-        }
-
-        static void MainX()
-        {
-            Console.WriteLine("SIPSorcery Getting Started Video Call Demo");
-            Console.WriteLine("Press ctrl-c to exit.");
-
-            AddConsoleLogger();
+            WindowsVideoEndPoint.logger = Log;
 
             _sipTransport = new SIPTransport();
 
@@ -116,21 +117,40 @@ namespace demo
                 }
             };
 
-            var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
+            var videoSrcOpts = new VideoSourceOptions 
+            { 
+                VideoSource = VideoSourcesEnum.TestPattern, 
+                SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE 
+            };
 
-            var winAVSession = new WindowsAudioVideoSession();
-            var rtpSession = new VoIPMediaSession(winAVSession);
+            var windowsAudioEndPoint = new WindowsAudioEndPoint();
+            var audioExtrasSource = new AudioExtrasSource(audioSrcOpts);
+            var windowsVideoEndPoint = new WindowsVideoEndPoint();
+
+            MediaEndPoints mediaEndPoints = new MediaEndPoints
+            {
+                AudioSink = windowsAudioEndPoint,
+                AudioSource = audioExtrasSource,
+                VideoSink = windowsVideoEndPoint,
+                VideoSource = windowsVideoEndPoint,
+            };
+            var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+            voipMediaSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.
-            Task<bool> callTask = userAgent.Call(DESTINATION, null, null, rtpSession);
-            callTask.Wait(CALL_IMTEOUT_SECONDS * 1000);
+            Task<bool> callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
+            callTask.Wait(CALL_TIMEOUT_SECONDS * 1000);
 
             ManualResetEvent exitMRE = new ManualResetEvent(false);
+
+            uint width = 0;
+            uint height = 0;
+            int stride = 0;
 
             if (callTask.Result)
             {
                 Log.LogInformation("Call attempt successful.");
-                winAVSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =>
+                windowsVideoEndPoint.OnVideoSinkRawSample += (uint duration, byte[] sample) =>
                 {
                     _picBox.BeginInvoke(new Action(() =>
                     {

@@ -58,7 +58,7 @@ namespace demo
             userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
-            var windowsAudio = new WindowsAudioSession();   // Using the sink (speaker playback).
+            var windowsAudio = new WindowsAudioEndPoint();   // Using the sink (speaker playback).
             var audioExtrasSource = new AudioExtrasSource();
             MediaEndPoints mediaEndPoints = new MediaEndPoints { AudioSource = audioExtrasSource, AudioSink = windowsAudio };
             var voipMediaSession = new VoIPMediaSession(mediaEndPoints);

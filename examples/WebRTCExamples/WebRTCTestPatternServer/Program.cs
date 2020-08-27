@@ -25,8 +25,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.FFmpeg;
-using SIPSorceryMedia.Windows.Codecs;
+using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -65,14 +66,14 @@ namespace WebRTCServer
 
     class Program
     {
-        private static string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
-        private const int FRAMES_PER_SECOND = 30;
-        private const int TEST_PATTERN_SPACING_MILLISECONDS = 33;
-        private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
-        private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
-        private const int TEXT_MARGIN_PIXELS = 5;
-        private const int POINTS_PER_INCH = 72;
-        private const int VIDEO_TIMESTAMP_SPACING = 3000;
+        //private static string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
+        //private const int FRAMES_PER_SECOND = 30;
+        //private const int TEST_PATTERN_SPACING_MILLISECONDS = 33;
+        //private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
+        //private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
+        //private const int TEXT_MARGIN_PIXELS = 5;
+        //private const int POINTS_PER_INCH = 72;
+        //private const int VIDEO_TIMESTAMP_SPACING = 3000;
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
 
@@ -81,16 +82,16 @@ namespace WebRTCServer
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static WebSocketServer _webSocketServer;
-        private static Bitmap _testPattern;
-        private static Timer _sendTestPatternTimer;
+        //private static Bitmap _testPattern;
+        //private static Timer _sendTestPatternTimer;
         private static bool _forceKeyFrame = false;
         private static long _presentationTimestamp = 0;
 
-        private static Vp8Codec _vp8Codec;
-        private static VideoEncoder _ffmpegEncoder;
-        private static VideoFrameConverter _videoFrameConverter;
+        //private static Vp8Codec _vp8Codec;
+        //private static VideoEncoder _ffmpegEncoder;
+        //private static VideoFrameConverter _videoFrameConverter;
 
-        private static event Action<SDPMediaTypesEnum, uint, byte[]> OnTestPatternSampleReady;
+        //private static event Action<SDPMediaTypesEnum, uint, byte[]> OnTestPatternSampleReady;
 
         static void Main(string[] args)
         {
@@ -122,7 +123,7 @@ namespace WebRTCServer
 
             AddConsoleLogger();
 
-            InitialiseTestPattern();
+            //InitialiseTestPattern();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -144,7 +145,8 @@ namespace WebRTCServer
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
-                _sendTestPatternTimer?.Dispose();
+                //_sendTestPatternTimer?.Dispose();
+                //windowsVideoEndPoint.CloseVideo();
                 exitMre.Set();
             };
 
@@ -155,6 +157,8 @@ namespace WebRTCServer
         private static async Task<RTCPeerConnection> SendSDPOffer(WebSocketContext context)
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
+
+            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint();
 
             var pc = new RTCPeerConnection(null);
 
@@ -188,7 +192,7 @@ namespace WebRTCServer
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
-            pc.onconnectionstatechange += (state) =>
+            pc.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
 
@@ -199,20 +203,30 @@ namespace WebRTCServer
 
                 if (state == RTCPeerConnectionState.closed)
                 {
-                    OnTestPatternSampleReady -= pc.SendMedia;
+                   // OnTestPatternSampleReady -= pc.SendMedia;
                     pc.OnReceiveReport -= RtpSession_OnReceiveReport;
                     pc.OnSendReport -= RtpSession_OnSendReport;
 
-                    if (OnTestPatternSampleReady == null)
-                    {
-                        _sendTestPatternTimer.Change(Timeout.Infinite, Timeout.Infinite);
-                    }
+                    await windowsVideoEndPoint.CloseVideo();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    OnTestPatternSampleReady += pc.SendMedia;
-                    _forceKeyFrame = true;
-                    _sendTestPatternTimer.Change(0, TEST_PATTERN_SPACING_MILLISECONDS);
+                    windowsVideoEndPoint.OnVideoSourceEncodedSample += (videoFormat, durationRtpUnits, sample) =>
+                    {
+                        if (videoFormat.Codec == VideoCodecsEnum.H264)
+                        {
+                            pc.SendH264Frame(durationRtpUnits, videoFormat.PayloadID, sample);
+                        }
+                        else if (videoFormat.Codec == VideoCodecsEnum.VP8)
+                        {
+                            pc.SendVp8Frame(durationRtpUnits, videoFormat.PayloadID, sample);
+                        }
+                        else
+                        {
+                            logger.LogWarning($"An encoded video sample was received for {videoFormat.Codec} but there's no RTP send method.");
+                        }
+                    };
+                    await windowsVideoEndPoint.StartVideo();
                 }
             };
 
@@ -248,118 +262,118 @@ namespace WebRTCServer
             }
         }
 
-        private static void InitialiseTestPattern()
-        {
-            _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
-            _sendTestPatternTimer = new Timer(SendTestPattern, null, Timeout.Infinite, Timeout.Infinite);
+        //private static void InitialiseTestPattern()
+        //{
+        //    _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
+        //    _sendTestPatternTimer = new Timer(SendTestPattern, null, Timeout.Infinite, Timeout.Infinite);
 
-            if (VIDEO_CODEC == SDPMediaFormatsEnum.VP8)
-            {
-                _vp8Codec = new Vp8Codec();
-                _vp8Codec.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
+        //    if (VIDEO_CODEC == SDPMediaFormatsEnum.VP8)
+        //    {
+        //        _vp8Codec = new Vp8Codec();
+        //        _vp8Codec.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
 
-                // Can also use FFmpeg which wraps libvpx.
-                //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
-            }
-            else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
-            {
-                _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
-                _videoFrameConverter = new VideoFrameConverter(
-                    new Size(_testPattern.Width, _testPattern.Height),
-                    AVPixelFormat.AV_PIX_FMT_BGRA,
-                    new Size(_testPattern.Width, _testPattern.Height),
-                    AVPixelFormat.AV_PIX_FMT_YUV420P);
-            }
-            else
-            {
-                throw new ApplicationException($"Video codec {VIDEO_CODEC} is not supported.");
-            }
-        }
+        //        // Can also use FFmpeg which wraps libvpx.
+        //        //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+        //    }
+        //    else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
+        //    {
+        //        _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+        //        _videoFrameConverter = new VideoFrameConverter(
+        //            new Size(_testPattern.Width, _testPattern.Height),
+        //            AVPixelFormat.AV_PIX_FMT_BGRA,
+        //            new Size(_testPattern.Width, _testPattern.Height),
+        //            AVPixelFormat.AV_PIX_FMT_YUV420P);
+        //    }
+        //    else
+        //    {
+        //        throw new ApplicationException($"Video codec {VIDEO_CODEC} is not supported.");
+        //    }
+        //}
 
-        private static void SendTestPattern(object state)
-        {
-            lock (_sendTestPatternTimer)
-            {
-                unsafe
-                {
-                    if (OnTestPatternSampleReady != null)
-                    {
-                        var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
-                        AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-                        var sampleBuffer = PixelConverter.BitmapToRGBA(stampedTestPattern as System.Drawing.Bitmap, _testPattern.Width, _testPattern.Height);
+        //private static void SendTestPattern(object state)
+        //{
+        //    lock (_sendTestPatternTimer)
+        //    {
+        //        unsafe
+        //        {
+        //            if (OnTestPatternSampleReady != null)
+        //            {
+        //                var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
+        //                AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
+        //                var sampleBuffer = PixelConverter.BitmapToRGBA(stampedTestPattern as System.Drawing.Bitmap, _testPattern.Width, _testPattern.Height);
 
-                        byte[] encodedBuffer = null;
+        //                byte[] encodedBuffer = null;
 
-                        if (VIDEO_CODEC == SDPMediaFormatsEnum.VP8)
-                        {
-                            byte[] i420Buffer = PixelConverter.RGBAtoYUV420Planar(sampleBuffer, _testPattern.Width, _testPattern.Height);
-                            encodedBuffer = _vp8Codec.Encode(i420Buffer, _forceKeyFrame);
-                        }
-                        else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
-                        {
-                            var i420Frame = _videoFrameConverter.Convert(sampleBuffer);
+        //                if (VIDEO_CODEC == SDPMediaFormatsEnum.VP8)
+        //                {
+        //                    byte[] i420Buffer = PixelConverter.RGBAtoYUV420Planar(sampleBuffer, _testPattern.Width, _testPattern.Height);
+        //                    encodedBuffer = _vp8Codec.Encode(i420Buffer, _forceKeyFrame);
+        //                }
+        //                else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
+        //                {
+        //                    var i420Frame = _videoFrameConverter.Convert(sampleBuffer);
 
-                            _presentationTimestamp += VIDEO_TIMESTAMP_SPACING;
+        //                    _presentationTimestamp += VIDEO_TIMESTAMP_SPACING;
 
-                            i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
-                            i420Frame.pts = _presentationTimestamp;
+        //                    i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
+        //                    i420Frame.pts = _presentationTimestamp;
 
-                            encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
-                        }
-                        else
-                        {
-                            _sendTestPatternTimer.Dispose();
-                            throw new ApplicationException($"Video codec is not supported.");
-                        }
+        //                    encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
+        //                }
+        //                else
+        //                {
+        //                    _sendTestPatternTimer.Dispose();
+        //                    throw new ApplicationException($"Video codec is not supported.");
+        //                }
                                                 
-                        if (encodedBuffer != null)
-                        {
-                            //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
-                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer);
-                        }
+        //                if (encodedBuffer != null)
+        //                {
+        //                    //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
+        //                    OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VIDEO_TIMESTAMP_SPACING, encodedBuffer);
+        //                }
 
-                        if (_forceKeyFrame)
-                        {
-                            _forceKeyFrame = false;
-                        }
+        //                if (_forceKeyFrame)
+        //                {
+        //                    _forceKeyFrame = false;
+        //                }
 
-                        stampedTestPattern.Dispose();
-                    }
-                }
-            }
-        }
+        //                stampedTestPattern.Dispose();
+        //            }
+        //        }
+        //    }
+        //}
 
-        private static void AddTimeStampAndLocation(System.Drawing.Image image, string timeStamp, string locationText)
-        {
-            int pixelHeight = (int)(image.Height * TEXT_SIZE_PERCENTAGE);
+        //private static void AddTimeStampAndLocation(System.Drawing.Image image, string timeStamp, string locationText)
+        //{
+        //    int pixelHeight = (int)(image.Height * TEXT_SIZE_PERCENTAGE);
 
-            Graphics g = Graphics.FromImage(image);
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        //    Graphics g = Graphics.FromImage(image);
+        //    g.SmoothingMode = SmoothingMode.AntiAlias;
+        //    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        //    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-            using (StringFormat format = new StringFormat())
-            {
-                format.LineAlignment = StringAlignment.Center;
-                format.Alignment = StringAlignment.Center;
+        //    using (StringFormat format = new StringFormat())
+        //    {
+        //        format.LineAlignment = StringAlignment.Center;
+        //        format.Alignment = StringAlignment.Center;
 
-                using (Font f = new Font("Tahoma", pixelHeight, GraphicsUnit.Pixel))
-                {
-                    using (var gPath = new GraphicsPath())
-                    {
-                        float emSize = g.DpiY * f.Size / POINTS_PER_INCH;
-                        if (locationText != null)
-                        {
-                            gPath.AddString(locationText, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, TEXT_MARGIN_PIXELS, image.Width, pixelHeight), format);
-                        }
+        //        using (Font f = new Font("Tahoma", pixelHeight, GraphicsUnit.Pixel))
+        //        {
+        //            using (var gPath = new GraphicsPath())
+        //            {
+        //                float emSize = g.DpiY * f.Size / POINTS_PER_INCH;
+        //                if (locationText != null)
+        //                {
+        //                    gPath.AddString(locationText, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, TEXT_MARGIN_PIXELS, image.Width, pixelHeight), format);
+        //                }
 
-                        gPath.AddString(timeStamp /* + " -- " + fps.ToString("0.00") + " fps" */, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, image.Height - (pixelHeight + TEXT_MARGIN_PIXELS), image.Width, pixelHeight), format);
-                        g.FillPath(Brushes.White, gPath);
-                        g.DrawPath(new Pen(Brushes.Black, pixelHeight * TEXT_OUTLINE_REL_THICKNESS), gPath);
-                    }
-                }
-            }
-        }
+        //                gPath.AddString(timeStamp /* + " -- " + fps.ToString("0.00") + " fps" */, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, image.Height - (pixelHeight + TEXT_MARGIN_PIXELS), image.Width, pixelHeight), format);
+        //                g.FillPath(Brushes.White, gPath);
+        //                g.DrawPath(new Pen(Brushes.Black, pixelHeight * TEXT_OUTLINE_REL_THICKNESS), gPath);
+        //            }
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Diagnostic handler to print out our RTCP sender/receiver reports.

@@ -37,8 +37,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Windows", "..\..\..\SIPSorceryMedia.Windows\src\SIPSorceryMedia.Windows.csproj", "{10BEE63D-571F-425F-B634-61841A5C58E9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.FFmpeg", "..\..\..\SIPSorceryMedia.FFmpeg\src\SIPSorcery.FFmpeg.csproj", "{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Abstractions", "..\..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj", "{EDB7C471-517B-4530-B75B-39BE5E761615}"
 EndProject
 Global
@@ -255,18 +253,6 @@ Global
 		{10BEE63D-571F-425F-B634-61841A5C58E9}.Release|x64.Build.0 = Release|Any CPU
 		{10BEE63D-571F-425F-B634-61841A5C58E9}.Release|x86.ActiveCfg = Release|Any CPU
 		{10BEE63D-571F-425F-B634-61841A5C58E9}.Release|x86.Build.0 = Release|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Debug|x64.Build.0 = Debug|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Debug|x86.Build.0 = Debug|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Release|x64.ActiveCfg = Release|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Release|x64.Build.0 = Release|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Release|x86.ActiveCfg = Release|Any CPU
-		{D3C99DF4-7CFD-4F01-B598-61CAD3A5D377}.Release|x86.Build.0 = Release|Any CPU
 		{EDB7C471-517B-4530-B75B-39BE5E761615}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EDB7C471-517B-4530-B75B-39BE5E761615}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EDB7C471-517B-4530-B75B-39BE5E761615}.Debug|x64.ActiveCfg = Debug|Any CPU
