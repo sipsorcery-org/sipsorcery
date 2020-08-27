@@ -10,8 +10,6 @@
 // History:
 // 11 Nov 2014	Aaron Clauson	Created, Hobart, Australia.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
-// 22 Aug 2020  Aaron Clauson   Moved from main SIPSorcery library to the
-//                              SIPSorceryMedia.Windows library.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

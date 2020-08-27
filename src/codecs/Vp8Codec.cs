@@ -17,6 +17,8 @@ namespace SIPSorceryMedia.Windows.Codecs
         /// </summary>
         private const int VPX_ENCODER_ABI_VERSION = 23;
 
+        private const int VPX_DECODER_ABI_VERSION = 12;
+
         /// <summary>
         /// The parameter to use for the "soft deadline" when encoding.
         /// </summary>
@@ -101,6 +103,22 @@ namespace SIPSorceryMedia.Windows.Codecs
             VpxImage.VpxImgAlloc(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_I420, _encodeWidth, _encodeHeight, 1);
         }
 
+        public void InitialiseDecoder()
+        {
+            _vpxDecodeCtx = new VpxCodecCtx();
+            _vpxEncodeImg = new VpxImage();
+
+            VpxCodecDecCfg vp8DecoderCfg = new VpxCodecDecCfg();
+
+            var initDecoderRes = vpx_decoder.VpxCodecDecInitVer(_vpxDecodeCtx, vp8dx.VpxCodecVp8Dx(), vp8DecoderCfg, 0, VPX_DECODER_ABI_VERSION);
+            if (initDecoderRes != VpxCodecErrT.VPX_CODEC_OK)
+            {
+                throw new ApplicationException($"Failed to initialise VP8 decoder, {initDecoderRes}.");
+            }
+
+            //VpxImage.VpxImgAlloc(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_I420, _encodeWidth, _encodeHeight, 1);
+        }
+
         public byte[] Encode(byte[] i420, bool forceKeyFrame = false)
         {
             byte[] encodedSample = null;
@@ -142,6 +160,68 @@ namespace SIPSorceryMedia.Windows.Codecs
             }
 
             return encodedSample;
+        }
+
+
+        // https://swift.im/git/swift-contrib/tree/Swiften/ScreenSharing/VP8Decoder.cpp?id=6247ed394302ff2cf1f33a71df808bebf7241242
+        public byte[] Decode(byte[] buffer, int bufferSize, out int width, out int height)
+        {
+            width = 0;
+            height = 0;
+
+            //vpx_codec_iter_t iter = NULL;
+            //vpx_image_t* img;
+
+            ///* Decode the frame */
+            //vpx_codec_err_t decodeResult = vpx_codec_decode(_vpxDecoder, (const uint8_t*)buffer, bufferSize, NULL, 0);
+
+            //if (decodeResult != VPX_CODEC_OK)
+            //{
+            //    printf("VPX codec failed to decode the frame: %s.\n", vpx_codec_err_to_string(decodeResult));
+            //    return -1;
+            //}
+            //else
+            //{
+            //    int pointer = 0;
+
+            //    while ((img = vpx_codec_get_frame(_vpxDecoder, &iter)))
+            //    {
+
+            //        width = img->d_w;
+            //        height = img->d_h;
+
+            //        //int outputSize = img->stride[0] * img->d_w * 3 / 2;
+            //        int outputSize = img->stride[0] * img->d_h * 3 / 2;
+            //        unsigned char* bufferOut = (unsigned char*)malloc(outputSize);
+            //        unsigned int plane, y;
+
+            //        for (plane = 0; plane < 3; plane++)
+            //        {
+
+            //            unsigned char* buf = img->planes[plane];
+
+            //            for (y = 0; y < (plane ? (img->d_h + 1) >> 1 : img->d_h); y++)
+            //            {
+
+            //                int numberofbitsToCopy = (plane ? (img->d_w + 1) >> 1 : img->d_w);
+            //                memcpy(bufferOut + pointer, buf, numberofbitsToCopy);
+            //                pointer += numberofbitsToCopy;
+
+            //                buf += img->stride[plane];
+            //            }
+            //        }
+
+            //        outBuffer = gcnew array<Byte>(outputSize);
+            //        Marshal::Copy((IntPtr)bufferOut, outBuffer, 0, outputSize);
+
+            //        free(bufferOut);
+
+            //        vpx_img_free(img);
+            //        img = nullptr;
+            //    }
+            //}
+
+            return null;
         }
 
         public static int GetCodecVersion()

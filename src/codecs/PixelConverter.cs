@@ -92,5 +92,19 @@ namespace SIPSorceryMedia.Windows.Codecs
 
             return buffer;
         }
+
+        public static byte[] YUV420PlanarToRGBA(byte[] i420, int width, int height, out int stride)
+        {
+            stride = width * 4;
+
+            return null;
+        }
+
+        public static byte[] YUV420PlanarToRGB(byte[] i420, int width, int height, out int stride)
+        {
+            stride = width * 3;
+
+            return null;
+        }
     }
 }

@@ -5,14 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using CppSharp;
 
-namespace Vpx.AutoGen
+namespace OpenH264.AutoGen
 {
     class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("libvpx C# bindings auto-generator.");
-            ConsoleDriver.Run(new VpxGenerator());
+            Console.WriteLine("OpenH264 C# bindings auto-generator.");
+            ConsoleDriver.Run(new OpenH264Generator());
             Console.WriteLine("Finished.");
             Console.ReadLine();
         }

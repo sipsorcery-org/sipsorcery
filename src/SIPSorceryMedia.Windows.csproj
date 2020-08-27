@@ -38,4 +38,10 @@
     </ContentWithTargetPath>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="media\testpattern.jpeg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

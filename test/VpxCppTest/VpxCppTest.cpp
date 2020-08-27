@@ -12,6 +12,7 @@ int main()
 
   std::cout << "vp8 encoder version " << vpx_codec_version_str() << "." << std::endl;
   std::cout << "VPX_ENCODER_ABI_VERSION=" << VPX_ENCODER_ABI_VERSION << "." << std::endl;
+  std::cout << "VPX_DECODER_ABI_VERSION=" << VPX_DECODER_ABI_VERSION << "." << std::endl;
 
   int width = 640;
   int height = 480;
