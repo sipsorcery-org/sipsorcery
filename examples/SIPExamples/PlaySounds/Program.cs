@@ -128,7 +128,10 @@ namespace demo
 
                 await Task.Delay(200);
 
-                userAgent.Hangup();
+                // Switch to the external microphone input source.
+                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.External, ExternalAudioSource = windowsAudio });
+
+                exitCts.Token.WaitHandle.WaitOne();
             }
             else
             {

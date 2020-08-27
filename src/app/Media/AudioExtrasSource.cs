@@ -65,6 +65,8 @@ namespace SIPSorcery.Media
         /// Don't generate any audio samples.
         /// </summary>
         None = 5,
+
+        External = 6,
     }
 
     public class AudioSourceOptions
@@ -82,7 +84,9 @@ namespace SIPSorcery.Media
         /// <summary>
         /// The sampling rate for the audio capture device.
         /// </summary>
-        public AudioSamplingRatesEnum CaptureDeviceSampleRate = AudioSamplingRatesEnum.Rate8KHz;
+        //public AudioSamplingRatesEnum CaptureDeviceSampleRate = AudioSamplingRatesEnum.Rate8KHz;
+
+        public IAudioSource ExternalAudioSource;
     }
 
     /// <summary>
@@ -118,6 +122,7 @@ namespace SIPSorcery.Media
         private bool _isStarted = false;
         private bool _isClosed = false;
         private List<AudioFormat> _supportedFormats;
+        private IAudioSource _externalAudioSource;
 
         /// <summary>
         /// The sample rate of the source stream.
@@ -191,6 +196,7 @@ namespace SIPSorcery.Media
                 _audioStreamTimer?.Dispose();
                 _audioStreamReader?.Close();
                 StopSendFromAudioStream();
+                _externalAudioSource?.CloseAudio();
             }
 
             return Task.CompletedTask;
@@ -279,9 +285,24 @@ namespace SIPSorcery.Media
                 _audioStreamReader?.Close();
                 StopSendFromAudioStream();
 
+                if (_externalAudioSource != null)
+                {
+                    _externalAudioSource.OnAudioSourceEncodedSample -= OnAudioSourceEncodedSample;
+                    _externalAudioSource.OnAudioSourceRawSample -= OnAudioSourceRawSample;
+                    _externalAudioSource?.PauseAudio();
+                }
+
                 if (sourceOptions.AudioSource == AudioSourcesEnum.None)
                 {
                     // Do nothing, all other sources have already been stopped.
+                }
+                else if(sourceOptions.AudioSource == AudioSourcesEnum.External)
+                {
+                    _externalAudioSource = sourceOptions.ExternalAudioSource;
+                    _externalAudioSource.OnAudioSourceEncodedSample += OnAudioSourceEncodedSample;
+                    _externalAudioSource.OnAudioSourceRawSample += OnAudioSourceRawSample;
+                    _externalAudioSource.StartAudio();
+
                 }
                 else if (sourceOptions.AudioSource == AudioSourcesEnum.Silence)
                 {
