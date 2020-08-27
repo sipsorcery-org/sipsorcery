@@ -19419,12 +19419,6 @@ references:
   commentId: T:SIPSorcery.Net.SDPMediaFormatsEnum
   fullName: SIPSorcery.Net.SDPMediaFormatsEnum
   nameWithType: SDPMediaFormatsEnum
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.Event
-  name: Event
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_Event
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.Event
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.Event
-  nameWithType: SDPMediaFormatsEnum.Event
 - uid: SIPSorcery.Net.SDPMediaFormatsEnum.G722
   name: G722
   href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_G722
@@ -19491,6 +19485,12 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.PCMU
   fullName: SIPSorcery.Net.SDPMediaFormatsEnum.PCMU
   nameWithType: SDPMediaFormatsEnum.PCMU
+- uid: SIPSorcery.Net.SDPMediaFormatsEnum.Telephone_Event
+  name: Telephone_Event
+  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_Telephone_Event
+  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.Telephone_Event
+  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.Telephone_Event
+  nameWithType: SDPMediaFormatsEnum.Telephone_Event
 - uid: SIPSorcery.Net.SDPMediaFormatsEnum.Unknown
   name: Unknown
   href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_Unknown
