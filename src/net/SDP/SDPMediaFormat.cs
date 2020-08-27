@@ -43,7 +43,7 @@ namespace SIPSorcery.Net
         // assigned is arbitrary and should not necessarily be used in SDP.
         VP9 = 98,
         VP8 = 100,  // Video.
-        Event = 101,
+        Telephone_Event = 101,
         H264 = 102,
         H265 = 103,
         OPUS = 111,
@@ -225,7 +225,7 @@ namespace SIPSorcery.Net
         {
             FormatAttribute = attribute;
 
-            Match attributeMatch = Regex.Match(attribute, @"(?<name>\w+)/(?<clockrate>\d+)\s*");
+            Match attributeMatch = Regex.Match(attribute, @"(?<name>\S+)/(?<clockrate>\d+)\s*");
             if (attributeMatch.Success)
             {
                 Name = attributeMatch.Result("${name}");
@@ -270,7 +270,8 @@ namespace SIPSorcery.Net
         {
             foreach (SDPMediaFormatsEnum format in Enum.GetValues(typeof(SDPMediaFormatsEnum)))
             {
-                if (name.ToLower() == format.ToString().ToLower())
+                if (name.ToLower() == format.ToString().ToLower() ||
+                    name.Replace('-', '_').ToLower() == format.ToString().ToLower())
                 {
                     return format;
                 }

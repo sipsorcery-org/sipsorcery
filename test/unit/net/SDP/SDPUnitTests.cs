@@ -82,8 +82,11 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(SDPMediaFormatsEnum.PCMU, sdp.Media[0].MediaFormats[0].FormatCodec);
         }
 
+        /// <summary>
+        /// Tests that the telephone event media format gets correctly recognised.
+        /// </summary>
         [Fact]
-        public void ParseBadFormatSDPUnitTest()
+        public void ParseTelephoneEventSDPUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -114,7 +117,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(sdp.SessionName == "session", "The SessionName was not parsed correctly.");
             Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
             Assert.Equal(SDPMediaFormatsEnum.PCMU, sdp.Media[0].MediaFormats[0].FormatCodec);
-            Assert.Equal(SDPMediaFormatsEnum.Event, sdp.Media[0].MediaFormats[1].FormatCodec);
+            Assert.Equal(SDPMediaFormatsEnum.Telephone_Event, sdp.Media[0].MediaFormats[1].FormatCodec);
         }
 
         [Fact]
@@ -863,6 +866,40 @@ a=sctpmap:5000 webrtc-datachannel 1024";
             Assert.Single(rndTripSdp.Media.Single().MediaFormats);
             Assert.Equal(5000, rndTripSdp.Media.Single().SctpPort.Value);
             Assert.Equal(1024, rndTripSdp.Media.Single().MaxMessageSize);
+        }
+
+        /// <summary>
+        /// Tests that parsing an SDP media format attribute where the name has a hyphen in it works correctly..
+        /// </summary>
+        [Fact]
+        public void ParseMediaFormatWithHyphenNameUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=- 1970544282 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 10.10.1.8
+t=0 0
+m=audio 57982 RTP/AVP 0 8
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=sendrecv
+m=video 57984 RTP/AVP 96
+a=rtpmap:96 H263-1998/90000
+a=fmtp:96 QCIF=3
+a=sendrecv";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("96", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().FormatID);
+            Assert.Equal("H263-1998", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Name);
         }
     }
 }
