@@ -55,12 +55,22 @@ namespace SIPSorceryMedia.FFmpeg
 
         public AVFrame Convert(byte[] srcData)
         {
-            int linesz = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 0);
+            int linesz0 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 0);
+            int linesz1 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 1);
+            int linesz2 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 2);
 
             fixed (byte* pSrcData = srcData)
             {
-                var srcFrameData = new byte_ptrArray8 { [0] = pSrcData };
-                var srcLinesize = new int_array8 { [0] = srcData.Length / _srcSize.Height };
+                var srcFrameData = new byte_ptrArray8 {
+                    [0] = pSrcData,
+                    [1] = (linesz1 > 0) ? pSrcData + linesz0 : null,
+                    [2] = (linesz2 > 0) ? pSrcData + linesz0 + linesz1: null,
+                };
+                var srcLinesize = new int_array8 { 
+                    [0] = linesz0,
+                    [1] = linesz1,
+                    [2] = linesz2
+                };
 
                 AVFrame srcFrame = new AVFrame
                 {

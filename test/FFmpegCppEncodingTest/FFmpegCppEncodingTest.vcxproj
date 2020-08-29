@@ -147,6 +147,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FFmpegCppEncodingTest.cpp" />
+    <ClCompile Include="H264BitstreamTest.cpp" />
+    <ClCompile Include="PixelConversionTest.c" />
+    <ClCompile Include="PixelWin32ConversionTest.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="strutils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

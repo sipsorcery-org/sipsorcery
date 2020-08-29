@@ -18,5 +18,19 @@
     <ClCompile Include="FFmpegCppEncodingTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PixelConversionTest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="H264BitstreamTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PixelWin32ConversionTest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="strutils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

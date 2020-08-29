@@ -1,16 +1,16 @@
-﻿// ffplay -probesize 32 -protocol_whitelist "file,rtp,udp" -i ffplay.sdp
+﻿// ffplay -probesize 32 -protocol_whitelist "file,rtp,udp" -i ffplay-h264.sdp
 
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Drawing.Text;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using FFmpeg.AutoGen;
-using SCTP4CS.Utils;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.FFmpeg;
@@ -43,6 +43,93 @@ namespace FFmpegEncodingTest
 
             InitialiseTestPattern();
 
+            RoundTripNoEncoding();
+
+            Console.WriteLine("Press any key to exit...");
+            Console.ReadLine();
+        }
+
+        private static void RoundTripNoEncoding()
+        {
+            int width = 32;
+            int height = 32;
+
+            var rgbToi420 = new VideoFrameConverter(
+                new Size(width, height),
+                AVPixelFormat.AV_PIX_FMT_RGB24,
+                new Size(width, height),
+                AVPixelFormat.AV_PIX_FMT_YUV420P);
+
+            var i420Converter = new VideoFrameConverter(
+                new Size(width, height),
+                AVPixelFormat.AV_PIX_FMT_YUV420P,
+                new Size(width, height),
+                AVPixelFormat.AV_PIX_FMT_RGB24);
+
+
+            // Create dummy bitmap.
+            byte[] srcRgb = new byte[width * height * 3];
+            for (int row = 0; row < 32; row++)
+            {
+                for (int col = 0; col < 32; col++)
+                {
+                    int index = row * width * 3 + col * 3;
+
+                    int red = (row < 16 && col < 16) ? 255 : 0;
+                    int green = (row < 16 && col > 16) ? 255 : 0;
+                    int blue = (row > 16 && col < 16) ? 255 : 0;
+
+                    srcRgb[index] = (byte)red;
+                    srcRgb[index + 1] = (byte)green;
+                    srcRgb[index + 2] = (byte)blue;
+                }
+            }
+
+            //Console.WriteLine(srcRgb.HexStr());
+
+            unsafe
+            {
+                fixed (byte* src = srcRgb)
+                {
+                    System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, srcRgb.Length / height, PixelFormat.Format24bppRgb, (IntPtr)src);
+                    bmpImage.Save("test-source.bmp");
+                    bmpImage.Dispose();
+                }
+            }
+
+            // Convert bitmap to i420.
+            var i420Frame = rgbToi420.Convert(srcRgb);
+
+            Console.WriteLine($"Converted rgb to i420.");
+
+            byte[] i420Buffer = new byte[width * height * 3 / 2];
+
+            unsafe
+            {
+                int size = width * height;
+                Marshal.Copy((IntPtr)i420Frame.data[0], i420Buffer, 0, size);
+                Marshal.Copy((IntPtr)i420Frame.data[1], i420Buffer, size, size / 4);
+                Marshal.Copy((IntPtr)i420Frame.data[2], i420Buffer, size + size / 4, size / 4);
+
+                Console.WriteLine($"Attempting to convert i420 to rgb.");
+
+                var rgbaFrame = i420Converter.Convert(i420Buffer);
+
+                byte[] rgbaBuffer = new byte[width * height * 3];
+
+                Marshal.Copy((IntPtr)rgbaFrame.data[0], rgbaBuffer, 0, width * height * 3);
+
+                fixed (byte* s = rgbaBuffer)
+                {
+                    System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, rgbaBuffer.Length / height, PixelFormat.Format24bppRgb, (IntPtr)s);
+                    bmpImage.Save("test-result.bmp");
+                    bmpImage.Dispose();
+                }
+            }
+        }
+
+        private void StreamToFFPlay()
+        {
             var videoCapabilities = new List<SDPMediaFormat>
                 {
                     //new SDPMediaFormat(SDPMediaFormatsEnum.VP8)
@@ -66,9 +153,6 @@ namespace FFmpegEncodingTest
             Console.ReadKey();
 
             _sendTestPatternTimer = new Timer(SendTestPattern, null, 0, TEST_PATTERN_SPACING_MILLISECONDS);
-
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadLine();
         }
 
         private static void InitialiseTestPattern()
@@ -113,9 +197,6 @@ namespace FFmpegEncodingTest
                         var sampleBuffer = BitmapToRGBA(stampedTestPattern as System.Drawing.Bitmap, _testPattern.Width, _testPattern.Height);
 
                         var i420Frame = _videoFrameConverter.Convert(sampleBuffer);
-
-                        //byte[] i420Buffer = PixelConverter.RGBAtoYUV420Planar(sampleBuffer, _testPattern.Width, _testPattern.Height);
-                        //var encodedBuffer = _vp8Codec.Encode(i420, _forceKeyFrame);
 
                         _presentationTimestamp += VIDEO_TIMESTAMP_SPACING;
 

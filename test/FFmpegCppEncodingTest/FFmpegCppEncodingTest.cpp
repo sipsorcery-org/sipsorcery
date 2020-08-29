@@ -24,7 +24,6 @@ extern "C"
 #define ERROR_LEN 128
 #define codecID AVCodecID::AV_CODEC_ID_H264 // AVCodecID::AV_CODEC_ID_VP8;
 
-SwsContext* _swsContext;
 AVCodec* _codec;
 AVCodecContext* _codecCtx;
 AVFormatContext* _formatContext;
@@ -33,7 +32,7 @@ char _errorLog[ERROR_LEN];
 AVCodecParserContext* _parserCtx;
 AVCodecContext* _parserCodecCtx;
 
-int main()
+int mainx()
 {
   std::cout << "FFmpeg Encoder and RTP Stream Test" << std::endl;
 
