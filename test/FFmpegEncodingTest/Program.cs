@@ -43,29 +43,79 @@ namespace FFmpegEncodingTest
 
             InitialiseTestPattern();
 
-            RoundTripNoEncoding();
+            //RoundTripNoEncodingDummyBitmap();
+
+            RoundTripNoEncodingTestPattern();
 
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();
         }
 
-        private static void RoundTripNoEncoding()
+        private static void RoundTripNoEncodingTestPattern()
         {
-            int width = 32;
-            int height = 32;
+            var testBmp = new Bitmap(TEST_PATTERN_IMAGE_PATH);
+            int w = testBmp.Width;
+            int h = testBmp.Height;
 
             var rgbToi420 = new VideoFrameConverter(
-                new Size(width, height),
+                testBmp.Size,
                 AVPixelFormat.AV_PIX_FMT_RGB24,
-                new Size(width, height),
+                testBmp.Size,
                 AVPixelFormat.AV_PIX_FMT_YUV420P);
 
             var i420Converter = new VideoFrameConverter(
-                new Size(width, height),
+                testBmp.Size,
                 AVPixelFormat.AV_PIX_FMT_YUV420P,
-                new Size(width, height),
+                testBmp.Size,
                 AVPixelFormat.AV_PIX_FMT_RGB24);
 
+            BitmapData bmpData = testBmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+            IntPtr bmpDataPtr = bmpData.Scan0;
+            int stride = bmpData.Stride;
+            byte[] bmpBuffer = new byte[Math.Abs(stride * h)];
+            Marshal.Copy(bmpDataPtr, bmpBuffer, 0, bmpBuffer.Length);
+            testBmp.UnlockBits(bmpData);
+
+            Console.WriteLine($"Test pattern stride {stride}.");
+
+            // Convert bitmap to i420.
+            var i420Buffer = rgbToi420.ConvertToBuffer(bmpBuffer);
+
+            Console.WriteLine($"Converted rgb to i420 buffer, length {i420Buffer.Length}.");
+
+            // Convert i420 back to bmp.
+            var outRgb = i420Converter.ConvertToBuffer(i420Buffer);
+
+            Console.WriteLine($"Converted i420 to rgb buffer, length {outRgb.Length}.");
+
+            unsafe
+            {
+                fixed (byte* s = outRgb)
+                {
+                    System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(w, h, outRgb.Length / h, PixelFormat.Format24bppRgb, (IntPtr)s);
+                    bmpImage.Save("testpattern-result.bmp");
+                    bmpImage.Dispose();
+                }
+            }
+        }
+
+        private static void RoundTripNoEncodingDummyBitmap()
+        {
+            int width = 32;
+            int height = 32;
+            Size sz = new Size(width, height);
+
+            var rgbToi420 = new VideoFrameConverter(
+                sz,
+                AVPixelFormat.AV_PIX_FMT_RGB24,
+                sz,
+                AVPixelFormat.AV_PIX_FMT_YUV420P);
+
+            var i420Converter = new VideoFrameConverter(
+                sz,
+                AVPixelFormat.AV_PIX_FMT_YUV420P,
+                sz,
+                AVPixelFormat.AV_PIX_FMT_RGB24);
 
             // Create dummy bitmap.
             byte[] srcRgb = new byte[width * height * 3];
@@ -85,8 +135,6 @@ namespace FFmpegEncodingTest
                 }
             }
 
-            //Console.WriteLine(srcRgb.HexStr());
-
             unsafe
             {
                 fixed (byte* src = srcRgb)
@@ -98,30 +146,20 @@ namespace FFmpegEncodingTest
             }
 
             // Convert bitmap to i420.
-            var i420Frame = rgbToi420.Convert(srcRgb);
+            var i420Buffer = rgbToi420.ConvertToBuffer(srcRgb);
 
-            Console.WriteLine($"Converted rgb to i420.");
+            Console.WriteLine($"Converted rgb to i420 buffer, length {i420Buffer.Length}.");
 
-            byte[] i420Buffer = new byte[width * height * 3 / 2];
+            // Convert i420 back to bmp.
+            var outRgb = i420Converter.ConvertToBuffer(i420Buffer);
+
+            Console.WriteLine($"Converted i420 to rgb buffer, length {outRgb.Length}.");
 
             unsafe
             {
-                int size = width * height;
-                Marshal.Copy((IntPtr)i420Frame.data[0], i420Buffer, 0, size);
-                Marshal.Copy((IntPtr)i420Frame.data[1], i420Buffer, size, size / 4);
-                Marshal.Copy((IntPtr)i420Frame.data[2], i420Buffer, size + size / 4, size / 4);
-
-                Console.WriteLine($"Attempting to convert i420 to rgb.");
-
-                var rgbaFrame = i420Converter.Convert(i420Buffer);
-
-                byte[] rgbaBuffer = new byte[width * height * 3];
-
-                Marshal.Copy((IntPtr)rgbaFrame.data[0], rgbaBuffer, 0, width * height * 3);
-
-                fixed (byte* s = rgbaBuffer)
+                fixed (byte* s = outRgb)
                 {
-                    System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, rgbaBuffer.Length / height, PixelFormat.Format24bppRgb, (IntPtr)s);
+                    System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, outRgb.Length / height, PixelFormat.Format24bppRgb, (IntPtr)s);
                     bmpImage.Save("test-result.bmp");
                     bmpImage.Dispose();
                 }
@@ -265,8 +303,8 @@ namespace FFmpegEncodingTest
                     throw new ArgumentException($"Bitmap pixel format {bmp.PixelFormat} was not recognised in BitmapToRGBA.");
             }
 
-            BitmapData bmpDate = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, bmp.PixelFormat);
-            IntPtr ptr = bmpDate.Scan0;
+            BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, bmp.PixelFormat);
+            IntPtr ptr = bmpData.Scan0;
             byte[] buffer = new byte[width * height * 4];
 
             int cnt = 0;
@@ -274,7 +312,7 @@ namespace FFmpegEncodingTest
             {
                 for (int x = 0; x <= width - 1; x++)
                 {
-                    int pos = y * bmpDate.Stride + x * pixelSize;
+                    int pos = y * bmpData.Stride + x * pixelSize;
 
                     var r = Marshal.ReadByte(ptr, pos + 0);
                     var g = Marshal.ReadByte(ptr, pos + 1);
@@ -288,7 +326,7 @@ namespace FFmpegEncodingTest
                 }
             }
 
-            bmp.UnlockBits(bmpDate);
+            bmp.UnlockBits(bmpData);
 
             return buffer;
         }

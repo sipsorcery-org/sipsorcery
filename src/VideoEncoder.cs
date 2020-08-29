@@ -8,11 +8,16 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public sealed unsafe class VideoEncoder : IDisposable
     {
-        private readonly AVCodec* _videoCodec;
-        private readonly AVCodecContext* _videoCodecContext;
+        private readonly AVCodec* _codec;
+        private AVCodecContext* _encoderContext;
+        private AVCodecContext* _decoderContext;
         private readonly int _frameWidth;
         private readonly int _frameHeight;
+        private readonly int _framesPerSecond;
         private readonly AVCodecID _codecID;
+
+        private bool _isEncoderInitialised = false;
+        private bool _isDecoderInitialised = false;
 
         private static ILogger logger = NullLogger.Instance;
 
@@ -21,37 +26,13 @@ namespace SIPSorceryMedia.FFmpeg
             _codecID = codecID;
             _frameWidth = frameWidth;
             _frameHeight = frameHeight;
+            _framesPerSecond = framesPerSecond;
 
-            _videoCodec = ffmpeg.avcodec_find_encoder(codecID);
-            if (_videoCodec == null)
+            _codec = ffmpeg.avcodec_find_encoder(codecID);
+            if (_codec == null)
             {
                 throw new ApplicationException($"Codec encoder could not be found for {codecID}.");
             }
-
-            _videoCodecContext = ffmpeg.avcodec_alloc_context3(_videoCodec);
-            if (_videoCodecContext == null)
-            {
-                throw new ApplicationException("Failed to allocated codec context.");
-            }
-
-            _videoCodecContext->width = frameWidth;
-            _videoCodecContext->height = frameHeight;
-            _videoCodecContext->time_base.den = framesPerSecond;
-            _videoCodecContext->time_base.num = 1;
-            _videoCodecContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
-
-            if(codecID == AVCodecID.AV_CODEC_ID_H264)
-            {
-                _videoCodecContext->gop_size = 30; // Key frame interval.
-
-                //_videoCodecContext->profile = ffmpeg.FF_PROFILE_H264_CONSTRAINED_BASELINE;
-                ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
-                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();
-                //ffmpeg.av_opt_set(_pCodecContext->priv_data, "preset", "veryslow", 0);
-                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
-            }
-
-            ffmpeg.avcodec_open2(_videoCodecContext, _videoCodec, null).ThrowExceptionIfError();
 
             //Console.WriteLine($"H264 encoding profile {_videoCodecContext->profile}.");
 
@@ -63,16 +44,76 @@ namespace SIPSorceryMedia.FFmpeg
             //}
         }
 
+        private void InitialiseEncoder()
+        {
+            _isEncoderInitialised = true;
+
+            _encoderContext = ffmpeg.avcodec_alloc_context3(_codec);
+            if (_encoderContext == null)
+            {
+                throw new ApplicationException("Failed to allocate encoder codec context.");
+            }
+
+            _encoderContext->width = _frameWidth;
+            _encoderContext->height = _frameHeight;
+            _encoderContext->time_base.den = _framesPerSecond;
+            _encoderContext->time_base.num = 1;
+            _encoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
+
+            if (_codecID == AVCodecID.AV_CODEC_ID_H264)
+            {
+                _encoderContext->gop_size = 30; // Key frame interval.
+
+                //_videoCodecContext->profile = ffmpeg.FF_PROFILE_H264_CONSTRAINED_BASELINE;
+                ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
+                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();
+                //ffmpeg.av_opt_set(_pCodecContext->priv_data, "preset", "veryslow", 0);
+                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
+            }
+
+            ffmpeg.avcodec_open2(_encoderContext, _codec, null).ThrowExceptionIfError();
+        }
+
+        private void InitialiseDecoder()
+        {
+            _isDecoderInitialised = true;
+
+            _decoderContext = ffmpeg.avcodec_alloc_context3(_codec);
+            if (_decoderContext == null)
+            {
+                throw new ApplicationException("Failed to allocate decoder codec context.");
+            }
+
+            _decoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
+
+            //if (_codecID == AVCodecID.AV_CODEC_ID_H264)
+            //{
+                //_encoderContext->gop_size = 30; // Key frame interval.
+
+                //_videoCodecContext->profile = ffmpeg.FF_PROFILE_H264_CONSTRAINED_BASELINE;
+                //ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
+                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();
+                //ffmpeg.av_opt_set(_pCodecContext->priv_data, "preset", "veryslow", 0);
+                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
+            //}
+
+            ffmpeg.avcodec_open2(_decoderContext, _codec, null).ThrowExceptionIfError();
+        }
+
         public void Dispose()
         {
-            ffmpeg.avcodec_close(_videoCodecContext);
-            ffmpeg.av_free(_videoCodecContext);
-            ffmpeg.av_free(_videoCodec);
+            if (_encoderContext != null)
+            {
+                ffmpeg.avcodec_close(_encoderContext);
+                ffmpeg.av_free(_encoderContext);
+            }
+
+            ffmpeg.av_free(_codec);
         }
 
         public string GetCodecName()
         {
-            var namePtr = _videoCodec->name;
+            var namePtr = _codec->name;
             return Marshal.PtrToStringAnsi((IntPtr)namePtr);
         }
 
@@ -101,6 +142,11 @@ namespace SIPSorceryMedia.FFmpeg
 
         public byte[] Encode(AVFrame i420Frame)
         {
+            if(!_isEncoderInitialised)
+            {
+                InitialiseEncoder();
+            }
+
             int _linesizeY = _frameWidth;
             int _linesizeU = _frameWidth / 2;
             int _linesizeV = _frameWidth / 2;
@@ -108,7 +154,7 @@ namespace SIPSorceryMedia.FFmpeg
             int _ySize = _linesizeY * _frameHeight;
             int _uSize = _linesizeU * _frameHeight / 2;
 
-            if (i420Frame.format != (int)_videoCodecContext->pix_fmt) throw new ArgumentException("Invalid pixel format.", nameof(i420Frame));
+            if (i420Frame.format != (int)_encoderContext->pix_fmt) throw new ArgumentException("Invalid pixel format.", nameof(i420Frame));
             if (i420Frame.width != _frameWidth) throw new ArgumentException("Invalid width.", nameof(i420Frame));
             if (i420Frame.height != _frameHeight) throw new ArgumentException("Invalid height.", nameof(i420Frame));
             if (i420Frame.linesize[0] != _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(i420Frame));
@@ -121,8 +167,8 @@ namespace SIPSorceryMedia.FFmpeg
 
             try
             {
-                ffmpeg.avcodec_send_frame(_videoCodecContext, &i420Frame).ThrowExceptionIfError();
-                int error = ffmpeg.avcodec_receive_packet(_videoCodecContext, pPacket);
+                ffmpeg.avcodec_send_frame(_encoderContext, &i420Frame).ThrowExceptionIfError();
+                int error = ffmpeg.avcodec_receive_packet(_encoderContext, pPacket);
 
                 if (error == 0)
                 {
@@ -155,6 +201,11 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 ffmpeg.av_packet_unref(pPacket);
             }
+        }
+
+        public byte[] Decode(AVFrame * frame)
+        {
+
         }
     }
 }
