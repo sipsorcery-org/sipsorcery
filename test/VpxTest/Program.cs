@@ -152,7 +152,7 @@ namespace Vpx
 
             Console.WriteLine($"VP8 decoded frames count {i420Frames.Count}, first frame length {i420Frames.First().Length}, width {dWidth}, height {dHeight}.");
 
-            byte[] rgb = i420Frames.First();//PixelConverter.I420toRGB(i420Frames.First(), (int)dWidth, (int)dHeight);
+            byte[] rgb = i420Frames.First();
 
             unsafe
             {

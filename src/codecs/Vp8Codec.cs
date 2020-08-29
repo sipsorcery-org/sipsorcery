@@ -159,7 +159,7 @@ namespace SIPSorceryMedia.Windows.Codecs
         {
             width = 0;
             height = 0;
-            List<byte[]> i420Buffers = new List<byte[]>();
+            List<byte[]> rgbBuffers = new List<byte[]>();
 
             unsafe
             {
@@ -207,41 +207,15 @@ namespace SIPSorceryMedia.Windows.Codecs
 
                                 // TODO: cast instead of clamp8
 
-                                data[i + 0] = (byte)(r);
+                                data[i + 0] = (byte)(b);
                                 data[i + 1] = (byte)(g);
-                                data[i + 2] = (byte)(b);
+                                data[i + 2] = (byte)(r);
 
                                 i += 3;
                             }
                         }
 
-                        //int outputSize = (int)(img.Stride[0] * height * 3 / 2);
-                        //int outputSize = (int)(width * height * 3 / 2);
-
-                        //byte[] bufferOut = new byte[sz * 3 /2];
-                        // int i420Posn = 0;
-
-                        //Marshal.Copy((IntPtr)img.Planes[0], bufferOut, 0, sz);
-                        //Marshal.Copy((IntPtr)img.Planes[1], bufferOut, sz, sz / 4);
-                        //Marshal.Copy((IntPtr)img.Planes[2], bufferOut, sz + sz / 4, sz / 4);
-
-                        //for (int plane = 0; plane < 3; plane++)
-                        //{
-                        //    byte* planeBuffer = img.Planes[plane];
-
-
-                        //    for (int y = 0; y < (plane > 0 ? (height + 1) >> 1 : height); y++)
-                        //    {
-                        //        int rowLength = (int)(plane > 0 ? (width + 1) >> 1 : width);
-                        //        Marshal.Copy((IntPtr)planeBuffer, bufferOut, i420Posn, rowLength);
-                        //        i420Posn += rowLength;
-
-                        //        planeBuffer += img.Stride[plane];
-                        //    }
-                        //}
-
-                        //i420Buffers.Add(bufferOut);
-                        i420Buffers.Add(data);
+                        rgbBuffers.Add(data);
                         VpxImage.VpxImgFree(img);
 
                         img = vpx_decoder.VpxCodecGetFrame(_vpxDecodeCtx, (void**)&iter);
@@ -249,7 +223,7 @@ namespace SIPSorceryMedia.Windows.Codecs
                 }
             }
 
-            return i420Buffers;
+            return rgbBuffers;
         }
 
         private int clamp8(int v)
