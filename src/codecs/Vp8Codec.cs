@@ -1,9 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text;
 using vpxmd;
 
 namespace SIPSorceryMedia.Windows.Codecs
@@ -46,7 +43,6 @@ namespace SIPSorceryMedia.Windows.Codecs
         private VpxCodecCtx _vpxEncodeCtx;
         private VpxImage _vpxEncodeImg;
         private VpxCodecCtx _vpxDecodeCtx;
-        private VpxImage _vpxDecodeImg;
 
         uint _encodeWidth = 0;
         uint _encodeHeight = 0;
@@ -65,7 +61,7 @@ namespace SIPSorceryMedia.Windows.Codecs
 
             VpxCodecEncCfg vp8EncoderCfg = new VpxCodecEncCfg();
 
-           var setConfigRes = vpx_encoder.VpxCodecEncConfigDefault(vp8cx.VpxCodecVp8Cx(), vp8EncoderCfg, 0);
+            var setConfigRes = vpx_encoder.VpxCodecEncConfigDefault(vp8cx.VpxCodecVp8Cx(), vp8EncoderCfg, 0);
             if (setConfigRes != VpxCodecErrT.VPX_CODEC_OK)
             {
                 throw new ApplicationException($"Failed to set VP8 encoder configuration to default values, {setConfigRes}.");
@@ -95,9 +91,9 @@ namespace SIPSorceryMedia.Windows.Codecs
             //	vpxConfig.kf_max_dist = 20;
 
             var initEncoderRes = vpx_encoder.VpxCodecEncInitVer(_vpxEncodeCtx, vp8cx.VpxCodecVp8Cx(), vp8EncoderCfg, 0, VPX_ENCODER_ABI_VERSION);
-            if(initEncoderRes != VpxCodecErrT.VPX_CODEC_OK)
+            if (initEncoderRes != VpxCodecErrT.VPX_CODEC_OK)
             {
-                throw new ApplicationException($"Failed to initialise VP8 encoder, {initEncoderRes}.");
+                throw new ApplicationException($"Failed to initialise VP8 encoder, {vpx_codec.VpxCodecErrToString(initEncoderRes)}.");
             }
 
             VpxImage.VpxImgAlloc(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_I420, _encodeWidth, _encodeHeight, 1);
@@ -106,17 +102,12 @@ namespace SIPSorceryMedia.Windows.Codecs
         public void InitialiseDecoder()
         {
             _vpxDecodeCtx = new VpxCodecCtx();
-            _vpxEncodeImg = new VpxImage();
 
-            VpxCodecDecCfg vp8DecoderCfg = new VpxCodecDecCfg();
-
-            var initDecoderRes = vpx_decoder.VpxCodecDecInitVer(_vpxDecodeCtx, vp8dx.VpxCodecVp8Dx(), vp8DecoderCfg, 0, VPX_DECODER_ABI_VERSION);
+            var initDecoderRes = vpx_decoder.VpxCodecDecInitVer(_vpxDecodeCtx, vp8dx.VpxCodecVp8Dx(), null, 0, VPX_DECODER_ABI_VERSION);
             if (initDecoderRes != VpxCodecErrT.VPX_CODEC_OK)
             {
-                throw new ApplicationException($"Failed to initialise VP8 decoder, {initDecoderRes}.");
+                throw new ApplicationException($"Failed to initialise VP8 decoder, {vpx_codec.VpxCodecErrToString(initDecoderRes)}.");
             }
-
-            //VpxImage.VpxImgAlloc(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_I420, _encodeWidth, _encodeHeight, 1);
         }
 
         public byte[] Encode(byte[] i420, bool forceKeyFrame = false)
@@ -132,9 +123,9 @@ namespace SIPSorceryMedia.Windows.Codecs
                     int flags = (forceKeyFrame) ? VPX_EFLAG_FORCE_KF : 0;
 
                     var encodeRes = vpx_encoder.VpxCodecEncode(_vpxEncodeCtx, _vpxEncodeImg, 1, 1, flags, VPX_DL_REALTIME);
-                    if(encodeRes != VpxCodecErrT.VPX_CODEC_OK)
+                    if (encodeRes != VpxCodecErrT.VPX_CODEC_OK)
                     {
-                        throw new ApplicationException($"VP8 encode attempt failed, {encodeRes}.");
+                        throw new ApplicationException($"VP8 encode attempt failed, {vpx_codec.VpxCodecErrToString(encodeRes)}.");
                     }
 
                     IntPtr iter = IntPtr.Zero;
@@ -143,7 +134,7 @@ namespace SIPSorceryMedia.Windows.Codecs
 
                     while (pkt != null)
                     {
-                        switch(pkt.Kind)
+                        switch (pkt.Kind)
                         {
                             case VpxCodecCxPktKind.VPX_CODEC_CX_FRAME_PKT:
                                 //Console.WriteLine($"is key frame={(pkt.data.frame.Flags & VPX_FRAME_IS_KEY) > 0}, length {pkt.data.Raw.Sz}.");
@@ -164,64 +155,106 @@ namespace SIPSorceryMedia.Windows.Codecs
 
 
         // https://swift.im/git/swift-contrib/tree/Swiften/ScreenSharing/VP8Decoder.cpp?id=6247ed394302ff2cf1f33a71df808bebf7241242
-        public byte[] Decode(byte[] buffer, int bufferSize, out int width, out int height)
+        public List<byte[]> Decode(byte[] buffer, int bufferSize, out uint width, out uint height)
         {
             width = 0;
             height = 0;
+            List<byte[]> i420Buffers = new List<byte[]>();
 
-            //vpx_codec_iter_t iter = NULL;
-            //vpx_image_t* img;
+            unsafe
+            {
+                fixed (byte* pBuffer = buffer)
+                {
+                    var decodeRes = vpx_decoder.VpxCodecDecode(_vpxDecodeCtx, pBuffer, (uint)bufferSize, IntPtr.Zero, 0);
+                    if (decodeRes != VpxCodecErrT.VPX_CODEC_OK)
+                    {
+                        throw new ApplicationException($"VP8 decode attempt failed, {vpx_codec.VpxCodecErrToString(decodeRes)}.");
+                    }
 
-            ///* Decode the frame */
-            //vpx_codec_err_t decodeResult = vpx_codec_decode(_vpxDecoder, (const uint8_t*)buffer, bufferSize, NULL, 0);
+                    IntPtr iter = IntPtr.Zero;
 
-            //if (decodeResult != VPX_CODEC_OK)
-            //{
-            //    printf("VPX codec failed to decode the frame: %s.\n", vpx_codec_err_to_string(decodeResult));
-            //    return -1;
-            //}
-            //else
-            //{
-            //    int pointer = 0;
+                    VpxImage img = vpx_decoder.VpxCodecGetFrame(_vpxDecodeCtx, (void**)&iter);
+                    while (img != null)
+                    {
+                        width = img.DW;
+                        height = img.DH;
+                        int sz = (int)(width * height);
 
-            //    while ((img = vpx_codec_get_frame(_vpxDecoder, &iter)))
-            //    {
+                        var yPlane = (byte*)img.PlaneY;
+                        var uPlane = (byte*)img.PlaneU;
+                        var vPlane = (byte*)img.PlaneV;
 
-            //        width = img->d_w;
-            //        height = img->d_h;
+                        byte[] data = new byte[width * height * 3];
 
-            //        //int outputSize = img->stride[0] * img->d_w * 3 / 2;
-            //        int outputSize = img->stride[0] * img->d_h * 3 / 2;
-            //        unsigned char* bufferOut = (unsigned char*)malloc(outputSize);
-            //        unsigned int plane, y;
+                        int i = 0;
+                        for (uint imgY = 0; imgY < height; imgY++)
+                        {
+                            for (uint imgX = 0; imgX < width; imgX++)
+                            {
+                                int y = yPlane[imgY * img.Stride[0] + imgX];
+                                int u = uPlane[(imgY / 2) * img.Stride[1] + (imgX / 2)];
+                                int v = vPlane[(imgY / 2) * img.Stride[2] + (imgX / 2)];
 
-            //        for (plane = 0; plane < 3; plane++)
-            //        {
+                                int c = y - 16;
+                                int d = (u - 128);
+                                int e = (v - 128);
 
-            //            unsigned char* buf = img->planes[plane];
+                                // TODO: adjust colors ?
 
-            //            for (y = 0; y < (plane ? (img->d_h + 1) >> 1 : img->d_h); y++)
-            //            {
+                                int r = clamp8((298 * c + 409 * e + 128) >> 8);
+                                int g = clamp8((298 * c - 100 * d - 208 * e + 128) >> 8);
+                                int b = clamp8((298 * c + 516 * d + 128) >> 8);
 
-            //                int numberofbitsToCopy = (plane ? (img->d_w + 1) >> 1 : img->d_w);
-            //                memcpy(bufferOut + pointer, buf, numberofbitsToCopy);
-            //                pointer += numberofbitsToCopy;
+                                // TODO: cast instead of clamp8
 
-            //                buf += img->stride[plane];
-            //            }
-            //        }
+                                data[i + 0] = (byte)(r);
+                                data[i + 1] = (byte)(g);
+                                data[i + 2] = (byte)(b);
 
-            //        outBuffer = gcnew array<Byte>(outputSize);
-            //        Marshal::Copy((IntPtr)bufferOut, outBuffer, 0, outputSize);
+                                i += 3;
+                            }
+                        }
 
-            //        free(bufferOut);
+                        //int outputSize = (int)(img.Stride[0] * height * 3 / 2);
+                        //int outputSize = (int)(width * height * 3 / 2);
 
-            //        vpx_img_free(img);
-            //        img = nullptr;
-            //    }
-            //}
+                        //byte[] bufferOut = new byte[sz * 3 /2];
+                        // int i420Posn = 0;
 
-            return null;
+                        //Marshal.Copy((IntPtr)img.Planes[0], bufferOut, 0, sz);
+                        //Marshal.Copy((IntPtr)img.Planes[1], bufferOut, sz, sz / 4);
+                        //Marshal.Copy((IntPtr)img.Planes[2], bufferOut, sz + sz / 4, sz / 4);
+
+                        //for (int plane = 0; plane < 3; plane++)
+                        //{
+                        //    byte* planeBuffer = img.Planes[plane];
+
+
+                        //    for (int y = 0; y < (plane > 0 ? (height + 1) >> 1 : height); y++)
+                        //    {
+                        //        int rowLength = (int)(plane > 0 ? (width + 1) >> 1 : width);
+                        //        Marshal.Copy((IntPtr)planeBuffer, bufferOut, i420Posn, rowLength);
+                        //        i420Posn += rowLength;
+
+                        //        planeBuffer += img.Stride[plane];
+                        //    }
+                        //}
+
+                        //i420Buffers.Add(bufferOut);
+                        i420Buffers.Add(data);
+                        VpxImage.VpxImgFree(img);
+
+                        img = vpx_decoder.VpxCodecGetFrame(_vpxDecodeCtx, (void**)&iter);
+                    }
+                }
+            }
+
+            return i420Buffers;
+        }
+
+        private int clamp8(int v)
+        {
+            return Math.Min(Math.Max(v, 0), 255);
         }
 
         public static int GetCodecVersion()
@@ -236,14 +269,19 @@ namespace SIPSorceryMedia.Windows.Codecs
 
         public void Dispose()
         {
-            if(_vpxEncodeCtx != null)
+            if (_vpxEncodeCtx != null)
             {
                 vpx_codec.VpxCodecDestroy(_vpxEncodeCtx);
             }
 
-            if(_vpxEncodeImg != null)
+            if (_vpxEncodeImg != null)
             {
                 VpxImage.VpxImgFree(_vpxEncodeImg);
+            }
+
+            if (_vpxDecodeCtx != null)
+            {
+                vpx_codec.VpxCodecDestroy(_vpxDecodeCtx);
             }
         }
     }

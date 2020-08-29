@@ -3452,7 +3452,16 @@ namespace vpxmd
             internal uint y_chroma_shift;
 
             [FieldOffset(48)]
-            internal global::System.IntPtr planes;
+            internal global::System.IntPtr planeY;
+
+            [FieldOffset(56)]
+            internal global::System.IntPtr planeU;
+
+            [FieldOffset(64)]
+            internal global::System.IntPtr planeV;
+
+            [FieldOffset(72)]
+            internal global::System.IntPtr planeT;
 
             [FieldOffset(80)]
             internal fixed int stride[4];
@@ -3837,28 +3846,97 @@ namespace vpxmd
         }
 
         /// <summary>pointer to the top left pixel for each plane</summary>
-        private byte*[] __planes;
+        //private byte*[] __planes;
 
-        private bool __planesInitialised;
-        public byte*[] Planes
+        //private bool __planesInitialised;
+        //public byte*[] Planes
+        //{
+        //    get
+        //    {
+        //        if (!__planesInitialised)
+        //        {
+        //            //__planes = null;
+
+        //            if (((global::vpxmd.VpxImage.__Internal*)__Instance)->planes != null)
+        //            {
+        //                __planes = new byte*[4];
+        //                for (int i = 0; i < 4; i++)
+        //                    __planes[i] = ((global::vpxmd.VpxImage.__Internal*)__Instance)->planes[i];
+        //            }
+
+        //            __planesInitialised = true;
+        //        }
+        //        return __planes;
+
+        //        //byte*[] __value = null;
+        //        //if (((global::vpxmd.VpxImage.__Internal*)__Instance)->planes != null)
+        //        //{
+        //        //    __value = new byte*[4];
+        //        //    for (int i = 0; i < 4; i++)
+        //        //        __value[i] = (byte*)((global::vpxmd.VpxImage.__Internal*)__Instance)->planes + i;
+        //        //}
+        //        //return __value;
+        //    }
+
+        //    set
+        //    {
+        //        __planes = value;
+        //        if (!__planesInitialised)
+        //        {
+        //            __planesInitialised = true;
+        //        }
+        //    }
+        //}
+
+        public global::System.IntPtr PlaneY
         {
             get
             {
-                if (!__planesInitialised)
-                {
-                    __planes = null;
-                    __planesInitialised = true;
-                }
-                return __planes;
+                return ((global::vpxmd.VpxImage.__Internal*)__Instance)->planeY;
             }
 
             set
             {
-                __planes = value;
-                if (!__planesInitialised)
-                {
-                    __planesInitialised = true;
-                }
+                ((global::vpxmd.VpxImage.__Internal*)__Instance)->planeY = (global::System.IntPtr)value;
+            }
+        }
+
+        public global::System.IntPtr PlaneU
+        {
+            get
+            {
+                return ((global::vpxmd.VpxImage.__Internal*)__Instance)->planeU;
+            }
+
+            set
+            {
+                ((global::vpxmd.VpxImage.__Internal*)__Instance)->planeU = (global::System.IntPtr)value;
+            }
+        }
+
+        public global::System.IntPtr PlaneV
+        {
+            get
+            {
+                return ((global::vpxmd.VpxImage.__Internal*)__Instance)->planeV;
+            }
+
+            set
+            {
+                ((global::vpxmd.VpxImage.__Internal*)__Instance)->planeV = (global::System.IntPtr)value;
+            }
+        }
+
+        public global::System.IntPtr PlaneT
+        {
+            get
+            {
+                return ((global::vpxmd.VpxImage.__Internal*)__Instance)->planeT;
+            }
+
+            set
+            {
+                ((global::vpxmd.VpxImage.__Internal*)__Instance)->planeT = (global::System.IntPtr)value;
             }
         }
 

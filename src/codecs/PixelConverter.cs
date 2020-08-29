@@ -93,18 +93,77 @@ namespace SIPSorceryMedia.Windows.Codecs
             return buffer;
         }
 
-        public static byte[] YUV420PlanarToRGBA(byte[] i420, int width, int height, out int stride)
+        public static byte[] RGBtoI420(byte[] rgb, int width, int height)
         {
-            stride = width * 4;
+            int frameSize = width * height;
+            int yIndex = 0;
+            int uIndex = frameSize;
+            int vIndex = frameSize + (frameSize / 4);
+            int r, g, b, y, u, v;
+            int index = 0;
 
-            return null;
+            byte[] buffer = new byte[width * height * 3 / 2];
+
+            for (int j = 0; j < height; j++)
+            {
+                for (int i = 0; i < width; i++)
+                {
+                    r = rgb[index * 3 + 0] & 0xff;
+                    g = rgb[index * 3 + 1] & 0xff;
+                    b = rgb[index * 3 + 2] & 0xff;
+
+                    y = (int)(0.257 * r + 0.504 * g + 0.098 * b) + 16;
+                    u = (int)(0.439 * r - 0.368 * g - 0.071 * b) + 128;
+                    v = (int)(-0.148 * r - 0.291 * g + 0.439 * b) + 128;
+
+                    buffer[yIndex++] = (byte)((y < 0) ? 0 : ((y > 255) ? 255 : y));
+
+                    if (j % 2 == 0 && index % 2 == 0)
+                    {
+                        buffer[uIndex++] = (byte)((u < 0) ? 0 : ((u > 255) ? 255 : u));
+                        buffer[vIndex++] = (byte)((v < 0) ? 0 : ((v > 255) ? 255 : v));
+                    }
+
+                    index++;
+                }
+            }
+
+            return buffer;
         }
 
-        public static byte[] YUV420PlanarToRGB(byte[] i420, int width, int height, out int stride)
+        /// <remarks>
+        /// Constants taken from https://en.wikipedia.org/wiki/YUV.
+        /// </remarks>
+        public static byte[] I420toRGB(byte[] data, int width, int height)
         {
-            stride = width * 3;
+            int size = width * height;
+            int uOffset = size;
+            int vOffset = size + size / 4;
+            byte[] rgb = new byte[size * 3];
+            int posn = 0;
+            int u, v, y;
+            int r, g, b;
 
-            return null;
+            for (int row = 0; row < height; row++)
+            {
+                for (int col = 0; col < width; col++)
+                {
+                    y = data[col + row * width];
+                    int uvposn = col / 2 + row / 2 * width / 2;
+                    v = data[uOffset + uvposn] - 128;
+                    u = data[vOffset + uvposn] - 128;
+
+                    r = (int)(y + 1.370705f * v);
+                    g = (int)(y - 0.698001f * v + 0.337633f * u);
+                    b = (int)(y + 1.732446f * u);
+
+                    rgb[posn++] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
+                    rgb[posn++] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
+                    rgb[posn++] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
+                }
+            }
+
+            return rgb;
         }
     }
 }

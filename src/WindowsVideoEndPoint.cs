@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -149,24 +150,25 @@ namespace SIPSorceryMedia.Windows
                     {
                         //fixed (byte* p = _currVideoFrame)
                         //{
-                        int width = 0, height = 0;
-                        byte[] i420 = null;
+                        uint width = 0, height = 0;
+                        List<byte[]> i420Frames = null;
 
                         //Console.WriteLine($"Attempting vpx decode {_currVideoFramePosn} bytes.");
 
-                        i420 = _vp8Decoder.Decode(_currVideoFrame, _currVideoFramePosn, out width, out height);
+                        i420Frames = _vp8Decoder.Decode(_currVideoFrame, _currVideoFramePosn, out width, out height);
 
-                        if (i420 != null)
+                        if (i420Frames != null)
                         {
                             logger.LogWarning("VPX decode of video sample failed.");
                         }
                         else
                         {
                             //Console.WriteLine($"Video frame ready {width}x{height}.");
+                            var i420 = i420Frames.First();
 
                             fixed (byte* r = i420)
                             {
-                                byte[] bmp = PixelConverter.YUV420PlanarToRGB(i420, width, height, out int stride);
+                                byte[] bmp = PixelConverter.I420toRGB(i420, (int)width, (int)height);
 
                                 //if (bmp != null)
                                 //{
