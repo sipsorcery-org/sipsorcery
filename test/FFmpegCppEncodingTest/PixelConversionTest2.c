@@ -14,13 +14,10 @@
 
 char _errorLog[ERROR_LEN];
 void CreateBitmapFile(LPCWSTR fileName, long width, long height, WORD bitsPerPixel, BYTE* bitmapData, DWORD bitmapDataLength);
-BYTE RGBtoY(RGBTRIPLE);
-BYTE RGBtoU(RGBTRIPLE);
-BYTE RGBtoV(RGBTRIPLE);
 
-int maina()
+int mainxx()
 {
-  printf("FFmpeg Pixel Conversion Test\n");
+  printf("FFmpeg Pixel Conversion Test 2\n");
 
   av_log_set_level(AV_LOG_DEBUG);
 
@@ -60,138 +57,99 @@ int maina()
 
   CreateBitmapFile(L"test-reference.bmp", WIDTH, HEIGHT, 24, rgbRaw, WIDTH * HEIGHT * 3);
 
+  printf("Allocating image buffers.\n");
+
+  uint8_t* rgbRef[4];
+  int rgbRefStride[4];
+
+  uint8_t *i420[4];
+  int i420Stride[4];
+
+  //rgbStride[0] = w * 3;
+  //i420Stride[0] = w * h;
+  //i420Stride[1] = w * h / 4;
+  //i420Stride[2] = w * h / 4;
+
+  //rgb[0] = rgbRaw;
+  //i420[0] = (uint8_t*)malloc((size_t)i420Stride[0] * h);
+  //i420[1] = (uint8_t*)malloc((size_t)i420Stride[1] * h);
+  //i420[2] = (uint8_t*)malloc((size_t)i420Stride[2] * h);
+
+  int imgAllocRes = av_image_alloc(&rgbRef, &rgbRefStride, w, h, AV_PIX_FMT_RGB24, 1);
+  if (imgAllocRes < 0) {
+    fprintf(stderr, "Image allocation for RGB reference image failed, %s.\n", av_make_error_string(_errorLog, ERROR_LEN, imgAllocRes));
+  }
+
+  printf("RGB ref %p, %p, %p, %p -> %d, %d, %d, %d\n", rgbRef[0], rgbRef[1], rgbRef[2], rgbRef[3], rgbRefStride[0], rgbRefStride[1], rgbRefStride[2], rgbRefStride[3]);
+
+  int reqdRawSz = av_image_fill_arrays(&rgbRef, &rgbRefStride, NULL, AV_PIX_FMT_RGB24, w, h, 1);
+  printf("Required RGB raw size %d.\n", reqdRawSz);
+
+  int avFillRes = av_image_fill_arrays(&rgbRef, &rgbRefStride, rgbRaw, AV_PIX_FMT_RGB24, w, h, 1);
+  if (avFillRes < 0) {
+    fprintf(stderr, "RGB reference image fill failed, %s.\n", av_make_error_string(_errorLog, ERROR_LEN, avFillRes));
+  }
+
+  int i420AllocRes = av_image_alloc(&i420, &i420Stride, w, h, AV_PIX_FMT_YUV420P, 1);
+  if (i420AllocRes < 0) {
+    fprintf(stderr, "I420 image allocation failed, %s.\n", av_make_error_string(_errorLog, ERROR_LEN, i420AllocRes));
+  }
+
+  printf("RGB raw %p, %p, %p, %p -> %d, %d, %d, %d\n", rgbRef[0], rgbRef[1], rgbRef[2], rgbRef[3], rgbRefStride[0], rgbRefStride[1], rgbRefStride[2], rgbRefStride[3]);
+  printf("I420 raw %p, %p, %p, %p -> %d, %d, %d, %d\n", i420[0], i420[1], i420[2], i420[3], i420Stride[0], i420Stride[1], i420Stride[2], i420Stride[3]);
+
   printf("Converting RGB to I420.\n");
 
-  uint8_t* rgb[3];
-  uint8_t* i420[3];
-  int rgbStride[3], i420Stride[3];
-
-  rgbStride[0] = w * 3;
-  i420Stride[0] = w * h;
-  i420Stride[1] = w * h / 4;
-  i420Stride[2] = w * h / 4;
-
-  rgb[0] = rgbRaw;
-  i420[0] = (uint8_t*)malloc((size_t)i420Stride[0] * h);
-  i420[1] = (uint8_t*)malloc((size_t)i420Stride[1] * h);
-  i420[2] = (uint8_t*)malloc((size_t)i420Stride[2] * h);
-
-  int toI420Res = sws_scale(rgbToI420Context, rgb, rgbStride, 0, h, i420, i420Stride);
+  int toI420Res = sws_scale(rgbToI420Context, rgbRef, rgbRefStride, 0, h, i420, i420Stride);
   if (toI420Res < 0) {
     fprintf(stderr, "Conversion from RGB to I420 failed, %s.\n", av_make_error_string(_errorLog, ERROR_LEN, toI420Res));
   }
 
   printf("Converting I420 to RGB.\n");
 
-  uint8_t* rgbOut[3];
-  int rgbOutStride[3];
+  uint8_t* rgbOut[4];
+  int rgbOutStride[4];
 
-  rgbOutStride[0] = w * 3;
-  rgbOut[0] = (uint8_t*)malloc((size_t)rgbOutStride[0] * h);
+  //rgbOutStride[0] = w * 3;
+  //rgbOut[0] = (uint8_t*)malloc((size_t)rgbOutStride[0] * h);
+
+  int rgbOutAllocRes = av_image_alloc(&rgbOut, &rgbOutStride, w, h, AV_PIX_FMT_RGB24, 1);
+  if (rgbOutAllocRes < 0) {
+    fprintf(stderr, "RGB output image allocation failed, %s.\n", av_make_error_string(_errorLog, ERROR_LEN, rgbOutAllocRes));
+  }
+
+  printf("RGB out %p, %p, %p, %p -> %d, %d, %d, %d\n", rgbOut[0], rgbOut[1], rgbOut[2], rgbOut[3], rgbOutStride[0], rgbOutStride[1], rgbOutStride[2], rgbOutStride[3]);
 
   int toRgbRes = sws_scale(i420ToRgbContext, i420, i420Stride, 0, h, rgbOut, rgbOutStride);
   if (toRgbRes < 0) {
     fprintf(stderr, "Conversion from RGB to I420 failed, %s.\n", av_make_error_string(_errorLog, ERROR_LEN, toRgbRes));
   }
 
-  CreateBitmapFile(L"test-output.bmp", WIDTH, HEIGHT, 24, rgbOut, WIDTH * HEIGHT * 3);
+  // Copy RGB output image to buffer.
+  int reqdSz = av_image_get_buffer_size(AV_PIX_FMT_RGB24, w, h, 1);
 
-  free(rgbOut[0]);
+  printf("Reqd output buffer size %d.\n", reqdSz);
 
-  for (int i = 0; i < 3; i++) {
-    free(i420[i]);
+  uint8_t* outBuf = malloc(reqdSz);
+
+  int copyToBufRes = av_image_copy_to_buffer(outBuf, reqdSz, rgbOut, rgbOutStride, AV_PIX_FMT_RGB24, w, h, 1);
+  if (copyToBufRes < 0) {
+    fprintf(stderr, "Copy output RGB image to buffer failed, %s.\n", av_make_error_string(_errorLog, ERROR_LEN, copyToBufRes));
   }
+
+  CreateBitmapFile(L"test-output.bmp", WIDTH, HEIGHT, 24, outBuf, WIDTH * HEIGHT * 3);
+
+  free(outBuf);
+
+  /*for (int i = 0; i < 4; i++) {
+    av_freep(&rgbOut[i]);
+    av_freep(&rgbRef[i]);
+    av_freep(&i420[i]);
+  }*/
 
   sws_freeContext(rgbToI420Context);
   sws_freeContext(i420ToRgbContext);
 
-  return 0;
-}
-
-// https://docs.microsoft.com/en-us/windows/win32/medfound/recommended-8-bit-yuv-formats-for-video-rendering
-// From: https://docs.microsoft.com/en-us/windows/win32/medfound/image-stride
-void RGB24_To_YV12(
-  BYTE* pDest,
-  LONG        lDestStride,
-  const BYTE* pSrc,
-  LONG        lSrcStride,
-  DWORD       dwWidthInPixels,
-  DWORD       dwHeightInPixels
-)
-{
-  //assert(dwWidthInPixels % 2 == 0);
-  //assert(dwHeightInPixels % 2 == 0);
-
-  const BYTE* pSrcRow = pSrc;
-
-  BYTE* pDestY = pDest;
-
-  // Calculate the offsets for the V and U planes.
-
-  // In YV12, each chroma plane has half the stride and half the height  
-  // as the Y plane.
-  BYTE* pDestV = pDest + (lDestStride * dwHeightInPixels);
-  BYTE* pDestU = pDest +
-    (lDestStride * dwHeightInPixels) +
-    ((lDestStride * dwHeightInPixels) / 4);
-
-  // Convert the Y plane.
-  for (DWORD y = 0; y < dwHeightInPixels; y++)
-  {
-    RGBTRIPLE* pSrcPixel = (RGBTRIPLE*)pSrcRow;
-
-    for (DWORD x = 0; x < dwWidthInPixels; x++)
-    {
-      pDestY[x] = RGBtoY(pSrcPixel[x]);    // Y0
-    }
-    pDestY += lDestStride;
-    pSrcRow += lSrcStride;
-  }
-
-  // Convert the V and U planes.
-
-  // YV12 is a 4:2:0 format, so each chroma sample is derived from four 
-  // RGB pixels.
-  pSrcRow = pSrc;
-  for (DWORD y = 0; y < dwHeightInPixels; y += 2)
-  {
-    RGBTRIPLE* pSrcPixel = (RGBTRIPLE*)pSrcRow;
-    RGBTRIPLE* pNextSrcRow = (RGBTRIPLE*)(pSrcRow + lSrcStride);
-
-    BYTE* pbV = pDestV;
-    BYTE* pbU = pDestU;
-
-    for (DWORD x = 0; x < dwWidthInPixels; x += 2)
-    {
-      // Use a simple average to downsample the chroma.
-
-      *pbV++ = (RGBtoV(pSrcPixel[x]) +
-        RGBtoV(pSrcPixel[x + 1]) +
-        RGBtoV(pNextSrcRow[x]) +
-        RGBtoV(pNextSrcRow[x + 1])) / 4;
-
-      *pbU++ = (RGBtoU(pSrcPixel[x]) +
-        RGBtoU(pSrcPixel[x + 1]) +
-        RGBtoU(pNextSrcRow[x]) +
-        RGBtoU(pNextSrcRow[x + 1])) / 4;
-    }
-    pDestV += lDestStride / 2;
-    pDestU += lDestStride / 2;
-
-    // Skip two lines on the source image.
-    pSrcRow += (lSrcStride * 2);
-  }
-}
-
-BYTE RGBtoY(RGBTRIPLE rgb) {
-  return 0;
-}
-
-BYTE RGBtoU(RGBTRIPLE rgb) {
-  return 0;
-}
-
-BYTE RGBtoV(RGBTRIPLE rgb) {
   return 0;
 }
 

@@ -27,6 +27,9 @@
     <ClCompile Include="PixelWin32ConversionTest.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PixelConversionTest2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="strutils.h">

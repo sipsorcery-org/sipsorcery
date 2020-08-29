@@ -15,7 +15,7 @@
 char _errorLog[ERROR_LEN];
 void CreateBitmapFile(LPCWSTR fileName, long width, long height, WORD bitsPerPixel, BYTE* bitmapData, DWORD bitmapDataLength);
 
-int mainz()
+int main()
 {
   printf("FFmpeg Pixel Conversion Test\n");
 
@@ -91,7 +91,7 @@ int mainz()
     fprintf(stderr, "Conversion from RGB to I420 failed, %s.\n", av_make_error_string(_errorLog, ERROR_LEN, toRgbRes));
   }
 
-  CreateBitmapFile(L"test-output.bmp", WIDTH, HEIGHT, 24, rgbOut, WIDTH * HEIGHT * 3);
+  CreateBitmapFile(L"test-output.bmp", WIDTH, HEIGHT, 24, rgbOut[0], WIDTH * HEIGHT * 3);
 
   free(rgbOut[0]);
 

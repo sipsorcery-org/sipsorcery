@@ -149,6 +149,7 @@
     <ClCompile Include="FFmpegCppEncodingTest.cpp" />
     <ClCompile Include="H264BitstreamTest.cpp" />
     <ClCompile Include="PixelConversionTest.c" />
+    <ClCompile Include="PixelConversionTest2.c" />
     <ClCompile Include="PixelWin32ConversionTest.c" />
   </ItemGroup>
   <ItemGroup>
