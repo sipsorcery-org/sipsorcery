@@ -187,7 +187,7 @@ namespace SIPSorceryMedia.Windows.Codecs
                                 width = img.DW;
                                 height = img.DH;
                                 int sz = (int)(width * height);
-                                int qtrw = (int)width / 4;
+                                //int qtrw = (int)width / 4;
 
                                 var yPlane = (byte*)img.PlaneY;
                                 var uPlane = (byte*)img.PlaneU;
@@ -212,8 +212,12 @@ namespace SIPSorceryMedia.Windows.Codecs
                                     //Console.WriteLine($"Copy vplane[{row * img.Stride[2]}] to out[{sz + sz / 4 + row * qtrw}] length {qtrw}.");
 
                                     Marshal.Copy((IntPtr)(yPlane + row * img.Stride[0]), decodedBuffer, (int)(row * width), (int)width);
-                                    //Marshal.Copy((IntPtr)(uPlane + row * img.Stride[1]), decodedBuffer, (int)(sz + row * qtrw), qtrw);
-                                    //Marshal.Copy((IntPtr)(vPlane + row * img.Stride[2]), decodedBuffer, (int)(sz + sz / 4 + row * qtrw), qtrw);
+
+                                    if (row < height / 2)
+                                    {
+                                        Marshal.Copy((IntPtr)(uPlane + row * img.Stride[1]), decodedBuffer, (int)(sz + row * (width/2)), (int)width/2);
+                                        Marshal.Copy((IntPtr)(vPlane + row * img.Stride[2]), decodedBuffer, (int)(sz + sz / 4 + row * (width/2)), (int)width/2);
+                                    }
                                 }
 
                                 //byte[] data = new byte[width * height * 3];
