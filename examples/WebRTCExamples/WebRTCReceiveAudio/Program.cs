@@ -134,9 +134,10 @@ namespace WebRTCServer
                 }
             };
 
-            peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) => logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
             peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
+                //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
+
                 if (media == SDPMediaTypesEnum.audio)
                 {
                     var sendingFormat = peerConnection.GetSendingFormat(SDPMediaTypesEnum.audio);

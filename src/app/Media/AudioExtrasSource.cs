@@ -136,8 +136,6 @@ namespace SIPSorcery.Media
         /// </summary>
         public event Action OnSendFromAudioStreamComplete;
 
-        public event SourceErrorDelegate OnAudioSourceFailure;
-
         public event AudioEncodedSampleDelegate OnAudioSourceEncodedSample;
 
         public event RawAudioSampleDelegate OnAudioSourceRawSample;
@@ -165,10 +163,10 @@ namespace SIPSorcery.Media
                     new AudioFormat{ Codec = AudioCodecsEnum.G722 }
                 };
             }
-            else if(!supportedFormats.Any(x => 
-                x.Codec != AudioCodecsEnum.G722 ||
-                x.Codec != AudioCodecsEnum.PCMA ||
-                x.Codec != AudioCodecsEnum.PCMU))
+            else if (!supportedFormats.Any(x =>
+                 x.Codec != AudioCodecsEnum.G722 ||
+                 x.Codec != AudioCodecsEnum.PCMA ||
+                 x.Codec != AudioCodecsEnum.PCMU))
             {
                 throw new ApplicationException("The only supported codecs are PCMU, PCMA and G722.");
             }
@@ -296,7 +294,7 @@ namespace SIPSorcery.Media
                 {
                     // Do nothing, all other sources have already been stopped.
                 }
-                else if(sourceOptions.AudioSource == AudioSourcesEnum.External)
+                else if (sourceOptions.AudioSource == AudioSourcesEnum.External)
                 {
                     _externalAudioSource = sourceOptions.ExternalAudioSource;
                     _externalAudioSource.OnAudioSourceEncodedSample += OnAudioSourceEncodedSample;
@@ -335,7 +333,7 @@ namespace SIPSorcery.Media
                     if (sourceOptions.SourceFiles == null || !sourceOptions.SourceFiles.ContainsKey(_sendingFormat.Codec))
                     {
                         Log.LogWarning($"Source file not set for codec {_sendingFormat.Codec}.");
-                        OnAudioSourceFailure?.Invoke($"Music source file not set for codec {_sendingFormat.Codec}.");
+                        throw new ApplicationException($"Music source file not set for codec {_sendingFormat.Codec}.");
                     }
                     else
                     {
@@ -344,7 +342,7 @@ namespace SIPSorcery.Media
                         if (String.IsNullOrEmpty(sourceFile) || !File.Exists(sourceFile))
                         {
                             Log.LogWarning($"Could not start audio music source as the file {sourceFile} does not exist.");
-                            OnAudioSourceFailure?.Invoke($"Could not start audio music source as the file {sourceFile} does not exist.");
+                            throw new ApplicationException($"Could not start audio music source as the file {sourceFile} does not exist.");
                         }
                         else
                         {

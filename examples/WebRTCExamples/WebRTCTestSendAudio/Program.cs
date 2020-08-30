@@ -109,6 +109,15 @@ namespace WebRTCServer
 
             var pc = new RTCPeerConnection(null);
 
+            audioExtras.OnAudioSourceRawSample += (samplingRate, durationMilliseconds, sample) =>
+            {
+                var sendingFormat = pc.GetSendingFormat(SDPMediaTypesEnum.audio);
+                var encodedSample = audioEncoder.EncodeAudio(sample, sendingFormat, samplingRate);
+                uint rtpTimestampDuration = (uint)(SDPMediaFormatInfo.GetRtpClockRate(sendingFormat.FormatCodec) / 1000 * durationMilliseconds);
+
+                pc.SendAudioFrame(rtpTimestampDuration, (int)sendingFormat.FormatCodec, encodedSample);
+            };
+
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendOnly);
             pc.addTrack(audioTrack);
 
@@ -124,14 +133,6 @@ namespace WebRTCServer
                 if(state == RTCPeerConnectionState.connected)
                 {
                     audioExtras.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave});
-                    audioExtras.OnAudioSourceRawSample += (samplingRate, durationMilliseconds, sample) =>
-                    {
-                        var sendingFormat = pc.GetSendingFormat(SDPMediaTypesEnum.audio);
-                        var encodedSample = audioEncoder.EncodeAudio(sample, sendingFormat, samplingRate);
-                        uint rtpTimestampDuration = (uint)(SDPMediaFormatInfo.GetRtpClockRate(sendingFormat.FormatCodec) / 1000 * durationMilliseconds);
-
-                        pc.SendAudioFrame(rtpTimestampDuration, (int)sendingFormat.FormatCodec, encodedSample);
-                    };
                 }
                 else if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {

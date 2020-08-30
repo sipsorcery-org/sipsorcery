@@ -124,7 +124,7 @@ namespace demo
 
             var windowsAudioEndPoint = new WindowsAudioEndPoint();
             var audioExtrasSource = new AudioExtrasSource(audioSrcOpts);
-            var windowsVideoEndPoint = new WindowsVideoEndPoint();
+            var windowsVideoEndPoint = new WindowsVideoEndPoint(true);
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
@@ -142,20 +142,16 @@ namespace demo
 
             ManualResetEvent exitMRE = new ManualResetEvent(false);
 
-            uint width = 0;
-            uint height = 0;
-            int stride = 0;
-
             if (callTask.Result)
             {
                 Log.LogInformation("Call attempt successful.");
-                windowsVideoEndPoint.OnVideoSinkRawSample += (uint duration, byte[] sample) =>
+                windowsVideoEndPoint.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride) =>
                 {
                     _picBox.BeginInvoke(new Action(() =>
                     {
                         unsafe
                         {
-                            fixed (byte* s = sample)
+                            fixed (byte* s = bmp)
                             {
                                 System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
                                 _picBox.Image = bmpImage;

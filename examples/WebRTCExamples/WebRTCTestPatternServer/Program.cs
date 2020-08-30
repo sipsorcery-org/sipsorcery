@@ -16,8 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -31,7 +29,6 @@ using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
-using FFmpeg.AutoGen;
 using SIPSorcery.Sys;
 
 namespace WebRTCServer
@@ -129,7 +126,6 @@ namespace WebRTCServer
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
-                //_sendTestPatternTimer?.Dispose();
                 //windowsVideoEndPoint.CloseVideo();
                 exitMre.Set();
             };
@@ -142,9 +138,25 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint();
+            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(true);
 
             var pc = new RTCPeerConnection(null);
+
+            windowsVideoEndPoint.OnVideoSourceEncodedSample += (videoFormat, durationRtpUnits, sample) =>
+            {
+                if (videoFormat.Codec == VideoCodecsEnum.H264)
+                {
+                    pc.SendH264Frame(durationRtpUnits, videoFormat.PayloadID, sample);
+                }
+                else if (videoFormat.Codec == VideoCodecsEnum.VP8)
+                {
+                    pc.SendVp8Frame(durationRtpUnits, videoFormat.PayloadID, sample);
+                }
+                else
+                {
+                    logger.LogWarning($"An encoded video sample was received for {videoFormat.Codec} but there's no RTP send method.");
+                }
+            };
 
             if (VIDEO_CODEC == SDPMediaFormatsEnum.VP8)
             {
@@ -195,21 +207,6 @@ namespace WebRTCServer
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    windowsVideoEndPoint.OnVideoSourceEncodedSample += (videoFormat, durationRtpUnits, sample) =>
-                    {
-                        if (videoFormat.Codec == VideoCodecsEnum.H264)
-                        {
-                            pc.SendH264Frame(durationRtpUnits, videoFormat.PayloadID, sample);
-                        }
-                        else if (videoFormat.Codec == VideoCodecsEnum.VP8)
-                        {
-                            pc.SendVp8Frame(durationRtpUnits, videoFormat.PayloadID, sample);
-                        }
-                        else
-                        {
-                            logger.LogWarning($"An encoded video sample was received for {videoFormat.Codec} but there's no RTP send method.");
-                        }
-                    };
                     await windowsVideoEndPoint.StartVideo();
                 }
             };
