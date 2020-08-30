@@ -45,7 +45,12 @@ namespace Vpx
 
             //RoundTripNoEncoding();
 
-            RoundTripTestPattern();
+            for (int i = 0; i < 25; i++)
+            {
+                DateTime startTime = DateTime.Now;
+                RoundTripTestPattern();
+                Console.WriteLine($"encode+decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
+            }
 
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();

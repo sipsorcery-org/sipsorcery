@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using vpxmd;
 
 namespace SIPSorceryMedia.Windows.Codecs
@@ -40,9 +42,12 @@ namespace SIPSorceryMedia.Windows.Codecs
         /// </remarks>
         private const byte VPX_FRAME_IS_KEY = 0x1;
 
+        public static ILogger logger = NullLogger.Instance;
+
         private VpxCodecCtx _vpxEncodeCtx;
         private VpxImage _vpxEncodeImg;
         private VpxCodecCtx _vpxDecodeCtx;
+        private bool _isDisposing;
 
         uint _encodeWidth = 0;
         uint _encodeHeight = 0;
@@ -153,77 +158,112 @@ namespace SIPSorceryMedia.Windows.Codecs
             return encodedSample;
         }
 
-
         // https://swift.im/git/swift-contrib/tree/Swiften/ScreenSharing/VP8Decoder.cpp?id=6247ed394302ff2cf1f33a71df808bebf7241242
         public List<byte[]> Decode(byte[] buffer, int bufferSize, out uint width, out uint height)
         {
+            List<byte[]> decodedBuffers = new List<byte[]>();
             width = 0;
             height = 0;
-            List<byte[]> rgbBuffers = new List<byte[]>();
 
-            unsafe
+            if (!_isDisposing)
             {
-                fixed (byte* pBuffer = buffer)
+                unsafe
                 {
-                    var decodeRes = vpx_decoder.VpxCodecDecode(_vpxDecodeCtx, pBuffer, (uint)bufferSize, IntPtr.Zero, 0);
-                    if (decodeRes != VpxCodecErrT.VPX_CODEC_OK)
+                    fixed (byte* pBuffer = buffer)
                     {
-                        throw new ApplicationException($"VP8 decode attempt failed, {vpx_codec.VpxCodecErrToString(decodeRes)}.");
-                    }
-
-                    IntPtr iter = IntPtr.Zero;
-
-                    VpxImage img = vpx_decoder.VpxCodecGetFrame(_vpxDecodeCtx, (void**)&iter);
-                    while (img != null)
-                    {
-                        width = img.DW;
-                        height = img.DH;
-                        int sz = (int)(width * height);
-
-                        var yPlane = (byte*)img.PlaneY;
-                        var uPlane = (byte*)img.PlaneU;
-                        var vPlane = (byte*)img.PlaneV;
-
-                        byte[] data = new byte[width * height * 3];
-
-                        int i = 0;
-                        for (uint imgY = 0; imgY < height; imgY++)
+                        var decodeRes = vpx_decoder.VpxCodecDecode(_vpxDecodeCtx, pBuffer, (uint)bufferSize, IntPtr.Zero, 1);
+                        if (decodeRes != VpxCodecErrT.VPX_CODEC_OK)
                         {
-                            for (uint imgX = 0; imgX < width; imgX++)
+                            //throw new ApplicationException($"VP8 decode attempt failed, {vpx_codec.VpxCodecErrToString(decodeRes)}.");
+                            logger.LogWarning($"VP8 decode attempt failed, {vpx_codec.VpxCodecErrToString(decodeRes)}.");
+                        }
+                        else
+                        {
+                            IntPtr iter = IntPtr.Zero;
+
+                            VpxImage img = vpx_decoder.VpxCodecGetFrame(_vpxDecodeCtx, (void**)&iter);
+                            while (img != null)
                             {
-                                int y = yPlane[imgY * img.Stride[0] + imgX];
-                                int u = uPlane[(imgY / 2) * img.Stride[1] + (imgX / 2)];
-                                int v = vPlane[(imgY / 2) * img.Stride[2] + (imgX / 2)];
+                                width = img.DW;
+                                height = img.DH;
+                                int sz = (int)(width * height);
+                                int qtrw = (int)width / 4;
 
-                                int c = y - 16;
-                                int d = (u - 128);
-                                int e = (v - 128);
+                                var yPlane = (byte*)img.PlaneY;
+                                var uPlane = (byte*)img.PlaneU;
+                                var vPlane = (byte*)img.PlaneV;
 
-                                // TODO: adjust colors ?
+                                //var yPlane = img.PlaneY;
+                                //var uPlane = img.PlaneU;
+                                //var vPlane = img.PlaneV;
 
-                                int r = clamp8((298 * c + 409 * e + 128) >> 8);
-                                int g = clamp8((298 * c - 100 * d - 208 * e + 128) >> 8);
-                                int b = clamp8((298 * c + 516 * d + 128) >> 8);
+                                byte[] decodedBuffer = new byte[width * height * 3 / 2];
 
-                                // TODO: cast instead of clamp8
+                                //Marshal.Copy(yPlane, decodedBuffer, 0, sz);
+                                //Marshal.Copy(uPlane, decodedBuffer, sz, sz / 4);
+                                //Marshal.Copy(vPlane, decodedBuffer, sz + sz / 4, sz / 4);
 
-                                data[i + 0] = (byte)(b);
-                                data[i + 1] = (byte)(g);
-                                data[i + 2] = (byte)(r);
+                                //Marshal.Copy((IntPtr)img.ImgData, decodedBuffer, 0, decodedBuffer.Length);
 
-                                i += 3;
+                                for (uint row = 0; row < height; row++)
+                                {
+                                    //Console.WriteLine($"Copy yplane[{row * img.Stride[0]}] to out[{row * width}] length {width}.");
+                                    //Console.WriteLine($"Copy uplane[{row * img.Stride[1]}] to out[{sz + row * qtrw}] length {qtrw}.");
+                                    //Console.WriteLine($"Copy vplane[{row * img.Stride[2]}] to out[{sz + sz / 4 + row * qtrw}] length {qtrw}.");
+
+                                    Marshal.Copy((IntPtr)(yPlane + row * img.Stride[0]), decodedBuffer, (int)(row * width), (int)width);
+                                    //Marshal.Copy((IntPtr)(uPlane + row * img.Stride[1]), decodedBuffer, (int)(sz + row * qtrw), qtrw);
+                                    //Marshal.Copy((IntPtr)(vPlane + row * img.Stride[2]), decodedBuffer, (int)(sz + sz / 4 + row * qtrw), qtrw);
+                                }
+
+                                //byte[] data = new byte[width * height * 3];
+
+                                //int i = 0;
+                                //for (uint imgY = 0; imgY < height; imgY++)
+                                //{
+                                //    for (uint imgX = 0; imgX < width; imgX++)
+                                //    {
+                                //        int y = yPlane[imgY * img.Stride[0] + imgX];
+                                //        int u = uPlane[(imgY / 2) * img.Stride[1] + (imgX / 2)];
+                                //        int v = vPlane[(imgY / 2) * img.Stride[2] + (imgX / 2)];
+
+                                //        int c = y - 16;
+                                //        int d = (u - 128);
+                                //        int e = (v - 128);
+
+                                //        // TODO: adjust colors ?
+
+                                //        int r = (298 * c + 409 * e + 128) >> 8;
+                                //        int g = (298 * c - 100 * d - 208 * e + 128) >> 8;
+                                //        int b = (298 * c + 516 * d + 128) >> 8;
+
+                                //        r = r < 0 ? 0 : r > 255 ? 255 : r;
+                                //        g = g < 0 ? 0 : g > 255 ? 255 : g;
+                                //        b = b < 0 ? 0 : b > 255 ? 255 : b;
+
+                                //        // TODO: cast instead of clamp8
+
+                                //        data[i + 0] = (byte)(b);
+                                //        data[i + 1] = (byte)(g);
+                                //        data[i + 2] = (byte)(r);
+
+                                //        i += 3;
+                                //    }
+                                //}
+
+                                decodedBuffers.Add(decodedBuffer);
+                                //decodedBuffers.Add(data);
+
+                                VpxImage.VpxImgFree(img);
+
+                                img = vpx_decoder.VpxCodecGetFrame(_vpxDecodeCtx, (void**)&iter);
                             }
                         }
-
-                        rgbBuffers.Add(data);
-                        VpxImage.VpxImgFree(img);
-
-                        img = vpx_decoder.VpxCodecGetFrame(_vpxDecodeCtx, (void**)&iter);
                     }
                 }
             }
 
-            return rgbBuffers;
+            return decodedBuffers;
         }
 
         private int clamp8(int v)
@@ -243,6 +283,8 @@ namespace SIPSorceryMedia.Windows.Codecs
 
         public void Dispose()
         {
+            _isDisposing = true;
+
             if (_vpxEncodeCtx != null)
             {
                 vpx_codec.VpxCodecDestroy(_vpxEncodeCtx);

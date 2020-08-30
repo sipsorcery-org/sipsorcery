@@ -28,8 +28,6 @@ using SIPSorceryMedia.Windows.Codecs;
 
 namespace SIPSorceryMedia.Windows
 {
-    public delegate void OnVideoSampleReadyDelegate(byte[] bmp, uint width, uint height, int stride);
-
     public enum VideoSourcesEnum
     {
         None = 0,
@@ -81,8 +79,8 @@ namespace SIPSorceryMedia.Windows
         private long _presentationTimestamp = 0;
         private VideoFormat _selectedSinkFormat = new VideoFormat { Codec = VideoCodecsEnum.VP8, PayloadID = 100 };
         private VideoFormat _selectedSourceFormat = new VideoFormat { Codec = VideoCodecsEnum.VP8, PayloadID = 100 };
-        private static byte[] _currVideoFrame = new byte[65536];
-        private static int _currVideoFramePosn = 0;
+        private byte[] _currVideoFrame = new byte[65536];
+        private int _currVideoFramePosn = 0;
         private bool _isStarted;
         private bool _isClosed;
 
@@ -108,14 +106,14 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// This event is fired after the sink decodes a video frame from the remote party.
         /// </summary>
-        public event RawVideoSampleDelegate OnVideoSinkRawSample;
+        public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
 
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
         public WindowsVideoEndPoint()
         {
-            InitialiseTestPattern();
+            //InitialiseTestPattern();
 
             _vp8Decoder = new Vp8Codec();
             _vp8Decoder.InitialiseDecoder();
@@ -132,7 +130,12 @@ namespace SIPSorceryMedia.Windows
 
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
         {
-            //Console.WriteLine($"rtp video, seqnum {rtpPacket.Header.SequenceNumber}, ts {rtpPacket.Header.Timestamp}, marker {rtpPacket.Header.MarkerBit}, payload {rtpPacket.Payload.Length}, payload[0-5] {rtpPacket.Payload.HexStr(5)}.");
+            //logger.LogDebug($"rtp video, seqnum {seqnum}, ts {timestamp}, marker {marker}, payload {payload.Length}.");
+            if (_currVideoFramePosn + payload.Length >= _currVideoFrame.Length)
+            {
+                // Something has gone very wrong. Clear the buffer.
+                _currVideoFramePosn = 0;
+            }
 
             // New frames must have the VP8 Payload Descriptor Start bit set.
             // The tracking of the current video frame position is to deal with a VP8 frame being split across multiple RTP packets
@@ -146,47 +149,31 @@ namespace SIPSorceryMedia.Windows
 
                 if (marker)
                 {
-                    unsafe
+                    DateTime startTime = DateTime.Now;
+
+                    List<byte[]> decodedFrames = _vp8Decoder.Decode(_currVideoFrame, _currVideoFramePosn, out var width, out var height);
+
+                    if (decodedFrames == null)
                     {
-                        //fixed (byte* p = _currVideoFrame)
+                        logger.LogWarning("VPX decode of video sample failed.");
+                    }
+                    else
+                    {
+                        foreach (var decodedFrame in decodedFrames)
+                        {
+                            //var rgb = _i420Converter.ConvertToBuffer(decodedFrame);
+                            byte[] rgb = PixelConverter.I420toRGB(decodedFrame, (int)width, (int)height);
+
+                            //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
+
+                            OnVideoSinkDecodedSample(rgb, width, height, (int)(width * 3));
+                        }
+
+                        //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
+
+                        //foreach (var rgb in decodedFrames)
                         //{
-                        uint width = 0, height = 0;
-                        List<byte[]> i420Frames = null;
-
-                        //Console.WriteLine($"Attempting vpx decode {_currVideoFramePosn} bytes.");
-
-                        i420Frames = _vp8Decoder.Decode(_currVideoFrame, _currVideoFramePosn, out width, out height);
-
-                        if (i420Frames != null)
-                        {
-                            logger.LogWarning("VPX decode of video sample failed.");
-                        }
-                        else
-                        {
-                            //Console.WriteLine($"Video frame ready {width}x{height}.");
-                            var i420 = i420Frames.First();
-
-                            fixed (byte* r = i420)
-                            {
-                                byte[] bmp = PixelConverter.I420toRGB(i420, (int)width, (int)height);
-
-                                //if (bmp != null)
-                                //{
-                                //    _form.BeginInvoke(new Action(() =>
-                                //    {
-                                //        fixed (byte* s = bmp)
-                                //        {
-                                //            System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                //            _picBox.Image = bmpImage;
-                                //        }
-                                //    }));
-                                //}
-                                //else
-                                //{
-                                //    Console.WriteLine("Pixel format conversion of decoded sample failed.");
-                                //}
-                            }
-                        }
+                        //    OnVideoSinkDecodedSample(rgb, width, height, (int)(width * 3));
                         //}
                     }
 
