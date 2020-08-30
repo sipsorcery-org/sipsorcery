@@ -17,6 +17,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -95,8 +96,6 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public event RawAudioSampleDelegate OnAudioSourceRawSample;
 
-        public event SourceErrorDelegate OnAudioSourceFailure;
-
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
@@ -134,7 +133,7 @@ namespace SIPSorceryMedia.Windows
                 }
                 else
                 {
-                    logger.LogWarning("No audio capture devices are available. No audio stream will be sent.");
+                    throw new ApplicationException("No audio capture devices are available. No audio stream will be sent.");
                 }
             }
 

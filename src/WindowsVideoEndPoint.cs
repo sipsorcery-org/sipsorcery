@@ -17,7 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Linq;
+using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -76,7 +76,7 @@ namespace SIPSorceryMedia.Windows
         private Vp8Codec _vp8Decoder;
         private Timer _sendTestPatternTimer;
         private bool _forceKeyFrame = false;
-        private long _presentationTimestamp = 0;
+        //private long _presentationTimestamp = 0;
         private VideoFormat _selectedSinkFormat = new VideoFormat { Codec = VideoCodecsEnum.VP8, PayloadID = 100 };
         private VideoFormat _selectedSourceFormat = new VideoFormat { Codec = VideoCodecsEnum.VP8, PayloadID = 100 };
         private byte[] _currVideoFrame = new byte[65536];
@@ -95,13 +95,12 @@ namespace SIPSorceryMedia.Windows
             set { }
         }
 
-        public event SourceErrorDelegate OnVideoSourceFailure;
         public event VideoEncodedSampleDelegate OnVideoSourceEncodedSample;
 
         /// <summary>
         /// Not currently used.
         /// </summary>
-        public event RawVideoSampleDelegate OnVideoSourceRawSample;
+        //public event RawVideoSampleDelegate OnVideoSourceRawSample;
 
         /// <summary>
         /// This event is fired after the sink decodes a video frame from the remote party.
@@ -111,9 +110,12 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
-        public WindowsVideoEndPoint()
+        public WindowsVideoEndPoint(bool useTestPattern = false)
         {
-            //InitialiseTestPattern();
+            if (useTestPattern)
+            {
+                InitialiseTestPattern();
+            }
 
             _vp8Decoder = new Vp8Codec();
             _vp8Decoder.InitialiseDecoder();
@@ -161,20 +163,10 @@ namespace SIPSorceryMedia.Windows
                     {
                         foreach (var decodedFrame in decodedFrames)
                         {
-                            //var rgb = _i420Converter.ConvertToBuffer(decodedFrame);
                             byte[] rgb = PixelConverter.I420toRGB(decodedFrame, (int)width, (int)height);
-
                             //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
-
                             OnVideoSinkDecodedSample(rgb, width, height, (int)(width * 3));
-                        }
-
-                        //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
-
-                        //foreach (var rgb in decodedFrames)
-                        //{
-                        //    OnVideoSinkDecodedSample(rgb, width, height, (int)(width * 3));
-                        //}
+                        } 
                     }
 
                     _currVideoFramePosn = 0;
@@ -241,29 +233,36 @@ namespace SIPSorceryMedia.Windows
 
         private void InitialiseTestPattern()
         {
-            _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
-            _sendTestPatternTimer = new Timer(SendTestPattern, null, Timeout.Infinite, Timeout.Infinite);
-
-            if (_selectedSourceFormat.Codec == VideoCodecsEnum.VP8)
+            if (!File.Exists(TEST_PATTERN_IMAGE_PATH))
             {
-                _vp8Encoder = new Vp8Codec();
-                _vp8Encoder.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
-
-                // Can also use FFmpeg which wraps libvpx.
-                //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+                throw new ApplicationException($"Test pattern file could not be found, {TEST_PATTERN_IMAGE_PATH}.");
             }
-            //else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
-            //{
-            //    _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
-            //    _videoFrameConverter = new VideoFrameConverter(
-            //        new Size(_testPattern.Width, _testPattern.Height),
-            //        AVPixelFormat.AV_PIX_FMT_BGRA,
-            //        new Size(_testPattern.Width, _testPattern.Height),
-            //        AVPixelFormat.AV_PIX_FMT_YUV420P);
-            //}
             else
             {
-                throw new ApplicationException($"Video codec {_selectedSourceFormat.Codec} is not supported.");
+                _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
+                _sendTestPatternTimer = new Timer(SendTestPattern, null, Timeout.Infinite, Timeout.Infinite);
+
+                if (_selectedSourceFormat.Codec == VideoCodecsEnum.VP8)
+                {
+                    _vp8Encoder = new Vp8Codec();
+                    _vp8Encoder.InitialiseEncoder((uint)_testPattern.Width, (uint)_testPattern.Height);
+
+                    // Can also use FFmpeg which wraps libvpx.
+                    //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+                }
+                //else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
+                //{
+                //    _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+                //    _videoFrameConverter = new VideoFrameConverter(
+                //        new Size(_testPattern.Width, _testPattern.Height),
+                //        AVPixelFormat.AV_PIX_FMT_BGRA,
+                //        new Size(_testPattern.Width, _testPattern.Height),
+                //        AVPixelFormat.AV_PIX_FMT_YUV420P);
+                //}
+                else
+                {
+                    throw new ApplicationException($"Video codec {_selectedSourceFormat.Codec} is not supported.");
+                }
             }
         }
 

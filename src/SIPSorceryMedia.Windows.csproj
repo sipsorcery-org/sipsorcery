@@ -32,6 +32,7 @@
     <Compile Remove="packages\**" />
     <EmbeddedResource Remove="packages\**" />
     <None Remove="packages\**" />
+    <Compile Remove="codecs\OpenH264Encoder.cs" />
     <ContentWithTargetPath Include="@(NativeLibs)">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <TargetPath>%(Filename)%(Extension)</TargetPath>

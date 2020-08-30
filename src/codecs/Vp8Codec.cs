@@ -174,6 +174,8 @@ namespace SIPSorceryMedia.Windows.Codecs
                         var decodeRes = vpx_decoder.VpxCodecDecode(_vpxDecodeCtx, pBuffer, (uint)bufferSize, IntPtr.Zero, 1);
                         if (decodeRes != VpxCodecErrT.VPX_CODEC_OK)
                         {
+                            // The reason not to throw an exception here is that a partial frame can easily be passed to the decoder.
+                            // This will result in a decode failure but should not affect the decode of the next full frame.
                             //throw new ApplicationException($"VP8 decode attempt failed, {vpx_codec.VpxCodecErrToString(decodeRes)}.");
                             logger.LogWarning($"VP8 decode attempt failed, {vpx_codec.VpxCodecErrToString(decodeRes)}.");
                         }
@@ -184,44 +186,31 @@ namespace SIPSorceryMedia.Windows.Codecs
                             VpxImage img = vpx_decoder.VpxCodecGetFrame(_vpxDecodeCtx, (void**)&iter);
                             while (img != null)
                             {
+                                // Convert the VPX image buffer to an I420 buffer WITHOUT the stride.
                                 width = img.DW;
                                 height = img.DH;
                                 int sz = (int)(width * height);
-                                //int qtrw = (int)width / 4;
 
                                 var yPlane = (byte*)img.PlaneY;
                                 var uPlane = (byte*)img.PlaneU;
                                 var vPlane = (byte*)img.PlaneV;
 
-                                //var yPlane = img.PlaneY;
-                                //var uPlane = img.PlaneU;
-                                //var vPlane = img.PlaneV;
-
                                 byte[] decodedBuffer = new byte[width * height * 3 / 2];
-
-                                //Marshal.Copy(yPlane, decodedBuffer, 0, sz);
-                                //Marshal.Copy(uPlane, decodedBuffer, sz, sz / 4);
-                                //Marshal.Copy(vPlane, decodedBuffer, sz + sz / 4, sz / 4);
-
-                                //Marshal.Copy((IntPtr)img.ImgData, decodedBuffer, 0, decodedBuffer.Length);
 
                                 for (uint row = 0; row < height; row++)
                                 {
-                                    //Console.WriteLine($"Copy yplane[{row * img.Stride[0]}] to out[{row * width}] length {width}.");
-                                    //Console.WriteLine($"Copy uplane[{row * img.Stride[1]}] to out[{sz + row * qtrw}] length {qtrw}.");
-                                    //Console.WriteLine($"Copy vplane[{row * img.Stride[2]}] to out[{sz + sz / 4 + row * qtrw}] length {qtrw}.");
-
                                     Marshal.Copy((IntPtr)(yPlane + row * img.Stride[0]), decodedBuffer, (int)(row * width), (int)width);
 
                                     if (row < height / 2)
                                     {
-                                        Marshal.Copy((IntPtr)(uPlane + row * img.Stride[1]), decodedBuffer, (int)(sz + row * (width/2)), (int)width/2);
-                                        Marshal.Copy((IntPtr)(vPlane + row * img.Stride[2]), decodedBuffer, (int)(sz + sz / 4 + row * (width/2)), (int)width/2);
+                                        Marshal.Copy((IntPtr)(uPlane + row * img.Stride[1]), decodedBuffer, (int)(sz + row * (width / 2)), (int)width / 2);
+                                        Marshal.Copy((IntPtr)(vPlane + row * img.Stride[2]), decodedBuffer, (int)(sz + sz / 4 + row * (width / 2)), (int)width / 2);
                                     }
                                 }
 
+                                // This block converts the VPX image buffer directly to RGB24 but it's way too slow.
+                                // Was taking 60 to 90ms on Win10 i7 CPU.
                                 //byte[] data = new byte[width * height * 3];
-
                                 //int i = 0;
                                 //for (uint imgY = 0; imgY < height; imgY++)
                                 //{
@@ -254,10 +243,10 @@ namespace SIPSorceryMedia.Windows.Codecs
                                 //        i += 3;
                                 //    }
                                 //}
-
-                                decodedBuffers.Add(decodedBuffer);
                                 //decodedBuffers.Add(data);
 
+                                decodedBuffers.Add(decodedBuffer);
+                               
                                 VpxImage.VpxImgFree(img);
 
                                 img = vpx_decoder.VpxCodecGetFrame(_vpxDecodeCtx, (void**)&iter);
@@ -268,11 +257,6 @@ namespace SIPSorceryMedia.Windows.Codecs
             }
 
             return decodedBuffers;
-        }
-
-        private int clamp8(int v)
-        {
-            return Math.Min(Math.Max(v, 0), 255);
         }
 
         public static int GetCodecVersion()
