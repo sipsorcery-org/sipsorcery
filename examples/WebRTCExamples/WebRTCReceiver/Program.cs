@@ -18,13 +18,12 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Extensions.Logging;
 using Serilog;
-using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorcery.Sys;
-using SIPSorceryMedia.Windows.Codecs;
+using SIPSorceryMedia.FFmpeg;
+using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -65,21 +64,20 @@ namespace TestConsole
         private const int WEBSOCKET_PORT = 8081;
 
         private static WebSocketServer _webSocketServer;
-        //private static VpxEncoder _vpxEncoder;
-        //private static ImageConvert _imgConverter;
-        private static Vp8Codec _vp8Codec;
         private static byte[] _currVideoFrame = new byte[65536];
         private static int _currVideoFramePosn = 0;
         private static Form _form;
         private static PictureBox _picBox;
+
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         [STAThread]
         static void Main(string[] args)
         {
             AddConsoleLogger();
 
-            _vp8Codec = new Vp8Codec();
-            _vp8Codec.InitialiseDecoder();
+            WindowsVideoEndPoint.logger = logger;
+            SIPSorceryMedia.Windows.Codecs.Vp8Codec.logger = logger;
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -113,6 +111,22 @@ namespace TestConsole
 
         private static RTCPeerConnection WebSocketOpened(WebSocketContext context)
         {
+            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint();
+            winVideoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride) =>
+            {
+                _form.BeginInvoke(new Action(() =>
+                {
+                    unsafe
+                    {
+                        fixed (byte* s = bmp)
+                        {
+                            System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, (int)(bmp.Length / height), System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                            _picBox.Image = bmpImage;
+                        }
+                    }
+                }));
+            };
+
             var peerConnection = new RTCPeerConnection(null);
 
             // Add local recvonly tracks. This ensures that the SDP answer includes only
@@ -136,11 +150,16 @@ namespace TestConsole
 
                 if (state == RTCPeerConnectionState.closed)
                 {
-                    peerConnection.OnRtpPacketReceived -= RtpSession_OnRtpPacketReceived;
+                    winVideoEP.CloseVideo();
                 }
-                else if (state == RTCPeerConnectionState.connected)
+            };
+            peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+            {
+                //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
+
+                if (media == SDPMediaTypesEnum.video)
                 {
-                    peerConnection.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
+                    winVideoEP.GotVideoRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
                 }
             };
 
@@ -171,82 +190,6 @@ namespace TestConsole
                 Console.WriteLine($"answer sdp: {answerInit.sdp}");
 
                 context.WebSocket.Send(answerInit.sdp);
-            }
-        }
-
-        private static void RtpSession_OnRtpPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
-        {
-            if (mediaType == SDPMediaTypesEnum.audio)
-            {
-                //Console.WriteLine($"rtp audio, seqnum {rtpPacket.Header.SequenceNumber}, payload type {rtpPacket.Header.PayloadType}, marker {rtpPacket.Header.MarkerBit}.");
-            }
-            else if (mediaType == SDPMediaTypesEnum.video)
-            {
-                //Console.WriteLine($"rtp video, seqnum {rtpPacket.Header.SequenceNumber}, ts {rtpPacket.Header.Timestamp}, marker {rtpPacket.Header.MarkerBit}, payload {rtpPacket.Payload.Length}, payload[0-5] {rtpPacket.Payload.HexStr(5)}.");
-
-                // New frames must have the VP8 Payload Descriptor Start bit set.
-                // The tracking of the current video frame position is to deal with a VP8 frame being split across multiple RTP packets
-                // as per https://tools.ietf.org/html/rfc7741#section-4.4.
-                if (_currVideoFramePosn > 0 || (rtpPacket.Payload[0] & 0x10) > 0)
-                {
-                    RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(rtpPacket.Payload);
-
-                    Buffer.BlockCopy(rtpPacket.Payload, vp8Header.Length, _currVideoFrame, _currVideoFramePosn, rtpPacket.Payload.Length - vp8Header.Length);
-                    _currVideoFramePosn += rtpPacket.Payload.Length - vp8Header.Length;
-
-                    if (rtpPacket.Header.MarkerBit == 1)
-                    {
-                        unsafe
-                        {
-                            //fixed (byte* p = _currVideoFrame)
-                            //{
-                            int width = 0, height = 0;
-                            byte[] i420 = null;
-
-                            //Console.WriteLine($"Attempting vpx decode {_currVideoFramePosn} bytes.");
-
-                            i420 = _vp8Codec.Decode(_currVideoFrame, _currVideoFramePosn, out width, out height);
-
-                            if (i420 != null)
-                            {
-                                Console.WriteLine("VPX decode of video sample failed.");
-                            }
-                            else
-                            {
-                                //Console.WriteLine($"Video frame ready {width}x{height}.");
-
-                                fixed (byte* r = i420)
-                                {
-                                    byte[] bmp = PixelConverter.YUV420PlanarToRGB(i420, width, height, out int stride);
-
-                                    if (bmp != null)
-                                    {
-                                        _form.BeginInvoke(new Action(() =>
-                                        {
-                                            fixed (byte* s = bmp)
-                                            {
-                                                System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                                _picBox.Image = bmpImage;
-                                            }
-                                        }));
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("Pixel format conversion of decoded sample failed.");
-                                    }
-                                }
-                            }
-                            //}
-                        }
-
-                        _currVideoFramePosn = 0;
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Discarding RTP packet, VP8 header Start bit not set.");
-                    Console.WriteLine($"rtp video, seqnum {rtpPacket.Header.SequenceNumber}, ts {rtpPacket.Header.Timestamp}, marker {rtpPacket.Header.MarkerBit}, payload {rtpPacket.Payload.Length}, payload[0-5] {rtpPacket.Payload.HexStr(5)}.");
-                }
             }
         }
 

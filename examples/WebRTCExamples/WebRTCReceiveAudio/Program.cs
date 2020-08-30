@@ -132,15 +132,16 @@ namespace WebRTCServer
                     peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
                     peerConnection.OnSendReport -= RtpSession_OnSendReport;
                 }
-                else if (state == RTCPeerConnectionState.connected)
+            };
+
+            peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) => logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
+            peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+            {
+                if (media == SDPMediaTypesEnum.audio)
                 {
-                    peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) => logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
-                    peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-                    {
-                        var sendingFormat = peerConnection.GetSendingFormat(SDPMediaTypesEnum.audio);
-                        var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, sendingFormat, windowsAudioEP.AudioPlaybackRate);
-                        windowsAudioEP.GotAudioSample(decodedSample);
-                    };
+                    var sendingFormat = peerConnection.GetSendingFormat(SDPMediaTypesEnum.audio);
+                    var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, sendingFormat, windowsAudioEP.AudioPlaybackRate);
+                    windowsAudioEP.GotAudioSample(decodedSample);
                 }
             };
 
