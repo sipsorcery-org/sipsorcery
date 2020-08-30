@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -8,7 +9,7 @@ namespace SIPSorceryMedia.Abstractions.V1
     public delegate void VideoEncodedSampleDelegate(VideoFormat videoFormat, uint durationRtpUnits, byte[] sample);
     public delegate void RawAudioSampleDelegate(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
     public delegate void RawVideoSampleDelegate(uint durationMilliseconds, byte[] sample);
-    public delegate void SourceErrorDelegate(string error);
+    public delegate void VideoSinkSampleDecodedDelegate(byte[] bmp, uint width, uint height, int stride);
 
     public enum AudioSamplingRatesEnum
     {
@@ -67,8 +68,6 @@ namespace SIPSorceryMedia.Abstractions.V1
 
     public interface IAudioSource
     {
-        event SourceErrorDelegate OnAudioSourceFailure;
-
         event AudioEncodedSampleDelegate OnAudioSourceEncodedSample;
 
         event RawAudioSampleDelegate OnAudioSourceRawSample;
@@ -103,15 +102,13 @@ namespace SIPSorceryMedia.Abstractions.V1
 
     public interface IVideoSource
     {
-        event SourceErrorDelegate OnVideoSourceFailure;
-
         event VideoEncodedSampleDelegate OnVideoSourceEncodedSample;
 
         /// <summary>
         /// No point enabling using this until there is at least one fully C# (no native library) codec
         /// that can encode raw video samples.
         /// </summary>
-        event RawVideoSampleDelegate OnVideoSourceRawSample;
+        //event RawVideoSampleDelegate OnVideoSourceRawSample;
 
         Task PauseVideo();
 
@@ -131,7 +128,7 @@ namespace SIPSorceryMedia.Abstractions.V1
         /// <summary>
         /// This event will be fired by the sink after is decodes a video frame from the RTP stream.
         /// </summary>
-        event RawVideoSampleDelegate OnVideoSinkRawSample;
+        event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
 
         //bool EncodedSamplesOnly { get; set; }
 
