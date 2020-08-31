@@ -24,12 +24,12 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions.V1;
-using SIPSorceryMedia.FFmpeg;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
 using SIPSorcery.Sys;
+using SIPSorcery.Media;
 
 namespace WebRTCServer
 {
@@ -57,22 +57,18 @@ namespace WebRTCServer
         protected override void OnClose(CloseEventArgs e)
         {
             base.OnClose(e);
-            PeerConnection.Close("remote party close");
+            PeerConnection?.Close("remote party close");
         }
     }
 
     class Program
     {
-        private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
-
         private static SDPMediaFormatsEnum VIDEO_CODEC = SDPMediaFormatsEnum.VP8;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static WebSocketServer _webSocketServer;
-        private static bool _forceKeyFrame = false;
-        private static long _presentationTimestamp = 0;
 
         static void Main(string[] args)
         {
@@ -104,15 +100,9 @@ namespace WebRTCServer
 
             AddConsoleLogger();
 
-            //InitialiseTestPattern();
-
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
             _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            //_webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            //_webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
-            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
-            //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
                 sdpExchanger.WebSocketOpened += SendSDPOffer;
@@ -126,7 +116,6 @@ namespace WebRTCServer
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
-                //windowsVideoEndPoint.CloseVideo();
                 exitMre.Set();
             };
 
@@ -138,56 +127,18 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(true);
-
             var pc = new RTCPeerConnection(null);
 
-            windowsVideoEndPoint.OnVideoSourceEncodedSample += (videoFormat, durationRtpUnits, sample) =>
-            {
-                if (videoFormat.Codec == VideoCodecsEnum.H264)
-                {
-                    pc.SendH264Frame(durationRtpUnits, videoFormat.PayloadID, sample);
-                }
-                else if (videoFormat.Codec == VideoCodecsEnum.VP8)
-                {
-                    pc.SendVp8Frame(durationRtpUnits, videoFormat.PayloadID, sample);
-                }
-                else
-                {
-                    logger.LogWarning($"An encoded video sample was received for {videoFormat.Codec} but there's no RTP send method.");
-                }
-            };
-
-            if (VIDEO_CODEC == SDPMediaFormatsEnum.VP8)
-            {
-                MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
-                    new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) },
-                    MediaStreamStatusEnum.SendOnly);
-                pc.addTrack(videoTrack);
-            }
-            else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
-            {
-                MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
-                new List<SDPMediaFormat>
-                {
-                    new SDPMediaFormat(SDPMediaFormatsEnum.H264)
-                    {
-                        FormatParameterAttribute = $"packetization-mode=1",
-                    }
-                },
-                MediaStreamStatusEnum.SendOnly);
-                pc.addTrack(videoTrack);
-            }
-            else
-            {
-                throw new ApplicationException($"Video codec {VIDEO_CODEC} is not supported.");
-            }
+            VideoTestPatternSource testPatternSource = new VideoTestPatternSource();
+            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(new VideoSourceOptions { ExternalSource = testPatternSource });
+            windowsVideoEndPoint.OnVideoSourceEncodedSample += (videoFormat, dur, sample) => pc.SendMedia(SDPMediaTypesEnum.video, dur, sample);
+            MediaStreamTrack track = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            pc.addTrack(track);
 
             //pc.OnReceiveReport += RtpSession_OnReceiveReport;
             //pc.OnSendReport += RtpSession_OnSendReport;
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
-
             pc.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");

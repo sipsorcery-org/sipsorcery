@@ -9,11 +9,22 @@ using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
 {
+    /// <summary>
+    /// This class serves as a bridge, or mapping, between the media end points, typically 
+    /// provided by a separate package, and a media session. Its goal is to wire up the 
+    /// sources and sinks from the media end point to the transport functions provided
+    /// by an RTP session. 
+    /// 
+    /// For audio end points it will also attempt to encode and decode formats that the 
+    /// inbuilt C# encoder class understands. The encoder can be turned off if an 
+    /// application wishes to do its own audio encoding.
+    /// 
+    /// For video end points there are no C# encoders available so the application must
+    /// always co-ordinate the encoding and decoding of samples sent to and received from
+    /// the RTP transport.
+    /// </summary>
     public class VoIPMediaSession : RTPSession, IMediaSession
     {
-        /// <summary>
-        /// The only supported encoding 
-        /// </summary>
         public const int RTP_AUDIO_TIMESTAMP_RATE = 8000;         // G711 and G722 use an 8KHz for RTP timestamps clock.
         
         private static ILogger logger = SIPSorcery.Sys.Log.Logger;
@@ -34,30 +45,7 @@ namespace SIPSorcery.Media
             // Wire up the audio and video sample event handlers.
             if (Media.AudioSource != null)
             {
-                List<SDPMediaFormat> audioTrackFormats = new List<SDPMediaFormat>();
-                foreach (var audioFormat in mediaEndPoint.AudioSource.GetAudioSourceFormats())
-                {
-                    SDPMediaFormatsEnum sdpAudioFormat = SDPMediaFormatsEnum.Unknown;
-                    switch (audioFormat.Codec)
-                    {
-                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
-                            sdpAudioFormat = SDPMediaFormatsEnum.PCMU;
-                            break;
-                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
-                            sdpAudioFormat = SDPMediaFormatsEnum.PCMA;
-                            break;
-                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
-                            sdpAudioFormat = SDPMediaFormatsEnum.G722;
-                            break;
-                        default:
-                            logger.LogWarning("Audio format not recognised.");
-                            break;
-                    }
-
-                    audioTrackFormats.Add(new SDPMediaFormat(sdpAudioFormat));
-                }
-
-                var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, audioTrackFormats);
+                var audioTrack = new MediaStreamTrack(mediaEndPoint.AudioSource.GetAudioSourceFormats());
                 base.addTrack(audioTrack);
 
                 // Example being a microphone.
@@ -67,27 +55,7 @@ namespace SIPSorcery.Media
 
             if(Media.VideoSource != null)
             {
-                List<SDPMediaFormat> videoTrackFormats = new List<SDPMediaFormat>();
-                foreach (var videoFormat in mediaEndPoint.VideoSource.GetVideoSourceFormats())
-                {
-                    SDPMediaFormatsEnum sdpVideoFormat = SDPMediaFormatsEnum.Unknown;
-                    switch (videoFormat.Codec)
-                    {
-                        case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.VP8:
-                            sdpVideoFormat = SDPMediaFormatsEnum.VP8;
-                            break;
-                        case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264:
-                            sdpVideoFormat = SDPMediaFormatsEnum.H264;
-                            break;
-                        default:
-                            logger.LogWarning("Video format not recognised.");
-                            break;
-                    }
-
-                    videoTrackFormats.Add(new SDPMediaFormat(sdpVideoFormat));
-                }
-
-                var videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, videoTrackFormats);
+                var videoTrack = new MediaStreamTrack(mediaEndPoint.VideoSource.GetVideoSourceFormats());
                 base.addTrack(videoTrack);
 
                 // An example video source could be a webcam.
@@ -137,10 +105,10 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// Handler for a PCM audio sample getting generated from the local audio source.
+        /// Handler for a raw PCM audio sample getting generated from the local audio source.
         /// </summary>
-        /// <param name="durationMilliseconds"></param>
-        /// <param name="pcmSample"></param>
+        /// <param name="durationMilliseconds">The duration of the sample in milliseconds.</param>
+        /// <param name="pcmSample">The raw signed PCM sample.</param>
         private void OnAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
         {
             var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
@@ -157,18 +125,7 @@ namespace SIPSorcery.Media
 
         private void OnVideoSourceEncodedSample(VideoFormat videoFormat, uint durationRtpUnits, byte[] sample)
         {
-            if(videoFormat.Codec == VideoCodecsEnum.H264)
-            {
-                base.SendH264Frame(durationRtpUnits, videoFormat.PayloadID, sample);
-            }
-            else if(videoFormat.Codec == VideoCodecsEnum.VP8)
-            {
-                base.SendVp8Frame(durationRtpUnits, videoFormat.PayloadID, sample);
-            }
-            else
-            {
-                logger.LogWarning($"An encoded video sample was received for {videoFormat.Codec} but there's no RTP send method.");
-            }
+            base.SendMedia(SDPMediaTypesEnum.video, durationRtpUnits, sample);
         }
 
         protected void RtpMediaPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)

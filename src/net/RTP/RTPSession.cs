@@ -1301,6 +1301,44 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Send a media sample to the remote party.
+        /// </summary>
+        /// <param name="mediaType">Whether the sample is audio or video.</param>
+        /// <param name="durationRtpUnits">The duration of the sample in RTP timestamp units.</param>
+        /// <param name="sample">The sample payload.</param> 
+        public void SendMedia(SDPMediaTypesEnum mediaType, uint durationRtpUnits, byte[] sample)
+        {
+            if (AudioDestinationEndPoint != null && (!IsSecure || IsSecureContextReady))
+            {
+                if (mediaType == SDPMediaTypesEnum.video)
+                {
+                    var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
+
+                    switch (videoSendingFormat.FormatCodec)
+                    {
+                        case SDPMediaFormatsEnum.VP8:
+                            int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
+                            SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
+                            break;
+                        case SDPMediaFormatsEnum.H264:
+                            int h264PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.H264).FormatID);
+                            SendH264Frame(durationRtpUnits, h264PayloadID, sample);
+                            break;
+                        default:
+                            throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.FormatCodec}.");
+                    }
+                }
+                else if (mediaType == SDPMediaTypesEnum.audio)
+                {
+                    var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
+
+                    int audioPayloadID = Convert.ToInt32(audioFormat);
+                    SendAudioFrame(durationRtpUnits, audioPayloadID, sample);
+                }
+            }
+        }
+
+        /// <summary>
         /// Sends an audio packet to the remote party.
         /// </summary>
         /// <param name="duration">The duration of the audio payload in timestamp units. This value

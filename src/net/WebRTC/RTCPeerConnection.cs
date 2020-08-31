@@ -701,42 +701,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Send a media sample to the remote party.
-        /// </summary>
-        /// <param name="mediaType">Whether the sample is audio or video.</param>
-        /// <param name="sampleTimestamp">The RTP timestamp for the sample.</param>
-        /// <param name="sample">The sample payload.</param>
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
-        {
-            if (base.AudioDestinationEndPoint != null && IsDtlsNegotiationComplete && connectionState == RTCPeerConnectionState.connected)
-            {
-                if (mediaType == SDPMediaTypesEnum.video)
-                {
-                    var videoSendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.video);
-
-                    switch (videoSendingFormat.FormatCodec)
-                    {
-                        case SDPMediaFormatsEnum.VP8:
-                            int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
-                            SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
-                            break;
-                        case SDPMediaFormatsEnum.H264:
-                            int h264PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.H264).FormatID);
-                            SendH264Frame(sampleTimestamp, h264PayloadID, sample);
-                            break;
-                        default:
-                            throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.FormatCodec}.");
-                    }
-                }
-                else if (mediaType == SDPMediaTypesEnum.audio)
-                {
-                    int pcmuPayloadID = Convert.ToInt32(AudioLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
-                    SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample);
-                }
-            }
-        }
-
-        /// <summary>
         /// Close the session including the underlying RTP session and channels.
         /// </summary>
         /// <param name="reason">An optional descriptive reason for the closure.</param>

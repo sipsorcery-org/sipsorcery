@@ -66,6 +66,9 @@ namespace SIPSorcery.Media
         /// </summary>
         None = 5,
 
+        /// <summary>
+        /// Audio generated from an external source such as a microphone.
+        /// </summary>
         External = 6,
     }
 

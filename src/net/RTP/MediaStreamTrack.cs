@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SIPSorcery.Sys;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Net
 {
@@ -116,6 +117,95 @@ namespace SIPSorcery.Net
             {
                 Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
                 SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+            }
+        }
+
+        /// <summary>
+        /// Add a local audio track.
+        /// </summary>
+        /// <param name="audioFormats">The audio formats that the local application supports.</param>
+        /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
+        /// send and receive or only one of.</param>
+        public MediaStreamTrack(
+            List<AudioFormat> audioFormats,
+            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
+        {
+            Kind = SDPMediaTypesEnum.audio;
+            IsRemote = false;
+            StreamStatus = streamStatus;
+            DefaultStreamStatus = streamStatus;
+            Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
+            SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+
+            if (audioFormats != null && audioFormats.Count > 0)
+            {
+                Capabilities = new List<SDPMediaFormat>();
+
+                foreach (var format in audioFormats)
+                {
+                    switch (format.Codec)
+                    {
+                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
+                            Capabilities.Add(new SDPMediaFormat(format.PayloadID) { FormatCodec = SDPMediaFormatsEnum.PCMU });
+                            break;
+                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
+                            Capabilities.Add(new SDPMediaFormat(format.PayloadID) { FormatCodec = SDPMediaFormatsEnum.PCMA });
+                            break;
+                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
+                            Capabilities.Add(new SDPMediaFormat(format.PayloadID) { FormatCodec = SDPMediaFormatsEnum.G722 });
+                            break;
+                        default:
+                            // Audio codec without inbuilt packetisation support. It will be up to the application
+                            // to package appropriately and send via SendRawRtp calls.
+                            break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Add a local video track.
+        /// </summary>
+        /// <param name="videoFormats">The video formats that the local application supports.</param>
+        /// <param name="streamStatus">Optional. The stream status for the video track, e.g. whether
+        /// send and receive or only one of.</param>
+        public MediaStreamTrack(
+            List<VideoFormat> videoFormats,
+            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
+        {
+            Kind = SDPMediaTypesEnum.video;
+            IsRemote = false;
+            StreamStatus = streamStatus;
+            DefaultStreamStatus = streamStatus;
+            Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
+            SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+
+            if (videoFormats != null && videoFormats.Count > 0)
+            {
+                Capabilities = new List<SDPMediaFormat>();
+
+                foreach (var format in videoFormats)
+                {
+                    switch (format.Codec)
+                    {
+                        case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.VP8:
+                            Capabilities.Add(new SDPMediaFormat(format.PayloadID) { FormatCodec = SDPMediaFormatsEnum.VP8 });
+                            break;
+                        case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264:
+                            Capabilities.Add(
+                                new SDPMediaFormat(format.PayloadID)
+                                {
+                                    FormatCodec = SDPMediaFormatsEnum.H264,
+                                    FormatParameterAttribute = "packetization-mode=1"
+
+                                });
+                            break;
+                        default:
+                            // Video codec without inbuilt packetisation support. It will be up to the application
+                            // to package appropriately and send via SendRawRtp calls.
+                            break;
+                    }
+                }
             }
         }
 
