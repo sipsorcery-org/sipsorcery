@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.UnitTests", "..\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.IntegrationTests", "..\test\integration\SIPSorcery.IntegrationTests.csproj", "{2E657CD6-B4F1-4952-8815-913898E2352F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Abstractions", "..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj", "{42CA208F-0779-4612-A580-8BEFCB9C06C7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,18 +57,6 @@ Global
 		{2E657CD6-B4F1-4952-8815-913898E2352F}.Release|x64.Build.0 = Release|Any CPU
 		{2E657CD6-B4F1-4952-8815-913898E2352F}.Release|x86.ActiveCfg = Release|Any CPU
 		{2E657CD6-B4F1-4952-8815-913898E2352F}.Release|x86.Build.0 = Release|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Debug|x64.Build.0 = Debug|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Debug|x86.Build.0 = Debug|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Release|x64.ActiveCfg = Release|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Release|x64.Build.0 = Release|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Release|x86.ActiveCfg = Release|Any CPU
-		{42CA208F-0779-4612-A580-8BEFCB9C06C7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
