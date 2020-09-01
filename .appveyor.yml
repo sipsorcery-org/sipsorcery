@@ -2,7 +2,7 @@ version: 0.0.1.{build}
 image: Visual Studio 2019
 configuration: Release
 before_build:
-- cmd: nuget restore -DisableParallelProcessing src\SIPSorcery.sln
+- cmd: nuget restore -DisableParallelProcessing src\SSIPSorceryMedia.Abstractions.sln
 build:
   project: src\SIPSorceryMedia.Abstractions.sln
   publish_nuget: true
