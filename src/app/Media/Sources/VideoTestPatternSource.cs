@@ -27,8 +27,12 @@ namespace SIPSorcery.Media
 
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
 
+        /// <summary>
+        /// This video source DOES NOT generate encoded samples. Subscribe to the raw samples
+        /// event and pass to an encoder.
+        /// </summary>
         [Obsolete("This video source is not currently capable of generating encoded samples.")]
-        public event VideoEncodedSampleDelegate OnVideoSourceEncodedSample;
+        public event VideoEncodedSampleDelegate OnVideoSourceEncodedSample { add { } remove { } }
 
         public VideoTestPatternSource()
         {

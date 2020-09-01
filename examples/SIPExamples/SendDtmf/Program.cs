@@ -43,6 +43,7 @@ using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery
 {
@@ -64,10 +65,13 @@ namespace SIPSorcery
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
+            var winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
+            var voipMediaSession = new VoIPMediaSession(winAudioEP.ToMediaEndPoints());
+
+            Console.WriteLine($"Calling {DEFAULT_DESTINATION_SIP_URI}.");
 
             // Place the call and wait for the result.
-            bool callResult = await userAgent.Call(DEFAULT_DESTINATION_SIP_URI, null, null, rtpSession);
+            bool callResult = await userAgent.Call(DEFAULT_DESTINATION_SIP_URI, null, null, voipMediaSession);
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)

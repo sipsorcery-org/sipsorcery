@@ -129,8 +129,12 @@ namespace SIPSorcery.Media
 
         public event AudioEncodedSampleDelegate OnAudioSourceEncodedSample;
 
+        /// <summary>
+        /// This audio source DOES NOT generate raw samples. Subscribe to the encoded samples event
+        /// to get samples ready for passing to the RTP transport layer.
+        /// </summary>
         [Obsolete("This audio source only produces encoded samples. Do not subscribe to this event.")]
-        public event RawAudioSampleDelegate OnAudioSourceRawSample;
+        public event RawAudioSampleDelegate OnAudioSourceRawSample { add { } remove { } }
 
         /// <summary>
         /// Instantiates an audio source that can generate output samples from a variety of different
