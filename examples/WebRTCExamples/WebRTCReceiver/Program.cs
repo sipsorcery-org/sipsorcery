@@ -133,7 +133,10 @@ namespace TestConsole
             // the codecs we support.
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.RecvOnly);
+            //MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.RecvOnly);
+            //peerConnection.addTrack(videoTrack);
+
+            MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(videoTrack);
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
@@ -144,13 +147,13 @@ namespace TestConsole
                 Console.WriteLine($"STUN {msg.Header.MessageType} received from {ep}, use candidate {hasUseCandidate}.");
             };
             peerConnection.oniceconnectionstatechange += (state) => Console.WriteLine($"ICE connection state changed to {state}.");
-            peerConnection.onconnectionstatechange += (state) =>
+            peerConnection.onconnectionstatechange += async (state) =>
             {
                 Console.WriteLine($"Peer connection state changed to {state}.");
 
                 if (state == RTCPeerConnectionState.closed)
                 {
-                    winVideoEP.CloseVideo();
+                    await winVideoEP.CloseVideo();
                 }
             };
             peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>

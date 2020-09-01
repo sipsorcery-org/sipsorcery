@@ -1,10 +1,9 @@
 ﻿using System;
-using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
 {
-    public class AudioEncoder
+    public class AudioEncoder : IAudioEncoder
     {
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
 
@@ -13,7 +12,20 @@ namespace SIPSorcery.Media
         private G722Codec _g722Decoder;
         private G722CodecState _g722DecoderState;
 
-        public byte[] EncodeAudio(byte[] pcm, SDPMediaFormat format, AudioSamplingRatesEnum sampleRate)
+        public bool IsSupported(AudioCodecsEnum codec)
+        {
+            switch(codec)
+            {
+                case AudioCodecsEnum.G722:
+                case AudioCodecsEnum.PCMA:
+                case AudioCodecsEnum.PCMU:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public byte[] EncodeAudio(byte[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate)
         {
             // Convert buffer into a PCM sample (array of signed shorts) that's
             // suitable for input into the chosen encoder.
@@ -23,14 +35,14 @@ namespace SIPSorcery.Media
                 pcmSigned[i] = BitConverter.ToInt16(pcm, i * 2);
             }
 
-            return EncodeAudio(pcmSigned, format, sampleRate);
+            return EncodeAudio(pcmSigned, codec, sampleRate);
         }
 
-        public byte[] EncodeAudio(short[] pcm, SDPMediaFormat format, AudioSamplingRatesEnum sampleRate)
+        public byte[] EncodeAudio(short[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate)
         {
             byte[] encodedSample = null;
 
-            if (format.FormatCodec == SDPMediaFormatsEnum.G722)
+            if (codec == AudioCodecsEnum.G722)
             {
                 if (_g722Codec == null)
                 {
@@ -63,10 +75,10 @@ namespace SIPSorcery.Media
 
                 return encodedSample;
             }
-            else if (format.FormatCodec == SDPMediaFormatsEnum.PCMA ||
-                     format.FormatCodec == SDPMediaFormatsEnum.PCMU)
+            else if (codec == AudioCodecsEnum.PCMA ||
+                     codec == AudioCodecsEnum.PCMU)
             {
-                Func<short, byte> encode = (format.FormatCodec == SDPMediaFormatsEnum.PCMA) ?
+                Func<short, byte> encode = (codec == AudioCodecsEnum.PCMA) ?
                        (Func<short, byte>)ALawEncoder.LinearToALawSample : MuLawEncoder.LinearToMuLawSample;
 
                 if (sampleRate == AudioSamplingRatesEnum.Rate8KHz)
@@ -98,7 +110,7 @@ namespace SIPSorcery.Media
             }
             else
             {
-                throw new ApplicationException($"Audio format {format} cannot be encoded.");
+                throw new ApplicationException($"Audio format {codec} cannot be encoded.");
             }
         }
 
@@ -106,14 +118,14 @@ namespace SIPSorcery.Media
         /// Event handler for receiving RTP packets from the remote party.
         /// </summary>
         /// <param name="remoteEP">The remote end point the RTP was received from.</param>
-        /// <param name="mediaType">The media type of the packets.</param>
+        /// <param name="codec">The encoding codec of the packets.</param>
         /// <param name="rtpPacket">The RTP packet with the media sample.</param>
-        public byte[] DecodeAudio(byte[] encodedSample, SDPMediaFormat format, AudioSamplingRatesEnum sampleRate)
+        public byte[] DecodeAudio(byte[] encodedSample, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate)
         {
             bool wants8kSamples = sampleRate == AudioSamplingRatesEnum.Rate8KHz;
             bool wants16kSamples = sampleRate == AudioSamplingRatesEnum.Rate16KHz;
 
-            if (format.FormatCodec == SDPMediaFormatsEnum.G722)
+            if (codec == AudioCodecsEnum.G722)
             {
                 if (_g722Decoder == null)
                 {
@@ -151,10 +163,10 @@ namespace SIPSorcery.Media
 
                 return pcm8kBuffer ?? pcm16kBuffer;
             }
-            else if (format.FormatCodec == SDPMediaFormatsEnum.PCMA ||
-                     format.FormatCodec == SDPMediaFormatsEnum.PCMU)
+            else if (codec == AudioCodecsEnum.PCMA ||
+                     codec == AudioCodecsEnum.PCMU)
             {
-                Func<byte, short> decode = (format.FormatCodec == SDPMediaFormatsEnum.PCMA) ?
+                Func<byte, short> decode = (codec == AudioCodecsEnum.PCMA) ?
                     (Func<byte, short>)ALawDecoder.ALawToLinearSample : MuLawDecoder.MuLawToLinearSample;
 
                 byte[] pcm8kBuffer = (wants8kSamples) ? new byte[encodedSample.Length * 2] : null;
@@ -188,7 +200,7 @@ namespace SIPSorcery.Media
             }
             else
             {
-                throw new ApplicationException($"Audio format {format} cannot be decoded.");
+                throw new ApplicationException($"Audio format {codec} cannot be decoded.");
             }
         }
     }

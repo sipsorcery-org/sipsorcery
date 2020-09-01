@@ -116,15 +116,14 @@ namespace demo
                 }
             };
 
-            var videoSrcOpts = new VideoSourceOptions 
-            { 
-                VideoSource = VideoSourcesEnum.TestPattern, 
-                SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE 
+            var videoSrcOpts = new VideoSourceOptions
+            {
+                ExternalSource = new VideoTestPatternSource()
             };
 
             var windowsAudioEndPoint = new WindowsAudioEndPoint();
-            var audioExtrasSource = new AudioExtrasSource(audioSrcOpts);
-            var windowsVideoEndPoint = new WindowsVideoEndPoint(true);
+            var audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioSrcOpts);
+            var windowsVideoEndPoint = new WindowsVideoEndPoint(videoSrcOpts);
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {

@@ -49,7 +49,6 @@ namespace SIPSorcery.Net
         H265 = 103,
         OPUS = 111,
 
-
         Unknown = 999,
     }
 
@@ -118,6 +117,46 @@ namespace SIPSorcery.Net
                     return 48000;
                 default:
                     return 8000;
+            }
+        }
+
+        /// <summary>
+        /// Maps an audio SDP media type to an audio codec.
+        /// </summary>
+        /// <param name="sdpFormat">The SDP format to match to an audio codec.</param>
+        /// <returns>A matching audio codec.</returns>
+        public static AudioCodecsEnum GetAudioCodecForSdpFormat(SDPMediaFormatsEnum sdpFormat)
+        {
+            switch(sdpFormat)
+            {
+                case SDPMediaFormatsEnum.G722:
+                    return AudioCodecsEnum.G722;
+                case SDPMediaFormatsEnum.PCMA:
+                    return AudioCodecsEnum.PCMA;
+                case SDPMediaFormatsEnum.PCMU:
+                    return AudioCodecsEnum.PCMU;
+                case SDPMediaFormatsEnum.OPUS:
+                    return AudioCodecsEnum.OPUS;
+                default:
+                    return AudioCodecsEnum.Unknown;
+            }
+        }
+
+        /// <summary>
+        /// Maps a video SDP media type to a video codec.
+        /// </summary>
+        /// <param name="sdpFormat">The SDP format to match to a video codec.</param>
+        /// <returns>A matching video codec.</returns>
+        public static VideoCodecsEnum GetVideoCodecForSdpFormat(SDPMediaFormatsEnum sdpFormat)
+        {
+            switch (sdpFormat)
+            {
+                case SDPMediaFormatsEnum.H264:
+                    return VideoCodecsEnum.H264;
+                case SDPMediaFormatsEnum.VP8:
+                    return VideoCodecsEnum.VP8;
+                default:
+                    return VideoCodecsEnum.Unknown;
             }
         }
     }

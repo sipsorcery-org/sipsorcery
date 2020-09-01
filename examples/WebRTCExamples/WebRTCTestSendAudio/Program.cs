@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -118,7 +117,7 @@ namespace WebRTCServer
                 pc.SendAudioFrame(rtpTimestampDuration, (int)sendingFormat.FormatCodec, encodedSample);
             };
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioExtras.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(audioTrack);
 
             pc.OnReceiveReport += RtpSession_OnReceiveReport;

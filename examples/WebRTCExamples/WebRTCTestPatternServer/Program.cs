@@ -131,9 +131,10 @@ namespace WebRTCServer
 
             VideoTestPatternSource testPatternSource = new VideoTestPatternSource();
             WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(new VideoSourceOptions { ExternalSource = testPatternSource });
-            windowsVideoEndPoint.OnVideoSourceEncodedSample += (videoFormat, dur, sample) => pc.SendMedia(SDPMediaTypesEnum.video, dur, sample);
             MediaStreamTrack track = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
+
+            windowsVideoEndPoint.OnVideoSourceEncodedSample += (videoFormat, dur, sample) => pc.SendMedia(SDPMediaTypesEnum.video, dur, sample);
 
             //pc.OnReceiveReport += RtpSession_OnReceiveReport;
             //pc.OnSendReport += RtpSession_OnSendReport;

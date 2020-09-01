@@ -99,7 +99,7 @@ namespace SIPSorcery.Media
     public class AudioExtrasSource : IAudioSource
     {
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
-        private const int DEFAULT_AUDIO_SAMPLE_RATE = 8000;
+        private const AudioSamplingRatesEnum DEFAULT_AUDIO_SAMPLE_RATE = AudioSamplingRatesEnum.Rate8KHz;
         private const int DEFAULT_RTP_TIMESTAMP_RATE = 8000;
 
         private static readonly byte PCMU_SILENCE_BYTE_ZERO = 0x7F;
@@ -116,7 +116,7 @@ namespace SIPSorcery.Media
         private Timer _audioStreamTimer;
         private AudioSourceOptions _audioOpts;
         private AudioFormat _sendingFormat = DEFAULT_SENDING_FORMAT;        // The codec that was selected to send with during the SDP negotiation.
-        private int _sendingAudioSampleRate = DEFAULT_AUDIO_SAMPLE_RATE;    // 8KHz for G711, 16KHz for G722.
+        private AudioSamplingRatesEnum _sourceAudioSampleRate = DEFAULT_AUDIO_SAMPLE_RATE;
         private int _sendingAudioRtpRate = DEFAULT_RTP_TIMESTAMP_RATE;      // 8Khz for both G711 and G722. Future codecs could have different values.
         private bool _streamSendInProgress;             // When a send for stream is in progress it takes precedence over the existing audio source.
         private byte[] _silenceBuffer;                  // PCMU and PCMA have a standardised silence format. When using these codecs the buffer can be constructed.  
@@ -126,6 +126,7 @@ namespace SIPSorcery.Media
         private bool _isClosed = false;
         private List<AudioFormat> _supportedFormats;
         private IAudioSource _externalAudioSource;
+        private AudioEncoder _audioEncoder;
 
         /// <summary>
         /// The sample rate of the source stream.
@@ -141,6 +142,7 @@ namespace SIPSorcery.Media
 
         public event AudioEncodedSampleDelegate OnAudioSourceEncodedSample;
 
+        [Obsolete("This audio source only produces encoded samples. Do not subscribe to this event.")]
         public event RawAudioSampleDelegate OnAudioSourceRawSample;
 
         /// <summary>
@@ -152,9 +154,11 @@ namespace SIPSorcery.Media
         /// <param name="supportedFormats">Optional. The audio codecs to support. Can only be a combination of 
         /// PCMU, PCMA and G722. Set as null to use the default option and support all three.</param>
         public AudioExtrasSource(
+            AudioEncoder audioEncoder,
             AudioSourceOptions audioOptions = null,
             List<AudioFormat> supportedFormats = null)
         {
+            _audioEncoder = audioEncoder;
             _audioOpts = audioOptions ?? new AudioSourceOptions { AudioSource = AudioSourcesEnum.None };
 
             if (supportedFormats == null || supportedFormats.Count == 0)
@@ -289,7 +293,7 @@ namespace SIPSorcery.Media
                 if (_externalAudioSource != null)
                 {
                     _externalAudioSource.OnAudioSourceEncodedSample -= OnAudioSourceEncodedSample;
-                    _externalAudioSource.OnAudioSourceRawSample -= OnAudioSourceRawSample;
+                    //_externalAudioSource.OnAudioSourceRawSample -= OnAudioSourceRawSample;
                     _externalAudioSource?.PauseAudio();
                 }
 
@@ -301,7 +305,7 @@ namespace SIPSorcery.Media
                 {
                     _externalAudioSource = sourceOptions.ExternalAudioSource;
                     _externalAudioSource.OnAudioSourceEncodedSample += OnAudioSourceEncodedSample;
-                    _externalAudioSource.OnAudioSourceRawSample += OnAudioSourceRawSample;
+                    //_externalAudioSource.OnAudioSourceRawSample += OnAudioSourceRawSample;
                     _externalAudioSource.StartAudio();
 
                 }
@@ -313,7 +317,8 @@ namespace SIPSorcery.Media
                      sourceOptions.AudioSource == AudioSourcesEnum.WhiteNoise ||
                     sourceOptions.AudioSource == AudioSourcesEnum.SineWave)
                 {
-                    _signalGenerator = new SignalGenerator(_sendingAudioSampleRate, 1);
+                    int sourceSampleRate = _sourceAudioSampleRate == AudioSamplingRatesEnum.Rate8KHz ? 8000 : 16000;
+                    _signalGenerator = new SignalGenerator(sourceSampleRate, 1);
 
                     switch (sourceOptions.AudioSource)
                     {
@@ -419,13 +424,16 @@ namespace SIPSorcery.Media
                 lock (_audioStreamTimer)
                 {
                     uint outputBufferSize = (uint)(_sendingAudioRtpRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS);
+                    int sourceSampleRate = _sourceAudioSampleRate == AudioSamplingRatesEnum.Rate8KHz ? 8000 : 16000;
 
                     if (_sendingFormat.Codec == AudioCodecsEnum.G722)
                     {
-                        int inputBufferSize = _sendingAudioSampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                        int inputBufferSize = sourceSampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
                         short[] silencePcm = new short[inputBufferSize];
 
-                        OnAudioSourceRawSample?.Invoke(AudioSamplingRatesEnum.Rate8KHz, AUDIO_SAMPLE_PERIOD_MILLISECONDS, silencePcm);
+                        //OnAudioSourceRawSample?.Invoke(AudioSamplingRatesEnum.Rate8KHz, AUDIO_SAMPLE_PERIOD_MILLISECONDS, silencePcm);
+                        byte[] encodedSample = _audioEncoder.EncodeAudio(silencePcm, AudioCodecsEnum.G722, _sourceAudioSampleRate);
+                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, outputBufferSize, encodedSample);
                     }
                     else if (_sendingFormat.Codec == AudioCodecsEnum.PCMU
                             || _sendingFormat.Codec == AudioCodecsEnum.PCMA)
@@ -456,8 +464,9 @@ namespace SIPSorcery.Media
             {
                 lock (_audioStreamTimer)
                 {
-                    int inputBufferSize = _sendingAudioSampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
-                    int outputBufferSize = _sendingAudioRtpRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                    int sourceSampleRate = _sourceAudioSampleRate == AudioSamplingRatesEnum.Rate8KHz ? 8000 : 16000;
+                    int inputBufferSize = sourceSampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                    uint outputBufferSize = (uint)(_sendingAudioRtpRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS);
 
                     // Get the signal generator to generate the samples and then convert from
                     // signed linear to PCM.
@@ -465,7 +474,9 @@ namespace SIPSorcery.Media
                     _signalGenerator.Read(linear, 0, inputBufferSize);
                     short[] pcm = linear.Select(x => (short)(x * LINEAR_MAXIMUM)).ToArray();
 
-                    OnAudioSourceRawSample?.Invoke(AudioSamplingRatesEnum.Rate8KHz, AUDIO_SAMPLE_PERIOD_MILLISECONDS, pcm);
+                    //OnAudioSourceRawSample?.Invoke(AudioSamplingRatesEnum.Rate8KHz, AUDIO_SAMPLE_PERIOD_MILLISECONDS, pcm);
+                    byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _sendingFormat.Codec, _sourceAudioSampleRate);
+                    OnAudioSourceEncodedSample?.Invoke(_sendingFormat, outputBufferSize, encodedSample);
                 }
             }
         }
@@ -503,7 +514,9 @@ namespace SIPSorcery.Media
                             }
                         }
 
-                        OnAudioSourceRawSample?.Invoke(_streamSourceSampleRate, AUDIO_SAMPLE_PERIOD_MILLISECONDS, sample);
+                        //OnAudioSourceRawSample?.Invoke(_streamSourceSampleRate, AUDIO_SAMPLE_PERIOD_MILLISECONDS, sample);
+                        byte[] encodedSample = _audioEncoder.EncodeAudio(sample, _sendingFormat.Codec, _sourceAudioSampleRate);
+                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, (uint)sampleSize, encodedSample);
 
                         if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
                         {

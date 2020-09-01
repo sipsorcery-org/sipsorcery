@@ -111,26 +111,31 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint();
-            AudioEncoder audioEncoder = new AudioEncoder();
+            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), true, false);
 
             var peerConnection = new RTCPeerConnection(null);
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
             peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
-            peerConnection.onconnectionstatechange += (state) =>
+            peerConnection.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection connected changed to {state}.");
 
-                if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
+                if(state == RTCPeerConnectionState.connected)
+                {
+                    await windowsAudioEP.StartAudio();
+                }
+                else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
                 {
                     peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
                     peerConnection.OnSendReport -= RtpSession_OnSendReport;
+
+                    await windowsAudioEP.CloseAudio();
                 }
             };
 
@@ -140,9 +145,7 @@ namespace WebRTCServer
 
                 if (media == SDPMediaTypesEnum.audio)
                 {
-                    var sendingFormat = peerConnection.GetSendingFormat(SDPMediaTypesEnum.audio);
-                    var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, sendingFormat, windowsAudioEP.AudioPlaybackRate);
-                    windowsAudioEP.GotAudioSample(decodedSample);
+                    windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
                 }
             };
 

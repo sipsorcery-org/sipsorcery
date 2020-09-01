@@ -59,9 +59,8 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioEndPoint();   // Using the sink (speaker playback).
-            var audioExtrasSource = new AudioExtrasSource();
-            MediaEndPoints mediaEndPoints = new MediaEndPoints { AudioSource = audioExtrasSource, AudioSink = windowsAudio };
-            var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+            var audioExtrasSource = new AudioExtrasSource(new AudioEncoder());
+            var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.

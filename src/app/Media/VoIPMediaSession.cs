@@ -112,7 +112,8 @@ namespace SIPSorcery.Media
         private void OnAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
         {
             var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
-            var encodedSample = _audioEncoder.EncodeAudio(sample, sendingFormat, samplingRate);
+            var sendingCodec = SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sendingFormat.FormatCodec);
+            var encodedSample = _audioEncoder.EncodeAudio(sample, sendingCodec, samplingRate);
             uint rtpTimestampDuration = RTP_AUDIO_TIMESTAMP_RATE / 1000 * durationMilliseconds;
 
             base.SendAudioFrame(rtpTimestampDuration, (int)sendingFormat.FormatCodec, encodedSample);
@@ -136,19 +137,20 @@ namespace SIPSorcery.Media
             if (mediaType == SDPMediaTypesEnum.audio && Media.AudioSink != null)
             {
                 var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
+                var sendingCodec = SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sendingFormat.FormatCodec);
 
                 // If the audio source wants to do it's own decoding OR it's not one of the codecs that
                 // this library has a decoder for then pass the raw RTP sample through.
                 if (Media.AudioSink.EncodedSamplesOnly || 
-                    !(sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMU 
-                    || sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA
-                    || sendingFormat.FormatCodec == SDPMediaFormatsEnum.G722))
+                    !(sendingCodec == AudioCodecsEnum.PCMU 
+                    || sendingCodec == AudioCodecsEnum.PCMA
+                    || sendingCodec == AudioCodecsEnum.G722))
                 {
                     Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
                 }
                 else
                 {
-                    var decodedSample = _audioEncoder.DecodeAudio(rtpPacket.Payload, sendingFormat, Media.AudioSink.AudioPlaybackRate);
+                    var decodedSample = _audioEncoder.DecodeAudio(rtpPacket.Payload, sendingCodec, Media.AudioSink.AudioPlaybackRate);
                     Media.AudioSink.GotAudioSample(decodedSample);
                 }
             }
