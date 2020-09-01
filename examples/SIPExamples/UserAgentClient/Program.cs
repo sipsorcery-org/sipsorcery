@@ -61,8 +61,7 @@ namespace demo
             var sipTransport = new SIPTransport();
             EnableTraceLogs(sipTransport);
 
-            //var rtpSession = new WindowsAudioRtpSession();
-            var audioSession = new WindowsAudioEndPoint();
+            var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
             var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
 
             var offerSDP = rtpSession.CreateOffer(null);

@@ -56,15 +56,14 @@ namespace demo
 
             var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
             userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
+            userAgent.ClientCallFailed += (uac, error, sipResponse) => exitCts.Cancel();
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
-            var windowsAudio = new WindowsAudioEndPoint();   // Using the sink (speaker playback).
             var audioExtrasSource = new AudioExtrasSource(new AudioEncoder());
-            var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
+            //var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder(), audioExtrasSource);
+            //var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
+            var voipMediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
             voipMediaSession.AcceptRtpFromAny = true;
-
-            // Place the call and wait for the result.
-            var callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
 
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
@@ -87,6 +86,9 @@ namespace demo
                 exitCts.Cancel();
             };
 
+            // Place the call and wait for the result.
+            var callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
+
             Console.WriteLine("press ctrl-c to exit...");
 
             bool callResult = await callTask;
@@ -94,6 +96,8 @@ namespace demo
             if (callResult)
             {
                 Console.WriteLine($"Call to {DESTINATION} succeeded.");
+
+                //await windowsAudio.PauseAudio();
 
                 Console.WriteLine("Sending welcome message from 8KHz sample.");
                 await audioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
@@ -103,24 +107,24 @@ namespace demo
 
                 await Task.Delay(2000);
 
-                Console.WriteLine("Sending DTMF.");
-                await userAgent.SendDtmf(0x01);
-                await userAgent.SendDtmf(0x02);
-                await userAgent.SendDtmf(0x03);
-                await userAgent.SendDtmf(0x04);
+                //Console.WriteLine("Sending DTMF.");
+                //await userAgent.SendDtmf(0x01);
+                //await userAgent.SendDtmf(0x02);
+                //await userAgent.SendDtmf(0x03);
+                //await userAgent.SendDtmf(0x04);
 
-                Console.WriteLine("Sending white noise signal.");
-                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.WhiteNoise });
-                await Task.Delay(2000);
+                //Console.WriteLine("Sending white noise signal.");
+                //audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.WhiteNoise });
+                //await Task.Delay(2000);
 
-                Console.WriteLine("Sending pink noise signal.");
-                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise });
-                await Task.Delay(2000);
+                //Console.WriteLine("Sending pink noise signal.");
+                //audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise });
+                //await Task.Delay(2000);
 
-                Console.WriteLine("Sending silence.");
-                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
+                //Console.WriteLine("Sending silence.");
+                //audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
 
-                await Task.Delay(2000);
+                //await Task.Delay(2000);
 
                 Console.WriteLine("Sending goodbye message from 16KHz sample.");
                 await audioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
@@ -128,7 +132,7 @@ namespace demo
                 await Task.Delay(200);
 
                 // Switch to the external microphone input source.
-                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.External, ExternalAudioSource = windowsAudio });
+                //await windowsAudio.ResumeAudio();
 
                 exitCts.Token.WaitHandle.WaitOne();
             }

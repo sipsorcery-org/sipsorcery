@@ -67,12 +67,18 @@ namespace SIPSorcery.Media
             return Task.CompletedTask;
         }
 
-        public List<VideoFormat> GetVideoSourceFormats()
+        /// <summary>
+        /// This source can only supply raw RGB bitmap samples.
+        /// </summary>
+        public List<VideoCodecsEnum> GetVideoSourceFormats()
         {
             throw new NotImplementedException();
         }
 
-        public void SetVideoSourceFormat(VideoFormat videoFormat)
+        /// <summary>
+        /// This source can only supply raw RGB bitmap samples.
+        /// </summary>
+        public void SetVideoSourceFormat(VideoCodecsEnum videoFormat)
         {
             throw new NotImplementedException();
         }

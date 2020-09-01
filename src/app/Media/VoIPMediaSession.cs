@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -25,47 +26,61 @@ namespace SIPSorcery.Media
     /// </summary>
     public class VoIPMediaSession : RTPSession, IMediaSession
     {
-        public const int RTP_AUDIO_TIMESTAMP_RATE = 8000;         // G711 and G722 use an 8KHz for RTP timestamps clock.
-        
         private static ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         public MediaEndPoints Media { get; private set; }
-        private AudioEncoder _audioEncoder;
 
         public VoIPMediaSession(
             MediaEndPoints mediaEndPoint,
-            IPAddress bindAddress = null, 
-            int bindPort = 0) 
+            IPAddress bindAddress = null,
+            int bindPort = 0)
             : base(false, false, false, bindAddress, bindPort)
         {
-            Media = mediaEndPoint; 
+            if(mediaEndPoint == null)
+            {
+                throw new ArgumentNullException("mediaEndPoint", "The media end point parameter cannot be null.");
+            }
 
-            _audioEncoder = new AudioEncoder();
+            Media = mediaEndPoint;
 
             // Wire up the audio and video sample event handlers.
             if (Media.AudioSource != null)
             {
                 var audioTrack = new MediaStreamTrack(mediaEndPoint.AudioSource.GetAudioSourceFormats());
                 base.addTrack(audioTrack);
-
-                // Example being a microphone.
-                Media.AudioSource.OnAudioSourceRawSample += OnAudioSourceRawSample;
                 Media.AudioSource.OnAudioSourceEncodedSample += OnAudioSourceEncodedSample;
             }
 
-            if(Media.VideoSource != null)
+            if (Media.VideoSource != null)
             {
                 var videoTrack = new MediaStreamTrack(mediaEndPoint.VideoSource.GetVideoSourceFormats());
                 base.addTrack(videoTrack);
-
-                // An example video source could be a webcam.
                 Media.VideoSource.OnVideoSourceEncodedSample += OnVideoSourceEncodedSample;
             }
-            
-            if(Media.AudioSink != null || Media.VideoSink != null)
+
+            if (Media.AudioSink != null || Media.VideoSink != null)
             {
                 base.OnRtpPacketReceived += RtpMediaPacketReceived;
             }
+
+            base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
+            base.OnVideoFormatsNegotiated += VideoFormatsNegotiated;
+        }
+
+        private void AudioFormatsNegotiated(List<SDPMediaFormat> audoFormats)
+        {
+            var audioCodec = SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audoFormats.First().FormatCodec);
+            logger.LogDebug($"Setting audio sink and source format to {audioCodec}.");
+            Media.AudioSink?.SetAudioSinkFormat(audioCodec);
+            Media.AudioSource?.SetAudioSourceFormat(audioCodec);
+        }
+
+        private void VideoFormatsNegotiated(List<SDPMediaFormat> videoFormats)
+        {
+            var videoCodec = SDPMediaFormatInfo.GetVideoCodecForSdpFormat(videoFormats.First().FormatCodec);
+            logger.LogDebug($"Setting video sink and source format to {videoCodec}.");
+            Media.VideoSink?.SetVideoSinkFormat(videoCodec);
+            Media.VideoSource?.SetVideoSourceFormat(videoCodec);
         }
 
         public async override Task Start()
@@ -73,16 +88,8 @@ namespace SIPSorcery.Media
             if (!base.IsStarted)
             {
                 await base.Start();
-
-                if (Media.AudioSource != null)
-                {
-                    await Media.AudioSource.StartAudio();
-                }
-
-                if (Media.VideoSource != null)
-                {
-                    await Media.VideoSource.StartVideo();
-                }
+                await (Media.AudioSource?.StartAudio() ?? Task.CompletedTask);
+                await (Media.VideoSource?.StartVideo() ?? Task.CompletedTask);
             }
         }
 
@@ -91,40 +98,17 @@ namespace SIPSorcery.Media
             if (!base.IsClosed)
             {
                 base.Close(reason);
-
-                if (Media.AudioSource != null)
-                {
-                    await Media.AudioSource.CloseAudio();
-                }
-
-                if (Media.VideoSource != null)
-                {
-                    await Media.VideoSource.CloseVideo();
-                }
+                await (Media.AudioSource?.CloseAudio() ?? Task.CompletedTask);
+                await (Media.VideoSource?.CloseVideo() ?? Task.CompletedTask);
             }
         }
 
-        /// <summary>
-        /// Handler for a raw PCM audio sample getting generated from the local audio source.
-        /// </summary>
-        /// <param name="durationMilliseconds">The duration of the sample in milliseconds.</param>
-        /// <param name="pcmSample">The raw signed PCM sample.</param>
-        private void OnAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
+        private void OnAudioSourceEncodedSample(AudioCodecsEnum audioCodec, uint durationRtpUnits, byte[] sample)
         {
-            var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
-            var sendingCodec = SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sendingFormat.FormatCodec);
-            var encodedSample = _audioEncoder.EncodeAudio(sample, sendingCodec, samplingRate);
-            uint rtpTimestampDuration = RTP_AUDIO_TIMESTAMP_RATE / 1000 * durationMilliseconds;
-
-            base.SendAudioFrame(rtpTimestampDuration, (int)sendingFormat.FormatCodec, encodedSample);
+            base.SendMedia(SDPMediaTypesEnum.audio, durationRtpUnits, sample);
         }
 
-        private void OnAudioSourceEncodedSample(AudioFormat audioFormat, uint durationRtpUnits, byte[] sample)
-        {
-            base.SendAudioFrame(durationRtpUnits, audioFormat.PayloadID, sample);
-        }
-
-        private void OnVideoSourceEncodedSample(VideoFormat videoFormat, uint durationRtpUnits, byte[] sample)
+        private void OnVideoSourceEncodedSample(VideoCodecsEnum videoCodec, uint durationRtpUnits, byte[] sample)
         {
             base.SendMedia(SDPMediaTypesEnum.video, durationRtpUnits, sample);
         }
@@ -136,25 +120,9 @@ namespace SIPSorcery.Media
 
             if (mediaType == SDPMediaTypesEnum.audio && Media.AudioSink != null)
             {
-                var sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
-                var sendingCodec = SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sendingFormat.FormatCodec);
-
-                // If the audio source wants to do it's own decoding OR it's not one of the codecs that
-                // this library has a decoder for then pass the raw RTP sample through.
-                if (Media.AudioSink.EncodedSamplesOnly || 
-                    !(sendingCodec == AudioCodecsEnum.PCMU 
-                    || sendingCodec == AudioCodecsEnum.PCMA
-                    || sendingCodec == AudioCodecsEnum.G722))
-                {
-                    Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
-                }
-                else
-                {
-                    var decodedSample = _audioEncoder.DecodeAudio(rtpPacket.Payload, sendingCodec, Media.AudioSink.AudioPlaybackRate);
-                    Media.AudioSink.GotAudioSample(decodedSample);
-                }
+                Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
             }
-            else if(mediaType == SDPMediaTypesEnum.video && Media.VideoSink != null)
+            else if (mediaType == SDPMediaTypesEnum.video && Media.VideoSink != null)
             {
                 Media.VideoSink.GotVideoRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
             }

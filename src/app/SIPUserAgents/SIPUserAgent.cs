@@ -436,10 +436,10 @@ namespace SIPSorcery.SIP.App
         {
             TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
-
             ClientCallAnswered += (uac, resp) => callResult.TrySetResult(true);
             ClientCallFailed += (uac, errorMessage, result) => callResult.TrySetResult(false);
+
+            await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
 
             return await callResult.Task.ConfigureAwait(false);
         }

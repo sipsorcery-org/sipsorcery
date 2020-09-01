@@ -373,6 +373,16 @@ namespace SIPSorcery.Net
         public event Action OnClosed;
 
         /// <summary>
+        /// Gets fired when the remote SDP is received and the set of common audio formats is set.
+        /// </summary>
+        public event Action<List<SDPMediaFormat>> OnAudioFormatsNegotiated;
+
+        /// <summary>
+        /// Gets fired when the remote SDP is received and the set of common video formats is set.
+        /// </summary>
+        public event Action<List<SDPMediaFormat>> OnVideoFormatsNegotiated;
+
+        /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
         /// pseudo random values.
         /// </summary>
@@ -541,13 +551,6 @@ namespace SIPSorcery.Net
 
             try
             {
-                // Check the obvious conditions that will prevent at least one compatible media stream 
-                // being negotiated.
-                // These two assumptions don't apply if "application" media types for WebRTC data channels are supported.
-                //if (AudioLocalTrack == null && VideoLocalTrack == null)
-                //{
-                //    return SetDescriptionResultEnum.NoLocalMedia;
-                //}
                 if (sessionDescription.Media?.Count == 0)
                 {
                     return SetDescriptionResultEnum.NoRemoteMedia;
@@ -572,10 +575,6 @@ namespace SIPSorcery.Net
                 {
                     connectionAddress = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
                 }
-                //else
-                //{
-                //    logger.LogWarning("RTP session set remote description was supplied an SDP with no connection address.");
-                //}
 
                 IPEndPoint remoteAudioRtpEP = null;
                 IPEndPoint remoteAudioRtcpEP = null;
@@ -633,6 +632,7 @@ namespace SIPSorcery.Net
                             // Check that there is at least one compatible non-"RTP Event" audio codec.
                             var audioCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats) :
                                 SDPMediaFormat.GetCompatibleFormats(audioAnnounce.MediaFormats, AudioLocalTrack.Capabilities);
+                            
                             if (audioCompatibleFormats?.Count == 0)
                             {
                                 return SetDescriptionResultEnum.AudioIncompatible;
@@ -641,11 +641,13 @@ namespace SIPSorcery.Net
                             {
                                 // Set the local audio capabilities to the common set.
                                 AudioLocalTrack.Capabilities = audioCompatibleFormats;
-                            }
 
-                            if (commonEventFormat != null)
-                            {
-                                AudioLocalTrack.Capabilities.Add(commonEventFormat);
+                                if (commonEventFormat != null)
+                                {
+                                    AudioLocalTrack.Capabilities.Add(commonEventFormat);
+                                }
+
+                                OnAudioFormatsNegotiated?.Invoke(AudioLocalTrack.Capabilities);
                             }
 
                             var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connectionAddress;
@@ -725,6 +727,7 @@ namespace SIPSorcery.Net
                             // Check that there is at least one compatible video codec.
                             var videoCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, videoAnnounce.MediaFormats) :
                                  SDPMediaFormat.GetCompatibleFormats(videoAnnounce.MediaFormats, VideoLocalTrack.Capabilities);
+
                             if (videoCompatibleFormats?.Count == 0)
                             {
                                 return SetDescriptionResultEnum.VideoIncompatible;
@@ -733,6 +736,8 @@ namespace SIPSorcery.Net
                             {
                                 // Set the local video capabilities to the common set.
                                 VideoLocalTrack.Capabilities = videoCompatibleFormats;
+
+                                OnVideoFormatsNegotiated?.Invoke(VideoLocalTrack.Capabilities);
                             }
 
                             var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connectionAddress;
@@ -774,7 +779,7 @@ namespace SIPSorcery.Net
 
                 if (AudioLocalTrack != null || VideoLocalTrack != null)
                 {
-                    AdjustLocalTracks(sdpType);
+                    AdjustLocalStreamStatus();
                 }
 
                 // If we get to here then the remote description was compatible with the local media tracks.
@@ -989,12 +994,9 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Adjust the properties of the local media tracks based on the remote tracks. The remote party
-        /// may not support both audio and video or may support different codecs. The local tracks need
-        /// to be adjusted to ensure that the choice of what to send matches what the remote party is expecting.
+        /// Adjust the stream status of the local media tracks based on the remote tracks.
         /// </summary>
-        /// <param name="remoteSdpType">Whether the remote SDP was an offer or answer.</param>
-        private void AdjustLocalTracks(SdpType remoteSdpType)
+        private void AdjustLocalStreamStatus()
         {
             if (AudioLocalTrack != null && (AudioRemoteTrack == null || AudioRemoteTrack?.StreamStatus == MediaStreamStatusEnum.Inactive))
             {
@@ -1332,7 +1334,7 @@ namespace SIPSorcery.Net
                 {
                     var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
 
-                    int audioPayloadID = Convert.ToInt32(audioFormat);
+                    int audioPayloadID = Convert.ToInt32(audioFormat.FormatID);
                     SendAudioFrame(durationRtpUnits, audioPayloadID, sample);
                 }
             }

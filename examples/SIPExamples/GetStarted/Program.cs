@@ -23,7 +23,6 @@ using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
 
 namespace demo
@@ -49,7 +48,7 @@ namespace demo
             userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
-            var windowsAudio = new WindowsAudioEndPoint();
+            var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
             var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
             

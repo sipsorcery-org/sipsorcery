@@ -27,7 +27,7 @@ using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
 
-namespace WebRTCServer
+namespace demo
 {
     public class WebRTCConnection : WebSocketBehavior
     {
@@ -103,23 +103,16 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            AudioExtrasSource audioExtras = new AudioExtrasSource();
-            AudioEncoder audioEncoder = new AudioEncoder();
-
             var pc = new RTCPeerConnection(null);
 
-            audioExtras.OnAudioSourceRawSample += (samplingRate, durationMilliseconds, sample) =>
-            {
-                var sendingFormat = pc.GetSendingFormat(SDPMediaTypesEnum.audio);
-                var encodedSample = audioEncoder.EncodeAudio(sample, sendingFormat, samplingRate);
-                uint rtpTimestampDuration = (uint)(SDPMediaFormatInfo.GetRtpClockRate(sendingFormat.FormatCodec) / 1000 * durationMilliseconds);
+            AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder());
+            audioSource.OnAudioSourceEncodedSample += (audioCodec, durationRtpUnits, sample) => pc.SendMedia(SDPMediaTypesEnum.audio, durationRtpUnits, sample);
 
-                pc.SendAudioFrame(rtpTimestampDuration, (int)sendingFormat.FormatCodec, encodedSample);
-            };
-
-            MediaStreamTrack audioTrack = new MediaStreamTrack(audioExtras.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(audioTrack);
 
+            pc.OnAudioFormatsNegotiated += (sdpFormat) =>
+                audioSource.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
             pc.OnReceiveReport += RtpSession_OnReceiveReport;
             pc.OnSendReport += RtpSession_OnSendReport;
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
@@ -131,7 +124,7 @@ namespace WebRTCServer
 
                 if(state == RTCPeerConnectionState.connected)
                 {
-                    audioExtras.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave});
+                    audioSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave});
                 }
                 else if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
@@ -139,7 +132,7 @@ namespace WebRTCServer
                 }
                 else if (state == RTCPeerConnectionState.closed)
                 {
-                    audioExtras?.CloseAudio();
+                    audioSource?.CloseAudio();
                     pc.OnReceiveReport -= RtpSession_OnReceiveReport;
                     pc.OnSendReport -= RtpSession_OnSendReport;
                 }

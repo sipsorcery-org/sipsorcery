@@ -15,8 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -25,13 +23,12 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
 
-namespace WebRTCServer
+namespace demo
 {
     public class SDPExchange : WebSocketBehavior
     {
@@ -111,13 +108,16 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), true, false);
-
             var peerConnection = new RTCPeerConnection(null);
 
+            // Sink (speaker) only audio end point.
+            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), null, true, false);
+            
             MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
 
+            peerConnection.OnAudioFormatsNegotiated += (sdpFormat) =>
+                windowsAudioEP.SetAudioSinkFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
@@ -142,7 +142,6 @@ namespace WebRTCServer
             peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
                 //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
-
                 if (media == SDPMediaTypesEnum.audio)
                 {
                     windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);

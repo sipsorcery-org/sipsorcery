@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -23,7 +22,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
@@ -31,7 +29,7 @@ using WebSocketSharp.Server;
 using SIPSorcery.Sys;
 using SIPSorcery.Media;
 
-namespace WebRTCServer
+namespace demo
 {
     public class SDPExchange : WebSocketBehavior
     {
@@ -129,13 +127,15 @@ namespace WebRTCServer
 
             var pc = new RTCPeerConnection(null);
 
-            VideoTestPatternSource testPatternSource = new VideoTestPatternSource();
-            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(new VideoSourceOptions { ExternalSource = testPatternSource });
+            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(new VideoTestPatternSource());
+
             MediaStreamTrack track = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
 
             windowsVideoEndPoint.OnVideoSourceEncodedSample += (videoFormat, dur, sample) => pc.SendMedia(SDPMediaTypesEnum.video, dur, sample);
 
+            pc.OnVideoFormatsNegotiated += (sdpFormat) =>
+                windowsVideoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
             //pc.OnReceiveReport += RtpSession_OnReceiveReport;
             //pc.OnSendReport += RtpSession_OnSendReport;
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");

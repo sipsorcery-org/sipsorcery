@@ -127,7 +127,7 @@ namespace SIPSorcery.Net
         /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
         /// send and receive or only one of.</param>
         public MediaStreamTrack(
-            List<AudioFormat> audioFormats,
+            List<AudioCodecsEnum> audioFormats,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
         {
             Kind = SDPMediaTypesEnum.audio;
@@ -143,19 +143,19 @@ namespace SIPSorcery.Net
 
                 foreach (var format in audioFormats)
                 {
-                    switch (format.Codec)
+                    switch (format)
                     {
                         case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
-                            Capabilities.Add(new SDPMediaFormat(format.PayloadID) { FormatCodec = SDPMediaFormatsEnum.PCMU });
+                            Capabilities.Add(new SDPMediaFormat(SDPMediaFormatsEnum.PCMU));
                             break;
                         case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
-                            Capabilities.Add(new SDPMediaFormat(format.PayloadID) { FormatCodec = SDPMediaFormatsEnum.PCMA });
+                            Capabilities.Add(new SDPMediaFormat(SDPMediaFormatsEnum.PCMA));
                             break;
                         case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
-                            Capabilities.Add(new SDPMediaFormat(format.PayloadID) { FormatCodec = SDPMediaFormatsEnum.G722 });
+                            Capabilities.Add(new SDPMediaFormat(SDPMediaFormatsEnum.G722));
                             break;
                         default:
-                            // Audio codec without inbuilt packetisation support. It will be up to the application
+                            // Audio codec without encoder support. It will be up to the application
                             // to package appropriately and send via SendRawRtp calls.
                             break;
                     }
@@ -170,7 +170,7 @@ namespace SIPSorcery.Net
         /// <param name="streamStatus">Optional. The stream status for the video track, e.g. whether
         /// send and receive or only one of.</param>
         public MediaStreamTrack(
-            List<VideoFormat> videoFormats,
+            List<VideoCodecsEnum> videoFormats,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
         {
             Kind = SDPMediaTypesEnum.video;
@@ -186,18 +186,16 @@ namespace SIPSorcery.Net
 
                 foreach (var format in videoFormats)
                 {
-                    switch (format.Codec)
+                    switch (format)
                     {
                         case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.VP8:
-                            Capabilities.Add(new SDPMediaFormat(format.PayloadID) { FormatCodec = SDPMediaFormatsEnum.VP8 });
+                            Capabilities.Add(new SDPMediaFormat(SDPMediaFormatsEnum.VP8));
                             break;
                         case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264:
                             Capabilities.Add(
-                                new SDPMediaFormat(format.PayloadID)
+                                new SDPMediaFormat(SDPMediaFormatsEnum.H264)
                                 {
-                                    FormatCodec = SDPMediaFormatsEnum.H264,
                                     FormatParameterAttribute = "packetization-mode=1"
-
                                 });
                             break;
                         default:

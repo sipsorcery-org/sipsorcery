@@ -116,14 +116,10 @@ namespace demo
                 }
             };
 
-            var videoSrcOpts = new VideoSourceOptions
-            {
-                ExternalSource = new VideoTestPatternSource()
-            };
-
-            var windowsAudioEndPoint = new WindowsAudioEndPoint();
             var audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioSrcOpts);
-            var windowsVideoEndPoint = new WindowsVideoEndPoint(videoSrcOpts);
+            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), audioExtrasSource);
+            var testPatternSource = new VideoTestPatternSource();
+            var windowsVideoEndPoint = new WindowsVideoEndPoint(testPatternSource);
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
@@ -132,6 +128,7 @@ namespace demo
                 VideoSink = windowsVideoEndPoint,
                 VideoSource = windowsVideoEndPoint,
             };
+
             var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
             voipMediaSession.AcceptRtpFromAny = true;
 

@@ -19,16 +19,14 @@ using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Windows.Forms;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
-using SIPSorceryMedia.FFmpeg;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
 
-namespace TestConsole
+namespace demo
 {
     public class SDPExchange : WebSocketBehavior
     {
@@ -64,8 +62,6 @@ namespace TestConsole
         private const int WEBSOCKET_PORT = 8081;
 
         private static WebSocketServer _webSocketServer;
-        private static byte[] _currVideoFrame = new byte[65536];
-        private static int _currVideoFramePosn = 0;
         private static Form _form;
         private static PictureBox _picBox;
 
@@ -133,9 +129,6 @@ namespace TestConsole
             // the codecs we support.
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
-            //MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.RecvOnly);
-            //peerConnection.addTrack(videoTrack);
-
             MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(videoTrack);
 
