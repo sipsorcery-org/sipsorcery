@@ -44,30 +44,6 @@ namespace demo
         private static Form _form;
         private static PictureBox _picBox;
 
-        //static void Main()
-        //{
-        //    Console.WriteLine("SIPSorcery Getting Started Video Call Demo");
-        //    Console.WriteLine("Press ctrl-c to exit.");
-
-        //    AddConsoleLogger();
-
-        //    Console.WriteLine($"VP8 encoder version {Vp8Codec.GetCodecVersion()}.");
-        //    Console.WriteLine($"VP8 encoder version string {Vp8Codec.GetCodecVersionStr()}.");
-
-        //    Vp8Codec vp8Codec = new Vp8Codec();
-        //    vp8Codec.InitialiseEncoder(640, 480);
-
-        //    byte[] dummyI420 = new byte[640 * 480 * 2];
-
-        //    var encoded = vp8Codec.Encode(dummyI420);
-
-        //    Console.WriteLine($"Encoded frame size {encoded.Length}.");
-
-        //    vp8Codec.Dispose();
-
-        //    Console.WriteLine("Finished.");
-        //}
-
         static void Main()
         {
             Console.WriteLine("SIPSorcery Getting Started Video Call Demo");
@@ -81,7 +57,7 @@ namespace demo
 
             EnableTraceLogs(_sipTransport);
 
-            // Open a Window to display the video feed from the WebRTC peer.
+            // Open a window to display the video feed from the remote SIP party.
             _form = new Form();
             _form.AutoSize = true;
             _form.BackgroundImageLayout = ImageLayout.Center;

@@ -105,6 +105,7 @@ namespace SIPSorcery.Media
 
         private void OnAudioSourceEncodedSample(AudioCodecsEnum audioCodec, uint durationRtpUnits, byte[] sample)
         {
+            //logger.LogDebug($"RTP audio duration {durationRtpUnits}, payload length {sample.Length} bytes.");
             base.SendMedia(SDPMediaTypesEnum.audio, durationRtpUnits, sample);
         }
 

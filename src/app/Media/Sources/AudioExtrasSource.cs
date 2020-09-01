@@ -264,6 +264,23 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
+        /// Convenience method for audio sources that don't require any options.
+        /// </summary>
+        /// <param name="audioSource">The audio source to set. The call will fail
+        /// if the source requires additional options, e.g. stream from file.</param>
+        public void SetSource(AudioSourcesEnum audioSource)
+        {
+            if(audioSource == AudioSourcesEnum.None ||
+                audioSource == AudioSourcesEnum.PinkNoise ||
+                audioSource == AudioSourcesEnum.Silence ||
+                audioSource == AudioSourcesEnum.SineWave ||
+                audioSource == AudioSourcesEnum.WhiteNoise)
+            {
+                SetSource(new AudioSourceOptions { AudioSource = audioSource });
+            }
+        }
+
+        /// <summary>
         /// Sets the source for the session. Overrides any existing source.
         /// </summary>
         /// <param name="sourceOptions">The new audio source.</param>
@@ -473,7 +490,7 @@ namespace SIPSorcery.Media
 
                     if (samplesRead > 0)
                     {
-                        //Log.LogDebug($"Audio stream reader bytes read {bytesRead}, position {_audioPcmStreamReader.BaseStream.Position}, length {_audioPcmStreamReader.BaseStream.Length}.");
+                        //Log.LogDebug($"Audio stream reader bytes read {samplesRead}, sample rate{_streamSourceSampleRate}, sending codec {_sendingFormat}.");
 
                         if (samplesRead < sample.Length)
                         {
@@ -487,7 +504,7 @@ namespace SIPSorcery.Media
 
                         //OnAudioSourceRawSample?.Invoke(_streamSourceSampleRate, AUDIO_SAMPLE_PERIOD_MILLISECONDS, sample);
                         byte[] encodedSample = _audioEncoder.EncodeAudio(sample, _sendingFormat, _streamSourceSampleRate);
-                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, (uint)sampleSize, encodedSample);
+                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, (uint)encodedSample.Length, encodedSample);
 
                         if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
                         {
