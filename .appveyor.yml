@@ -1,0 +1,30 @@
+version: 0.0.1.{build}
+image: Visual Studio 2019
+configuration: Release
+before_build:
+- cmd: nuget restore -DisableParallelProcessing src\SIPSorcery.sln
+build:
+  project: src\SIPSorceryMedia.Abstractions.sln
+  publish_nuget: true
+  publish_nuget_symbols: true
+  verbosity: quiet
+deploy:
+  - provider: NuGet
+    server:                  # remove to push to NuGet.org
+    api_key:
+      secure: MMAD8YSvIgFD6mUWB2tdEGzBNbyfW/9TeB+yN325nQ/nHJMLhv2hBYan1CU1O60z
+    skip_symbols: false
+    symbol_server:           # remove to push symbols to SymbolSource.org
+    artifact: /.*\.nupkg/
+    on:
+      # branch: master                # release from master branch only
+      APPVEYOR_REPO_TAG: true       # deploy on tag push only
+#  - provider: GitHub
+#    artifact: /.*\.nupkg/           # upload all NuGet packages to release assets
+#    draft: true
+#    prerelease: true
+#    auth_token:
+#      secure: E58r+OknoQn8+bsPRT6l3U2K4kfOpDiGCo1C75LkVg+R/RBHpY//J8UCXEfVvyRB
+#    on:
+#      branch: master                # release from master branch only
+#      APPVEYOR_REPO_TAG: true       # deploy on tag push only

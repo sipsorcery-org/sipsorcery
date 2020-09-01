@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions.V1
 {
-    public delegate void AudioEncodedSampleDelegate(AudioFormat audioFormat, uint durationRtpUnits, byte[] sample);
-    public delegate void VideoEncodedSampleDelegate(VideoFormat videoFormat, uint durationRtpUnits, byte[] sample);
+    public delegate void AudioEncodedSampleDelegate(AudioCodecsEnum audioFormat, uint durationRtpUnits, byte[] sample);
+    public delegate void VideoEncodedSampleDelegate(VideoCodecsEnum videoFormat, uint durationRtpUnits, byte[] sample);
     public delegate void RawAudioSampleDelegate(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
-    public delegate void RawVideoSampleDelegate(uint durationMilliseconds, byte[] sample);
+    public delegate void RawVideoSampleDelegate(uint durationMilliseconds, int width, int height, byte[] rgb24Sample);
     public delegate void VideoSinkSampleDecodedDelegate(byte[] bmp, uint width, uint height, int stride);
 
     public enum AudioSamplingRatesEnum
@@ -23,40 +23,37 @@ namespace SIPSorceryMedia.Abstractions.V1
         G722 = 9,
         PCMA = 8,
         OPUS = 111,
+
+        Unknown = 999,
     }
 
     public enum VideoCodecsEnum
     {
         VP8 = 100,
         H264 = 102,
+
+        Unknown = 999,
     }
 
-    public enum PixelFormatsEnum
-    {
-        RGB = 0,
-        BGR = 1,
-        I420 = 2
-    }
+    //public struct AudioFormat
+    //{
+    //    public string Name { get; set; }
+    //    public int PayloadID { get; set; }
+    //    public AudioCodecsEnum Codec { get; set; }
+    //    public AudioSamplingRatesEnum Rate { get; set; }
+    //    public int BitsPerSample { get; set; }
+    //    public Dictionary<string, string> CustomProperties { get; set; }
+    //}
 
-    public struct AudioFormat
-    {
-        public string Name { get; set; }
-        public int PayloadID { get; set; }
-        public AudioCodecsEnum Codec { get; set; }
-        public AudioSamplingRatesEnum Rate { get; set; }
-        public int BitsPerSample { get; set; }
-        public Dictionary<string, string> CustomProperties { get; set; }
-    }
-
-    public struct VideoFormat
-    {
-        public string Name { get; set; }
-        public int PayloadID { get; set; }
-        public VideoCodecsEnum Codec { get; set; }
-        public int FrameRate { get; set; }
-        public int BitsPerSample { get; set; }
-        public Dictionary<string, string> CustomProperties { get; set; }
-    }
+    //public struct VideoFormat
+    //{
+    //    public string Name { get; set; }
+    //    public int PayloadID { get; set; }
+    //    public VideoCodecsEnum Codec { get; set; }
+    //    public int FrameRate { get; set; }
+    //    public int BitsPerSample { get; set; }
+    //    public Dictionary<string, string> CustomProperties { get; set; }
+    //}
 
     public class MediaEndPoints
     {
@@ -64,6 +61,17 @@ namespace SIPSorceryMedia.Abstractions.V1
         public IAudioSink AudioSink { get; set; }
         public IVideoSource VideoSource { get; set; }
         public IVideoSink VideoSink { get; set; }
+    }
+
+    public interface IAudioEncoder
+    {
+        bool IsSupported(AudioCodecsEnum codec);
+
+        byte[] EncodeAudio(byte[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
+        
+        byte[] EncodeAudio(short[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
+     
+        byte[] DecodeAudio(byte[] encodedSample, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
     }
 
     public interface IAudioSource
@@ -80,9 +88,9 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         Task CloseAudio();
 
-        List<AudioFormat> GetAudioSourceFormats();
+        List<AudioCodecsEnum> GetAudioSourceFormats();
 
-        void SetAudioSourceFormat(AudioFormat audioFormat);
+        void SetAudioSourceFormat(AudioCodecsEnum audioFormat);
     }
 
     public interface IAudioSink
@@ -91,24 +99,18 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         AudioSamplingRatesEnum AudioPlaybackRate { get; set; }
 
-        List<AudioFormat> GetAudioSinkFormats();
+        List<AudioCodecsEnum> GetAudioSinkFormats();
 
-        void SetAudioSinkFormat(AudioFormat audioFormat);
+        void SetAudioSinkFormat(AudioCodecsEnum audioFormat);
 
         void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
-
-        void GotAudioSample(byte[] pcmSample);
     }
 
     public interface IVideoSource
     {
         event VideoEncodedSampleDelegate OnVideoSourceEncodedSample;
 
-        /// <summary>
-        /// No point enabling using this until there is at least one fully C# (no native library) codec
-        /// that can encode raw video samples.
-        /// </summary>
-        //event RawVideoSampleDelegate OnVideoSourceRawSample;
+        event RawVideoSampleDelegate OnVideoSourceRawSample;
 
         Task PauseVideo();
 
@@ -118,9 +120,9 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         Task CloseVideo();
 
-        List<VideoFormat> GetVideoSourceFormats();
+        List<VideoCodecsEnum> GetVideoSourceFormats();
 
-        void SetVideoSourceFormat(VideoFormat videoFormat);
+        void SetVideoSourceFormat(VideoCodecsEnum videoFormat);
     }
 
     public interface IVideoSink
@@ -130,14 +132,10 @@ namespace SIPSorceryMedia.Abstractions.V1
         /// </summary>
         event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
 
-        //bool EncodedSamplesOnly { get; set; }
-
         void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
 
-        //void GotVideoSample(PixelFormatsEnum pixelFormat, byte[] bmpSample);
+        List<VideoCodecsEnum> GetVideoSinkFormats();
 
-        List<VideoFormat> GetVideoSinkFormats();
-
-        void SetVideoSinkFormat(VideoFormat videoFormat);
+        void SetVideoSinkFormat(VideoCodecsEnum videoFormat);
     }
 }

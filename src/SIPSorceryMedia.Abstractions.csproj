@@ -1,7 +1,34 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net46</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
+    <Version>0.0.1-pre</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Aaron Clauson</Authors>
+    <Copyright>Copyright © 2020 Aaron Clauson</Copyright>
+    <Company>SIP Sorcery PTY LTD</Company>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <Title>SIPSorceryMedia.Abstractions</Title>
+    <Summary>A set of interfaces and common structures used for building media end points for the SIPSorcery library.</Summary>
+    <Description>
+      Don't reference this package unless you are building a media end point to work with the SIPSorcery real-time communications library. In most cases a concrete implementation
+      package such as SIPSorceryMedia.Windows should be referenced.
+    </Description>
+    <Product>SIPSorceryMedia.Abstractions</Product>
+    <PackageId>SIPSorceryMedia.Abstractions</PackageId>
+    <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Abstractions</RepositoryUrl>
+    <AssemblyVersion>0.0.1.0</AssemblyVersion>
+    <FileVersion>0.0.1.0</FileVersion>
+    <RepositoryBranch>master</RepositoryBranch>
+    <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
+    <PackageReleaseNotes>-0.0.1-pre: Initial pre-release</PackageReleaseNotes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
 
 </Project>
