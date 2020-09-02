@@ -8,7 +8,7 @@ build:
   publish_nuget: false
   verbosity: quiet
 after_build:
-  - dotnet pack src\SIPSorceryMedia.Windows.csproj -p:NuspecFile=src\SIPSorceryMedia.Windows.nuspec -c Release -o . --no-build
+  - dotnet pack src\SIPSorceryMedia.Windows.csproj -p:NuspecFile=SIPSorceryMedia.Windows.nuspec -c Release -o . --no-build
 deploy:
   - provider: NuGet
     server:                  # remove to push to NuGet.org
