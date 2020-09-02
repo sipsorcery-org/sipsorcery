@@ -11,9 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VpxCppTest", "..\test\VpxCp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenH264.AutoGen", "..\autogen\OpenH264.Autogen\OpenH264.AutoGen.csproj", "{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Abstractions", "..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj", "{FD151AC7-C111-4E3C-91D6-381233E5D9A6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VpxTest", "..\test\VpxTest\VpxTest.csproj", "{B833EFC1-D286-407A-8ADB-141A254189B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VpxTest", "..\test\VpxTest\VpxTest.csproj", "{B833EFC1-D286-407A-8ADB-141A254189B5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\sipsorcery-core\src\SIPSorcery.csproj", "{3CAAF278-8DFC-413A-8490-439129DED0D4}"
 EndProject
@@ -74,18 +72,6 @@ Global
 		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Release|x64.Build.0 = Release|x64
 		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Release|x86.ActiveCfg = Release|x86
 		{7E921C9C-9B25-4EF0-ACA9-003014D62FB7}.Release|x86.Build.0 = Release|x86
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Debug|x64.Build.0 = Debug|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Debug|x86.Build.0 = Debug|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Release|x64.ActiveCfg = Release|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Release|x64.Build.0 = Release|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Release|x86.ActiveCfg = Release|Any CPU
-		{FD151AC7-C111-4E3C-91D6-381233E5D9A6}.Release|x86.Build.0 = Release|Any CPU
 		{B833EFC1-D286-407A-8ADB-141A254189B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B833EFC1-D286-407A-8ADB-141A254189B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B833EFC1-D286-407A-8ADB-141A254189B5}.Debug|x64.ActiveCfg = Debug|Any CPU

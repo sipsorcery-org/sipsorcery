@@ -1,0 +1,29 @@
+version: {build}
+image: Visual Studio 2019
+configuration: Release
+before_build:
+- cmd: nuget restore -DisableParallelProcessing src\SIPSorceryMedia.Windows.sln
+build:
+  project: src\SIPSorceryMedia.Windows.sln
+  publish_nuget: false
+  verbosity: quiet
+after_build:
+  - dotnet pack src\SIPSorceryMedia.Windows.csproj -p:NuspecFile=src\SIPSorceryMedia.Windows.nuspec -c Release -o .
+deploy:
+  - provider: NuGet
+    server:                  # remove to push to NuGet.org
+    api_key:
+      secure: MMAD8YSvIgFD6mUWB2tdEGzBNbyfW/9TeB+yN325nQ/nHJMLhv2hBYan1CU1O60z
+    skip_symbols: false
+    symbol_server:           # remove to push symbols to SymbolSource.org
+    artifact: /.*\.nupkg/
+    on:
+      APPVEYOR_REPO_TAG: true       # deploy on tag push only
+  - provider: NuGet
+    server: https://nuget.pkg.github.com/sipsorcery/index.json
+    artifact: /.nupkg/
+    username: sipsorcery
+    api_key:
+      secure: E58r+OknoQn8+bsPRT6l3U2K4kfOpDiGCo1C75LkVg+R/RBHpY//J8UCXEfVvyRB
+    on:
+      APPVEYOR_REPO_TAG: true       # deploy on tag push only

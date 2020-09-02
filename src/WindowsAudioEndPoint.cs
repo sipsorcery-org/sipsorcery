@@ -24,7 +24,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using NAudio.Wave; // <-- Windows Specific Library.
+using NAudio.Wave;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorceryMedia.Windows
@@ -34,6 +34,7 @@ namespace SIPSorceryMedia.Windows
         private const int DEVICE_PLAYBACK_RATE = 8000;
         private const int DEVICE_BITS_PER_SAMPLE = 16;
         private const int DEVICE_CHANNELS = 1;
+        private const int INPUT_BUFFERS = 2;          // See https://github.com/sipsorcery/sipsorcery/pull/148.
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
         private const int AUDIO_INPUTDEVICE_INDEX = -1;
         private const int AUDIO_OUTPUTDEVICE_INDEX = -1;
@@ -65,6 +66,14 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         private WaveInEvent _waveInEvent;
 
+        private IAudioEncoder _audioEncoder;
+        private AudioCodecsEnum _selectedSourceFormat = AudioCodecsEnum.PCMU;
+        private AudioCodecsEnum _selectedSinkFormat = AudioCodecsEnum.PCMU;
+        private IAudioSource _externalSource;
+
+        private bool _disableSink;
+        private bool _disableSource;
+
         protected bool _isStarted;
         protected bool _isClosed;
 
@@ -78,11 +87,11 @@ namespace SIPSorceryMedia.Windows
         }
 
         /// <summary>
-        /// The audio playback device is hard coded to 8KHz.
+        /// The audio playback device sampling rate.
         /// </summary>
         public AudioSamplingRatesEnum AudioPlaybackRate
         {
-            get { return AudioSamplingRatesEnum.Rate8KHz; }
+            get { return AudioSourceSamplingRate; }
             set { }
         }
 
@@ -92,15 +101,77 @@ namespace SIPSorceryMedia.Windows
         public event AudioEncodedSampleDelegate OnAudioSourceEncodedSample;
 
         /// <summary>
-        /// This audio source supplies raw PCM samples.
+        /// This audio source DOES NOT generate raw samples. Subscribe to the encoded samples event
+        /// to get samples ready for passing to the RTP transport layer.
         /// </summary>
-        public event RawAudioSampleDelegate OnAudioSourceRawSample;
+        [Obsolete("The audio source only generates encoded samples.")]
+        public event RawAudioSampleDelegate OnAudioSourceRawSample { add { } remove { } }
 
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
-        public WindowsAudioEndPoint()
-        { }
+        /// <param name="audioEncoder">A 3rd party audio encoder that can be used to encode and decode
+        /// specific audio codecs.</param>
+        /// <param name="externalSource">Optional. An external source to use in combination with the source
+        /// provided by this end point. The application will need to signal which source is active.</param>
+        /// <param name="disableSource">Set to true to disable the use of the audio source functionality, i.e.
+        /// don't capture input from the microphone.</param>
+        /// <param name="disableSink">Set to true to disable the use of the audio sink functionality, i.e.
+        /// don't playback audio to the speaker.</param>
+        public WindowsAudioEndPoint(IAudioEncoder audioEncoder, IAudioSource externalSource = null, bool disableSource = false, bool disableSink = false)
+        {
+            _audioEncoder = audioEncoder;
+
+            _disableSource = disableSource;
+            _disableSink = disableSink;
+
+            if (externalSource != null)
+            {
+                _externalSource = externalSource;
+
+                // Pass the encoded audio sample to the RTP transport. If this class ever supported additional codecs,
+                // such as Opus, the idea would be to change to receive raw samples from the external source and then
+                // do the custom encoding before handing over to the transport.
+                _externalSource.OnAudioSourceEncodedSample += (audioFormat, durationRtpUnits, sample)
+                    => OnAudioSourceEncodedSample?.Invoke(audioFormat, durationRtpUnits, sample);
+            }
+
+            if (!_disableSink)
+            {
+                // Render device.
+                _waveOutEvent = new WaveOutEvent();
+                _waveOutEvent.DeviceNumber = AUDIO_OUTPUTDEVICE_INDEX;
+                _waveProvider = new BufferedWaveProvider(_waveFormat);
+                _waveProvider.DiscardOnBufferOverflow = true;
+                _waveOutEvent.Init(_waveProvider);
+            }
+
+            if (!_disableSource)
+            {
+                if (WaveInEvent.DeviceCount > 0)
+                {
+                    _waveInEvent = new WaveInEvent();
+                    _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                    _waveInEvent.NumberOfBuffers = INPUT_BUFFERS;
+                    _waveInEvent.DeviceNumber = AUDIO_INPUTDEVICE_INDEX;
+                    _waveInEvent.WaveFormat = _waveFormat;
+                    _waveInEvent.DataAvailable += LocalAudioSampleAvailable;
+                }
+                else
+                {
+                    throw new ApplicationException("No audio capture devices are available.");
+                }
+            }
+        }
+
+        public MediaEndPoints ToMediaEndPoints()
+        {
+            return new MediaEndPoints
+            {
+                AudioSource = (_disableSource) ? null : this,
+                AudioSink = (_disableSink) ? null : this,
+            };
+        }
 
         /// <summary>
         /// Starts the media capturing/source devices.
@@ -110,52 +181,11 @@ namespace SIPSorceryMedia.Windows
             if (!_isStarted)
             {
                 _isStarted = true;
-
-                // Render device.
-                _waveOutEvent = new WaveOutEvent();
-                _waveOutEvent.DeviceNumber = AUDIO_OUTPUTDEVICE_INDEX;
-                _waveProvider = new BufferedWaveProvider(_waveFormat);
-                _waveProvider.DiscardOnBufferOverflow = true;
-                _waveOutEvent.Init(_waveProvider);
-                _waveOutEvent.Play();
-
-                // Audio source.
-                if (WaveInEvent.DeviceCount > 0)
-                {
-                    _waveInEvent = new WaveInEvent();
-                    _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
-                    _waveInEvent.NumberOfBuffers = 1;
-                    _waveInEvent.DeviceNumber = AUDIO_INPUTDEVICE_INDEX;
-                    _waveInEvent.WaveFormat = _waveFormat;
-                    _waveInEvent.DataAvailable += LocalAudioSampleAvailable;
-
-                    _waveInEvent.StartRecording();
-                }
-                else
-                {
-                    throw new ApplicationException("No audio capture devices are available. No audio stream will be sent.");
-                }
+                _waveOutEvent?.Play();
+                _waveInEvent?.StartRecording();
             }
 
             return Task.CompletedTask;
-        }
-
-        public MediaEndPoints ToMediaEndPoints()
-        {
-            return new MediaEndPoints
-            {
-                AudioSource = this,
-                AudioSink = this
-            };
-        }
-
-        /// <summary>
-        /// Event handler for audio sample being supplied by local capture device.
-        /// </summary>
-        private void LocalAudioSampleAvailable(object sender, WaveInEventArgs args)
-        {
-            WaveBuffer wavBuffer = new WaveBuffer(args.Buffer.Take(args.BytesRecorded).ToArray());
-            OnAudioSourceRawSample?.Invoke(AudioSourceSamplingRate, AUDIO_SAMPLE_PERIOD_MILLISECONDS, wavBuffer.ShortBuffer);
         }
 
         /// <summary>
@@ -169,7 +199,7 @@ namespace SIPSorceryMedia.Windows
 
                 _waveOutEvent?.Stop();
 
-                if(_waveInEvent != null)
+                if (_waveInEvent != null)
                 {
                     _waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
                     _waveInEvent.StopRecording();
@@ -191,36 +221,46 @@ namespace SIPSorceryMedia.Windows
             return Task.CompletedTask;
         }
 
-        public List<AudioFormat> GetAudioSourceFormats()
+        /// <summary>
+        /// Event handler for audio sample being supplied by local capture device.
+        /// </summary>
+        private void LocalAudioSampleAvailable(object sender, WaveInEventArgs args)
         {
-            var formats = new List<AudioFormat>{
-                new AudioFormat { Codec = AudioCodecsEnum.PCMU, PayloadID = (int)AudioCodecsEnum.PCMU },
-                new AudioFormat { Codec = AudioCodecsEnum.PCMA, PayloadID = (int)AudioCodecsEnum.PCMA },
-                new AudioFormat { Codec = AudioCodecsEnum.G722, PayloadID = (int)AudioCodecsEnum.G722 } };
+            //WaveBuffer wavBuffer = new WaveBuffer(args.Buffer.Take(args.BytesRecorded).ToArray());
+            //byte[] encodedSample = _audioEncoder.EncodeAudio(wavBuffer.ShortBuffer, _selectedSourceFormat, AudioSourceSamplingRate);
+            byte[] encodedSample = _audioEncoder.EncodeAudio(args.Buffer.Take(args.BytesRecorded).ToArray(), _selectedSourceFormat, AudioSourceSamplingRate);
+            OnAudioSourceEncodedSample?.Invoke(_selectedSourceFormat, (uint)encodedSample.Length, encodedSample);
+        }
+
+        public List<AudioCodecsEnum> GetAudioSourceFormats()
+        {
+            var formats = new List<AudioCodecsEnum>{
+                AudioCodecsEnum.PCMU,
+                AudioCodecsEnum.PCMA,
+                AudioCodecsEnum.G722};
 
             return formats;
         }
 
-        public void SetAudioSourceFormat(AudioFormat audioFormat)
+        public void SetAudioSourceFormat(AudioCodecsEnum audioFormat)
         {
-            //_selectedAudioFormat = audioFormat;
+            _selectedSourceFormat = audioFormat;
+            _externalSource?.SetAudioSourceFormat(audioFormat);
         }
 
-        /// <summary>
-        /// The sink only supports decoded PCM samples.
-        /// </summary>
-        /// <returns>Null.</returns>
-        public List<AudioFormat> GetAudioSinkFormats()
+        public List<AudioCodecsEnum> GetAudioSinkFormats()
         {
-            return null;
+            var formats = new List<AudioCodecsEnum>{
+               AudioCodecsEnum.PCMU,
+               AudioCodecsEnum.PCMA,
+               AudioCodecsEnum.G722};
+
+            return formats;
         }
 
-        /// <summary>
-        /// Not used. This sink only accepts raw PCM samples.
-        /// </summary>
-        public void SetAudioSinkFormat(AudioFormat audioFormat)
+        public void SetAudioSinkFormat(AudioCodecsEnum audioFormat)
         {
-            throw new System.NotImplementedException("WindowsAudioSession does not support encoded samples. Audio sink format cannot be set.");
+            _selectedSinkFormat = audioFormat;
         }
 
         /// <summary>
@@ -229,12 +269,19 @@ namespace SIPSorceryMedia.Windows
         /// <param name="pcmSample">Raw PCM sample from remote party.</param>
         public void GotAudioSample(byte[] pcmSample)
         {
-            _waveProvider?.AddSamples(pcmSample, 0, pcmSample.Length);
+            if (_waveProvider != null)
+            {
+                _waveProvider.AddSamples(pcmSample, 0, pcmSample.Length);
+            }
         }
 
         public void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
         {
-            throw new System.NotImplementedException("WindowsAudioSession does not support encoded samples. Raw RTP packets cannot be processed.");
+            if (_waveProvider != null && _audioEncoder != null && _audioEncoder.IsSupported(_selectedSinkFormat))
+            {
+                var pcmSample = _audioEncoder.DecodeAudio(payload, _selectedSinkFormat, AudioPlaybackRate);
+                _waveProvider?.AddSamples(pcmSample, 0, pcmSample.Length);
+            }
         }
     }
 }
