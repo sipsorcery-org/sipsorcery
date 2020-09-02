@@ -56,7 +56,7 @@ The simplest possible example to place an audio-only SIP call is shown below. Th
 dotnet new console --name SIPGetStarted
 cd SIPGetStarted
 dotnet add package SIPSorcery -v 4.0.61-pre
-dotnet add package SIPSorceryMedia -v 4.0.61-pre
+dotnet add package SIPSorceryMedia -v 4.0.60-pre
 code . # If you have Visual Studio Code https://code.visualstudio.com installed.
 # edit Program.cs and paste in the contents below.
 dotnet run
@@ -115,7 +115,7 @@ If you are familiar with the [WebRTC javascript API](https://www.w3.org/TR/webrt
 ````bash
 dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
-dotnet add package SIPSorcery -v 4.0.60-pre
+dotnet add package SIPSorcery -v 4.0.61-pre
 dotnet add package SIPSorceryMedia -v 4.0.60-pre
 code . # If you have Visual Studio Code (https://code.visualstudio.com) installed
 # edit Program.cs and paste in the contents below.
