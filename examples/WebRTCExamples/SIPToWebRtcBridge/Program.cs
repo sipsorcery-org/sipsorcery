@@ -153,7 +153,7 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
+                        rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.None }, null);
                         await userAgent.Answer(incomingCall, rtpAVSession);
                         rtpAVSession.OnRtpPacketReceived += (ep, mediaType, rtpPacket) => ForwardMedia(mediaType, rtpPacket);
 

@@ -58,7 +58,7 @@ namespace demo
 
     class Program
     {
-        private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
+        //private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
 
         private static WebSocketServer _webSocketServer;
@@ -77,9 +77,9 @@ namespace demo
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
-            _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, false);
+            //_webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
+            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
                 sdpExchanger.WebSocketOpened += WebSocketOpened;
