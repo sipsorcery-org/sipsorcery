@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
+    <PackageId>SIPSorceryMedia.Abstractions</PackageId>
+    <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Aaron Clauson</Authors>
     <Copyright>Copyright © 2020 Aaron Clauson</Copyright>
@@ -14,17 +15,16 @@
       package such as SIPSorceryMedia.Windows should be referenced.
     </Description>
     <Product>SIPSorceryMedia.Abstractions</Product>
-    <PackageId>SIPSorceryMedia.Abstractions</PackageId>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Abstractions</RepositoryUrl>
-    <Version>0.0.4-pre</Version>
-    <AssemblyVersion>0.0.4.0</AssemblyVersion>
-    <FileVersion>0.0.4.0</FileVersion>
+    <Version>0.0.5-pre</Version>
+    <AssemblyVersion>0.0.5.0</AssemblyVersion>
+    <FileVersion>0.0.5.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
-    <PackageReleaseNotes>-0.0.1-pre: Initial pre-release</PackageReleaseNotes>
+    <PackageReleaseNotes>-0.0.5-pre: Initial pre-release</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
