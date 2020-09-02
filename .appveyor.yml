@@ -2,9 +2,9 @@ version: 1.{build}
 image: Visual Studio 2019
 configuration: Release
 before_build:
-- cmd: nuget restore -DisableParallelProcessing src\SIPSorceryMedia.Windows.sln
+- cmd: nuget restore -DisableParallelProcessing src\SIPSorceryMedia.Windows.csproj
 build:
-  project: src\SIPSorceryMedia.Windows.sln
+  project: src\SIPSorceryMedia.Windows.csproj
   publish_nuget: false
   verbosity: quiet
 after_build:
