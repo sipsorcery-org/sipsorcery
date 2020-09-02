@@ -11,12 +11,13 @@
 	<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
 	<icon>icon.png</icon>
     <projectUrl>https://github.com/sipsorcery/SIPSorceryMedia.Windows</projectUrl>
+	<repository type="git" url="https://github.com/sipsorcery/SIPSorceryMedia.Windows" branch="master" />
 	<tags>WebRTC VoIP SIPSorcery Media Windows</tags>
 	<dependencies>
       <group targetFramework="netstandard2.0" />
     </dependencies>
-	<releaseNotes>-0.0.7-pre: Initial pre-release</releaseNotes>
-	<version>0.0.7-pre</version>
+	<releaseNotes>-0.0.8-pre: Initial pre-release</releaseNotes>
+	<version>0.0.8-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
