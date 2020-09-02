@@ -15,8 +15,8 @@
 	<dependencies>
       <group targetFramework="netstandard2.0" />
     </dependencies>
-	<releaseNotes>-0.0.6-pre: Initial pre-release</releaseNotes>
-	<version>0.0.6-pre</version>
+	<releaseNotes>-0.0.7-pre: Initial pre-release</releaseNotes>
+	<version>0.0.7-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
