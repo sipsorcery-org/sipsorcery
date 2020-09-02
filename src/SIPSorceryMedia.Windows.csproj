@@ -14,7 +14,7 @@
     </PackageReference>
     <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.4-pre" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.5-pre" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
