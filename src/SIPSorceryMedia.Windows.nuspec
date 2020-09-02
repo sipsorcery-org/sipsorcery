@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
   <metadata>
+    <id>SIPSorceryMedia.Windows</id>
     <authors>Aaron Clauson</authors>
     <copyright>Copyright © 2020 Aaron Clauson</copyright>
     <license type="expression">BSD-3-Clause</license>
     <title>SIPSorceryMedia.Windows</title>
-    <summary></summary>
+    <summary>Windows specific media end points for real-time communications.</summary>
 	<description>Provides Windows specific audio and video media end points that can be used with the main SIPSorcery real-time communications library.</description>
-    <id>SIPSorceryMedia.Windows</id>
 	<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
 	<icon>icon.png</icon>
     <projectUrl>https://github.com/sipsorcery/SIPSorceryMedia.Windows</projectUrl>
-    <version>0.0.1-pre</version>
+	<tags>WebRTC VoIP SIPSorcery Media Windows</tags>
 	<dependencies>
       <group targetFramework="netstandard2.0" />
     </dependencies>
+	<releaseNotes>-0.0.2-pre: Initial pre-release</releaseNotes>
+	<version>0.0.2-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />

@@ -42,35 +42,6 @@
     </None>
   </ItemGroup>
 
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Aaron Clauson</Authors>
-    <Copyright>Copyright © 2020 Aaron Clauson</Copyright>
-    <Company>SIP Sorcery PTY LTD</Company>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
-    <Title>SIPSorceryMedia.Windows</Title>
-    <Summary></Summary>
-    <Description>Provides Windows specific audio and video media end points that can be used with the main SIPSorcery real-time communications library.
-    </Description>
-    <Product>SIPSorceryMedia.Windows</Product>
-    <PackageId>SIPSorceryMedia.Windows</PackageId>
-    <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageProjectUrl></PackageProjectUrl>
-    <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Windows</RepositoryUrl>
-    <Version>0.0.1-pre</Version>
-    <AssemblyVersion>0.0.1.0</AssemblyVersion>
-    <FileVersion>0.0.1.0</FileVersion>
-    <RepositoryBranch>master</RepositoryBranch>
-    <PackageTags>WebRTC VoIP SIPSorcery Media Windows</PackageTags>
-    <PackageReleaseNotes>-0.0.1-pre: Initial pre-release</PackageReleaseNotes>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="icon.png" Pack="true" PackagePath="" />
-  </ItemGroup>
-
   <!--<PropertyGroup>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
