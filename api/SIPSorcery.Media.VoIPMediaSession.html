@@ -1,0 +1,549 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class VoIPMediaSession
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class VoIPMediaSession
+   ">
+    <meta name="generator" content="docfx 2.56.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Media.VoIPMediaSession">
+  
+  
+  <h1 id="SIPSorcery_Media_VoIPMediaSession" data-uid="SIPSorcery.Media.VoIPMediaSession" class="text-break">Class VoIPMediaSession
+  </h1>
+  <div class="markdown level0 summary"><p>This class serves as a bridge, or mapping, between the media end points, typically
+provided by a separate package, and a media session. Its goal is to wire up the
+sources and sinks from the media end point to the transport functions provided
+by an RTP session.</p>
+<p>For audio end points it will also attempt to encode and decode formats that the
+inbuilt C# encoder class understands. The encoder can be turned off if an
+application wishes to do its own audio encoding.</p>
+<p>For video end points there are no C# encoders available so the application must
+always co-ordinate the encoding and decoding of samples sent to and received from
+the RTP transport.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.Net.RTPSession.html">RTPSession</a></div>
+    <div class="level2"><span class="xref">VoIPMediaSession</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IDisposable</span></div>
+    <div><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SRTP_MAX_PREFIX_LENGTH">RTPSession.SRTP_MAX_PREFIX_LENGTH</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_H264_RTP_HEADER_LENGTH">RTPSession.H264_RTP_HEADER_LENGTH</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS">RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DEFAULT_MEDIA_TYPE">RTPSession.DEFAULT_MEDIA_TYPE</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DEFAULT_DTMF_EVENT_PAYLOAD_ID">RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_MEDIA_PROFILE">RTPSession.RTP_MEDIA_PROFILE</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DTMF_EVENT_DURATION">RTPSession.DTMF_EVENT_DURATION</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DTMF_EVENT_PAYLOAD_ID">RTPSession.DTMF_EVENT_PAYLOAD_ID</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioLocalTrack">RTPSession.AudioLocalTrack</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioRemoteTrack">RTPSession.AudioRemoteTrack</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioRtcpSession">RTPSession.AudioRtcpSession</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoLocalTrack">RTPSession.VideoLocalTrack</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoRemoteTrack">RTPSession.VideoRemoteTrack</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoRtcpSession">RTPSession.VideoRtcpSession</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteDescription">RTPSession.RemoteDescription</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecure">RTPSession.IsSecure</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecureContextReady">RTPSession.IsSecureContextReady</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioDestinationEndPoint">RTPSession.AudioDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioControlDestinationEndPoint">RTPSession.AudioControlDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoDestinationEndPoint">RTPSession.VideoDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoControlDestinationEndPoint">RTPSession.VideoControlDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteRtpEventPayloadID">RTPSession.RemoteRtpEventPayloadID</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsClosed">RTPSession.IsClosed</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsStarted">RTPSession.IsStarted</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_HasAudio">RTPSession.HasAudio</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_HasVideo">RTPSession.HasVideo</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AcceptRtpFromAny">RTPSession.AcceptRtpFromAny</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpPacketReceived">RTPSession.OnRtpPacketReceived</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpEvent">RTPSession.OnRtpEvent</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpClosed">RTPSession.OnRtpClosed</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtcpBye">RTPSession.OnRtcpBye</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnTimeout">RTPSession.OnTimeout</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceiveReport">RTPSession.OnReceiveReport</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnSendReport">RTPSession.OnSendReport</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnStarted">RTPSession.OnStarted</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnClosed">RTPSession.OnClosed</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnAudioFormatsNegotiated">RTPSession.OnAudioFormatsNegotiated</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFormatsNegotiated">RTPSession.OnVideoFormatsNegotiated</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack">RTPSession.addSingleTrack()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addTrack_SIPSorcery_Net_MediaStreamTrack_">RTPSession.addTrack(MediaStreamTrack)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateOffer_System_Net_IPAddress_">RTPSession.CreateOffer(IPAddress)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateAnswer_System_Net_IPAddress_">RTPSession.CreateAnswer(IPAddress)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetRemoteDescription_SIPSorcery_SIP_App_SdpType_SIPSorcery_Net_SDP_">RTPSession.SetRemoteDescription(SdpType, SDP)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetMediaStreamStatus_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_MediaStreamStatusEnum_">RTPSession.SetMediaStreamStatus(SDPMediaTypesEnum, MediaStreamStatusEnum)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.GetRtpChannel(SDPMediaTypesEnum)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.CreateRtpChannel(SDPMediaTypesEnum)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_">RTPSession.SetSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetLocalTracks">RTPSession.GetLocalTracks()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_System_Net_IPEndPoint_System_Net_IPEndPoint_">RTPSession.SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetSendingFormat_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.GetSendingFormat(SDPMediaTypesEnum)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___">RTPSession.SendMedia(SDPMediaTypesEnum, UInt32, Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendAudioFrame(UInt32, Int32, Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendVp8Frame(UInt32, Int32, Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendJpegFrame_System_UInt32_System_Int32_System_Byte___System_Int32_System_Int32_System_Int32_">RTPSession.SendJpegFrame(UInt32, Int32, Byte[], Int32, Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendH264Frame(UInt32, Int32, Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_System_Threading_CancellationToken_">RTPSession.SendDtmf(Byte, CancellationToken)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_">RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtpRaw_SIPSorcery_Net_SDPMediaTypesEnum_System_Byte___System_UInt32_System_Int32_System_Int32_">RTPSession.SendRtpRaw(SDPMediaTypesEnum, Byte[], UInt32, Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpFeedback_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTCPFeedback_">RTPSession.SendRtcpFeedback(SDPMediaTypesEnum, RTCPFeedback)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceive_System_Int32_System_Net_IPEndPoint_System_Byte___">RTPSession.OnReceive(Int32, IPEndPoint, Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Dispose_System_Boolean_">RTPSession.Dispose(Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Dispose">RTPSession.Dispose()</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Media.html">SIPSorcery.Media</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Media_VoIPMediaSession_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class VoIPMediaSession : RTPSession, IDisposable, IMediaSession</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession__ctor_SIPSorceryMedia_Abstractions_V1_MediaEndPoints_System_Net_IPAddress_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.%23ctor(SIPSorceryMedia.Abstractions.V1.MediaEndPoints%2CSystem.Net.IPAddress%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L33">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_VoIPMediaSession__ctor_" data-uid="SIPSorcery.Media.VoIPMediaSession.#ctor*"></a>
+  <h4 id="SIPSorcery_Media_VoIPMediaSession__ctor_SIPSorceryMedia_Abstractions_V1_MediaEndPoints_System_Net_IPAddress_System_Int32_" data-uid="SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorceryMedia.Abstractions.V1.MediaEndPoints,System.Net.IPAddress,System.Int32)">VoIPMediaSession(MediaEndPoints, IPAddress, Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public VoIPMediaSession(MediaEndPoints mediaEndPoint, IPAddress bindAddress = null, int bindPort = 0)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.MediaEndPoints</span></td>
+        <td><span class="parametername">mediaEndPoint</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="parametername">bindAddress</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">bindPort</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession_Media.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.Media%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L31">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_VoIPMediaSession_Media_" data-uid="SIPSorcery.Media.VoIPMediaSession.Media*"></a>
+  <h4 id="SIPSorcery_Media_VoIPMediaSession_Media" data-uid="SIPSorcery.Media.VoIPMediaSession.Media">Media</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public MediaEndPoints Media { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.MediaEndPoints</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L96">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_VoIPMediaSession_Close_" data-uid="SIPSorcery.Media.VoIPMediaSession.Close*"></a>
+  <h4 id="SIPSorcery_Media_VoIPMediaSession_Close_System_String_" data-uid="SIPSorcery.Media.VoIPMediaSession.Close(System.String)">Close(String)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void Close(string reason)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">reason</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Close_System_String_">RTPSession.Close(String)</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession_RtpMediaPacketReceived_System_Net_IPEndPoint_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTPPacket_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.RtpMediaPacketReceived(System.Net.IPEndPoint%2CSIPSorcery.Net.SDPMediaTypesEnum%2CSIPSorcery.Net.RTPPacket)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L117">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_VoIPMediaSession_RtpMediaPacketReceived_" data-uid="SIPSorcery.Media.VoIPMediaSession.RtpMediaPacketReceived*"></a>
+  <h4 id="SIPSorcery_Media_VoIPMediaSession_RtpMediaPacketReceived_System_Net_IPEndPoint_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTPPacket_" data-uid="SIPSorcery.Media.VoIPMediaSession.RtpMediaPacketReceived(System.Net.IPEndPoint,SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.RTPPacket)">RtpMediaPacketReceived(IPEndPoint, SDPMediaTypesEnum, RTPPacket)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void RtpMediaPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">remoteEndPoint</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
+        <td><span class="parametername">mediaType</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a></td>
+        <td><span class="parametername">rtpPacket</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession_Start.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.Start%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L86">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_VoIPMediaSession_Start_" data-uid="SIPSorcery.Media.VoIPMediaSession.Start*"></a>
+  <h4 id="SIPSorcery_Media_VoIPMediaSession_Start" data-uid="SIPSorcery.Media.VoIPMediaSession.Start">Start()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override Task Start()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Start">RTPSession.Start()</a></div>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IDisposable</span>
+  </div>
+  <div>
+      <a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L27" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

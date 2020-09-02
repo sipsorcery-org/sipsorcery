@@ -168,6 +168,9 @@
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_HasVideo">RTPSession.HasVideo</a>
     </div>
     <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AcceptRtpFromAny">RTPSession.AcceptRtpFromAny</a>
+    </div>
+    <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpPacketReceived">RTPSession.OnRtpPacketReceived</a>
     </div>
     <div>
@@ -189,6 +192,18 @@
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnSendReport">RTPSession.OnSendReport</a>
     </div>
     <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnStarted">RTPSession.OnStarted</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnClosed">RTPSession.OnClosed</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnAudioFormatsNegotiated">RTPSession.OnAudioFormatsNegotiated</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFormatsNegotiated">RTPSession.OnVideoFormatsNegotiated</a>
+    </div>
+    <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack">RTPSession.addSingleTrack()</a>
     </div>
     <div>
@@ -199,12 +214,6 @@
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetMediaStreamStatus_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_MediaStreamStatusEnum_">RTPSession.SetMediaStreamStatus(SDPMediaTypesEnum, MediaStreamStatusEnum)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_getSenders">RTPSession.getSenders()</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_getReceivers">RTPSession.getReceivers()</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.GetRtpChannel(SDPMediaTypesEnum)</a>
@@ -223,6 +232,9 @@
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetSendingFormat_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.GetSendingFormat(SDPMediaTypesEnum)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___">RTPSession.SendMedia(SDPMediaTypesEnum, UInt32, Byte[])</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendAudioFrame(UInt32, Int32, Byte[])</a>
@@ -934,7 +946,7 @@ that the certificate supplied during the DTLS handshake matches.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_addIceCandidate_SIPSorcery_Net_RTCIceCandidateInit_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.addIceCandidate(SIPSorcery.Net.RTCIceCandidateInit)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1066">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1055">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_addIceCandidate_" data-uid="SIPSorcery.Net.RTCPeerConnection.addIceCandidate*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_addIceCandidate_SIPSorcery_Net_RTCIceCandidateInit_" data-uid="SIPSorcery.Net.RTCPeerConnection.addIceCandidate(SIPSorcery.Net.RTCIceCandidateInit)">addIceCandidate(RTCIceCandidateInit)</h4>
@@ -968,7 +980,7 @@ that the certificate supplied during the DTLS handshake matches.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_close.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L738">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L727">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_close_" data-uid="SIPSorcery.Net.RTCPeerConnection.close*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_close" data-uid="SIPSorcery.Net.RTCPeerConnection.close">close()</h4>
@@ -984,7 +996,7 @@ that the certificate supplied during the DTLS handshake matches.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L718">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L707">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_Close_" data-uid="SIPSorcery.Net.RTCPeerConnection.Close*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_Close_System_String_" data-uid="SIPSorcery.Net.RTCPeerConnection.Close(System.String)">Close(String)</h4>
@@ -1020,7 +1032,7 @@ that the certificate supplied during the DTLS handshake matches.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_createAnswer_SIPSorcery_Net_RTCAnswerOptions_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.createAnswer(SIPSorcery.Net.RTCAnswerOptions)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L809">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L798">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_createAnswer_" data-uid="SIPSorcery.Net.RTCPeerConnection.createAnswer*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_createAnswer_SIPSorcery_Net_RTCAnswerOptions_" data-uid="SIPSorcery.Net.RTCPeerConnection.createAnswer(SIPSorcery.Net.RTCAnswerOptions)">createAnswer(RTCAnswerOptions)</h4>
@@ -1074,7 +1086,7 @@ controls over the generated answer SDP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_CreateAnswer_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.CreateAnswer(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L788">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L777">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_CreateAnswer_" data-uid="SIPSorcery.Net.RTCPeerConnection.CreateAnswer*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_CreateAnswer_System_Net_IPAddress_" data-uid="SIPSorcery.Net.RTCPeerConnection.CreateAnswer(System.Net.IPAddress)">CreateAnswer(IPAddress)</h4>
@@ -1127,7 +1139,7 @@ TODO: Consolidate with createAnswer.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_createDataChannel_System_String_SIPSorcery_Net_RTCDataChannelInit_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.createDataChannel(System.String%2CSIPSorcery.Net.RTCDataChannelInit)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1112">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1101">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_createDataChannel_" data-uid="SIPSorcery.Net.RTCPeerConnection.createDataChannel*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_createDataChannel_System_String_SIPSorcery_Net_RTCDataChannelInit_" data-uid="SIPSorcery.Net.RTCPeerConnection.createDataChannel(System.String,SIPSorcery.Net.RTCDataChannelInit)">createDataChannel(String, RTCDataChannelInit)</h4>
@@ -1182,7 +1194,7 @@ TODO: Consolidate with createAnswer.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_createOffer_SIPSorcery_Net_RTCOfferOptions_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.createOffer(SIPSorcery.Net.RTCOfferOptions)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L751">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L740">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_createOffer_" data-uid="SIPSorcery.Net.RTCPeerConnection.createOffer*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_createOffer_SIPSorcery_Net_RTCOfferOptions_" data-uid="SIPSorcery.Net.RTCPeerConnection.createOffer(SIPSorcery.Net.RTCOfferOptions)">createOffer(RTCOfferOptions)</h4>
@@ -1235,7 +1247,7 @@ controls over the generated offer SDP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_CreateRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L507">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L519">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_CreateRtpChannel_" data-uid="SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_CreateRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_" data-uid="SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)">CreateRtpChannel(SDPMediaTypesEnum)</h4>
@@ -1288,7 +1300,7 @@ packets) for use with this session.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_Dispose.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.Dispose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1257">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1246">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_Dispose_" data-uid="SIPSorcery.Net.RTCPeerConnection.Dispose*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_Dispose" data-uid="SIPSorcery.Net.RTCPeerConnection.Dispose">Dispose()</h4>
@@ -1306,7 +1318,7 @@ packets) for use with this session.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_Dispose_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.Dispose(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1249">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1238">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_Dispose_" data-uid="SIPSorcery.Net.RTCPeerConnection.Dispose*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_Dispose_System_Boolean_" data-uid="SIPSorcery.Net.RTCPeerConnection.Dispose(System.Boolean)">Dispose(Boolean)</h4>
@@ -1341,7 +1353,7 @@ packets) for use with this session.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_getConfiguration.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.getConfiguration%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1093">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1082">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_getConfiguration_" data-uid="SIPSorcery.Net.RTCPeerConnection.getConfiguration*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_getConfiguration" data-uid="SIPSorcery.Net.RTCPeerConnection.getConfiguration">getConfiguration()</h4>
@@ -1374,7 +1386,7 @@ with.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_GetRtpChannel.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.GetRtpChannel%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L865">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L854">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_GetRtpChannel_" data-uid="SIPSorcery.Net.RTCPeerConnection.GetRtpChannel*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_GetRtpChannel" data-uid="SIPSorcery.Net.RTCPeerConnection.GetRtpChannel">GetRtpChannel()</h4>
@@ -1407,7 +1419,7 @@ Audio and video (and RTCP) are all multiplexed on the same channel.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_restartIce.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.restartIce%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1083">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1072">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_restartIce_" data-uid="SIPSorcery.Net.RTCPeerConnection.restartIce*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_restartIce" data-uid="SIPSorcery.Net.RTCPeerConnection.restartIce">restartIce()</h4>
@@ -1420,56 +1432,10 @@ Audio and video (and RTCP) are all multiplexed on the same channel.</p>
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L697">View Source</a>
-  </span>
-  <a id="SIPSorcery_Net_RTCPeerConnection_SendMedia_" data-uid="SIPSorcery.Net.RTCPeerConnection.SendMedia*"></a>
-  <h4 id="SIPSorcery_Net_RTCPeerConnection_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___" data-uid="SIPSorcery.Net.RTCPeerConnection.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum,System.UInt32,System.Byte[])">SendMedia(SDPMediaTypesEnum, UInt32, Byte[])</h4>
-  <div class="markdown level1 summary"><p>Send a media sample to the remote party.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
-        <td><span class="parametername">mediaType</span></td>
-        <td><p>Whether the sample is audio or video.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.UInt32</span></td>
-        <td><span class="parametername">sampleTimestamp</span></td>
-        <td><p>The RTP timestamp for the sample.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Byte</span>[]</td>
-        <td><span class="parametername">sample</span></td>
-        <td><p>The sample payload.</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_setConfiguration_SIPSorcery_Net_RTCConfiguration_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.setConfiguration(SIPSorcery.Net.RTCConfiguration)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1102">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L1091">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_setConfiguration_" data-uid="SIPSorcery.Net.RTCPeerConnection.setConfiguration*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_setConfiguration_SIPSorcery_Net_RTCConfiguration_" data-uid="SIPSorcery.Net.RTCPeerConnection.setConfiguration(SIPSorcery.Net.RTCConfiguration)">setConfiguration(RTCConfiguration)</h4>
@@ -1503,7 +1469,7 @@ connection has been initialised.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_setLocalDescription_SIPSorcery_Net_RTCSessionDescriptionInit_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.setLocalDescription(SIPSorcery.Net.RTCSessionDescriptionInit)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L534">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L546">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_setLocalDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.setLocalDescription*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_setLocalDescription_SIPSorcery_Net_RTCSessionDescriptionInit_" data-uid="SIPSorcery.Net.RTCPeerConnection.setLocalDescription(SIPSorcery.Net.RTCSessionDescriptionInit)">setLocalDescription(RTCSessionDescriptionInit)</h4>
@@ -1554,7 +1520,7 @@ connection has been initialised.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_SetRemoteCredentials_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.SetRemoteCredentials(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L855">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L844">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_SetRemoteCredentials_" data-uid="SIPSorcery.Net.RTCPeerConnection.SetRemoteCredentials*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_SetRemoteCredentials_System_String_System_String_" data-uid="SIPSorcery.Net.RTCPeerConnection.SetRemoteCredentials(System.String,System.String)">SetRemoteCredentials(String, String)</h4>
@@ -1596,7 +1562,7 @@ diagnostics purposes.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_setRemoteDescription_SIPSorcery_Net_RTCSessionDescriptionInit_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.setRemoteDescription(SIPSorcery.Net.RTCSessionDescriptionInit)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L582">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L594">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_setRemoteDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.setRemoteDescription*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_setRemoteDescription_SIPSorcery_Net_RTCSessionDescriptionInit_" data-uid="SIPSorcery.Net.RTCPeerConnection.setRemoteDescription(SIPSorcery.Net.RTCSessionDescriptionInit)">setRemoteDescription(RTCSessionDescriptionInit)</h4>
@@ -1650,7 +1616,7 @@ If they are not available there's no point carrying on.</li>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_SetRemoteDescription_SIPSorcery_SIP_App_SdpType_SIPSorcery_Net_SDP_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.SetRemoteDescription(SIPSorcery.SIP.App.SdpType%2CSIPSorcery.Net.SDP)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L563">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L575">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPeerConnection_SetRemoteDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.SetRemoteDescription*"></a>
   <h4 id="SIPSorcery_Net_RTCPeerConnection_SetRemoteDescription_SIPSorcery_SIP_App_SdpType_SIPSorcery_Net_SDP_" data-uid="SIPSorcery.Net.RTCPeerConnection.SetRemoteDescription(SIPSorcery.SIP.App.SdpType,SIPSorcery.Net.SDP)">SetRemoteDescription(SdpType, SDP)</h4>

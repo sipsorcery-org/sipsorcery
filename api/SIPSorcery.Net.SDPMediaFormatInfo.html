@@ -114,6 +114,56 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPMediaFormatInfo_GetAudioCodecForSdpFormat_SIPSorcery_Net_SDPMediaFormatsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPMediaFormat.cs/#L128">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPMediaFormatInfo_GetAudioCodecForSdpFormat_" data-uid="SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat*"></a>
+  <h4 id="SIPSorcery_Net_SDPMediaFormatInfo_GetAudioCodecForSdpFormat_SIPSorcery_Net_SDPMediaFormatsEnum_" data-uid="SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)">GetAudioCodecForSdpFormat(SDPMediaFormatsEnum)</h4>
+  <div class="markdown level1 summary"><p>Maps an audio SDP media type to an audio codec.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static AudioCodecsEnum GetAudioCodecForSdpFormat(SDPMediaFormatsEnum sdpFormat)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaFormatsEnum.html">SDPMediaFormatsEnum</a></td>
+        <td><span class="parametername">sdpFormat</span></td>
+        <td><p>The SDP format to match to an audio codec.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum</span></td>
+        <td><p>A matching audio codec.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPMediaFormatInfo_GetClockRate_SIPSorcery_Net_SDPMediaFormatsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPMediaFormatInfo.GetClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
@@ -209,6 +259,107 @@ as the clock rate but in some cases for seemingly historical reasons they are di
         <td><span class="xref">System.Int32</span></td>
         <td><p>An integer representing the payload type's RTP timestamp frequency or 0
 if it's not known.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPMediaFormatInfo_GetRtpDefaultClockRate_SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPMediaFormatInfo.GetRtpDefaultClockRate(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPMediaFormat.cs/#L108">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPMediaFormatInfo_GetRtpDefaultClockRate_" data-uid="SIPSorcery.Net.SDPMediaFormatInfo.GetRtpDefaultClockRate*"></a>
+  <h4 id="SIPSorcery_Net_SDPMediaFormatInfo_GetRtpDefaultClockRate_SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_" data-uid="SIPSorcery.Net.SDPMediaFormatInfo.GetRtpDefaultClockRate(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)">GetRtpDefaultClockRate(AudioCodecsEnum)</h4>
+  <div class="markdown level1 summary"><p>Attempts to get the RTP clock rate of known payload types. Generally this will be the same
+as the clock rate but in some cases for seemingly historical reasons they are different</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int GetRtpDefaultClockRate(AudioCodecsEnum codec)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum</span></td>
+        <td><span class="parametername">codec</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><p>An integer representing the payload type's RTP timestamp frequency or 0
+if it's not known.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPMediaFormatInfo_GetVideoCodecForSdpFormat_SIPSorcery_Net_SDPMediaFormatsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPMediaFormat.cs/#L150">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPMediaFormatInfo_GetVideoCodecForSdpFormat_" data-uid="SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat*"></a>
+  <h4 id="SIPSorcery_Net_SDPMediaFormatInfo_GetVideoCodecForSdpFormat_SIPSorcery_Net_SDPMediaFormatsEnum_" data-uid="SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)">GetVideoCodecForSdpFormat(SDPMediaFormatsEnum)</h4>
+  <div class="markdown level1 summary"><p>Maps a video SDP media type to a video codec.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static VideoCodecsEnum GetVideoCodecForSdpFormat(SDPMediaFormatsEnum sdpFormat)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaFormatsEnum.html">SDPMediaFormatsEnum</a></td>
+        <td><span class="parametername">sdpFormat</span></td>
+        <td><p>The SDP format to match to a video codec.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum</span></td>
+        <td><p>A matching video codec.</p>
 </td>
       </tr>
     </tbody>

@@ -85,6 +85,12 @@ based on code from:
       <h4><a class="xref" href="SIPSorcery.Media.ALawEncoder.html">ALawEncoder</a></h4>
       <section><p>A-law encoder</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Media.AudioEncoder.html">AudioEncoder</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Media.AudioExtrasSource.html">AudioExtrasSource</a></h4>
+      <section><p>An audio source implementation that provides a diverse range of audio source options.
+The available options encompass signal generation, playback from file and more.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Media.AudioSourceOptions.html">AudioSourceOptions</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Media.Band.html">Band</a></h4>
@@ -118,24 +124,26 @@ based on code from:
 based on code from:
 <a href="http://hazelware.luggle.com/tutorials/mulawcompression.html">http://hazelware.luggle.com/tutorials/mulawcompression.html</a></p>
 </section>
-      <h4><a class="xref" href="SIPSorcery.Media.RtpAudioSession.html">RtpAudioSession</a></h4>
-      <section><p>An audio only RTP session that can supply an audio stream to the caller. Any incoming audio stream is
-ignored and this class does NOT use any audio devices on the system for capture or playback.</p>
-</section>
-      <h4><a class="xref" href="SIPSorcery.Media.RtpVP8Header.html">RtpVP8Header</a></h4>
-      <section><p>Representation of the VP8 RTP header as specified in RFC7741
-<a href="https://tools.ietf.org/html/rfc7741">https://tools.ietf.org/html/rfc7741</a>.</p>
-</section>
       <h4><a class="xref" href="SIPSorcery.Media.SignalGenerator.html">SignalGenerator</a></h4>
       <section><p>Signal Generator
 Sin, Square, Triangle, SawTooth, White Noise, Pink Noise, Sweep.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Media.VideoTestPatternSource.html">VideoTestPatternSource</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a></h4>
+      <section><p>This class serves as a bridge, or mapping, between the media end points, typically
+provided by a separate package, and a media session. Its goal is to wire up the
+sources and sinks from the media end point to the transport functions provided
+by an RTP session.</p>
+<p>For audio end points it will also attempt to encode and decode formats that the
+inbuilt C# encoder class understands. The encoder can be turned off if an
+application wishes to do its own audio encoding.</p>
+<p>For video end points there are no C# encoders available so the application must
+always co-ordinate the encoding and decoding of samples sent to and received from
+the RTP transport.</p>
+</section>
     <h3 id="enums">Enums
   </h3>
-      <h4><a class="xref" href="SIPSorcery.Media.AudioSamplingRatesEnum.html">AudioSamplingRatesEnum</a></h4>
-      <section><p>The supported sampling rates for externally generated audio sources
-such as a microphone.</p>
-</section>
       <h4><a class="xref" href="SIPSorcery.Media.AudioSourcesEnum.html">AudioSourcesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Media.G722Flags.html">G722Flags</a></h4>

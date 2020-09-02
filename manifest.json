@@ -281,11 +281,23 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Media.AudioSamplingRatesEnum.yml",
+      "source_relative_path": "api/SIPSorcery.Media.AudioEncoder.yml",
       "output": {
         ".html": {
-          "relative_path": "api/SIPSorcery.Media.AudioSamplingRatesEnum.html",
-          "hash": "KCfS+oPDBhhpUaKGRuSxKA=="
+          "relative_path": "api/SIPSorcery.Media.AudioEncoder.html",
+          "hash": "2AErTuPoLNQkvAAd/ejP9Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.AudioExtrasSource.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.AudioExtrasSource.html",
+          "hash": "8a8GXo6hlsOsSIZYk6h5iw=="
         }
       },
       "is_incremental": false,
@@ -297,7 +309,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.AudioSourceOptions.html",
-          "hash": "jqwoaV+fJJuC7OKBjovlLw=="
+          "hash": "ZE/Ol9LKo4rrlUsmxismmw=="
         }
       },
       "is_incremental": false,
@@ -309,7 +321,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.AudioSourcesEnum.html",
-          "hash": "WdKJHjXPOBBDQHKGlHjouQ=="
+          "hash": "AIvzN5Lz/vEmDi6ubRZTjQ=="
         }
       },
       "is_incremental": false,
@@ -389,35 +401,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Media.RtpAudioSession.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Media.RtpAudioSession.html",
-          "hash": "aUgjnRCdFPBj4SymFITWrg=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Media.RtpVP8Header.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Media.RtpVP8Header.html",
-          "hash": "N3jlJog8NAltGpz1oXUeVA=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Media.SignalGenerator.yml",
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.SignalGenerator.html",
-          "hash": "OMB3I/pEBD6ZmNQ1fKVMTQ=="
+          "hash": "FhnYgJOUihQd7oP6lsxFhg=="
         }
       },
       "is_incremental": false,
@@ -429,7 +417,31 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.SignalGeneratorType.html",
-          "hash": "ww09WVHh2UCwqmVNpyKb9g=="
+          "hash": "wndBnu5gLgtPRA3AMDbrxg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.VideoTestPatternSource.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.VideoTestPatternSource.html",
+          "hash": "rV0bGClMLdrIdQ910+b0dQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.VoIPMediaSession.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.VoIPMediaSession.html",
+          "hash": "aOoeVsz+7QHP8y0MNPjF2g=="
         }
       },
       "is_incremental": false,
@@ -441,7 +453,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.html",
-          "hash": "9J37TNEUIElhF+/4Y84pSw=="
+          "hash": "30ME5WpXyIpBIJVebAKXUg=="
         }
       },
       "is_incremental": false,
@@ -729,7 +741,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.MediaStreamTrack.html",
-          "hash": "WDxiLBubYY1NE3EY5p3nqw=="
+          "hash": "9lCljJ96XIMMGzLzZPWvDQ=="
         }
       },
       "is_incremental": false,
@@ -1173,7 +1185,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "lBjK/St6kneisgMZzlpLuQ=="
+          "hash": "glClrqB7UpsWo+LGCSMFAw=="
         }
       },
       "is_incremental": false,
@@ -1210,30 +1222,6 @@
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCRtcpMuxPolicy.html",
           "hash": "z8pr5hWfyrUarnIflwuwBQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.RTCRtpReceiver.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.RTCRtpReceiver.html",
-          "hash": "jHGaxaOAdrAYpMK2hXz5ug=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.RTCRtpSender.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.RTCRtpSender.html",
-          "hash": "XKObI4J0CmJijRDBbh4HYw=="
         }
       },
       "is_incremental": false,
@@ -1353,7 +1341,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPSession.html",
-          "hash": "TmB5hCJA6ssI2BbeFZbLHw=="
+          "hash": "eu/7/zLaUha6I4HoPHMr/A=="
         }
       },
       "is_incremental": false,
@@ -1617,7 +1605,19 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RtpIceChannel.html",
-          "hash": "jiYGDXtkpfra53JGOHxVDA=="
+          "hash": "CeecVdEaOCEQjW+bUWy0ug=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RtpVP8Header.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RtpVP8Header.html",
+          "hash": "FnHHLO/YPh3zLSdbVAt/Jw=="
         }
       },
       "is_incremental": false,
@@ -1665,7 +1665,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDPMediaFormat.html",
-          "hash": "fAvOt9ZX2WWYcFlKInwb2A=="
+          "hash": "868aU0kALwZKnYZc1D2qWA=="
         }
       },
       "is_incremental": false,
@@ -1677,7 +1677,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDPMediaFormatInfo.html",
-          "hash": "uNKPBmMncdjI71eZ+fUrOg=="
+          "hash": "McRgNbwVmW+OYQO1BlruzQ=="
         }
       },
       "is_incremental": false,
@@ -1689,7 +1689,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDPMediaFormatsEnum.html",
-          "hash": "xb3ezaIbTtz6ZXThSEkhgA=="
+          "hash": "0a+wGKsdnjig1HMIZZmmCg=="
         }
       },
       "is_incremental": false,
@@ -2913,7 +2913,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "1w47BDMVb8ey+EjRhVT32w=="
+          "hash": "daPDfBxJsWcYcR3eTvwJ8A=="
         }
       },
       "is_incremental": false,
@@ -3513,7 +3513,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "qI4SMbcngE+FXkq81G4Fqw=="
+          "hash": "Rqy+7OzgA9cIV26oE7Gmpw=="
         }
       },
       "is_incremental": false,
@@ -3741,7 +3741,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPDialogue.html",
-          "hash": "QIjDJKn3BBYFCtO4QPBECg=="
+          "hash": "LR4u2LLCCdhYKmUXpmdsCw=="
         }
       },
       "is_incremental": false,
@@ -5097,7 +5097,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "lV2raZ0g80dIexhqdR1JeA=="
+          "hash": "gwAv6cjjEM7n9yjbWUhkLQ=="
         }
       },
       "is_incremental": false,

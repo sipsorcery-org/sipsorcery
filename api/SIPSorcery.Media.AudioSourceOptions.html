@@ -117,7 +117,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioSourceOptions_AudioSource.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioSourceOptions.AudioSource%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RtpAudioSession.cs/#L88">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Sources/AudioExtrasSource.cs/#L75">View Source</a>
   </span>
   <h4 id="SIPSorcery_Media_AudioSourceOptions_AudioSource" data-uid="SIPSorcery.Media.AudioSourceOptions.AudioSource">AudioSource</h4>
   <div class="markdown level1 summary"><p>The type of audio source to use.</p>
@@ -144,40 +144,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioSourceOptions_CaptureDeviceSampleRate.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioSourceOptions.CaptureDeviceSampleRate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RtpAudioSession.cs/#L98">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_Media_AudioSourceOptions_CaptureDeviceSampleRate" data-uid="SIPSorcery.Media.AudioSourceOptions.CaptureDeviceSampleRate">CaptureDeviceSampleRate</h4>
-  <div class="markdown level1 summary"><p>The sampling rate for the audio capture device.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public AudioSamplingRatesEnum CaptureDeviceSampleRate</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.Media.AudioSamplingRatesEnum.html">AudioSamplingRatesEnum</a></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioSourceOptions_SourceFiles.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioSourceOptions.SourceFiles%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RtpAudioSession.cs/#L93">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Sources/AudioExtrasSource.cs/#L80">View Source</a>
   </span>
   <h4 id="SIPSorcery_Media_AudioSourceOptions_SourceFiles" data-uid="SIPSorcery.Media.AudioSourceOptions.SourceFiles">SourceFiles</h4>
   <div class="markdown level1 summary"><p>If using a pre-recorded audio source this is the audio source file.</p>
@@ -185,7 +155,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Dictionary&lt;SDPMediaFormatsEnum, string&gt; SourceFiles</code></pre>
+    <pre><code class="lang-csharp hljs">public Dictionary&lt;AudioCodecsEnum, string&gt; SourceFiles</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -197,7 +167,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaFormatsEnum.html">SDPMediaFormatsEnum</a>, <span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum</span>, <span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -213,7 +183,7 @@
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioSourceOptions.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioSourceOptions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RtpAudioSession.cs/#L83" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Sources/AudioExtrasSource.cs/#L70" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
