@@ -362,81 +362,93 @@ namespace SIPSorcery.Net
             _rtpIceChannel.OnIceCandidate += (candidate) => _onIceCandidate?.Invoke(candidate);
             _rtpIceChannel.OnIceConnectionStateChange += (state) =>
             {
-                if (state == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
+                if (iceConnectionState == RTCIceConnectionState.connected &&
+                    state == RTCIceConnectionState.connected)
                 {
-                    if (_dtlsHandle != null)
+                    // Already connected. This event is due to change in the nominated remote candidate.
+                    var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                    base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
+
+                    logger.LogInformation($"ICE changing connected remote end point to {AudioDestinationEndPoint}.");
+                }
+                else
+                {
+                    if (state == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
                     {
-                        // The ICE connection state change is due to a re-connection.
-                        iceConnectionState = state;
-                        oniceconnectionstatechange?.Invoke(iceConnectionState);
-
-                        connectionState = RTCPeerConnectionState.connected;
-                        onconnectionstatechange?.Invoke(connectionState);
-                    }
-                    else
-                    {
-                        var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
-                        base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
-
-                        logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
-
-                        _dtlsHandle = new DtlsSrtpTransport(
-                                    IceRole == IceRolesEnum.active ?
-                                    (IDtlsSrtpPeer)new DtlsSrtpClient(_currentCertificate.Certificate) :
-                                    (IDtlsSrtpPeer)new DtlsSrtpServer(_currentCertificate.Certificate));
-
-                        _dtlsHandle.OnAlert += OnDtlsAlert;
-
-                        logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
-                        Task.Run<bool>(() => DoDtlsHandshake(_dtlsHandle))
-                        .ContinueWith(t =>
+                        if (_dtlsHandle != null)
                         {
-                            if (t.IsFaulted)
-                            {
-                                logger.LogWarning($"RTCPeerConnection DTLS handshake task completed in a faulted state. {t.Exception?.Flatten().Message}");
+                            // The ICE connection state change is due to a re-connection.
+                            iceConnectionState = state;
+                            oniceconnectionstatechange?.Invoke(iceConnectionState);
 
-                                connectionState = RTCPeerConnectionState.failed;
-                                onconnectionstatechange?.Invoke(connectionState);
-                            }
-                            else
-                            {
-                                connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
-                                onconnectionstatechange?.Invoke(connectionState);
+                            connectionState = RTCPeerConnectionState.connected;
+                            onconnectionstatechange?.Invoke(connectionState);
+                        }
+                        else
+                        {
+                            var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                            base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
-                                if (connectionState == RTCPeerConnectionState.connected && RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
+                            logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
+
+                            _dtlsHandle = new DtlsSrtpTransport(
+                                        IceRole == IceRolesEnum.active ?
+                                        (IDtlsSrtpPeer)new DtlsSrtpClient(_currentCertificate.Certificate) :
+                                        (IDtlsSrtpPeer)new DtlsSrtpServer(_currentCertificate.Certificate));
+
+                            _dtlsHandle.OnAlert += OnDtlsAlert;
+
+                            logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
+                            Task.Run<bool>(() => DoDtlsHandshake(_dtlsHandle))
+                            .ContinueWith(t =>
+                            {
+                                if (t.IsFaulted)
                                 {
-                                    InitialiseSctpAssociation();
+                                    logger.LogWarning($"RTCPeerConnection DTLS handshake task completed in a faulted state. {t.Exception?.Flatten().Message}");
+
+                                    connectionState = RTCPeerConnectionState.failed;
+                                    onconnectionstatechange?.Invoke(connectionState);
                                 }
-                            }
-                        });
+                                else
+                                {
+                                    connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
+                                    onconnectionstatechange?.Invoke(connectionState);
+
+                                    if (connectionState == RTCPeerConnectionState.connected && RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
+                                    {
+                                        InitialiseSctpAssociation();
+                                    }
+                                }
+                            });
+                        }
                     }
-                }
 
-                iceConnectionState = state;
-                oniceconnectionstatechange?.Invoke(iceConnectionState);
+                    iceConnectionState = state;
+                    oniceconnectionstatechange?.Invoke(iceConnectionState);
 
-                if(iceConnectionState == RTCIceConnectionState.checking)
-                {
-                    connectionState = RTCPeerConnectionState.connecting;
-                    onconnectionstatechange?.Invoke(connectionState);
-                }
-                else if (iceConnectionState == RTCIceConnectionState.disconnected)
-                {
-                    if (connectionState == RTCPeerConnectionState.connected)
+                    if (iceConnectionState == RTCIceConnectionState.checking)
                     {
-                        connectionState = RTCPeerConnectionState.disconnected;
+                        connectionState = RTCPeerConnectionState.connecting;
                         onconnectionstatechange?.Invoke(connectionState);
                     }
-                    else
+                    else if (iceConnectionState == RTCIceConnectionState.disconnected)
+                    {
+                        if (connectionState == RTCPeerConnectionState.connected)
+                        {
+                            connectionState = RTCPeerConnectionState.disconnected;
+                            onconnectionstatechange?.Invoke(connectionState);
+                        }
+                        else
+                        {
+                            connectionState = RTCPeerConnectionState.failed;
+                            onconnectionstatechange?.Invoke(connectionState);
+                        }
+                    }
+                    else if (iceConnectionState == RTCIceConnectionState.failed)
                     {
                         connectionState = RTCPeerConnectionState.failed;
                         onconnectionstatechange?.Invoke(connectionState);
                     }
-                }
-                else if (iceConnectionState == RTCIceConnectionState.failed)
-                {
-                    connectionState = RTCPeerConnectionState.failed;
-                    onconnectionstatechange?.Invoke(connectionState);
                 }
             };
             _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
@@ -686,29 +698,6 @@ namespace SIPSorcery.Net
             }
 
             return setResult;
-        }
-
-        /// <summary>
-        /// Send a media sample to the remote party.
-        /// </summary>
-        /// <param name="mediaType">Whether the sample is audio or video.</param>
-        /// <param name="sampleTimestamp">The RTP timestamp for the sample.</param>
-        /// <param name="sample">The sample payload.</param>
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
-        {
-            if (base.AudioDestinationEndPoint != null && IsDtlsNegotiationComplete && connectionState == RTCPeerConnectionState.connected)
-            {
-                if (mediaType == SDPMediaTypesEnum.video)
-                {
-                    int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
-                    SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
-                }
-                else if (mediaType == SDPMediaTypesEnum.audio)
-                {
-                    int pcmuPayloadID = Convert.ToInt32(AudioLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
-                    SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample);
-                }
-            }
         }
 
         /// <summary>

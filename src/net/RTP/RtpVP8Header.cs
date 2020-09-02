@@ -17,7 +17,7 @@
 
 using System;
 
-namespace SIPSorcery.Media
+namespace SIPSorcery.Net
 {
     /// <summary>
     /// Representation of the VP8 RTP header as specified in RFC7741
@@ -77,7 +77,7 @@ namespace SIPSorcery.Media
             {
                 if (((rtpPayload[2] >> 7) & 0x01) == 1)
                 {
-                    // The Picure ID is using two bytes.
+                    // The Picture ID is using two bytes.
                     vp8Header._length = 4;
                     payloadHeaderStartIndex = 4;
                     vp8Header.PictureID = BitConverter.ToUInt16(rtpPayload, 2);

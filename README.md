@@ -1,6 +1,6 @@
 | Target        | SIPSorcery    | Examples <br/> (Windows Only)    | Softphone <br/> (Windows Only) |
 | --------------| ------------- |:-------------|:--------- |
-| net46        | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | | |
+| net472        | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | | |
 | netstandard2.0 | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-std20/badge.svg) |  |  |
 | dotnetcore3.1 | <table><tr><td>Windows</td><td>![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31-win/badge.svg)</td></tr><tr><td>MacOS</td><td>![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31-mac/badge.svg)</td></tr><tr><td>Ubuntu</td><td>![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31-ubuntu/badge.svg)</td></tr></table> | ![](https://github.com/sipsorcery/sipsorcery/workflows/examples-core31/badge.svg) <br> [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master) |
 
@@ -30,18 +30,18 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 ## Installation
 
-The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framework 4.6. It is available via NuGet.
+The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framework 4.7.2. It is available via NuGet.
 
 For .NET Core:
 
 ````bash
-dotnet add package SIPSorcery -v 4.0.60-pre
+dotnet add package SIPSorcery -v 4.0.61-pre
 ````
 
 With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](https://www.nuget.org/packages/SIPSorcery/)):
 
 ````ps1
-Install-Package SIPSorcery -v 4.0.60-pre
+Install-Package SIPSorcery -v 4.0.61-pre
 ````
 
 ## Documentation
@@ -55,7 +55,7 @@ The simplest possible example to place an audio-only SIP call is shown below. Th
 ````bash
 dotnet new console --name SIPGetStarted
 cd SIPGetStarted
-dotnet add package SIPSorcery -v 4.0.60-pre
+dotnet add package SIPSorcery -v 4.0.61-pre
 dotnet add package SIPSorceryMedia -v 4.0.60-pre
 code . # If you have Visual Studio Code https://code.visualstudio.com installed.
 # edit Program.cs and paste in the contents below.
@@ -115,7 +115,7 @@ If you are familiar with the [WebRTC javascript API](https://www.w3.org/TR/webrt
 ````bash
 dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
-dotnet add package SIPSorcery -v 4.0.60-pre
+dotnet add package SIPSorcery -v 4.0.61-pre
 dotnet add package SIPSorceryMedia -v 4.0.60-pre
 code . # If you have Visual Studio Code (https://code.visualstudio.com) installed
 # edit Program.cs and paste in the contents below.

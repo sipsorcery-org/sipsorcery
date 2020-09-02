@@ -11,7 +11,7 @@
 
             closePeer();
 
-            let videoControl = document.querySelector('#videoCtl');
+            let audioControl = document.querySelector('#audioCtl');
 
             //const constraints = {
             //    'video': true,
@@ -19,7 +19,6 @@
             //}
 
             const localStream = await navigator.mediaDevices.getUserMedia({ video:false, audio: true });
-            videoControl.srcObject = localStream;
 
             ws = new WebSocket(url, []);
 
@@ -27,12 +26,6 @@
                 console.log("web socket onopen.");
 
                 pc = new RTCPeerConnection(null);
-
-                //pc.ontrack = ({ track, streams: [stream] }) => {
-                //    track.onunmute = () => {
-                //        videoControl.srcObject = stream;
-                //    };
-                //};
 
                 localStream.getTracks().forEach(track => {
                     console.log('add local track ' + track.kind + ' to peer connection.');
@@ -105,8 +98,6 @@
     </script>
 </head>
 <body>
-
-    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
 
     <div>
         <button type="button" class="btn btn-success" onclick="start();">Start</button>

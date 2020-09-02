@@ -127,10 +127,7 @@ namespace SIPSorcery.SoftPhone
 
             StatusMessage(this, $"Starting call to {callURI}.");
 
-            var dstEndpoint = await Task.Run(() =>
-            {
-                return SIPDns.Resolve(callURI, false);
-            });
+            var dstEndpoint = await SIPDns.ResolveAsync(callURI, false, _cts.Token);
 
             if (dstEndpoint == null)
             {
@@ -144,7 +141,7 @@ namespace SIPSorcery.SoftPhone
 
                 var audioSrcOpts = new AudioOptions
                 {
-                    AudioSource = AudioSourcesEnum.CaptureDevice,
+                    AudioSource = AudioSourcesEnum.External,
                     OutputDeviceIndex = m_audioOutDeviceIndex
                 };
                 var videoSrcOpts = new VideoOptions
@@ -154,6 +151,7 @@ namespace SIPSorcery.SoftPhone
                     SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
                 };
                 MediaSession = new RtpAVSession(audioSrcOpts, videoSrcOpts);
+                MediaSession.AcceptRtpFromAny = true;
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
@@ -212,7 +210,7 @@ namespace SIPSorcery.SoftPhone
                 {
                     audioOpts = new AudioOptions
                     {
-                        AudioSource = AudioSourcesEnum.CaptureDevice,
+                        AudioSource = AudioSourcesEnum.External,
                         OutputDeviceIndex = m_audioOutDeviceIndex,
                         AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
                     };
@@ -230,6 +228,7 @@ namespace SIPSorcery.SoftPhone
                 }
 
                 MediaSession = new RtpAVSession(audioOpts, videoOpts);
+                MediaSession.AcceptRtpFromAny = true;
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
@@ -301,7 +300,7 @@ namespace SIPSorcery.SoftPhone
 
             AudioOptions audioOnHold = (!hasAudio) ? null : new AudioOptions
             {
-                AudioSource = AudioSourcesEnum.CaptureDevice,
+                AudioSource = AudioSourcesEnum.External,
                 OutputDeviceIndex = m_audioOutDeviceIndex
             };
             VideoOptions videoOnHold = (!hasVideo) ? null : new VideoOptions

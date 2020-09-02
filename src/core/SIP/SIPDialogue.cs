@@ -122,6 +122,8 @@ namespace SIPSorcery.SIP
 
         public SIPDialogueStateEnum DialogueState = SIPDialogueStateEnum.Unknown;
 
+        internal SIPNonInviteTransaction m_byeTransaction;
+
         public SIPDialogue() { }
 
         public SIPDialogue(
@@ -327,8 +329,8 @@ namespace SIPSorcery.SIP
                 }
 
                 SIPRequest byeRequest = GetInDialogRequest(SIPMethodsEnum.BYE);
-                SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, byeRequest, byeOutboundProxy);
-                byeTransaction.SendRequest();
+                m_byeTransaction = new SIPNonInviteTransaction(sipTransport, byeRequest, byeOutboundProxy);
+                m_byeTransaction.SendRequest();
             }
             catch (Exception excp)
             {
