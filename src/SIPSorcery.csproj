@@ -27,7 +27,7 @@
       <Version>1.0.0</Version>
     </PackageReference>
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.4-pre" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.5-pre" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
@@ -62,7 +62,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.60-pre: Fix for RTP Session sequence number bug.
+    <PackageReleaseNotes>- v4.0.61-pre: Added hooks for new media abstractions interface. Minimum .Net Framework target updated from net46 to net472.
+- v4.0.60-pre: Fix for RTP Session sequence number bug.
 - v4.0.59-pre: WebRTC data channel support.
 - v4.0.58-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
 - v4.0.55-pre: RtpIceChannel support for TURN relaying.
@@ -97,9 +98,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.60-pre</Version>
-    <AssemblyVersion>4.0.60.0</AssemblyVersion>
-    <FileVersion>4.0.60.0</FileVersion>
+    <Version>4.0.61-pre</Version>
+    <AssemblyVersion>4.0.61.0</AssemblyVersion>
+    <FileVersion>4.0.61.0</FileVersion>
   </PropertyGroup>
 
 </Project>
