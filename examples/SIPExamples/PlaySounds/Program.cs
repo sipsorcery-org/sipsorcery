@@ -19,58 +19,131 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Windows;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "1@127.0.0.1";
+        //private static string DESTINATION = "1@127.0.0.1";
+        private static string DESTINATION = "sip:pcdodo@192.168.0.50";
+        private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
+        //private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
+        //private static string DESTINATION = "sip:aaron@192.168.0.50:7060";
+        //private static SIPEndPoint OUTBOUND_PROXY = null;
 
-        //private static string WELCOME_8K = "Sounds/hellowelcome8k.raw";
-        private static string WELCOME_16K = "Sounds/hellowelcome16k.raw";
-        private static string GOODBYE_16K = "Sounds/goodbye16k.raw";
+        private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
+        private const string GOODBYE_16K = "Sounds/goodbye16k.raw";
 
         static async Task Main()
         {
             Console.WriteLine("SIPSorcery Play Sounds Demo");
 
             AddConsoleLogger();
+            CancellationTokenSource exitCts = new CancellationTokenSource();
 
             var sipTransport = new SIPTransport();
 
             EnableTraceLogs(sipTransport);
 
-            var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new WindowsAudioRtpSession();
+            var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
+            userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
+            userAgent.ClientCallFailed += (uac, error, sipResponse) => exitCts.Cancel();
+            userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
+
+            var audioExtrasSource = new AudioExtrasSource(new AudioEncoder());
+            var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder(), audioExtrasSource);
+            var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
+            voipMediaSession.AcceptRtpFromAny = true;
+
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            {
+                e.Cancel = true;
+
+                if (userAgent != null)
+                {
+                    if (userAgent.IsCalling || userAgent.IsRinging)
+                    {
+                        Console.WriteLine("Cancelling in progress call.");
+                        userAgent.Cancel();
+                    }
+                    else if (userAgent.IsCallActive)
+                    {
+                        Console.WriteLine("Hanging up established call.");
+                        userAgent.Hangup();
+                    }
+                };
+
+                exitCts.Cancel();
+            };
 
             // Place the call and wait for the result.
-            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
-            Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
+            var callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
+
+            Console.WriteLine("press ctrl-c to exit...");
+
+            bool callResult = await callTask;
 
             if (callResult)
             {
-                await Task.Delay(1000);
-                await rtpSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
-                await Task.Delay(1000);
-                await rtpSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
+                Console.WriteLine($"Call to {DESTINATION} succeeded.");
+
+                await windowsAudio.PauseAudio();
+
+                Console.WriteLine("Sending welcome message from 8KHz sample.");
+                await audioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
+
+                await Task.Delay(200);
+
+                Console.WriteLine("Sending sine wave.");
+                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+
+                await Task.Delay(2000);
+
+                Console.WriteLine("Sending white noise signal.");
+                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.WhiteNoise });
+                await Task.Delay(2000);
+
+                Console.WriteLine("Sending pink noise signal.");
+                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise });
+                await Task.Delay(2000);
+
+                Console.WriteLine("Sending silence.");
+                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
+
+                await Task.Delay(2000);
+
+                Console.WriteLine("Sending goodbye message from 16KHz sample.");
+                await audioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+
+                audioExtrasSource.SetSource(AudioSourcesEnum.None);
+
+                await Task.Delay(200);
+
+                // Switch to the external microphone input source.
+                await windowsAudio.ResumeAudio();
+
+                exitCts.Token.WaitHandle.WaitOne();
             }
-
-            Console.WriteLine("press any key to exit...");
-            Console.Read();
-
-            if (userAgent.IsCallActive)
+            else
             {
-                Console.WriteLine("Hanging up.");
-                userAgent.Hangup();
+                Console.WriteLine($"Call to {DESTINATION} failed.");
             }
 
-            // Give the hangup a chance to complete.
-            await Task.Delay(1000);
+            Console.WriteLine("Exiting...");
+
+            if (userAgent?.IsHangingUp == true)
+            {
+                Console.WriteLine("Waiting 1s for the call hangup or cancel to complete...");
+                await Task.Delay(1000);
+            }
 
             // Clean up.
             sipTransport.Shutdown();

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Net
 {
@@ -47,7 +48,6 @@ namespace SIPSorcery.Net
         H264 = 102,
         H265 = 103,
         OPUS = 111,
-
 
         Unknown = 999,
     }
@@ -95,6 +95,68 @@ namespace SIPSorcery.Net
                     return 48000;
                 default:
                     return GetClockRate(payloadType);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to get the RTP clock rate of known payload types. Generally this will be the same
+        /// as the clock rate but in some cases for seemingly historical reasons they are different
+        /// </summary>
+        /// <param name="mediaType">The media type to get the clock rate for.</param>
+        /// <returns>An integer representing the payload type's RTP timestamp frequency or 0
+        /// if it's not known.</returns>
+        public static int GetRtpDefaultClockRate(AudioCodecsEnum codec)
+        {
+            switch (codec)
+            {
+                case AudioCodecsEnum.PCMA:
+                case AudioCodecsEnum.PCMU:
+                case AudioCodecsEnum.G722:
+                    return 8000;
+                case AudioCodecsEnum.OPUS:
+                    return 48000;
+                default:
+                    return 8000;
+            }
+        }
+
+        /// <summary>
+        /// Maps an audio SDP media type to an audio codec.
+        /// </summary>
+        /// <param name="sdpFormat">The SDP format to match to an audio codec.</param>
+        /// <returns>A matching audio codec.</returns>
+        public static AudioCodecsEnum GetAudioCodecForSdpFormat(SDPMediaFormatsEnum sdpFormat)
+        {
+            switch(sdpFormat)
+            {
+                case SDPMediaFormatsEnum.G722:
+                    return AudioCodecsEnum.G722;
+                case SDPMediaFormatsEnum.PCMA:
+                    return AudioCodecsEnum.PCMA;
+                case SDPMediaFormatsEnum.PCMU:
+                    return AudioCodecsEnum.PCMU;
+                case SDPMediaFormatsEnum.OPUS:
+                    return AudioCodecsEnum.OPUS;
+                default:
+                    return AudioCodecsEnum.Unknown;
+            }
+        }
+
+        /// <summary>
+        /// Maps a video SDP media type to a video codec.
+        /// </summary>
+        /// <param name="sdpFormat">The SDP format to match to a video codec.</param>
+        /// <returns>A matching video codec.</returns>
+        public static VideoCodecsEnum GetVideoCodecForSdpFormat(SDPMediaFormatsEnum sdpFormat)
+        {
+            switch (sdpFormat)
+            {
+                case SDPMediaFormatsEnum.H264:
+                    return VideoCodecsEnum.H264;
+                case SDPMediaFormatsEnum.VP8:
+                    return VideoCodecsEnum.VP8;
+                default:
+                    return VideoCodecsEnum.Unknown;
             }
         }
     }

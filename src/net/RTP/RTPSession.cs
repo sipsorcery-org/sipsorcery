@@ -102,164 +102,6 @@ namespace SIPSorcery.Net
         /// SCTP over DTLS is supported, no TCP option).
         /// </summary>
         DataChannelTransportNotSupported,
-
-    }
-
-    /// <summary>
-    /// This class represents the source for a real-time  stream. It can be thought
-    /// of as a source stream for any media that is being sent to a remote party.
-    /// </summary>
-    public class RTCRtpSender : IRTCRtpSender
-    {
-        public MediaStreamTrack track { get; private set; }
-
-        public RTCRtpSender(MediaStreamTrack localTrack)
-        {
-            track = localTrack;
-        }
-    }
-
-    /// <summary>
-    /// This class represents a remote real-time sourced stream. It can be thought of 
-    /// as the destination for a media stream being received from a remote party.
-    /// </summary>
-    public class RTCRtpReceiver : IRTCRtpReceiver
-    {
-        public MediaStreamTrack track { get; private set; }
-
-        public RTCRtpReceiver(MediaStreamTrack remoteTrack)
-        {
-            track = remoteTrack;
-        }
-    }
-
-    public class MediaStreamTrack
-    {
-        /// <summary>
-        /// The type of media stream represented by this track. Must be audio or video.
-        /// </summary>
-        public SDPMediaTypesEnum Kind { get; private set; }
-
-        /// <summary>
-        /// The value used in the RTP Synchronisation Source header field for media packets
-        /// sent using this media stream.
-        /// </summary>
-        public uint Ssrc { get; internal set; }
-
-        /// <summary>
-        /// The value used in the RTP Sequence Number header field for media packets
-        /// sent using this media stream.
-        /// </summary>
-        public ushort SeqNum { get; internal set; }
-
-        /// <summary>
-        /// The value used in the RTP Timestamp header field for media packets
-        /// sent using this media stream.
-        /// </summary>
-        public uint Timestamp { get; internal set; }
-
-        /// <summary>
-        /// Indicates whether this track was sourced by a remote connection.
-        /// </summary>
-        public bool IsRemote { get; set; }
-
-        /// <summary>
-        /// The media capabilities supported by this track.
-        /// </summary>
-        public List<SDPMediaFormat> Capabilities { get; internal set; }
-
-        /// <summary>
-        /// Represents the original and default stream status for the track. This is set
-        /// when the track is created and does not change. It allows tracks to be set back to
-        /// their original state after being put on hold etc. For example if a track is
-        /// added as receive only video source then when after on and off hold it needs to
-        /// be known that the track reverts receive only rather than sendrecv.
-        /// </summary>
-        public MediaStreamStatusEnum DefaultStreamStatus { get; private set; }
-
-        /// <summary>
-        /// Holds the stream state of the track.
-        /// </summary>
-        public MediaStreamStatusEnum StreamStatus { get; internal set; }
-
-        /// <summary>
-        /// If the SDP remote the remote party provides "a=ssrc" attributes, as specified
-        /// in RFC5576, this property will hold the values. The list can be used when
-        /// an RTP/RTCP packet is received and needs to be matched against a media type or 
-        /// RTCP report.
-        /// </summary>
-        public Dictionary<uint, SDPSsrcAttribute> SdpSsrc { get; set; } = new Dictionary<uint, SDPSsrcAttribute>();
-
-        /// <summary>
-        /// Creates a lightweight class to track a media stream track within an RTP session 
-        /// When supporting RFC3550 (the standard RTP specification) the relationship between
-        /// an RTP stream and session is 1:1. For WebRTC and RFC8101 there can be multiple
-        /// streams per session.
-        /// </summary>
-        /// <param name="mid">The media ID for this track. Must match the value set in the SDP.</param>
-        /// <param name="kind">The type of media for this stream. There can only be one
-        /// stream per media type.</param>
-        /// <param name="isRemote">True if this track corresponds to a media announcement from the 
-        /// remote party.</param>
-        /// <param name="Capabilities">The capabilities for the track being added. Where the same media
-        /// type is supported locally and remotely only the mutual capabilities can be used. This will
-        /// occur if we receive an SDP offer (add track initiated by the remote party) and we need
-        /// to remove capabilities we don't support.</param>
-        /// <param name="streamStatus">The initial stream status for the media track. Defaults to
-        /// send receive.</param>
-        public MediaStreamTrack(
-            SDPMediaTypesEnum kind,
-            bool isRemote,
-            List<SDPMediaFormat> capabilities,
-            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
-        {
-            Kind = kind;
-            IsRemote = isRemote;
-            Capabilities = capabilities;
-            StreamStatus = streamStatus;
-            DefaultStreamStatus = streamStatus;
-
-            if (!isRemote)
-            {
-                Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
-                SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
-            }
-        }
-
-        /// <summary>
-        /// Checks whether the payload ID in an RTP packet received from the remote call party
-        /// is in this track's list.
-        /// </summary>
-        /// <param name="payloadID">The payload ID to check against.</param>
-        /// <returns>True if the payload ID matches one of the codecs for this stream. False if not.</returns>
-        public bool IsPayloadIDMatch(int payloadID)
-        {
-            return Capabilities.Any(x => x.FormatID == payloadID.ToString());
-        }
-
-        /// <summary>
-        /// Creates and returns a copy of the media stream track.
-        /// </summary>
-        public MediaStreamTrack CopyOf()
-        {
-            List<SDPMediaFormat> capabilitiesCopy = new List<SDPMediaFormat>(Capabilities);
-            var copy = new MediaStreamTrack(Kind, IsRemote, capabilitiesCopy, StreamStatus);
-            copy.Ssrc = Ssrc;
-            copy.SeqNum = SeqNum;
-            copy.Timestamp = Timestamp;
-            return copy;
-        }
-
-        /// <summary>
-        /// Checks whether a SSRC value from an RTP header or RTCP report matches
-        /// a value expected for this track.
-        /// </summary>
-        /// <param name="ssrc">The SSRC value to check.</param>
-        /// <returns>True if the SSRC value is expected for this track. False if not.</returns>
-        public bool IsSsrcMatch(uint ssrc)
-        {
-            return ssrc == Ssrc || SdpSsrc.ContainsKey(ssrc);
-        }
     }
 
     /// <summary>
@@ -466,6 +308,14 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// If set to true RTP will be accepted from ANY remote end point. If false
+        /// certain rules are used to determine whether RTP should be accepted for 
+        /// a particular audio or video stream. It is recommended to leave the
+        /// value to false unless a specific need exists.
+        /// </summary>
+        public bool AcceptRtpFromAny { get; set; } = false;
+
+        /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
         /// Parameters are:
         ///  - Remote endpoint packet was received from,
@@ -509,6 +359,28 @@ namespace SIPSorcery.Net
         /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
         /// </summary>
         public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReport;
+
+        /// <summary>
+        /// Gets fired when the start method is called on the session. This is the point
+        /// audio and video sources should commence generating samples.
+        /// </summary>
+        public event Action OnStarted;
+
+        /// <summary>
+        /// Gets fired when the session is closed. This is the point audio and video
+        /// source should stop generating samples.
+        /// </summary>
+        public event Action OnClosed;
+
+        /// <summary>
+        /// Gets fired when the remote SDP is received and the set of common audio formats is set.
+        /// </summary>
+        public event Action<List<SDPMediaFormat>> OnAudioFormatsNegotiated;
+
+        /// <summary>
+        /// Gets fired when the remote SDP is received and the set of common video formats is set.
+        /// </summary>
+        public event Action<List<SDPMediaFormat>> OnVideoFormatsNegotiated;
 
         /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
@@ -679,13 +551,6 @@ namespace SIPSorcery.Net
 
             try
             {
-                // Check the obvious conditions that will prevent at least one compatible media stream 
-                // being negotiated.
-                // These two assumptions don't apply if "application" media types for WebRTC data channels are supported.
-                //if (AudioLocalTrack == null && VideoLocalTrack == null)
-                //{
-                //    return SetDescriptionResultEnum.NoLocalMedia;
-                //}
                 if (sessionDescription.Media?.Count == 0)
                 {
                     return SetDescriptionResultEnum.NoRemoteMedia;
@@ -710,10 +575,6 @@ namespace SIPSorcery.Net
                 {
                     connectionAddress = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
                 }
-                //else
-                //{
-                //    logger.LogWarning("RTP session set remote description was supplied an SDP with no connection address.");
-                //}
 
                 IPEndPoint remoteAudioRtpEP = null;
                 IPEndPoint remoteAudioRtcpEP = null;
@@ -771,6 +632,7 @@ namespace SIPSorcery.Net
                             // Check that there is at least one compatible non-"RTP Event" audio codec.
                             var audioCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats) :
                                 SDPMediaFormat.GetCompatibleFormats(audioAnnounce.MediaFormats, AudioLocalTrack.Capabilities);
+                            
                             if (audioCompatibleFormats?.Count == 0)
                             {
                                 return SetDescriptionResultEnum.AudioIncompatible;
@@ -779,11 +641,13 @@ namespace SIPSorcery.Net
                             {
                                 // Set the local audio capabilities to the common set.
                                 AudioLocalTrack.Capabilities = audioCompatibleFormats;
-                            }
 
-                            if (commonEventFormat != null)
-                            {
-                                AudioLocalTrack.Capabilities.Add(commonEventFormat);
+                                if (commonEventFormat != null)
+                                {
+                                    AudioLocalTrack.Capabilities.Add(commonEventFormat);
+                                }
+
+                                OnAudioFormatsNegotiated?.Invoke(AudioLocalTrack.Capabilities);
                             }
 
                             var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connectionAddress;
@@ -863,6 +727,7 @@ namespace SIPSorcery.Net
                             // Check that there is at least one compatible video codec.
                             var videoCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, videoAnnounce.MediaFormats) :
                                  SDPMediaFormat.GetCompatibleFormats(videoAnnounce.MediaFormats, VideoLocalTrack.Capabilities);
+
                             if (videoCompatibleFormats?.Count == 0)
                             {
                                 return SetDescriptionResultEnum.VideoIncompatible;
@@ -871,6 +736,8 @@ namespace SIPSorcery.Net
                             {
                                 // Set the local video capabilities to the common set.
                                 VideoLocalTrack.Capabilities = videoCompatibleFormats;
+
+                                OnVideoFormatsNegotiated?.Invoke(VideoLocalTrack.Capabilities);
                             }
 
                             var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connectionAddress;
@@ -912,7 +779,7 @@ namespace SIPSorcery.Net
 
                 if (AudioLocalTrack != null || VideoLocalTrack != null)
                 {
-                    AdjustLocalTracks(sdpType);
+                    AdjustLocalStreamStatus();
                 }
 
                 // If we get to here then the remote description was compatible with the local media tracks.
@@ -949,48 +816,6 @@ namespace SIPSorcery.Net
                 VideoLocalTrack.StreamStatus = status;
                 m_sdpAnnouncementVersion++;
             }
-        }
-
-        /// <summary>
-        /// Gets a list of the RTP senders for this session.
-        /// </summary>
-        /// <returns>A list of the RTP senders for this session.</returns>
-        public List<IRTCRtpSender> getSenders()
-        {
-            List<IRTCRtpSender> senders = new List<IRTCRtpSender>();
-
-            if (AudioLocalTrack != null)
-            {
-                senders.Add(new RTCRtpSender(AudioLocalTrack));
-            }
-
-            if (VideoLocalTrack != null)
-            {
-                senders.Add(new RTCRtpSender(VideoLocalTrack));
-            }
-
-            return senders;
-        }
-
-        /// <summary>
-        /// Gets a list of the RTP receivers for this session.
-        /// </summary>
-        /// <returns>A list of the RTP receivers for this session.</returns>
-        public List<IRTCRtpReceiver> getReceivers()
-        {
-            List<IRTCRtpReceiver> receivers = new List<IRTCRtpReceiver>();
-
-            if (AudioRemoteTrack != null)
-            {
-                receivers.Add(new RTCRtpReceiver(AudioRemoteTrack));
-            }
-
-            if (VideoRemoteTrack != null)
-            {
-                receivers.Add(new RTCRtpReceiver(VideoRemoteTrack));
-            }
-
-            return receivers;
         }
 
         /// <summary>
@@ -1050,6 +875,15 @@ namespace SIPSorcery.Net
                     // Need to create a sending SSRC and set it on the RTCP session. 
                     AudioRtcpSession.Ssrc = track.Ssrc;
                     AudioLocalTrack = track;
+
+                    if (AudioLocalTrack.Capabilities != null && !AudioLocalTrack.NoDtmfSupport &&
+                        !AudioLocalTrack.Capabilities.Any(x => x.FormatID == DTMF_EVENT_PAYLOAD_ID.ToString()))
+                    {
+                        SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
+                        rtpEventFormat.SetFormatAttribute($"{SDP.TELEPHONE_EVENT_ATTRIBUTE}/{DEFAULT_AUDIO_CLOCK_RATE}");
+                        rtpEventFormat.SetFormatParameterAttribute("0-16");
+                        AudioLocalTrack.Capabilities.Add(rtpEventFormat);
+                    }
                 }
                 else if (track.Kind == SDPMediaTypesEnum.video)
                 {
@@ -1160,12 +994,9 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Adjust the properties of the local media tracks based on the remote tracks. The remote party
-        /// may not support both audio and video or may support different codecs. The local tracks need
-        /// to be adjusted to ensure that the choice of what to send matches what the remote party is expecting.
+        /// Adjust the stream status of the local media tracks based on the remote tracks.
         /// </summary>
-        /// <param name="remoteSdpType">Whether the remote SDP was an offer or answer.</param>
-        private void AdjustLocalTracks(SdpType remoteSdpType)
+        private void AdjustLocalStreamStatus()
         {
             if (AudioLocalTrack != null && (AudioRemoteTrack == null || AudioRemoteTrack?.StreamStatus == MediaStreamStatusEnum.Inactive))
             {
@@ -1417,6 +1248,8 @@ namespace SIPSorcery.Net
                     // the remote party.
                     VideoRtcpSession.Start();
                 }
+
+                OnStarted?.Invoke();
             }
 
             return Task.CompletedTask;
@@ -1466,6 +1299,44 @@ namespace SIPSorcery.Net
             else
             {
                 throw new ApplicationException($"Sending of {mediaType} is not supported.");
+            }
+        }
+
+        /// <summary>
+        /// Send a media sample to the remote party.
+        /// </summary>
+        /// <param name="mediaType">Whether the sample is audio or video.</param>
+        /// <param name="durationRtpUnits">The duration of the sample in RTP timestamp units.</param>
+        /// <param name="sample">The sample payload.</param> 
+        public void SendMedia(SDPMediaTypesEnum mediaType, uint durationRtpUnits, byte[] sample)
+        {
+            if (AudioDestinationEndPoint != null && (!IsSecure || IsSecureContextReady))
+            {
+                if (mediaType == SDPMediaTypesEnum.video)
+                {
+                    var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
+
+                    switch (videoSendingFormat.FormatCodec)
+                    {
+                        case SDPMediaFormatsEnum.VP8:
+                            int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
+                            SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
+                            break;
+                        case SDPMediaFormatsEnum.H264:
+                            int h264PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.H264).FormatID);
+                            SendH264Frame(durationRtpUnits, h264PayloadID, sample);
+                            break;
+                        default:
+                            throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.FormatCodec}.");
+                    }
+                }
+                else if (mediaType == SDPMediaTypesEnum.audio)
+                {
+                    var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
+
+                    int audioPayloadID = Convert.ToInt32(audioFormat.FormatID);
+                    SendAudioFrame(durationRtpUnits, audioPayloadID, sample);
+                }
             }
         }
 
@@ -1645,12 +1516,19 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// H264 frames need a two byte header when transmitted over RTP.
+        /// Sends a H264 frame, represented by an Access Unit, to the remote party.
         /// </summary>
-        /// <param name="frame">The H264 encoded frame to transmit.</param>
-        /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
-        /// <param name="payloadType">The payload type to set on the RTP packet.</param>
-        public void SendH264Frame(uint duration, int payloadTypeID, byte[] frame)
+        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
+        /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
+        /// <param name="accessUnit">The encoded H264 access unit to transmit. An access unit can contain one or more
+        /// NAL's.</param>
+        /// <remarks>
+        /// An Access Unit can contain one or more NAL's. The NAL's have to be parsed in order to be able to package 
+        /// in RTP packets.
+        /// 
+        /// See https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201602-S!!PDF-E&type=items Annex B for byte stream specification.
+        /// </remarks>
+        public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit)
         {
             var dstEndPoint = m_isMediaMultiplexed ? AudioDestinationEndPoint : VideoDestinationEndPoint;
 
@@ -1659,67 +1537,202 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            try
-            {
-                var videoTrack = VideoLocalTrack;
+            var videoTrack = VideoLocalTrack;
 
-                if (videoTrack == null)
+            if (videoTrack == null)
+            {
+                logger.LogWarning("SendH264Frame was called on an RTP session without a video stream.");
+            }
+            else if (videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
+            {
+                return;
+            }
+            else
+            {
+                int zeroes = 0;
+
+                // Parse NALs from H264 access unit, encoded as an Annex B bitstream.
+                // NALs are delimited by 0x000001 or 0x00000001.
+                int currPosn = 0;
+                for (int i = 0; i < accessUnit.Length; i++)
                 {
-                    logger.LogWarning("SendH264Frame was called on an RTP session without a video stream.");
-                }
-                else if (videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
-                {
-                    for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
+                    if (accessUnit[i] == 0x00)
                     {
-                        int offset = index * RTP_MAX_PAYLOAD;
-                        int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
-                        byte[] payload = new byte[payloadLength + H264_RTP_HEADER_LENGTH];
-
-                        // Start RTP packet in frame 0x1c 0x89
-                        // Middle RTP packet in frame 0x1c 0x09
-                        // Last RTP packet in frame 0x1c 0x49
-
-                        int markerBit = 0;
-                        byte[] h264Header = new byte[] { 0x1c, 0x09 };
-
-                        if (index == 0 && frame.Length < RTP_MAX_PAYLOAD)
-                        {
-                            // First and last RTP packet in the frame.
-                            h264Header = new byte[] { 0x1c, 0x49 };
-                            markerBit = 1;
-                        }
-                        else if (index == 0)
-                        {
-                            h264Header = new byte[] { 0x1c, 0x89 };
-                        }
-                        else if ((index + 1) * RTP_MAX_PAYLOAD > frame.Length)
-                        {
-                            h264Header = new byte[] { 0x1c, 0x49 };
-                            markerBit = 1;
-                        }
-
-                        var h264Stream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
-                        h264Stream.InsertRange(0, h264Header);
-
-                        Buffer.BlockCopy(h264Header, 0, payload, 0, H264_RTP_HEADER_LENGTH);
-                        Buffer.BlockCopy(frame, offset, payload, H264_RTP_HEADER_LENGTH, payloadLength);
-
-                        SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
-
-                        videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
+                        zeroes++;
                     }
+                    else if (accessUnit[i] == 0x01 && zeroes >= 2)
+                    {
+                        // This is a NAL start sequence.
+                        int nalStart = i + 1;
+                        if (nalStart - currPosn > 4)
+                        {
+                            int endPosn = nalStart - ((zeroes == 2) ? 3 : 4);
+                            int nalSize = endPosn - currPosn;
 
-                    videoTrack.Timestamp += duration;
+                            SendH264Nal(duration, payloadTypeID, accessUnit.Skip(currPosn).Take(nalSize).ToArray(), dstEndPoint, videoTrack);
+                        }
+
+                        currPosn = nalStart;
+                    }
+                    else
+                    {
+                        zeroes = 0;
+                    }
+                }
+
+                if (currPosn < accessUnit.Length)
+                {
+                    SendH264Nal(duration, payloadTypeID, accessUnit.Skip(currPosn).ToArray(), dstEndPoint, videoTrack);
                 }
             }
-            catch (SocketException sockExcp)
+        }
+
+        /// <summary>
+        /// Sends a single H264 NAL to the remote party.
+        /// </summary>
+        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
+        /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
+        /// <param name="nal">The buffer containing the NAL to send.</param>
+        /// <param name="dstEndPoint">The destination end point to send to.</param>
+        /// <param name="videoTrack">The video track to send on.</param>
+        /// <remarks>
+        /// /// <remarks>
+        /// RTP Payload Format for H.264 Video:
+        /// https://tools.ietf.org/html/rfc6184
+        /// 
+        /// FFmpeg H264 RTP packetisation code:
+        /// https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/rtpenc_h264_hevc.c
+        /// 
+        /// When the payload size is less than or equal to max RTP payload, send as 
+        /// Single-Time Aggregation Packet (STAP):
+        /// https://tools.ietf.org/html/rfc6184#section-5.7.1
+        /// 
+        ///      0                   1                   2                   3
+        /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// |                          RTP Header                           |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// |STAP-A NAL HDR |         NALU 1 Size           | NALU 1 HDR    |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// 
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// |F|NRI|  Type   |                                               |
+        /// +-+-+-+-+-+-+-+-+
+        /// 
+        /// Type = 24 for STAP-A (NOTE: this is the type of the H264 RTP header 
+        /// and NOT the NAL type).
+        /// 
+        /// When the payload size is greater than max RTP payload, send as 
+        /// Fragmentation Unit A (FU-A):
+        /// https://tools.ietf.org/html/rfc6184#section-5.8
+        ///      0                   1                   2                   3
+        /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// | FU indicator  |   FU header   |                               |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
+        /// |   Fragmentation Unit (FU) Payload
+        /// |
+        /// ...
+        /// 
+        /// 
+        /// The FU indicator octet has the following format:
+        ///
+        /// +---------------+
+        /// |0|1|2|3|4|5|6|7|
+        /// +-+-+-+-+-+-+-+-+
+        /// |F|NRI|  Type   |
+        /// +---------------+
+        /// 
+        /// F and NRI bits come from the NAL being transmitted.
+        /// Type = 28 for FU-A (NOTE: this is the type of the H264 RTP header 
+        /// and NOT the NAL type).
+        /// 
+        /// The FU header has the following format:
+        ///
+        /// +---------------+
+        /// |0|1|2|3|4|5|6|7|
+        /// +-+-+-+-+-+-+-+-+
+        /// |S|E|R|  Type   |
+        /// +---------------+
+        /// 
+        /// S: Set to 1 for the start of the NAL FU (i.e. first packet in frame).
+        /// E: Set to 1 for the end of the NAL FU (i.e. the last packet in the frame).
+        /// R: Reserved bit must be 0.
+        /// Type: The NAL unit payload type, comes from NAL packet (NOTE: this IS the type of the NAL message).
+        /// </remarks>
+        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, IPEndPoint dstEndPoint, MediaStreamTrack videoTrack)
+        {
+            //logger.LogDebug($"Send NAL {nal.Length}.");
+
+            byte nalType = (byte)(nal[0] & 0x1F);
+            byte nalNri = (byte)((nal[0] >> 5) & 0x03);
+
+            byte firstHdrByte = (byte)(nal[0] & 0xE0); // Has either 24 (STAP-A) or 28 (FU-A) added to it.
+
+            //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
+
+            if (nal.Length <= RTP_MAX_PAYLOAD)
             {
-                logger.LogError("SocketException SendH264Frame. " + sockExcp.Message);
+                // Send as Single-Time Aggregation Packet (STAP-A).
+                //byte[] payload = new byte[nal.Length + 3];
+                byte[] payload = new byte[nal.Length];
+
+                //byte stapAByte = (byte)(firstHdrByte + 24);
+                //byte[] h264RtpHdr = new byte[] { stapAByte, (byte)(nal.Length >> 8 & 0xff), (byte)(nal.Length & 0xff) };
+                int markerBit = 1;   // There is only ever one packet in a STAP-A.
+
+                //Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, 3);
+                Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
+
+                var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
+
+                SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
+                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+
+                videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
             }
+            else
+            {
+                nal = nal.Skip(1).ToArray();
+
+                // Send as Fragmentation Unit A (FU-A):
+                for (int index = 0; index * RTP_MAX_PAYLOAD < nal.Length; index++)
+                {
+                    int offset = index * RTP_MAX_PAYLOAD;
+                    int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < nal.Length) ? RTP_MAX_PAYLOAD : nal.Length - index * RTP_MAX_PAYLOAD;
+
+                    byte[] payload = new byte[payloadLength + H264_RTP_HEADER_LENGTH];
+
+                    bool isFirstPacket = index == 0;
+                    bool isFinalPacket = (index + 1) * RTP_MAX_PAYLOAD >= nal.Length;
+                    int markerBit = (isFinalPacket) ? 1 : 0;
+
+                    byte fuIndicator = (byte)(firstHdrByte + 28);
+                    byte fuHeader = nalType;
+                    if (isFirstPacket)
+                    {
+                        fuHeader += 0x80;
+                    }
+                    else if (isFinalPacket)
+                    {
+                        fuHeader += 0x40;
+                    }
+                    byte[] h264RtpHdr = new byte[] { fuIndicator, fuHeader };
+
+                    Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, H264_RTP_HEADER_LENGTH);
+                    Buffer.BlockCopy(nal, offset, payload, H264_RTP_HEADER_LENGTH, payloadLength);
+
+                    var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
+
+                    SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.SeqNum, VideoRtcpSession);
+                    //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+
+                    videoTrack.SeqNum = (videoTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(videoTrack.SeqNum + 1);
+                }
+            }
+
+            videoTrack.Timestamp += duration;
         }
 
         /// <summary>
@@ -1910,6 +1923,8 @@ namespace SIPSorcery.Net
                 }
 
                 OnRtpClosed?.Invoke(reason);
+
+                OnClosed?.Invoke();
             }
         }
 
@@ -2017,8 +2032,9 @@ namespace SIPSorcery.Net
                                 rtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
                                 OnReceiveReport?.Invoke(remoteEndPoint, rtcpSession.MediaType, rtcpPkt);
                             }
-                            else
+                            else if (AudioRtcpSession?.PacketsReceivedCount > 0 || VideoRtcpSession?.PacketsReceivedCount > 0)
                             {
+                                // Only give this warning if we've received at least one RTP packet.
                                 logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
                             }
                         }
@@ -2104,9 +2120,15 @@ namespace SIPSorcery.Net
                                 }
                             }
 
-                            SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
+                            if (RemoteDescription != null)
+                            {
+                                // Don't hand RTP packets to the application until the remote description has been set. Without it
+                                // things like the common codec, DTMF support etc. are not known.
 
-                            OnRtpPacketReceived?.Invoke(remoteEndPoint, mediaType, rtpPacket);
+                                SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
+
+                                OnRtpPacketReceived?.Invoke(remoteEndPoint, mediaType, rtpPacket);
+                            }
 
                             // Used for reporting purposes.
                             if (rtpMediaType == SDPMediaTypesEnum.audio && AudioRtcpSession != null)
@@ -2143,19 +2165,21 @@ namespace SIPSorcery.Net
                 // Exact match on actual and expected destination.
                 isValidSource = true;
             }
-            else if ((expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate())
+            else if (AcceptRtpFromAny || (expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate())
                //|| (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address
                )
             {
-                // The end point doesn't match BUT we were supplied a private address and the remote source is a public address
+                // The end point doesn't match BUT we were supplied a private address in the SDP and the remote source is a public address
                 // so high probability there's a NAT on the network path. Switch to the remote end point (note this can only happen once
-                // and only if the SSRV is 0, i.e. this is the first packet.
-                // AC 12 Jul 2020: Commented out the expression that allows the end point to be change just because it's a loopback address.
-                // Need to determine the use case as to why I added that. A breaking case is doing an attended transfer test where
-                // two different agents are using loopback addresses. The expression allows an older session to override the destination
-                // set by a newer remote SDP.
+                // and only if the SSRV is 0, i.e. this is the first RTP packet.
                 // If the remote end point is a loopback address then it's likely that this is a test/development 
                 // scenario and the source can be trusted.
+                // AC 12 Jul 2020: Commented out the expression that allows the end point to be change just because it's a loopback address.
+                // A breaking case is doing an attended transfer test where two different agents are using loopback addresses. 
+                // The expression allows an older session to override the destination set by a newer remote SDP.
+                // AC 18 Aug 2020: Despite the carefully crafted rules below and https://github.com/sipsorcery/sipsorcery/issues/197
+                // there are still cases that were a problem in one scenario but acceptable in another. To accommodate a new property
+                // was added to allow the application to decide whether the RTP end point switches should be liberal or not.
                 logger.LogDebug($"{mediaType} end point switched for RTP ssrc {ssrc} from {expectedEndPoint} to {receivedOnEndPoint}.");
 
                 if (mediaType == SDPMediaTypesEnum.audio)

@@ -24,9 +24,10 @@ using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Media;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Windows;
 
 namespace demo
 {
@@ -35,7 +36,7 @@ namespace demo
         private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
         private const string VIDEO_TEST_PATTERN_FILE = "media/testpattern.jpeg";
         private static string DESTINATION = "aaron@127.0.0.1:6060"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
-        private static int CALL_IMTEOUT_SECONDS = 20;
+        private static int CALL_TIMEOUT_SECONDS = 20;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -50,11 +51,13 @@ namespace demo
 
             AddConsoleLogger();
 
+            WindowsVideoEndPoint.logger = Log;
+
             _sipTransport = new SIPTransport();
 
             EnableTraceLogs(_sipTransport);
 
-            // Open a Window to display the video feed from the WebRTC peer.
+            // Open a window to display the video feed from the remote SIP party.
             _form = new Form();
             _form.AutoSize = true;
             _form.BackgroundImageLayout = ImageLayout.Center;
@@ -80,33 +83,47 @@ namespace demo
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
-            var audioSrcOpts = new AudioOptions
+            var audioSrcOpts = new AudioSourceOptions
             {
                 AudioSource = AudioSourcesEnum.Music,
-                SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
+                SourceFiles = new Dictionary<AudioCodecsEnum, string>
                 {
-                    { SDPMediaFormatsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
+                    { AudioCodecsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
                 }
             };
-            var videoSrcOpts = new VideoOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
-            var rtpSession = new RtpAVSession(audioSrcOpts, videoSrcOpts);
+
+            var audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioSrcOpts);
+            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), audioExtrasSource);
+            var testPatternSource = new VideoTestPatternSource();
+            var windowsVideoEndPoint = new WindowsVideoEndPoint(testPatternSource);
+
+            MediaEndPoints mediaEndPoints = new MediaEndPoints
+            {
+                AudioSink = windowsAudioEndPoint,
+                AudioSource = audioExtrasSource,
+                VideoSink = windowsVideoEndPoint,
+                VideoSource = windowsVideoEndPoint,
+            };
+
+            var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+            voipMediaSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.
-            Task<bool> callTask = userAgent.Call(DESTINATION, null, null, rtpSession);
-            callTask.Wait(CALL_IMTEOUT_SECONDS * 1000);
+            Task<bool> callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
+            callTask.Wait(CALL_TIMEOUT_SECONDS * 1000);
 
             ManualResetEvent exitMRE = new ManualResetEvent(false);
 
             if (callTask.Result)
             {
                 Log.LogInformation("Call attempt successful.");
-                rtpSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =>
+                windowsVideoEndPoint.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride) =>
                 {
                     _picBox.BeginInvoke(new Action(() =>
                     {
                         unsafe
                         {
-                            fixed (byte* s = sample)
+                            fixed (byte* s = bmp)
                             {
                                 System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
                                 _picBox.Image = bmpImage;

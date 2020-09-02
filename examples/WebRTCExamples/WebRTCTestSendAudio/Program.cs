@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -28,81 +27,33 @@ using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
 
-namespace WebRTCServer
+namespace demo
 {
-    public class WebRTCAudioSession : WebSocketBehavior
+    public class WebRTCConnection : WebSocketBehavior
     {
-        private const int RTP_TIMESTAMP_RATE = 8000;         // G711 uses an 8KHz for RTP timestamps clock.
-        private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
-
-        public RTCPeerConnection _peerConnection;
-        private SignalGenerator _signalGenerator;
-        private Timer _audioStreamTimer;
+        public RTCPeerConnection PeerConnection;
 
         public event Func<WebSocketContext, Task<RTCPeerConnection>> WebSocketOpened;
         public event Action<RTCPeerConnection, string> OnMessageReceived;
 
-        public WebRTCAudioSession()
+        public WebRTCConnection()
         { }
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            OnMessageReceived(_peerConnection, e.Data);
+            OnMessageReceived(PeerConnection, e.Data);
         }
 
         protected override async void OnOpen()
         {
             base.OnOpen();
-            _peerConnection = await WebSocketOpened(this.Context);
-
-            _peerConnection.onconnectionstatechange += (state) =>
-            {
-
-                if (state == RTCPeerConnectionState.connected)
-                {
-                    _signalGenerator = new SignalGenerator(8000, 1);
-                    _signalGenerator.Type = SignalGeneratorType.Sin;
-                    _audioStreamTimer = new Timer(SendSignalGeneratorSample, null, 0, AUDIO_SAMPLE_PERIOD_MILLISECONDS);
-                }
-                else if (state == RTCPeerConnectionState.closed)
-                {
-                    _audioStreamTimer?.Dispose();
-                }
-            };
+            PeerConnection = await WebSocketOpened(this.Context);
         }
 
         protected override void OnClose(CloseEventArgs e)
         {
             base.OnClose(e);
-            _peerConnection.Close("remote party close");
-            _audioStreamTimer?.Dispose();
-        }
-
-        /// <summary>
-        /// Sends a sample from a signal generator generated waveform.
-        /// </summary>
-        private void SendSignalGeneratorSample(object state)
-        {
-            lock (_audioStreamTimer)
-            {
-                int inputBufferSize = RTP_TIMESTAMP_RATE / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
-                int outputBufferSize = RTP_TIMESTAMP_RATE / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
-
-                // Get the signal generator to generate the samples and then convert from
-                // signed linear to PCM.
-                float[] linear = new float[inputBufferSize];
-                _signalGenerator.Read(linear, 0, inputBufferSize);
-                short[] pcm = linear.Select(x => (short)(x * 32767f)).ToArray();
-
-                byte[] encodedSample = new byte[outputBufferSize];
-
-                for (int index = 0; index < inputBufferSize; index++)
-                {
-                    encodedSample[index] = MuLawEncoder.LinearToMuLawSample(pcm[index]);
-                }
-
-                _peerConnection.SendAudioFrame((uint)outputBufferSize, _peerConnection.GetSendingFormat(SDPMediaTypesEnum.audio).FormatCodec.GetHashCode(), encodedSample);
-            }
+            PeerConnection.Close("remote party close");
         }
     }
 
@@ -128,7 +79,7 @@ namespace WebRTCServer
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
             _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            _webSocketServer.AddWebSocketService<WebRTCAudioSession>("/", (session) =>
+            _webSocketServer.AddWebSocketService<WebRTCConnection>("/", (session) =>
             {
                 session.WebSocketOpened += SendSDPOffer;
                 session.OnMessageReceived += WebSocketMessageReceived;
@@ -154,9 +105,14 @@ namespace WebRTCServer
 
             var pc = new RTCPeerConnection(null);
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendOnly);
-            pc.addTrack(videoTrack);
+            AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder());
+            audioSource.OnAudioSourceEncodedSample += (audioCodec, durationRtpUnits, sample) => pc.SendMedia(SDPMediaTypesEnum.audio, durationRtpUnits, sample);
 
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            pc.addTrack(audioTrack);
+
+            pc.OnAudioFormatsNegotiated += (sdpFormat) =>
+                audioSource.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
             pc.OnReceiveReport += RtpSession_OnReceiveReport;
             pc.OnSendReport += RtpSession_OnSendReport;
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
@@ -166,12 +122,17 @@ namespace WebRTCServer
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
 
-                if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
+                if(state == RTCPeerConnectionState.connected)
+                {
+                    audioSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave});
+                }
+                else if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
                     pc.Close("remote disconnection");
                 }
-                else if(state == RTCPeerConnectionState.closed)
+                else if (state == RTCPeerConnectionState.closed)
                 {
+                    audioSource?.CloseAudio();
                     pc.OnReceiveReport -= RtpSession_OnReceiveReport;
                     pc.OnSendReport -= RtpSession_OnSendReport;
                 }
@@ -190,22 +151,15 @@ namespace WebRTCServer
 
         private static void WebSocketMessageReceived(RTCPeerConnection pc, string message)
         {
-            try
+            if (pc.remoteDescription == null)
             {
-                if (pc.remoteDescription == null)
-                {
-                    logger.LogDebug("Answer SDP: " + message);
-                    pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
-                }
-                else
-                {
-                    logger.LogDebug("ICE Candidate: " + message);
-                    pc.addIceCandidate(new RTCIceCandidateInit { candidate = message });
-                }
+                logger.LogDebug("Answer SDP: " + message);
+                pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
             }
-            catch (Exception excp)
+            else
             {
-                logger.LogError("Exception WebSocketMessageReceived. " + excp.Message);
+                logger.LogDebug("ICE Candidate: " + message);
+                pc.addIceCandidate(new RTCIceCandidateInit { candidate = message });
             }
         }
 

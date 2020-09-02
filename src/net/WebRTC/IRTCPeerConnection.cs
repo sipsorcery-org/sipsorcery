@@ -349,8 +349,8 @@ namespace SIPSorcery.Net
 
         // TODO: Extensions for the RTCMediaAPI
         // https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface-extensions.
-        List<IRTCRtpSender> getSenders();
-        List<IRTCRtpReceiver> getReceivers();
+        //List<IRTCRtpSender> getSenders();
+        //List<IRTCRtpReceiver> getReceivers();
         //List<RTCRtpTransceiver> getTransceivers();
         //RTCRtpSender addTrack(MediaStreamTrack track, param MediaStream[] streams);
         //void removeTrack(RTCRtpSender sender);

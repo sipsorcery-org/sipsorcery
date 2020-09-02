@@ -11,7 +11,7 @@
 
             closePeer();
 
-            let videoControl = document.querySelector('#audioCtl');
+            let audioControl = document.querySelector('#audioCtl');
 
             ws = new WebSocket(url, []);
 
@@ -22,7 +22,7 @@
 
                 pc.ontrack = ({ track, streams: [stream] }) => {
                     track.onunmute = () => {
-                        videoControl.srcObject = stream;
+                        audioControl.srcObject = stream;
                     };
                 };
 
