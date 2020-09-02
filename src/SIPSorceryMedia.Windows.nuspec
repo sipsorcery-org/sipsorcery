@@ -15,9 +15,14 @@
 	<tags>WebRTC VoIP SIPSorcery Media Windows</tags>
 	<dependencies>
       <group targetFramework="netstandard2.0" />
+	    <dependency id="Microsoft.Extensions.Logging.Abstractions" version="3.1.1" />
+		<dependency id="NAudio" version="1.10.0" />
+		<dependency id="System.Drawing.Common" version="4.7.0" />
+		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.5-pre" />
+		<dependency id="Microsoft.Extensions.DependencyInjection" version="3.1.7" />
     </dependencies>
-	<releaseNotes>-0.0.8-pre: Initial pre-release</releaseNotes>
-	<version>0.0.8-pre</version>
+	<releaseNotes>-0.0.9-pre: Initial pre-release</releaseNotes>
+	<version>0.0.9-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
