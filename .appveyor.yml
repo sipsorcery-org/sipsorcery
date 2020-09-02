@@ -8,7 +8,7 @@ build:
   publish_nuget: false
   verbosity: quiet
 after_build:
-  - dotnet pack src\SIPSorceryMedia.Windows.csproj -p:NuspecFile=SIPSorceryMedia.Windows.nuspec -c Release -o . --no-build
+  - dotnet pack src\SIPSorceryMedia.Windows.csproj -p:NuspecFile=SIPSorceryMedia.Windows.nuspec -c Release --no-build
 deploy:
   - provider: NuGet
     server:                  # remove to push to NuGet.org
@@ -21,7 +21,7 @@ deploy:
       APPVEYOR_REPO_TAG: true       # deploy on tag push only
   - provider: NuGet
     server: https://nuget.pkg.github.com/sipsorcery/index.json
-    artifact: /.nupkg/
+    artifact: /.*\.nupkg/
     username: sipsorcery
     api_key:
       secure: E58r+OknoQn8+bsPRT6l3U2K4kfOpDiGCo1C75LkVg+R/RBHpY//J8UCXEfVvyRB
