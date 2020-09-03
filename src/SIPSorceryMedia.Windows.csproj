@@ -14,7 +14,7 @@
     </PackageReference>
     <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.5-pre" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.6-pre" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection">
       <Version>3.1.7</Version>
     </PackageReference>
@@ -27,6 +27,8 @@
     <EmbeddedResource Remove="packages\**" />
     <None Remove="packages\**" />
     <Compile Remove="codecs\OpenH264Encoder.cs" />
+    <None Remove="icon.png" />
+    <None Remove="SIPSorceryMedia.Windows.nuspec" />
     <ContentWithTargetPath Include="@(NativeLibs)">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <TargetPath>%(Filename)%(Extension)</TargetPath>

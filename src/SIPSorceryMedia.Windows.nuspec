@@ -18,12 +18,12 @@
 	    <dependency id="Microsoft.Extensions.Logging.Abstractions" version="3.1.1" />
 		<dependency id="NAudio" version="1.10.0" />
 		<dependency id="System.Drawing.Common" version="4.7.0" />
-		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.5-pre" />
+		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.6-pre" />
 		<dependency id="Microsoft.Extensions.DependencyInjection" version="3.1.7" />
 	  </group>
     </dependencies>
-	<releaseNotes>-0.0.9-pre: Initial pre-release</releaseNotes>
-	<version>0.0.9-pre</version>
+	<releaseNotes>-0.0.10-pre: Initial pre-release</releaseNotes>
+	<version>0.0.10-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />

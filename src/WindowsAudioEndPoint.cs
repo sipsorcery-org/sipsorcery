@@ -51,6 +51,13 @@ namespace SIPSorceryMedia.Windows
             DEVICE_BITS_PER_SAMPLE,
             DEVICE_CHANNELS);
 
+        public static readonly List<AudioCodecsEnum> SupportedCodecs = new List<AudioCodecsEnum>
+        {
+            AudioCodecsEnum.PCMU,
+            AudioCodecsEnum.PCMA,
+            AudioCodecsEnum.G722
+        };
+
         /// <summary>
         /// Audio render device.
         /// </summary>
@@ -70,6 +77,7 @@ namespace SIPSorceryMedia.Windows
         private AudioCodecsEnum _selectedSourceFormat = AudioCodecsEnum.PCMU;
         private AudioCodecsEnum _selectedSinkFormat = AudioCodecsEnum.PCMU;
         private IAudioSource _externalSource;
+        private List<AudioCodecsEnum> _supportedCodecs = new List<AudioCodecsEnum>(SupportedCodecs);
 
         private bool _disableSink;
         private bool _disableSource;
@@ -164,6 +172,35 @@ namespace SIPSorceryMedia.Windows
             }
         }
 
+        /// <summary>
+        /// Requests that the audio sink and source only advertise support for the supplied list of codecs.
+        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
+        /// used.
+        /// </summary>
+        /// <param name="codecs">The list of codecs restrict advertised support to.</param>
+        public void RestrictCodecs(List<AudioCodecsEnum> codecs)
+        {
+            if(codecs == null || codecs.Count == 0)
+            {
+                _supportedCodecs = new List<AudioCodecsEnum>(SupportedCodecs);
+            }
+            else
+            {
+                _supportedCodecs = new List<AudioCodecsEnum>();
+                foreach(var codec in codecs)
+                {
+                    if(SupportedCodecs.Any(x => x == codec))
+                    {
+                        _supportedCodecs.Add(codec);
+                    }
+                    else
+                    {
+                        logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
+                    }
+                }
+            }
+        }
+
         public MediaEndPoints ToMediaEndPoints()
         {
             return new MediaEndPoints
@@ -234,12 +271,7 @@ namespace SIPSorceryMedia.Windows
 
         public List<AudioCodecsEnum> GetAudioSourceFormats()
         {
-            var formats = new List<AudioCodecsEnum>{
-                AudioCodecsEnum.PCMU,
-                AudioCodecsEnum.PCMA,
-                AudioCodecsEnum.G722};
-
-            return formats;
+            return _supportedCodecs;
         }
 
         public void SetAudioSourceFormat(AudioCodecsEnum audioFormat)
@@ -250,12 +282,7 @@ namespace SIPSorceryMedia.Windows
 
         public List<AudioCodecsEnum> GetAudioSinkFormats()
         {
-            var formats = new List<AudioCodecsEnum>{
-               AudioCodecsEnum.PCMU,
-               AudioCodecsEnum.PCMA,
-               AudioCodecsEnum.G722};
-
-            return formats;
+            return _supportedCodecs;
         }
 
         public void SetAudioSinkFormat(AudioCodecsEnum audioFormat)

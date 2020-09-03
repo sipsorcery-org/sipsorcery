@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,11 @@ namespace SIPSorceryMedia.Windows
 
         public static ILogger logger = NullLogger.Instance;
 
+        public static readonly List<VideoCodecsEnum> SupportedCodecs = new List<VideoCodecsEnum>
+        {
+            VideoCodecsEnum.VP8
+        };
+
         private IVideoSource _externalSource;
         private Vp8Codec _vp8Encoder;
         private Vp8Codec _vp8Decoder;
@@ -40,6 +46,7 @@ namespace SIPSorceryMedia.Windows
         private int _currVideoFramePosn = 0;
         private bool _isStarted;
         private bool _isClosed;
+        private List<VideoCodecsEnum> _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
 
         /// <summary>
         /// This video source DOES NOT generate raw samples. Subscribe to the encoded samples event
@@ -69,6 +76,35 @@ namespace SIPSorceryMedia.Windows
             }
             _vp8Decoder = new Vp8Codec();
             _vp8Decoder.InitialiseDecoder();
+        }
+
+        /// <summary>
+        /// Requests that the audio sink and source only advertise support for the supplied list of codecs.
+        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
+        /// used.
+        /// </summary>
+        /// <param name="codecs">The list of codecs restrict advertised support to.</param>
+        public void RestrictCodecs(List<VideoCodecsEnum> codecs)
+        {
+            if (codecs == null || codecs.Count == 0)
+            {
+                _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
+            }
+            else
+            {
+                _supportedCodecs = new List<VideoCodecsEnum>();
+                foreach (var codec in codecs)
+                {
+                    if (SupportedCodecs.Any(x => x == codec))
+                    {
+                        _supportedCodecs.Add(codec);
+                    }
+                    else
+                    {
+                        logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
+                    }
+                }
+            }
         }
 
         private void ExternalSource_OnVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] rgb24Sample)
@@ -209,7 +245,7 @@ namespace SIPSorceryMedia.Windows
 
         public List<VideoCodecsEnum> GetVideoSourceFormats()
         {
-            return new List<VideoCodecsEnum> { VideoCodecsEnum.VP8 };
+            return _supportedCodecs;
         }
 
         public void SetVideoSourceFormat(VideoCodecsEnum videoFormat)
@@ -219,7 +255,7 @@ namespace SIPSorceryMedia.Windows
 
         public List<VideoCodecsEnum> GetVideoSinkFormats()
         {
-            return new List<VideoCodecsEnum> { VideoCodecsEnum.VP8};
+            return _supportedCodecs;
         }
 
         public void SetVideoSinkFormat(VideoCodecsEnum videoFormat)

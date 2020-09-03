@@ -34,7 +34,7 @@ namespace SIPSorceryMedia.Windows
         public ushort PictureID;
 
         // Payload Header Fields.
-        public int FirstPartitionSize;              // The size of the first partition in bytes is calculated from the 19 bits in Size0, SIze1 & Size2 as: size = Size0 + (8 x Size1) + (2048 8 Size2).
+        public int FirstPartitionSize;              // The size of the first partition in bytes is calculated from the 19 bits in Size0, Size1 & Size2 as: size = Size0 + (8 x Size1) + (2048 8 Size2).
         public bool ShowFrame;
         public int VersionNumber;
         public bool IsKeyFrame;
