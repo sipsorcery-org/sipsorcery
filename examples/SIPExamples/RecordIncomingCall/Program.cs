@@ -14,7 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -24,6 +23,7 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using NAudio.Wave;
+using SIPSorceryMedia.Windows;
 
 namespace demo
 {
@@ -47,7 +47,20 @@ namespace demo
 
             _sipTransport = new SIPTransport();
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
-            _sipTransport.SIPTransportRequestReceived += OnRequest;
+
+            var userAgent = new SIPUserAgent(_sipTransport, null, true);
+            userAgent.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
+            userAgent.OnCallHungup += (dialog) => _waveFile?.Close();
+            userAgent.OnIncomingCall += async (ua, req) =>
+            {
+                WindowsAudioEndPoint winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
+                VoIPMediaSession voipMediaSession = new VoIPMediaSession(winAudioEP.ToMediaEndPoints());
+                voipMediaSession.AcceptRtpFromAny = true;
+                voipMediaSession.OnRtpPacketReceived += OnRtpPacketReceived;
+
+                var uas = userAgent.AcceptCall(req);
+                await userAgent.Answer(uas, voipMediaSession);
+            };
 
             Console.WriteLine("press any key to exit...");
             Console.Read();
@@ -77,67 +90,6 @@ namespace demo
                         _waveFile.Write(pcmSample, 0, 2);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// Because this is a server user agent the SIP transport must start listening for client user agents.
-        /// </summary>
-        private static async Task OnRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
-        {
-            try
-            {
-                if (sipRequest.Header.From != null &&
-                sipRequest.Header.From.FromTag != null &&
-                sipRequest.Header.To != null &&
-                sipRequest.Header.To.ToTag != null)
-                {
-                    // This is an in-dialog request that will be handled directly by a user agent instance.
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
-                {
-                    Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
-
-                    var userAgent = new SIPUserAgent(_sipTransport, null);
-                    userAgent.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
-                    userAgent.OnCallHungup += (dialog) => _waveFile?.Close();
-                    
-                    var rtpSession = new RtpAVSession(
-                        new AudioOptions
-                        {
-                            AudioSource = AudioSourcesEnum.CaptureDevice,
-                            AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
-                        },
-                        null);
-                    rtpSession.OnRtpPacketReceived += OnRtpPacketReceived;
-
-                    var uas = userAgent.AcceptCall(sipRequest);
-                    await userAgent.Answer(uas, rtpSession);
-
-                    if (userAgent.IsCallActive)
-                    {
-                        await rtpSession.Start();
-                    }
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.BYE)
-                {
-                    SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                    await _sipTransport.SendResponseAsync(byeResponse);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
-                {
-                    SIPResponse notAllowededResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    await _sipTransport.SendResponseAsync(notAllowededResponse);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
-                {
-                    SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await _sipTransport.SendResponseAsync(optionsResponse);
-                }
-            }
-            catch (Exception reqExcp)
-            {
-                Log.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
             }
         }
 

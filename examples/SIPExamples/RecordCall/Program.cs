@@ -14,7 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Serilog;
@@ -22,14 +21,15 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Windows;
 using NAudio.Wave;
 
 namespace demo
 {
     class Program
     {
-        //private static string DESTINATION = "time@sipsorcery.com";
-        private static string DESTINATION = "*66@192.168.11.48";
+        private static string DESTINATION = "time@sipsorcery.com";
+        //private static string DESTINATION = "*66@192.168.0.48";
 
         private static readonly WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);
         private static WaveFileWriter _waveFile;
@@ -51,14 +51,9 @@ namespace demo
             };
             userAgent.OnCallHungup += (dialog) => _waveFile?.Close();
 
-            var rtpSession = new RtpAVSession(
-                new AudioOptions
-                {
-                    AudioSource = AudioSourcesEnum.CaptureDevice,
-                    AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
-                },
-                null);
-            rtpSession.OnRtpPacketReceived += OnRtpPacketReceived;
+            WindowsAudioEndPoint winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
+            VoIPMediaSession voipSession = new VoIPMediaSession(winAudioEP.ToMediaEndPoints());
+            voipSession.OnRtpPacketReceived += OnRtpPacketReceived;
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
@@ -78,7 +73,7 @@ namespace demo
             };
 
             // Place the call and wait for the result.
-            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
+            bool callResult = await userAgent.Call(DESTINATION, null, null, voipSession);
             Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
 
             Console.WriteLine("press any key to exit...");

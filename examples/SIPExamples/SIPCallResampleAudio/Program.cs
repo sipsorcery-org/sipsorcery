@@ -24,6 +24,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace demo
 {
@@ -60,8 +61,9 @@ namespace demo
             //EnableTraceLogs(sipTransport);
 
             var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-            var audioFormats = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU };
-            var rtpSession = new RtpAudioSession(audioOptions, audioFormats);
+            var audioCodecs = new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU };
+            AudioExtrasSource audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions, audioCodecs);
+            var rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
             rtpSession.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
 
             // Place the call and wait for the result.
