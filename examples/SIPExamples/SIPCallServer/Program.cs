@@ -28,6 +28,7 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery
 {
@@ -61,8 +62,8 @@ namespace SIPSorcery
 
     class Program
     {
-        private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.11.48";
-        private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.11.48";
+        private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.0.48";
+        private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.0.48";
         private static int SIP_LISTEN_PORT = 5060;
         private const string MUSIC_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
         private const string MUSIC_FILE_PCMA = "media/Macroform_-_Simplicity.alaw";
@@ -220,8 +221,8 @@ namespace SIPSorcery
                             foreach (var call in _calls)
                             {
                                 int duration = Convert.ToInt32(DateTimeOffset.Now.Subtract(call.Value.Dialogue.Inserted).TotalSeconds);
-                                uint rtpSent = (call.Value.MediaSession as RtpAudioSession).RtpPacketsSent;
-                                uint rtpRecv = (call.Value.MediaSession as RtpAudioSession).RtpPacketsReceived;
+                                uint rtpSent = (call.Value.MediaSession as VoIPMediaSession).AudioRtcpSession.PacketsSentCount;
+                                uint rtpRecv = (call.Value.MediaSession as VoIPMediaSession).AudioRtcpSession.PacketsReceivedCount;
                                 Log.LogInformation($"{call.Key}: {call.Value.Dialogue.RemoteTarget} {duration}s {rtpSent}/{rtpRecv}");
                             }
                         }
@@ -291,9 +292,9 @@ namespace SIPSorcery
         /// <param name="dst">THe destination specified on an incoming call. Can be used to
         /// set the audio source.</param>
         /// <returns>A new RTP session object.</returns>
-        private static RtpAudioSession CreateRtpSession(SIPUserAgent ua, string dst)
+        private static VoIPMediaSession CreateRtpSession(SIPUserAgent ua, string dst)
         {
-            List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
+            List<AudioCodecsEnum> codecs = new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU, AudioCodecsEnum.PCMA, AudioCodecsEnum.G722 };
 
             var audioSource = AudioSourcesEnum.SineWave;
             if (string.IsNullOrEmpty(dst) || !Enum.TryParse<AudioSourcesEnum>(dst, out audioSource))
@@ -304,15 +305,17 @@ namespace SIPSorcery
             var audioOptions = new AudioSourceOptions { AudioSource = audioSource };
             if (audioSource == AudioSourcesEnum.Music)
             {
-                audioOptions.SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>();
-                if (codecs.Contains(SDPMediaFormatsEnum.PCMA)) { audioOptions.SourceFiles.Add(SDPMediaFormatsEnum.PCMA, MUSIC_FILE_PCMA); }
-                if (codecs.Contains(SDPMediaFormatsEnum.PCMU)) { audioOptions.SourceFiles.Add(SDPMediaFormatsEnum.PCMU, MUSIC_FILE_PCMU); }
-                if (codecs.Contains(SDPMediaFormatsEnum.G722)) { audioOptions.SourceFiles.Add(SDPMediaFormatsEnum.G722, MUSIC_FILE_G722); }
+                audioOptions.SourceFiles = new Dictionary<AudioCodecsEnum, string>();
+                if (codecs.Contains(AudioCodecsEnum.PCMA)) { audioOptions.SourceFiles.Add(AudioCodecsEnum.PCMA, MUSIC_FILE_PCMA); }
+                if (codecs.Contains(AudioCodecsEnum.PCMU)) { audioOptions.SourceFiles.Add(AudioCodecsEnum.PCMU, MUSIC_FILE_PCMU); }
+                if (codecs.Contains(AudioCodecsEnum.G722)) { audioOptions.SourceFiles.Add(AudioCodecsEnum.G722, MUSIC_FILE_G722); }
             };
 
             Log.LogInformation($"RTP audio session source set to {audioSource}.");
 
-            var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
+            AudioExtrasSource audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions, codecs);
+            var rtpAudioSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
+            rtpAudioSession.AcceptRtpFromAny = true;
 
             // Wire up the event handler for RTP packets received from the remote party.
             rtpAudioSession.OnRtpPacketReceived += (ep, type, rtp) => OnRtpPacketReceived(ua, type, rtp);

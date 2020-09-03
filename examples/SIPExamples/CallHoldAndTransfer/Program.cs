@@ -26,18 +26,19 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Media;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery
 {
     class Program
     {
         private static int SIP_LISTEN_PORT = 5060;
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7001@192.168.11.24";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7001@192.168.0.48";
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7000@192.168.11.48";
-        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.24";  // The destination to transfer the initial call to.
+        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.0.48";  // The destination to transfer the initial call to.
         private static readonly string SIP_USERNAME = "7000";
         private static readonly string SIP_PASSWORD = "password";
         private static int TRANSFER_TIMEOUT_SECONDS = 10;                    // Give up on transfer if no response within this period.
@@ -71,48 +72,30 @@ namespace SIPSorcery
 
             _currentDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            RtpAVSession rtpAVSession = null;
+            var audioExtrasSource = new AudioExtrasSource(new AudioEncoder());
+            var winAudio = new WindowsAudioEndPoint(new AudioEncoder(), audioExtrasSource);
+            winAudio.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
 
             // Create a client/server user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
-            var userAgent = new SIPUserAgent(sipTransport, null);
+            var userAgent = new SIPUserAgent(sipTransport, null, true);
             userAgent.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
             userAgent.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
-
-            sipTransport.SIPTransportRequestReceived += async (localEndPoint, remoteEndPoint, sipRequest) =>
+            userAgent.OnIncomingCall += async (ua, req) =>
             {
-                if (sipRequest.Header.From != null &&
-                    sipRequest.Header.From.FromTag != null &&
-                    sipRequest.Header.To != null &&
-                    sipRequest.Header.To.ToTag != null)
-                {
-                    // This is an in-dialog request that will be handled directly by a user agent instance.
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
-                {
-                    if (userAgent?.IsCallActive == true)
-                    {
-                        Log.LogWarning($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
-                        // If we are already on a call return a busy response.
-                        UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
-                        SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                        uasTransaction.SendFinalResponse(busyResponse);
-                    }
-                    else
-                    {
-                        Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
-                        var incomingCall = userAgent.AcceptCall(sipRequest);
+                Log.LogInformation($"Incoming call from {req.Header.From.FriendlyDescription()} at {req.RemoteSIPEndPoint}.");
+                var uas = userAgent.AcceptCall(req);
 
-                        rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
-                        await userAgent.Answer(incomingCall, rtpAVSession);
-
-                        Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
-                    }
+                if (userAgent?.IsCallActive == true)
+                {
+                    // If we are already on a call return a busy response.
+                    Log.LogWarning($"Busy response returned for incoming call request.");
+                    uas.Reject(SIPResponseStatusCodesEnum.BusyHere, null);
                 }
                 else
                 {
-                    Log.LogDebug($"SIP {sipRequest.Method} request received but no processing has been set up for it, rejecting.");
-                    SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    await sipTransport.SendResponseAsync(notAllowedResponse);
+                    var voipSession = new VoIPMediaSession(winAudio.ToMediaEndPoints());
+                    voipSession.AcceptRtpFromAny = true;
+                    var answerResult = await userAgent.Answer(uas, voipSession);
                 }
             };
 
@@ -129,8 +112,9 @@ namespace SIPSorcery
                         {
                             if (!userAgent.IsCallActive)
                             {
-                                rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
-                                bool callResult = await userAgent.Call(DEFAULT_DESTINATION_SIP_URI, SIP_USERNAME, SIP_PASSWORD, rtpAVSession);
+                                var voipSession = new VoIPMediaSession(winAudio.ToMediaEndPoints());
+                                voipSession.AcceptRtpFromAny = true;
+                                bool callResult = await userAgent.Call(DEFAULT_DESTINATION_SIP_URI, SIP_USERNAME, SIP_PASSWORD, voipSession);
 
                                 Log.LogInformation($"Call attempt {((callResult) ? "successfull" : "failed")}.");
                             }
@@ -148,20 +132,25 @@ namespace SIPSorcery
                                 {
                                     Log.LogInformation("Taking the remote call party off hold.");
                                     userAgent.TakeOffHold();
-                                    await (userAgent.MediaSession as RtpAVSession).SetSources(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
+
+                                    audioExtrasSource.SetSource(AudioSourcesEnum.None);
+                                    await winAudio.ResumeAudio();
                                 }
                                 else
                                 {
                                     Log.LogInformation("Placing the remote call party on hold.");
-                                    userAgent.PutOnHold();
-                                    await (userAgent.MediaSession as RtpAVSession).SetSources(new AudioOptions
+                                    await winAudio.PauseAudio();
+
+                                    audioExtrasSource.SetSource(new AudioSourceOptions
                                     {
                                         AudioSource = AudioSourcesEnum.Music,
-                                        SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
+                                        SourceFiles = new Dictionary<AudioCodecsEnum, string>
                                         {
-                                            { SDPMediaFormatsEnum.PCMU, _currentDir + "/" + AUDIO_FILE_PCMU }
+                                            { AudioCodecsEnum.PCMU, _currentDir + "/" + AUDIO_FILE_PCMU }
                                         }
-                                    }, null);
+                                    });
+
+                                    userAgent.PutOnHold();
                                 }
                             }
                             else
@@ -227,8 +216,6 @@ namespace SIPSorcery
             #region Cleanup.
 
             Log.LogInformation("Exiting...");
-
-            rtpAVSession?.Close("app exit");
 
             if (userAgent != null)
             {

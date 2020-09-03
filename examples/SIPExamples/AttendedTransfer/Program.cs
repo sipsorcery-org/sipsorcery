@@ -39,6 +39,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery
 {
@@ -115,9 +116,10 @@ namespace SIPSorcery
                         Log.LogInformation($"{agentDesc}: Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = activeAgent.AcceptCall(sipRequest);
 
-                        var rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
+                        WindowsAudioEndPoint winAudio = new WindowsAudioEndPoint(new AudioEncoder());
+                        var voipMediaSession = new VoIPMediaSession(winAudio.ToMediaEndPoints());
 
-                        await activeAgent.Answer(incomingCall, rtpAVSession);
+                        await activeAgent.Answer(incomingCall, voipMediaSession);
                         Log.LogInformation($"{agentDesc}: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
                     else
@@ -152,8 +154,9 @@ namespace SIPSorcery
                             SIPUserAgent freeAgent = (!userAgent1.IsCallActive) ? userAgent1 : (!userAgent2.IsCallActive) ? userAgent2 : null;
                             if (freeAgent != null)
                             {
-                                var rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
-                                bool callResult = await freeAgent.Call(DEFAULT_DESTINATION_SIP_URI, null, null, rtpAVSession);
+                                WindowsAudioEndPoint winAudio = new WindowsAudioEndPoint(new AudioEncoder());
+                                var voipMediaSession = new VoIPMediaSession(winAudio.ToMediaEndPoints());
+                                bool callResult = await freeAgent.Call(DEFAULT_DESTINATION_SIP_URI, null, null, voipMediaSession);
 
                                 Log.LogInformation($"Call attempt {((callResult) ? "successfull" : "failed")}.");
                             }
@@ -222,7 +225,7 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {

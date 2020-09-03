@@ -62,6 +62,8 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery
 {
@@ -131,7 +133,7 @@ namespace SIPSorcery
             // acts as a singleton
             SIPServerUserAgent uas = null;
             CancellationTokenSource rtpCts = null; // Cancellation token to stop the RTP stream.
-            RtpAVSession rtpSession = null;
+            VoIPMediaSession rtpSession = null;
 
             // Because this is a server user agent the SIP transport must start listening for client user agents.
             sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -149,15 +151,17 @@ namespace SIPSorcery
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"Client offer contained PCMU audio codec.");
-                            rtpSession = new RtpAVSession(
-                                new AudioOptions
-                                {
-                                    AudioSource = AudioSourcesEnum.Music,
-                                    SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
+                            AudioExtrasSource extrasSource = new AudioExtrasSource(new AudioEncoder(),
+                                 new AudioSourceOptions
+                                 {
+                                     AudioSource = AudioSourcesEnum.Music,
+                                     SourceFiles = new Dictionary<AudioCodecsEnum, string>
                                     {
-                                        { SDPMediaFormatsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
+                                        { AudioCodecsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
                                     }
-                                }, null);
+                                 }, null);
+                            rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = extrasSource });
+                            rtpSession.AcceptRtpFromAny = true;
 
                             var setResult = rtpSession.SetRemoteDescription(SdpType.offer, offerSdp);
 
