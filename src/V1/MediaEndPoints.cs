@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -91,6 +90,8 @@ namespace SIPSorceryMedia.Abstractions.V1
         List<AudioCodecsEnum> GetAudioSourceFormats();
 
         void SetAudioSourceFormat(AudioCodecsEnum audioFormat);
+
+        void RestrictCodecs(List<AudioCodecsEnum> codecs);
     }
 
     public interface IAudioSink
@@ -104,6 +105,8 @@ namespace SIPSorceryMedia.Abstractions.V1
         void SetAudioSinkFormat(AudioCodecsEnum audioFormat);
 
         void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
+
+        void RestrictCodecs(List<AudioCodecsEnum> codecs);
     }
 
     public interface IVideoSource
@@ -123,6 +126,8 @@ namespace SIPSorceryMedia.Abstractions.V1
         List<VideoCodecsEnum> GetVideoSourceFormats();
 
         void SetVideoSourceFormat(VideoCodecsEnum videoFormat);
+
+        void RestrictCodecs(List<VideoCodecsEnum> codecs);
     }
 
     public interface IVideoSink
@@ -137,5 +142,7 @@ namespace SIPSorceryMedia.Abstractions.V1
         List<VideoCodecsEnum> GetVideoSinkFormats();
 
         void SetVideoSinkFormat(VideoCodecsEnum videoFormat);
+
+        void RestrictCodecs(List<VideoCodecsEnum> codecs);
     }
 }
