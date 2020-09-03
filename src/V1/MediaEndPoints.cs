@@ -96,10 +96,6 @@ namespace SIPSorceryMedia.Abstractions.V1
 
     public interface IAudioSink
     {
-        bool EncodedSamplesOnly { get; set; }
-
-        AudioSamplingRatesEnum AudioPlaybackRate { get; set; }
-
         List<AudioCodecsEnum> GetAudioSinkFormats();
 
         void SetAudioSinkFormat(AudioCodecsEnum audioFormat);
