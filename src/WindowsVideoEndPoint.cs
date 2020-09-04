@@ -27,7 +27,8 @@ namespace SIPSorceryMedia.Windows
 {
     public class WindowsVideoEndPoint : IVideoSource, IVideoSink, IDisposable
     {
-        private const int VIDEO_TIMESTAMP_SPACING = 3000;
+        private const int VIDEO_SAMPLING_RATE = 90000;
+        private const int DEFAULT_FRAMES_PER_SECOND = 30;
 
         public static ILogger logger = NullLogger.Instance;
 
@@ -36,14 +37,11 @@ namespace SIPSorceryMedia.Windows
             VideoCodecsEnum.VP8
         };
 
-        private IVideoSource _externalSource;
         private Vp8Codec _vp8Encoder;
         private Vp8Codec _vp8Decoder;
         private bool _forceKeyFrame = false;
         private VideoCodecsEnum _selectedSinkFormat = VideoCodecsEnum.VP8;
         private VideoCodecsEnum _selectedSourceFormat = VideoCodecsEnum.VP8;
-        private byte[] _currVideoFrame = new byte[65536];
-        private int _currVideoFramePosn = 0;
         private bool _isStarted;
         private bool _isClosed;
         private List<VideoCodecsEnum> _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
@@ -55,35 +53,30 @@ namespace SIPSorceryMedia.Windows
         [Obsolete("This video source only generates encoded samples. No raw video samples will be supplied to this event.")]
         public event RawVideoSampleDelegate OnVideoSourceRawSample { add { } remove { } }
 
-        public event VideoEncodedSampleDelegate OnVideoSourceEncodedSample;
+        public event EncodedSampleDelegate OnVideoSourceEncodedSample;
 
         /// <summary>
         /// This event is fired after the sink decodes a video frame from the remote party.
         /// </summary>
         public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
 
-        /// <summary>
-        /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
-        /// </summary>
-        /// <param name="options">The options for the video source. If null then this end point will
-        /// act as a video sink only.</param>
-        public WindowsVideoEndPoint(IVideoSource externalSource = null)
+        public WindowsVideoEndPoint()
         {
-            if (externalSource != null)
-            {
-                _externalSource = externalSource;
-                _externalSource.OnVideoSourceRawSample += ExternalSource_OnVideoSourceRawSample;
-            }
             _vp8Decoder = new Vp8Codec();
             _vp8Decoder.InitialiseDecoder();
         }
 
+        public void ForceKeyFrame()
+        {
+            _forceKeyFrame = true;
+        }
+
         /// <summary>
-        /// Requests that the audio sink and source only advertise support for the supplied list of codecs.
+        /// Requests that the video sink and source only advertise support for the supplied list of codecs.
         /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
         /// used.
         /// </summary>
-        /// <param name="codecs">The list of codecs restrict advertised support to.</param>
+        /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
         public void RestrictCodecs(List<VideoCodecsEnum> codecs)
         {
             if (codecs == null || codecs.Count == 0)
@@ -107,7 +100,7 @@ namespace SIPSorceryMedia.Windows
             }
         }
 
-        private void ExternalSource_OnVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] rgb24Sample)
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] rgb24Sample)
         {
             if (_vp8Encoder == null)
             {
@@ -124,17 +117,6 @@ namespace SIPSorceryMedia.Windows
                     byte[] i420Buffer = PixelConverter.RGBtoI420(rgb24Sample, width, height);
                     encodedBuffer = _vp8Encoder.Encode(i420Buffer, _forceKeyFrame);
                 }
-                //else if (VIDEO_CODEC == SDPMediaFormatsEnum.H264)
-                //{
-                //    var i420Frame = _videoFrameConverter.Convert(sampleBuffer);
-
-                //    _presentationTimestamp += VIDEO_TIMESTAMP_SPACING;
-
-                //    i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
-                //    i420Frame.pts = _presentationTimestamp;
-
-                //    encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
-                //}
                 else
                 {
                     throw new ApplicationException($"Video codec is not supported.");
@@ -143,7 +125,9 @@ namespace SIPSorceryMedia.Windows
                 if (encodedBuffer != null)
                 {
                     //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
-                    OnVideoSourceEncodedSample.Invoke(_selectedSourceFormat, VIDEO_TIMESTAMP_SPACING, encodedBuffer);
+                    uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
+                    uint durationRtpTS =  VIDEO_SAMPLING_RATE / fps;
+                    OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
                 }
 
                 if (_forceKeyFrame)
@@ -164,62 +148,37 @@ namespace SIPSorceryMedia.Windows
 
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
         {
-            //logger.LogDebug($"rtp video, seqnum {seqnum}, ts {timestamp}, marker {marker}, payload {payload.Length}.");
-            if (_currVideoFramePosn + payload.Length >= _currVideoFrame.Length)
+            throw new ApplicationException("The Windows Video End Point requires full video frames rather than individual RTP packets.");
+        }
+
+        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame)
+        {
+            //DateTime startTime = DateTime.Now;
+
+            List<byte[]> decodedFrames = _vp8Decoder.Decode(frame, frame.Length, out var width, out var height);
+
+            if (decodedFrames == null)
             {
-                // Something has gone very wrong. Clear the buffer.
-                _currVideoFramePosn = 0;
-            }
-
-            // New frames must have the VP8 Payload Descriptor Start bit set.
-            // The tracking of the current video frame position is to deal with a VP8 frame being split across multiple RTP packets
-            // as per https://tools.ietf.org/html/rfc7741#section-4.4.
-            if (_currVideoFramePosn > 0 || (payload[0] & 0x10) > 0)
-            {
-                RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(payload);
-
-                Buffer.BlockCopy(payload, vp8Header.Length, _currVideoFrame, _currVideoFramePosn, payload.Length - vp8Header.Length);
-                _currVideoFramePosn += payload.Length - vp8Header.Length;
-
-                if (marker)
-                {
-                    DateTime startTime = DateTime.Now;
-
-                    List<byte[]> decodedFrames = _vp8Decoder.Decode(_currVideoFrame, _currVideoFramePosn, out var width, out var height);
-
-                    if (decodedFrames == null)
-                    {
-                        logger.LogWarning("VPX decode of video sample failed.");
-                    }
-                    else
-                    {
-                        foreach (var decodedFrame in decodedFrames)
-                        {
-                            byte[] rgb = PixelConverter.I420toRGB(decodedFrame, (int)width, (int)height);
-                            //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
-                            OnVideoSinkDecodedSample(rgb, width, height, (int)(width * 3));
-                        }
-                    }
-
-                    _currVideoFramePosn = 0;
-                }
+                logger.LogWarning("VPX decode of video sample failed.");
             }
             else
             {
-                logger.LogWarning("Discarding RTP packet, VP8 header Start bit not set.");
-                logger.LogWarning($"rtp video, seqnum {seqnum}, ts {timestamp}, marker {marker}, payload {payload.Length}.");
+                foreach (var decodedFrame in decodedFrames)
+                {
+                    byte[] rgb = PixelConverter.I420toRGB(decodedFrame, (int)width, (int)height);
+                    //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
+                    OnVideoSinkDecodedSample(rgb, width, height, (int)(width * 3));
+                }
             }
         }
 
         public Task PauseVideo()
         {
-            _externalSource?.PauseVideo();
             return Task.CompletedTask;
         }
 
         public Task ResumeVideo()
         {
-            _externalSource?.ResumeVideo();
             return Task.CompletedTask;
         }
 
@@ -228,7 +187,6 @@ namespace SIPSorceryMedia.Windows
             if (!_isStarted)
             {
                 _isStarted = true;
-                _externalSource?.StartVideo();
             }
             return Task.CompletedTask;
         }
@@ -238,7 +196,6 @@ namespace SIPSorceryMedia.Windows
             if (!_isClosed)
             {
                 _isClosed = true;
-                _externalSource?.CloseVideo();
             }
             return Task.CompletedTask;
         }
