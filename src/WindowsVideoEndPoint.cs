@@ -196,6 +196,7 @@ namespace SIPSorceryMedia.Windows
             if (!_isClosed)
             {
                 _isClosed = true;
+                Dispose();
             }
             return Task.CompletedTask;
         }
