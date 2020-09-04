@@ -4,8 +4,7 @@ using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions.V1
 {
-    public delegate void AudioEncodedSampleDelegate(AudioCodecsEnum audioFormat, uint durationRtpUnits, byte[] sample);
-    public delegate void VideoEncodedSampleDelegate(VideoCodecsEnum videoFormat, uint durationRtpUnits, byte[] sample);
+    public delegate void EncodedSampleDelegate(uint durationRtpUnits, byte[] sample);
     public delegate void RawAudioSampleDelegate(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
     public delegate void RawVideoSampleDelegate(uint durationMilliseconds, int width, int height, byte[] rgb24Sample);
     public delegate void VideoSinkSampleDecodedDelegate(byte[] bmp, uint width, uint height, int stride);
@@ -75,7 +74,7 @@ namespace SIPSorceryMedia.Abstractions.V1
 
     public interface IAudioSource
     {
-        event AudioEncodedSampleDelegate OnAudioSourceEncodedSample;
+        event EncodedSampleDelegate OnAudioSourceEncodedSample;
 
         event RawAudioSampleDelegate OnAudioSourceRawSample;
 
@@ -92,6 +91,8 @@ namespace SIPSorceryMedia.Abstractions.V1
         void SetAudioSourceFormat(AudioCodecsEnum audioFormat);
 
         void RestrictCodecs(List<AudioCodecsEnum> codecs);
+
+        void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
     }
 
     public interface IAudioSink
@@ -107,7 +108,7 @@ namespace SIPSorceryMedia.Abstractions.V1
 
     public interface IVideoSource
     {
-        event VideoEncodedSampleDelegate OnVideoSourceEncodedSample;
+        event EncodedSampleDelegate OnVideoSourceEncodedSample;
 
         event RawVideoSampleDelegate OnVideoSourceRawSample;
 
@@ -124,6 +125,10 @@ namespace SIPSorceryMedia.Abstractions.V1
         void SetVideoSourceFormat(VideoCodecsEnum videoFormat);
 
         void RestrictCodecs(List<VideoCodecsEnum> codecs);
+
+        void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] rgb24Sample);
+
+        void ForceKeyFrame();
     }
 
     public interface IVideoSink
@@ -134,6 +139,8 @@ namespace SIPSorceryMedia.Abstractions.V1
         event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
 
         void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
+
+        void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload);
 
         List<VideoCodecsEnum> GetVideoSinkFormats();
 
