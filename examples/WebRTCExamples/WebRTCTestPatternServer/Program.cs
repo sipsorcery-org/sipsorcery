@@ -127,12 +127,14 @@ namespace demo
 
             var pc = new RTCPeerConnection(null);
 
-            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(new VideoTestPatternSource());
+            var testPatternSource = new VideoTestPatternSource();
+            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint();
 
             MediaStreamTrack track = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
 
-            windowsVideoEndPoint.OnVideoSourceEncodedSample += (videoFormat, dur, sample) => pc.SendMedia(SDPMediaTypesEnum.video, dur, sample);
+            testPatternSource.OnVideoSourceRawSample += windowsVideoEndPoint.ExternalVideoSourceRawSample;
+            windowsVideoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
 
             pc.OnVideoFormatsNegotiated += (sdpFormat) =>
                 windowsVideoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
@@ -156,9 +158,11 @@ namespace demo
                     pc.OnSendReport -= RtpSession_OnSendReport;
 
                     await windowsVideoEndPoint.CloseVideo();
+                    await testPatternSource.CloseVideo();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
+                    await testPatternSource.StartVideo();
                     await windowsVideoEndPoint.StartVideo();
                 }
             };
@@ -181,7 +185,11 @@ namespace demo
                 if (pc.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    if(res != SetDescriptionResultEnum.OK)
+                    {
+                        logger.LogWarning($"Failed to set remote description {res}.");
+                    }
                 }
                 else
                 {

@@ -585,13 +585,6 @@ namespace SIPSorcery.Net
                 {
                     if (announcement.Media == SDPMediaTypesEnum.audio)
                     {
-                        // If there's an existing remote audio track it needs to be replaced.
-                        if (AudioRemoteTrack != null)
-                        {
-                            logger.LogDebug($"Removing existing remote audio track for ssrc {AudioRemoteTrack.Ssrc}.");
-                            AudioRemoteTrack = null;
-                        }
-
                         logger.LogDebug("Adding remote audio track to session.");
 
                         var audioAnnounce = announcement;
@@ -632,7 +625,7 @@ namespace SIPSorcery.Net
                             // Check that there is at least one compatible non-"RTP Event" audio codec.
                             var audioCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats) :
                                 SDPMediaFormat.GetCompatibleFormats(audioAnnounce.MediaFormats, AudioLocalTrack.Capabilities);
-                            
+
                             if (audioCompatibleFormats?.Count == 0)
                             {
                                 return SetDescriptionResultEnum.AudioIncompatible;
@@ -687,17 +680,9 @@ namespace SIPSorcery.Net
                     }
                     else if (announcement.Media == SDPMediaTypesEnum.video)
                     {
-                        var videoAnnounce = announcement;
-
-                        // If there's an existing remote video track it needs to be replaced.
-                        if (VideoRemoteTrack != null)
-                        {
-                            logger.LogDebug($"Removing existing remote video track for ssrc {VideoRemoteTrack.Ssrc}.");
-                            VideoRemoteTrack = null;
-                        }
-
                         logger.LogDebug("Adding remote video track to session.");
 
+                        var videoAnnounce = announcement;
                         var remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats, videoAnnounce.MediaStreamStatus);
                         addTrack(remoteVideoTrack);
 
@@ -919,38 +904,35 @@ namespace SIPSorcery.Net
             {
                 if (AudioRemoteTrack != null)
                 {
-                    throw new ApplicationException("A remote audio track has already been set on this session.");
+                    //throw new ApplicationException("A remote audio track has already been set on this session.");
+                    logger.LogDebug($"Replacing existing remote audio track for ssrc {AudioRemoteTrack.Ssrc}.");
                 }
-                else
-                {
-                    AudioRemoteTrack = track;
 
-                    // Even if there's no local audio track an RTCP session can still be required 
-                    // in case the remote party send reports (presumably in case we decide we do want
-                    // to send or receive audio on this session at some later stage).
-                    if (AudioRtcpSession == null)
-                    {
-                        AudioRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.audio);
-                    }
+                AudioRemoteTrack = track;
+
+                // Even if there's no local audio track an RTCP session can still be required 
+                // in case the remote party send reports (presumably in case we decide we do want
+                // to send or receive audio on this session at some later stage).
+                if (AudioRtcpSession == null)
+                {
+                    AudioRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.audio);
                 }
             }
             else if (track.Kind == SDPMediaTypesEnum.video)
             {
                 if (VideoRemoteTrack != null)
                 {
-                    throw new ApplicationException("A remote video track has already been set on this session.");
+                    logger.LogDebug($"Replacing existing remote video track for ssrc {VideoRemoteTrack.Ssrc}.");
                 }
-                else
-                {
-                    VideoRemoteTrack = track;
 
-                    // Even if there's no local video track an RTCP session can still be required 
-                    // in case the remote party send reports (presumably in case we decide we do want
-                    // to send or receive video on this session at some later stage).
-                    if (VideoRtcpSession == null)
-                    {
-                        VideoRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.video);
-                    }
+                VideoRemoteTrack = track;
+
+                // Even if there's no local video track an RTCP session can still be required 
+                // in case the remote party send reports (presumably in case we decide we do want
+                // to send or receive video on this session at some later stage).
+                if (VideoRtcpSession == null)
+                {
+                    VideoRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.video);
                 }
             }
         }
@@ -1302,43 +1284,76 @@ namespace SIPSorcery.Net
             }
         }
 
+        public void SendAudio(uint durationRtpUnits, byte[] sample)
+        {
+            if (AudioDestinationEndPoint != null && (!IsSecure || IsSecureContextReady))
+            {
+                var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
+
+                int audioPayloadID = Convert.ToInt32(audioFormat.FormatID);
+                SendAudioFrame(durationRtpUnits, audioPayloadID, sample);
+            }
+        }
+
+        public void SendVideo(uint durationRtpUnits, byte[] sample)
+        {
+            if (VideoDestinationEndPoint != null || (m_isMediaMultiplexed && AudioDestinationEndPoint != null) && (!IsSecure || IsSecureContextReady))
+            {
+                var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
+
+                switch (videoSendingFormat.FormatCodec)
+                {
+                    case SDPMediaFormatsEnum.VP8:
+                        int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
+                        SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
+                        break;
+                    case SDPMediaFormatsEnum.H264:
+                        int h264PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.H264).FormatID);
+                        SendH264Frame(durationRtpUnits, h264PayloadID, sample);
+                        break;
+                    default:
+                        throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.FormatCodec}.");
+                }
+            }
+        }
+
         /// <summary>
         /// Send a media sample to the remote party.
         /// </summary>
         /// <param name="mediaType">Whether the sample is audio or video.</param>
         /// <param name="durationRtpUnits">The duration of the sample in RTP timestamp units.</param>
         /// <param name="sample">The sample payload.</param> 
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint durationRtpUnits, byte[] sample)
-        {
-            if (AudioDestinationEndPoint != null && (!IsSecure || IsSecureContextReady))
-            {
-                if (mediaType == SDPMediaTypesEnum.video)
-                {
-                    var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
+        //public void SendMedia(SDPMediaTypesEnum mediaType, uint durationRtpUnits, byte[] sample)
+        //{
+        //    if (AudioDestinationEndPoint != null && (!IsSecure || IsSecureContextReady))
+        //    {
+        //        if (mediaType == SDPMediaTypesEnum.video)
+        //        {
+        //            var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
 
-                    switch (videoSendingFormat.FormatCodec)
-                    {
-                        case SDPMediaFormatsEnum.VP8:
-                            int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
-                            SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
-                            break;
-                        case SDPMediaFormatsEnum.H264:
-                            int h264PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.H264).FormatID);
-                            SendH264Frame(durationRtpUnits, h264PayloadID, sample);
-                            break;
-                        default:
-                            throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.FormatCodec}.");
-                    }
-                }
-                else if (mediaType == SDPMediaTypesEnum.audio)
-                {
-                    var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
+        //            switch (videoSendingFormat.FormatCodec)
+        //            {
+        //                case SDPMediaFormatsEnum.VP8:
+        //                    int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
+        //                    SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
+        //                    break;
+        //                case SDPMediaFormatsEnum.H264:
+        //                    int h264PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.H264).FormatID);
+        //                    SendH264Frame(durationRtpUnits, h264PayloadID, sample);
+        //                    break;
+        //                default:
+        //                    throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.FormatCodec}.");
+        //            }
+        //        }
+        //        else if (mediaType == SDPMediaTypesEnum.audio)
+        //        {
+        //            var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
 
-                    int audioPayloadID = Convert.ToInt32(audioFormat.FormatID);
-                    SendAudioFrame(durationRtpUnits, audioPayloadID, sample);
-                }
-            }
-        }
+        //            int audioPayloadID = Convert.ToInt32(audioFormat.FormatID);
+        //            SendAudioFrame(durationRtpUnits, audioPayloadID, sample);
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Sends an audio packet to the remote party.

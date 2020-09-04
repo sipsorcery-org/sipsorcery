@@ -28,7 +28,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
@@ -36,11 +35,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorceryMedia;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -115,7 +112,7 @@ namespace SIPSorcery
 
             //EnableTraceLogs(sipTransport);
 
-            RtpAVSession rtpAVSession = null;
+            RTPSession rtpSession = null;
 
             // Create a SIP user agent to receive a call from a remote SIP client.
             // Wire up event handlers for the different stages of the call.
@@ -153,9 +150,13 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.None }, null);
-                        await userAgent.Answer(incomingCall, rtpAVSession);
-                        rtpAVSession.OnRtpPacketReceived += (ep, mediaType, rtpPacket) => ForwardMedia(mediaType, rtpPacket);
+                        rtpSession = new RTPSession(false, false, false);
+                        rtpSession.AcceptRtpFromAny = true;
+                        MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+                        rtpSession.addTrack(audioTrack);
+
+                        await userAgent.Answer(incomingCall, rtpSession);
+                        rtpSession.OnRtpPacketReceived += (ep, mediaType, rtpPacket) => ForwardMedia(mediaType, rtpPacket);
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
@@ -182,7 +183,7 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            rtpAVSession?.Close("app exit");
+            rtpSession?.Close("app exit");
 
             if (userAgent != null)
             {
@@ -216,10 +217,6 @@ namespace SIPSorcery
             Log.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
             _peerConnection = new RTCPeerConnection(null);
-            //AddressFamily.InterNetwork,
-            //DTLS_CERTIFICATE_FINGERPRINT,
-            //null,
-            //null);
 
             _peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             _peerConnection.OnSendReport += RtpSession_OnSendReport;
@@ -272,9 +269,9 @@ namespace SIPSorcery
         /// <param name="rtpPacket">The RTP packet received on the SIP session.</param>
         private static void ForwardMedia(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
-            if (_peerConnection != null)
+            if (_peerConnection != null && mediaType == SDPMediaTypesEnum.audio)
             {
-                _peerConnection.SendMedia(mediaType, (uint)rtpPacket.Payload.Length, rtpPacket.Payload);
+                _peerConnection.SendAudio((uint)rtpPacket.Payload.Length, rtpPacket.Payload);
             }
         }
 

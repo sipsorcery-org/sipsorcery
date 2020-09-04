@@ -99,6 +99,14 @@ namespace SIPSorcery.Media
 
         private static ILogger Log = SIPSorcery.Sys.Log.Logger;
 
+        public static readonly List<AudioCodecsEnum> SupportedCodecs = new List<AudioCodecsEnum>
+        {
+            AudioCodecsEnum.PCMU,
+            AudioCodecsEnum.PCMA,
+            AudioCodecsEnum.G722
+        };
+
+        private List<AudioCodecsEnum> _supportedCodecs = new List<AudioCodecsEnum>(SupportedCodecs);
         private StreamReader _audioStreamReader;
         private SignalGenerator _signalGenerator;
         private Timer _audioStreamTimer;
@@ -112,7 +120,6 @@ namespace SIPSorcery.Media
         private Timer _streamSourceTimer;
         private bool _isStarted = false;
         private bool _isClosed = false;
-        private List<AudioCodecsEnum> _supportedFormats;
         private AudioEncoder _audioEncoder;
 
         /// <summary>
@@ -127,7 +134,7 @@ namespace SIPSorcery.Media
         /// </summary>
         public event Action OnSendFromAudioStreamComplete;
 
-        public event AudioEncodedSampleDelegate OnAudioSourceEncodedSample;
+        public event EncodedSampleDelegate OnAudioSourceEncodedSample;
 
         /// <summary>
         /// This audio source DOES NOT generate raw samples. Subscribe to the encoded samples event
@@ -136,47 +143,58 @@ namespace SIPSorcery.Media
         [Obsolete("This audio source only produces encoded samples. Do not subscribe to this event.")]
         public event RawAudioSampleDelegate OnAudioSourceRawSample { add { } remove { } }
 
+        public AudioExtrasSource()
+        {
+            _audioEncoder = new AudioEncoder();
+            _audioOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.None };
+        }
+
         /// <summary>
         /// Instantiates an audio source that can generate output samples from a variety of different
         /// non-live sources.
         /// </summary>
         /// <param name="audioOptions">Optional. The options that determine the type of audio to stream to the remote party. 
         /// Example type of audio sources are music, silence, white noise etc.</param>
-        /// <param name="supportedFormats">Optional. The audio codecs to support. Can only be a combination of 
-        /// PCMU, PCMA and G722. Set as null to use the default option and support all three.</param>
         public AudioExtrasSource(
             AudioEncoder audioEncoder,
-            AudioSourceOptions audioOptions = null,
-            List<AudioCodecsEnum> supportedFormats = null)
+            AudioSourceOptions audioOptions = null)
         {
             _audioEncoder = audioEncoder;
             _audioOpts = audioOptions ?? new AudioSourceOptions { AudioSource = AudioSourcesEnum.None };
+        }
 
-            if (supportedFormats == null || supportedFormats.Count == 0)
+        /// <summary>
+        /// Requests that the audio sink and source only advertise support for the supplied list of codecs.
+        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
+        /// used.
+        /// </summary>
+        /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
+        public void RestrictCodecs(List<AudioCodecsEnum> codecs)
+        {
+            if (codecs == null || codecs.Count == 0)
             {
-                _supportedFormats = new List<AudioCodecsEnum>
-                {
-                    AudioCodecsEnum.PCMU,
-                    AudioCodecsEnum.PCMA,
-                    AudioCodecsEnum.G722
-                };
-            }
-            else if (!supportedFormats.Any(x =>
-                 x != AudioCodecsEnum.G722 ||
-                 x != AudioCodecsEnum.PCMA ||
-                 x != AudioCodecsEnum.PCMU))
-            {
-                throw new ApplicationException("The only supported codecs are PCMU, PCMA and G722.");
+                _supportedCodecs = new List<AudioCodecsEnum>(SupportedCodecs);
             }
             else
             {
-                _supportedFormats = supportedFormats;
+                _supportedCodecs = new List<AudioCodecsEnum>();
+                foreach (var codec in codecs)
+                {
+                    if (SupportedCodecs.Any(x => x == codec))
+                    {
+                        _supportedCodecs.Add(codec);
+                    }
+                    else
+                    {
+                        Log.LogWarning($"Not including unsupported codec {codec} in filtered list.");
+                    }
+                }
             }
         }
 
         public List<AudioCodecsEnum> GetAudioSourceFormats()
         {
-            return _supportedFormats;
+            return _supportedCodecs;
         }
 
         public void SetAudioSourceFormat(AudioCodecsEnum audioFormat)
@@ -395,7 +413,7 @@ namespace SIPSorcery.Media
 
                     if (bytesRead > 0)
                     {
-                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, sampleSize, sample);
+                        OnAudioSourceEncodedSample?.Invoke(sampleSize, sample);
                     }
 
                     if (bytesRead == 0 || _audioStreamReader.EndOfStream)
@@ -425,7 +443,7 @@ namespace SIPSorcery.Media
 
                         //OnAudioSourceRawSample?.Invoke(AudioSamplingRatesEnum.Rate8KHz, AUDIO_SAMPLE_PERIOD_MILLISECONDS, silencePcm);
                         byte[] encodedSample = _audioEncoder.EncodeAudio(silencePcm, AudioCodecsEnum.G722, _sourceAudioSampleRate);
-                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, outputBufferSize, encodedSample);
+                        OnAudioSourceEncodedSample?.Invoke(outputBufferSize, encodedSample);
                     }
                     else if (_sendingFormat == AudioCodecsEnum.PCMU
                             || _sendingFormat == AudioCodecsEnum.PCMA)
@@ -437,7 +455,7 @@ namespace SIPSorcery.Media
                         }
 
                         // No encoding required for PCMU/PCMA silence.
-                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, outputBufferSize, _silenceBuffer);
+                        OnAudioSourceEncodedSample?.Invoke(outputBufferSize, _silenceBuffer);
                     }
                     else
                     {
@@ -468,7 +486,7 @@ namespace SIPSorcery.Media
 
                     //OnAudioSourceRawSample?.Invoke(AudioSamplingRatesEnum.Rate8KHz, AUDIO_SAMPLE_PERIOD_MILLISECONDS, pcm);
                     byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _sendingFormat, _sourceAudioSampleRate);
-                    OnAudioSourceEncodedSample?.Invoke(_sendingFormat, outputBufferSize, encodedSample);
+                    OnAudioSourceEncodedSample?.Invoke(outputBufferSize, encodedSample);
                 }
             }
         }
@@ -508,7 +526,7 @@ namespace SIPSorcery.Media
 
                         //OnAudioSourceRawSample?.Invoke(_streamSourceSampleRate, AUDIO_SAMPLE_PERIOD_MILLISECONDS, sample);
                         byte[] encodedSample = _audioEncoder.EncodeAudio(sample, _sendingFormat, _streamSourceSampleRate);
-                        OnAudioSourceEncodedSample?.Invoke(_sendingFormat, (uint)encodedSample.Length, encodedSample);
+                        OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
 
                         if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
                         {

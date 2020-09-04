@@ -92,15 +92,14 @@ namespace demo
                 }
             };
 
-            var audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioSrcOpts);
-            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), audioExtrasSource);
-            var testPatternSource = new VideoTestPatternSource();
-            var windowsVideoEndPoint = new WindowsVideoEndPoint(testPatternSource);
+            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
+            windowsAudioEndPoint.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
+            var windowsVideoEndPoint = new WindowsVideoEndPoint();
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
                 AudioSink = windowsAudioEndPoint,
-                AudioSource = audioExtrasSource,
+                AudioSource = windowsAudioEndPoint,
                 VideoSink = windowsVideoEndPoint,
                 VideoSource = windowsVideoEndPoint,
             };
@@ -131,6 +130,9 @@ namespace demo
                         }
                     }));
                 };
+
+                windowsAudioEndPoint.PauseAudio().Wait();
+                voipMediaSession.AudioExtrasSource.SetSource(audioSrcOpts);
             }
             else
             {

@@ -782,14 +782,14 @@ a=sendrecv";
             return new MockMediaSession();
         }
 
-        private VoIPMediaSession CreateMockVoIPMediaEndPoint(List<AudioCodecsEnum> supportedFormats = null)
+        private VoIPMediaSession CreateMockVoIPMediaEndPoint(List<AudioCodecsEnum> supportedCodecs = null)
         {
+            var audioSource = new AudioExtrasSource();
+            audioSource.RestrictCodecs(supportedCodecs);
+
             MediaEndPoints mockEndPoints = new MediaEndPoints
             {
-                AudioSource = new AudioExtrasSource(
-                    new AudioEncoder(),
-                    new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
-                    supportedFormats)
+                AudioSource = audioSource
             };
             return new VoIPMediaSession(mockEndPoints);
         }

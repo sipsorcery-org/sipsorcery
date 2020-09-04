@@ -106,7 +106,7 @@ namespace demo
             var pc = new RTCPeerConnection(null);
 
             AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder());
-            audioSource.OnAudioSourceEncodedSample += (audioCodec, durationRtpUnits, sample) => pc.SendMedia(SDPMediaTypesEnum.audio, durationRtpUnits, sample);
+            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(audioTrack);

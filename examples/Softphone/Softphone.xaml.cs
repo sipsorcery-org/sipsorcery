@@ -275,7 +275,7 @@ namespace SIPSorcery.SoftPhone
 
                     if (_sipClients[0].MediaSession.HasVideo)
                     {
-                        _sipClients[0].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client0WriteableBitmap, _client0Video);
+                        _sipClients[0].MediaSession.OnVideoSinkSample += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client0WriteableBitmap, _client0Video);
                         _client0Video.Visibility = Visibility.Visible;
                     }
 
@@ -301,7 +301,7 @@ namespace SIPSorcery.SoftPhone
 
                     if (_sipClients[1].MediaSession.HasVideo)
                     {
-                        _sipClients[1].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client1WriteableBitmap, _client1Video);
+                        _sipClients[1].MediaSession.OnVideoSinkSample += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client1WriteableBitmap, _client1Video);
                         _client1Video.Visibility = Visibility.Visible;
                     }
                 });

@@ -58,8 +58,7 @@ namespace demo
             userAgent.ClientCallFailed += (uac, error, sipResponse) => exitCts.Cancel();
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
-            var audioExtrasSource = new AudioExtrasSource(new AudioEncoder());
-            var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder(), audioExtrasSource);
+            var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
             var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
 
@@ -98,32 +97,32 @@ namespace demo
                 await windowsAudio.PauseAudio();
 
                 Console.WriteLine("Sending welcome message from 8KHz sample.");
-                await audioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
+                await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
 
                 await Task.Delay(200);
 
                 Console.WriteLine("Sending sine wave.");
-                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.SineWave);
 
                 await Task.Delay(2000);
 
                 Console.WriteLine("Sending white noise signal.");
-                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.WhiteNoise });
+                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.WhiteNoise);
                 await Task.Delay(2000);
 
                 Console.WriteLine("Sending pink noise signal.");
-                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.PinkNoise });
+                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.PinkNoise);
                 await Task.Delay(2000);
 
                 Console.WriteLine("Sending silence.");
-                audioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
+                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Silence);
 
                 await Task.Delay(2000);
 
                 Console.WriteLine("Sending goodbye message from 16KHz sample.");
-                await audioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+                await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
 
-                audioExtrasSource.SetSource(AudioSourcesEnum.None);
+                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.None);
 
                 await Task.Delay(200);
 
