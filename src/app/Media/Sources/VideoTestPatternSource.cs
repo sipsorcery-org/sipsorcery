@@ -1,13 +1,31 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: VideoTestPatternSource.cs
+//
+// Description: Implements a video test pattern source based on a static 
+// jpeg file.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 04 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions.V1;
 
@@ -15,7 +33,9 @@ namespace SIPSorcery.Media
 {
     public class VideoTestPatternSource : IVideoSource, IDisposable
     {
-        private const string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
+        public const string TEST_PATTERN_RESOURCE_PATH = "media.testpattern.jpeg";
+        public const string TEST_PATTERN_INVERTED_RESOURCE_PATH = "media.testpattern_inverted.jpeg";
+
         private const int MAXIMUM_FRAMES_PER_SECOND = 30;
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
         private const int MINIMUM_FRAMES_PER_SECOND = 1;
@@ -32,7 +52,6 @@ namespace SIPSorcery.Media
         };
 
         private List<VideoCodecsEnum> _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
-        private string _testPatternPath = TEST_PATTERN_IMAGE_PATH;
         private int _frameSpacing;
         private Bitmap _testPattern;
         private Timer _sendTestPatternTimer;
@@ -50,16 +69,39 @@ namespace SIPSorcery.Media
 
         public VideoTestPatternSource()
         {
-            if (!File.Exists(_testPatternPath))
+            EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+            var testPatternFileInfo = efp.GetFileInfo(TEST_PATTERN_RESOURCE_PATH);
+
+            if (testPatternFileInfo == null)
             {
-                throw new ApplicationException($"Test pattern file could not be found, {_testPatternPath}.");
+                throw new ApplicationException($"Test pattern embedded resource could not be found, {TEST_PATTERN_RESOURCE_PATH}.");
             }
             else
             {
-                _testPattern = new Bitmap(_testPatternPath);
+                _testPattern = new Bitmap(testPatternFileInfo.CreateReadStream());
                 _sendTestPatternTimer = new Timer(GenerateTestPattern, null, Timeout.Infinite, Timeout.Infinite);
-
                 _frameSpacing = 1000 / DEFAULT_FRAMES_PER_SECOND;
+            }
+        }
+
+        public void SetEmbeddedTestPatternPath(string path)
+        {
+            EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+            var testPattenFileInfo = efp.GetFileInfo(path);
+
+            if(testPattenFileInfo == null)
+            {
+                logger.LogWarning($"Video test pattern source could not locate embedded path {path}.");
+            }
+            else
+            {
+                logger.LogDebug($"Test pattern loaded from embedded resource {path}.");
+
+                lock (_sendTestPatternTimer)
+                {
+                    _testPattern?.Dispose();
+                    _testPattern = new Bitmap(testPattenFileInfo.CreateReadStream());
+                }
             }
         }
 
@@ -71,17 +113,19 @@ namespace SIPSorcery.Media
             }
             else
             {
+                logger.LogDebug($"Test pattern loaded from {path}.");
+
                 lock (_sendTestPatternTimer)
                 {
-                    _testPatternPath = path;
-                    _testPattern = new Bitmap(_testPatternPath);
+                    _testPattern?.Dispose();
+                    _testPattern = new Bitmap(path);
                 }
             }
         }
 
         public void SetFrameRate(int framesPerSecond)
         {
-            if(framesPerSecond < MINIMUM_FRAMES_PER_SECOND || framesPerSecond > MAXIMUM_FRAMES_PER_SECOND)
+            if (framesPerSecond < MINIMUM_FRAMES_PER_SECOND || framesPerSecond > MAXIMUM_FRAMES_PER_SECOND)
             {
                 logger.LogWarning($"Frames per second not in the allowed range of {MINIMUM_FRAMES_PER_SECOND} to {MAXIMUM_FRAMES_PER_SECOND}, ignoring.");
             }
@@ -89,7 +133,7 @@ namespace SIPSorcery.Media
             {
                 _frameSpacing = 1000 / framesPerSecond;
 
-                if(_isStarted)
+                if (_isStarted)
                 {
                     _sendTestPatternTimer.Change(0, _frameSpacing);
                 }
@@ -193,7 +237,7 @@ namespace SIPSorcery.Media
                     // This event handler could get removed while the timestamp text is being added.
                     OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, _testPattern.Width, _testPattern.Height, BitmapToRGB24(stampedTestPattern as Bitmap));
 
-                    stampedTestPattern.Dispose();
+                    stampedTestPattern?.Dispose();
                 }
             }
         }

@@ -360,7 +360,7 @@ namespace SIPSorcery.Media
                         if (String.IsNullOrEmpty(sourceFile) || !File.Exists(sourceFile))
                         {
                             Log.LogWarning($"Could not start audio music source as the file {sourceFile} does not exist.");
-                            throw new ApplicationException($"Could not start audio music source as the file {sourceFile} does not exist.");
+                            //throw new ApplicationException($"Could not start audio music source as the file {sourceFile} does not exist.");
                         }
                         else
                         {
@@ -598,6 +598,11 @@ namespace SIPSorcery.Media
                     buffer[index + 1] = PCMU_SILENCE_BYTE_ONE;
                 }
             }
+        }
+
+        public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
+        {
+            throw new NotImplementedException();
         }
     }
 }

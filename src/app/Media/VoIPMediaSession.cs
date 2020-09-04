@@ -1,4 +1,22 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: VoIPMediaSession.cs
+//
+// Description: This class serves as a bridge, or mapping, between the media end points, 
+// typically  provided by a separate package, and a media session. Its goal is to wire up the 
+// sources and sinks from the media end point to the transport functions provided
+// by an RTP session.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 04 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -26,8 +44,6 @@ namespace SIPSorcery.Media
     /// </summary>
     public class VoIPMediaSession : RTPSession, IMediaSession
     {
-        private const string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
-        private const string TEST_PATTERN_ONHOLD_IMAGE_PATH = "media/testpattern_inverted.jpeg";
         private const int TEST_PATTERN_FPS = 30;
         private const int TEST_PATTERN_ONHOLD_FPS = 3;
         private const string MUSIC_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
@@ -92,9 +108,10 @@ namespace SIPSorcery.Media
             if (Media.VideoSink != null)
             {
                 Media.VideoSink.OnVideoSinkDecodedSample += VideoSinkSampleReady;
+                base.OnVideoFrameReceived += Media.VideoSink.GotVideoFrame;
             }
 
-            if (Media.AudioSink != null || Media.VideoSink != null)
+            if (Media.AudioSink != null)
             {
                 base.OnRtpPacketReceived += RtpMediaPacketReceived;
             }
@@ -168,6 +185,12 @@ namespace SIPSorcery.Media
                     await Media.VideoSource.CloseVideo().ConfigureAwait(false);
                 }
 
+                if (Media.VideoSink != null)
+                {
+                    Media.VideoSink.OnVideoSinkDecodedSample -= VideoSinkSampleReady;
+                    base.OnVideoFrameReceived -= Media.VideoSink.GotVideoFrame;
+                }
+
                 if (_videoTestPatternSource != null)
                 {
                     _videoTestPatternSource.OnVideoSourceRawSample -= Media.VideoSource.ExternalVideoSourceRawSample;
@@ -190,10 +213,10 @@ namespace SIPSorcery.Media
             {
                 Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
             }
-            else if (mediaType == SDPMediaTypesEnum.video && Media.VideoSink != null)
-            {
-                Media.VideoSink.GotVideoRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
-            }
+            //else if (mediaType == SDPMediaTypesEnum.video && Media.VideoSink != null)
+            //{
+            //    Media.VideoSink.GotVideoRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
+            //}
         }
 
         public async Task PutOnHold()
@@ -218,7 +241,7 @@ namespace SIPSorcery.Media
 
             if (HasVideo)
             {
-                _videoTestPatternSource.SetTestPatternPath(TEST_PATTERN_ONHOLD_IMAGE_PATH);
+                _videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH);
                 _videoTestPatternSource.SetFrameRate(TEST_PATTERN_ONHOLD_FPS);
                 Media.VideoSource.ForceKeyFrame();
             }
@@ -234,7 +257,7 @@ namespace SIPSorcery.Media
 
             if (HasVideo)
             {
-                _videoTestPatternSource.SetTestPatternPath(TEST_PATTERN_IMAGE_PATH);
+                _videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH);
                 _videoTestPatternSource.SetFrameRate(TEST_PATTERN_FPS);
                 Media.VideoSource.ForceKeyFrame();
             }

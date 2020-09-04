@@ -25,8 +25,10 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Net
 {
@@ -170,6 +172,7 @@ namespace SIPSorcery.Net
         private int m_bindPort = 0;                     // If non-zero specifies the port number to attempt to bind the first RTP socket on.
         private bool m_rtpEventInProgress;              // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                // The last timestamp used in an RTP packet.    
+        private RtpVideoFramer _rtpVideoFramer;
 
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
@@ -381,6 +384,17 @@ namespace SIPSorcery.Net
         /// Gets fired when the remote SDP is received and the set of common video formats is set.
         /// </summary>
         public event Action<List<SDPMediaFormat>> OnVideoFormatsNegotiated;
+
+        /// <summary>
+        /// Gets fired when a full video frame is reconstructed from one or more RTP packets
+        /// received from the remote party.
+        /// </summary>
+        /// <remarks>
+        ///  - Received from end point,
+        ///  - The frame timestamp,
+        ///  - The frame payload.
+        /// </remarks>
+        public event Action<IPEndPoint, uint, byte[]> OnVideoFrameReceived;
 
         /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
@@ -2141,6 +2155,26 @@ namespace SIPSorcery.Net
                                 // things like the common codec, DTMF support etc. are not known.
 
                                 SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
+                               
+                                // For video RTP packets an attempt will be made to collate into frames. It's up to the application
+                                // whether it wants to subscribe to frames of RTP packets.
+                                if (mediaType == SDPMediaTypesEnum.video)
+                                {
+                                    var videoFormat = GetSendingFormat(SDPMediaTypesEnum.video);
+                                    if (videoFormat.FormatCodec == SDPMediaFormatsEnum.VP8)
+                                    {
+                                        if (_rtpVideoFramer == null)
+                                        {
+                                            _rtpVideoFramer = new RtpVideoFramer(VideoCodecsEnum.VP8);
+                                        }
+
+                                        var frame = _rtpVideoFramer.GotRtpPacket(rtpPacket);
+                                        if (frame != null)
+                                        {
+                                            OnVideoFrameReceived?.Invoke(remoteEndPoint, rtpPacket.Header.Timestamp, frame);
+                                        }
+                                    }
+                                }
 
                                 OnRtpPacketReceived?.Invoke(remoteEndPoint, mediaType, rtpPacket);
                             }

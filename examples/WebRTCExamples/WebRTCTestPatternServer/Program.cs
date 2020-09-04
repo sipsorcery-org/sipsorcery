@@ -157,13 +157,14 @@ namespace demo
                     pc.OnReceiveReport -= RtpSession_OnReceiveReport;
                     pc.OnSendReport -= RtpSession_OnSendReport;
 
-                    await windowsVideoEndPoint.CloseVideo();
                     await testPatternSource.CloseVideo();
+                    await windowsVideoEndPoint.CloseVideo();
+                   
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    await testPatternSource.StartVideo();
                     await windowsVideoEndPoint.StartVideo();
+                    await testPatternSource.StartVideo();
                 }
             };
 

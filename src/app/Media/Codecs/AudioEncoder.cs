@@ -1,4 +1,19 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: AudioEncoder.cs
+//
+// Description: Audio codecs for the simpler codecs.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 04 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
