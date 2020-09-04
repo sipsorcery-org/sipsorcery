@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -170,6 +169,7 @@ namespace SIPSorcery.Examples
                 _ffmpegVideoFormat = videoAnn.MediaFormats.First();
 
                 _ffmpegListener = new RTPSession(false, false, false, IPAddress.Loopback, FFMPEG_DEFAULT_RTP_PORT);
+                _ffmpegListener.AcceptRtpFromAny = true;
                 MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { _ffmpegVideoFormat }, MediaStreamStatusEnum.RecvOnly);
                 _ffmpegListener.addTrack(videoTrack);
 

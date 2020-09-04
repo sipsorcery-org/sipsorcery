@@ -51,7 +51,7 @@
                     <Button x:Name="m_transferButton" Click="BlindTransferButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed">
                         <TextBlock TextAlignment="Center">Blind<LineBreak/>Transfer</TextBlock>
                     </Button>
-                    <TextBox FontSize="16" Margin="4,0,4,0" x:Name="m_uriEntryTextBox" HorizontalAlignment="Right" TextWrapping="NoWrap" Text="sip:*61@192.168.11.48" HorizontalContentAlignment="Stretch" MinWidth="200" VerticalContentAlignment="Center"/>
+                    <TextBox FontSize="16" Margin="4,0,4,0" x:Name="m_uriEntryTextBox" HorizontalAlignment="Right" TextWrapping="NoWrap" Text="sip:time@sipsorcery.com" HorizontalContentAlignment="Stretch" MinWidth="200" VerticalContentAlignment="Center"/>
                     <Button x:Name="m_cancelButton" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
                     <Button x:Name="m_byeButton" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
                     <Button HorizontalAlignment="Right" x:Name="m_callButton" Width="64" Content="Call" Click="CallButton_Click" Margin="0,0,4,0" />

@@ -43,9 +43,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Common\Devices\WindowsAudioRtpSession.cs">
-      <Link>WindowsAudioRtpSession.cs</Link>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -69,10 +66,10 @@
       <Version>3.1.1</Version>
     </PackageReference>
     <PackageReference Include="SIPSorcery">
-      <Version>4.0.58-pre</Version>
+      <Version>4.0.66-pre</Version>
     </PackageReference>
-    <PackageReference Include="SIPSorceryMedia">
-      <Version>4.0.58-pre</Version>
+    <PackageReference Include="SIPSorceryMedia.Windows">
+      <Version>0.0.11-pre</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

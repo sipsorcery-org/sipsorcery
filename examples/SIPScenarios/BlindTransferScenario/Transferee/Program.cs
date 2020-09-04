@@ -60,9 +60,7 @@ namespace SIPSorcery
             userAgent.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
             userAgent.OnIncomingCall += async (ua, req) =>
             {
-                List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
-                var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-                var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
+                var rtpAudioSession = new AudioSendOnlyMediaSession();
 
                 var uas = ua.AcceptCall(req);
                 bool answerResult = await ua.Answer(uas, rtpAudioSession);

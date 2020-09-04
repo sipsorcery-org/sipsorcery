@@ -159,7 +159,7 @@ namespace SIPSorcery
                                     {
                                         { AudioCodecsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
                                     }
-                                 }, null);
+                                 });
                             rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = extrasSource });
                             rtpSession.AcceptRtpFromAny = true;
 

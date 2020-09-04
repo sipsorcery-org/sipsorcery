@@ -36,17 +36,14 @@ namespace SIPSorcery
     class Program
     {
         private static int SIP_LISTEN_PORT = 5060;
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7001@192.168.0.48";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:aaron@192.168.0.50:6060";
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7000@192.168.11.48";
         private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.0.48";  // The destination to transfer the initial call to.
         private static readonly string SIP_USERNAME = "7000";
         private static readonly string SIP_PASSWORD = "password";
         private static int TRANSFER_TIMEOUT_SECONDS = 10;                    // Give up on transfer if no response within this period.
-        private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
-
-        private static string _currentDir;
 
         static void Main()
         {
@@ -70,10 +67,7 @@ namespace SIPSorcery
 
             EnableTraceLogs(sipTransport);
 
-            _currentDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-            var audioExtrasSource = new AudioExtrasSource(new AudioEncoder());
-            var winAudio = new WindowsAudioEndPoint(new AudioEncoder(), audioExtrasSource);
+            var winAudio = new WindowsAudioEndPoint(new AudioEncoder());
             winAudio.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
 
             // Create a client/server user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
@@ -131,25 +125,13 @@ namespace SIPSorcery
                                 if (userAgent.IsOnLocalHold)
                                 {
                                     Log.LogInformation("Taking the remote call party off hold.");
+                                    (userAgent.MediaSession as VoIPMediaSession).TakeOffHold();
                                     userAgent.TakeOffHold();
-
-                                    audioExtrasSource.SetSource(AudioSourcesEnum.None);
-                                    await winAudio.ResumeAudio();
                                 }
                                 else
                                 {
                                     Log.LogInformation("Placing the remote call party on hold.");
-                                    await winAudio.PauseAudio();
-
-                                    audioExtrasSource.SetSource(new AudioSourceOptions
-                                    {
-                                        AudioSource = AudioSourcesEnum.Music,
-                                        SourceFiles = new Dictionary<AudioCodecsEnum, string>
-                                        {
-                                            { AudioCodecsEnum.PCMU, _currentDir + "/" + AUDIO_FILE_PCMU }
-                                        }
-                                    });
-
+                                    await (userAgent.MediaSession as VoIPMediaSession).PutOnHold();
                                     userAgent.PutOnHold();
                                 }
                             }

@@ -73,6 +73,7 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery
 {
@@ -391,9 +392,11 @@ namespace SIPSorcery
                 ua.ClientCallAnswered += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
                 var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-                var rtpAudioSession = new RtpAudioSession(audioOptions, new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
+                var audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions);
+                audioExtrasSource.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
+                var voipMediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
 
-                var result = await ua.Call(dst.ToString(), null, null, rtpAudioSession);
+                var result = await ua.Call(dst.ToString(), null, null, voipMediaSession);
 
                 ua.Hangup();
 

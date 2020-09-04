@@ -111,7 +111,7 @@ namespace demo
             var peerConnection = new RTCPeerConnection(null);
 
             // Sink (speaker) only audio end point.
-            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), null, true, false);
+            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
             
             MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);

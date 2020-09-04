@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -174,19 +173,24 @@ namespace SIPSorcery.Examples
         {
             var pc = new RTCPeerConnection(null);
 
+            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) =>
+            {
+                bool hasUseCandidate = msg.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.UseCandidate);
+                Console.WriteLine($"STUN {msg.Header.MessageType} received from {ep}, use candidate {hasUseCandidate}.");
+            };
             pc.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
             //pc.OnReceiveReport += (type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
             pc.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
 
-            pc.onicecandidate += (candidate) =>
-            {
-                if (pc.signalingState == RTCSignalingState.have_local_offer ||
-                    pc.signalingState == RTCSignalingState.have_remote_offer)
-                {
-                    context.WebSocket.Send($"candidate:{candidate}");
-                }
-            };
+            //pc.onicecandidate += (candidate) =>
+            //{
+            //    if (pc.signalingState == RTCSignalingState.have_local_offer ||
+            //        pc.signalingState == RTCSignalingState.have_remote_offer)
+            //    {
+            //        context.WebSocket.Send($"candidate:{candidate}");
+            //    }
+            //};
 
             pc.onconnectionstatechange += (state) =>
             {
@@ -212,7 +216,6 @@ namespace SIPSorcery.Examples
                     };
                     pc.OnRtpClosed += (reason) => rtpSession.Close(reason);
                 }
-
             };
 
             _activePeerConnection = pc;
@@ -305,7 +308,11 @@ namespace SIPSorcery.Examples
                 else if (pc.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    var result = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    if(result != SetDescriptionResultEnum.OK)
+                    {
+                        logger.LogWarning($"Failed to set remote description {result}.");
+                    }
                 }
                 else
                 {

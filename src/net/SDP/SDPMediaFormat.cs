@@ -287,7 +287,7 @@ namespace SIPSorcery.Net
         {
             FormatAttribute = attribute;
 
-            Match attributeMatch = Regex.Match(attribute, @"(?<name>\S+)/(?<clockrate>\d+)\s*");
+            Match attributeMatch = Regex.Match(attribute, @"(?<name>[a-zA-Z0-9\-]+)/(?<clockrate>\d+)\s*");
             if (attributeMatch.Success)
             {
                 Name = attributeMatch.Result("${name}");

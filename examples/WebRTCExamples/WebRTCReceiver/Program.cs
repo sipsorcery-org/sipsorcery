@@ -149,15 +149,16 @@ namespace demo
                     await winVideoEP.CloseVideo();
                 }
             };
-            peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-            {
-                //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
+            //peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+            //{
+            //    //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
 
-                if (media == SDPMediaTypesEnum.video)
-                {
-                    winVideoEP.GotVideoRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
-                }
-            };
+            //    if (media == SDPMediaTypesEnum.video)
+            //    {
+            //        winVideoEP.GotVideoRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
+            //    }
+            //};
+            peerConnection.OnVideoFrameReceived += winVideoEP.GotVideoFrame;
 
             return peerConnection;
         }

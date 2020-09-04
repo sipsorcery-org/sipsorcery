@@ -869,7 +869,7 @@ a=sctpmap:5000 webrtc-datachannel 1024";
         }
 
         /// <summary>
-        /// Tests that parsing an SDP media format attribute where the name has a hyphen in it works correctly..
+        /// Tests that parsing an SDP media format attribute where the name has a hyphen in it works correctly.
         /// </summary>
         [Fact]
         public void ParseMediaFormatWithHyphenNameUnitTest()
@@ -900,6 +900,38 @@ a=sendrecv";
 
             Assert.Equal("96", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().FormatID);
             Assert.Equal("H263-1998", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Name);
+        }
+
+
+        /// <summary>
+        /// Tests that parsing an SDP media format attribute where the name has additional information following a '/'
+        /// character is parsed correctly.
+        /// </summary>
+        [Fact]
+        public void ParseMediaFormatWithFowardSlashUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=- 1970544282 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 10.10.1.8
+t=0 0
+m=audio 57982 RTP/AVP 111
+a=rtpmap:111 opus/48000/2
+a=fmtp:111 minptime=10;useinbandfec=1
+a=sendrecv";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("111", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats.Single().FormatID);
+            Assert.Equal(SDPMediaFormatsEnum.OPUS, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats.Single().FormatCodec);
         }
     }
 }

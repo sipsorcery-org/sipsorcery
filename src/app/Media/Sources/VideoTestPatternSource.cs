@@ -1,25 +1,58 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: VideoTestPatternSource.cs
+//
+// Description: Implements a video test pattern source based on a static 
+// jpeg file.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 04 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
 {
     public class VideoTestPatternSource : IVideoSource, IDisposable
     {
-        private const string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
-        private const int TEST_PATTERN_SPACING_MILLISECONDS = 33;
+        public const string TEST_PATTERN_RESOURCE_PATH = "media.testpattern.jpeg";
+        public const string TEST_PATTERN_INVERTED_RESOURCE_PATH = "media.testpattern_inverted.jpeg";
+
+        private const int MAXIMUM_FRAMES_PER_SECOND = 30;
+        private const int DEFAULT_FRAMES_PER_SECOND = 30;
+        private const int MINIMUM_FRAMES_PER_SECOND = 1;
         private const float TEXT_SIZE_PERCENTAGE = 0.035f;          // Height of text as a percentage of the total image height
         private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f;     // Black text outline thickness is set as a percentage of text height in pixels
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
 
+        public static ILogger logger = Sys.Log.Logger;
+
+        public static readonly List<VideoCodecsEnum> SupportedCodecs = new List<VideoCodecsEnum>
+        {
+            VideoCodecsEnum.VP8
+        };
+
+        private List<VideoCodecsEnum> _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
+        private int _frameSpacing;
         private Bitmap _testPattern;
         private Timer _sendTestPatternTimer;
         private bool _isStarted;
@@ -32,11 +65,108 @@ namespace SIPSorcery.Media
         /// event and pass to an encoder.
         /// </summary>
         [Obsolete("This video source is not currently capable of generating encoded samples.")]
-        public event VideoEncodedSampleDelegate OnVideoSourceEncodedSample { add { } remove { } }
+        public event EncodedSampleDelegate OnVideoSourceEncodedSample { add { } remove { } }
 
         public VideoTestPatternSource()
         {
-            InitialiseTestPattern();
+            EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+            var testPatternFileInfo = efp.GetFileInfo(TEST_PATTERN_RESOURCE_PATH);
+
+            if (testPatternFileInfo == null)
+            {
+                throw new ApplicationException($"Test pattern embedded resource could not be found, {TEST_PATTERN_RESOURCE_PATH}.");
+            }
+            else
+            {
+                _testPattern = new Bitmap(testPatternFileInfo.CreateReadStream());
+                _sendTestPatternTimer = new Timer(GenerateTestPattern, null, Timeout.Infinite, Timeout.Infinite);
+                _frameSpacing = 1000 / DEFAULT_FRAMES_PER_SECOND;
+            }
+        }
+
+        public void SetEmbeddedTestPatternPath(string path)
+        {
+            EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+            var testPattenFileInfo = efp.GetFileInfo(path);
+
+            if (testPattenFileInfo == null)
+            {
+                logger.LogWarning($"Video test pattern source could not locate embedded path {path}.");
+            }
+            else
+            {
+                logger.LogDebug($"Test pattern loaded from embedded resource {path}.");
+
+                lock (_sendTestPatternTimer)
+                {
+                    _testPattern?.Dispose();
+                    _testPattern = new Bitmap(testPattenFileInfo.CreateReadStream());
+                }
+            }
+        }
+
+        public void SetTestPatternPath(string path)
+        {
+            if (!File.Exists(path))
+            {
+                logger.LogWarning($"The test pattern file could not be found at {path}.");
+            }
+            else
+            {
+                logger.LogDebug($"Test pattern loaded from {path}.");
+
+                lock (_sendTestPatternTimer)
+                {
+                    _testPattern?.Dispose();
+                    _testPattern = new Bitmap(path);
+                }
+            }
+        }
+
+        public void SetFrameRate(int framesPerSecond)
+        {
+            if (framesPerSecond < MINIMUM_FRAMES_PER_SECOND || framesPerSecond > MAXIMUM_FRAMES_PER_SECOND)
+            {
+                logger.LogWarning($"Frames per second not in the allowed range of {MINIMUM_FRAMES_PER_SECOND} to {MAXIMUM_FRAMES_PER_SECOND}, ignoring.");
+            }
+            else
+            {
+                _frameSpacing = 1000 / framesPerSecond;
+
+                if (_isStarted)
+                {
+                    _sendTestPatternTimer.Change(0, _frameSpacing);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Requests that the video sink and source only advertise support for the supplied list of codecs.
+        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
+        /// used.
+        /// </summary>
+        /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
+        public void RestrictCodecs(List<VideoCodecsEnum> codecs)
+        {
+            if (codecs == null || codecs.Count == 0)
+            {
+                _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
+            }
+            else
+            {
+                _supportedCodecs = new List<VideoCodecsEnum>();
+                foreach (var codec in codecs)
+                {
+                    if (SupportedCodecs.Any(x => x == codec))
+                    {
+                        _supportedCodecs.Add(codec);
+                    }
+                    else
+                    {
+                        logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
+                    }
+                }
+            }
         }
 
         public Task PauseVideo()
@@ -47,7 +177,7 @@ namespace SIPSorcery.Media
 
         public Task ResumeVideo()
         {
-            _sendTestPatternTimer.Change(0, TEST_PATTERN_SPACING_MILLISECONDS);
+            _sendTestPatternTimer.Change(0, _frameSpacing);
             return Task.CompletedTask;
         }
 
@@ -56,7 +186,7 @@ namespace SIPSorcery.Media
             if (!_isStarted)
             {
                 _isStarted = true;
-                _sendTestPatternTimer.Change(0, TEST_PATTERN_SPACING_MILLISECONDS);
+                _sendTestPatternTimer.Change(0, _frameSpacing);
             }
             return Task.CompletedTask;
         }
@@ -87,17 +217,12 @@ namespace SIPSorcery.Media
             throw new NotImplementedException();
         }
 
-        private void InitialiseTestPattern()
+        /// <summary>
+        /// This source does not have any video encoding capabilities.
+        /// </summary>
+        public void ForceKeyFrame()
         {
-            if (!File.Exists(TEST_PATTERN_IMAGE_PATH))
-            {
-                throw new ApplicationException($"Test pattern file could not be found, {TEST_PATTERN_IMAGE_PATH}.");
-            }
-            else
-            {
-                _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
-                _sendTestPatternTimer = new Timer(GenerateTestPattern, null, Timeout.Infinite, Timeout.Infinite);
-            }
+            throw new NotImplementedException();
         }
 
         private void GenerateTestPattern(object state)
@@ -109,9 +234,10 @@ namespace SIPSorcery.Media
                     var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
                     AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
 
-                    OnVideoSourceRawSample(TEST_PATTERN_SPACING_MILLISECONDS, _testPattern.Width, _testPattern.Height, BitmapToRGB24(stampedTestPattern as Bitmap));
+                    // This event handler could get removed while the timestamp text is being added.
+                    OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, _testPattern.Width, _testPattern.Height, BitmapToRGB24(stampedTestPattern as Bitmap));
 
-                    stampedTestPattern.Dispose();
+                    stampedTestPattern?.Dispose();
                 }
             }
         }
@@ -160,6 +286,11 @@ namespace SIPSorcery.Media
             bitmap.UnlockBits(bitmapData);
 
             return bytes;
+        }
+
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] rgb24Sample)
+        {
+            throw new NotImplementedException("The test pattern video source does not offer any encoding services for external sources.");
         }
 
         public void Dispose()

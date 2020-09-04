@@ -62,7 +62,8 @@ namespace demo
 
             var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
             var audioCodecs = new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU };
-            AudioExtrasSource audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions, audioCodecs);
+            AudioExtrasSource audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions);
+            audioExtrasSource.RestrictCodecs(audioCodecs);
             var rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
             rtpSession.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
 

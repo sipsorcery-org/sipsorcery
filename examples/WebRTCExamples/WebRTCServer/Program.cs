@@ -77,8 +77,9 @@ namespace WebRTCServer
         private static uint _vp8Timestamp;
         private static uint _mulawTimestamp;
 
-        private delegate void MediaSampleReadyDelegate(SDPMediaTypesEnum mediaType, uint timestamp, byte[] sample);
-        private static event MediaSampleReadyDelegate OnMediaSampleReady;
+        private delegate void MediaSampleReadyDelegate(uint timestamp, byte[] sample);
+        private static event MediaSampleReadyDelegate OnAudioSampleReady;
+        private static event MediaSampleReadyDelegate OnVideoSampleReady;
 
         static void Main()
         {
@@ -162,7 +163,8 @@ namespace WebRTCServer
 
                 if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
-                    OnMediaSampleReady -= peerConnection.SendMedia;
+                    OnVideoSampleReady -= peerConnection.SendVideo;
+                    OnAudioSampleReady -= peerConnection.SendAudio;
                     peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
                     peerConnection.OnSendReport -= RtpSession_OnSendReport;
                 }
@@ -171,7 +173,8 @@ namespace WebRTCServer
                     if (!_isSampling)
                     {
                         _isSampling = true;
-                        OnMediaSampleReady += peerConnection.SendMedia;
+                        OnVideoSampleReady += peerConnection.SendVideo;
+                        OnAudioSampleReady += peerConnection.SendAudio;
                         _ = Task.Run(StartMedia);
                     }
                 }
@@ -251,7 +254,7 @@ namespace WebRTCServer
 
                 while (true)
                 {
-                    if (OnMediaSampleReady == null)
+                    if (OnVideoSampleReady == null && OnAudioSampleReady == null)
                     {
                         logger.LogDebug("No active clients, media sampling paused.");
                         break;
@@ -284,7 +287,7 @@ namespace WebRTCServer
                                 }
                             }
 
-                            OnMediaSampleReady?.Invoke(SDPMediaTypesEnum.video, _vp8Timestamp, vpxEncodedBuffer);
+                            OnVideoSampleReady?.Invoke(_vp8Timestamp, vpxEncodedBuffer);
 
                             //Console.WriteLine($"Video SeqNum {videoSeqNum}, timestamp {videoTimestamp}, buffer length {vpxEncodedBuffer.Length}, frame count {sampleProps.FrameCount}.");
 
@@ -304,7 +307,7 @@ namespace WebRTCServer
                                 mulawSample[sampleIndex++] = ulawByte;
                             }
 
-                            OnMediaSampleReady?.Invoke(SDPMediaTypesEnum.audio, _mulawTimestamp, mulawSample);
+                            OnAudioSampleReady?.Invoke(_mulawTimestamp, mulawSample);
 
                             //Console.WriteLine($"Audio SeqNum {audioSeqNum}, timestamp {audioTimestamp}, buffer length {mulawSample.Length}.");
 

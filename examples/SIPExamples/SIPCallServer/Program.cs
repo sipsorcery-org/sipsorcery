@@ -313,7 +313,8 @@ namespace SIPSorcery
 
             Log.LogInformation($"RTP audio session source set to {audioSource}.");
 
-            AudioExtrasSource audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions, codecs);
+            AudioExtrasSource audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions);
+            audioExtrasSource.RestrictCodecs(codecs);
             var rtpAudioSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
             rtpAudioSession.AcceptRtpFromAny = true;
 
