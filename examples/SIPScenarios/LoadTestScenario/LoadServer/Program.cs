@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -144,8 +143,8 @@ namespace SIPSorcery
                             foreach (var call in _calls)
                             {
                                 int duration = Convert.ToInt32(DateTimeOffset.Now.Subtract(call.Value.Dialogue.Inserted).TotalSeconds);
-                                uint rtpSent = (call.Value.MediaSession as RtpAudioSession).RtpPacketsSent;
-                                uint rtpRecv = (call.Value.MediaSession as RtpAudioSession).RtpPacketsReceived;
+                                uint rtpSent = (call.Value.MediaSession as AudioSendOnlyMediaSession).AudioRtcpSession.PacketsSentCount;
+                                uint rtpRecv = (call.Value.MediaSession as AudioSendOnlyMediaSession).AudioRtcpSession.PacketsReceivedCount;
                                 Log.LogInformation($"{call.Key}: {call.Value.Dialogue.RemoteTarget} {duration}s {rtpSent}/{rtpRecv}");
                             }
                         }
@@ -171,11 +170,9 @@ namespace SIPSorcery
         /// <param name="dst">THe destination specified on an incoming call. Can be used to
         /// set the audio source.</param>
         /// <returns>A new RTP session object.</returns>
-        private static RtpAudioSession CreateRtpSession(SIPUserAgent ua)
+        private static AudioSendOnlyMediaSession CreateRtpSession(SIPUserAgent ua)
         {
-            List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
-            var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-            var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
+            var rtpAudioSession = new AudioSendOnlyMediaSession();
 
             // Wire up the event handler for RTP packets received from the remote party.
             rtpAudioSession.OnRtpPacketReceived += (ep, type, rtp) => OnRtpPacketReceived(ua, type, rtp);

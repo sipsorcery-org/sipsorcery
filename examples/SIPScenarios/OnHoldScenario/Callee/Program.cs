@@ -64,9 +64,7 @@ namespace SIPSorcery
             userAgent.RemoteTookOffHold += () => Log.LogDebug("Remote party took call off hold.");
             userAgent.OnIncomingCall += async (ua, req) =>
             {
-                List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
-                var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-                var rtpAudioSession = new RtpAudioSession(audioOptions, codecs, null, _rtpPort);
+                var rtpAudioSession = new AudioSendOnlyMediaSession(null, _rtpPort);
                 _rtpPort += 2;
 
                 rtpAudioSession.OnReceiveReport += RtpSession_OnReceiveReport;

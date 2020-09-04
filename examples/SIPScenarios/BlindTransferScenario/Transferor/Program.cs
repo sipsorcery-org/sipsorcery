@@ -184,18 +184,16 @@ namespace SIPSorcery
         /// <param name="dst">THe destination specified on an incoming call. Can be used to
         /// set the audio source.</param>
         /// <returns>A new RTP session object.</returns>
-        private static RtpAudioSession CreateRtpSession()
+        private static AudioSendOnlyMediaSession CreateRtpSession()
         {
-            List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
-            var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-            var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
+            var audioSession = new AudioSendOnlyMediaSession();
 
             // Wire up the event handler for RTP packets received from the remote party.
             //rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(type, rtp);
-            rtpAudioSession.OnRtcpBye += (reason) => Log.LogDebug($"RTCP BYE received.");
-            rtpAudioSession.OnRtpClosed += (reason) => Log.LogDebug("RTP session closed.");
-            rtpAudioSession.OnReceiveReport += RtpSession_OnReceiveReport;
-            rtpAudioSession.OnSendReport += RtpSession_OnSendReport;
+            audioSession.OnRtcpBye += (reason) => Log.LogDebug($"RTCP BYE received.");
+            audioSession.OnRtpClosed += (reason) => Log.LogDebug("RTP session closed.");
+            audioSession.OnReceiveReport += RtpSession_OnReceiveReport;
+            audioSession.OnSendReport += RtpSession_OnSendReport;
             //rtpAudioSession.OnTimeout += (mediaType) =>
             //{
             //    if (ua?.Dialogue != null)
@@ -210,7 +208,7 @@ namespace SIPSorcery
             //    ua.Hangup();
             //};
 
-            return rtpAudioSession;
+            return audioSession;
         }
 
         /// <summary>

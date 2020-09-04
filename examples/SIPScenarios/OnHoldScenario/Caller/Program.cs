@@ -185,11 +185,9 @@ namespace SIPSorcery
         /// <param name="dst">THe destination specified on an incoming call. Can be used to
         /// set the audio source.</param>
         /// <returns>A new RTP session object.</returns>
-        private static RtpAudioSession CreateRtpSession()
+        private static AudioSendOnlyMediaSession CreateRtpSession()
         {
-            List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
-            var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-            var rtpAudioSession = new RtpAudioSession(audioOptions, codecs, null, _rtpPort);
+            var rtpAudioSession = new AudioSendOnlyMediaSession(null, _rtpPort);
             _rtpPort += 2;
 
             // Wire up the event handler for RTP packets received from the remote party.
