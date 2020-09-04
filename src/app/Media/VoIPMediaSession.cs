@@ -46,9 +46,6 @@ namespace SIPSorcery.Media
     {
         private const int TEST_PATTERN_FPS = 30;
         private const int TEST_PATTERN_ONHOLD_FPS = 3;
-        private const string MUSIC_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
-        private const string MUSIC_FILE_PCMA = "media/Macroform_-_Simplicity.alaw";
-        private const string MUSIC_FILE_G722 = "media/Macroform_-_Simplicity.g722";
 
         private static ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -193,8 +190,8 @@ namespace SIPSorcery.Media
 
                 if (_videoTestPatternSource != null)
                 {
-                    _videoTestPatternSource.OnVideoSourceRawSample -= Media.VideoSource.ExternalVideoSourceRawSample;
                     await _videoTestPatternSource.CloseVideo().ConfigureAwait(false);
+                    _videoTestPatternSource.OnVideoSourceRawSample -= Media.VideoSource.ExternalVideoSourceRawSample;
                 }
             }
         }
@@ -224,19 +221,7 @@ namespace SIPSorcery.Media
             if (HasAudio)
             {
                 await Media.AudioSource.PauseAudio().ConfigureAwait(false);
-
-                AudioSourceOptions audioOnHold =
-                    new AudioSourceOptions
-                    {
-                        AudioSource = AudioSourcesEnum.Music,
-                        SourceFiles = new Dictionary<AudioCodecsEnum, string>
-                        {
-                            { AudioCodecsEnum.PCMU, MUSIC_FILE_PCMU },
-                            { AudioCodecsEnum.PCMA, MUSIC_FILE_PCMA }
-                        }
-                    };
-
-                _audioExtrasSource.SetSource(audioOnHold);
+                _audioExtrasSource.SetSource(AudioSourcesEnum.Music);
             }
 
             if (HasVideo)

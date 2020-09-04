@@ -89,7 +89,7 @@ namespace SIPSorcery.Media
             EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
             var testPattenFileInfo = efp.GetFileInfo(path);
 
-            if(testPattenFileInfo == null)
+            if (testPattenFileInfo == null)
             {
                 logger.LogWarning($"Video test pattern source could not locate embedded path {path}.");
             }
