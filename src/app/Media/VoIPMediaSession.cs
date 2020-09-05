@@ -166,15 +166,21 @@ namespace SIPSorcery.Media
             {
                 base.Close(reason);
 
-                if (Media.AudioSource != null)
-                {
-                    await Media.AudioSource.CloseAudio().ConfigureAwait(false);
-                }
-
                 if (_audioExtrasSource != null)
                 {
                     _audioExtrasSource.OnAudioSourceEncodedSample -= SendAudio;
                     await _audioExtrasSource.CloseAudio().ConfigureAwait(false);
+                }
+
+                if (_videoTestPatternSource != null)
+                {
+                    await _videoTestPatternSource.CloseVideo().ConfigureAwait(false);
+                    _videoTestPatternSource.OnVideoSourceRawSample -= Media.VideoSource.ExternalVideoSourceRawSample;
+                }
+
+                if (Media.AudioSource != null)
+                {
+                    await Media.AudioSource.CloseAudio().ConfigureAwait(false);
                 }
 
                 if (Media.VideoSource != null)
@@ -186,12 +192,6 @@ namespace SIPSorcery.Media
                 {
                     Media.VideoSink.OnVideoSinkDecodedSample -= VideoSinkSampleReady;
                     base.OnVideoFrameReceived -= Media.VideoSink.GotVideoFrame;
-                }
-
-                if (_videoTestPatternSource != null)
-                {
-                    await _videoTestPatternSource.CloseVideo().ConfigureAwait(false);
-                    _videoTestPatternSource.OnVideoSourceRawSample -= Media.VideoSource.ExternalVideoSourceRawSample;
                 }
             }
         }
@@ -210,10 +210,6 @@ namespace SIPSorcery.Media
             {
                 Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
             }
-            //else if (mediaType == SDPMediaTypesEnum.video && Media.VideoSink != null)
-            //{
-            //    Media.VideoSink.GotVideoRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
-            //}
         }
 
         public async Task PutOnHold()
