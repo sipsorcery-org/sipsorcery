@@ -178,8 +178,14 @@ docfx/*
 >>>>>>> master
 =======
 *.sdp
+<<<<<<< HEAD
 >>>>>>> master
 =======
 *.sdp
 **/.ionide
+>>>>>>> master
+=======
+**/.ionide
+.fake
+.ionide
 >>>>>>> master
