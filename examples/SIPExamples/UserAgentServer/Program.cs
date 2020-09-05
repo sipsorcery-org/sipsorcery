@@ -151,15 +151,7 @@ namespace SIPSorcery
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"Client offer contained PCMU audio codec.");
-                            AudioExtrasSource extrasSource = new AudioExtrasSource(new AudioEncoder(),
-                                 new AudioSourceOptions
-                                 {
-                                     AudioSource = AudioSourcesEnum.Music,
-                                     SourceFiles = new Dictionary<AudioCodecsEnum, string>
-                                    {
-                                        { AudioCodecsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
-                                    }
-                                 });
+                            AudioExtrasSource extrasSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
                             rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = extrasSource });
                             rtpSession.AcceptRtpFromAny = true;
 

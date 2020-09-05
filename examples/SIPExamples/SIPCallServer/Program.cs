@@ -302,18 +302,9 @@ namespace SIPSorcery
                 audioSource = AudioSourcesEnum.Silence;
             }
 
-            var audioOptions = new AudioSourceOptions { AudioSource = audioSource };
-            if (audioSource == AudioSourcesEnum.Music)
-            {
-                audioOptions.SourceFiles = new Dictionary<AudioCodecsEnum, string>();
-                if (codecs.Contains(AudioCodecsEnum.PCMA)) { audioOptions.SourceFiles.Add(AudioCodecsEnum.PCMA, MUSIC_FILE_PCMA); }
-                if (codecs.Contains(AudioCodecsEnum.PCMU)) { audioOptions.SourceFiles.Add(AudioCodecsEnum.PCMU, MUSIC_FILE_PCMU); }
-                if (codecs.Contains(AudioCodecsEnum.G722)) { audioOptions.SourceFiles.Add(AudioCodecsEnum.G722, MUSIC_FILE_G722); }
-            };
-
             Log.LogInformation($"RTP audio session source set to {audioSource}.");
 
-            AudioExtrasSource audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions);
+            AudioExtrasSource audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = audioSource });
             audioExtrasSource.RestrictCodecs(codecs);
             var rtpAudioSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
             rtpAudioSession.AcceptRtpFromAny = true;
