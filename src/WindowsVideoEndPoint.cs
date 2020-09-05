@@ -102,37 +102,31 @@ namespace SIPSorceryMedia.Windows
 
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] rgb24Sample)
         {
-            if (_vp8Encoder == null)
+            if (!_isClosed)
             {
-                _vp8Encoder = new Vp8Codec();
-                _vp8Encoder.InitialiseEncoder((uint)width, (uint)height);
-            }
+                if (_vp8Encoder == null)
+                {
+                    _vp8Encoder = new Vp8Codec();
+                    _vp8Encoder.InitialiseEncoder((uint)width, (uint)height);
+                }
 
-            if (OnVideoSourceEncodedSample != null)
-            {
-                byte[] encodedBuffer = null;
-
-                if (_selectedSourceFormat == VideoCodecsEnum.VP8)
+                if (OnVideoSourceEncodedSample != null)
                 {
                     byte[] i420Buffer = PixelConverter.RGBtoI420(rgb24Sample, width, height);
-                    encodedBuffer = _vp8Encoder.Encode(i420Buffer, _forceKeyFrame);
-                }
-                else
-                {
-                    throw new ApplicationException($"Video codec is not supported.");
-                }
+                    byte[] encodedBuffer = _vp8Encoder.Encode(i420Buffer, _forceKeyFrame);
 
-                if (encodedBuffer != null)
-                {
-                    //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
-                    uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
-                    uint durationRtpTS =  VIDEO_SAMPLING_RATE / fps;
-                    OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
-                }
+                    if (encodedBuffer != null)
+                    {
+                        //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
+                        uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
+                        uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
+                        OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+                    }
 
-                if (_forceKeyFrame)
-                {
-                    _forceKeyFrame = false;
+                    if (_forceKeyFrame)
+                    {
+                        _forceKeyFrame = false;
+                    }
                 }
             }
         }
@@ -153,21 +147,24 @@ namespace SIPSorceryMedia.Windows
 
         public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame)
         {
-            //DateTime startTime = DateTime.Now;
-
-            List<byte[]> decodedFrames = _vp8Decoder.Decode(frame, frame.Length, out var width, out var height);
-
-            if (decodedFrames == null)
+            if (!_isClosed)
             {
-                logger.LogWarning("VPX decode of video sample failed.");
-            }
-            else
-            {
-                foreach (var decodedFrame in decodedFrames)
+                //DateTime startTime = DateTime.Now;
+
+                List<byte[]> decodedFrames = _vp8Decoder.Decode(frame, frame.Length, out var width, out var height);
+
+                if (decodedFrames == null)
                 {
-                    byte[] rgb = PixelConverter.I420toRGB(decodedFrame, (int)width, (int)height);
-                    //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
-                    OnVideoSinkDecodedSample(rgb, width, height, (int)(width * 3));
+                    logger.LogWarning("VPX decode of video sample failed.");
+                }
+                else
+                {
+                    foreach (var decodedFrame in decodedFrames)
+                    {
+                        byte[] rgb = PixelConverter.I420toRGB(decodedFrame, (int)width, (int)height);
+                        //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
+                        OnVideoSinkDecodedSample(rgb, width, height, (int)(width * 3));
+                    }
                 }
             }
         }
@@ -208,6 +205,11 @@ namespace SIPSorceryMedia.Windows
 
         public void SetVideoSourceFormat(VideoCodecsEnum videoFormat)
         {
+            if (videoFormat == VideoCodecsEnum.VP8)
+            {
+                throw new ApplicationException($"THe Windows Video Source End Point does not support video codec {videoFormat}.");
+            }
+
             _selectedSourceFormat = videoFormat;
         }
 
@@ -218,6 +220,11 @@ namespace SIPSorceryMedia.Windows
 
         public void SetVideoSinkFormat(VideoCodecsEnum videoFormat)
         {
+            if (videoFormat == VideoCodecsEnum.VP8)
+            {
+                throw new ApplicationException($"THe Windows Video Sink End Point does not support video codec {videoFormat}.");
+            }
+
             _selectedSinkFormat = videoFormat;
         }
 
