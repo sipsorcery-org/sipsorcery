@@ -60,7 +60,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.61-pre: Added hooks for new media abstractions interface. Minimum .Net Framework target updated from net46 to net472.
+    <PackageReleaseNotes>- v4.0.67-pre: Embedded test pattern images and default PCM music on hold files.
+- v4.0.61-pre: Added hooks for new media abstractions interface. Minimum .Net Framework target updated from net46 to net472.
 - v4.0.60-pre: Fix for RTP Session sequence number bug.
 - v4.0.59-pre: WebRTC data channel support.
 - v4.0.58-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
@@ -96,9 +97,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.66-pre</Version>
-    <AssemblyVersion>4.0.66.0</AssemblyVersion>
-    <FileVersion>4.0.66.0</FileVersion>
+    <Version>4.0.67-pre</Version>
+    <AssemblyVersion>4.0.67.0</AssemblyVersion>
+    <FileVersion>4.0.67.0</FileVersion>
   </PropertyGroup>
 
 </Project>

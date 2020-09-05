@@ -83,15 +83,6 @@ namespace demo
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
-            var audioSrcOpts = new AudioSourceOptions
-            {
-                AudioSource = AudioSourcesEnum.Music,
-                SourceFiles = new Dictionary<AudioCodecsEnum, string>
-                {
-                    { AudioCodecsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
-                }
-            };
-
             var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
             windowsAudioEndPoint.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
             var windowsVideoEndPoint = new WindowsVideoEndPoint();
@@ -132,7 +123,7 @@ namespace demo
                 };
 
                 windowsAudioEndPoint.PauseAudio().Wait();
-                voipMediaSession.AudioExtrasSource.SetSource(audioSrcOpts);
+                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
             }
             else
             {

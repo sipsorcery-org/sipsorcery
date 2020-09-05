@@ -11,25 +11,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="C:\Users\aaron\.nuget\packages\sipsorcery\4.0.65-pre\contentFiles\any\netcoreapp3.1\media\testpattern_inverted.jpeg" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="media\testpattern.jpeg" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SIPSorcery" Version="4.0.66-pre" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.11-pre" />
+    <!--<PackageReference Include="SIPSorcery" Version="4.0.66-pre" />-->
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.15-pre" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="media\testpattern.jpeg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 
 </Project>

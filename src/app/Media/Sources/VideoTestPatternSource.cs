@@ -43,6 +43,7 @@ namespace SIPSorcery.Media
         private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f;     // Black text outline thickness is set as a percentage of text height in pixels
         private const int TEXT_MARGIN_PIXELS = 5;
         private const int POINTS_PER_INCH = 72;
+        private const int TIMER_DISPOSE_WAIT_MILLISECONDS = 1000;
 
         public static ILogger logger = Sys.Log.Logger;
 
@@ -196,7 +197,10 @@ namespace SIPSorcery.Media
             if (!_isClosed)
             {
                 _isClosed = true;
-                Dispose();
+
+                ManualResetEventSlim mre = new ManualResetEventSlim();
+                _sendTestPatternTimer?.Dispose(mre.WaitHandle);
+                return Task.Run(() => mre.Wait(TIMER_DISPOSE_WAIT_MILLISECONDS));
             }
             return Task.CompletedTask;
         }
@@ -295,13 +299,7 @@ namespace SIPSorcery.Media
 
         public void Dispose()
         {
-            if (_sendTestPatternTimer != null)
-            {
-                lock (_sendTestPatternTimer)
-                {
-                    _sendTestPatternTimer?.Dispose();
-                }
-            }
+            _sendTestPatternTimer?.Dispose();
             _testPattern?.Dispose();
         }
     }
