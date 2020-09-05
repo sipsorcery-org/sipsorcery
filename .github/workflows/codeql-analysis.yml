@@ -47,7 +47,7 @@ jobs:
     #    uses a compiled language
 
     - run: |
-       dotnet build src/SIPSorcery/sln
+       dotnet build src/SIPSorcery.sln
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1

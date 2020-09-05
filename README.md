@@ -23,12 +23,12 @@ The diagram below is a high level overview of a Real-time audio and video call b
  - Interactive Connectivity Establishment [(ICE)](https://tools.ietf.org/html/rfc8445),
  - And more.
 
-**Caveats:**
+**Media End Points - Audio/Video Sinks and Sources:**
 
- - This library does not provide access to audio and video devices or native codecs. Providing cross platform access on top of .NET Core is a large undertaking. A number of efforts are currently in progress. 
+ - This library does not provide access to audio and video devices or native codecs. Providing cross platform access on top of .NET Core is a large undertaking. A number of efforts in separate libraries are currently in progress. 
    - [SIPSorceryMedia.Windows](https://github.com/sipsorcery/SIPSorceryMedia.Windows): Windows specific library that provides audio capture and playback. Also provides [VP8](https://www.webmproject.org/) encoding and decoding functions. The examples in this repository use it.
    - [SIPSorceryMedia.FFmpeg](https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg): A in-progress effort to provide cross platform audio, video and codec functions using PInvoke and [FFmpeg](https://ffmpeg.org/).
-   - Others: **Contributions welcome**. Frequently requested are Xamarin Forms on Android/iOS and Unix (Linux and/or Mac).
+   - Others: **Contributions welcome**. Frequently requested are Xamarin Forms on Android/iOS and Unix (Linux and/or Mac). New implementations need to implement one or more of the Audio Sink/Source and/or Video Sink/Source interfaces from [SIPSorceryMedia.Abstractions](https://github.com/sipsorcery/SIPSorceryMedia.Abstractions/blob/master/src/V1/MediaEndPoints.cs).
 
  - This library provides only a small number of audio and video codecs (G711, G722 and MJPEG). Additional codecs, particularly video ones, require C++ libraries. 
 
