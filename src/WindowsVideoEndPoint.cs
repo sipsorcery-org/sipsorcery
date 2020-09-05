@@ -205,7 +205,7 @@ namespace SIPSorceryMedia.Windows
 
         public void SetVideoSourceFormat(VideoCodecsEnum videoFormat)
         {
-            if (videoFormat == VideoCodecsEnum.VP8)
+            if (videoFormat != VideoCodecsEnum.VP8)
             {
                 throw new ApplicationException($"THe Windows Video Source End Point does not support video codec {videoFormat}.");
             }
@@ -220,7 +220,7 @@ namespace SIPSorceryMedia.Windows
 
         public void SetVideoSinkFormat(VideoCodecsEnum videoFormat)
         {
-            if (videoFormat == VideoCodecsEnum.VP8)
+            if (videoFormat != VideoCodecsEnum.VP8)
             {
                 throw new ApplicationException($"THe Windows Video Sink End Point does not support video codec {videoFormat}.");
             }

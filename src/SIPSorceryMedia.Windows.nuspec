@@ -22,8 +22,8 @@
 		<dependency id="Microsoft.Extensions.DependencyInjection" version="3.1.7" />
 	  </group>
     </dependencies>
-	<releaseNotes>-0.0.14-pre: Initial pre-release</releaseNotes>
-	<version>0.0.14-pre</version>
+	<releaseNotes>-0.0.15-pre: Initial pre-release</releaseNotes>
+	<version>0.0.15-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
