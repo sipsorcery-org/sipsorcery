@@ -173,3 +173,5 @@ docfx/*
 **/.vscode*
 *.sdp
 **/.ionide
+.fake
+.ionide

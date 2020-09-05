@@ -25,7 +25,11 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 **Caveats:**
 
- - This library does not provide access to audio and video devices. Some Windows specific examples of using 3rd party libraries are provided,
+ - This library does not provide access to audio and video devices or native codecs. Providing cross platform access on top of .NET Core is a large undertaking. A number of efforts are currently in progress. 
+   - [SIPSorceryMedia.Windows](https://github.com/sipsorcery/SIPSorceryMedia.Windows): Windows specific library that provides audio capture and playback. Also provides [VP8](https://www.webmproject.org/) encoding and decoding functions. The examples in this repository use it.
+   - [SIPSorceryMedia.FFmpeg](https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg): A in-progress effort to provide cross platform audio, video and codec functions using PInvoke and [FFmpeg](https://ffmpeg.org/).
+   - Others: **Contributions welcome**. Frequently requested are Xamarin Forms on Android/iOS and Unix (Linux and/or Mac).
+
  - This library provides only a small number of audio and video codecs (G711, G722 and MJPEG). Additional codecs, particularly video ones, require C++ libraries. 
 
 ## Installation
@@ -35,13 +39,13 @@ The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framewor
 For .NET Core:
 
 ````bash
-dotnet add package SIPSorcery -v 4.0.61-pre
+dotnet add package SIPSorcery -v 4.0.67-pre
 ````
 
 With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](https://www.nuget.org/packages/SIPSorcery/)):
 
 ````ps1
-Install-Package SIPSorcery -v 4.0.61-pre
+Install-Package SIPSorcery -v 4.0.67-pre
 ````
 
 ## Documentation
@@ -55,8 +59,8 @@ The simplest possible example to place an audio-only SIP call is shown below. Th
 ````bash
 dotnet new console --name SIPGetStarted
 cd SIPGetStarted
-dotnet add package SIPSorcery -v 4.0.61-pre
-dotnet add package SIPSorceryMedia -v 4.0.60-pre
+dotnet add package SIPSorcery -v 4.0.67-pre
+dotnet add package SIPSorceryMedia.Windows -v 0.0.15-pre
 code . # If you have Visual Studio Code https://code.visualstudio.com installed.
 # edit Program.cs and paste in the contents below.
 dotnet run
@@ -67,9 +71,9 @@ ctrl-c
 ````csharp
 using System;
 using System.Threading.Tasks;
-using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Media;
+using SIPSorceryMedia.Windows;
 
 namespace SIPGetStarted
 {
@@ -80,13 +84,13 @@ namespace SIPGetStarted
         static async Task Main()
         {
             Console.WriteLine("SIP Get Started");
-            
-            var sipTransport = new SIPTransport();
-            var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
+			
+			var userAgent = new SIPUserAgent();
+            var winAudio = new WindowsAudioEndPoint(new AudioEncoder());
+            var voipMediaSession = new VoIPMediaSession(winAudio.ToMediaEndPoints());
 
             // Place the call and wait for the result.
-            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
+            bool callResult = await userAgent.Call(DESTINATION, null, null, voipMediaSession);
             Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
 
             Console.WriteLine("Press any key to hangup and exit.");
@@ -115,8 +119,8 @@ If you are familiar with the [WebRTC javascript API](https://www.w3.org/TR/webrt
 ````bash
 dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
-dotnet add package SIPSorcery -v 4.0.61-pre
-dotnet add package SIPSorceryMedia -v 4.0.60-pre
+dotnet add package SIPSorcery -v 4.0.67-pre
+dotnet add package SIPSorceryMedia.Windows -v 0.0.15-pre
 code . # If you have Visual Studio Code (https://code.visualstudio.com) installed
 # edit Program.cs and paste in the contents below.
 dotnet run
@@ -151,6 +155,9 @@ namespace WebRTCGetStarted
             var offerSdp = pc.createOffer(null);
             await pc.setLocalDescription(offerSdp);
 
+            Console.WriteLine($"local offer: {offerSdp.sdp}");
+
+            Console.WriteLine("Press any key to hangup and exit.");
             Console.ReadLine();
         }
     }
