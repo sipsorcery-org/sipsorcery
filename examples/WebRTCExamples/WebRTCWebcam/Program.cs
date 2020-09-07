@@ -106,7 +106,8 @@ namespace demo
 
             var pc = new RTCPeerConnection(null);
 
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(640, 480);
+            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(1920, 1080, 30);
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(640, 480, 5);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint();
             await winVideoEP.Initialise();
 
