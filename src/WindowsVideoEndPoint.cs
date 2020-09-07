@@ -26,6 +26,7 @@ using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows.Codecs;
+using Windows.ApplicationModel.Background;
 
 namespace SIPSorceryMedia.Windows
 {
@@ -80,6 +81,9 @@ namespace SIPSorceryMedia.Windows
         [Obsolete("This video source only generates encoded samples. No raw video samples will be supplied to this event.")]
         public event RawVideoSampleDelegate OnVideoSourceRawSample { add { } remove { } }
 
+        /// <summary>
+        /// This event will be fired whenever a video sample is encoded and is ready to transmit to the remote party.
+        /// </summary>
         public event EncodedSampleDelegate OnVideoSourceEncodedSample;
 
         /// <summary>
@@ -88,13 +92,16 @@ namespace SIPSorceryMedia.Windows
         public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
 
         /// <summary>
-        /// 
+        /// Attempts to create a new video source from a local video capture device.
         /// </summary>
         /// <param name="width">If specified the video capture device will be requested to initialise with this frame
         /// width. If the attempt fails an exception is thrown. If not specified the device's default frame width will
         /// be used.</param>
         /// <param name="height">If specified the video capture device will be requested to initialise with this frame
         /// height. If the attempt fails an exception is thrown. If not specified the device's default frame height will
+        /// be used.</param>
+        /// <param name="fps">If specified the video capture device will be requested to initialise with this frame
+        /// rate. If the attempt fails an exception is thrown. If not specified the device's default frame rate will
         /// be used.</param>
         public WindowsVideoEndPoint(uint width = 0, uint height = 0, uint fps = 0)
         {
@@ -108,6 +115,11 @@ namespace SIPSorceryMedia.Windows
             _mediaCapture = new MediaCapture();
         }
 
+        /// <summary>
+        /// Initialises the video capture device. Ideally should be called before attempting to use the device,
+        /// which happens after calling <see cref="StartVideo"/>. By initialising first any problem with the requested
+        /// frame size and rate parameters can be caught.
+        /// </summary>
         public Task Initialise()
         {
             if (!_isInitialised)
@@ -121,6 +133,9 @@ namespace SIPSorceryMedia.Windows
             }
         }
 
+        /// <summary>
+        /// Requests that the next frame encoded is a key frame.
+        /// </summary>
         public void ForceKeyFrame()
         {
             _forceKeyFrame = true;
@@ -229,7 +244,7 @@ namespace SIPSorceryMedia.Windows
                 {
                     if (OnVideoSourceEncodedSample != null)
                     {
-                        lock (_mediaCapture)
+                        lock (_vp8Encoder)
                         {
                             SoftwareBitmap nv12bmp = null;
 
@@ -260,13 +275,11 @@ namespace SIPSorceryMedia.Windows
 
                             byte[] encodedBuffer = null;
 
-
                             encodedBuffer = _vp8Encoder.Encode(nv12Buffer, _forceKeyFrame);
 
                             if (encodedBuffer != null)
                             {
-                                //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
-                                uint fps = DEFAULT_FRAMES_PER_SECOND;
+                                uint fps = (_fpsDenominator > 0 && _fpsNumerator > 0) ? _fpsNumerator / _fpsDenominator : DEFAULT_FRAMES_PER_SECOND;
                                 uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
                                 OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
                             }
@@ -358,7 +371,10 @@ namespace SIPSorceryMedia.Windows
                 _mediaFrameReader.FrameArrived -= FrameArrivedHandler;
                 await _mediaFrameReader.StopAsync().AsTask().ConfigureAwait(false);
 
-                Dispose();
+                lock (_vp8Encoder)
+                {
+                    Dispose();
+                }
             }
         }
 
@@ -429,7 +445,11 @@ namespace SIPSorceryMedia.Windows
                 var mediaFrameSource = _mediaCapture.FrameSources.FirstOrDefault(source =>
                     source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
                     source.Value.Info.SourceKind == MediaFrameSourceKind.Color &&
-                    source.Value.SupportedFormats.Any(x => x.Subtype == VIDEO_DESIRED_PIXEL_FORMAT && x.VideoFormat.Width == _width && x.VideoFormat.Height == _height)).Value;
+                    source.Value.SupportedFormats.Any(x => 
+                        x.Subtype == VIDEO_DESIRED_PIXEL_FORMAT && 
+                        (_width == 0 || x.VideoFormat.Width == _width) && 
+                        (_height == 0 || x.VideoFormat.Height == _height) &&
+                        (_fpsNumerator == 0 || x.FrameRate.Numerator == _fpsNumerator))).Value;
 
                 if (mediaFrameSource == null)
                 {
@@ -437,7 +457,10 @@ namespace SIPSorceryMedia.Windows
                     mediaFrameSource = _mediaCapture.FrameSources.FirstOrDefault(source =>
                     source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
                     source.Value.Info.SourceKind == MediaFrameSourceKind.Color &&
-                    source.Value.SupportedFormats.Any(x => x.VideoFormat.Width == _width && x.VideoFormat.Height == _height)).Value;
+                    source.Value.SupportedFormats.Any(x => 
+                        (_width == 0 || x.VideoFormat.Width == _width) && 
+                        (_height == 0 || x.VideoFormat.Height == _height) &&
+                        (_fpsNumerator == 0 || x.FrameRate.Numerator == _fpsNumerator))).Value;
                 }
 
                 if (mediaFrameSource == null)
@@ -450,8 +473,9 @@ namespace SIPSorceryMedia.Windows
                 // If there's a format that matches the desired pixel format set that.
                 var idealFormat = mediaFrameSource.SupportedFormats.FirstOrDefault(x =>
                     x.Subtype == VIDEO_DESIRED_PIXEL_FORMAT &&
-                    x.VideoFormat.Width == _width &&
-                    x.VideoFormat.Height == _height);
+                    (_width == 0 || x.VideoFormat.Width == _width) &&
+                    (_height == 0 || x.VideoFormat.Height == _height) &&
+                    (_fpsNumerator == 0 || x.FrameRate.Numerator == _fpsNumerator));
 
                 if (idealFormat != null)
                 {
@@ -493,9 +517,9 @@ namespace SIPSorceryMedia.Windows
                         {
                             for (int j = 0; j < bufferLayout.Width; j++)
                             {
-                                dataInBytes[bufferLayout.StartIndex + bufferLayout.Stride * i + 4 * j + 2] = rgb24Sample[posn++];
-                                dataInBytes[bufferLayout.StartIndex + bufferLayout.Stride * i + 4 * j + 1] = rgb24Sample[posn++];
                                 dataInBytes[bufferLayout.StartIndex + bufferLayout.Stride * i + 4 * j + 0] = rgb24Sample[posn++];
+                                dataInBytes[bufferLayout.StartIndex + bufferLayout.Stride * i + 4 * j + 1] = rgb24Sample[posn++];
+                                dataInBytes[bufferLayout.StartIndex + bufferLayout.Stride * i + 4 * j + 2] = rgb24Sample[posn++];
                                 dataInBytes[bufferLayout.StartIndex + bufferLayout.Stride * i + 4 * j + 3] = (byte)255;
                             }
                         }
