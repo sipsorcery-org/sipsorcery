@@ -101,7 +101,8 @@ namespace SIPSorceryMedia.Windows.Codecs
                 throw new ApplicationException($"Failed to initialise VP8 encoder, {vpx_codec.VpxCodecErrToString(initEncoderRes)}.");
             }
 
-            VpxImage.VpxImgAlloc(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_I420, _encodeWidth, _encodeHeight, 1);
+            //VpxImage.VpxImgAlloc(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_I420, _encodeWidth, _encodeHeight, 1);
+            VpxImage.VpxImgAlloc(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_NV12, _encodeWidth, _encodeHeight, 1);
         }
 
         public void InitialiseDecoder()
@@ -123,7 +124,8 @@ namespace SIPSorceryMedia.Windows.Codecs
             {
                 fixed (byte* pI420 = i420)
                 {
-                    VpxImage.VpxImgWrap(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_I420, _encodeWidth, _encodeHeight, 1, pI420);
+                    //VpxImage.VpxImgWrap(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_I420, _encodeWidth, _encodeHeight, 1, pI420);
+                    VpxImage.VpxImgWrap(_vpxEncodeImg, VpxImgFmt.VPX_IMG_FMT_NV12, _encodeWidth, _encodeHeight, 1, pI420);
 
                     int flags = (forceKeyFrame) ? VPX_EFLAG_FORCE_KF : 0;
 
