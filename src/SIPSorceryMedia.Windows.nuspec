@@ -14,21 +14,31 @@
 	<repository type="git" url="https://github.com/sipsorcery/SIPSorceryMedia.Windows" branch="master" />
 	<tags>WebRTC VoIP SIPSorcery Media Windows</tags>
 	<dependencies>
-      <group targetFramework="netstandard2.0">
+      <group targetFramework="netcoreapp3.1">
 	    <dependency id="Microsoft.Extensions.Logging.Abstractions" version="3.1.1" />
 		<dependency id="NAudio" version="1.10.0" />
 		<dependency id="System.Drawing.Common" version="4.7.0" />
 		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.9-pre" />
 		<dependency id="Microsoft.Extensions.DependencyInjection" version="3.1.7" />
+		<dependency id="Microsoft.Windows.SDK.Contracts" version="10.0.19041.1" />
+	  </group>
+	 <group targetFramework="net472">
+	    <dependency id="Microsoft.Extensions.Logging.Abstractions" version="3.1.1" />
+		<dependency id="NAudio" version="1.10.0" />
+		<dependency id="System.Drawing.Common" version="4.7.0" />
+		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.9-pre" />
+		<dependency id="Microsoft.Extensions.DependencyInjection" version="3.1.7" />
+		<dependency id="Microsoft.Windows.SDK.Contracts" version="10.0.19041.1" />
 	  </group>
     </dependencies>
-	<releaseNotes>-v0.0.16-pre: Added webcam support.
+	<releaseNotes>-v0.0.17-pre: Added webcam support.
 -v0.0.15-pre: Initial pre-release</releaseNotes>
 	<version>0.0.16-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
-  	<file src="bin\Release\netstandard2.0\SIPSorceryMedia.Windows.dll" target="lib\netstandard2.0" />
+  	<file src="bin\Release\netcoreapp3.1\SIPSorceryMedia.Windows.dll" target="lib\netcoreapp3.1" />
+	<file src="bin\Release\net472\SIPSorceryMedia.Windows.dll" target="lib\net472" />
     <file src="..\lib\nuspec\SIPSorceryMedia.Windows.targets" target="build\SIPSorceryMedia.Windows.targets" />
     <file src="..\lib\x64\*.dll" target="build\x64" />
     <file src="..\lib\x86\*.dll" target="build\x86" />
