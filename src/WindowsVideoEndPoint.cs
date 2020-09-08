@@ -26,7 +26,6 @@ using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows.Codecs;
-using Windows.ApplicationModel.Background;
 
 namespace SIPSorceryMedia.Windows
 {
