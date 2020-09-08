@@ -128,7 +128,7 @@ namespace demo
             var pc = new RTCPeerConnection(null);
 
             var testPatternSource = new VideoTestPatternSource();
-            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint();
+            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(true);
 
             MediaStreamTrack track = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);

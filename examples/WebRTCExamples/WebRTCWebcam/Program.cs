@@ -106,10 +106,10 @@ namespace demo
 
             var pc = new RTCPeerConnection(null);
 
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(1920, 1080, 30);
+            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 1920, 1080, 30);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(640, 480, 5);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint();
-            await winVideoEP.Initialise();
+            await winVideoEP.InitialiseVideoSourceDevice();
 
             MediaStreamTrack track = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
