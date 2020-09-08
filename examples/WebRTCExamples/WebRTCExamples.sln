@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfmpegToWebRTC", "FfmpegToW
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCSendAudio", "WebRTCSendAudio\WebRTCSendAudio.csproj", "{116B2DB1-0788-4A32-A9FC-949993662F9F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCWebcam", "WebRTCWebcam\WebRTCWebcam.csproj", "{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -153,6 +155,18 @@ Global
 		{116B2DB1-0788-4A32-A9FC-949993662F9F}.Release|x64.Build.0 = Release|Any CPU
 		{116B2DB1-0788-4A32-A9FC-949993662F9F}.Release|x86.ActiveCfg = Release|Any CPU
 		{116B2DB1-0788-4A32-A9FC-949993662F9F}.Release|x86.Build.0 = Release|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Debug|x64.Build.0 = Debug|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Debug|x86.Build.0 = Debug|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Release|x64.ActiveCfg = Release|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Release|x64.Build.0 = Release|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Release|x86.ActiveCfg = Release|Any CPU
+		{033C7F3C-BD37-4CC5-BB86-DB92C0A084BD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
