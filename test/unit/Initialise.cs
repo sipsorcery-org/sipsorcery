@@ -19,7 +19,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
@@ -44,8 +43,10 @@ namespace SIPSorcery.UnitTests
                 .CreateLogger();
 
             return new SerilogLoggerProvider(serilog).CreateLogger("unit");
+
+#else
+            return Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
 #endif
-            return NullLogger.Instance;
         }
     }
 

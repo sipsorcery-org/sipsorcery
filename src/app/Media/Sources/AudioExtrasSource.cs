@@ -353,9 +353,12 @@ namespace SIPSorcery.Media
                 }
                 else if (sourceOptions.AudioSource == AudioSourcesEnum.Music)
                 {
-                    if (string.IsNullOrEmpty(sourceOptions.MusicFile) || !File.Exists(sourceOptions.MusicFile))
+                    if (string.IsNullOrWhiteSpace(sourceOptions.MusicFile) || !File.Exists(sourceOptions.MusicFile))
                     {
-                        Log.LogWarning($"Music file not set or not found, using default music resource.");
+                        if (!string.IsNullOrWhiteSpace(sourceOptions.MusicFile))
+                        {
+                            Log.LogWarning($"Music file not set or not found, using default music resource.");
+                        }
 
                         EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
                         var audioStreamFileInfo = efp.GetFileInfo(MUSIC_RESOURCE_PATH);
