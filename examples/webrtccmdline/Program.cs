@@ -28,8 +28,10 @@ using System.Threading.Tasks;
 using CommandLine;
 using Makaretu.Dns;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Serilog;
+using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using WebSocketSharp.Net.WebSockets;
@@ -105,7 +107,7 @@ namespace SIPSorcery.Examples
         private const string DATA_CHANNEL_LABEL = "dcx";
         private const int MDNS_TIMEOUT = 2000;
 
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         private static WebSocketServer _webSocketServer;
         private static RTCIceServer _stunServer;
@@ -152,7 +154,7 @@ namespace SIPSorcery.Examples
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
             //ManualResetEvent exitMre = new ManualResetEvent(false);
 
-            AddConsoleLogger();
+            logger = AddConsoleLogger();
 
             // Start MDNS server.
             var mdnsServer = new ServiceDiscovery();
@@ -172,16 +174,17 @@ namespace SIPSorcery.Examples
 
             _relayOnly = options.RelayOnly;
 
-            if(!string.IsNullOrEmpty(options.IceTypes))
+            if (!string.IsNullOrEmpty(options.IceTypes))
             {
-                options.IceTypes.Split().ToList().ForEach(x => {
-                    if (Enum.TryParse<RTCIceCandidateType>(x, out var iceType)) 
+                options.IceTypes.Split().ToList().ForEach(x =>
+                {
+                    if (Enum.TryParse<RTCIceCandidateType>(x, out var iceType))
                     {
                         _iceTypes.Add(iceType);
                     }
                 });
 
-                if(!_iceTypes.Any( x=> x == RTCIceCandidateType.host))
+                if (!_iceTypes.Any(x => x == RTCIceCandidateType.host))
                 {
                     _offerOptions = new RTCOfferOptions { X_ExcludeIceCandidates = true };
                     _answerOptions = new RTCAnswerOptions { X_ExcludeIceCandidates = true };
@@ -190,7 +193,8 @@ namespace SIPSorcery.Examples
 
             if (!string.IsNullOrEmpty(options.AcceptIceTypes))
             {
-                options.AcceptIceTypes.Split().ToList().ForEach(x => {
+                options.AcceptIceTypes.Split().ToList().ForEach(x =>
+                {
                     if (Enum.TryParse<RTCIceCandidateType>(x, out var iceType))
                     {
                         _acceptIceTypes.Add(iceType);
@@ -643,7 +647,7 @@ namespace SIPSorcery.Examples
                             usernameFragment = candidate.usernameFragment,
                             candidate = "candidate:" + candidate.ToString()
                         };
-                        
+
                         context.WebSocket.Send(JsonConvert.SerializeObject(candidateInit));
                     }
                 }
@@ -770,16 +774,16 @@ namespace SIPSorcery.Examples
         /// <summary>
         ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static void AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            var factory = new SerilogLoggerFactory(loggerConfig);
+            SIPSorcery.LogFactory.Set(factory);
+            return factory.CreateLogger<Program>();
         }
     }
 }
