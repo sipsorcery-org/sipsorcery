@@ -27,6 +27,7 @@ using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
 using SIPSorcery.Sys;
+using Serilog.Extensions.Logging;
 
 namespace demo
 {
@@ -238,14 +239,12 @@ namespace demo
         /// </summary>
         private static void AddConsoleLogger()
         {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
+            var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            SIPSorcery.LogFactory.Instance.Set(new SerilogLoggerFactory(serilogLogger));
         }
     }
 }

@@ -25,8 +25,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-//using SharpGL;
-//using SharpGL.SceneGraph;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -36,7 +35,7 @@ namespace SIPSorcery.SoftPhone
         private const int ZINDEX_TOP = 10;
         private const int REGISTRATION_EXPIRY = 180;
 
-        private static ILogger logger = Log.Logger;
+        private static ILogger logger = SIPSorcery.SIPSorceryLogFactory.CreateLogger<SoftPhone>();
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
@@ -275,7 +274,7 @@ namespace SIPSorcery.SoftPhone
 
                     if (_sipClients[0].MediaSession.HasVideo)
                     {
-                        _sipClients[0].MediaSession.OnVideoSinkSample += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client0WriteableBitmap, _client0Video);
+                        _sipClients[0].MediaSession.OnVideoSinkSample += (sample, width, height, stride, pixelFormat) => VideoSampleReady(sample, width, height, stride, pixelFormat, _client0WriteableBitmap, _client0Video);
                         _client0Video.Visibility = Visibility.Visible;
                     }
 
@@ -301,7 +300,7 @@ namespace SIPSorcery.SoftPhone
 
                     if (_sipClients[1].MediaSession.HasVideo)
                     {
-                        _sipClients[1].MediaSession.OnVideoSinkSample += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client1WriteableBitmap, _client1Video);
+                        _sipClients[1].MediaSession.OnVideoSinkSample += (sample, width, height, stride, pixelFormat) => VideoSampleReady(sample, width, height, stride, pixelFormat, _client1WriteableBitmap, _client1Video);
                         _client1Video.Visibility = Visibility.Visible;
                     }
                 });
@@ -604,12 +603,29 @@ namespace SIPSorcery.SoftPhone
         /// <param name="width">The bitmap width.</param>
         /// <param name="height">The bitmap height.</param>
         /// <param name="stride">The bitmap stride.</param>
-        private void VideoSampleReady(byte[] sample, uint width, uint height, int stride, WriteableBitmap wBmp, System.Windows.Controls.Image dst)
+        private void VideoSampleReady(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat, WriteableBitmap wBmp, System.Windows.Controls.Image dst)
         {
             if (sample != null && sample.Length > 0)
             {
                 this.Dispatcher.BeginInvoke(new Action(() =>
                 {
+                    var bmpPixelFormat = PixelFormats.Bgr24;
+                    switch(pixelFormat)
+                    {
+                        case VideoPixelFormatsEnum.Bgr:
+                            bmpPixelFormat = PixelFormats.Bgr24;
+                            break;
+                        case VideoPixelFormatsEnum.Bgra:
+                            bmpPixelFormat = PixelFormats.Bgra32;
+                            break;
+                        case VideoPixelFormatsEnum.Rgb:
+                            bmpPixelFormat = PixelFormats.Rgb24;
+                            break;
+                        default:
+                            bmpPixelFormat = PixelFormats.Bgr24;
+                            break;
+                    }
+
                     if (wBmp == null || wBmp.Width != width || wBmp.Height != height)
                     {
                         wBmp = new WriteableBitmap(
@@ -617,7 +633,7 @@ namespace SIPSorcery.SoftPhone
                             (int)height,
                             96,
                             96,
-                            PixelFormats.Bgr24,
+                            bmpPixelFormat,
                             null);
 
                         dst.Source = wBmp;

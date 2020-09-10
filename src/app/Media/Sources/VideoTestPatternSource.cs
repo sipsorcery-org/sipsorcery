@@ -68,6 +68,8 @@ namespace SIPSorcery.Media
         [Obsolete("This video source is not currently capable of generating encoded samples.")]
         public event EncodedSampleDelegate OnVideoSourceEncodedSample { add { } remove { } }
 
+        public event SourceErrorDelegate OnVideoSourceError;
+
         public VideoTestPatternSource()
         {
             EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
@@ -75,7 +77,7 @@ namespace SIPSorcery.Media
 
             if (testPatternFileInfo == null)
             {
-                throw new ApplicationException($"Test pattern embedded resource could not be found, {TEST_PATTERN_RESOURCE_PATH}.");
+                OnVideoSourceError?.Invoke($"Test pattern embedded resource could not be found, {TEST_PATTERN_RESOURCE_PATH}.");
             }
             else
             {
@@ -92,7 +94,7 @@ namespace SIPSorcery.Media
 
             if (testPattenFileInfo == null)
             {
-                logger.LogWarning($"Video test pattern source could not locate embedded path {path}.");
+                OnVideoSourceError?.Invoke($"Video test pattern source could not locate embedded path {path}.");
             }
             else
             {
