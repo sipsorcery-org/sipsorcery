@@ -20,7 +20,9 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
 using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
@@ -34,7 +36,7 @@ namespace SIPSorcery
     {
         private static int SIP_LISTEN_PORT = 5060;
 
-        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
         private static SIPTransport _sipTransport;
 
@@ -334,18 +336,18 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
+            var logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
+                .WriteTo.Console()
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            var factory = new SerilogLoggerFactory(logger);
+            SIPSorcery.LogFactory.Set(factory);
+            Log = factory.CreateLogger<Program>();
         }
 
         /// <summary>
