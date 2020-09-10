@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Extensions.Logging;
 using Xamarin.Forms;
 
 namespace XamarinDataChannelTest
@@ -27,16 +28,13 @@ namespace XamarinDataChannelTest
 
         public void InitialiseLogging()
         {
-            var loggerFactory = new LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
+            var seriLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Debug()
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
-
-            SIPSorcery.Sys.Log.Logger.LogDebug("Logging initialised.");
+            var factory = new SerilogLoggerFactory(seriLogger);
+            SIPSorcery.LogFactory.Set(factory);
         }
     }
 }

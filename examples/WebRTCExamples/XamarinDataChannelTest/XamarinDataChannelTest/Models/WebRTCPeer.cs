@@ -46,7 +46,7 @@ namespace XamarinDataChannelTest.Models
 "2w/UUSAAv5wrzCwH8gOPoUxgavo6KSDUutM9zbD+KYxmFzMAyy+bGgswWjUztKSyQbhtzA7MB8wBwYFKw4DAhoEFNSCGFAVyZcG" +
 "WY8tTP+50BmGmvMdBBQLO5m+vo7Hkuz3VJH9LSMna/EYhgICB9A=";
 
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<WebRTCPeer>();
         public RTCPeerConnection PeerConnection { get; private set; }
         private string _dataChannelLabel;
         public event Action<RTCIceCandidateInit> OnIceCandidateAvailable;

@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Net.WebSockets;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -13,9 +9,7 @@ using System.Threading.Tasks;
 using Xamarin.Forms;
 using XamarinDataChannelTest.Models;
 using SIPSorcery.Net;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
-using Xamarin.Forms.PlatformConfiguration;
 
 namespace XamarinDataChannelTest.Views
 {
@@ -26,7 +20,7 @@ namespace XamarinDataChannelTest.Views
     {
         public const string DATA_CHANNEL_LABEL = "xdc";
 
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.LogFactory.CreateLogger<StartPage>();
         private WebRTCPeer _peer;
 
         public StartPage()
