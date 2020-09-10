@@ -6,6 +6,7 @@ branches:
     - ubuntu-ci
     - win-ci
     - wsl-ci
+skip_tags: true
 image: Visual Studio 2019
 before_build:
 - cmd: nuget restore -DisableParallelProcessing examples\Softphone\SIPSorcery.SoftPhone.sln

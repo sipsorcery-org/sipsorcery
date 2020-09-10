@@ -19,8 +19,12 @@ using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Windows.Forms;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
@@ -65,15 +69,12 @@ namespace demo
         private static Form _form;
         private static PictureBox _picBox;
 
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         [STAThread]
         static void Main(string[] args)
         {
-            AddConsoleLogger();
-
-            WindowsVideoEndPoint.logger = logger;
-            SIPSorceryMedia.Windows.Codecs.Vp8Codec.logger = logger;
+            logger = AddConsoleLogger();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -108,7 +109,7 @@ namespace demo
         private static RTCPeerConnection WebSocketOpened(WebSocketContext context)
         {
             WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint();
-            winVideoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride) =>
+            winVideoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {
                 _form.BeginInvoke(new Action(() =>
                 {
@@ -254,18 +255,18 @@ namespace demo
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static void AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
+            var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            var factory = new SerilogLoggerFactory(serilogLogger);
+            SIPSorcery.LogFactory.Set(factory);
+            return factory.CreateLogger<Program>();
         }
     }
 }

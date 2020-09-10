@@ -6,6 +6,7 @@ branches:
     - ubuntu-ci
     - win-ci
     - wsl-ci
+skip_tags: true
 image: Visual Studio 2019
 build_script:
 - nuget restore -DisableParallelProcessing examples/sipexamples/sipexamples.sln

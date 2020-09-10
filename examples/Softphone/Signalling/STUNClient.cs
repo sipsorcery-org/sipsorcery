@@ -19,13 +19,12 @@ using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
 {
     public class SoftphoneSTUNClient
     {
-        private ILogger logger = Log.Logger;
+        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<SoftphoneSTUNClient>();
 
         private Timer updateTimer;
 

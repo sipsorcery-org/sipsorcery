@@ -149,6 +149,11 @@ namespace SIPSorcery.Media
         [Obsolete("This audio source only produces encoded samples. Do not subscribe to this event.")]
         public event RawAudioSampleDelegate OnAudioSourceRawSample { add { } remove { } }
 
+#pragma warning disable CS0067
+        public event SourceErrorDelegate OnAudioSourceError;
+        public event SourceErrorDelegate OnAudioSinkError;
+#pragma warning restore CS0067
+
         public AudioExtrasSource()
         {
             _audioEncoder = new AudioEncoder();
@@ -348,9 +353,12 @@ namespace SIPSorcery.Media
                 }
                 else if (sourceOptions.AudioSource == AudioSourcesEnum.Music)
                 {
-                    if (string.IsNullOrEmpty(sourceOptions.MusicFile) || !File.Exists(sourceOptions.MusicFile))
+                    if (string.IsNullOrWhiteSpace(sourceOptions.MusicFile) || !File.Exists(sourceOptions.MusicFile))
                     {
-                        Log.LogWarning($"Music file not set or not found, using default music resource.");
+                        if (!string.IsNullOrWhiteSpace(sourceOptions.MusicFile))
+                        {
+                            Log.LogWarning($"Music file not set or not found, using default music resource.");
+                        }
 
                         EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
                         var audioStreamFileInfo = efp.GetFileInfo(MUSIC_RESOURCE_PATH);

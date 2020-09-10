@@ -73,7 +73,7 @@ namespace WebRTCAspNetMvc
                     pattern: "{controller=Home}/{action=Index}/{id?}");
             });
 
-            SIPSorcery.Sys.Log.LoggerFactory = app.ApplicationServices.GetService<ILoggerFactory>();
+            SIPSorcery.LogFactory.Set(app.ApplicationServices.GetService<ILoggerFactory>());
         }
     }
 }

@@ -333,7 +333,10 @@ namespace SIPSorcery.Net
 
         public byte[] UnprotectRTP(byte[] packet, int offset, int length)
         {
-            return this.srtpDecoder.ReverseTransform(packet, offset, length);
+            lock (this.srtpDecoder)
+            {
+                return this.srtpDecoder.ReverseTransform(packet, offset, length);
+            }
         }
 
         public int UnprotectRTP(byte[] payload, int length, out int outLength)
@@ -353,7 +356,10 @@ namespace SIPSorcery.Net
 
         public byte[] ProtectRTP(byte[] packet, int offset, int length)
         {
-            return this.srtpEncoder.Transform(packet, offset, length);
+            lock (this.srtpEncoder)
+            {
+                return this.srtpEncoder.Transform(packet, offset, length);
+            }
         }
 
         public int ProtectRTP(byte[] payload, int length, out int outLength)
@@ -373,7 +379,10 @@ namespace SIPSorcery.Net
 
         public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
         {
-            return this.srtcpDecoder.ReverseTransform(packet, offset, length);
+            lock (this.srtcpDecoder)
+            {
+                return this.srtcpDecoder.ReverseTransform(packet, offset, length);
+            }
         }
 
         public int UnprotectRTCP(byte[] payload, int length, out int outLength)
@@ -393,7 +402,10 @@ namespace SIPSorcery.Net
 
         public byte[] ProtectRTCP(byte[] packet, int offset, int length)
         {
-            return this.srtcpEncoder.Transform(packet, offset, length);
+            lock (this.srtcpEncoder)
+            {
+                return this.srtcpEncoder.Transform(packet, offset, length);
+            }
         }
 
         public int ProtectRTCP(byte[] payload, int length, out int outLength)
