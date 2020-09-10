@@ -42,7 +42,7 @@ namespace SIPSorceryMedia.Windows.Codecs
         /// </remarks>
         private const byte VPX_FRAME_IS_KEY = 0x1;
 
-        public static ILogger logger = NullLogger.Instance;
+        private ILogger logger = NullLogger.Instance;
 
         private VpxCodecCtx _vpxEncodeCtx;
         private VpxImage _vpxEncodeImg;
@@ -51,6 +51,11 @@ namespace SIPSorceryMedia.Windows.Codecs
 
         uint _encodeWidth = 0;
         uint _encodeHeight = 0;
+
+        public Vp8Codec()
+        {
+            logger = SIPSorcery.LogFactory.CreateLogger<Vp8Codec>();
+        }
 
         // Setting config parameters in Chromium source.
         // https://chromium.googlesource.com/external/webrtc/stable/src/+/b8671cb0516ec9f6c7fe22a6bbe331d5b091cdbb/modules/video_coding/codecs/vp8/vp8.cc

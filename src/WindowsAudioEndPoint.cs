@@ -23,7 +23,6 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using NAudio.Wave;
 using SIPSorceryMedia.Abstractions.V1;
 
@@ -46,7 +45,7 @@ namespace SIPSorceryMedia.Windows
 
         public readonly static AudioSamplingRatesEnum AudioPlaybackRate = AudioSamplingRatesEnum.Rate8KHz;
 
-        private static ILogger logger = NullLogger.Instance;
+        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
         private static readonly WaveFormat _waveFormat = new WaveFormat(
             DEVICE_PLAYBACK_RATE,
@@ -98,6 +97,10 @@ namespace SIPSorceryMedia.Windows
         [Obsolete("The audio source only generates encoded samples.")]
         public event RawAudioSampleDelegate OnAudioSourceRawSample { add { } remove { } }
 
+        public event SourceErrorDelegate OnAudioSourceError;
+
+        public event SourceErrorDelegate OnAudioSinkError;
+
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
@@ -109,12 +112,14 @@ namespace SIPSorceryMedia.Windows
         /// don't capture input from the microphone.</param>
         /// <param name="disableSink">Set to true to disable the use of the audio sink functionality, i.e.
         /// don't playback audio to the speaker.</param>
-        public WindowsAudioEndPoint(IAudioEncoder audioEncoder, 
+        public WindowsAudioEndPoint(IAudioEncoder audioEncoder,
             int audioOutDeviceIndex = AUDIO_OUTPUTDEVICE_INDEX,
             int audioInDeviceIndex = AUDIO_INPUTDEVICE_INDEX,
-            bool disableSource = false, 
+            bool disableSource = false,
             bool disableSink = false)
         {
+            logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
+
             _audioEncoder = audioEncoder;
 
             _disableSource = disableSource;
@@ -122,12 +127,20 @@ namespace SIPSorceryMedia.Windows
 
             if (!_disableSink)
             {
-                // Render device.
-                _waveOutEvent = new WaveOutEvent();
-                _waveOutEvent.DeviceNumber = audioOutDeviceIndex;
-                _waveProvider = new BufferedWaveProvider(_waveFormat);
-                _waveProvider.DiscardOnBufferOverflow = true;
-                _waveOutEvent.Init(_waveProvider);
+                try
+                {
+                    // Playback device.
+                    _waveOutEvent = new WaveOutEvent();
+                    _waveOutEvent.DeviceNumber = audioOutDeviceIndex;
+                    _waveProvider = new BufferedWaveProvider(_waveFormat);
+                    _waveProvider.DiscardOnBufferOverflow = true;
+                    _waveOutEvent.Init(_waveProvider);
+                }
+                catch (Exception excp)
+                {
+                    logger.LogWarning(0, excp, "WindowsAudioEndPoint failed to initialise playback device.");
+                    OnAudioSinkError?.Invoke($"WindowsAudioEndPoint failed to initialise playback device. {excp.Message}");
+                }
             }
 
             if (!_disableSource)
@@ -145,12 +158,12 @@ namespace SIPSorceryMedia.Windows
                     }
                     else
                     {
-                        throw new ApplicationException($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount-1}.");
+                        OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
                     }
                 }
                 else
                 {
-                    throw new ApplicationException("No audio capture devices are available.");
+                    OnAudioSourceError?.Invoke("No audio capture devices are available.");
                 }
             }
         }
@@ -163,16 +176,16 @@ namespace SIPSorceryMedia.Windows
         /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
         public void RestrictCodecs(List<AudioCodecsEnum> codecs)
         {
-            if(codecs == null || codecs.Count == 0)
+            if (codecs == null || codecs.Count == 0)
             {
                 _supportedCodecs = new List<AudioCodecsEnum>(SupportedCodecs);
             }
             else
             {
                 _supportedCodecs = new List<AudioCodecsEnum>();
-                foreach(var codec in codecs)
+                foreach (var codec in codecs)
                 {
-                    if(SupportedCodecs.Any(x => x == codec))
+                    if (SupportedCodecs.Any(x => x == codec))
                     {
                         _supportedCodecs.Add(codec);
                     }

@@ -150,8 +150,8 @@ namespace SIPSorceryMedia.Windows.Codecs
                 {
                     y = data[col + row * width];
                     int uvposn = col / 2 + row / 2 * width / 2;
-                    v = data[uOffset + uvposn] - 128;
-                    u = data[vOffset + uvposn] - 128;
+                    u = data[uOffset + uvposn] - 128;
+                    v = data[vOffset + uvposn] - 128;
 
                     r = (int)(y + 1.370705f * v);
                     g = (int)(y - 0.698001f * v + 0.337633f * u);
