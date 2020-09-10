@@ -30,7 +30,7 @@ namespace SIPSorcery.Demo
 {
     public class WebRTCPeer
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.LogFactory.CreateLogger<WebRTCPeer>();
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         public RTCPeerConnection PeerConnection { get; private set; }
         private const int MDNS_TIMEOUT = 2000;

@@ -16,22 +16,24 @@
 using System;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 
 namespace StunServerExample
 {
     class Program
     {
-        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
         static void Main()
         {
             Console.WriteLine("Example STUN Server");
 
-            ConfigureConsoleLog();
+            AddConsoleLogger();
 
-            // STUN servers need two separater end points to listen on.
+            // STUN servers need two separate end points to listen on.
             IPEndPoint primaryEndPoint = new IPEndPoint(IPAddress.Any, 3478);
             IPEndPoint secondaryEndPoint = new IPEndPoint(IPAddress.Any, 3479);
 
@@ -56,19 +58,18 @@ namespace StunServerExample
         }
 
         /// <summary>
-        /// Configures a console logger.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static void ConfigureConsoleLog()
+        private static void AddConsoleLogger()
         {
-            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
+            var logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            var factory = new SerilogLoggerFactory(logger);
+            SIPSorcery.LogFactory.Set(factory);
+            Log = factory.CreateLogger<Program>();
         }
 
         /// <summary>
