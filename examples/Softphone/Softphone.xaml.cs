@@ -47,8 +47,10 @@ namespace SIPSorcery.SoftPhone
         private SoftphoneSTUNClient _stunClient;                    // STUN client to periodically check the public IP address.
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
 
+#pragma warning disable CS0649
         private WriteableBitmap _client0WriteableBitmap;
         private WriteableBitmap _client1WriteableBitmap;
+#pragma warning restore CS0649
         //private AudioScope.AudioScope _audioScope0;
         //private AudioScope.AudioScopeOpenGL _audioScopeGL0;
         //private AudioScope.AudioScope _audioScope1;

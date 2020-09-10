@@ -23,6 +23,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp;
@@ -107,18 +108,27 @@ namespace demo
 
             var pc = new RTCPeerConnection(null);
 
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 1920, 1080, 30);
-            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(640, 480, 5);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint();
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(640, 480, 5);
+            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 1920, 1080, 30);          
             await winVideoEP.InitialiseVideoSourceDevice();
 
-            MediaStreamTrack track = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
-            pc.addTrack(track);
+            //WindowsAudioEndPoint winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
+            AudioExtrasSource audioExtras = new AudioExtrasSource();
+
+            MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            pc.addTrack(videoTrack);
+            //MediaStreamTrack audioTrack = new MediaStreamTrack(winAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioExtras.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            pc.addTrack(audioTrack);
 
             winVideoEP.OnVideoSourceEncodedSample += pc.SendVideo;
+            audioExtras.OnAudioSourceEncodedSample += pc.SendAudio;
 
-            pc.OnVideoFormatsNegotiated += (sdpFormat) =>
-                winVideoEP.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.OnVideoFormatsNegotiated += (videoSdpFormat) =>
+                winVideoEP.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(videoSdpFormat.First().FormatCodec));
+            pc.OnAudioFormatsNegotiated += (audioSdpFormat) =>
+                audioExtras.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audioSdpFormat.First().FormatCodec));
             //pc.OnReceiveReport += RtpSession_OnReceiveReport;
             //pc.OnSendReport += RtpSession_OnSendReport;
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
@@ -139,10 +149,13 @@ namespace demo
                     pc.OnSendReport -= RtpSession_OnSendReport;
 
                     await winVideoEP.CloseVideo();
-                   
+                    //await winAudioEP.CloseAudio();  
+                    await audioExtras.CloseAudio();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
+                    //await winAudioEP.StartAudio();
+                    audioExtras.SetSource(AudioSourcesEnum.Music);
                     await winVideoEP.StartVideo();
                 }
             };
