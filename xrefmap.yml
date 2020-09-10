@@ -2456,12 +2456,24 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioExtrasSource.GetAudioSourceFormats
   nameWithType: AudioExtrasSource.GetAudioSourceFormats
+- uid: SIPSorcery.Media.AudioExtrasSource.OnAudioSinkError
+  name: OnAudioSinkError
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_OnAudioSinkError
+  commentId: E:SIPSorcery.Media.AudioExtrasSource.OnAudioSinkError
+  fullName: SIPSorcery.Media.AudioExtrasSource.OnAudioSinkError
+  nameWithType: AudioExtrasSource.OnAudioSinkError
 - uid: SIPSorcery.Media.AudioExtrasSource.OnAudioSourceEncodedSample
   name: OnAudioSourceEncodedSample
   href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_OnAudioSourceEncodedSample
   commentId: E:SIPSorcery.Media.AudioExtrasSource.OnAudioSourceEncodedSample
   fullName: SIPSorcery.Media.AudioExtrasSource.OnAudioSourceEncodedSample
   nameWithType: AudioExtrasSource.OnAudioSourceEncodedSample
+- uid: SIPSorcery.Media.AudioExtrasSource.OnAudioSourceError
+  name: OnAudioSourceError
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_OnAudioSourceError
+  commentId: E:SIPSorcery.Media.AudioExtrasSource.OnAudioSourceError
+  fullName: SIPSorcery.Media.AudioExtrasSource.OnAudioSourceError
+  nameWithType: AudioExtrasSource.OnAudioSourceError
 - uid: SIPSorcery.Media.AudioExtrasSource.OnAudioSourceRawSample
   name: OnAudioSourceRawSample
   href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_OnAudioSourceRawSample
@@ -3295,15 +3307,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.Dispose
   nameWithType: VideoTestPatternSource.Dispose
-- uid: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample(System.UInt32,System.Int32,System.Int32,System.Byte[])
-  name: ExternalVideoSourceRawSample(UInt32, Int32, Int32, Byte[])
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_ExternalVideoSourceRawSample_System_UInt32_System_Int32_System_Int32_System_Byte___
-  commentId: M:SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample(System.UInt32,System.Int32,System.Int32,System.Byte[])
-  name.vb: ExternalVideoSourceRawSample(UInt32, Int32, Int32, Byte())
-  fullName: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample(System.UInt32, System.Int32, System.Int32, System.Byte[])
-  fullName.vb: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample(System.UInt32, System.Int32, System.Int32, System.Byte())
-  nameWithType: VideoTestPatternSource.ExternalVideoSourceRawSample(UInt32, Int32, Int32, Byte[])
-  nameWithType.vb: VideoTestPatternSource.ExternalVideoSourceRawSample(UInt32, Int32, Int32, Byte())
+- uid: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample(System.UInt32,System.Int32,System.Int32,System.Byte[],SIPSorceryMedia.Abstractions.V1.VideoPixelFormatsEnum)
+  name: ExternalVideoSourceRawSample(UInt32, Int32, Int32, Byte[], VideoPixelFormatsEnum)
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_ExternalVideoSourceRawSample_System_UInt32_System_Int32_System_Int32_System_Byte___SIPSorceryMedia_Abstractions_V1_VideoPixelFormatsEnum_
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample(System.UInt32,System.Int32,System.Int32,System.Byte[],SIPSorceryMedia.Abstractions.V1.VideoPixelFormatsEnum)
+  name.vb: ExternalVideoSourceRawSample(UInt32, Int32, Int32, Byte(), VideoPixelFormatsEnum)
+  fullName: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample(System.UInt32, System.Int32, System.Int32, System.Byte[], SIPSorceryMedia.Abstractions.V1.VideoPixelFormatsEnum)
+  fullName.vb: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample(System.UInt32, System.Int32, System.Int32, System.Byte(), SIPSorceryMedia.Abstractions.V1.VideoPixelFormatsEnum)
+  nameWithType: VideoTestPatternSource.ExternalVideoSourceRawSample(UInt32, Int32, Int32, Byte[], VideoPixelFormatsEnum)
+  nameWithType.vb: VideoTestPatternSource.ExternalVideoSourceRawSample(UInt32, Int32, Int32, Byte(), VideoPixelFormatsEnum)
 - uid: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample*
   name: ExternalVideoSourceRawSample
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_ExternalVideoSourceRawSample_
@@ -3337,6 +3349,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.GetVideoSourceFormats
   nameWithType: VideoTestPatternSource.GetVideoSourceFormats
+- uid: SIPSorcery.Media.VideoTestPatternSource.InitialiseVideoSourceDevice
+  name: InitialiseVideoSourceDevice()
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_InitialiseVideoSourceDevice
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.InitialiseVideoSourceDevice
+  fullName: SIPSorcery.Media.VideoTestPatternSource.InitialiseVideoSourceDevice()
+  nameWithType: VideoTestPatternSource.InitialiseVideoSourceDevice()
+- uid: SIPSorcery.Media.VideoTestPatternSource.InitialiseVideoSourceDevice*
+  name: InitialiseVideoSourceDevice
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_InitialiseVideoSourceDevice_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.InitialiseVideoSourceDevice
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VideoTestPatternSource.InitialiseVideoSourceDevice
+  nameWithType: VideoTestPatternSource.InitialiseVideoSourceDevice
 - uid: SIPSorcery.Media.VideoTestPatternSource.logger
   name: logger
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_logger
@@ -3349,6 +3374,12 @@ references:
   commentId: E:SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceEncodedSample
   fullName: SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceEncodedSample
   nameWithType: VideoTestPatternSource.OnVideoSourceEncodedSample
+- uid: SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceError
+  name: OnVideoSourceError
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_OnVideoSourceError
+  commentId: E:SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceError
+  fullName: SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceError
+  nameWithType: VideoTestPatternSource.OnVideoSourceError
 - uid: SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceRawSample
   name: OnVideoSourceRawSample
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_OnVideoSourceRawSample
@@ -39070,66 +39101,6 @@ references:
   commentId: F:SIPSorcery.Sys.IPv4Packet.Payload
   fullName: SIPSorcery.Sys.IPv4Packet.Payload
   nameWithType: IPv4Packet.Payload
-- uid: SIPSorcery.Sys.Log
-  name: Log
-  href: api/SIPSorcery.Sys.Log.html
-  commentId: T:SIPSorcery.Sys.Log
-  fullName: SIPSorcery.Sys.Log
-  nameWithType: Log
-- uid: SIPSorcery.Sys.Log.LOG_CATEGORY
-  name: LOG_CATEGORY
-  href: api/SIPSorcery.Sys.Log.html#SIPSorcery_Sys_Log_LOG_CATEGORY
-  commentId: F:SIPSorcery.Sys.Log.LOG_CATEGORY
-  fullName: SIPSorcery.Sys.Log.LOG_CATEGORY
-  nameWithType: Log.LOG_CATEGORY
-- uid: SIPSorcery.Sys.Log.Logger
-  name: Logger
-  href: api/SIPSorcery.Sys.Log.html#SIPSorcery_Sys_Log_Logger
-  commentId: P:SIPSorcery.Sys.Log.Logger
-  fullName: SIPSorcery.Sys.Log.Logger
-  nameWithType: Log.Logger
-- uid: SIPSorcery.Sys.Log.Logger*
-  name: Logger
-  href: api/SIPSorcery.Sys.Log.html#SIPSorcery_Sys_Log_Logger_
-  commentId: Overload:SIPSorcery.Sys.Log.Logger
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.Log.Logger
-  nameWithType: Log.Logger
-- uid: SIPSorcery.Sys.Log.LoggerFactory
-  name: LoggerFactory
-  href: api/SIPSorcery.Sys.Log.html#SIPSorcery_Sys_Log_LoggerFactory
-  commentId: P:SIPSorcery.Sys.Log.LoggerFactory
-  fullName: SIPSorcery.Sys.Log.LoggerFactory
-  nameWithType: Log.LoggerFactory
-- uid: SIPSorcery.Sys.Log.LoggerFactory*
-  name: LoggerFactory
-  href: api/SIPSorcery.Sys.Log.html#SIPSorcery_Sys_Log_LoggerFactory_
-  commentId: Overload:SIPSorcery.Sys.Log.LoggerFactory
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.Log.LoggerFactory
-  nameWithType: Log.LoggerFactory
-- uid: SIPSorcery.Sys.LoggerExtensions
-  name: LoggerExtensions
-  href: api/SIPSorcery.Sys.LoggerExtensions.html
-  commentId: T:SIPSorcery.Sys.LoggerExtensions
-  fullName: SIPSorcery.Sys.LoggerExtensions
-  nameWithType: LoggerExtensions
-- uid: SIPSorcery.Sys.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger,System.Exception,System.String,System.Object[])
-  name: LogError(ILogger, Exception, String, Object[])
-  href: api/SIPSorcery.Sys.LoggerExtensions.html#SIPSorcery_Sys_LoggerExtensions_LogError_Microsoft_Extensions_Logging_ILogger_System_Exception_System_String_System_Object___
-  commentId: M:SIPSorcery.Sys.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger,System.Exception,System.String,System.Object[])
-  name.vb: LogError(ILogger, Exception, String, Object())
-  fullName: SIPSorcery.Sys.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger, System.Exception, System.String, System.Object[])
-  fullName.vb: SIPSorcery.Sys.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger, System.Exception, System.String, System.Object())
-  nameWithType: LoggerExtensions.LogError(ILogger, Exception, String, Object[])
-  nameWithType.vb: LoggerExtensions.LogError(ILogger, Exception, String, Object())
-- uid: SIPSorcery.Sys.LoggerExtensions.LogError*
-  name: LogError
-  href: api/SIPSorcery.Sys.LoggerExtensions.html#SIPSorcery_Sys_LoggerExtensions_LogError_
-  commentId: Overload:SIPSorcery.Sys.LoggerExtensions.LogError
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.LoggerExtensions.LogError
-  nameWithType: LoggerExtensions.LogError
 - uid: SIPSorcery.Sys.NetConvert
   name: NetConvert
   href: api/SIPSorcery.Sys.NetConvert.html
@@ -39280,102 +39251,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.SupportsDualModeIPv4PacketInfo
   nameWithType: NetServices.SupportsDualModeIPv4PacketInfo
-- uid: SIPSorcery.Sys.NullLogger
-  name: NullLogger
-  href: api/SIPSorcery.Sys.NullLogger.html
-  commentId: T:SIPSorcery.Sys.NullLogger
-  fullName: SIPSorcery.Sys.NullLogger
-  nameWithType: NullLogger
-- uid: SIPSorcery.Sys.NullLogger.BeginScope*
-  name: BeginScope
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_BeginScope_
-  commentId: Overload:SIPSorcery.Sys.NullLogger.BeginScope
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NullLogger.BeginScope
-  nameWithType: NullLogger.BeginScope
-- uid: SIPSorcery.Sys.NullLogger.BeginScope``1(``0)
-  name: BeginScope<TState>(TState)
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_BeginScope__1___0_
-  commentId: M:SIPSorcery.Sys.NullLogger.BeginScope``1(``0)
-  name.vb: BeginScope(Of TState)(TState)
-  fullName: SIPSorcery.Sys.NullLogger.BeginScope<TState>(TState)
-  fullName.vb: SIPSorcery.Sys.NullLogger.BeginScope(Of TState)(TState)
-  nameWithType: NullLogger.BeginScope<TState>(TState)
-  nameWithType.vb: NullLogger.BeginScope(Of TState)(TState)
-- uid: SIPSorcery.Sys.NullLogger.Instance
-  name: Instance
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_Instance
-  commentId: P:SIPSorcery.Sys.NullLogger.Instance
-  fullName: SIPSorcery.Sys.NullLogger.Instance
-  nameWithType: NullLogger.Instance
-- uid: SIPSorcery.Sys.NullLogger.Instance*
-  name: Instance
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_Instance_
-  commentId: Overload:SIPSorcery.Sys.NullLogger.Instance
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NullLogger.Instance
-  nameWithType: NullLogger.Instance
-- uid: SIPSorcery.Sys.NullLogger.IsEnabled(Microsoft.Extensions.Logging.LogLevel)
-  name: IsEnabled(LogLevel)
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_IsEnabled_Microsoft_Extensions_Logging_LogLevel_
-  commentId: M:SIPSorcery.Sys.NullLogger.IsEnabled(Microsoft.Extensions.Logging.LogLevel)
-  fullName: SIPSorcery.Sys.NullLogger.IsEnabled(Microsoft.Extensions.Logging.LogLevel)
-  nameWithType: NullLogger.IsEnabled(LogLevel)
-- uid: SIPSorcery.Sys.NullLogger.IsEnabled*
-  name: IsEnabled
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_IsEnabled_
-  commentId: Overload:SIPSorcery.Sys.NullLogger.IsEnabled
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NullLogger.IsEnabled
-  nameWithType: NullLogger.IsEnabled
-- uid: SIPSorcery.Sys.NullLogger.Log*
-  name: Log
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_Log_
-  commentId: Overload:SIPSorcery.Sys.NullLogger.Log
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NullLogger.Log
-  nameWithType: NullLogger.Log
-- uid: SIPSorcery.Sys.NullLogger.Log``1(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,``0,System.Exception,System.Func{``0,System.Exception,System.String})
-  name: Log<TState>(LogLevel, EventId, TState, Exception, Func<TState, Exception, String>)
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_Log__1_Microsoft_Extensions_Logging_LogLevel_Microsoft_Extensions_Logging_EventId___0_System_Exception_System_Func___0_System_Exception_System_String__
-  commentId: M:SIPSorcery.Sys.NullLogger.Log``1(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,``0,System.Exception,System.Func{``0,System.Exception,System.String})
-  name.vb: Log(Of TState)(LogLevel, EventId, TState, Exception, Func(Of TState, Exception, String))
-  fullName: SIPSorcery.Sys.NullLogger.Log<TState>(Microsoft.Extensions.Logging.LogLevel, Microsoft.Extensions.Logging.EventId, TState, System.Exception, System.Func<TState, System.Exception, System.String>)
-  fullName.vb: SIPSorcery.Sys.NullLogger.Log(Of TState)(Microsoft.Extensions.Logging.LogLevel, Microsoft.Extensions.Logging.EventId, TState, System.Exception, System.Func(Of TState, System.Exception, System.String))
-  nameWithType: NullLogger.Log<TState>(LogLevel, EventId, TState, Exception, Func<TState, Exception, String>)
-  nameWithType.vb: NullLogger.Log(Of TState)(LogLevel, EventId, TState, Exception, Func(Of TState, Exception, String))
-- uid: SIPSorcery.Sys.NullScope
-  name: NullScope
-  href: api/SIPSorcery.Sys.NullScope.html
-  commentId: T:SIPSorcery.Sys.NullScope
-  fullName: SIPSorcery.Sys.NullScope
-  nameWithType: NullScope
-- uid: SIPSorcery.Sys.NullScope.Dispose
-  name: Dispose()
-  href: api/SIPSorcery.Sys.NullScope.html#SIPSorcery_Sys_NullScope_Dispose
-  commentId: M:SIPSorcery.Sys.NullScope.Dispose
-  fullName: SIPSorcery.Sys.NullScope.Dispose()
-  nameWithType: NullScope.Dispose()
-- uid: SIPSorcery.Sys.NullScope.Dispose*
-  name: Dispose
-  href: api/SIPSorcery.Sys.NullScope.html#SIPSorcery_Sys_NullScope_Dispose_
-  commentId: Overload:SIPSorcery.Sys.NullScope.Dispose
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NullScope.Dispose
-  nameWithType: NullScope.Dispose
-- uid: SIPSorcery.Sys.NullScope.Instance
-  name: Instance
-  href: api/SIPSorcery.Sys.NullScope.html#SIPSorcery_Sys_NullScope_Instance
-  commentId: P:SIPSorcery.Sys.NullScope.Instance
-  fullName: SIPSorcery.Sys.NullScope.Instance
-  nameWithType: NullScope.Instance
-- uid: SIPSorcery.Sys.NullScope.Instance*
-  name: Instance
-  href: api/SIPSorcery.Sys.NullScope.html#SIPSorcery_Sys_NullScope_Instance_
-  commentId: Overload:SIPSorcery.Sys.NullScope.Instance
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NullScope.Instance
-  nameWithType: NullScope.Instance
 - uid: SIPSorcery.Sys.NumberFormatter
   name: NumberFormatter
   href: api/SIPSorcery.Sys.NumberFormatter.html
