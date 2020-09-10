@@ -39,7 +39,9 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
 using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -68,7 +70,7 @@ namespace SIPSorcery.SIPProxy
     {
         private static int _listenPort = SIPConstants.DEFAULT_SIP_PORT;             // The default UDP SIP port.
 
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         private static SIPTransport _sipTransport;
         private static Dictionary<string, SIPAccountBinding> _sipRegistrations = new Dictionary<string, SIPAccountBinding>(); // [SIP Username, Binding], tracks SIP clients that have registered with the server.
@@ -79,7 +81,7 @@ namespace SIPSorcery.SIPProxy
             {
                 Console.WriteLine("SIPSorcery SIP Proxy Demo");
 
-                AddConsoleLogger();
+                logger = AddConsoleLogger();
 
                 // Configure the SIP transport layer.
                 _sipTransport = new SIPTransport();
@@ -196,24 +198,6 @@ namespace SIPSorcery.SIPProxy
             return Task.CompletedTask;
         }
 
-        #region Non-functional trace/logging handlers. Main use is troubleshooting.
-
-        /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-        /// </summary>
-        private static void AddConsoleLogger()
-        {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
-        }
-
         private static void SIPRequestInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             logger.LogDebug("REQUEST IN {0}->{1}: {2}", remoteEndPoint.ToString(), localSIPEndPoint.ToString(), sipRequest.StatusLine);
@@ -248,6 +232,19 @@ namespace SIPSorcery.SIPProxy
             logger.LogWarning("Bad SIPResponse. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
         }
 
-        #endregion
+        /// <summary>
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        {
+            var serilogLogger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            var factory = new SerilogLoggerFactory(serilogLogger);
+            SIPSorcery.LogFactory.Set(factory);
+            return factory.CreateLogger<Program>();
+        }
     }
 }

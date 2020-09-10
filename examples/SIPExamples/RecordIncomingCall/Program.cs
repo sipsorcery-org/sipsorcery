@@ -15,9 +15,10 @@
 
 using System;
 using System.Net;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -31,7 +32,7 @@ namespace demo
     {
         private static int SIP_LISTEN_PORT = 5060;
 
-        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
         private static readonly WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);
         private static WaveFileWriter _waveFile;
@@ -41,7 +42,7 @@ namespace demo
         {
             Console.WriteLine("SIPSorcery Getting Started Demo");
 
-            AddConsoleLogger();
+            Log = AddConsoleLogger();
 
             _waveFile = new WaveFileWriter("output.mp3", _waveFormat);
 
@@ -94,18 +95,18 @@ namespace demo
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static void AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
+            var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Information)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            var factory = new SerilogLoggerFactory(serilogLogger);
+            SIPSorcery.LogFactory.Set(factory);
+            return factory.CreateLogger<Program>();
         }
     }
 }

@@ -55,12 +55,13 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery
@@ -73,14 +74,14 @@ namespace SIPSorcery
         //private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
         private static string SIPS_CERTIFICATE_PATH = "localhost.pfx";
 
-        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
         static void Main(string[] args)
         {
             Console.WriteLine("SIPSorcery user agent server example.");
             Console.WriteLine("Press h to hangup a call or ctrl-c to exit.");
 
-            EnableConsoleLogger();
+            Log = AddConsoleLogger();
 
             IPAddress listenAddress = IPAddress.Any;
             IPAddress listenIPv6Address = IPAddress.IPv6Any;
@@ -140,7 +141,7 @@ namespace SIPSorcery
                 {
                     if (sipRequest.Method == SIPMethodsEnum.INVITE)
                     {
-                        SIPSorcery.Sys.Log.Logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
+                        Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
 
                         // Check there's a codec we support in the INVITE offer.
                         var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
@@ -192,7 +193,7 @@ namespace SIPSorcery
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
                     {
-                        SIPSorcery.Sys.Log.Logger.LogInformation("Call hungup.");
+                        Log.LogInformation("Call hungup.");
                         SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         await sipTransport.SendResponseAsync(byeResponse);
                         uas?.Hangup(true);
@@ -212,7 +213,7 @@ namespace SIPSorcery
                     }
                 catch (Exception reqExcp)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
+                    Log.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
                 }
             };
 
@@ -222,7 +223,7 @@ namespace SIPSorcery
             {
                 e.Cancel = true;
 
-                SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
+                Log.LogInformation("Exiting...");
 
                 Hangup(uas).Wait();
 
@@ -231,7 +232,7 @@ namespace SIPSorcery
 
                 if (sipTransport != null)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogInformation("Shutting down SIP transport...");
+                    Log.LogInformation("Shutting down SIP transport...");
                     sipTransport.Shutdown();
                 }
 
@@ -259,11 +260,11 @@ namespace SIPSorcery
 
                         if (keyProps.KeyChar == 'q')
                         {
-                            SIPSorcery.Sys.Log.Logger.LogInformation("Quitting...");
+                            Log.LogInformation("Quitting...");
 
                             if (sipTransport != null)
                             {
-                                SIPSorcery.Sys.Log.Logger.LogInformation("Shutting down SIP transport...");
+                                Log.LogInformation("Shutting down SIP transport...");
                                 sipTransport.Shutdown();
                             }
 
@@ -273,7 +274,7 @@ namespace SIPSorcery
                 }
                 catch (Exception excp)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogError($"Exception Key Press listener. {excp.Message}.");
+                    Log.LogError($"Exception Key Press listener. {excp.Message}.");
                 }
             });
 
@@ -293,30 +294,14 @@ namespace SIPSorcery
                     uas?.Hangup(false);
 
                     // Give the BYE or CANCEL request time to be transmitted.
-                    SIPSorcery.Sys.Log.Logger.LogInformation("Waiting 1s for call to hangup...");
+                    Log.LogInformation("Waiting 1s for call to hangup...");
                     await Task.Delay(1000);
                 }
             }
             catch (Exception excp)
             {
-                SIPSorcery.Sys.Log.Logger.LogError($"Exception Hangup. {excp.Message}");
+                Log.LogError($"Exception Hangup. {excp.Message}");
             }
-        }
-
-        /// <summary>
-        /// Wires up the dotnet logging infrastructure to STDOUT.
-        /// </summary>
-        private static void EnableConsoleLogger()
-        {
-            // Logging configuration. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
         }
 
         /// <summary>
@@ -357,6 +342,21 @@ namespace SIPSorcery
             {
                 Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
             };
+        }
+
+        /// <summary>
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        {
+            var serilogLogger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            var factory = new SerilogLoggerFactory(serilogLogger);
+            SIPSorcery.LogFactory.Set(factory);
+            return factory.CreateLogger<Program>();
         }
     }
 }

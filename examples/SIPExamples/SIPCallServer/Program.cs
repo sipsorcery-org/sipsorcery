@@ -21,7 +21,9 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
 using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
@@ -69,7 +71,7 @@ namespace SIPSorcery
         private const string MUSIC_FILE_PCMA = "media/Macroform_-_Simplicity.alaw";
         private const string MUSIC_FILE_G722 = "media/Macroform_-_Simplicity.g722";
 
-        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
         /// <summary>
         /// The set of SIP accounts available for registering and/or authenticating calls.
@@ -103,7 +105,7 @@ namespace SIPSorcery
             Console.WriteLine("Press 't' to transfer the newest call to the default destination.");
             Console.WriteLine("Press 'q' to quit.");
 
-            AddConsoleLogger();
+            Log = AddConsoleLogger();
 
             // Set up a default SIP transport.
             _sipTransport = new SIPTransport();
@@ -464,21 +466,6 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-        /// </summary>
-        private static void AddConsoleLogger()
-        {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
-        }
-
-        /// <summary>
         /// Enable detailed SIP log messages.
         /// </summary>
         private static void EnableTraceLogs(SIPTransport sipTransport, bool fullSIP)
@@ -548,6 +535,21 @@ namespace SIPSorcery
             {
                 Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
             };
+        }
+
+        /// <summary>
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        {
+            var serilogLogger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            var factory = new SerilogLoggerFactory(serilogLogger);
+            SIPSorcery.LogFactory.Set(factory);
+            return factory.CreateLogger<Program>();
         }
     }
 }
