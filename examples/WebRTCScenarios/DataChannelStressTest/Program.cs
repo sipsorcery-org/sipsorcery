@@ -16,18 +16,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using SIPSorcery.Net;
-using Serilog;
 using Microsoft.Extensions.Logging;
-using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging.Abstractions;
+using Serilog;
+using Serilog.Extensions.Logging;
+using SIPSorcery.Net;
 
 namespace SIPSorcery.Demo
 {
     class Program
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         static void Main(string[] args)
         {
@@ -198,18 +200,18 @@ namespace SIPSorcery.Demo
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
+            var seriLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            var factory = new SerilogLoggerFactory(seriLogger);
+            SIPSorcery.LogFactory.Set(factory);
+            logger = factory.CreateLogger<Program>();
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
