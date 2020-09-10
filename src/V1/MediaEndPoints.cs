@@ -6,13 +6,21 @@ namespace SIPSorceryMedia.Abstractions.V1
 {
     public delegate void EncodedSampleDelegate(uint durationRtpUnits, byte[] sample);
     public delegate void RawAudioSampleDelegate(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
-    public delegate void RawVideoSampleDelegate(uint durationMilliseconds, int width, int height, byte[] rgb24Sample);
-    public delegate void VideoSinkSampleDecodedDelegate(byte[] bmp, uint width, uint height, int stride);
+    public delegate void RawVideoSampleDelegate(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
+    public delegate void VideoSinkSampleDecodedDelegate(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat);
+    public delegate void SourceErrorDelegate(string errorMessage);
 
     public enum AudioSamplingRatesEnum
     {
         Rate8KHz = 0,
         Rate16KHz = 1,
+    }
+
+    public enum VideoPixelFormatsEnum
+    {
+        Rgb = 0,        // 24 bits per pixel.
+        Bgr = 1,        // 24 bits per pixel.
+        Bgra = 2,       // 32 bits per pixel.
     }
 
     public enum AudioCodecsEnum
@@ -78,6 +86,8 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         event RawAudioSampleDelegate OnAudioSourceRawSample;
 
+        event SourceErrorDelegate OnAudioSourceError;
+
         Task PauseAudio();
 
         Task ResumeAudio();
@@ -97,6 +107,8 @@ namespace SIPSorceryMedia.Abstractions.V1
 
     public interface IAudioSink
     {
+        event SourceErrorDelegate OnAudioSinkError;
+
         List<AudioCodecsEnum> GetAudioSinkFormats();
 
         void SetAudioSinkFormat(AudioCodecsEnum audioFormat);
@@ -112,6 +124,8 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         event RawVideoSampleDelegate OnVideoSourceRawSample;
 
+        event SourceErrorDelegate OnVideoSourceError;
+
         Task PauseVideo();
 
         Task ResumeVideo();
@@ -126,7 +140,7 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         void RestrictCodecs(List<VideoCodecsEnum> codecs);
 
-        void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] rgb24Sample);
+        void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
 
         void ForceKeyFrame();
     }
