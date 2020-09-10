@@ -26,7 +26,7 @@ namespace SIPSorcery.Sys
 
         static Log()
         {
-            SIPSorceryLogFactory.Instance.OnFactorySet += Reset;
+            SIPSorcery.LogFactory.Instance.OnFactorySet += Reset;
         }
 
         private static ILogger _logger;
@@ -36,7 +36,7 @@ namespace SIPSorcery.Sys
             {
                 if (_logger == null)
                 {
-                    _logger = SIPSorceryLogFactory.CreateLogger(LOG_CATEGORY);
+                    _logger = SIPSorcery.LogFactory.CreateLogger(LOG_CATEGORY);
                 }
 
                 return _logger;

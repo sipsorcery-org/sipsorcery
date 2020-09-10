@@ -24,7 +24,7 @@ namespace SIPSorcery.SoftPhone
 {
     public class SoftphoneSTUNClient
     {
-        private ILogger logger = SIPSorcery.SIPSorceryLogFactory.CreateLogger<SoftphoneSTUNClient>();
+        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<SoftphoneSTUNClient>();
 
         private Timer updateTimer;
 

@@ -34,7 +34,7 @@ namespace SIPSorcery.SoftPhone
         private static string HOMER_SERVER_ADDRESS = null; //"192.168.11.49";
         private static int HOMER_SERVER_PORT = 9060;
 
-        private ILogger logger = SIPSorcery.SIPSorceryLogFactory.CreateLogger<SIPTransportManager>();
+        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<SIPTransportManager>();
 
         private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;    // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
 

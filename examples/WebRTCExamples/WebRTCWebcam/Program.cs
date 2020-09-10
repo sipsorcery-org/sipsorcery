@@ -20,13 +20,13 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
-using SIPSorcery.Sys;
 using Serilog.Extensions.Logging;
 
 namespace demo
@@ -63,7 +63,7 @@ namespace demo
     {
         private const int WEBSOCKET_PORT = 8081;
 
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         private static WebSocketServer _webSocketServer;
 
@@ -76,7 +76,7 @@ namespace demo
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
             ManualResetEvent exitMre = new ManualResetEvent(false);
 
-            AddConsoleLogger();
+            logger = AddConsoleLogger();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -237,14 +237,16 @@ namespace demo
         /// <summary>
         ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static void AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {
             var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
-            SIPSorcery.LogFactory.Instance.Set(new SerilogLoggerFactory(serilogLogger));
+            var factory = new SerilogLoggerFactory(serilogLogger);
+            SIPSorcery.LogFactory.Set(factory);
+            return factory.CreateLogger<Program>();
         }
     }
 }

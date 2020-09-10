@@ -35,7 +35,7 @@ namespace SIPSorcery.SoftPhone
         private const int ZINDEX_TOP = 10;
         private const int REGISTRATION_EXPIRY = 180;
 
-        private static ILogger logger = SIPSorcery.SIPSorceryLogFactory.CreateLogger<SoftPhone>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SoftPhone>();
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;

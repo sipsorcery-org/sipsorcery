@@ -74,7 +74,7 @@ namespace SIPSorcery.SoftPhone
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Debug()
                 .CreateLogger();
-            SIPSorcery.SIPSorceryLogFactory.Set(new SerilogLoggerFactory(serilogLogger));
+            SIPSorcery.LogFactory.Set(new SerilogLoggerFactory(serilogLogger));
         }
     }
 }
