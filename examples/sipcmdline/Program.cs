@@ -66,10 +66,11 @@ using System.Threading.Tasks;
 using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
 using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Media;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -81,7 +82,7 @@ namespace SIPSorcery
     {
         private const int DEFAULT_RESPONSE_TIMEOUT_SECONDS = 5;
 
-        private static Microsoft.Extensions.Logging.ILogger logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         public enum Scenarios
         {
@@ -127,15 +128,14 @@ namespace SIPSorcery
 
         static void Main(string[] args)
         {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                //.Enrich.FromLogContext()
+            var seriLogger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console(theme: AnsiConsoleTheme.Code)
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
-            logger = SIPSorcery.Sys.Log.Logger;
+            var factory = new SerilogLoggerFactory(seriLogger);
+            SIPSorcery.LogFactory.Set(factory);
+            logger = factory.CreateLogger<Program>();
 
             var result = Parser.Default.ParseArguments<Options>(args)
                 .WithParsed<Options>(opts => RunCommand(opts).Wait());

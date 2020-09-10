@@ -81,7 +81,7 @@ namespace demo
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.IPv6Any, WEBSOCKET_PORT);
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
                 sdpExchanger.WebSocketOpened += SendSDPOffer;
