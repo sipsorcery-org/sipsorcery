@@ -68,6 +68,8 @@ namespace SIPSorcery.Media
         [Obsolete("This video source is not currently capable of generating encoded samples.")]
         public event EncodedSampleDelegate OnVideoSourceEncodedSample { add { } remove { } }
 
+        public event SourceErrorDelegate OnVideoSourceError;
+
         public VideoTestPatternSource()
         {
             EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
@@ -75,7 +77,7 @@ namespace SIPSorcery.Media
 
             if (testPatternFileInfo == null)
             {
-                throw new ApplicationException($"Test pattern embedded resource could not be found, {TEST_PATTERN_RESOURCE_PATH}.");
+                OnVideoSourceError?.Invoke($"Test pattern embedded resource could not be found, {TEST_PATTERN_RESOURCE_PATH}.");
             }
             else
             {
@@ -92,7 +94,7 @@ namespace SIPSorcery.Media
 
             if (testPattenFileInfo == null)
             {
-                logger.LogWarning($"Video test pattern source could not locate embedded path {path}.");
+                OnVideoSourceError?.Invoke($"Video test pattern source could not locate embedded path {path}.");
             }
             else
             {
@@ -239,7 +241,7 @@ namespace SIPSorcery.Media
                     AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
 
                     // This event handler could get removed while the timestamp text is being added.
-                    OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, _testPattern.Width, _testPattern.Height, BitmapToRGB24(stampedTestPattern as Bitmap));
+                    OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, _testPattern.Width, _testPattern.Height, BitmapToBGR24(stampedTestPattern as Bitmap), VideoPixelFormatsEnum.Bgr);
 
                     stampedTestPattern?.Dispose();
                 }
@@ -278,23 +280,37 @@ namespace SIPSorcery.Media
             }
         }
 
-        private byte[] BitmapToRGB24(Bitmap bitmap)
+        private byte[] BitmapToBGR24(Bitmap bitmap)
         {
-            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            var length = bitmapData.Stride * bitmapData.Height;
+            if(bitmap.PixelFormat != PixelFormat.Format24bppRgb)
+            {
+                throw new ApplicationException("BitmapToRGB24 cannot convert from a non 24bppRgb pixel format.");
+            }
 
-            byte[] bytes = new byte[length];
+            // NOTE: Pixel formats that have "Rgb" in their name, such as PixelFormat.Format24bppRgb,
+            // use a buffer format of BGR. Many issues on StackOverflow regarding this,
+            // e.g. https://stackoverflow.com/questions/5106505/converting-gdi-pixelformat-to-wpf-pixelformat.
+            // Needs to be taken into account by the receiver of the BGR buffer.
 
-            // Copy bitmap to byte[]
-            Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, bitmap.PixelFormat);
+            var length = Math.Abs(bitmapData.Stride) * bitmapData.Height;
+
+            byte[] bgrValues = new byte[length];
+
+            Marshal.Copy(bitmapData.Scan0, bgrValues, 0, length);
             bitmap.UnlockBits(bitmapData);
 
-            return bytes;
+            return bgrValues;
         }
 
-        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] rgb24Sample)
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixlFormat)
         {
             throw new NotImplementedException("The test pattern video source does not offer any encoding services for external sources.");
+        }
+
+        public Task<bool> InitialiseVideoSourceDevice()
+        {
+            throw new NotImplementedException("The test pattern video source does not use a device.");
         }
 
         public void Dispose()

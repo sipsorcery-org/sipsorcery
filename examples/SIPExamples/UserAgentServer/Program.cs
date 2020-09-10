@@ -47,7 +47,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -63,7 +62,6 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions.V1;
-using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery
 {
@@ -71,9 +69,9 @@ namespace SIPSorcery
     {
         private static int SIP_LISTEN_PORT = 5060;
         private static int SIPS_LISTEN_PORT = 5061;
-        private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
-        private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
-        private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
+        //private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
+        //private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
+        private static string SIPS_CERTIFICATE_PATH = "localhost.pfx";
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -109,7 +107,7 @@ namespace SIPSorcery
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
 
-            var localhostCertificate = new X509Certificate2("localhost.pfx");
+            var localhostCertificate = new X509Certificate2(SIPS_CERTIFICATE_PATH);
 
             // IPv4 channels.
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));

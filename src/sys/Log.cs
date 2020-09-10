@@ -16,83 +16,44 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //----------------------------------------------------------------------------
 
-using System;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys
 {
-    public class Log
+    internal class Log
     {
-        public const string LOG_CATEGORY = "sipsorcery";
+        private const string LOG_CATEGORY = "sipsorcery";
 
-        private static ILoggerFactory _loggerFactory;
-        public static ILoggerFactory LoggerFactory
+        static Log()
         {
-            set
-            {
-                _loggerFactory = value;
-                _logger = null;
-            }
+            SIPSorcery.LogFactory.Instance.OnFactorySet += Reset;
         }
 
         private static ILogger _logger;
-        public static ILogger Logger
+        internal static ILogger Logger
         {
             get
             {
-                if (_logger == null && _loggerFactory != null)
+                if (_logger == null)
                 {
-                    _logger = _loggerFactory.CreateLogger(LOG_CATEGORY);
+                    _logger = SIPSorcery.LogFactory.CreateLogger(LOG_CATEGORY);
                 }
 
-                return _logger ?? NullLogger.Instance;
+                return _logger;
             }
             set
             {
                 _logger = value;
             }
         }
-    }
 
-    /// <summary>
-    /// Minimalistic logger that does nothing.
-    /// </summary>
-    public class NullLogger : ILogger
-    {
-        public static NullLogger Instance { get; } = new NullLogger();
-
-        private NullLogger()
+        /// <summary>
+        /// Intended to be called if the application wide logging configuration changes. Will force
+        /// the singleton logger to be re-created.
+        /// </summary>
+        internal static void Reset()
         {
-        }
-
-        public IDisposable BeginScope<TState>(TState state)
-        {
-            return NullScope.Instance;
-        }
-
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            return false;
-        }
-
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
-        {
-        }
-    }
-
-    /// <summary>
-    /// An empty scope without any logic
-    /// </summary>
-    public class NullScope : IDisposable
-    {
-        public static NullScope Instance { get; } = new NullScope();
-
-        private NullScope()
-        {
-        }
-
-        public void Dispose()
-        {
+            _logger = null;
         }
     }
 }

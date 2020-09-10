@@ -18,9 +18,8 @@ using System;
 using System.Configuration;
 using System.Net;
 using System.Xml;
-using Microsoft.Extensions.Logging;
 using Serilog;
-using SIPSorcery.Sys;
+using Serilog.Extensions.Logging;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -29,8 +28,6 @@ namespace SIPSorcery.SoftPhone
         private const string SIPSOFTPHONE_CONFIGNODE_NAME = "sipsoftphone";
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string STUN_SERVER_KEY = "STUNServerHostname";
-
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static readonly XmlNode m_sipSoftPhoneConfigNode;
         public static readonly XmlNode SIPSocketsNode;
@@ -47,27 +44,19 @@ namespace SIPSorcery.SoftPhone
 
         static SIPSoftPhoneState()
         {
-            try
+            AddDebugLogger();
+
+            if (ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME) != null)
             {
-                AddDebugLogger();
-
-                if (ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME) != null)
-                {
-                    m_sipSoftPhoneConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME);
-                }
-
-                if (m_sipSoftPhoneConfigNode != null)
-                {
-                    SIPSocketsNode = m_sipSoftPhoneConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
-                }
-
-                STUNServerHostname = ConfigurationManager.AppSettings[STUN_SERVER_KEY];
+                m_sipSoftPhoneConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME);
             }
-            catch (Exception excp)
+
+            if (m_sipSoftPhoneConfigNode != null)
             {
-                logger.LogError("Exception SIPSoftPhoneState. " + excp.Message);
-                throw;
+                SIPSocketsNode = m_sipSoftPhoneConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
             }
+
+            STUNServerHostname = ConfigurationManager.AppSettings[STUN_SERVER_KEY];
         }
 
         /// <summary>
@@ -80,14 +69,12 @@ namespace SIPSorcery.SoftPhone
 
         private static void AddDebugLogger()
         {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
+            var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Debug()
                 .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            SIPSorcery.LogFactory.Set(new SerilogLoggerFactory(serilogLogger));
         }
     }
 }

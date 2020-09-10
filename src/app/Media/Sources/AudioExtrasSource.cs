@@ -149,6 +149,11 @@ namespace SIPSorcery.Media
         [Obsolete("This audio source only produces encoded samples. Do not subscribe to this event.")]
         public event RawAudioSampleDelegate OnAudioSourceRawSample { add { } remove { } }
 
+#pragma warning disable CS0067
+        public event SourceErrorDelegate OnAudioSourceError;
+        public event SourceErrorDelegate OnAudioSinkError;
+#pragma warning restore CS0067
+
         public AudioExtrasSource()
         {
             _audioEncoder = new AudioEncoder();
