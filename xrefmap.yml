@@ -8065,6 +8065,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.candidate
   nameWithType: RTCIceCandidate.candidate
+- uid: SIPSorcery.Net.RTCIceCandidate.CANDIDATE_PREFIX
+  name: CANDIDATE_PREFIX
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_CANDIDATE_PREFIX
+  commentId: F:SIPSorcery.Net.RTCIceCandidate.CANDIDATE_PREFIX
+  fullName: SIPSorcery.Net.RTCIceCandidate.CANDIDATE_PREFIX
+  nameWithType: RTCIceCandidate.CANDIDATE_PREFIX
 - uid: SIPSorcery.Net.RTCIceCandidate.component
   name: component
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_component
@@ -8793,6 +8799,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPCompoundPacket.GetBytes
   nameWithType: RTCPCompoundPacket.GetBytes
+- uid: SIPSorcery.Net.RTCPCompoundPacket.GetDebugSummary
+  name: GetDebugSummary()
+  href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket_GetDebugSummary
+  commentId: M:SIPSorcery.Net.RTCPCompoundPacket.GetDebugSummary
+  fullName: SIPSorcery.Net.RTCPCompoundPacket.GetDebugSummary()
+  nameWithType: RTCPCompoundPacket.GetDebugSummary()
+- uid: SIPSorcery.Net.RTCPCompoundPacket.GetDebugSummary*
+  name: GetDebugSummary
+  href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket_GetDebugSummary_
+  commentId: Overload:SIPSorcery.Net.RTCPCompoundPacket.GetDebugSummary
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPCompoundPacket.GetDebugSummary
+  nameWithType: RTCPCompoundPacket.GetDebugSummary
 - uid: SIPSorcery.Net.RTCPCompoundPacket.ReceiverReport
   name: ReceiverReport
   href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket_ReceiverReport
@@ -23723,6 +23742,57 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.Utility.ReverseEndian
   nameWithType: Utility.ReverseEndian
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer
+  name: WebRTCWebSocketPeer
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html
+  commentId: T:SIPSorcery.Net.WebRTCWebSocketPeer
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer
+  nameWithType: WebRTCWebSocketPeer
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.#ctor
+  name: WebRTCWebSocketPeer()
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer__ctor
+  commentId: M:SIPSorcery.Net.WebRTCWebSocketPeer.#ctor
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.WebRTCWebSocketPeer()
+  nameWithType: WebRTCWebSocketPeer.WebRTCWebSocketPeer()
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.#ctor*
+  name: WebRTCWebSocketPeer
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer__ctor_
+  commentId: Overload:SIPSorcery.Net.WebRTCWebSocketPeer.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.WebRTCWebSocketPeer
+  nameWithType: WebRTCWebSocketPeer.WebRTCWebSocketPeer
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.CreatePeerConnection
+  name: CreatePeerConnection
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_CreatePeerConnection
+  commentId: F:SIPSorcery.Net.WebRTCWebSocketPeer.CreatePeerConnection
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.CreatePeerConnection
+  nameWithType: WebRTCWebSocketPeer.CreatePeerConnection
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage(WebSocketSharp.MessageEventArgs)
+  name: OnMessage(MessageEventArgs)
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_OnMessage_WebSocketSharp_MessageEventArgs_
+  commentId: M:SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage(WebSocketSharp.MessageEventArgs)
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage(WebSocketSharp.MessageEventArgs)
+  nameWithType: WebRTCWebSocketPeer.OnMessage(MessageEventArgs)
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage*
+  name: OnMessage
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_OnMessage_
+  commentId: Overload:SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage
+  nameWithType: WebRTCWebSocketPeer.OnMessage
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.OnOpen
+  name: OnOpen()
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_OnOpen
+  commentId: M:SIPSorcery.Net.WebRTCWebSocketPeer.OnOpen
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.OnOpen()
+  nameWithType: WebRTCWebSocketPeer.OnOpen()
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.OnOpen*
+  name: OnOpen
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_OnOpen_
+  commentId: Overload:SIPSorcery.Net.WebRTCWebSocketPeer.OnOpen
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.OnOpen
+  nameWithType: WebRTCWebSocketPeer.OnOpen
 - uid: SIPSorcery.SIP
   name: SIPSorcery.SIP
   href: api/SIPSorcery.SIP.html

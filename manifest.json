@@ -657,7 +657,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IRTCIceCandidate.html",
-          "hash": "XkVYu0lphUVcmUg7A/R2CA=="
+          "hash": "iOzXozVBtKBptNRNOFz7rQ=="
         }
       },
       "is_incremental": false,
@@ -921,7 +921,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceCandidate.html",
-          "hash": "5qRerCjDJTdik79zG9WiDA=="
+          "hash": "XyA413V1oamYCCogrB/hdg=="
         }
       },
       "is_incremental": false,
@@ -1077,7 +1077,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPCompoundPacket.html",
-          "hash": "MQ8YWG8xlmV82Gl+mUWJpw=="
+          "hash": "U6meMqL3UetDYeW97cRCsQ=="
         }
       },
       "is_incremental": false,
@@ -1197,7 +1197,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "N8N7HZzryj5GUs+WDdocRg=="
+          "hash": "AneU1D5f92yZjVEizeTm8Q=="
         }
       },
       "is_incremental": false,
@@ -2921,11 +2921,23 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.WebRTCWebSocketPeer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.WebRTCWebSocketPeer.html",
+          "hash": "JhGGh2/9rJ+1VRifOxIVHQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.yml",
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "daPDfBxJsWcYcR3eTvwJ8A=="
+          "hash": "EkwL1xBmlDGz55X8jhubcA=="
         }
       },
       "is_incremental": false,
@@ -5085,7 +5097,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "JECAUwQX2TzOcnM/V9HhmA=="
+          "hash": "IflJ2SzvyV59xqPiwtAdGQ=="
         }
       },
       "is_incremental": false,
@@ -5338,7 +5350,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 422,
+          "total_file_count": 423,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
