@@ -17,7 +17,7 @@
             await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
                 .then(stm => stm.getTracks().forEach(track => pc.addTrack(track, stm)));
 
-            ws = new WebSocket(WEBSOCKET_URL, []);
+            ws = new WebSocket(document.querySelector('#websockurl').value, []);
             ws.onmessage = async function (evt) {
                 if (/^[\{"'\s]*candidate/.test(evt.data)) {
                     pc.addIceCandidate(JSON.parse(evt.data));
