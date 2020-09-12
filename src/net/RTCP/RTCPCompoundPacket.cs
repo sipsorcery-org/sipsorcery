@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -137,6 +138,49 @@ namespace SIPSorcery.Net
             }
 
             return compoundBuffer.ToArray();
+        }
+
+        public string GetDebugSummary()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (Bye != null)
+            {
+                sb.AppendLine("BYE");
+            }
+
+            if(SDesReport != null)
+            {
+                sb.AppendLine($"SDES: SSRC={SDesReport.SSRC}, CNAME={SDesReport.CNAME}");
+            }
+
+            if (SenderReport != null)
+            {
+                var sr = SenderReport;
+                sb.AppendLine($"Sender: SSRC={sr.SSRC}, PKTS={sr.PacketCount}, BYTES={sr.OctetCount}");
+                if (sr.ReceptionReports != null)
+                {
+                    foreach (var rr in sr.ReceptionReports)
+                    {
+                        sb.AppendLine($" RR: SSRC={rr.SSRC}, LOST={rr.PacketsLost}, JITTER={rr.Jitter}");
+                    }
+                }
+            }
+           
+            if(ReceiverReport != null)
+            {
+                var recv = ReceiverReport;
+                sb.AppendLine($"Receiver: SSRC={recv.SSRC}");
+                if (recv.ReceptionReports != null)
+                {
+                    foreach (var rr in recv.ReceptionReports)
+                    {
+                        sb.AppendLine($" RR: SSRC={rr.SSRC}, LOST={rr.PacketsLost}, JITTER={rr.Jitter}");
+                    }
+                }
+            }
+
+            return sb.ToString().TrimEnd('\n');
         }
     }
 }

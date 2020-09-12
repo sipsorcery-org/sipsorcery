@@ -21,6 +21,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using Newtonsoft.Json;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -30,6 +31,7 @@ namespace SIPSorcery.Net
         public const string m_CRLF = "\r\n";
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
+        public const string CANDIDATE_PREFIX = "candidate";
 
         /// <summary>
         /// The ICE server (STUN or TURN) the candidate was generated from.
@@ -276,9 +278,18 @@ namespace SIPSorcery.Net
                       (2 ^ 0) * (256 - component.GetHashCode()));
         }
 
-        public RTCIceCandidateInit toJSON()
+        public string toJSON()
         {
-            throw new NotImplementedException();
+            var rtcCandInit = new RTCIceCandidateInit
+            {
+                sdpMid = sdpMid ?? sdpMLineIndex.ToString(),
+                sdpMLineIndex = sdpMLineIndex,
+                usernameFragment = usernameFragment,
+                candidate = CANDIDATE_PREFIX + ":" + this.ToString()
+            };
+
+            return JsonConvert.SerializeObject(rtcCandInit,
+                     new Newtonsoft.Json.Converters.StringEnumConverter());
         }
 
         /// <summary>

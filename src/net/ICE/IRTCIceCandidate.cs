@@ -186,6 +186,7 @@ namespace SIPSorcery.Net
         string relatedAddress { get; }
         ushort relatedPort { get; }
         string usernameFragment { get; }
-        RTCIceCandidateInit toJSON();
+        //RTCIceCandidateInit toJSON();
+        string toJSON();
     }
 }

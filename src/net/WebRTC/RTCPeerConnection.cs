@@ -695,6 +695,14 @@ namespace SIPSorcery.Net
 
                 signalingState = RTCSignalingState.have_remote_offer;
                 onsignalingstatechange?.Invoke();
+
+                // Trigger the ICE candidate events for any non-host candidates, host candidates are always included in the
+                // SDP offer/answer. The reason for the trigger is that ICE candidates cannot be sent to the remote peer
+                // until it is ready to receive them which is indicated by the remote offer being received.
+                foreach (var nonHostCand in _rtpIceChannel.Candidates.Where(x => x.type != RTCIceCandidateType.host))
+                {
+                    _onIceCandidate?.Invoke(nonHostCand);
+                }
             }
 
             return setResult;

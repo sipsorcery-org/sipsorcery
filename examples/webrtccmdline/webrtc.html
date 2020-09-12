@@ -25,7 +25,7 @@
             ws.onopen = async function () {
                 console.log("web socket onopen.");
 
-                pc = new RTCPeerConnection(
+                /*pc = new RTCPeerConnection(
                     {
                         iceServers: [
                             {
@@ -36,8 +36,9 @@
                         ],
                         //iceTransportPolicy: "relay"
                         iceTransportPolicy: "all"
-                    });
+                    });*/
 
+					pc = new RTCPeerConnection(null);
                 dc = pc.createDataChannel("dc1");
 
                 //localStream.getTracks().forEach(track => {
