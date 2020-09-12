@@ -18,7 +18,19 @@
             ws.onopen = function () {
                 console.log("web socket onopen.");
 
-                pc = new RTCPeerConnection(null);
+                //pc = new RTCPeerConnection(null);
+                pc = new RTCPeerConnection(
+                    {
+                        iceServers: [
+                            {
+                                urls: "turn:turn.sipsorcery.com",
+                                username: "aaron",
+                                credential: "password"
+                            }
+                        ],
+                        //iceTransportPolicy: "relay"
+                        iceTransportPolicy: "all"
+                    });
 
                 pc.ontrack = ({ track, streams: [stream] }) => {
                     track.onunmute = () => {
@@ -44,7 +56,7 @@
                         console.log(event.candidate.candidate);
                         console.log(event.candidate);
                         //console.log(pc.localDescription.sdp);
-                        ws.send(event.candidate.candidate);
+                        ws.send(JSON.stringify(event.candidate));
                     }
                 };
             };
@@ -52,16 +64,25 @@
             ws.onmessage = async function (evt) {
                 // Received SDP offer from the remote web socket server.
                 console.log("web socket onmessage: " + evt.data + ".");
-                await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
 
-                // Now create our offer SDP to send back to the web socket server.
-                pc.createAnswer().then(function (answer) {
-                    return pc.setLocalDescription(answer);
-                }).then(function () {
-                    console.log("Sending answer SDP.");
-                    console.log("SDP: " + pc.localDescription.sdp);
-                    ws.send(pc.localDescription.sdp);
-                });
+                if (/^[\{"'\s]*candidate/.test(evt.data)) {
+                    console.log("attempting to add ice candidate.");
+                    pc.addIceCandidate(JSON.parse(evt.data));
+                }
+                else {
+                    console.log("attempting to set remote description.");
+                    //await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+
+                    // Now create our offer SDP to send back to the web socket server.
+                    pc.createAnswer().then(function (answer) {
+                        return pc.setLocalDescription(answer);
+                    }).then(function () {
+                        console.log("Sending answer SDP.");
+                        console.log("SDP: " + pc.localDescription.sdp);
+                        ws.send(JSON.stringify(pc.localDescription));
+                    });
+                }
             };
         };
 
@@ -76,14 +97,14 @@
             //    });
             //}
 
-            if (ws != null) {
-                console.log("closing web socket.");
-                ws.close();
-            }
-
             if (pc != null) {
                 console.log("close peer");
                 pc.close();
+            }
+
+            if (ws != null) {
+                console.log("closing web socket.");
+                ws.close();
             }
         };
 

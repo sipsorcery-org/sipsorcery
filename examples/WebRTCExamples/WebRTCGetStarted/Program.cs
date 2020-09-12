@@ -1,14 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example WebRTC server application that serves a test pattern
-// video stream to a WebRTC enabled browser.
+// Description: An example WebRTC server application that attempts to send and
+// receive audio and video. A web socket is used for signalling.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 17 Jan 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 12 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -39,7 +39,7 @@ namespace demo
 
         static void Main()
         {
-            Console.WriteLine("WebRTC Test Pattern Server Demo");
+            Console.WriteLine("WebRTC Get Started");
 
             logger = AddConsoleLogger();
 
@@ -74,20 +74,29 @@ namespace demo
 
             var testPatternSource = new VideoTestPatternSource();
             WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(true);
+            var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-            MediaStreamTrack track = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
-            pc.addTrack(track);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            pc.addTrack(videoTrack);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            pc.addTrack(audioTrack);
 
             testPatternSource.OnVideoSourceRawSample += windowsVideoEndPoint.ExternalVideoSourceRawSample;
             windowsVideoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
             pc.OnVideoFormatsNegotiated += (sdpFormat) =>
                 windowsVideoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
-            
             pc.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
 
-                if (state == RTCPeerConnectionState.failed)
+                if (state == RTCPeerConnectionState.connected)
+                {
+                    await audioSource.StartAudio();
+                    await windowsVideoEndPoint.StartVideo();
+                    await testPatternSource.StartVideo();
+                }
+                else if (state == RTCPeerConnectionState.failed)
                 {
                     pc.Close("ice disconnection");
                 }
@@ -95,11 +104,7 @@ namespace demo
                 {
                     await testPatternSource.CloseVideo();
                     await windowsVideoEndPoint.CloseVideo();
-                }
-                else if (state == RTCPeerConnectionState.connected)
-                {
-                    await windowsVideoEndPoint.StartVideo();
-                    await testPatternSource.StartVideo();
+                    await audioSource.CloseAudio();
                 }
             };
 

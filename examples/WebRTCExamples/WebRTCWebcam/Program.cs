@@ -25,6 +25,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
@@ -81,7 +82,7 @@ namespace demo
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT) { AllowForwardedRequest = true };
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
                 sdpExchanger.WebSocketOpened += SendSDPOffer;
@@ -109,30 +110,29 @@ namespace demo
             var pc = new RTCPeerConnection(null);
 
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint();
-            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(640, 480, 5);
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 1920, 1080, 30);          
+            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 640, 480, 30);
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 1920, 1080, 30);          
             await winVideoEP.InitialiseVideoSourceDevice();
 
-            WindowsAudioEndPoint winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
-            //AudioExtrasSource audioExtras = new AudioExtrasSource();
+            //WindowsAudioEndPoint winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
+            AudioExtrasSource audioExtras = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+            IAudioSource audioSrc = audioExtras;
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
-            MediaStreamTrack audioTrack = new MediaStreamTrack(winAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
-            //MediaStreamTrack audioTrack = new MediaStreamTrack(audioExtras.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSrc.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(audioTrack);
 
             winVideoEP.OnVideoSourceEncodedSample += pc.SendVideo;
-            //audioExtras.OnAudioSourceEncodedSample += pc.SendAudio;
-            winAudioEP.OnAudioSourceEncodedSample += pc.SendAudio;
+            audioSrc.OnAudioSourceEncodedSample += pc.SendAudio;
 
             pc.OnVideoFormatsNegotiated += (videoSdpFormat) =>
                 winVideoEP.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(videoSdpFormat.First().FormatCodec));
             //pc.OnAudioFormatsNegotiated += (audioSdpFormat) =>
             //    audioExtras.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audioSdpFormat.First().FormatCodec));
             pc.OnAudioFormatsNegotiated += (audioSdpFormat) =>
-                winAudioEP.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audioSdpFormat.First().FormatCodec));
-            //pc.OnReceiveReport += RtpSession_OnReceiveReport;
+                audioSrc.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audioSdpFormat.First().FormatCodec));
+            pc.OnReceiveReport += RtpSession_OnReceiveReport;
             //pc.OnSendReport += RtpSession_OnSendReport;
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
@@ -147,18 +147,15 @@ namespace demo
 
                 if (state == RTCPeerConnectionState.closed)
                 {
-                    // OnTestPatternSampleReady -= pc.SendMedia;
                     pc.OnReceiveReport -= RtpSession_OnReceiveReport;
                     pc.OnSendReport -= RtpSession_OnSendReport;
 
                     await winVideoEP.CloseVideo();
-                    await winAudioEP.CloseAudio();  
-                    //await audioExtras.CloseAudio();
+                    await audioSrc.CloseAudio();  
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    await winAudioEP.StartAudio();
-                    //audioExtras.SetSource(AudioSourcesEnum.Music);
+                    await audioSrc.StartAudio();
                     await winVideoEP.StartVideo();
                 }
             };
