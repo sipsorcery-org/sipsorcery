@@ -39,13 +39,13 @@ The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framewor
 For .NET Core:
 
 ````bash
-dotnet add package SIPSorcery -v 4.0.67-pre
+dotnet add package SIPSorcery -v 4.0.71-pre
 ````
 
 With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](https://www.nuget.org/packages/SIPSorcery/)):
 
 ````ps1
-Install-Package SIPSorcery -v 4.0.67-pre
+Install-Package SIPSorcery -v 4.0.71-pre
 ````
 
 ## Documentation
@@ -326,7 +326,6 @@ If successful the browser should display a test pattern image and play a music s
 
 ````bash
 ...
-[19:40:25 DBG] STUN BindingRequest received from [2a02:8084:6981:7880::1e7]:57682.
 [19:40:25 DBG] STUN BindingRequest received from 192.168.0.50:57681.
 [19:40:26 DBG] RTCP Receive for video from 192.168.11.50:57681
 SDES: SSRC=3458092865, CNAME=5+ksoe4uBNfyl5u5
@@ -335,7 +334,6 @@ Sender: SSRC=3458092865, PKTS=18, BYTES=16392
 Receiver: SSRC=3458092865
  RR: SSRC=852075017, LOST=0, JITTER=390
 [19:40:26 DBG] STUN BindingRequest received from 192.168.11.50:57681.
-[19:40:26 DBG] STUN BindingRequest received from [2a02:8084:6981:7880::1e7]:57682.
 [19:40:27 DBG] RTCP Receive for video from 192.168.11.50:57681
 SDES: SSRC=3458092865, CNAME=5+ksoe4uBNfyl5u5
 Sender: SSRC=3458092865, PKTS=46, BYTES=39676
