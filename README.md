@@ -57,7 +57,7 @@ Class reference documentation and articles explaining common usage are available
 The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia` library to play the received audio and only works on Windows (due to lack of .NET Core audio device support on non-Windows platforms).
 
 ````bash
-dotnet new console --name SIPGetStarted
+dotnet new console --name SIPGetStarted -f netcoreapp3.1
 cd SIPGetStarted
 dotnet add package SIPSorcery -v 4.0.71-pre
 dotnet add package SIPSorceryMedia.Windows -v 0.0.18-pre
@@ -85,7 +85,7 @@ namespace SIPGetStarted
         {
             Console.WriteLine("SIP Get Started");
 			
-			var userAgent = new SIPUserAgent();
+            var userAgent = new SIPUserAgent();
             var winAudio = new WindowsAudioEndPoint(new AudioEncoder());
             var voipMediaSession = new VoIPMediaSession(winAudio.ToMediaEndPoints());
 
@@ -112,7 +112,7 @@ The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examp
 
 ## Getting Started WebRTC
 
-The WebRTC specifications do not include directions about how signaling should be done (for VoIP the signaling protocol is SIP; WebRTC has no equivalent). The example below uses a simple JSON message exchange over web sockets for signaling.
+The WebRTC specifications do not include directions about how signaling should be done (for VoIP the signaling protocol is SIP; WebRTC has no equivalent). The example below uses a simple JSON message exchange over web sockets for signaling. Part of the reason the `Getting Started WebRTC` is over 5 times as long as the `Getting Started VoIP` is the need for custom signaling.
 
 The example requires two steps:
 
@@ -126,10 +126,12 @@ The example relies on the Windows specific `SIPSorceryMedia.Windows` package. Ho
 Step 1:
 
 ````bash
-dotnet new console --name WebRTCGetStarted
+dotnet new console --name WebRTCGetStarted -f netcoreapp3.1
 cd WebRTCGetStarted
 dotnet add package SIPSorcery -v 4.0.71-pre
 dotnet add package SIPSorceryMedia.Windows -v 0.0.18-pre
+dotnet add package Serilog.Sinks.Console
+dotnet add package Serilog.Extensions.Logging
 code . # If you have Visual Studio Code (https://code.visualstudio.com) installed
 # edit Program.cs and paste in the contents below.
 dotnet run
