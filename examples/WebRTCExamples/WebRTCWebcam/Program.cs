@@ -15,84 +15,46 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
-using WebSocketSharp;
-using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
 
 namespace demo
 {
-    public class SDPExchange : WebSocketBehavior
-    {
-        public RTCPeerConnection PeerConnection;
-
-        public event Func<WebSocketContext, Task<RTCPeerConnection>> WebSocketOpened;
-        public event Action<RTCPeerConnection, string> OnMessageReceived;
-
-        public SDPExchange()
-        { }
-
-        protected override void OnMessage(MessageEventArgs e)
-        {
-            OnMessageReceived(PeerConnection, e.Data);
-        }
-
-        protected override async void OnOpen()
-        {
-            base.OnOpen();
-            PeerConnection = await WebSocketOpened(this.Context);
-        }
-
-        protected override void OnClose(CloseEventArgs e)
-        {
-            base.OnClose(e);
-            PeerConnection?.Close("remote party close");
-        }
-    }
-
     class Program
     {
         private const int WEBSOCKET_PORT = 8081;
+        private const string STUN_URL = "stun:stun.sipsorcery.com";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
-
-        private static WebSocketServer _webSocketServer;
 
         static void Main()
         {
             Console.WriteLine("WebRTC Webcam Send Demo");
             Console.WriteLine("Press ctrl-c to exit.");
 
-            // Plumbing code to facilitate a graceful exit.
-            CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
-            ManualResetEvent exitMre = new ManualResetEvent(false);
-
             logger = AddConsoleLogger();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT) { AllowForwardedRequest = true };
-            _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
-            {
-                sdpExchanger.WebSocketOpened += SendSDPOffer;
-                sdpExchanger.OnMessageReceived += WebSocketMessageReceived;
-            });
-            _webSocketServer.Start();
+            var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+            webSocketServer.Start();
 
-            Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
+            Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
+            Console.WriteLine("Press ctrl-c to exit.");
 
             // Ctrl-c will gracefully exit the call at any point.
+            ManualResetEvent exitMre = new ManualResetEvent(false);
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
@@ -103,148 +65,56 @@ namespace demo
             exitMre.WaitOne();
         }
 
-        private static async Task<RTCPeerConnection> SendSDPOffer(WebSocketContext context)
+        private static RTCPeerConnection CreatePeerConnection()
         {
-            logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
+            RTCConfiguration config = new RTCConfiguration
+            {
+                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
+            };
+            var pc = new RTCPeerConnection(config);
 
-            var pc = new RTCPeerConnection(null);
-
-            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint();
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 640, 480, 30);
+            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint();
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 640, 480, 30);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 1920, 1080, 30);          
-            await winVideoEP.InitialiseVideoSourceDevice();
+            //await winVideoEP.InitialiseVideoSourceDevice();
+            var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-            //WindowsAudioEndPoint winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
-            AudioExtrasSource audioExtras = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
-            IAudioSource audioSrc = audioExtras;
-
-            MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(videoTrack);
-            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSrc.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(audioTrack);
 
             winVideoEP.OnVideoSourceEncodedSample += pc.SendVideo;
-            audioSrc.OnAudioSourceEncodedSample += pc.SendAudio;
-
-            pc.OnVideoFormatsNegotiated += (videoSdpFormat) =>
-                winVideoEP.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(videoSdpFormat.First().FormatCodec));
-            //pc.OnAudioFormatsNegotiated += (audioSdpFormat) =>
-            //    audioExtras.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audioSdpFormat.First().FormatCodec));
-            pc.OnAudioFormatsNegotiated += (audioSdpFormat) =>
-                audioSrc.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audioSdpFormat.First().FormatCodec));
-            pc.OnReceiveReport += RtpSession_OnReceiveReport;
-            //pc.OnSendReport += RtpSession_OnSendReport;
-            pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
-            pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+            pc.OnVideoFormatsNegotiated += (sdpFormat) =>
+                 winVideoEP.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
             pc.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
 
-                if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
+                if (state == RTCPeerConnectionState.connected)
                 {
-                    pc.Close("remote disconnection");
-                }
-
-                if (state == RTCPeerConnectionState.closed)
-                {
-                    pc.OnReceiveReport -= RtpSession_OnReceiveReport;
-                    pc.OnSendReport -= RtpSession_OnSendReport;
-
-                    await winVideoEP.CloseVideo();
-                    await audioSrc.CloseAudio();  
-                }
-                else if (state == RTCPeerConnectionState.connected)
-                {
-                    await audioSrc.StartAudio();
+                    await audioSource.StartAudio();
                     await winVideoEP.StartVideo();
+                }
+                else if (state == RTCPeerConnectionState.failed)
+                {
+                    pc.Close("ice disconnection");
+                }
+                else if (state == RTCPeerConnectionState.closed)
+                {
+                    await winVideoEP.CloseVideo();
+                    await audioSource.CloseAudio();
                 }
             };
 
-            var offerSdp = pc.createOffer(null);
-            await pc.setLocalDescription(offerSdp);
-
-            logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
-            logger.LogDebug(offerSdp.sdp);
-
-            context.WebSocket.Send(offerSdp.sdp);
+            // Diagnostics.
+            pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+            pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
+            pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
             return pc;
-        }
-
-        private static void WebSocketMessageReceived(RTCPeerConnection pc, string message)
-        {
-            try
-            {
-                if (pc.remoteDescription == null)
-                {
-                    logger.LogDebug("Answer SDP: " + message);
-                    var res = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
-                    if(res != SetDescriptionResultEnum.OK)
-                    {
-                        logger.LogWarning($"Failed to set remote description {res}.");
-                    }
-                }
-                else
-                {
-                    logger.LogDebug("ICE Candidate: " + message);
-                    pc.addIceCandidate(new RTCIceCandidateInit { candidate = message });
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception WebSocketMessageReceived. " + excp.Message);
-            }
-        }
-
-        /// <summary>
-        /// Diagnostic handler to print out our RTCP sender/receiver reports.
-        /// </summary>
-        private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
-        {
-            if (sentRtcpReport.Bye != null)
-            {
-                logger.LogDebug($"RTCP sent BYE {mediaType}.");
-            }
-            else if (sentRtcpReport.SenderReport != null)
-            {
-                var sr = sentRtcpReport.SenderReport;
-                logger.LogDebug($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
-            }
-            else
-            {
-                if (sentRtcpReport.ReceiverReport.ReceptionReports?.Count > 0)
-                {
-                    var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
-                    logger.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
-                }
-                else
-                {
-                    logger.LogDebug($"RTCP sent RR {mediaType}, no packets sent or received.");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
-        /// </summary>
-        private static void RtpSession_OnReceiveReport(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
-        {
-            if (recvRtcpReport.Bye != null)
-            {
-                logger.LogDebug($"RTCP recv BYE {mediaType}.");
-            }
-            else
-            {
-                var rr = recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
-                if (rr != null)
-                {
-                    logger.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
-                }
-                else
-                {
-                    logger.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
-                }
-            }
         }
 
         /// <summary>
