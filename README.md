@@ -59,8 +59,8 @@ The simplest possible example to place an audio-only SIP call is shown below. Th
 ````bash
 dotnet new console --name SIPGetStarted
 cd SIPGetStarted
-dotnet add package SIPSorcery -v 4.0.67-pre
-dotnet add package SIPSorceryMedia.Windows -v 0.0.15-pre
+dotnet add package SIPSorcery -v 4.0.71-pre
+dotnet add package SIPSorceryMedia.Windows -v 0.0.18-pre
 code . # If you have Visual Studio Code https://code.visualstudio.com installed.
 # edit Program.cs and paste in the contents below.
 dotnet run
@@ -112,15 +112,24 @@ The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examp
 
 ## Getting Started WebRTC
 
-The core of the code required to establish a WebRTC connection is demonstrated below. The code shown will build but will not establish a connection due to no mechanism to exchange the SDP offer and answer between peers. A full working example with a web socket signalling mechanism is available in the [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCTestPatternServer) example.
+The WebRTC specifications do not include directions about how signaling should be done (for VoIP the signaling protocol is SIP; WebRTC has no equivalent). The example below uses a simple JSON message exchange over web sockets for signaling.
 
-If you are familiar with the [WebRTC javascript API](https://www.w3.org/TR/webrtc/) the API in this project aims to be as close to it as possible.
+The example requires two steps:
+
+ - Run the `dotnet` console application,
+ - Open an HTML page in a browser on the same machine.
+
+ The full project file and code are available at [WebRTC Get Started](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStarted).
+
+The example relies on the Windows specific `SIPSorceryMedia.Windows` package. Hopefully in the future there will be equivalent packages for other platforms.
+
+Step 1:
 
 ````bash
 dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
-dotnet add package SIPSorcery -v 4.0.67-pre
-dotnet add package SIPSorceryMedia.Windows -v 0.0.15-pre
+dotnet add package SIPSorcery -v 4.0.71-pre
+dotnet add package SIPSorceryMedia.Windows -v 0.0.18-pre
 code . # If you have Visual Studio Code (https://code.visualstudio.com) installed
 # edit Program.cs and paste in the contents below.
 dotnet run
@@ -129,39 +138,219 @@ dotnet run
 ````csharp
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Serilog;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Windows;
+using WebSocketSharp.Server;
+using SIPSorcery.Media;
+using Serilog.Extensions.Logging;
 
-namespace WebRTCGetStarted
+namespace demo
 {
     class Program
     {
-        static async Task Main()
+        private const int WEBSOCKET_PORT = 8081;
+        private const string STUN_URL = "stun:stun.sipsorcery.com";
+
+        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
+
+        static void Main()
         {
-            Console.WriteLine("Get Started WebRTC");
-            
-            var pc = new RTCPeerConnection(null);
+            Console.WriteLine("WebRTC Get Started");
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(
-              SDPMediaTypesEnum.video, 
-              false, 
-              new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, 
-              MediaStreamStatusEnum.SendOnly);
+            logger = AddConsoleLogger();
+
+            // Start web socket.
+            Console.WriteLine("Starting web socket server...");
+            var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+            webSocketServer.Start();
+
+            Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
+            Console.WriteLine("Press ctrl-c to exit.");
+
+            // Ctrl-c will gracefully exit the call at any point.
+            ManualResetEvent exitMre = new ManualResetEvent(false);
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            {
+                e.Cancel = true;
+                exitMre.Set();
+            };
+
+            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
+            exitMre.WaitOne();
+        }
+
+        private static RTCPeerConnection CreatePeerConnection()
+        {
+            RTCConfiguration config = new RTCConfiguration
+            {
+                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
+            };
+            var pc = new RTCPeerConnection(config);
+
+            var testPatternSource = new VideoTestPatternSource();
+            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(true);
+            var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+
+            MediaStreamTrack videoTrack = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(videoTrack);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            pc.addTrack(audioTrack);
 
-            pc.oniceconnectionstatechange += (state) => Console.WriteLine($"ICE connection state change to {state}.");
-            pc.onconnectionstatechange += (state) => Console.WriteLine($"Peer connection state change to {state}.");
+            testPatternSource.OnVideoSourceRawSample += windowsVideoEndPoint.ExternalVideoSourceRawSample;
+            windowsVideoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+            pc.OnVideoFormatsNegotiated += (sdpFormat) =>
+                windowsVideoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.onconnectionstatechange += async (state) =>
+            {
+                logger.LogDebug($"Peer connection state change to {state}.");
 
-            var offerSdp = pc.createOffer(null);
-            await pc.setLocalDescription(offerSdp);
+                if (state == RTCPeerConnectionState.connected)
+                {
+                    await audioSource.StartAudio();
+                    await windowsVideoEndPoint.StartVideo();
+                    await testPatternSource.StartVideo();
+                }
+                else if (state == RTCPeerConnectionState.failed)
+                {
+                    pc.Close("ice disconnection");
+                }
+                else if (state == RTCPeerConnectionState.closed)
+                {
+                    await testPatternSource.CloseVideo();
+                    await windowsVideoEndPoint.CloseVideo();
+                    await audioSource.CloseAudio();
+                }
+            };
 
-            Console.WriteLine($"local offer: {offerSdp.sdp}");
+            // Diagnostics.
+            pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+            pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
+            pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
-            Console.WriteLine("Press any key to hangup and exit.");
-            Console.ReadLine();
+            return pc;
+        }
+
+        /// <summary>
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        {
+            var seriLogger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            var factory = new SerilogLoggerFactory(seriLogger);
+            SIPSorcery.LogFactory.Set(factory);
+            return factory.CreateLogger<Program>();
         }
     }
 }
+````
+
+Step 2:
+
+Create an HTML file, paste the contents below into it, open it in a browser that supports WebRTC and finally press the `start` button.
+
+````html
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const STUN_URL = "stun:stun.sipsorcery.com";
+        const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
+
+        var pc, ws;
+
+        async function start() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+
+            pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+            await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                .then(stm => stm.getTracks().forEach(track => pc.addTrack(track, stm)));
+
+            ws = new WebSocket(document.querySelector('#websockurl').value, []);
+            ws.onmessage = async function (evt) {
+                if (/^[\{"'\s]*candidate/.test(evt.data)) {
+                    pc.addIceCandidate(JSON.parse(evt.data));
+                }
+                else {
+                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+                    pc.createAnswer()
+                        .then((answer) => pc.setLocalDescription(answer))
+                        .then(() => ws.send(JSON.stringify(pc.localDescription)));
+                }
+            };
+        };
+
+        async function closePeer() {
+            pc.getSenders().forEach(sender => {
+                sender.track.stop();
+                pc.removeTrack(sender);
+            });
+            await pc.close();
+            await ws.close();
+        };
+
+    </script>
+</head>
+<body>
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+    <div>
+        <input type="text" id="websockurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+</body>
+
+<script>
+    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+</script>
+````
+
+Result:
+
+If successful the browser should display a test pattern image and play a music sample. The `dotnet` console should display a steady stream of RTCP reports.
+
+````bash
+...
+[19:40:25 DBG] STUN BindingRequest received from [2a02:8084:6981:7880::1e7]:57682.
+[19:40:25 DBG] STUN BindingRequest received from 192.168.0.50:57681.
+[19:40:26 DBG] RTCP Receive for video from 192.168.11.50:57681
+SDES: SSRC=3458092865, CNAME=5+ksoe4uBNfyl5u5
+Sender: SSRC=3458092865, PKTS=18, BYTES=16392
+[19:40:26 DBG] RTCP Receive for video from 192.168.11.50:57681
+Receiver: SSRC=3458092865
+ RR: SSRC=852075017, LOST=0, JITTER=390
+[19:40:26 DBG] STUN BindingRequest received from 192.168.11.50:57681.
+[19:40:26 DBG] STUN BindingRequest received from [2a02:8084:6981:7880::1e7]:57682.
+[19:40:27 DBG] RTCP Receive for video from 192.168.11.50:57681
+SDES: SSRC=3458092865, CNAME=5+ksoe4uBNfyl5u5
+Sender: SSRC=3458092865, PKTS=46, BYTES=39676
+[19:40:27 DBG] RTCP Receive for video from 192.168.11.50:57681
+Receiver: SSRC=3458092865
+ RR: SSRC=852075017, LOST=0, JITTER=368
+[19:40:27 DBG] STUN BindingRequest received from 192.168.11.50:57681.
+[19:40:27 DBG] RTCP Receive for audio from 192.168.11.50:57681
+SDES: SSRC=1049319500, CNAME=5+ksoe4uBNfyl5u5
+Sender: SSRC=1049319500, PKTS=106, BYTES=16960
+[19:40:27 DBG] STUN BindingRequest received from 192.168.0.50:57681.
+[19:40:27 DBG] RTCP Receive for video from 192.168.11.50:57681
+Receiver: SSRC=3458092865
+ RR: SSRC=852075017, LOST=0, JITTER=419
+ ...
 ````
 
 The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples) contains sample code to demonstrate other common WebRTC cases.
