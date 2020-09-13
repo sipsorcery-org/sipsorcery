@@ -61,7 +61,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.70-pre: Fixed reentrant bug to SRTP protect and unprotect methods.
+    <PackageReleaseNotes>- v4.0.71-pre: Added helper class for webrtc signaling over web sockets.
+- v4.0.70-pre: Fixed reentrant bug to SRTP protect and unprotect methods.
 - v4.0.69-pre: Modified logging to use singleton factory from abstractions package.
 - v4.0.67-pre: Embedded test pattern images and default PCM music on hold files.
 - v4.0.61-pre: Added hooks for new media abstractions interface. Minimum .Net Framework target updated from net46 to net472.
@@ -100,9 +101,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.70-pre</Version>
-    <AssemblyVersion>4.0.70.0</AssemblyVersion>
-    <FileVersion>4.0.70.0</FileVersion>
+    <Version>4.0.71-pre</Version>
+    <AssemblyVersion>4.0.71.0</AssemblyVersion>
+    <FileVersion>4.0.71.0</FileVersion>
   </PropertyGroup>
 
 </Project>
