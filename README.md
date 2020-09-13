@@ -57,7 +57,7 @@ Class reference documentation and articles explaining common usage are available
 The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia` library to play the received audio and only works on Windows (due to lack of .NET Core audio device support on non-Windows platforms).
 
 ````bash
-dotnet new console --name SIPGetStarted  -f netcoreapp3.1
+dotnet new console --name SIPGetStarted -f netcoreapp3.1
 cd SIPGetStarted
 dotnet add package SIPSorcery -v 4.0.71-pre
 dotnet add package SIPSorceryMedia.Windows -v 0.0.18-pre
