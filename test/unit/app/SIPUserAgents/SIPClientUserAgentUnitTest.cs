@@ -27,10 +27,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             transport.AddSIPChannel(channel);
             SIPClientUserAgent userAgent = new SIPClientUserAgent(
                 transport,
-                new SIPEndPoint(new IPEndPoint(new IPAddress(new byte[] { 192, 168, 11, 50 }), 5060)),
-                "owner",
-                "admin",
-                null);
+                new SIPEndPoint(new IPEndPoint(new IPAddress(new byte[] { 192, 168, 11, 50 }), 5060)));
             SIPContactHeader testHeader = new SIPContactHeader("Contact Name", new SIPURI("User", "Host", "Param=Value"));
             userAgent.AdjustInvite = invite =>
             {

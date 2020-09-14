@@ -36,7 +36,6 @@ namespace SIPSorcery.SIP.App
         SIPRequest CallRequest { get; }
         string CallDestination { get; }
         bool IsUASAnswered { get; }
-        string Owner { get; }
 
         event SIPUASDelegate CallCancelled;
         event SIPUASDelegate NoRingTimeout;
@@ -55,7 +54,6 @@ namespace SIPSorcery.SIP.App
         void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI);
         void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI, string[] customHeaders);
         void NoCDR();
-        void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate);
         void SetOwner(string owner, string adminMemberId);
         void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body);
         void SetDialPlanContextID(Guid dialPlanContextID);
