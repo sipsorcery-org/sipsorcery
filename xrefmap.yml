@@ -5578,6 +5578,19 @@ references:
   commentId: T:SIPSorcery.Net.DtlsUtils
   fullName: SIPSorcery.Net.DtlsUtils
   nameWithType: DtlsUtils
+- uid: SIPSorcery.Net.DtlsUtils.ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate,Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair)
+  name: ConvertBouncyCert(X509Certificate, AsymmetricCipherKeyPair)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ConvertBouncyCert_Org_BouncyCastle_X509_X509Certificate_Org_BouncyCastle_Crypto_AsymmetricCipherKeyPair_
+  commentId: M:SIPSorcery.Net.DtlsUtils.ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate,Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair)
+  fullName: SIPSorcery.Net.DtlsUtils.ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate, Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair)
+  nameWithType: DtlsUtils.ConvertBouncyCert(X509Certificate, AsymmetricCipherKeyPair)
+- uid: SIPSorcery.Net.DtlsUtils.ConvertBouncyCert*
+  name: ConvertBouncyCert
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_ConvertBouncyCert_
+  commentId: Overload:SIPSorcery.Net.DtlsUtils.ConvertBouncyCert
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsUtils.ConvertBouncyCert
+  nameWithType: DtlsUtils.ConvertBouncyCert
 - uid: SIPSorcery.Net.DtlsUtils.CreatePrivateKeyResource(System.String)
   name: CreatePrivateKeyResource(String)
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreatePrivateKeyResource_System_String_
