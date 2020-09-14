@@ -53,8 +53,6 @@ namespace SIPSorcery.SIP
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
 
         public Guid Id { get; set; }                                // Id for persistence, NOT used for SIP call purposes.
-        public string Owner { get; set; }                           // In cases where ownership needs to be set on the dialogue this value can be used. Does not have any effect on the operation of the dialogue and is for info only.
-        public string AdminMemberId { get; set; }
         public string CallId { get; set; }
         public SIPRouteSet RouteSet { get; set; }
         public SIPUserField LocalUserField { get; set; }            // To header for a UAS, From header for a UAC.
@@ -136,8 +134,6 @@ namespace SIPSorcery.SIP
             string localTag,
             string remoteTag,
             Guid cdrId,
-            string owner,
-            string adminMemberId,
             string sdp,
             string remoteSDP)
         {
@@ -152,8 +148,6 @@ namespace SIPSorcery.SIP
             CSeq = cseq;
             RemoteTarget = remoteTarget;
             CDRId = cdrId;
-            Owner = owner;
-            AdminMemberId = adminMemberId;
             SDP = sdp;
             RemoteSDP = remoteSDP;
             Inserted = DateTimeOffset.UtcNow;
@@ -166,9 +160,7 @@ namespace SIPSorcery.SIP
         /// in the From header.
         /// </summary>
         public SIPDialogue(
-            UASInviteTransaction uasInviteTransaction,
-            string owner,
-            string adminMemberId)
+            UASInviteTransaction uasInviteTransaction)
         {
             Id = Guid.NewGuid();
 
@@ -181,8 +173,6 @@ namespace SIPSorcery.SIP
             RemoteTag = uasInviteTransaction.TransactionFinalResponse.Header.From.FromTag;
             CSeq = uasInviteTransaction.TransactionRequest.Header.CSeq;
             CDRId = uasInviteTransaction.CDR != null ? uasInviteTransaction.CDR.CDRId : Guid.Empty;
-            Owner = owner;
-            AdminMemberId = adminMemberId;
             ContentType = uasInviteTransaction.TransactionFinalResponse.Header.ContentType;
             SDP = uasInviteTransaction.TransactionFinalResponse.Body;
             RemoteSDP = uasInviteTransaction.TransactionRequest.Body ?? uasInviteTransaction.AckRequest.Body;
@@ -212,10 +202,7 @@ namespace SIPSorcery.SIP
         /// acting as a client user agent the local fields are contained in the From header and the remote fields are 
         /// in the To header.
         /// </summary>
-        public SIPDialogue(
-          UACInviteTransaction uacInviteTransaction,
-          string owner,
-          string adminMemberId)
+        public SIPDialogue(UACInviteTransaction uacInviteTransaction)
         {
             Id = Guid.NewGuid();
 
@@ -227,8 +214,6 @@ namespace SIPSorcery.SIP
             RemoteTag = uacInviteTransaction.TransactionFinalResponse.Header.To.ToTag;
             CSeq = uacInviteTransaction.TransactionRequest.Header.CSeq;
             CDRId = (uacInviteTransaction.CDR != null) ? uacInviteTransaction.CDR.CDRId : Guid.Empty;
-            Owner = owner;
-            AdminMemberId = adminMemberId;
             ContentType = uacInviteTransaction.TransactionRequest.Header.ContentType;
             SDP = uacInviteTransaction.TransactionRequest.Body;
             RemoteSDP = uacInviteTransaction.TransactionFinalResponse.Body;
@@ -267,8 +252,6 @@ namespace SIPSorcery.SIP
         /// </summary>
         public SIPDialogue(
           SIPRequest nonInviteRequest,
-          string owner,
-          string adminMemberId,
           string toTag)
         {
             Id = Guid.NewGuid();
@@ -281,8 +264,6 @@ namespace SIPSorcery.SIP
             LocalUserField.Parameters.Set("tag", toTag);
             LocalTag = toTag;
             CSeq = nonInviteRequest.Header.CSeq;
-            Owner = owner;
-            AdminMemberId = adminMemberId;
             Inserted = DateTimeOffset.UtcNow;
             Direction = SIPCallDirection.Out;
 

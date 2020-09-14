@@ -83,7 +83,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="sipRequest">The unmangled SIP request.</param>
         /// <returns>The mangled SIP request</returns>
-        public static void MangleSIPRequest(SIPMonitorServerTypesEnum server, SIPRequest sipRequest, string username, SIPMonitorLogDelegate logDelegate)
+        public static void MangleSIPRequest(SIPRequest sipRequest)
         {
             try
             {
@@ -115,10 +115,7 @@ namespace SIPSorcery.SIP.App
                         sipRequest.Body = mangledSDP;
                         sipRequest.Header.ContentLength = sipRequest.Body.Length;
 
-                        if (logDelegate != null)
-                        {
-                            logDelegate(new SIPMonitorConsoleEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for " + sipRequest.Method.ToString() + " request from " + sipRequest.RemoteSIPEndPoint.ToString() + ", adjusted address " + bottomViaIPAddress + ".", username));
-                        }
+                        logger.LogDebug("SDP mangled for " + sipRequest.Method.ToString() + " request from " + sipRequest.RemoteSIPEndPoint.ToString() + ", adjusted address " + bottomViaIPAddress + ".");
                     }
                 }
             }
@@ -133,7 +130,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="sipResponse">The unmangled SIP response.</param>
         /// <returns>The mangled SIP response</returns>
-        public static void MangleSIPResponse(SIPMonitorServerTypesEnum server, SIPResponse sipResponse, SIPEndPoint remoteEndPoint, string username, SIPMonitorLogDelegate logDelegate)
+        public static void MangleSIPResponse(SIPResponse sipResponse, SIPEndPoint remoteEndPoint)
         {
             try
             {
@@ -163,10 +160,7 @@ namespace SIPSorcery.SIP.App
                         sipResponse.Body = mangledSDP;
                         sipResponse.Header.ContentLength = sipResponse.Body.Length;
 
-                        if (logDelegate != null)
-                        {
-                            logDelegate(new SIPMonitorConsoleEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for " + sipResponse.Status.ToString() + " response from " + sipResponse.RemoteSIPEndPoint.ToString() + ", adjusted address " + remoteEndPoint.Address.ToString() + ".", username));
-                        }
+                        logger.LogDebug("SDP mangled for " + sipResponse.Status.ToString() + " response from " + sipResponse.RemoteSIPEndPoint.ToString() + ", adjusted address " + remoteEndPoint.Address.ToString() + ".");
                     }
                 }
             }

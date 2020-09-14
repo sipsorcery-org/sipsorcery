@@ -35,7 +35,6 @@ namespace SIPSorcery.SIP.App.UnitTests
                 "192.168.11.50",
                 new SIPURI(SIPSchemesEnum.sip, IPAddress.Any, 0),
                 120,
-                null,
                 new[] { "My-Header: value" });
 
             userAgent.Start();
@@ -65,7 +64,6 @@ namespace SIPSorcery.SIP.App.UnitTests
                 "192.168.11.50",
                 new SIPURI(SIPSchemesEnum.sip, IPAddress.Any, 0),
                 120,
-                null,
                 new[] { "My-Header: value" });
             SIPContactHeader testHeader = new SIPContactHeader("Contact Name", new SIPURI("User", "Host", "Param=Value"));
             userAgent.AdjustRegister = register =>
