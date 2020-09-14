@@ -123,7 +123,7 @@ UAC's CSeq it can cause problems. To avoid this issue when generating requests t
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L127">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L125">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue__ctor_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue__ctor" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor">SIPDialogue()</h4>
@@ -135,20 +135,20 @@ UAC's CSeq it can cause problems. To avoid this issue when generating requests t
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_SIPRequest_System_String_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.%23ctor(SIPSorcery.SIP.SIPRequest%2CSystem.String%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_SIPRequest_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.%23ctor(SIPSorcery.SIP.SIPRequest%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L268">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L253">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue__ctor_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_SIPRequest_System_String_System_String_System_String_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.SIPRequest,System.String,System.String,System.String)">SIPDialogue(SIPRequest, String, String, String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_SIPRequest_System_String_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.SIPRequest,System.String)">SIPDialogue(SIPRequest, String)</h4>
   <div class="markdown level1 summary"><p>This constructor is used to create non-INVITE dialogues for example the dialogues used in SIP event interactions
 where the dialogue is created based on a SUBSCRIBE request.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPDialogue(SIPRequest nonInviteRequest, string owner, string adminMemberId, string toTag)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPDialogue(SIPRequest nonInviteRequest, string toTag)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -167,16 +167,6 @@ where the dialogue is created based on a SUBSCRIBE request.</p>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">owner</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">adminMemberId</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
         <td><span class="parametername">toTag</span></td>
         <td></td>
       </tr>
@@ -184,13 +174,13 @@ where the dialogue is created based on a SUBSCRIBE request.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UACInviteTransaction_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.%23ctor(SIPSorcery.SIP.UACInviteTransaction%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UACInviteTransaction_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.%23ctor(SIPSorcery.SIP.UACInviteTransaction)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L215">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L205">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue__ctor_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UACInviteTransaction_System_String_System_String_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UACInviteTransaction,System.String,System.String)">SIPDialogue(UACInviteTransaction, String, String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UACInviteTransaction_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UACInviteTransaction)">SIPDialogue(UACInviteTransaction)</h4>
   <div class="markdown level1 summary"><p>This constructor is used by client user agents or SIP elements acting in a client user agent role. When
 acting as a client user agent the local fields are contained in the From header and the remote fields are
 in the To header.</p>
@@ -198,7 +188,7 @@ in the To header.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPDialogue(UACInviteTransaction uacInviteTransaction, string owner, string adminMemberId)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPDialogue(UACInviteTransaction uacInviteTransaction)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -215,27 +205,17 @@ in the To header.</p>
         <td><span class="parametername">uacInviteTransaction</span></td>
         <td></td>
       </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">owner</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">adminMemberId</span></td>
-        <td></td>
-      </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UASInviteTransaction_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.%23ctor(SIPSorcery.SIP.UASInviteTransaction%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UASInviteTransaction_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.%23ctor(SIPSorcery.SIP.UASInviteTransaction)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L168">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L162">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue__ctor_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UASInviteTransaction_System_String_System_String_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UASInviteTransaction,System.String,System.String)">SIPDialogue(UASInviteTransaction, String, String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UASInviteTransaction_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UASInviteTransaction)">SIPDialogue(UASInviteTransaction)</h4>
   <div class="markdown level1 summary"><p>This constructor is used by server user agents or SIP elements acting in a server user agent role. When
 acting as a server user agent the local fields are contained in the To header and the remote fields are
 in the From header.</p>
@@ -243,7 +223,7 @@ in the From header.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPDialogue(UASInviteTransaction uasInviteTransaction, string owner, string adminMemberId)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPDialogue(UASInviteTransaction uasInviteTransaction)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -260,32 +240,22 @@ in the From header.</p>
         <td><span class="parametername">uasInviteTransaction</span></td>
         <td></td>
       </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">owner</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">adminMemberId</span></td>
-        <td></td>
-      </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_System_Guid_System_String_System_String_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.%23ctor(System.String%2CSIPSorcery.SIP.SIPRouteSet%2CSIPSorcery.SIP.SIPUserField%2CSIPSorcery.SIP.SIPUserField%2CSystem.Int32%2CSIPSorcery.SIP.SIPURI%2CSystem.String%2CSystem.String%2CSystem.Guid%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_System_Guid_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.%23ctor(System.String%2CSIPSorcery.SIP.SIPRouteSet%2CSIPSorcery.SIP.SIPUserField%2CSIPSorcery.SIP.SIPUserField%2CSystem.Int32%2CSIPSorcery.SIP.SIPURI%2CSystem.String%2CSystem.String%2CSystem.Guid%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L129">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L127">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue__ctor_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_System_Guid_System_String_System_String_System_String_System_String_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String,System.String,System.String)">SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String, String, String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_System_Guid_System_String_System_String_" data-uid="SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String)">SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPDialogue(string callId, SIPRouteSet routeSet, SIPUserField localUser, SIPUserField remoteUser, int cseq, SIPURI remoteTarget, string localTag, string remoteTag, Guid cdrId, string owner, string adminMemberId, string sdp, string remoteSDP)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPDialogue(string callId, SIPRouteSet routeSet, SIPUserField localUser, SIPUserField remoteUser, int cseq, SIPURI remoteTarget, string localTag, string remoteTag, Guid cdrId, string sdp, string remoteSDP)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -344,16 +314,6 @@ in the From header.</p>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">owner</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">adminMemberId</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
         <td><span class="parametername">sdp</span></td>
         <td></td>
       </tr>
@@ -371,7 +331,7 @@ in the From header.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_DialogueState.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.DialogueState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L123">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L121">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPDialogue_DialogueState" data-uid="SIPSorcery.SIP.SIPDialogue.DialogueState">DialogueState</h4>
   <div class="markdown level1 summary"></div>
@@ -487,7 +447,7 @@ in the From header.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_ReinviteDelay.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.ReinviteDelay%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L89">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L87">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPDialogue_ReinviteDelay" data-uid="SIPSorcery.SIP.SIPDialogue.ReinviteDelay">ReinviteDelay</h4>
   <div class="markdown level1 summary"><p>Used as a flag to indicate whether to send an immediate or slightly delayed re-INVITE request
@@ -517,40 +477,10 @@ when a call is answered as an attempt to help solve audio issues.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_AdminMemberId.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.AdminMemberId%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L57">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_SIPDialogue_AdminMemberId_" data-uid="SIPSorcery.SIP.SIPDialogue.AdminMemberId*"></a>
-  <h4 id="SIPSorcery_SIP_SIPDialogue_AdminMemberId" data-uid="SIPSorcery.SIP.SIPDialogue.AdminMemberId">AdminMemberId</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string AdminMemberId { get; set; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_BridgeId.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.BridgeId%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L71">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L69">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_BridgeId_" data-uid="SIPSorcery.SIP.SIPDialogue.BridgeId*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_BridgeId" data-uid="SIPSorcery.SIP.SIPDialogue.BridgeId">BridgeId</h4>
@@ -580,7 +510,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_CallDurationLimit.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.CallDurationLimit%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L72">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L70">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_CallDurationLimit_" data-uid="SIPSorcery.SIP.SIPDialogue.CallDurationLimit*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_CallDurationLimit" data-uid="SIPSorcery.SIP.SIPDialogue.CallDurationLimit">CallDurationLimit</h4>
@@ -610,7 +540,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_CallId.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.CallId%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L58">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L56">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_CallId_" data-uid="SIPSorcery.SIP.SIPDialogue.CallId*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_CallId" data-uid="SIPSorcery.SIP.SIPDialogue.CallId">CallId</h4>
@@ -640,7 +570,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_CDRId.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.CDRId%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L67">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L65">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_CDRId_" data-uid="SIPSorcery.SIP.SIPDialogue.CDRId*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_CDRId" data-uid="SIPSorcery.SIP.SIPDialogue.CDRId">CDRId</h4>
@@ -670,7 +600,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_ContentType.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.ContentType%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L68">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L66">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_ContentType_" data-uid="SIPSorcery.SIP.SIPDialogue.ContentType*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_ContentType" data-uid="SIPSorcery.SIP.SIPDialogue.ContentType">ContentType</h4>
@@ -700,7 +630,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_CRMCompanyName.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.CRMCompanyName%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L82">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L80">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_CRMCompanyName_" data-uid="SIPSorcery.SIP.SIPDialogue.CRMCompanyName*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_CRMCompanyName" data-uid="SIPSorcery.SIP.SIPDialogue.CRMCompanyName">CRMCompanyName</h4>
@@ -730,7 +660,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_CRMPersonName.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.CRMPersonName%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L81">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L79">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_CRMPersonName_" data-uid="SIPSorcery.SIP.SIPDialogue.CRMPersonName*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_CRMPersonName" data-uid="SIPSorcery.SIP.SIPDialogue.CRMPersonName">CRMPersonName</h4>
@@ -760,7 +690,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_CRMPictureURL.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.CRMPictureURL%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L83">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L81">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_CRMPictureURL_" data-uid="SIPSorcery.SIP.SIPDialogue.CRMPictureURL*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_CRMPictureURL" data-uid="SIPSorcery.SIP.SIPDialogue.CRMPictureURL">CRMPictureURL</h4>
@@ -790,7 +720,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_CSeq.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.CSeq%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L64">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L62">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_CSeq_" data-uid="SIPSorcery.SIP.SIPDialogue.CSeq*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_CSeq" data-uid="SIPSorcery.SIP.SIPDialogue.CSeq">CSeq</h4>
@@ -820,7 +750,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_DialogueName.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.DialogueName%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L91">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L89">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_DialogueName_" data-uid="SIPSorcery.SIP.SIPDialogue.DialogueName*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_DialogueName" data-uid="SIPSorcery.SIP.SIPDialogue.DialogueName">DialogueName</h4>
@@ -850,7 +780,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_Direction.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.Direction%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L79">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L77">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_Direction_" data-uid="SIPSorcery.SIP.SIPDialogue.Direction*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_Direction" data-uid="SIPSorcery.SIP.SIPDialogue.Direction">Direction</h4>
@@ -911,7 +841,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_Inserted.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.Inserted%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L117">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L115">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_Inserted_" data-uid="SIPSorcery.SIP.SIPDialogue.Inserted*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_Inserted" data-uid="SIPSorcery.SIP.SIPDialogue.Inserted">Inserted</h4>
@@ -941,7 +871,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_LocalTag.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.LocalTag%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L61">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L59">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_LocalTag_" data-uid="SIPSorcery.SIP.SIPDialogue.LocalTag*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_LocalTag" data-uid="SIPSorcery.SIP.SIPDialogue.LocalTag">LocalTag</h4>
@@ -971,7 +901,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_LocalUserField.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.LocalUserField%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L60">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L58">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_LocalUserField_" data-uid="SIPSorcery.SIP.SIPDialogue.LocalUserField*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_LocalUserField" data-uid="SIPSorcery.SIP.SIPDialogue.LocalUserField">LocalUserField</h4>
@@ -998,40 +928,10 @@ when a call is answered as an attempt to help solve audio issues.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_Owner.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.Owner%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L56">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_SIPDialogue_Owner_" data-uid="SIPSorcery.SIP.SIPDialogue.Owner*"></a>
-  <h4 id="SIPSorcery_SIP_SIPDialogue_Owner" data-uid="SIPSorcery.SIP.SIPDialogue.Owner">Owner</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string Owner { get; set; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_ProxySendFrom.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.ProxySendFrom%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L73">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L71">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_ProxySendFrom_" data-uid="SIPSorcery.SIP.SIPDialogue.ProxySendFrom*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_ProxySendFrom" data-uid="SIPSorcery.SIP.SIPDialogue.ProxySendFrom">ProxySendFrom</h4>
@@ -1061,7 +961,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_RemoteCSeq.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.RemoteCSeq%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L65">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L63">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_RemoteCSeq_" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteCSeq*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_RemoteCSeq" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteCSeq">RemoteCSeq</h4>
@@ -1091,7 +991,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_RemoteSDP.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.RemoteSDP%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L70">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L68">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_RemoteSDP_" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteSDP*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_RemoteSDP" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteSDP">RemoteSDP</h4>
@@ -1121,7 +1021,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_RemoteTag.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.RemoteTag%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L63">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L61">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_RemoteTag_" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteTag*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_RemoteTag" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteTag">RemoteTag</h4>
@@ -1151,7 +1051,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_RemoteTarget.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.RemoteTarget%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L66">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L64">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_RemoteTarget_" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteTarget*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_RemoteTarget" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteTarget">RemoteTarget</h4>
@@ -1181,7 +1081,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_RemoteUserField.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.RemoteUserField%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L62">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L60">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_RemoteUserField_" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteUserField*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_RemoteUserField" data-uid="SIPSorcery.SIP.SIPDialogue.RemoteUserField">RemoteUserField</h4>
@@ -1211,7 +1111,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_RouteSet.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.RouteSet%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L59">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L57">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_RouteSet_" data-uid="SIPSorcery.SIP.SIPDialogue.RouteSet*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_RouteSet" data-uid="SIPSorcery.SIP.SIPDialogue.RouteSet">RouteSet</h4>
@@ -1241,7 +1141,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_SDP.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.SDP%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L69">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L67">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_SDP_" data-uid="SIPSorcery.SIP.SIPDialogue.SDP*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_SDP" data-uid="SIPSorcery.SIP.SIPDialogue.SDP">SDP</h4>
@@ -1271,7 +1171,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_TransferMode.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.TransferMode%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L74">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L72">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_TransferMode_" data-uid="SIPSorcery.SIP.SIPDialogue.TransferMode*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_TransferMode" data-uid="SIPSorcery.SIP.SIPDialogue.TransferMode">TransferMode</h4>
@@ -1303,7 +1203,7 @@ when a call is answered as an attempt to help solve audio issues.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_GetInDialogRequest_SIPSorcery_SIP_SIPMethodsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L348">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L329">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_GetInDialogRequest_" data-uid="SIPSorcery.SIP.SIPDialogue.GetInDialogRequest*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_GetInDialogRequest_SIPSorcery_SIP_SIPMethodsEnum_" data-uid="SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum)">GetInDialogRequest(SIPMethodsEnum)</h4>
@@ -1355,7 +1255,7 @@ This is safe to do even if the request does not end up being sent.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_Hangup_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport%2CSIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L311">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L292">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_Hangup_" data-uid="SIPSorcery.SIP.SIPDialogue.Hangup*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_Hangup_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint)">Hangup(SIPTransport, SIPEndPoint)</h4>

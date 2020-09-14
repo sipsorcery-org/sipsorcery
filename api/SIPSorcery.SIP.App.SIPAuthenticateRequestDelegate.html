@@ -79,7 +79,7 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_App_SIPAuthenticateRequestDelegate_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public delegate SIPRequestAuthenticationResult SIPAuthenticateRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPAccount sipAccount, SIPMonitorLogDelegate log);</code></pre>
+    <pre><code class="lang-csharp hljs">public delegate SIPRequestAuthenticationResult SIPAuthenticateRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPAccount sipAccount);</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -109,11 +109,6 @@
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.App.SIPAccount.html">SIPAccount</a></td>
         <td><span class="parametername">sipAccount</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.App.SIPMonitorLogDelegate.html">SIPMonitorLogDelegate</a></td>
-        <td><span class="parametername">log</span></td>
         <td></td>
       </tr>
     </tbody>

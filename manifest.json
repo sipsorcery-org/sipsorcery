@@ -3057,7 +3057,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.ISIPClientUserAgent.html",
-          "hash": "zfvBKefahU1KBVT1X+NPEA=="
+          "hash": "TP8cU/84eZWYAwzdvG+n5A=="
         }
       },
       "is_incremental": false,
@@ -3069,7 +3069,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.ISIPServerUserAgent.html",
-          "hash": "m+bqwVuE7NlQSNGL5/0/PQ=="
+          "hash": "YAs4QG+1BxjmELfv0hc5Ig=="
         }
       },
       "is_incremental": false,
@@ -3201,7 +3201,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate.html",
-          "hash": "VZ7tnsPt0t1KyiQabNXoeQ=="
+          "hash": "V4Gq97G5fZBANENtGRYVLw=="
         }
       },
       "is_incremental": false,
@@ -3261,7 +3261,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPClientUserAgent.html",
-          "hash": "hg9I1vdggx3ewE+yAHqW7w=="
+          "hash": "EojKrAWYsKe4JDgKoRHcUw=="
         }
       },
       "is_incremental": false,
@@ -3281,167 +3281,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorClientTypes.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorClientTypes.html",
-          "hash": "JlZtybIsI3ZkbAlsPlgw3A=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.html",
-          "hash": "RO6p6IxqXhqgq9cmdmYITA=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html",
-          "hash": "4vLkk5Rd13RioJQhw87OgQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEvent.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEvent.html",
-          "hash": "Ba6rQhD5Mk32TEUsPbaoGw=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEventTypes.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEventTypes.html",
-          "hash": "RsF/lAtGHr7M5PkC5Je7Ng=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html",
-          "hash": "5fOnPClY/fpTiVwirnJK7A=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorLogDelegate.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorLogDelegate.html",
-          "hash": "11jDV9uYhupYGJY2HbNmcw=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html",
-          "hash": "fVTjHj6xIHi2JBIxbG5fgA=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.html",
-          "hash": "0bL1rGBYM6ByYA0ugf5h9w=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html",
-          "hash": "giQit5bUufNOZqQczSYwiQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineLogDelegate.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineLogDelegate.html",
-          "hash": "rUXF6HasEW2NqHTWSw2ptg=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorServerTypes.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorServerTypes.html",
-          "hash": "uULmO3xfyhMS/7vmDrT1ZQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html",
-          "hash": "a9f3PmTZn9kGTN6Fm2TY6g=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.SIP.App.SIPNotifierClient-1.yml",
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPNotifierClient-1.html",
-          "hash": "zgxiLYfsIyQQ95WS5OMdew=="
+          "hash": "Sq2HHTqWm3rQ1W/X/9CwRw=="
         }
       },
       "is_incremental": false,
@@ -3453,7 +3297,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPPacketMangler.html",
-          "hash": "fDPQisIr6rvldzvun1zdQA=="
+          "hash": "eMnU/w31X+/l27LExYhSQw=="
         }
       },
       "is_incremental": false,
@@ -3477,7 +3321,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html",
-          "hash": "KmMGH2gwKWVA2LWPGNN4hA=="
+          "hash": "0tm33jTMV9Y3u/nalxjfiw=="
         }
       },
       "is_incremental": false,
@@ -3489,7 +3333,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPRequestAuthenticator.html",
-          "hash": "RM7ku3n5u/oUp6msLh0Wtg=="
+          "hash": "E18vWDGD4C0Qg8VejNcNZg=="
         }
       },
       "is_incremental": false,
@@ -3501,7 +3345,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPServerUserAgent.html",
-          "hash": "lnBxc56UOtp3gcdRp0Cbhg=="
+          "hash": "pJAtTET7B5YgduMbDTgVPA=="
         }
       },
       "is_incremental": false,
@@ -3561,7 +3405,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.html",
-          "hash": "qX1hWwTxY6CDPDXOE82BTA=="
+          "hash": "cyGCK+3T14ovtEs87mORHQ=="
         }
       },
       "is_incremental": false,
@@ -3765,7 +3609,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPDialogue.html",
-          "hash": "LR4u2LLCCdhYKmUXpmdsCw=="
+          "hash": "WPSIxcyNacfYtgVFJQMl1Q=="
         }
       },
       "is_incremental": false,
@@ -5097,7 +4941,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "IflJ2SzvyV59xqPiwtAdGQ=="
+          "hash": "WzuoA/iUbN453xqAYBYx4A=="
         }
       },
       "is_incremental": false,
@@ -5350,7 +5194,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 423,
+          "total_file_count": 410,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {

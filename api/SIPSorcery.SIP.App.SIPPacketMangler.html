@@ -117,7 +117,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPPacketMangler_GetRequestIPAddress_SIPSorcery_SIP_SIPRequest_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPPacketMangler.GetRequestIPAddress(SIPSorcery.SIP.SIPRequest)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPPacketMangler.cs/#L179">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPPacketMangler.cs/#L173">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPPacketMangler_GetRequestIPAddress_" data-uid="SIPSorcery.SIP.App.SIPPacketMangler.GetRequestIPAddress*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPPacketMangler_GetRequestIPAddress_SIPSorcery_SIP_SIPRequest_" data-uid="SIPSorcery.SIP.App.SIPPacketMangler.GetRequestIPAddress(SIPSorcery.SIP.SIPRequest)">GetRequestIPAddress(SIPRequest)</h4>
@@ -218,19 +218,19 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPRequest_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_SIPRequest_System_String_SIPSorcery_SIP_App_SIPMonitorLogDelegate_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum%2CSIPSorcery.SIP.SIPRequest%2CSystem.String%2CSIPSorcery.SIP.App.SIPMonitorLogDelegate)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPRequest_SIPSorcery_SIP_SIPRequest_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.SIPRequest)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPPacketMangler.cs/#L86">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPRequest_" data-uid="SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest*"></a>
-  <h4 id="SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPRequest_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_SIPRequest_System_String_SIPSorcery_SIP_App_SIPMonitorLogDelegate_" data-uid="SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.SIPRequest,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)">MangleSIPRequest(SIPMonitorServerTypesEnum, SIPRequest, String, SIPMonitorLogDelegate)</h4>
+  <h4 id="SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPRequest_SIPSorcery_SIP_SIPRequest_" data-uid="SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.SIPRequest)">MangleSIPRequest(SIPRequest)</h4>
   <div class="markdown level1 summary"><p>Mangles private IP addresses in a SIP request replacing them with the IP address the packet was received on.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static void MangleSIPRequest(SIPMonitorServerTypesEnum server, SIPRequest sipRequest, string username, SIPMonitorLogDelegate logDelegate)</code></pre>
+    <pre><code class="lang-csharp hljs">public static void MangleSIPRequest(SIPRequest sipRequest)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -242,44 +242,29 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html">SIPMonitorServerTypesEnum</a></td>
-        <td><span class="parametername">server</span></td>
-        <td></td>
-      </tr>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a></td>
         <td><span class="parametername">sipRequest</span></td>
         <td><p>The unmangled SIP request.</p>
 </td>
       </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">username</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.App.SIPMonitorLogDelegate.html">SIPMonitorLogDelegate</a></td>
-        <td><span class="parametername">logDelegate</span></td>
-        <td></td>
-      </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPResponse_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_SIPResponse_SIPSorcery_SIP_SIPEndPoint_System_String_SIPSorcery_SIP_App_SIPMonitorLogDelegate_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum%2CSIPSorcery.SIP.SIPResponse%2CSIPSorcery.SIP.SIPEndPoint%2CSystem.String%2CSIPSorcery.SIP.App.SIPMonitorLogDelegate)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPResponse_SIPSorcery_SIP_SIPResponse_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.SIPResponse%2CSIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPPacketMangler.cs/#L136">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPPacketMangler.cs/#L133">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPResponse_" data-uid="SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse*"></a>
-  <h4 id="SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPResponse_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_SIPResponse_SIPSorcery_SIP_SIPEndPoint_System_String_SIPSorcery_SIP_App_SIPMonitorLogDelegate_" data-uid="SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.SIPResponse,SIPSorcery.SIP.SIPEndPoint,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)">MangleSIPResponse(SIPMonitorServerTypesEnum, SIPResponse, SIPEndPoint, String, SIPMonitorLogDelegate)</h4>
+  <h4 id="SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPResponse_SIPSorcery_SIP_SIPResponse_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.SIPResponse,SIPSorcery.SIP.SIPEndPoint)">MangleSIPResponse(SIPResponse, SIPEndPoint)</h4>
   <div class="markdown level1 summary"><p>Mangles private IP addresses in a SIP response replacing them with the IP address the packet was received on.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static void MangleSIPResponse(SIPMonitorServerTypesEnum server, SIPResponse sipResponse, SIPEndPoint remoteEndPoint, string username, SIPMonitorLogDelegate logDelegate)</code></pre>
+    <pre><code class="lang-csharp hljs">public static void MangleSIPResponse(SIPResponse sipResponse, SIPEndPoint remoteEndPoint)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -291,11 +276,6 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html">SIPMonitorServerTypesEnum</a></td>
-        <td><span class="parametername">server</span></td>
-        <td></td>
-      </tr>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></td>
         <td><span class="parametername">sipResponse</span></td>
@@ -305,16 +285,6 @@
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
         <td><span class="parametername">remoteEndPoint</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">username</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.App.SIPMonitorLogDelegate.html">SIPMonitorLogDelegate</a></td>
-        <td><span class="parametername">logDelegate</span></td>
         <td></td>
       </tr>
     </tbody>

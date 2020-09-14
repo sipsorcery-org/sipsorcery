@@ -24069,19 +24069,6 @@ references:
   commentId: T:SIPSorcery.SIP.App.ISIPClientUserAgent
   fullName: SIPSorcery.SIP.App.ISIPClientUserAgent
   nameWithType: ISIPClientUserAgent
-- uid: SIPSorcery.SIP.App.ISIPClientUserAgent.AdminMemberId
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_AdminMemberId
-  commentId: P:SIPSorcery.SIP.App.ISIPClientUserAgent.AdminMemberId
-  fullName: SIPSorcery.SIP.App.ISIPClientUserAgent.AdminMemberId
-  nameWithType: ISIPClientUserAgent.AdminMemberId
-- uid: SIPSorcery.SIP.App.ISIPClientUserAgent.AdminMemberId*
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_AdminMemberId_
-  commentId: Overload:SIPSorcery.SIP.App.ISIPClientUserAgent.AdminMemberId
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.ISIPClientUserAgent.AdminMemberId
-  nameWithType: ISIPClientUserAgent.AdminMemberId
 - uid: SIPSorcery.SIP.App.ISIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
   name: Call(SIPCallDescriptor)
   href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_
@@ -24164,19 +24151,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.ISIPClientUserAgent.IsUACAnswered
   nameWithType: ISIPClientUserAgent.IsUACAnswered
-- uid: SIPSorcery.SIP.App.ISIPClientUserAgent.Owner
-  name: Owner
-  href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_Owner
-  commentId: P:SIPSorcery.SIP.App.ISIPClientUserAgent.Owner
-  fullName: SIPSorcery.SIP.App.ISIPClientUserAgent.Owner
-  nameWithType: ISIPClientUserAgent.Owner
-- uid: SIPSorcery.SIP.App.ISIPClientUserAgent.Owner*
-  name: Owner
-  href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_Owner_
-  commentId: Overload:SIPSorcery.SIP.App.ISIPClientUserAgent.Owner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.ISIPClientUserAgent.Owner
-  nameWithType: ISIPClientUserAgent.Owner
 - uid: SIPSorcery.SIP.App.ISIPClientUserAgent.ServerTransaction
   name: ServerTransaction
   href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_ServerTransaction
@@ -24430,19 +24404,6 @@ references:
   commentId: E:SIPSorcery.SIP.App.ISIPServerUserAgent.NoRingTimeout
   fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.NoRingTimeout
   nameWithType: ISIPServerUserAgent.NoRingTimeout
-- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Owner
-  name: Owner
-  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Owner
-  commentId: P:SIPSorcery.SIP.App.ISIPServerUserAgent.Owner
-  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Owner
-  nameWithType: ISIPServerUserAgent.Owner
-- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Owner*
-  name: Owner
-  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Owner_
-  commentId: Overload:SIPSorcery.SIP.App.ISIPServerUserAgent.Owner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Owner
-  nameWithType: ISIPServerUserAgent.Owner
 - uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
   name: Progress(SIPResponseStatusCodesEnum, String, String[], String, String)
   href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Progress_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_
@@ -24529,19 +24490,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.SetOwner
   nameWithType: ISIPServerUserAgent.SetOwner
-- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  name: SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_SetTraceDelegate_SIPSorcery_SIP_SIPTransactionTraceMessageDelegate_
-  commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  nameWithType: ISIPServerUserAgent.SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.SetTraceDelegate*
-  name: SetTraceDelegate
-  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_SetTraceDelegate_
-  commentId: Overload:SIPSorcery.SIP.App.ISIPServerUserAgent.SetTraceDelegate
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.SetTraceDelegate
-  nameWithType: ISIPServerUserAgent.SetTraceDelegate
 - uid: SIPSorcery.SIP.App.ISIPServerUserAgent.SIPAccount
   name: SIPAccount
   href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_SIPAccount
@@ -25474,12 +25422,12 @@ references:
   commentId: M:SIPSorcery.SIP.App.SIPClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport)
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SIPClientUserAgent(SIPSorcery.SIP.SIPTransport)
   nameWithType: SIPClientUserAgent.SIPClientUserAgent(SIPTransport)
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  name: SIPClientUserAgent(SIPTransport, SIPEndPoint, String, String, SIPMonitorLogDelegate)
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_App_SIPMonitorLogDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SIPClientUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, System.String, System.String, SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  nameWithType: SIPClientUserAgent.SIPClientUserAgent(SIPTransport, SIPEndPoint, String, String, SIPMonitorLogDelegate)
+- uid: SIPSorcery.SIP.App.SIPClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint)
+  name: SIPClientUserAgent(SIPTransport, SIPEndPoint)
+  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.App.SIPClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SIPClientUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPClientUserAgent.SIPClientUserAgent(SIPTransport, SIPEndPoint)
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.#ctor*
   name: SIPClientUserAgent
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent__ctor_
@@ -25493,19 +25441,6 @@ references:
   commentId: F:SIPSorcery.SIP.App.SIPClientUserAgent.AdjustInvite
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.AdjustInvite
   nameWithType: SIPClientUserAgent.AdjustInvite
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.AdminMemberId
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AdminMemberId
-  commentId: P:SIPSorcery.SIP.App.SIPClientUserAgent.AdminMemberId
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.AdminMemberId
-  nameWithType: SIPClientUserAgent.AdminMemberId
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.AdminMemberId*
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AdminMemberId_
-  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.AdminMemberId
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.AdminMemberId
-  nameWithType: SIPClientUserAgent.AdminMemberId
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
   name: Call(SIPCallDescriptor)
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_
@@ -25614,19 +25549,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.IsUACAnswered
   nameWithType: SIPClientUserAgent.IsUACAnswered
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.Owner
-  name: Owner
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_Owner
-  commentId: P:SIPSorcery.SIP.App.SIPClientUserAgent.Owner
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.Owner
-  nameWithType: SIPClientUserAgent.Owner
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.Owner*
-  name: Owner
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_Owner_
-  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.Owner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.Owner
-  nameWithType: SIPClientUserAgent.Owner
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.PrackSupported
   name: PrackSupported
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_PrackSupported
@@ -25698,961 +25620,6 @@ references:
   commentId: T:SIPSorcery.SIP.App.SIPMonitorAuthenticationDelegate
   fullName: SIPSorcery.SIP.App.SIPMonitorAuthenticationDelegate
   nameWithType: SIPMonitorAuthenticationDelegate
-- uid: SIPSorcery.SIP.App.SIPMonitorClientTypes
-  name: SIPMonitorClientTypes
-  href: api/SIPSorcery.SIP.App.SIPMonitorClientTypes.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorClientTypes
-  fullName: SIPSorcery.SIP.App.SIPMonitorClientTypes
-  nameWithType: SIPMonitorClientTypes
-- uid: SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientType(System.String)
-  name: GetSIPMonitorClientType(String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorClientTypes.html#SIPSorcery_SIP_App_SIPMonitorClientTypes_GetSIPMonitorClientType_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientType(System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientType(System.String)
-  nameWithType: SIPMonitorClientTypes.GetSIPMonitorClientType(String)
-- uid: SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientType*
-  name: GetSIPMonitorClientType
-  href: api/SIPSorcery.SIP.App.SIPMonitorClientTypes.html#SIPSorcery_SIP_App_SIPMonitorClientTypes_GetSIPMonitorClientType_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientType
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientType
-  nameWithType: SIPMonitorClientTypes.GetSIPMonitorClientType
-- uid: SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientTypeForId(System.Int32)
-  name: GetSIPMonitorClientTypeForId(Int32)
-  href: api/SIPSorcery.SIP.App.SIPMonitorClientTypes.html#SIPSorcery_SIP_App_SIPMonitorClientTypes_GetSIPMonitorClientTypeForId_System_Int32_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientTypeForId(System.Int32)
-  fullName: SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientTypeForId(System.Int32)
-  nameWithType: SIPMonitorClientTypes.GetSIPMonitorClientTypeForId(Int32)
-- uid: SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientTypeForId*
-  name: GetSIPMonitorClientTypeForId
-  href: api/SIPSorcery.SIP.App.SIPMonitorClientTypes.html#SIPSorcery_SIP_App_SIPMonitorClientTypes_GetSIPMonitorClientTypeForId_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientTypeForId
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorClientTypes.GetSIPMonitorClientTypeForId
-  nameWithType: SIPMonitorClientTypes.GetSIPMonitorClientTypeForId
-- uid: SIPSorcery.SIP.App.SIPMonitorClientTypesEnum
-  name: SIPMonitorClientTypesEnum
-  href: api/SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorClientTypesEnum
-  fullName: SIPSorcery.SIP.App.SIPMonitorClientTypesEnum
-  nameWithType: SIPMonitorClientTypesEnum
-- uid: SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.Console
-  name: Console
-  href: api/SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorClientTypesEnum_Console
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.Console
-  fullName: SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.Console
-  nameWithType: SIPMonitorClientTypesEnum.Console
-- uid: SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.Machine
-  name: Machine
-  href: api/SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorClientTypesEnum_Machine
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.Machine
-  fullName: SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.Machine
-  nameWithType: SIPMonitorClientTypesEnum.Machine
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent
-  name: SIPMonitorConsoleEvent
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorConsoleEvent
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent
-  nameWithType: SIPMonitorConsoleEvent
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.App.SIPMonitorEventTypesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  name: SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum, SIPMonitorEventTypesEnum, String, SIPEndPoint, SIPEndPoint, SIPEndPoint)
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent__ctor_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.App.SIPMonitorEventTypesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.SIPMonitorConsoleEvent(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum, SIPSorcery.SIP.App.SIPMonitorEventTypesEnum, System.String, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPMonitorConsoleEvent.SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum, SIPMonitorEventTypesEnum, String, SIPEndPoint, SIPEndPoint, SIPEndPoint)
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.App.SIPMonitorEventTypesEnum,System.String,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponse,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPCallDirection)
-  name: SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum, SIPMonitorEventTypesEnum, String, SIPRequest, SIPResponse, SIPEndPoint, SIPEndPoint, SIPCallDirection)
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent__ctor_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_System_String_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponse_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPCallDirection_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.App.SIPMonitorEventTypesEnum,System.String,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponse,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPCallDirection)
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.SIPMonitorConsoleEvent(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum, SIPSorcery.SIP.App.SIPMonitorEventTypesEnum, System.String, SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPResponse, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPCallDirection)
-  nameWithType: SIPMonitorConsoleEvent.SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum, SIPMonitorEventTypesEnum, String, SIPRequest, SIPResponse, SIPEndPoint, SIPEndPoint, SIPCallDirection)
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.App.SIPMonitorEventTypesEnum,System.String,System.String)
-  name: SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum, SIPMonitorEventTypesEnum, String, String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent__ctor_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.App.SIPMonitorEventTypesEnum,System.String,System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.SIPMonitorConsoleEvent(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum, SIPSorcery.SIP.App.SIPMonitorEventTypesEnum, System.String, System.String)
-  nameWithType: SIPMonitorConsoleEvent.SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum, SIPMonitorEventTypesEnum, String, String)
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.App.SIPMonitorEventTypesEnum,System.String,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  name: SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum, SIPMonitorEventTypesEnum, String, String, SIPEndPoint, SIPEndPoint)
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent__ctor_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_System_String_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.App.SIPMonitorEventTypesEnum,System.String,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.SIPMonitorConsoleEvent(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum, SIPSorcery.SIP.App.SIPMonitorEventTypesEnum, System.String, System.String, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPMonitorConsoleEvent.SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum, SIPMonitorEventTypesEnum, String, String, SIPEndPoint, SIPEndPoint)
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor*
-  name: SIPMonitorConsoleEvent
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent__ctor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.SIPMonitorConsoleEvent
-  nameWithType: SIPMonitorConsoleEvent.SIPMonitorConsoleEvent
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.DestinationEndPoint
-  name: DestinationEndPoint
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_DestinationEndPoint
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.DestinationEndPoint
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.DestinationEndPoint
-  nameWithType: SIPMonitorConsoleEvent.DestinationEndPoint
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.EventType
-  name: EventType
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_EventType
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.EventType
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.EventType
-  nameWithType: SIPMonitorConsoleEvent.EventType
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ParseClientControlEventCSV(System.String)
-  name: ParseClientControlEventCSV(String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_ParseClientControlEventCSV_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ParseClientControlEventCSV(System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ParseClientControlEventCSV(System.String)
-  nameWithType: SIPMonitorConsoleEvent.ParseClientControlEventCSV(String)
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ParseClientControlEventCSV*
-  name: ParseClientControlEventCSV
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_ParseClientControlEventCSV_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ParseClientControlEventCSV
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ParseClientControlEventCSV
-  nameWithType: SIPMonitorConsoleEvent.ParseClientControlEventCSV
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.SERIALISATION_PREFIX
-  name: SERIALISATION_PREFIX
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_SERIALISATION_PREFIX
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.SERIALISATION_PREFIX
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.SERIALISATION_PREFIX
-  nameWithType: SIPMonitorConsoleEvent.SERIALISATION_PREFIX
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ServerEndPoint
-  name: ServerEndPoint
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_ServerEndPoint
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ServerEndPoint
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ServerEndPoint
-  nameWithType: SIPMonitorConsoleEvent.ServerEndPoint
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ServerType
-  name: ServerType
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_ServerType
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ServerType
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ServerType
-  nameWithType: SIPMonitorConsoleEvent.ServerType
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToConsoleString(System.String)
-  name: ToConsoleString(String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_ToConsoleString_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToConsoleString(System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToConsoleString(System.String)
-  nameWithType: SIPMonitorConsoleEvent.ToConsoleString(String)
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToConsoleString*
-  name: ToConsoleString
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_ToConsoleString_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToConsoleString
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToConsoleString
-  nameWithType: SIPMonitorConsoleEvent.ToConsoleString
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToCSV
-  name: ToCSV()
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_ToCSV
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToCSV
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToCSV()
-  nameWithType: SIPMonitorConsoleEvent.ToCSV()
-- uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToCSV*
-  name: ToCSV
-  href: api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html#SIPSorcery_SIP_App_SIPMonitorConsoleEvent_ToCSV_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToCSV
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorConsoleEvent.ToCSV
-  nameWithType: SIPMonitorConsoleEvent.ToCSV
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent
-  name: SIPMonitorEvent
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorEvent
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent
-  nameWithType: SIPMonitorEvent
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.#ctor
-  name: SIPMonitorEvent()
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent__ctor
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorEvent.#ctor
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.SIPMonitorEvent()
-  nameWithType: SIPMonitorEvent.SIPMonitorEvent()
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.#ctor*
-  name: SIPMonitorEvent
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent__ctor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorEvent.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.SIPMonitorEvent
-  nameWithType: SIPMonitorEvent.SIPMonitorEvent
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.ClientType
-  name: ClientType
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_ClientType
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.ClientType
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.ClientType
-  nameWithType: SIPMonitorEvent.ClientType
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.Created
-  name: Created
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_Created
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.Created
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.Created
-  nameWithType: SIPMonitorEvent.Created
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.END_MESSAGE_DELIMITER
-  name: END_MESSAGE_DELIMITER
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_END_MESSAGE_DELIMITER
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.END_MESSAGE_DELIMITER
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.END_MESSAGE_DELIMITER
-  nameWithType: SIPMonitorEvent.END_MESSAGE_DELIMITER
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.logger
-  name: logger
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_logger
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.logger
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.logger
-  nameWithType: SIPMonitorEvent.logger
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.m_serialisationPrefix
-  name: m_serialisationPrefix
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_m_serialisationPrefix
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.m_serialisationPrefix
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.m_serialisationPrefix
-  nameWithType: SIPMonitorEvent.m_serialisationPrefix
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.Message
-  name: Message
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_Message
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.Message
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.Message
-  nameWithType: SIPMonitorEvent.Message
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.MonitorServerID
-  name: MonitorServerID
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_MonitorServerID
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.MonitorServerID
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.MonitorServerID
-  nameWithType: SIPMonitorEvent.MonitorServerID
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.ParseEventCSV(System.String)
-  name: ParseEventCSV(String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_ParseEventCSV_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorEvent.ParseEventCSV(System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.ParseEventCSV(System.String)
-  nameWithType: SIPMonitorEvent.ParseEventCSV(String)
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.ParseEventCSV*
-  name: ParseEventCSV
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_ParseEventCSV_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorEvent.ParseEventCSV
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.ParseEventCSV
-  nameWithType: SIPMonitorEvent.ParseEventCSV
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.ProcessID
-  name: ProcessID
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_ProcessID
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.ProcessID
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.ProcessID
-  nameWithType: SIPMonitorEvent.ProcessID
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.RemoteEndPoint
-  name: RemoteEndPoint
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_RemoteEndPoint
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.RemoteEndPoint
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.RemoteEndPoint
-  nameWithType: SIPMonitorEvent.RemoteEndPoint
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.SERIALISATION_DATETIME_FORMAT
-  name: SERIALISATION_DATETIME_FORMAT
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_SERIALISATION_DATETIME_FORMAT
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.SERIALISATION_DATETIME_FORMAT
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.SERIALISATION_DATETIME_FORMAT
-  nameWithType: SIPMonitorEvent.SERIALISATION_DATETIME_FORMAT
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.SessionID
-  name: SessionID
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_SessionID
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.SessionID
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.SessionID
-  nameWithType: SIPMonitorEvent.SessionID
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.ToCSV
-  name: ToCSV()
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_ToCSV
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorEvent.ToCSV
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.ToCSV()
-  nameWithType: SIPMonitorEvent.ToCSV()
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.ToCSV*
-  name: ToCSV
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_ToCSV_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorEvent.ToCSV
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.ToCSV
-  nameWithType: SIPMonitorEvent.ToCSV
-- uid: SIPSorcery.SIP.App.SIPMonitorEvent.Username
-  name: Username
-  href: api/SIPSorcery.SIP.App.SIPMonitorEvent.html#SIPSorcery_SIP_App_SIPMonitorEvent_Username
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEvent.Username
-  fullName: SIPSorcery.SIP.App.SIPMonitorEvent.Username
-  nameWithType: SIPMonitorEvent.Username
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypes
-  name: SIPMonitorEventTypes
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypes.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorEventTypes
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypes
-  nameWithType: SIPMonitorEventTypes
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventType(System.String)
-  name: GetProxyEventType(String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypes.html#SIPSorcery_SIP_App_SIPMonitorEventTypes_GetProxyEventType_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventType(System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventType(System.String)
-  nameWithType: SIPMonitorEventTypes.GetProxyEventType(String)
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventType*
-  name: GetProxyEventType
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypes.html#SIPSorcery_SIP_App_SIPMonitorEventTypes_GetProxyEventType_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventType
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventType
-  nameWithType: SIPMonitorEventTypes.GetProxyEventType
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventTypeForId(System.Int32)
-  name: GetProxyEventTypeForId(Int32)
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypes.html#SIPSorcery_SIP_App_SIPMonitorEventTypes_GetProxyEventTypeForId_System_Int32_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventTypeForId(System.Int32)
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventTypeForId(System.Int32)
-  nameWithType: SIPMonitorEventTypes.GetProxyEventTypeForId(Int32)
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventTypeForId*
-  name: GetProxyEventTypeForId
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypes.html#SIPSorcery_SIP_App_SIPMonitorEventTypes_GetProxyEventTypeForId_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventTypeForId
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypes.GetProxyEventTypeForId
-  nameWithType: SIPMonitorEventTypes.GetProxyEventTypeForId
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum
-  name: SIPMonitorEventTypesEnum
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum
-  nameWithType: SIPMonitorEventTypesEnum
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BadSIPMessage
-  name: BadSIPMessage
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_BadSIPMessage
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BadSIPMessage
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BadSIPMessage
-  nameWithType: SIPMonitorEventTypesEnum.BadSIPMessage
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingExpired
-  name: BindingExpired
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_BindingExpired
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingExpired
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingExpired
-  nameWithType: SIPMonitorEventTypesEnum.BindingExpired
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingFailed
-  name: BindingFailed
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_BindingFailed
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingFailed
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingFailed
-  nameWithType: SIPMonitorEventTypesEnum.BindingFailed
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingInProgress
-  name: BindingInProgress
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_BindingInProgress
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingInProgress
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingInProgress
-  nameWithType: SIPMonitorEventTypesEnum.BindingInProgress
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingRemoval
-  name: BindingRemoval
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_BindingRemoval
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingRemoval
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.BindingRemoval
-  nameWithType: SIPMonitorEventTypesEnum.BindingRemoval
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.CallDispatcher
-  name: CallDispatcher
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_CallDispatcher
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.CallDispatcher
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.CallDispatcher
-  nameWithType: SIPMonitorEventTypesEnum.CallDispatcher
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRefresh
-  name: ContactRefresh
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_ContactRefresh
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRefresh
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRefresh
-  nameWithType: SIPMonitorEventTypesEnum.ContactRefresh
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRegistered
-  name: ContactRegistered
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_ContactRegistered
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRegistered
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRegistered
-  nameWithType: SIPMonitorEventTypesEnum.ContactRegistered
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRegisterFailed
-  name: ContactRegisterFailed
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_ContactRegisterFailed
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRegisterFailed
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRegisterFailed
-  nameWithType: SIPMonitorEventTypesEnum.ContactRegisterFailed
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRegisterInProgress
-  name: ContactRegisterInProgress
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_ContactRegisterInProgress
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRegisterInProgress
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRegisterInProgress
-  nameWithType: SIPMonitorEventTypesEnum.ContactRegisterInProgress
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRemoval
-  name: ContactRemoval
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_ContactRemoval
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRemoval
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ContactRemoval
-  nameWithType: SIPMonitorEventTypesEnum.ContactRemoval
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.DialPlan
-  name: DialPlan
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_DialPlan
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.DialPlan
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.DialPlan
-  nameWithType: SIPMonitorEventTypesEnum.DialPlan
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.DNS
-  name: DNS
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_DNS
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.DNS
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.DNS
-  nameWithType: SIPMonitorEventTypesEnum.DNS
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Error
-  name: Error
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_Error
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Error
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Error
-  nameWithType: SIPMonitorEventTypesEnum.Error
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.FullSIPTrace
-  name: FullSIPTrace
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_FullSIPTrace
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.FullSIPTrace
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.FullSIPTrace
-  nameWithType: SIPMonitorEventTypesEnum.FullSIPTrace
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.HealthCheck
-  name: HealthCheck
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_HealthCheck
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.HealthCheck
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.HealthCheck
-  nameWithType: SIPMonitorEventTypesEnum.HealthCheck
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.MediatedCall
-  name: MediatedCall
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_MediatedCall
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.MediatedCall
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.MediatedCall
-  nameWithType: SIPMonitorEventTypesEnum.MediatedCall
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Monitor
-  name: Monitor
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_Monitor
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Monitor
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Monitor
-  nameWithType: SIPMonitorEventTypesEnum.Monitor
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.MWI
-  name: MWI
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_MWI
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.MWI
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.MWI
-  nameWithType: SIPMonitorEventTypesEnum.MWI
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NATConnection
-  name: NATConnection
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_NATConnection
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NATConnection
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NATConnection
-  nameWithType: SIPMonitorEventTypesEnum.NATConnection
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NATKeepAlive
-  name: NATKeepAlive
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_NATKeepAlive
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NATKeepAlive
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NATKeepAlive
-  nameWithType: SIPMonitorEventTypesEnum.NATKeepAlive
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NATKeepAliveRelay
-  name: NATKeepAliveRelay
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_NATKeepAliveRelay
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NATKeepAliveRelay
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NATKeepAliveRelay
-  nameWithType: SIPMonitorEventTypesEnum.NATKeepAliveRelay
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NewCall
-  name: NewCall
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_NewCall
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NewCall
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NewCall
-  nameWithType: SIPMonitorEventTypesEnum.NewCall
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NotifySent
-  name: NotifySent
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_NotifySent
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NotifySent
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.NotifySent
-  nameWithType: SIPMonitorEventTypesEnum.NotifySent
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.OptionsBounce
-  name: OptionsBounce
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_OptionsBounce
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.OptionsBounce
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.OptionsBounce
-  nameWithType: SIPMonitorEventTypesEnum.OptionsBounce
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ParseSIPMessage
-  name: ParseSIPMessage
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_ParseSIPMessage
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ParseSIPMessage
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ParseSIPMessage
-  nameWithType: SIPMonitorEventTypesEnum.ParseSIPMessage
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.PINGResponse
-  name: PINGResponse
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_PINGResponse
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.PINGResponse
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.PINGResponse
-  nameWithType: SIPMonitorEventTypesEnum.PINGResponse
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ProxyForward
-  name: ProxyForward
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_ProxyForward
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ProxyForward
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.ProxyForward
-  nameWithType: SIPMonitorEventTypesEnum.ProxyForward
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Redirect
-  name: Redirect
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_Redirect
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Redirect
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Redirect
-  nameWithType: SIPMonitorEventTypesEnum.Redirect
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegisterDuplicate
-  name: RegisterDuplicate
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_RegisterDuplicate
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegisterDuplicate
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegisterDuplicate
-  nameWithType: SIPMonitorEventTypesEnum.RegisterDuplicate
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegisterFail
-  name: RegisterFail
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_RegisterFail
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegisterFail
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegisterFail
-  nameWithType: SIPMonitorEventTypesEnum.RegisterFail
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegisterSuccess
-  name: RegisterSuccess
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_RegisterSuccess
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegisterSuccess
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegisterSuccess
-  nameWithType: SIPMonitorEventTypesEnum.RegisterSuccess
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Registrar
-  name: Registrar
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_Registrar
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Registrar
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Registrar
-  nameWithType: SIPMonitorEventTypesEnum.Registrar
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarCache
-  name: RegistrarCache
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_RegistrarCache
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarCache
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarCache
-  nameWithType: SIPMonitorEventTypesEnum.RegistrarCache
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarLookup
-  name: RegistrarLookup
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_RegistrarLookup
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarLookup
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarLookup
-  nameWithType: SIPMonitorEventTypesEnum.RegistrarLookup
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarPersistence
-  name: RegistrarPersistence
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_RegistrarPersistence
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarPersistence
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarPersistence
-  nameWithType: SIPMonitorEventTypesEnum.RegistrarPersistence
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarTiming
-  name: RegistrarTiming
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_RegistrarTiming
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarTiming
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.RegistrarTiming
-  nameWithType: SIPMonitorEventTypesEnum.RegistrarTiming
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SIPInvalid
-  name: SIPInvalid
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_SIPInvalid
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SIPInvalid
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SIPInvalid
-  nameWithType: SIPMonitorEventTypesEnum.SIPInvalid
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SIPMessageArrivalStats
-  name: SIPMessageArrivalStats
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_SIPMessageArrivalStats
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SIPMessageArrivalStats
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SIPMessageArrivalStats
-  nameWithType: SIPMonitorEventTypesEnum.SIPMessageArrivalStats
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SIPTransaction
-  name: SIPTransaction
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_SIPTransaction
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SIPTransaction
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SIPTransaction
-  nameWithType: SIPMonitorEventTypesEnum.SIPTransaction
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.STUNPrimary
-  name: STUNPrimary
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_STUNPrimary
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.STUNPrimary
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.STUNPrimary
-  nameWithType: SIPMonitorEventTypesEnum.STUNPrimary
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.STUNSecondary
-  name: STUNSecondary
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_STUNSecondary
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.STUNSecondary
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.STUNSecondary
-  nameWithType: SIPMonitorEventTypesEnum.STUNSecondary
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeAccept
-  name: SubscribeAccept
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_SubscribeAccept
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeAccept
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeAccept
-  nameWithType: SIPMonitorEventTypesEnum.SubscribeAccept
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeAuth
-  name: SubscribeAuth
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_SubscribeAuth
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeAuth
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeAuth
-  nameWithType: SIPMonitorEventTypesEnum.SubscribeAuth
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeFailed
-  name: SubscribeFailed
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_SubscribeFailed
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeFailed
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeFailed
-  nameWithType: SIPMonitorEventTypesEnum.SubscribeFailed
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeQueued
-  name: SubscribeQueued
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_SubscribeQueued
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeQueued
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeQueued
-  nameWithType: SIPMonitorEventTypesEnum.SubscribeQueued
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeRenew
-  name: SubscribeRenew
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_SubscribeRenew
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeRenew
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.SubscribeRenew
-  nameWithType: SIPMonitorEventTypesEnum.SubscribeRenew
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Switch
-  name: Switch
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_Switch
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Switch
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Switch
-  nameWithType: SIPMonitorEventTypesEnum.Switch
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Timing
-  name: Timing
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_Timing
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Timing
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Timing
-  nameWithType: SIPMonitorEventTypesEnum.Timing
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.UnrecognisedMessage
-  name: UnrecognisedMessage
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_UnrecognisedMessage
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.UnrecognisedMessage
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.UnrecognisedMessage
-  nameWithType: SIPMonitorEventTypesEnum.UnrecognisedMessage
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.UserSpecificSIPTrace
-  name: UserSpecificSIPTrace
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_UserSpecificSIPTrace
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.UserSpecificSIPTrace
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.UserSpecificSIPTrace
-  nameWithType: SIPMonitorEventTypesEnum.UserSpecificSIPTrace
-- uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Warn
-  name: Warn
-  href: api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorEventTypesEnum_Warn
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Warn
-  fullName: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.Warn
-  nameWithType: SIPMonitorEventTypesEnum.Warn
-- uid: SIPSorcery.SIP.App.SIPMonitorLogDelegate
-  name: SIPMonitorLogDelegate
-  href: api/SIPSorcery.SIP.App.SIPMonitorLogDelegate.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorLogDelegate
-  fullName: SIPSorcery.SIP.App.SIPMonitorLogDelegate
-  nameWithType: SIPMonitorLogDelegate
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent
-  name: SIPMonitorMachineEvent
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorMachineEvent
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent
-  nameWithType: SIPMonitorMachineEvent
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,System.String)
-  name: SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum, String, SIPEndPoint, String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent__ctor_SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_System_String_SIPSorcery_SIP_SIPEndPoint_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorMachineEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.SIPMonitorMachineEvent(SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum, System.String, SIPSorcery.SIP.SIPEndPoint, System.String)
-  nameWithType: SIPMonitorMachineEvent.SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum, String, SIPEndPoint, String)
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum,System.String,System.String,SIPSorcery.SIP.SIPURI)
-  name: SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum, String, String, SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent__ctor_SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_System_String_System_String_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorMachineEvent.#ctor(SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum,System.String,System.String,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.SIPMonitorMachineEvent(SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum, System.String, System.String, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPMonitorMachineEvent.SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum, String, String, SIPURI)
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.#ctor*
-  name: SIPMonitorMachineEvent
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent__ctor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorMachineEvent.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.SIPMonitorMachineEvent
-  nameWithType: SIPMonitorMachineEvent.SIPMonitorMachineEvent
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.MachineEventType
-  name: MachineEventType
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_MachineEventType
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEvent.MachineEventType
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.MachineEventType
-  nameWithType: SIPMonitorMachineEvent.MachineEventType
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ParseMachineEventCSV(System.String)
-  name: ParseMachineEventCSV(String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_ParseMachineEventCSV_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorMachineEvent.ParseMachineEventCSV(System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ParseMachineEventCSV(System.String)
-  nameWithType: SIPMonitorMachineEvent.ParseMachineEventCSV(String)
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ParseMachineEventCSV*
-  name: ParseMachineEventCSV
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_ParseMachineEventCSV_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorMachineEvent.ParseMachineEventCSV
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ParseMachineEventCSV
-  nameWithType: SIPMonitorMachineEvent.ParseMachineEventCSV
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ResourceID
-  name: ResourceID
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_ResourceID
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEvent.ResourceID
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ResourceID
-  nameWithType: SIPMonitorMachineEvent.ResourceID
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ResourceURI
-  name: ResourceURI
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_ResourceURI
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEvent.ResourceURI
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ResourceURI
-  nameWithType: SIPMonitorMachineEvent.ResourceURI
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.SERIALISATION_PREFIX
-  name: SERIALISATION_PREFIX
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_SERIALISATION_PREFIX
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEvent.SERIALISATION_PREFIX
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.SERIALISATION_PREFIX
-  nameWithType: SIPMonitorMachineEvent.SERIALISATION_PREFIX
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToAnonymousCSV
-  name: ToAnonymousCSV()
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_ToAnonymousCSV
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToAnonymousCSV
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToAnonymousCSV()
-  nameWithType: SIPMonitorMachineEvent.ToAnonymousCSV()
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToAnonymousCSV*
-  name: ToAnonymousCSV
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_ToAnonymousCSV_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToAnonymousCSV
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToAnonymousCSV
-  nameWithType: SIPMonitorMachineEvent.ToAnonymousCSV
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToCSV
-  name: ToCSV()
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_ToCSV
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToCSV
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToCSV()
-  nameWithType: SIPMonitorMachineEvent.ToCSV()
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToCSV*
-  name: ToCSV
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html#SIPSorcery_SIP_App_SIPMonitorMachineEvent_ToCSV_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToCSV
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEvent.ToCSV
-  nameWithType: SIPMonitorMachineEvent.ToCSV
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes
-  name: SIPMonitorMachineEventTypes
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorMachineEventTypes
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes
-  nameWithType: SIPMonitorMachineEventTypes
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineEventType(System.String)
-  name: GetMonitorMachineEventType(String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypes_GetMonitorMachineEventType_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineEventType(System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineEventType(System.String)
-  nameWithType: SIPMonitorMachineEventTypes.GetMonitorMachineEventType(String)
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineEventType*
-  name: GetMonitorMachineEventType
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypes_GetMonitorMachineEventType_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineEventType
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineEventType
-  nameWithType: SIPMonitorMachineEventTypes.GetMonitorMachineEventType
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId(System.Int32)
-  name: GetMonitorMachineTypeForId(Int32)
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypes_GetMonitorMachineTypeForId_System_Int32_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId(System.Int32)
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId(System.Int32)
-  nameWithType: SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId(Int32)
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId*
-  name: GetMonitorMachineTypeForId
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypes_GetMonitorMachineTypeForId_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId
-  nameWithType: SIPMonitorMachineEventTypes.GetMonitorMachineTypeForId
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum
-  name: SIPMonitorMachineEventTypesEnum
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum
-  nameWithType: SIPMonitorMachineEventTypesEnum
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.Logout
-  name: Logout
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_Logout
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.Logout
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.Logout
-  nameWithType: SIPMonitorMachineEventTypesEnum.Logout
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPAccountDelete
-  name: SIPAccountDelete
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPAccountDelete
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPAccountDelete
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPAccountDelete
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPAccountDelete
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPAccountUpdate
-  name: SIPAccountUpdate
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPAccountUpdate
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPAccountUpdate
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPAccountUpdate
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPAccountUpdate
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueCreated
-  name: SIPDialogueCreated
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPDialogueCreated
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueCreated
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueCreated
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPDialogueCreated
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved
-  name: SIPDialogueRemoved
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPDialogueRemoved
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPDialogueRemoved
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer
-  name: SIPDialogueTransfer
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPDialogueTransfer
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPDialogueTransfer
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated
-  name: SIPDialogueUpdated
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPDialogueUpdated
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPDialogueUpdated
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval
-  name: SIPRegistrarBindingRemoval
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPRegistrarBindingRemoval
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate
-  name: SIPRegistrarBindingUpdate
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPRegistrarBindingUpdate
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingRemoval
-  name: SIPRegistrationAgentBindingRemoval
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPRegistrationAgentBindingRemoval
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingRemoval
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingRemoval
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingRemoval
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingUpdate
-  name: SIPRegistrationAgentBindingUpdate
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorMachineEventTypesEnum_SIPRegistrationAgentBindingUpdate
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingUpdate
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingUpdate
-  nameWithType: SIPMonitorMachineEventTypesEnum.SIPRegistrationAgentBindingUpdate
-- uid: SIPSorcery.SIP.App.SIPMonitorMachineLogDelegate
-  name: SIPMonitorMachineLogDelegate
-  href: api/SIPSorcery.SIP.App.SIPMonitorMachineLogDelegate.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorMachineLogDelegate
-  fullName: SIPSorcery.SIP.App.SIPMonitorMachineLogDelegate
-  nameWithType: SIPMonitorMachineLogDelegate
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypes
-  name: SIPMonitorServerTypes
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypes.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorServerTypes
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypes
-  nameWithType: SIPMonitorServerTypes
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerType(System.String)
-  name: GetProxyServerType(String)
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypes.html#SIPSorcery_SIP_App_SIPMonitorServerTypes_GetProxyServerType_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerType(System.String)
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerType(System.String)
-  nameWithType: SIPMonitorServerTypes.GetProxyServerType(String)
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerType*
-  name: GetProxyServerType
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypes.html#SIPSorcery_SIP_App_SIPMonitorServerTypes_GetProxyServerType_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerType
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerType
-  nameWithType: SIPMonitorServerTypes.GetProxyServerType
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerTypeForId(System.Int32)
-  name: GetProxyServerTypeForId(Int32)
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypes.html#SIPSorcery_SIP_App_SIPMonitorServerTypes_GetProxyServerTypeForId_System_Int32_
-  commentId: M:SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerTypeForId(System.Int32)
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerTypeForId(System.Int32)
-  nameWithType: SIPMonitorServerTypes.GetProxyServerTypeForId(Int32)
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerTypeForId*
-  name: GetProxyServerTypeForId
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypes.html#SIPSorcery_SIP_App_SIPMonitorServerTypes_GetProxyServerTypeForId_
-  commentId: Overload:SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerTypeForId
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypes.GetProxyServerTypeForId
-  nameWithType: SIPMonitorServerTypes.GetProxyServerTypeForId
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum
-  name: SIPMonitorServerTypesEnum
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html
-  commentId: T:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum
-  nameWithType: SIPMonitorServerTypesEnum
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.AppServer
-  name: AppServer
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_AppServer
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.AppServer
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.AppServer
-  nameWithType: SIPMonitorServerTypesEnum.AppServer
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Authoriser
-  name: Authoriser
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_Authoriser
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Authoriser
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Authoriser
-  nameWithType: SIPMonitorServerTypesEnum.Authoriser
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Monitor
-  name: Monitor
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_Monitor
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Monitor
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Monitor
-  nameWithType: SIPMonitorServerTypesEnum.Monitor
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.NATKeepAlive
-  name: NATKeepAlive
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_NATKeepAlive
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.NATKeepAlive
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.NATKeepAlive
-  nameWithType: SIPMonitorServerTypesEnum.NATKeepAlive
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Notifier
-  name: Notifier
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_Notifier
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Notifier
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Notifier
-  nameWithType: SIPMonitorServerTypesEnum.Notifier
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.NotifierAgent
-  name: NotifierAgent
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_NotifierAgent
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.NotifierAgent
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.NotifierAgent
-  nameWithType: SIPMonitorServerTypesEnum.NotifierAgent
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.NotifierClient
-  name: NotifierClient
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_NotifierClient
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.NotifierClient
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.NotifierClient
-  nameWithType: SIPMonitorServerTypesEnum.NotifierClient
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.RegisterAgent
-  name: RegisterAgent
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_RegisterAgent
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.RegisterAgent
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.RegisterAgent
-  nameWithType: SIPMonitorServerTypesEnum.RegisterAgent
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Registrar
-  name: Registrar
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_Registrar
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Registrar
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Registrar
-  nameWithType: SIPMonitorServerTypesEnum.Registrar
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.RTCC
-  name: RTCC
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_RTCC
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.RTCC
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.RTCC
-  nameWithType: SIPMonitorServerTypesEnum.RTCC
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.SIPProxy
-  name: SIPProxy
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPProxy
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.SIPProxy
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.SIPProxy
-  nameWithType: SIPMonitorServerTypesEnum.SIPProxy
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.SIPTransactionLayer
-  name: SIPTransactionLayer
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPTransactionLayer
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.SIPTransactionLayer
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.SIPTransactionLayer
-  nameWithType: SIPMonitorServerTypesEnum.SIPTransactionLayer
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Unknown
-  name: Unknown
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_Unknown
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Unknown
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.Unknown
-  nameWithType: SIPMonitorServerTypesEnum.Unknown
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.UserAgentClient
-  name: UserAgentClient
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_UserAgentClient
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.UserAgentClient
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.UserAgentClient
-  nameWithType: SIPMonitorServerTypesEnum.UserAgentClient
-- uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.UserAgentServer
-  name: UserAgentServer
-  href: api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html#SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_UserAgentServer
-  commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.UserAgentServer
-  fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.UserAgentServer
-  nameWithType: SIPMonitorServerTypesEnum.UserAgentServer
 - uid: SIPSorcery.SIP.App.SIPNotifierClient`1
   name: SIPNotifierClient<T>
   href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html
@@ -26662,14 +25629,14 @@ references:
   fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T)
   nameWithType: SIPNotifierClient<T>
   nameWithType.vb: SIPNotifierClient(Of T)
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.#ctor(SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.Int32,System.String)
-  name: SIPNotifierClient(SIPMonitorLogDelegate, SIPTransport, SIPEndPoint, SIPEventPackage, SIPURI, String, String, String, Int32, String)
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1__ctor_SIPSorcery_SIP_App_SIPMonitorLogDelegate_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEventPackage_SIPSorcery_SIP_SIPURI_System_String_System_String_System_String_System_Int32_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient`1.#ctor(SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.Int32,System.String)
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.SIPNotifierClient(SIPSorcery.SIP.App.SIPMonitorLogDelegate, SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEventPackage, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.Int32, System.String)
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).SIPNotifierClient(SIPSorcery.SIP.App.SIPMonitorLogDelegate, SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEventPackage, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.Int32, System.String)
-  nameWithType: SIPNotifierClient<T>.SIPNotifierClient(SIPMonitorLogDelegate, SIPTransport, SIPEndPoint, SIPEventPackage, SIPURI, String, String, String, Int32, String)
-  nameWithType.vb: SIPNotifierClient(Of T).SIPNotifierClient(SIPMonitorLogDelegate, SIPTransport, SIPEndPoint, SIPEventPackage, SIPURI, String, String, String, Int32, String)
+- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.Int32,System.String)
+  name: SIPNotifierClient(SIPTransport, SIPEndPoint, SIPEventPackage, SIPURI, String, String, String, Int32, String)
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEventPackage_SIPSorcery_SIP_SIPURI_System_String_System_String_System_String_System_Int32_System_String_
+  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient`1.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.Int32,System.String)
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.SIPNotifierClient(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEventPackage, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.Int32, System.String)
+  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).SIPNotifierClient(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEventPackage, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.Int32, System.String)
+  nameWithType: SIPNotifierClient<T>.SIPNotifierClient(SIPTransport, SIPEndPoint, SIPEventPackage, SIPURI, String, String, String, Int32, String)
+  nameWithType.vb: SIPNotifierClient(Of T).SIPNotifierClient(SIPTransport, SIPEndPoint, SIPEventPackage, SIPURI, String, String, String, Int32, String)
 - uid: SIPSorcery.SIP.App.SIPNotifierClient`1.#ctor*
   name: SIPNotifierClient
   href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1__ctor_
@@ -26857,12 +25824,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPPacketMangler.MangleSDP
   nameWithType: SIPPacketMangler.MangleSDP
-- uid: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.SIPRequest,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  name: MangleSIPRequest(SIPMonitorServerTypesEnum, SIPRequest, String, SIPMonitorLogDelegate)
-  href: api/SIPSorcery.SIP.App.SIPPacketMangler.html#SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPRequest_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_SIPRequest_System_String_SIPSorcery_SIP_App_SIPMonitorLogDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.SIPRequest,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  fullName: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum, SIPSorcery.SIP.SIPRequest, System.String, SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  nameWithType: SIPPacketMangler.MangleSIPRequest(SIPMonitorServerTypesEnum, SIPRequest, String, SIPMonitorLogDelegate)
+- uid: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.SIPRequest)
+  name: MangleSIPRequest(SIPRequest)
+  href: api/SIPSorcery.SIP.App.SIPPacketMangler.html#SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPRequest_SIPSorcery_SIP_SIPRequest_
+  commentId: M:SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest(SIPSorcery.SIP.SIPRequest)
+  nameWithType: SIPPacketMangler.MangleSIPRequest(SIPRequest)
 - uid: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest*
   name: MangleSIPRequest
   href: api/SIPSorcery.SIP.App.SIPPacketMangler.html#SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPRequest_
@@ -26870,12 +25837,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPRequest
   nameWithType: SIPPacketMangler.MangleSIPRequest
-- uid: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.SIPResponse,SIPSorcery.SIP.SIPEndPoint,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  name: MangleSIPResponse(SIPMonitorServerTypesEnum, SIPResponse, SIPEndPoint, String, SIPMonitorLogDelegate)
-  href: api/SIPSorcery.SIP.App.SIPPacketMangler.html#SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPResponse_SIPSorcery_SIP_App_SIPMonitorServerTypesEnum_SIPSorcery_SIP_SIPResponse_SIPSorcery_SIP_SIPEndPoint_System_String_SIPSorcery_SIP_App_SIPMonitorLogDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum,SIPSorcery.SIP.SIPResponse,SIPSorcery.SIP.SIPEndPoint,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  fullName: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.App.SIPMonitorServerTypesEnum, SIPSorcery.SIP.SIPResponse, SIPSorcery.SIP.SIPEndPoint, System.String, SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  nameWithType: SIPPacketMangler.MangleSIPResponse(SIPMonitorServerTypesEnum, SIPResponse, SIPEndPoint, String, SIPMonitorLogDelegate)
+- uid: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.SIPResponse,SIPSorcery.SIP.SIPEndPoint)
+  name: MangleSIPResponse(SIPResponse, SIPEndPoint)
+  href: api/SIPSorcery.SIP.App.SIPPacketMangler.html#SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPResponse_SIPSorcery_SIP_SIPResponse_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.SIPResponse,SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse(SIPSorcery.SIP.SIPResponse, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPPacketMangler.MangleSIPResponse(SIPResponse, SIPEndPoint)
 - uid: SIPSorcery.SIP.App.SIPPacketMangler.MangleSIPResponse*
   name: MangleSIPResponse
   href: api/SIPSorcery.SIP.App.SIPPacketMangler.html#SIPSorcery_SIP_App_SIPPacketMangler_MangleSIPResponse_
@@ -26895,15 +25862,15 @@ references:
   commentId: T:SIPSorcery.SIP.App.SIPRegistrationUserAgent
   fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent
   nameWithType: SIPRegistrationUserAgent
-- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.String,SIPSorcery.SIP.SIPURI,System.Int32,SIPSorcery.SIP.App.SIPMonitorLogDelegate,System.String[],System.Int32,System.Int32,System.Int32)
-  name: SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, SIPMonitorLogDelegate, String[], Int32, Int32, Int32)
-  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPURI_System_String_System_String_System_String_System_String_SIPSorcery_SIP_SIPURI_System_Int32_SIPSorcery_SIP_App_SIPMonitorLogDelegate_System_String___System_Int32_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.String,SIPSorcery.SIP.SIPURI,System.Int32,SIPSorcery.SIP.App.SIPMonitorLogDelegate,System.String[],System.Int32,System.Int32,System.Int32)
-  name.vb: SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, SIPMonitorLogDelegate, String(), Int32, Int32, Int32)
-  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.String, SIPSorcery.SIP.SIPURI, System.Int32, SIPSorcery.SIP.App.SIPMonitorLogDelegate, System.String[], System.Int32, System.Int32, System.Int32)
-  fullName.vb: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.String, SIPSorcery.SIP.SIPURI, System.Int32, SIPSorcery.SIP.App.SIPMonitorLogDelegate, System.String(), System.Int32, System.Int32, System.Int32)
-  nameWithType: SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, SIPMonitorLogDelegate, String[], Int32, Int32, Int32)
-  nameWithType.vb: SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, SIPMonitorLogDelegate, String(), Int32, Int32, Int32)
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.String,SIPSorcery.SIP.SIPURI,System.Int32,System.String[],System.Int32,System.Int32,System.Int32)
+  name: SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, String[], Int32, Int32, Int32)
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPURI_System_String_System_String_System_String_System_String_SIPSorcery_SIP_SIPURI_System_Int32_System_String___System_Int32_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.String,SIPSorcery.SIP.SIPURI,System.Int32,System.String[],System.Int32,System.Int32,System.Int32)
+  name.vb: SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, String(), Int32, Int32, Int32)
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.String, SIPSorcery.SIP.SIPURI, System.Int32, System.String[], System.Int32, System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.String, SIPSorcery.SIP.SIPURI, System.Int32, System.String(), System.Int32, System.Int32, System.Int32)
+  nameWithType: SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, String[], Int32, Int32, Int32)
+  nameWithType.vb: SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, String(), Int32, Int32, Int32)
 - uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,System.String,System.String,System.String,System.Int32,System.Int32,System.Int32,System.Int32)
   name: SIPRegistrationUserAgent(SIPTransport, String, String, String, Int32, Int32, Int32, Int32)
   href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_SIPSorcery_SIP_SIPTransport_System_String_System_String_System_String_System_Int32_System_Int32_System_Int32_System_Int32_
@@ -27030,12 +25997,12 @@ references:
   commentId: T:SIPSorcery.SIP.App.SIPRequestAuthenticator
   fullName: SIPSorcery.SIP.App.SIPRequestAuthenticator
   nameWithType: SIPRequestAuthenticator
-- uid: SIPSorcery.SIP.App.SIPRequestAuthenticator.AuthenticateSIPRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.App.SIPAccount,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  name: AuthenticateSIPRequest(SIPEndPoint, SIPEndPoint, SIPRequest, SIPAccount, SIPMonitorLogDelegate)
-  href: api/SIPSorcery.SIP.App.SIPRequestAuthenticator.html#SIPSorcery_SIP_App_SIPRequestAuthenticator_AuthenticateSIPRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_App_SIPAccount_SIPSorcery_SIP_App_SIPMonitorLogDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPRequestAuthenticator.AuthenticateSIPRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.App.SIPAccount,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  fullName: SIPSorcery.SIP.App.SIPRequestAuthenticator.AuthenticateSIPRequest(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.App.SIPAccount, SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  nameWithType: SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint, SIPEndPoint, SIPRequest, SIPAccount, SIPMonitorLogDelegate)
+- uid: SIPSorcery.SIP.App.SIPRequestAuthenticator.AuthenticateSIPRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.App.SIPAccount)
+  name: AuthenticateSIPRequest(SIPEndPoint, SIPEndPoint, SIPRequest, SIPAccount)
+  href: api/SIPSorcery.SIP.App.SIPRequestAuthenticator.html#SIPSorcery_SIP_App_SIPRequestAuthenticator_AuthenticateSIPRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_App_SIPAccount_
+  commentId: M:SIPSorcery.SIP.App.SIPRequestAuthenticator.AuthenticateSIPRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.App.SIPAccount)
+  fullName: SIPSorcery.SIP.App.SIPRequestAuthenticator.AuthenticateSIPRequest(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.App.SIPAccount)
+  nameWithType: SIPRequestAuthenticator.AuthenticateSIPRequest(SIPEndPoint, SIPEndPoint, SIPRequest, SIPAccount)
 - uid: SIPSorcery.SIP.App.SIPRequestAuthenticator.AuthenticateSIPRequest*
   name: AuthenticateSIPRequest
   href: api/SIPSorcery.SIP.App.SIPRequestAuthenticator.html#SIPSorcery_SIP_App_SIPRequestAuthenticator_AuthenticateSIPRequest_
@@ -27062,12 +26029,12 @@ references:
   commentId: T:SIPSorcery.SIP.App.SIPServerUserAgent
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent
   nameWithType: SIPServerUserAgent
-- uid: SIPSorcery.SIP.App.SIPServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.App.GetSIPAccountDelegate,SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate,SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.UASInviteTransaction)
-  name: SIPServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, GetSIPAccountDelegate, SIPAuthenticateRequestDelegate, SIPMonitorLogDelegate, UASInviteTransaction)
-  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_SIPCallDirection_SIPSorcery_SIP_App_GetSIPAccountDelegate_SIPSorcery_SIP_App_SIPAuthenticateRequestDelegate_SIPSorcery_SIP_App_SIPMonitorLogDelegate_SIPSorcery_SIP_UASInviteTransaction_
-  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.App.GetSIPAccountDelegate,SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate,SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.UASInviteTransaction)
-  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SIPServerUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, System.String, System.String, SIPSorcery.SIP.SIPCallDirection, SIPSorcery.SIP.App.GetSIPAccountDelegate, SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate, SIPSorcery.SIP.App.SIPMonitorLogDelegate, SIPSorcery.SIP.UASInviteTransaction)
-  nameWithType: SIPServerUserAgent.SIPServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, GetSIPAccountDelegate, SIPAuthenticateRequestDelegate, SIPMonitorLogDelegate, UASInviteTransaction)
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.App.GetSIPAccountDelegate,SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate,SIPSorcery.SIP.UASInviteTransaction)
+  name: SIPServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, GetSIPAccountDelegate, SIPAuthenticateRequestDelegate, UASInviteTransaction)
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_SIPCallDirection_SIPSorcery_SIP_App_GetSIPAccountDelegate_SIPSorcery_SIP_App_SIPAuthenticateRequestDelegate_SIPSorcery_SIP_UASInviteTransaction_
+  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.App.GetSIPAccountDelegate,SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate,SIPSorcery.SIP.UASInviteTransaction)
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SIPServerUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, System.String, System.String, SIPSorcery.SIP.SIPCallDirection, SIPSorcery.SIP.App.GetSIPAccountDelegate, SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate, SIPSorcery.SIP.UASInviteTransaction)
+  nameWithType: SIPServerUserAgent.SIPServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, GetSIPAccountDelegate, SIPAuthenticateRequestDelegate, UASInviteTransaction)
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.#ctor*
   name: SIPServerUserAgent
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent__ctor_
@@ -27440,19 +26407,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SetOwner
   nameWithType: SIPServerUserAgent.SetOwner
-- uid: SIPSorcery.SIP.App.SIPServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  name: SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_SetTraceDelegate_SIPSorcery_SIP_SIPTransactionTraceMessageDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  nameWithType: SIPServerUserAgent.SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-- uid: SIPSorcery.SIP.App.SIPServerUserAgent.SetTraceDelegate*
-  name: SetTraceDelegate
-  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_SetTraceDelegate_
-  commentId: Overload:SIPSorcery.SIP.App.SIPServerUserAgent.SetTraceDelegate
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SetTraceDelegate
-  nameWithType: SIPServerUserAgent.SetTraceDelegate
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.SIPAccount
   name: SIPAccount
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_SIPAccount
@@ -29764,30 +28718,30 @@ references:
   commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor
   fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue()
   nameWithType: SIPDialogue.SIPDialogue()
-- uid: SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.SIPRequest,System.String,System.String,System.String)
-  name: SIPDialogue(SIPRequest, String, String, String)
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_SIPRequest_System_String_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.SIPRequest,System.String,System.String,System.String)
-  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(SIPSorcery.SIP.SIPRequest, System.String, System.String, System.String)
-  nameWithType: SIPDialogue.SIPDialogue(SIPRequest, String, String, String)
-- uid: SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UACInviteTransaction,System.String,System.String)
-  name: SIPDialogue(UACInviteTransaction, String, String)
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UACInviteTransaction_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UACInviteTransaction,System.String,System.String)
-  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(SIPSorcery.SIP.UACInviteTransaction, System.String, System.String)
-  nameWithType: SIPDialogue.SIPDialogue(UACInviteTransaction, String, String)
-- uid: SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UASInviteTransaction,System.String,System.String)
-  name: SIPDialogue(UASInviteTransaction, String, String)
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UASInviteTransaction_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UASInviteTransaction,System.String,System.String)
-  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(SIPSorcery.SIP.UASInviteTransaction, System.String, System.String)
-  nameWithType: SIPDialogue.SIPDialogue(UASInviteTransaction, String, String)
-- uid: SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String,System.String,System.String)
-  name: SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String, String, String)
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_System_Guid_System_String_System_String_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String,System.String,System.String)
-  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(System.String, SIPSorcery.SIP.SIPRouteSet, SIPSorcery.SIP.SIPUserField, SIPSorcery.SIP.SIPUserField, System.Int32, SIPSorcery.SIP.SIPURI, System.String, System.String, System.Guid, System.String, System.String, System.String, System.String)
-  nameWithType: SIPDialogue.SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String, String, String)
+- uid: SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.SIPRequest,System.String)
+  name: SIPDialogue(SIPRequest, String)
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_SIPRequest_System_String_
+  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.SIPRequest,System.String)
+  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(SIPSorcery.SIP.SIPRequest, System.String)
+  nameWithType: SIPDialogue.SIPDialogue(SIPRequest, String)
+- uid: SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UACInviteTransaction)
+  name: SIPDialogue(UACInviteTransaction)
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UACInviteTransaction_
+  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UACInviteTransaction)
+  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(SIPSorcery.SIP.UACInviteTransaction)
+  nameWithType: SIPDialogue.SIPDialogue(UACInviteTransaction)
+- uid: SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UASInviteTransaction)
+  name: SIPDialogue(UASInviteTransaction)
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_SIPSorcery_SIP_UASInviteTransaction_
+  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UASInviteTransaction)
+  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(SIPSorcery.SIP.UASInviteTransaction)
+  nameWithType: SIPDialogue.SIPDialogue(UASInviteTransaction)
+- uid: SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String)
+  name: SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String)
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_System_Guid_System_String_System_String_
+  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String)
+  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(System.String, SIPSorcery.SIP.SIPRouteSet, SIPSorcery.SIP.SIPUserField, SIPSorcery.SIP.SIPUserField, System.Int32, SIPSorcery.SIP.SIPURI, System.String, System.String, System.Guid, System.String, System.String)
+  nameWithType: SIPDialogue.SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String)
 - uid: SIPSorcery.SIP.SIPDialogue.#ctor*
   name: SIPDialogue
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_
@@ -29795,19 +28749,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue
   nameWithType: SIPDialogue.SIPDialogue
-- uid: SIPSorcery.SIP.SIPDialogue.AdminMemberId
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_AdminMemberId
-  commentId: P:SIPSorcery.SIP.SIPDialogue.AdminMemberId
-  fullName: SIPSorcery.SIP.SIPDialogue.AdminMemberId
-  nameWithType: SIPDialogue.AdminMemberId
-- uid: SIPSorcery.SIP.SIPDialogue.AdminMemberId*
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_AdminMemberId_
-  commentId: Overload:SIPSorcery.SIP.SIPDialogue.AdminMemberId
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDialogue.AdminMemberId
-  nameWithType: SIPDialogue.AdminMemberId
 - uid: SIPSorcery.SIP.SIPDialogue.BridgeId
   name: BridgeId
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_BridgeId
@@ -30053,19 +28994,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPDialogue.m_sipVersion
   fullName: SIPSorcery.SIP.SIPDialogue.m_sipVersion
   nameWithType: SIPDialogue.m_sipVersion
-- uid: SIPSorcery.SIP.SIPDialogue.Owner
-  name: Owner
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_Owner
-  commentId: P:SIPSorcery.SIP.SIPDialogue.Owner
-  fullName: SIPSorcery.SIP.SIPDialogue.Owner
-  nameWithType: SIPDialogue.Owner
-- uid: SIPSorcery.SIP.SIPDialogue.Owner*
-  name: Owner
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_Owner_
-  commentId: Overload:SIPSorcery.SIP.SIPDialogue.Owner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDialogue.Owner
-  nameWithType: SIPDialogue.Owner
 - uid: SIPSorcery.SIP.SIPDialogue.ProxySendFrom
   name: ProxySendFrom
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_ProxySendFrom
