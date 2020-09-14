@@ -22,8 +22,6 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface ISIPClientUserAgent
     {
-        string Owner { get; }
-        string AdminMemberId { get; }
         UACInviteTransaction ServerTransaction { get; }
         SIPDialogue SIPDialogue { get; }
         SIPCallDescriptor CallDescriptor { get; }
