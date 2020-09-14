@@ -1,6 +1,6 @@
 | Target        | SIPSorcery    | Examples <br/> (Windows Only)    | Softphone <br/> (Windows Only) |
 | --------------| ------------- |:-------------|:--------- |
-| net472        | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | | |
+| net461        | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | | |
 | netstandard2.0 | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-std20/badge.svg) |  |  |
 | dotnetcore3.1 | <table><tr><td>Windows</td><td>![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31-win/badge.svg)</td></tr><tr><td>MacOS</td><td>![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31-mac/badge.svg)</td></tr><tr><td>Ubuntu</td><td>![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31-ubuntu/badge.svg)</td></tr></table> | ![](https://github.com/sipsorcery/sipsorcery/workflows/examples-core31/badge.svg) <br> [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master) |
 
@@ -34,7 +34,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 ## Installation
 
-The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framework 4.7.2. It is available via NuGet.
+The library is compliant with .NET Standard 2.0 (encompassing .NET Core 2.0+) and .NET Framework 4.6.1 (theoretically also encompassed by `netstandard2.0` but set as an explicit target due to compatibility issues between the two). It is available via NuGet.
 
 For .NET Core:
 

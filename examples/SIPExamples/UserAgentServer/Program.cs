@@ -174,7 +174,7 @@ namespace SIPSorcery
                                 rtpCts = new CancellationTokenSource();
 
                                 UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
-                                uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
+                                uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, uasTransaction);
                                 uas.CallCancelled += (uasAgent) =>
                                 {
                                     rtpCts?.Cancel();
