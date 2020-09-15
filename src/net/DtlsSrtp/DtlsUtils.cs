@@ -46,6 +46,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Asn1.X509;
@@ -63,11 +65,14 @@ using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.Utilities.IO.Pem;
 using Org.BouncyCastle.X509;
 using SIPSorcery.Sys;
+using WebSocketSharp;
 
 namespace SIPSorcery.Net
 {
     public class DtlsUtils
     {
+        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+
         public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, X509Certificate2 certificate)
         {
             return Fingerprint(hashAlgorithm, LoadCertificateResource(certificate));
@@ -363,25 +368,65 @@ namespace SIPSorcery.Net
         }
 
         /// <remarks>Plagarised from https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs.</remarks>
-        public static X509Certificate2 ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate BouncyCert, AsymmetricCipherKeyPair KeyPair)
+        public static X509Certificate2 ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate bouncyCert, AsymmetricCipherKeyPair keyPair)
         {
             var pkcs12Store = new Pkcs12Store();
-            var certEntry = new X509CertificateEntry(BouncyCert);
+            var certEntry = new X509CertificateEntry(bouncyCert);
 
-            pkcs12Store.SetCertificateEntry(BouncyCert.SerialNumber.ToString(), certEntry);
-            pkcs12Store.SetKeyEntry(BouncyCert.SerialNumber.ToString(),
-                new AsymmetricKeyEntry(KeyPair.Private), new[] { certEntry });
+            pkcs12Store.SetCertificateEntry(bouncyCert.SerialNumber.ToString(), certEntry);
+            pkcs12Store.SetKeyEntry(bouncyCert.SerialNumber.ToString(),
+                new AsymmetricKeyEntry(keyPair.Private), new[] { certEntry });
 
             X509Certificate2 keyedCert;
 
             using (MemoryStream pfxStream = new MemoryStream())
             {
-                pkcs12Store.Save(pfxStream, null, new SecureRandom());
+                pkcs12Store.Save(pfxStream, new char[] {}, new SecureRandom());
                 pfxStream.Seek(0, SeekOrigin.Begin);
-                keyedCert = new X509Certificate2(pfxStream.ToArray(), "", X509KeyStorageFlags.Exportable);
+                keyedCert = new X509Certificate2(pfxStream.ToArray(), string.Empty, X509KeyStorageFlags.Exportable);
             }
 
             return keyedCert;
+
+            //var info = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair.Private);
+
+            //// merge into X509Certificate2
+            //var x509 = new X509Certificate2(bouncyCert.GetEncoded());
+
+            //var seq = (Asn1Sequence)Asn1Object.FromByteArray(info.ParsePrivateKey().GetDerEncoded());
+            //if (seq.Count != 9)
+            //{
+            //    throw new Org.BouncyCastle.OpenSsl.PemException("malformed sequence in RSA private key");
+            //}
+
+            //var rsa = RsaPrivateKeyStructure.GetInstance(seq); //new RsaPrivateKeyStructure(seq);
+            //var rsaparams = new RsaPrivateCrtKeyParameters(
+            //    rsa.Modulus, rsa.PublicExponent, rsa.PrivateExponent, rsa.Prime1, rsa.Prime2, rsa.Exponent1, rsa.Exponent2, rsa.Coefficient);
+
+            //return x509.CopyWithPrivateKey(ToRSA(rsaparams));
+
+            //X509Certificate2 x509 = null;
+
+            //using (MemoryStream ms = new MemoryStream())
+            //{
+            //    using (StreamWriter tw = new StreamWriter(ms))
+            //    {
+            //        PemWriter pw = new PemWriter(tw);
+            //        //PemObject po = new PemObject("CERTIFICATE", bouncyCert.GetEncoded());
+            //        PemObject po = new PemObject("CERTIFICATE", bouncyCert.GetEncoded());
+            //        pw.WriteObject(po);
+
+            //        logger.LogDebug(Encoding.UTF8.GetString(ms.GetBuffer()));
+
+            //        StreamWriter sw2 = new StreamWriter("test.cer");
+            //        sw2.Write(ms.GetBuffer());
+            //        sw2.Close();
+
+            //         x509 = new X509Certificate2(bouncyCert.GetEncoded());
+            //    }
+            //}
+
+            //return x509;
         }
 
 
