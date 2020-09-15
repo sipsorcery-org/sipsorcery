@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const url = "ws://127.0.0.1:8081/"
+        var pc, ws;
+
+        function start() {
+
+            closePeer();
+
+            let videoControl = document.querySelector('#videoCtl');
+
+            ws = new WebSocket(url, []);
+
+            ws.onopen = function () {
+                console.log("web socket onopen.");
+
+                //pc = new RTCPeerConnection(null);
+                pc = new RTCPeerConnection(
+                    {
+                        iceServers: [
+                            {
+                                urls: "turn:turn.sipsorcery.com",
+                                username: "aaron",
+                                credential: "password"
+                            }
+                        ],
+                        //iceTransportPolicy: "relay"
+                        iceTransportPolicy: "all"
+                    });
+
+                pc.ontrack = ({ track, streams: [stream] }) => {
+                    track.onunmute = () => {
+                        videoControl.srcObject = stream;
+                    };
+                };
+
+                pc.onicegatheringstatechange = function () {
+                    console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+                }
+
+                pc.oniceconnectionstatechange = function () {
+                    console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+                }
+
+                pc.onsignalingstatechange = function () {
+                    console.log("onsignalingstatechange: " + pc.signalingState);
+                }
+
+                pc.onicecandidate = function (event) {
+                    if (event.candidate) {
+                        console.log('new-ice-candidate:');
+                        console.log(event.candidate.candidate);
+                        console.log(event.candidate);
+                        //console.log(pc.localDescription.sdp);
+                        ws.send(JSON.stringify(event.candidate));
+                    }
+                };
+            };
+
+            ws.onmessage = async function (evt) {
+                // Received SDP offer from the remote web socket server.
+                console.log("web socket onmessage: " + evt.data + ".");
+
+                if (/^[\{"'\s]*candidate/.test(evt.data)) {
+                    console.log("attempting to add ice candidate.");
+                    pc.addIceCandidate(JSON.parse(evt.data));
+                }
+                else {
+                    console.log("attempting to set remote description.");
+                    //await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+
+                    // Now create our offer SDP to send back to the web socket server.
+                    pc.createAnswer().then(function (answer) {
+                        return pc.setLocalDescription(answer);
+                    }).then(function () {
+                        console.log("Sending answer SDP.");
+                        console.log("SDP: " + pc.localDescription.sdp);
+                        ws.send(JSON.stringify(pc.localDescription));
+                    });
+                }
+            };
+        };
+
+        function closePeer() {
+            //let stm = document.querySelector('#videoCtl').srcObject;
+            //if (stm != null) {
+
+            //    stm.getTracks().forEach((trk) => {
+            //        console.log(`stopping track ${trk.id} kind ${trk.kind} readyState ${trk.readyState}.`);
+            //        console.log(trk);
+            //        trk.stop();
+            //    });
+            //}
+
+            if (pc != null) {
+                console.log("close peer");
+                pc.close();
+            }
+
+            if (ws != null) {
+                console.log("closing web socket.");
+                ws.close();
+            }
+        };
+
+    </script>
+</head>
+<body>
+
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+
+    <div>
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+</body>
