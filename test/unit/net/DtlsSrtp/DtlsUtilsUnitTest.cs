@@ -76,12 +76,12 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            //if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            //{
-            //    logger.LogDebug("Test skipped as MacOS is not able to load certificates from a .pfx file pre .NET Core 5.0.");
-            //}
-            //else
-            //{
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                logger.LogDebug("Test skipped as MacOS is not able to load certificates from a .pfx file pre .NET Core 5.0.");
+            }
+            else
+            {
                 var cert = new X509Certificate2("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
                 Assert.NotNull(cert);
 
@@ -89,7 +89,7 @@ namespace SIPSorcery.Net.UnitTests
 
                 var key = DtlsUtils.LoadPrivateKeyResource(cert);
                 Assert.NotNull(key);
-            //}
+            }
         }
     }
 }
