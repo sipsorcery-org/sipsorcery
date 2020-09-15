@@ -165,7 +165,9 @@
     </tbody>
   </table>
   <h5 id="SIPSorcery_Net_DtlsUtils_ConvertBouncyCert_Org_BouncyCastle_X509_X509Certificate_Org_BouncyCastle_Crypto_AsymmetricCipherKeyPair__remarks">Remarks</h5>
-  <div class="markdown level1 remarks"><p>Plagarised from <a href="https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs">https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs</a>.</p>
+  <div class="markdown level1 remarks"><p>Plagarised from <a href="https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs">https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs</a>.
+NOTE: netstandard2.1+ and netcoreapp3.1+ have x509.CopyWithPrivateKey which will avoid the need to
+use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X509 certificates.</p>
 </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
@@ -219,7 +221,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L315">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L313">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">CreateSelfSignedCert(AsymmetricKeyParameter)</h4>
@@ -266,7 +268,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String%2CSystem.String%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L320">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L318">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">CreateSelfSignedCert(String, String, AsymmetricKeyParameter)</h4>
@@ -323,7 +325,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_DigestOf_Org_BouncyCastle_Crypto_IDigest_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L123">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L121">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_DigestOf_" data-uid="SIPSorcery.Net.DtlsUtils.DigestOf*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_DigestOf_Org_BouncyCastle_Crypto_IDigest_System_Byte___" data-uid="SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest,System.Byte[])">DigestOf(IDigest, Byte[])</h4>
@@ -375,7 +377,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_Fingerprint_Org_BouncyCastle_Asn1_X509_X509CertificateStructure_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Asn1.X509.X509CertificateStructure)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L110">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L108">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_Fingerprint_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_Fingerprint_Org_BouncyCastle_Asn1_X509_X509CertificateStructure_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Asn1.X509.X509CertificateStructure)">Fingerprint(X509CertificateStructure)</h4>
@@ -422,7 +424,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_Fingerprint_Org_BouncyCastle_Crypto_Tls_Certificate_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L99">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L97">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_Fingerprint_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_Fingerprint_Org_BouncyCastle_Crypto_Tls_Certificate_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)">Fingerprint(Certificate)</h4>
@@ -469,7 +471,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_Fingerprint_System_Security_Cryptography_X509Certificates_X509Certificate2_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.Fingerprint(System.Security.Cryptography.X509Certificates.X509Certificate2)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L105">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L103">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_Fingerprint_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_Fingerprint_System_Security_Cryptography_X509Certificates_X509Certificate2_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint(System.Security.Cryptography.X509Certificates.X509Certificate2)">Fingerprint(X509Certificate2)</h4>
@@ -516,7 +518,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_Fingerprint_System_String_Org_BouncyCastle_Asn1_X509_X509CertificateStructure_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.Fingerprint(System.String%2COrg.BouncyCastle.Asn1.X509.X509CertificateStructure)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L81">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L79">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_Fingerprint_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_Fingerprint_System_String_Org_BouncyCastle_Asn1_X509_X509CertificateStructure_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,Org.BouncyCastle.Asn1.X509.X509CertificateStructure)">Fingerprint(String, X509CertificateStructure)</h4>
@@ -568,7 +570,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_Fingerprint_System_String_System_Security_Cryptography_X509Certificates_X509Certificate2_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.Fingerprint(System.String%2CSystem.Security.Cryptography.X509Certificates.X509Certificate2)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L76">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L74">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_Fingerprint_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_Fingerprint_System_String_System_Security_Cryptography_X509Certificates_X509Certificate2_" data-uid="SIPSorcery.Net.DtlsUtils.Fingerprint(System.String,System.Security.Cryptography.X509Certificates.X509Certificate2)">Fingerprint(String, X509Certificate2)</h4>
@@ -669,7 +671,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2COrg.BouncyCastle.Crypto.Tls.Certificate%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L131">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L129">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">LoadAgreementCredentials(TlsContext, Certificate, AsymmetricKeyParameter)</h4>
@@ -726,7 +728,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2CSystem.String%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L137">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L135">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadAgreementCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_" data-uid="SIPSorcery.Net.DtlsUtils.LoadAgreementCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)">LoadAgreementCredentials(TlsContext, String[], String)</h4>
@@ -783,7 +785,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadCertificateChain_System_Security_Cryptography_X509Certificates_X509Certificate2_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadCertificateChain(System.Security.Cryptography.X509Certificates.X509Certificate2)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L243">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L241">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadCertificateChain_" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateChain*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadCertificateChain_System_Security_Cryptography_X509Certificates_X509Certificate2_" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateChain(System.Security.Cryptography.X509Certificates.X509Certificate2)">LoadCertificateChain(X509Certificate2)</h4>
@@ -830,7 +832,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadCertificateChain_System_Security_Cryptography_X509Certificates_X509Certificate2___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadCertificateChain(System.Security.Cryptography.X509Certificates.X509Certificate2%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L232">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L230">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadCertificateChain_" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateChain*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadCertificateChain_System_Security_Cryptography_X509Certificates_X509Certificate2___" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateChain(System.Security.Cryptography.X509Certificates.X509Certificate2[])">LoadCertificateChain(X509Certificate2[])</h4>
@@ -877,7 +879,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadCertificateChain_System_String___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadCertificateChain(System.String%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L248">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L246">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadCertificateChain_" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateChain*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadCertificateChain_System_String___" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateChain(System.String[])">LoadCertificateChain(String[])</h4>
@@ -924,7 +926,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadCertificateResource_System_Security_Cryptography_X509Certificates_X509Certificate2_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadCertificateResource(System.Security.Cryptography.X509Certificates.X509Certificate2)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L259">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L257">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadCertificateResource_" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateResource*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadCertificateResource_System_Security_Cryptography_X509Certificates_X509Certificate2_" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateResource(System.Security.Cryptography.X509Certificates.X509Certificate2)">LoadCertificateResource(X509Certificate2)</h4>
@@ -971,7 +973,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadCertificateResource_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadCertificateResource(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L269">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L267">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadCertificateResource_" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateResource*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadCertificateResource_System_String_" data-uid="SIPSorcery.Net.DtlsUtils.LoadCertificateResource(System.String)">LoadCertificateResource(String)</h4>
@@ -1018,7 +1020,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2COrg.BouncyCastle.Crypto.Tls.Certificate%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L145">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L143">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">LoadEncryptionCredentials(TlsContext, Certificate, AsymmetricKeyParameter)</h4>
@@ -1075,7 +1077,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2CSystem.String%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L152">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L150">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadEncryptionCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_" data-uid="SIPSorcery.Net.DtlsUtils.LoadEncryptionCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)">LoadEncryptionCredentials(TlsContext, String[], String)</h4>
@@ -1132,7 +1134,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadPemResource_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadPemResource(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L302">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L300">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadPemResource_" data-uid="SIPSorcery.Net.DtlsUtils.LoadPemResource*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadPemResource_System_String_" data-uid="SIPSorcery.Net.DtlsUtils.LoadPemResource(System.String)">LoadPemResource(String)</h4>
@@ -1179,7 +1181,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadPrivateKeyResource_System_Security_Cryptography_X509Certificates_X509Certificate2_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadPrivateKeyResource(System.Security.Cryptography.X509Certificates.X509Certificate2)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L279">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L277">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadPrivateKeyResource_" data-uid="SIPSorcery.Net.DtlsUtils.LoadPrivateKeyResource*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadPrivateKeyResource_System_Security_Cryptography_X509Certificates_X509Certificate2_" data-uid="SIPSorcery.Net.DtlsUtils.LoadPrivateKeyResource(System.Security.Cryptography.X509Certificates.X509Certificate2)">LoadPrivateKeyResource(X509Certificate2)</h4>
@@ -1226,7 +1228,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadPrivateKeyResource_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadPrivateKeyResource(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L284">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L282">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadPrivateKeyResource_" data-uid="SIPSorcery.Net.DtlsUtils.LoadPrivateKeyResource*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadPrivateKeyResource_System_String_" data-uid="SIPSorcery.Net.DtlsUtils.LoadPrivateKeyResource(System.String)">LoadPrivateKeyResource(String)</h4>
@@ -1273,7 +1275,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2COrg.BouncyCastle.Crypto.Tls.Certificate%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L161">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L159">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter)</h4>
@@ -1330,7 +1332,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_Org_BouncyCastle_Crypto_Tls_SignatureAndHashAlgorithm_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2COrg.BouncyCastle.Crypto.Tls.Certificate%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter%2COrg.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L175">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L173">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_Org_BouncyCastle_Crypto_Tls_SignatureAndHashAlgorithm_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)">LoadSignerCredentials(TlsContext, Certificate, AsymmetricKeyParameter, SignatureAndHashAlgorithm)</h4>
@@ -1392,7 +1394,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_Collections_IList_System_Byte_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2CSystem.Collections.IList%2CSystem.Byte%2COrg.BouncyCastle.Crypto.Tls.Certificate%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L193">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L191">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_Collections_IList_System_Byte_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">LoadSignerCredentials(TlsContext, IList, Byte, Certificate, AsymmetricKeyParameter)</h4>
@@ -1459,7 +1461,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_Collections_IList_System_Byte_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2CSystem.Collections.IList%2CSystem.Byte%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L222">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L220">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_Collections_IList_System_Byte_System_String_System_String_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.Collections.IList,System.Byte,System.String,System.String)">LoadSignerCredentials(TlsContext, IList, Byte, String, String)</h4>
@@ -1526,7 +1528,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2CSystem.String%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L167">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L165">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String)">LoadSignerCredentials(TlsContext, String[], String)</h4>
@@ -1583,7 +1585,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_Org_BouncyCastle_Crypto_Tls_SignatureAndHashAlgorithm_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext%2CSystem.String%5B%5D%2CSystem.String%2COrg.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L183">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L181">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_LoadSignerCredentials_Org_BouncyCastle_Crypto_Tls_TlsContext_System_String___System_String_Org_BouncyCastle_Crypto_Tls_SignatureAndHashAlgorithm_" data-uid="SIPSorcery.Net.DtlsUtils.LoadSignerCredentials(Org.BouncyCastle.Crypto.Tls.TlsContext,System.String[],System.String,Org.BouncyCastle.Crypto.Tls.SignatureAndHashAlgorithm)">LoadSignerCredentials(TlsContext, String[], String, SignatureAndHashAlgorithm)</h4>
@@ -1748,7 +1750,7 @@ version from working on non-Windows platforms.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L72" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L70" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
