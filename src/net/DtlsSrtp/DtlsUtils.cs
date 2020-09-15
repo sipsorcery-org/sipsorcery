@@ -363,9 +363,9 @@ namespace SIPSorcery.Net
         }
 
         /// <remarks>Plagarised from https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs.</remarks>
-        public static X509Certificate2 ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate BouncyCert, AsymmetricCipherKeyPair KeyPair)
+        public static X509Certificate2 ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate bouncyCert, AsymmetricCipherKeyPair keyPair)
         {
-            var pkcs12Store = new Pkcs12Store();
+            /*var pkcs12Store = new Pkcs12Store();
             var certEntry = new X509CertificateEntry(BouncyCert);
 
             pkcs12Store.SetCertificateEntry(BouncyCert.SerialNumber.ToString(), certEntry);
@@ -381,7 +381,32 @@ namespace SIPSorcery.Net
                 keyedCert = new X509Certificate2(pfxStream.ToArray(), "", X509KeyStorageFlags.Exportable);
             }
 
-            return keyedCert;
+            return keyedCert;*/
+
+            // corresponding private key
+            var info = PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair.Private);
+
+            // merge into X509Certificate2
+            var x509 = new X509Certificate2(bouncyCert.GetEncoded());
+
+            var seq = (Asn1Sequence)Asn1Object.FromByteArray(info.ParsePrivateKey().GetDerEncoded());
+            if (seq.Count != 9)
+            {
+                throw new Org.BouncyCastle.OpenSsl.PemException("malformed sequence in RSA private key");
+            }
+
+            var rsa = RsaPrivateKeyStructure.GetInstance(seq); //new RsaPrivateKeyStructure(seq);
+            var rsaparams = new RsaPrivateCrtKeyParameters(
+                rsa.Modulus, rsa.PublicExponent, rsa.PrivateExponent, rsa.Prime1, rsa.Prime2, rsa.Exponent1, rsa.Exponent2, rsa.Coefficient);
+
+            var parms = DotNetUtilities.ToRSAParameters(rsaparams);
+            var rsa2 = RSA.Create();
+            rsa2.ImportParameters(parms);
+            //x509.PrivateKey = rsa2;
+
+            //x509.PrivateKey = DotNetUtilities.ToRSA(rsaparams);
+
+            return x509.CopyWithPrivateKey(ToRSA(rsaparams));
         }
 
 
