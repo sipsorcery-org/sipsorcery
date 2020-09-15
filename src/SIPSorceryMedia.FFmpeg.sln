@@ -5,9 +5,7 @@ VisualStudioVersion = 16.0.30320.27
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.FFmpeg", "SIPSorceryMedia.FFmpeg.csproj", "{C3721569-24C0-4666-994F-6B042E84A786}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FFmpegEncodingTest", "..\test\FFmpegEncodingTest\FFmpegEncodingTest.csproj", "{4F243FBC-1BC7-4A6E-99B1-950F7E0C41E4}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\sipsorcery-core\src\SIPSorcery.csproj", "{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FFmpegEncodingTest", "..\test\FFmpegEncodingTest\FFmpegEncodingTest.csproj", "{4F243FBC-1BC7-4A6E-99B1-950F7E0C41E4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{C76D54C9-D8F7-4D5E-B82A-35887626EC04}"
 EndProject
@@ -47,18 +45,6 @@ Global
 		{4F243FBC-1BC7-4A6E-99B1-950F7E0C41E4}.Release|x64.Build.0 = Release|Any CPU
 		{4F243FBC-1BC7-4A6E-99B1-950F7E0C41E4}.Release|x86.ActiveCfg = Release|Any CPU
 		{4F243FBC-1BC7-4A6E-99B1-950F7E0C41E4}.Release|x86.Build.0 = Release|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Debug|x64.Build.0 = Debug|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Debug|x86.Build.0 = Debug|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Release|x64.ActiveCfg = Release|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Release|x64.Build.0 = Release|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Release|x86.ActiveCfg = Release|Any CPU
-		{C42C8E0E-AF6C-4BC6-8CDE-4A699EF76FBF}.Release|x86.Build.0 = Release|Any CPU
 		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Debug|Any CPU.Build.0 = Debug|x64
 		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Debug|x64.ActiveCfg = Debug|x64

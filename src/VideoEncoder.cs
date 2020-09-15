@@ -16,8 +16,9 @@ namespace SIPSorceryMedia.FFmpeg
         private readonly int _framesPerSecond;
         private readonly AVCodecID _codecID;
 
+        private VideoFrameConverter? _rgbToi420;
         private bool _isEncoderInitialised = false;
-        private bool _isDecoderInitialised = false;
+        //private bool _isDecoderInitialised = false;
 
         private static ILogger logger = NullLogger.Instance;
 
@@ -46,37 +47,46 @@ namespace SIPSorceryMedia.FFmpeg
 
         private void InitialiseEncoder()
         {
-            _isEncoderInitialised = true;
-
-            _encoderContext = ffmpeg.avcodec_alloc_context3(_codec);
-            if (_encoderContext == null)
+            if (!_isEncoderInitialised)
             {
-                throw new ApplicationException("Failed to allocate encoder codec context.");
+                _isEncoderInitialised = true;
+
+                _encoderContext = ffmpeg.avcodec_alloc_context3(_codec);
+                if (_encoderContext == null)
+                {
+                    throw new ApplicationException("Failed to allocate encoder codec context.");
+                }
+
+                _encoderContext->width = _frameWidth;
+                _encoderContext->height = _frameHeight;
+                _encoderContext->time_base.den = _framesPerSecond;
+                _encoderContext->time_base.num = 1;
+                _encoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
+
+                if (_codecID == AVCodecID.AV_CODEC_ID_H264)
+                {
+                    _encoderContext->gop_size = 30; // Key frame interval.
+
+                    //_videoCodecContext->profile = ffmpeg.FF_PROFILE_H264_CONSTRAINED_BASELINE;
+                    ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
+                    //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();
+                    //ffmpeg.av_opt_set(_pCodecContext->priv_data, "preset", "veryslow", 0);
+                    //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
+                }
+
+                ffmpeg.avcodec_open2(_encoderContext, _codec, null).ThrowExceptionIfError();
+
+                _rgbToi420 = new VideoFrameConverter(
+                    _frameWidth, _frameHeight,
+                    AVPixelFormat.AV_PIX_FMT_RGB24,
+                    _frameWidth, _frameHeight,
+                    AVPixelFormat.AV_PIX_FMT_YUV420P);
             }
-
-            _encoderContext->width = _frameWidth;
-            _encoderContext->height = _frameHeight;
-            _encoderContext->time_base.den = _framesPerSecond;
-            _encoderContext->time_base.num = 1;
-            _encoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
-
-            if (_codecID == AVCodecID.AV_CODEC_ID_H264)
-            {
-                _encoderContext->gop_size = 30; // Key frame interval.
-
-                //_videoCodecContext->profile = ffmpeg.FF_PROFILE_H264_CONSTRAINED_BASELINE;
-                ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
-                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();
-                //ffmpeg.av_opt_set(_pCodecContext->priv_data, "preset", "veryslow", 0);
-                //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
-            }
-
-            ffmpeg.avcodec_open2(_encoderContext, _codec, null).ThrowExceptionIfError();
         }
 
         private void InitialiseDecoder()
         {
-            _isDecoderInitialised = true;
+            //_isDecoderInitialised = true;
 
             _decoderContext = ffmpeg.avcodec_alloc_context3(_codec);
             if (_decoderContext == null)
@@ -111,7 +121,7 @@ namespace SIPSorceryMedia.FFmpeg
             ffmpeg.av_free(_codec);
         }
 
-        public string GetCodecName()
+        public string? GetCodecName()
         {
             var namePtr = _codec->name;
             return Marshal.PtrToStringAnsi((IntPtr)namePtr);
@@ -140,7 +150,25 @@ namespace SIPSorceryMedia.FFmpeg
             return i420Frame;
         }
 
-        public byte[] Encode(AVFrame i420Frame)
+        public byte[]? Encode(byte[] rgb)
+        {
+            if (!_isEncoderInitialised)
+            {
+                InitialiseEncoder();
+            }
+
+            if (_rgbToi420 != null)
+            {
+                var i420Frame = _rgbToi420.Convert(rgb);
+                return Encode(i420Frame);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public byte[]? Encode(AVFrame i420Frame)
         {
             if(!_isEncoderInitialised)
             {
@@ -203,9 +231,9 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public byte[] Decode(AVFrame * frame)
-        {
+        //public byte[] Decode(AVFrame * frame)
+        //{
 
-        }
+        //}
     }
 }

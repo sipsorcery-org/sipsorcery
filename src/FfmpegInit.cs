@@ -53,7 +53,7 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public static unsafe string av_strerror(int error)
+        public static unsafe string? av_strerror(int error)
         {
             var bufferSize = 1024;
             var buffer = stackalloc byte[bufferSize];

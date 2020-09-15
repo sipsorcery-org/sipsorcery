@@ -45,7 +45,14 @@ namespace FFmpegEncodingTest
 
             //RoundTripNoEncodingDummyBitmap();
 
-            RoundTripNoEncodingTestPattern();
+            for (int i = 0; i < 25; i++)
+            {
+                DateTime startTime = DateTime.Now;
+
+                RoundTripNoEncodingTestPattern();
+
+                Console.WriteLine($"encode+decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
+            }
 
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();
@@ -58,15 +65,15 @@ namespace FFmpegEncodingTest
             int h = testBmp.Height;
 
             var rgbToi420 = new VideoFrameConverter(
-                testBmp.Size,
+                testBmp.Size.Width, testBmp.Size.Height,
                 AVPixelFormat.AV_PIX_FMT_RGB24,
-                testBmp.Size,
+                testBmp.Size.Width, testBmp.Size.Height,
                 AVPixelFormat.AV_PIX_FMT_YUV420P);
 
             var i420Converter = new VideoFrameConverter(
-                testBmp.Size,
+                testBmp.Size.Width, testBmp.Size.Height,
                 AVPixelFormat.AV_PIX_FMT_YUV420P,
-                testBmp.Size,
+                testBmp.Size.Width, testBmp.Size.Height,
                 AVPixelFormat.AV_PIX_FMT_RGB24);
 
             BitmapData bmpData = testBmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
@@ -106,15 +113,15 @@ namespace FFmpegEncodingTest
             Size sz = new Size(width, height);
 
             var rgbToi420 = new VideoFrameConverter(
-                sz,
+                width, height,
                 AVPixelFormat.AV_PIX_FMT_RGB24,
-                sz,
+               width, height,
                 AVPixelFormat.AV_PIX_FMT_YUV420P);
 
             var i420Converter = new VideoFrameConverter(
-                sz,
+                width, height,
                 AVPixelFormat.AV_PIX_FMT_YUV420P,
-                sz,
+                width, height,
                 AVPixelFormat.AV_PIX_FMT_RGB24);
 
             // Create dummy bitmap.
@@ -204,9 +211,9 @@ namespace FFmpegEncodingTest
             Console.WriteLine($"Codec name {_ffmpegEncoder.GetCodecName()}.");
 
             _videoFrameConverter = new VideoFrameConverter(
-                new Size(_testPattern.Width, _testPattern.Height),
+                _testPattern.Width, _testPattern.Height,
                 AVPixelFormat.AV_PIX_FMT_BGRA,
-                new Size(_testPattern.Width, _testPattern.Height),
+                _testPattern.Width, _testPattern.Height,
                 AVPixelFormat.AV_PIX_FMT_YUV420P);
         }
 
