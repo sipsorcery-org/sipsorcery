@@ -14,7 +14,7 @@ init:
 build_script:
 - uname -a
 - dotnet --version
-- dotnet build src/SIPSorcery.sln --framework netcoreapp3.1
+#- dotnet build src/SIPSorcery.sln --framework netcoreapp3.1
 test_script:
 - dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework netcoreapp3.1 -c Release
 #on_finish:
