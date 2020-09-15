@@ -41,7 +41,7 @@ namespace SIPSorcery.UnitTests
                 .WriteTo.TestOutput(output, outputTemplate: template)
                 .WriteTo.Console(outputTemplate: template)
                 .CreateLogger();
-
+            SIPSorcery.LogFactory.Set(new SerilogLoggerFactory(serilog));
             return new SerilogLoggerProvider(serilog).CreateLogger("unit");
 
 #else
