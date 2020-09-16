@@ -23,7 +23,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Windows;
 using WebSocketSharp.Server;
 using SIPSorcery.Media;
 using Serilog.Extensions.Logging;
@@ -73,15 +72,15 @@ namespace demo
             var pc = new RTCPeerConnection(config);
 
             var testPatternSource = new VideoTestPatternSource();
-            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(true);
+            var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
 
-            MediaStreamTrack track = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack track = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
 
-            testPatternSource.OnVideoSourceRawSample += windowsVideoEndPoint.ExternalVideoSourceRawSample;
-            windowsVideoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
-            pc.OnVideoFormatsNegotiated += (sdpFormat) =>
-                windowsVideoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            testPatternSource.OnVideoSourceRawSample += videoEndPoint.ExternalVideoSourceRawSample;
+            videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+            pc.OnVideoFormatsNegotiated += (sdpFormat) => videoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
             
             pc.onconnectionstatechange += async (state) =>
             {
@@ -94,19 +93,19 @@ namespace demo
                 else if (state == RTCPeerConnectionState.closed)
                 {
                     await testPatternSource.CloseVideo();
-                    await windowsVideoEndPoint.CloseVideo();
+                    await videoEndPoint.CloseVideo();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    await windowsVideoEndPoint.StartVideo();
+                    await videoEndPoint.StartVideo();
                     await testPatternSource.StartVideo();
                 }
             };
 
             // Diagnostics.
-            pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-            pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
-            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
+            //pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+            //pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+            //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
             return pc;
