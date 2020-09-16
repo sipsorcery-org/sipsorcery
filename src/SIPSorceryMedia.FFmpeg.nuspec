@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>SIPSorceryMedia.FFmpeg</id>
+    <authors>Aaron Clauson</authors>
+    <copyright>Copyright © 2020 Aaron Clauson</copyright>
+    <license type="expression">BSD-3-Clause</license>
+    <title>SIPSorceryMedia.FFmpeg</title>
+    <summary>FFmpeg media end points for real-time communications.</summary>
+	<description>Provides FFmpeg based audio and video media end points that can be used with the SIPSorcery real-time communications library.</description>
+	<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
+	<icon>icon.png</icon>
+    <projectUrl>https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg</projectUrl>
+	<repository type="git" url="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg" branch="master" />
+	<tags>WebRTC VoIP SIPSorcery Media FFmpeg</tags>
+	<dependencies>
+      <group targetFramework="netcoreapp3.1">
+	    <dependency id="Microsoft.Extensions.Logging.Abstractions" version="3.1.8" />
+		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.10-pre" />
+		<dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" />
+		<dependency id="FFmpeg.AutoGen" version="4.3.0.1" />
+	  </group>
+    </dependencies>
+	<releaseNotes>-v0.0.1-pre: Initial release.</releaseNotes>
+	<version>0.0.1-pre</version>
+  </metadata>
+  <files>
+    <file src="icon.png" target="icon.png" />
+  	<file src="bin\Release\netcoreapp3.1\SIPSorceryMedia.FFmpeg.dll" target="lib\netcoreapp3.1" />
+    <file src="..\lib\nuspec\SIPSorceryMedia.FFmpeg.targets" target="build\SIPSorceryMedia.FFmpeg.targets" />
+    <file src="..\lib\x64\*.dll" target="build\x64" />
+    <file src="..\lib\x86\*.dll" target="build\x86" />
+  </files>
+</package>

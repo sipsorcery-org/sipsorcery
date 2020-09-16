@@ -76,33 +76,24 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload)
         {
-            //if (!_isClosed)
-            //{
-            AVCodecID codecID = GetAVCodecID(_selectedSinkFormat);
-            int width = 0, height = 0;
-            byte[]? rgbFrame = _ffmpegEncoder.Decode(codecID, payload, out width, out height);
-
-            if (rgbFrame == null || width == 0 || height == 0)
+            if (!_isClosed)
             {
-                logger.LogWarning($"Decode of video sample failed, width {width}, height {height}.");
-            }
-            else
-            {
-                //int w = (int)width;
-                //int h = (int)height;
+                AVCodecID codecID = GetAVCodecID(_selectedSinkFormat);
 
-                //var i420Converter = new VideoFrameConverter(
-                //    w, h,
-                //    AVPixelFormat.AV_PIX_FMT_YUV420P,
-                //    w, h,
-                //    AVPixelFormat.AV_PIX_FMT_RGB24);
+                var rgbFrames = _ffmpegEncoder.Decode(codecID, payload, out var width, out var height);
 
-                //foreach (var rgbFrame in rgbFrames)
-                //{
-                OnVideoSinkDecodedSample?.Invoke(rgbFrame, (uint)width, (uint)height, (int)(width * 3), VideoPixelFormatsEnum.Rgb);
-                //}
+                if (rgbFrames == null || width == 0 || height == 0)
+                {
+                    logger.LogWarning($"Decode of video sample failed, width {width}, height {height}.");
+                }
+                else
+                {
+                    foreach (var rgbFrame in rgbFrames)
+                    {
+                        OnVideoSinkDecodedSample?.Invoke(rgbFrame, (uint)width, (uint)height, (int)(width * 3), VideoPixelFormatsEnum.Rgb);
+                    }
+                }
             }
-            //}
         }
 
         public void RestrictCodecs(List<VideoCodecsEnum> codecs)
