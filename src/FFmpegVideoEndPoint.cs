@@ -18,7 +18,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         public static readonly List<VideoCodecsEnum> SupportedCodecs = new List<VideoCodecsEnum>
         {
-            VideoCodecsEnum.VP8
+            VideoCodecsEnum.VP8,
+            VideoCodecsEnum.H264
         };
 
         private VideoEncoder? _ffmpegEncoder;
@@ -138,7 +139,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public Task StartVideo()
         {
-            if(!_isStarted)
+            if (!_isStarted)
             {
                 _isStarted = true;
             }
@@ -148,7 +149,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public Task CloseVideo()
         {
-           if(!_isClosed)
+            if (!_isClosed)
             {
                 _isClosed = true;
             }
@@ -163,7 +164,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void SetVideoSourceFormat(VideoCodecsEnum videoFormat)
         {
-            if (videoFormat != VideoCodecsEnum.VP8)
+            if (!SupportedCodecs.Any(x => x == videoFormat))
             {
                 throw new ApplicationException($"The FFmpeg Video Source End Point does not support video codec {videoFormat}.");
             }
@@ -177,7 +178,21 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 if (_ffmpegEncoder == null)
                 {
-                    _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, width, height, DEFAULT_FRAMES_PER_SECOND);
+                    var avCodecID = AVCodecID.AV_CODEC_ID_VP8;
+
+                    switch (_selectedSourceFormat)
+                    {
+                        case VideoCodecsEnum.VP8:
+                            avCodecID = AVCodecID.AV_CODEC_ID_VP8;
+                            break;
+                        case VideoCodecsEnum.H264:
+                            avCodecID = AVCodecID.AV_CODEC_ID_H264;
+                            break;
+                        default:
+                            throw new ApplicationException($"FFmpeg video source, selected video codec {_selectedSourceFormat} is not supported.");
+                    }
+
+                    _ffmpegEncoder = new VideoEncoder(avCodecID, width, height, DEFAULT_FRAMES_PER_SECOND);
                 }
 
                 if (OnVideoSourceEncodedSample != null)

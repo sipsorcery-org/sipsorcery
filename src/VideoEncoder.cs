@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace SIPSorceryMedia.FFmpeg
 {
@@ -20,7 +19,9 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isEncoderInitialised = false;
         //private bool _isDecoderInitialised = false;
 
-        private static ILogger logger = NullLogger.Instance;
+        private int _pts = 0;
+
+        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<VideoEncoder>();
 
         public VideoEncoder(AVCodecID codecID, int frameWidth, int frameHeight, int framesPerSecond)
         {
@@ -78,7 +79,8 @@ namespace SIPSorceryMedia.FFmpeg
 
                 _rgbToi420 = new VideoFrameConverter(
                     _frameWidth, _frameHeight,
-                    AVPixelFormat.AV_PIX_FMT_RGB24,
+                    //AVPixelFormat.AV_PIX_FMT_RGB24,
+                    AVPixelFormat.AV_PIX_FMT_BGR24,
                     _frameWidth, _frameHeight,
                     AVPixelFormat.AV_PIX_FMT_YUV420P);
             }
@@ -133,7 +135,7 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 width = width,
                 height = height,
-                format = (int)AVPixelFormat.AV_PIX_FMT_YUV420P
+                format = (int)AVPixelFormat.AV_PIX_FMT_YUV420P,
             };
 
             fixed (byte* pSrcData = i420Buffer)
@@ -191,6 +193,8 @@ namespace SIPSorceryMedia.FFmpeg
             if (i420Frame.data[1] - i420Frame.data[0] != _ySize) throw new ArgumentException("Invalid Y data size.", nameof(i420Frame));
             if (i420Frame.data[2] - i420Frame.data[1] != _uSize) throw new ArgumentException("Invalid U data size.", nameof(i420Frame));
 
+            i420Frame.pts = _pts++;
+
             var pPacket = ffmpeg.av_packet_alloc();
 
             try
@@ -203,6 +207,7 @@ namespace SIPSorceryMedia.FFmpeg
                     if (_codecID == AVCodecID.AV_CODEC_ID_H264)
                     {
                         // TODO: Work out how to use the FFmpeg H264 bit stream parser to extract the NALs.
+                        // Currently it's being done in the RTPSession class.
                         byte[] arr = new byte[pPacket->size];
                         Marshal.Copy((IntPtr)pPacket->data, arr, 0, pPacket->size);
                         return arr;
