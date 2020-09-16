@@ -29,6 +29,5 @@
   	<file src="bin\Release\netcoreapp3.1\SIPSorceryMedia.FFmpeg.dll" target="lib\netcoreapp3.1" />
     <file src="..\lib\nuspec\SIPSorceryMedia.FFmpeg.targets" target="build\SIPSorceryMedia.FFmpeg.targets" />
     <file src="..\lib\x64\*.dll" target="build\x64" />
-    <file src="..\lib\x86\*.dll" target="build\x86" />
   </files>
 </package>
