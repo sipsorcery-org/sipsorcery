@@ -22,7 +22,7 @@ namespace SIPSorceryMedia.FFmpeg
             VideoCodecsEnum.H264
         };
 
-        private VideoEncoder? _ffmpegEncoder;
+        private VideoEncoder _ffmpegEncoder;
 
         private VideoCodecsEnum _selectedSinkFormat = VideoCodecsEnum.VP8;
         private VideoCodecsEnum _selectedSourceFormat = VideoCodecsEnum.VP8;
@@ -42,7 +42,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public FFmpegVideoEndPoint()
         {
-
+            _ffmpegEncoder = new VideoEncoder();
         }
 
         public MediaEndPoints ToMediaEndPoints()
@@ -61,7 +61,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void SetVideoSinkFormat(VideoCodecsEnum videoFormat)
         {
-            if (videoFormat != VideoCodecsEnum.VP8)
+            if (!SupportedCodecs.Any(x => x == videoFormat))
             {
                 throw new ApplicationException($"The FFmpeg Video Sink End Point does not support video codec {videoFormat}.");
             }
@@ -78,28 +78,29 @@ namespace SIPSorceryMedia.FFmpeg
         {
             //if (!_isClosed)
             //{
+            AVCodecID codecID = GetAVCodecID(_selectedSinkFormat);
             int width = 0, height = 0;
-            List<byte[]> rgbFrames = new List<byte[]>();//_ffmpegEncoder.Decode(_currVideoFrame, _currVideoFramePosn, out width, out height);
+            byte[]? rgbFrame = _ffmpegEncoder.Decode(codecID, payload, out width, out height);
 
-            if (rgbFrames == null)
+            if (rgbFrame == null || width == 0 || height == 0)
             {
-                logger.LogWarning("VPX decode of video sample failed.");
+                logger.LogWarning($"Decode of video sample failed, width {width}, height {height}.");
             }
             else
             {
-                int w = (int)width;
-                int h = (int)height;
+                //int w = (int)width;
+                //int h = (int)height;
 
-                var i420Converter = new VideoFrameConverter(
-                    w, h,
-                    AVPixelFormat.AV_PIX_FMT_YUV420P,
-                    w, h,
-                    AVPixelFormat.AV_PIX_FMT_RGB24);
+                //var i420Converter = new VideoFrameConverter(
+                //    w, h,
+                //    AVPixelFormat.AV_PIX_FMT_YUV420P,
+                //    w, h,
+                //    AVPixelFormat.AV_PIX_FMT_RGB24);
 
-                foreach (var rgbFrame in rgbFrames)
-                {
-                    OnVideoSinkDecodedSample?.Invoke(rgbFrame, (uint)w, (uint)h, (int)(width * 3), VideoPixelFormatsEnum.Rgb);
-                }
+                //foreach (var rgbFrame in rgbFrames)
+                //{
+                OnVideoSinkDecodedSample?.Invoke(rgbFrame, (uint)width, (uint)height, (int)(width * 3), VideoPixelFormatsEnum.Rgb);
+                //}
             }
             //}
         }
@@ -176,33 +177,15 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isClosed)
             {
-                if (_ffmpegEncoder == null)
-                {
-                    var avCodecID = AVCodecID.AV_CODEC_ID_VP8;
-
-                    switch (_selectedSourceFormat)
-                    {
-                        case VideoCodecsEnum.VP8:
-                            avCodecID = AVCodecID.AV_CODEC_ID_VP8;
-                            break;
-                        case VideoCodecsEnum.H264:
-                            avCodecID = AVCodecID.AV_CODEC_ID_H264;
-                            break;
-                        default:
-                            throw new ApplicationException($"FFmpeg video source, selected video codec {_selectedSourceFormat} is not supported.");
-                    }
-
-                    _ffmpegEncoder = new VideoEncoder(avCodecID, width, height, DEFAULT_FRAMES_PER_SECOND);
-                }
-
                 if (OnVideoSourceEncodedSample != null)
                 {
-                    byte[]? encodedBuffer = _ffmpegEncoder.Encode(sample);
+                    uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
+
+                    byte[]? encodedBuffer = _ffmpegEncoder.Encode(GetAVCodecID(_selectedSourceFormat), sample, width, height, (int)fps);
 
                     if (encodedBuffer != null)
                     {
                         //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
-                        uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
                         uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
                         OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
                     }
@@ -218,6 +201,24 @@ namespace SIPSorceryMedia.FFmpeg
         public void ForceKeyFrame()
         {
             throw new NotImplementedException();
+        }
+
+        private AVCodecID GetAVCodecID(VideoCodecsEnum videoCodec)
+        {
+            var avCodecID = AVCodecID.AV_CODEC_ID_VP8;
+            switch (videoCodec)
+            {
+                case VideoCodecsEnum.VP8:
+                    avCodecID = AVCodecID.AV_CODEC_ID_VP8;
+                    break;
+                case VideoCodecsEnum.H264:
+                    avCodecID = AVCodecID.AV_CODEC_ID_H264;
+                    break;
+                default:
+                    throw new ApplicationException($"FFmpeg video source, selected video codec {videoCodec} is not supported.");
+            }
+
+            return avCodecID;
         }
 
         public void Dispose()

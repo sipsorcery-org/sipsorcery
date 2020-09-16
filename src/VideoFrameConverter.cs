@@ -138,5 +138,33 @@ namespace SIPSorceryMedia.FFmpeg
 
             return outputBuffer;
         }
+
+        public byte[] ConvertFrame(AVFrame * frame)
+        {
+            //int linesz0 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 0);
+            //int linesz1 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 1);
+            //int linesz2 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 2);
+
+            //byte_ptrArray4 src = new byte_ptrArray4();
+            //int_array4 srcStride = new int_array4();
+
+            //fixed (byte* pSrcData = srcData)
+            //{
+            //    ffmpeg.av_image_fill_arrays(ref src, ref srcStride, pSrcData, _srcPixelFormat, _srcWidth, _srcHeight, 1).ThrowExceptionIfError();
+            //}
+
+            ffmpeg.sws_scale(_pConvertContext, frame->data, frame->linesize, 0, frame->height, _dstData, _dstLinesize).ThrowExceptionIfError();
+
+            int outputBufferSize = ffmpeg.av_image_get_buffer_size(_dstPixelFormat, _dstWidth, _dstHeight, 1);
+            byte[] outputBuffer = new byte[outputBufferSize];
+
+            fixed (byte* pOutData = outputBuffer)
+            {
+                ffmpeg.av_image_copy_to_buffer(pOutData, outputBufferSize, _dstData, _dstLinesize, _dstPixelFormat, _dstWidth, _dstHeight, 1)
+                    .ThrowExceptionIfError();
+            }
+
+            return outputBuffer;
+        }
     }
 }

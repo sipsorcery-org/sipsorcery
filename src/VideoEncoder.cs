@@ -7,34 +7,38 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public sealed unsafe class VideoEncoder : IDisposable
     {
-        private readonly AVCodec* _codec;
+        private AVCodec* _codec;
         private AVCodecContext* _encoderContext;
         private AVCodecContext* _decoderContext;
-        private readonly int _frameWidth;
-        private readonly int _frameHeight;
-        private readonly int _framesPerSecond;
-        private readonly AVCodecID _codecID;
+        //private readonly int _frameWidth;
+        //private readonly int _frameHeight;
+        //private readonly int _framesPerSecond;
+        private AVCodecID _codecID;
 
         private VideoFrameConverter? _rgbToi420;
+        private VideoFrameConverter? _i420ToRgb;
         private bool _isEncoderInitialised = false;
-        //private bool _isDecoderInitialised = false;
+        private bool _isDecoderInitialised = false;
 
         private int _pts = 0;
 
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<VideoEncoder>();
 
-        public VideoEncoder(AVCodecID codecID, int frameWidth, int frameHeight, int framesPerSecond)
+        public VideoEncoder()
         {
-            _codecID = codecID;
-            _frameWidth = frameWidth;
-            _frameHeight = frameHeight;
-            _framesPerSecond = framesPerSecond;
+            //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_VERBOSE);
+            ffmpeg.av_log_set_level(ffmpeg.AV_LOG_TRACE);
 
-            _codec = ffmpeg.avcodec_find_encoder(codecID);
-            if (_codec == null)
-            {
-                throw new ApplicationException($"Codec encoder could not be found for {codecID}.");
-            }
+            //_codecID = codecID;
+            //_frameWidth = frameWidth;
+            //_frameHeight = frameHeight;
+            //_framesPerSecond = framesPerSecond;
+
+            //_codec = ffmpeg.avcodec_find_encoder(codecID);
+            //if (_codec == null)
+            //{
+            //    throw new ApplicationException($"Codec encoder could not be found for {codecID}.");
+            //}
 
             //Console.WriteLine($"H264 encoding profile {_videoCodecContext->profile}.");
 
@@ -46,11 +50,18 @@ namespace SIPSorceryMedia.FFmpeg
             //}
         }
 
-        private void InitialiseEncoder()
+        private void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
         {
             if (!_isEncoderInitialised)
             {
                 _isEncoderInitialised = true;
+
+                _codecID = codecID;
+                _codec = ffmpeg.avcodec_find_encoder(codecID);
+                if (_codec == null)
+                {
+                    throw new ApplicationException($"Codec encoder could not be found for {codecID}.");
+                }
 
                 _encoderContext = ffmpeg.avcodec_alloc_context3(_codec);
                 if (_encoderContext == null)
@@ -58,9 +69,9 @@ namespace SIPSorceryMedia.FFmpeg
                     throw new ApplicationException("Failed to allocate encoder codec context.");
                 }
 
-                _encoderContext->width = _frameWidth;
-                _encoderContext->height = _frameHeight;
-                _encoderContext->time_base.den = _framesPerSecond;
+                _encoderContext->width = width;
+                _encoderContext->height = height;
+                _encoderContext->time_base.den = fps;
                 _encoderContext->time_base.num = 1;
                 _encoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
 
@@ -78,28 +89,42 @@ namespace SIPSorceryMedia.FFmpeg
                 ffmpeg.avcodec_open2(_encoderContext, _codec, null).ThrowExceptionIfError();
 
                 _rgbToi420 = new VideoFrameConverter(
-                    _frameWidth, _frameHeight,
+                    width, height,
                     //AVPixelFormat.AV_PIX_FMT_RGB24,
                     AVPixelFormat.AV_PIX_FMT_BGR24,
-                    _frameWidth, _frameHeight,
+                    width, height,
                     AVPixelFormat.AV_PIX_FMT_YUV420P);
             }
         }
 
-        private void InitialiseDecoder()
+        private void InitialiseDecoder(AVCodecID codecID)
         {
-            //_isDecoderInitialised = true;
-
-            _decoderContext = ffmpeg.avcodec_alloc_context3(_codec);
-            if (_decoderContext == null)
+            if (!_isDecoderInitialised)
             {
-                throw new ApplicationException("Failed to allocate decoder codec context.");
-            }
+                _isDecoderInitialised = true;
 
-            _decoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
+                _codecID = codecID;
+                _codec = ffmpeg.avcodec_find_decoder(codecID);
+                if (_codec == null)
+                {
+                    throw new ApplicationException($"Codec encoder could not be found for {codecID}.");
+                }
 
-            //if (_codecID == AVCodecID.AV_CODEC_ID_H264)
-            //{
+                _decoderContext = ffmpeg.avcodec_alloc_context3(_codec);
+                if (_decoderContext == null)
+                {
+                    throw new ApplicationException("Failed to allocate decoder codec context.");
+                }
+
+                //_decoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
+                //_decoderContext->time_base.den = fps;
+                //_decoderContext->time_base.num = 1;
+                //_decoderContext->width = 640;
+                //_decoderContext->height = 480;
+                //_decoderContext->debug = 1;
+
+                //if (_codecID == AVCodecID.AV_CODEC_ID_H264)
+                //{
                 //_encoderContext->gop_size = 30; // Key frame interval.
 
                 //_videoCodecContext->profile = ffmpeg.FF_PROFILE_H264_CONSTRAINED_BASELINE;
@@ -107,9 +132,10 @@ namespace SIPSorceryMedia.FFmpeg
                 //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();
                 //ffmpeg.av_opt_set(_pCodecContext->priv_data, "preset", "veryslow", 0);
                 //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
-            //}
+                //}
 
-            ffmpeg.avcodec_open2(_decoderContext, _codec, null).ThrowExceptionIfError();
+                ffmpeg.avcodec_open2(_decoderContext, _codec, null).ThrowExceptionIfError();
+            }
         }
 
         public void Dispose()
@@ -152,17 +178,17 @@ namespace SIPSorceryMedia.FFmpeg
             return i420Frame;
         }
 
-        public byte[]? Encode(byte[] rgb)
+        public byte[]? Encode(AVCodecID codecID, byte[] rgb, int width, int height, int fps)
         {
             if (!_isEncoderInitialised)
             {
-                InitialiseEncoder();
+                InitialiseEncoder(codecID, width, height, fps);
             }
 
             if (_rgbToi420 != null)
             {
                 var i420Frame = _rgbToi420.Convert(rgb);
-                return Encode(i420Frame);
+                return Encode(codecID, i420Frame, width, height, fps);
             }
             else
             {
@@ -170,23 +196,23 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public byte[]? Encode(AVFrame i420Frame)
+        public byte[]? Encode(AVCodecID codecID, AVFrame i420Frame, int width, int height, int fps)
         {
-            if(!_isEncoderInitialised)
+            if (!_isEncoderInitialised)
             {
-                InitialiseEncoder();
+                InitialiseEncoder(codecID, width, height, fps);
             }
 
-            int _linesizeY = _frameWidth;
-            int _linesizeU = _frameWidth / 2;
-            int _linesizeV = _frameWidth / 2;
+            int _linesizeY = width;
+            int _linesizeU = width / 2;
+            int _linesizeV = width / 2;
 
-            int _ySize = _linesizeY * _frameHeight;
-            int _uSize = _linesizeU * _frameHeight / 2;
+            int _ySize = _linesizeY * height;
+            int _uSize = _linesizeU * height / 2;
 
             if (i420Frame.format != (int)_encoderContext->pix_fmt) throw new ArgumentException("Invalid pixel format.", nameof(i420Frame));
-            if (i420Frame.width != _frameWidth) throw new ArgumentException("Invalid width.", nameof(i420Frame));
-            if (i420Frame.height != _frameHeight) throw new ArgumentException("Invalid height.", nameof(i420Frame));
+            if (i420Frame.width != width) throw new ArgumentException("Invalid width.", nameof(i420Frame));
+            if (i420Frame.height != height) throw new ArgumentException("Invalid height.", nameof(i420Frame));
             if (i420Frame.linesize[0] != _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(i420Frame));
             if (i420Frame.linesize[1] != _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(i420Frame));
             if (i420Frame.linesize[2] != _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(i420Frame));
@@ -236,9 +262,78 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        //public byte[] Decode(AVFrame * frame)
-        //{
+        public byte[]? Decode(AVCodecID codecID, byte[] buffer, out int width, out int height)
+        {
+            AVPacket* packet = ffmpeg.av_packet_alloc();
+            //ffmpeg.av_init_packet(packet);
 
-        //}
+            try
+            {
+                var paddedBuffer = new byte[buffer.Length + ffmpeg.AV_INPUT_BUFFER_PADDING_SIZE];
+                Buffer.BlockCopy(buffer, 0, paddedBuffer, 0, buffer.Length);
+
+                fixed (byte* pBuffer = paddedBuffer)
+                {
+                    ffmpeg.av_packet_from_data(packet, pBuffer, paddedBuffer.Length).ThrowExceptionIfError();
+
+                    //packet->pts = ffmpeg.AV_NOPTS_VALUE;
+                    //packet->dts = ffmpeg.AV_NOPTS_VALUE;
+                    //packet->duration = 3000;
+
+                    return Decode(codecID, packet, out width, out height);
+                }
+            }
+            finally
+            {
+                //ffmpeg.av_packet_free(&packet);
+            }
+        }
+
+        public byte[]? Decode(AVCodecID codecID, AVPacket* packet, out int width, out int height)
+        {
+            width = 0;
+            height = 0;
+
+            if (!_isDecoderInitialised)
+            {
+                InitialiseDecoder(codecID);
+            }
+
+            AVFrame* decodedFrame = ffmpeg.av_frame_alloc();
+
+            try
+            {
+                ffmpeg.avcodec_send_packet(_decoderContext, packet).ThrowExceptionIfError();
+
+                int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, decodedFrame);
+
+                if (recvRes == 0)
+                {
+                    width = decodedFrame->width;
+                    height = decodedFrame->height;
+
+                    if (_i420ToRgb == null)
+                    {
+                        _i420ToRgb = new VideoFrameConverter(
+                            width, height,
+                            AVPixelFormat.AV_PIX_FMT_YUV420P,
+                            width, height,
+                            AVPixelFormat.AV_PIX_FMT_RGB24);
+                    }
+
+                    return _i420ToRgb.ConvertFrame(decodedFrame);
+                }
+                else if (recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
+                {
+                    recvRes.ThrowExceptionIfError();
+                }
+
+                return null;
+            }
+            finally
+            {
+                ffmpeg.av_frame_free(&decodedFrame);
+            }
+        }
     }
 }
