@@ -112,10 +112,11 @@ namespace SIPSorceryMedia.FFmpeg
             ffmpeg.av_free(_codec);
         }
 
-        public string? GetCodecName()
+        public string GetCodecName()
         {
-            var namePtr = _codec->name;
-            return Marshal.PtrToStringAnsi((IntPtr)namePtr);
+            //var namePtr = _codec->name;
+            //return Marshal.PtrToStringAnsi((IntPtr)namePtr);
+            return ffmpeg.avcodec_get_name(_codec->id);
         }
 
         public AVFrame MakeFrame(byte[] i420Buffer, int width, int height)
@@ -151,7 +152,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (_rgbToi420 != null)
             {
                 var i420Frame = _rgbToi420.Convert(rgb);
-                return Encode(codecID, i420Frame, width, height, fps);
+                return Encode(codecID, i420Frame, fps);
             }
             else
             {
@@ -159,8 +160,11 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public byte[]? Encode(AVCodecID codecID, AVFrame i420Frame, int width, int height, int fps)
+        public byte[]? Encode(AVCodecID codecID, AVFrame i420Frame, int fps)
         {
+            int width = i420Frame.width;
+            int height = i420Frame.height;
+
             if (!_isEncoderInitialised)
             {
                 InitialiseEncoder(codecID, width, height, fps);
@@ -286,15 +290,12 @@ namespace SIPSorceryMedia.FFmpeg
                     recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, decodedFrame);
                 }
                 
-                if(recvRes == ffmpeg.AVERROR(ffmpeg.EAGAIN))
-                {
-                    return rgbFrames;
-                }
-                else
+                if(recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
                 {
                     recvRes.ThrowExceptionIfError();
-                    return null;
                 }
+
+                return rgbFrames;
             }
             finally
             {
