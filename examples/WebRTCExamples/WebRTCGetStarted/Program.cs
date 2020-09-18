@@ -22,11 +22,11 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp.Server;
-using SIPSorcery.Media;
-using Serilog.Extensions.Logging;
 
 namespace demo
 {
