@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorceryMedia.FFmpeg
 {
@@ -69,6 +70,27 @@ namespace SIPSorceryMedia.FFmpeg
                 throw new ApplicationException(av_strerror(error));
             }
             return error;
+        }
+    }
+
+    public static class FFmpegConvert
+    {
+        public static AVCodecID GetAVCodecID(VideoCodecsEnum videoCodec)
+        {
+            var avCodecID = AVCodecID.AV_CODEC_ID_VP8;
+            switch (videoCodec)
+            {
+                case VideoCodecsEnum.VP8:
+                    avCodecID = AVCodecID.AV_CODEC_ID_VP8;
+                    break;
+                case VideoCodecsEnum.H264:
+                    avCodecID = AVCodecID.AV_CODEC_ID_H264;
+                    break;
+                default:
+                    throw new ApplicationException($"FFmpeg video source, selected video codec {videoCodec} is not supported.");
+            }
+
+            return avCodecID;
         }
     }
 }

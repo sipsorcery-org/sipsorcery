@@ -2,18 +2,17 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorceryMedia.FFmpeg
 {
-    public class FFmpegFileSource : IVideoSource, IAudioSource
+    public class FFmpegFileSource : IVideoSource, IAudioSource, IDisposable
     {
         private const int VIDEO_SAMPLING_RATE = 90000;
-        private const int DEFAULT_FRAMES_PER_SECOND = 30;
+        private const int DEFAULT_FRAME_RATE = 30;
+        private const AudioSamplingRatesEnum AUDIO_SAMPLING_RATE = AudioSamplingRatesEnum.Rate8KHz;
 
         public ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
 
@@ -22,7 +21,6 @@ namespace SIPSorceryMedia.FFmpeg
             VideoCodecsEnum.VP8,
             VideoCodecsEnum.H264
         };
-
 
         public static readonly List<AudioCodecsEnum> SupportedAudioCodecs = new List<AudioCodecsEnum>
         {
@@ -38,16 +36,21 @@ namespace SIPSorceryMedia.FFmpeg
         private List<VideoCodecsEnum> _supportedVideoCodecs = new List<VideoCodecsEnum>(SupportedVideoCodecs);
         private List<AudioCodecsEnum> _supportedAudioCodecs = new List<AudioCodecsEnum>(SupportedAudioCodecs);
         private bool _forceKeyFrame;
-        private FileSourceDecoder _fileSourceDecdoer;
+        private FileSourceDecoder _fileSourceDecoder;
         private VideoEncoder _videoEncoder;
         private IAudioEncoder _audioEncoder;
 
-        public event EncodedSampleDelegate OnVideoSourceEncodedSample;
-        public event RawVideoSampleDelegate OnVideoSourceRawSample;
-        public event SourceErrorDelegate OnVideoSourceError;
-        public event EncodedSampleDelegate OnAudioSourceEncodedSample;
-        public event RawAudioSampleDelegate OnAudioSourceRawSample;
-        public event SourceErrorDelegate OnAudioSourceError;
+        public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
+        public event EncodedSampleDelegate? OnAudioSourceEncodedSample;
+
+#pragma warning disable CS0067
+        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
+        public event SourceErrorDelegate? OnVideoSourceError;
+        public event RawAudioSampleDelegate? OnAudioSourceRawSample;
+        public event SourceErrorDelegate? OnAudioSourceError;
+#pragma warning restore CS0067
+
+        public event Action? OnEndOfFile;
 
         public FFmpegFileSource(string path, IAudioEncoder audioEncoder)
         {
@@ -57,23 +60,54 @@ namespace SIPSorceryMedia.FFmpeg
             }
 
             _audioEncoder = audioEncoder;
-            _fileSourceDecdoer = new FileSourceDecoder(path);
+            _fileSourceDecoder = new FileSourceDecoder(path);
             _videoEncoder = new VideoEncoder();
-            _fileSourceDecdoer.OnVideoFrame += FileSourceDecdoer_OnVideoFrame;
-            _fileSourceDecdoer.OnAudioFrame += FileSourceDecdoer_OnAudioFrame;
+            _fileSourceDecoder.OnVideoFrame += FileSourceDecdoer_OnVideoFrame;
+            _fileSourceDecoder.OnAudioFrame += FileSourceDecdoer_OnAudioFrame;
+            _fileSourceDecoder.OnEndOfFile += () =>
+            {
+                logger.LogDebug($"File source decode complete for {path}.");
+                OnEndOfFile?.Invoke();
+                _fileSourceDecoder.Dispose();
+            };
+        }
+
+        public void Initialise()
+        {
+            _fileSourceDecoder.InitialiseSource();
         }
 
         private void FileSourceDecdoer_OnAudioFrame(byte[] buffer)
         {
-            var encodedSample = _audioEncoder.EncodeAudio(buffer, _sendingAudioFormat, AudioSamplingRatesEnum.Rate8KHz);
-            OnAudioSourceEncodedSample((uint)buffer.Length, encodedSample);
+            if (OnAudioSourceEncodedSample != null)
+            {
+                var encodedSample = _audioEncoder.EncodeAudio(buffer, _sendingAudioFormat, AUDIO_SAMPLING_RATE);
+
+                //Console.WriteLine($"encoded audio size {encodedSample.Length}.");
+
+                OnAudioSourceEncodedSample((uint)encodedSample.Length, encodedSample);
+            }
         }
 
         private void FileSourceDecdoer_OnVideoFrame(byte[] buffer, int width, int height)
         {
-            var frame = _videoEncoder.MakeFrame(buffer, width, height);
-            var encodedSample = _videoEncoder.Encode(AVCodecID.AV_CODEC_ID_VP8, frame, 30);
-            OnVideoSourceEncodedSample?.Invoke(3000, encodedSample);
+            if (OnVideoSourceEncodedSample != null)
+            {
+                int frameRate = (int)_fileSourceDecoder.VideoAverageFrameRate;
+                frameRate = (frameRate <= 0) ? DEFAULT_FRAME_RATE : frameRate;
+                uint timestampDuration = (uint)(VIDEO_SAMPLING_RATE / frameRate);
+
+                //Console.WriteLine($"framerate {frameRate}, timestamp duration {timestampDuration}.");
+
+                var frame = _videoEncoder.MakeFrame(buffer, width, height);
+                var encodedSample = _videoEncoder.Encode(FFmpegConvert.GetAVCodecID(_selectedVideoSourceFormat), frame, frameRate, _forceKeyFrame);
+                OnVideoSourceEncodedSample(timestampDuration, encodedSample);
+
+                if(_forceKeyFrame)
+                {
+                    _forceKeyFrame = false;
+                }
+            }
         }
 
         public Task StartVideo()
@@ -81,20 +115,20 @@ namespace SIPSorceryMedia.FFmpeg
             if (!_isStarted)
             {
                 _isStarted = true;
-                _fileSourceDecdoer.StartDecode();
+                _fileSourceDecoder.StartDecode();
             }
 
             return Task.CompletedTask;
         }
 
-        public Task CloseVideo()
+        public async Task CloseVideo()
         {
             if (!_isClosed)
             {
                 _isClosed = true;
+                await _fileSourceDecoder.Close();
+                Dispose();
             }
-
-            return Task.CompletedTask;
         }
 
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
@@ -211,6 +245,12 @@ namespace SIPSorceryMedia.FFmpeg
         public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
         {
             throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            _fileSourceDecoder.Dispose();
+            _videoEncoder.Dispose();
         }
     }
 }

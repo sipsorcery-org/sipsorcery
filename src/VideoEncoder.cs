@@ -142,7 +142,7 @@ namespace SIPSorceryMedia.FFmpeg
             return i420Frame;
         }
 
-        public byte[]? Encode(AVCodecID codecID, byte[] rgb, int width, int height, int fps)
+        public byte[]? Encode(AVCodecID codecID, byte[] rgb, int width, int height, int fps, bool keyFrame = false)
         {
             if (!_isEncoderInitialised)
             {
@@ -152,7 +152,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (_rgbToi420 != null)
             {
                 var i420Frame = _rgbToi420.Convert(rgb);
-                return Encode(codecID, i420Frame, fps);
+                return Encode(codecID, i420Frame, fps, keyFrame);
             }
             else
             {
@@ -160,7 +160,7 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public byte[]? Encode(AVCodecID codecID, AVFrame i420Frame, int fps)
+        public byte[]? Encode(AVCodecID codecID, AVFrame i420Frame, int fps, bool keyFrame = false)
         {
             int width = i420Frame.width;
             int height = i420Frame.height;
@@ -186,6 +186,10 @@ namespace SIPSorceryMedia.FFmpeg
             if (i420Frame.data[1] - i420Frame.data[0] != _ySize) throw new ArgumentException("Invalid Y data size.", nameof(i420Frame));
             if (i420Frame.data[2] - i420Frame.data[1] != _uSize) throw new ArgumentException("Invalid U data size.", nameof(i420Frame));
 
+            if (keyFrame)
+            {
+                i420Frame.key_frame = 1;
+            }
             i420Frame.pts = _pts++;
 
             var pPacket = ffmpeg.av_packet_alloc();
@@ -289,8 +293,8 @@ namespace SIPSorceryMedia.FFmpeg
 
                     recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, decodedFrame);
                 }
-                
-                if(recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
+
+                if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
                 {
                     recvRes.ThrowExceptionIfError();
                 }
