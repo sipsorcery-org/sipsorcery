@@ -297,7 +297,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.AudioExtrasSource.html",
-          "hash": "OEirfeAkHqjqcUs/oswnmQ=="
+          "hash": "g8TTOyrAMu/VDoGBcZt2LA=="
         }
       },
       "is_incremental": false,
@@ -321,7 +321,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.AudioSourceOptions.html",
-          "hash": "lNLmBiURMbxL5gR4hegUdQ=="
+          "hash": "ikMVY3ho5qE/L5Ya76qPug=="
         }
       },
       "is_incremental": false,
@@ -333,7 +333,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.AudioSourcesEnum.html",
-          "hash": "K8E8SXhi/PYb+qY67n0UUw=="
+          "hash": "1KiV/zfWrvwLbuqtmRfAZQ=="
         }
       },
       "is_incremental": false,
