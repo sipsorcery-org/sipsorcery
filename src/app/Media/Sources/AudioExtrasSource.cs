@@ -29,7 +29,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
