@@ -218,9 +218,9 @@ namespace SIPSorceryMedia.FFmpeg
                         int recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, frame);
                         while (recvRes >= 0)
                         {
-                            //Console.WriteLine($"video number samples {frame->nb_samples}, pts={frame->pts}, dts={(int)(_videoTimebase * frame->pts * 1000)}.");
+                            Console.WriteLine($"video number samples {frame->nb_samples}, pts={frame->pts}, dts={(int)(_videoTimebase * frame->pts * 1000)}, width {frame->width}, height {frame->height}.");
 
-                            OnVideoFrame?.Invoke(GetBuffer(frame), frame->width, frame->height);
+                            OnVideoFrame?.Invoke(GetBuffer(*frame), frame->width, frame->height);
 
                             double dpts = 0;
                             if (frame->pts != ffmpeg.AV_NOPTS_VALUE)
@@ -317,19 +317,19 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        private unsafe byte[] GetBuffer(AVFrame* frame)
+        private unsafe byte[] GetBuffer(AVFrame frame)
         {
-            int outputBufferSize = ffmpeg.av_image_get_buffer_size((AVPixelFormat)frame->format, frame->width, frame->height, 1);
+            int outputBufferSize = ffmpeg.av_image_get_buffer_size((AVPixelFormat)frame.format, frame.width, frame.height, 1);
             byte[] buffer = new byte[outputBufferSize];
 
             byte_ptrArray4 data = new byte_ptrArray4();
-            data.UpdateFrom(frame->data.ToArray());
+            data.UpdateFrom(frame.data.ToArray());
             int_array4 lineSz = new int_array4();
-            lineSz.UpdateFrom(frame->linesize.ToArray());
+            lineSz.UpdateFrom(frame.linesize.ToArray());
 
             fixed (byte* pBuffer = buffer)
             {
-                ffmpeg.av_image_copy_to_buffer(pBuffer, buffer.Length, data, lineSz, (AVPixelFormat)frame->format, frame->width, frame->height, 1).ThrowExceptionIfError();
+                ffmpeg.av_image_copy_to_buffer(pBuffer, buffer.Length, data, lineSz, (AVPixelFormat)frame.format, frame.width, frame.height, 1).ThrowExceptionIfError();
             }
 
             return buffer;

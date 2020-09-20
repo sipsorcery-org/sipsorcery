@@ -75,10 +75,8 @@ namespace SIPSorceryMedia.FFmpeg
             };
         }
 
-        public void Initialise()
-        {
-            _fileSourceDecoder.InitialiseSource();
-        }
+        public void Initialise() => _fileSourceDecoder.InitialiseSource();
+        public bool IsPaused() => _isPaused;
 
         public List<AudioCodecsEnum> GetAudioSourceFormats() => _audioCodecManager.GetSourceFormats();
         public void SetAudioSourceFormat(AudioCodecsEnum audioFormat) => _audioCodecManager.SetSelectedCodec(audioFormat);
@@ -174,11 +172,6 @@ namespace SIPSorceryMedia.FFmpeg
                 _isPaused = false;
                 await _fileSourceDecoder.Resume();
             }
-        }
-
-        public bool IsPaused()
-        {
-            return _isPaused;
         }
 
         public void Dispose()
