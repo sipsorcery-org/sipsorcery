@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Abstractions.V1;
@@ -110,7 +111,8 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        private void FileSourceDecdoer_OnVideoFrame(byte[] buffer, int width, int height)
+        //private void FileSourceDecdoer_OnVideoFrame(byte[] buffer, int width, int height)
+        private void FileSourceDecdoer_OnVideoFrame(ref AVFrame frame)
         {
             if (OnVideoSourceEncodedSample != null)
             {
@@ -120,7 +122,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                 //Console.WriteLine($"framerate {frameRate}, timestamp duration {timestampDuration}.");
 
-                var frame = _videoEncoder.MakeFrame(buffer, width, height);
+                //var frame = _videoEncoder.MakeFrame(buffer, width, height);
                 var encodedSample = _videoEncoder.Encode(FFmpegConvert.GetAVCodecID(_videoCodecManager.SelectedCodec), frame, frameRate, _forceKeyFrame);
 
                 // Note the event handler can be removed while the encoding is in progress.

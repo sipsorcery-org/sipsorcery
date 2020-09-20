@@ -37,8 +37,11 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isDisposed;
         private Task? _sourceTask;
 
+        public delegate void OnFrameDelegate(ref AVFrame frame);
+
         //public event Action<byte[]> OnEncodedPacket;
-        public event Action<byte[], int, int>? OnVideoFrame;
+        //public event Action<byte[], int, int>? OnVideoFrame;
+        public event OnFrameDelegate? OnVideoFrame;
         public event Action<byte[]>? OnAudioFrame;
         public event Action? OnEndOfFile;
 
@@ -220,7 +223,8 @@ namespace SIPSorceryMedia.FFmpeg
                         {
                             Console.WriteLine($"video number samples {frame->nb_samples}, pts={frame->pts}, dts={(int)(_videoTimebase * frame->pts * 1000)}, width {frame->width}, height {frame->height}.");
 
-                            OnVideoFrame?.Invoke(GetBuffer(*frame), frame->width, frame->height);
+                            //OnVideoFrame?.Invoke(GetBuffer(*frame), frame->width, frame->height);
+                            OnVideoFrame?.Invoke(ref *frame);
 
                             double dpts = 0;
                             if (frame->pts != ffmpeg.AV_NOPTS_VALUE)

@@ -170,21 +170,21 @@ namespace SIPSorceryMedia.FFmpeg
                 InitialiseEncoder(codecID, width, height, fps);
             }
 
-            int _linesizeY = width;
-            int _linesizeU = width / 2;
-            int _linesizeV = width / 2;
+            //int _linesizeY = width;
+            //int _linesizeU = width / 2;
+            //int _linesizeV = width / 2;
 
-            int _ySize = _linesizeY * height;
-            int _uSize = _linesizeU * height / 2;
+            //int _ySize = _linesizeY * height;
+            //int _uSize = _linesizeU * height / 2;
 
             if (i420Frame.format != (int)_encoderContext->pix_fmt) throw new ArgumentException("Invalid pixel format.", nameof(i420Frame));
             if (i420Frame.width != width) throw new ArgumentException("Invalid width.", nameof(i420Frame));
             if (i420Frame.height != height) throw new ArgumentException("Invalid height.", nameof(i420Frame));
-            if (i420Frame.linesize[0] != _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(i420Frame));
-            if (i420Frame.linesize[1] != _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(i420Frame));
-            if (i420Frame.linesize[2] != _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(i420Frame));
-            if (i420Frame.data[1] - i420Frame.data[0] != _ySize) throw new ArgumentException("Invalid Y data size.", nameof(i420Frame));
-            if (i420Frame.data[2] - i420Frame.data[1] != _uSize) throw new ArgumentException("Invalid U data size.", nameof(i420Frame));
+            //if (i420Frame.linesize[0] != _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(i420Frame));
+            //if (i420Frame.linesize[1] != _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(i420Frame));
+            //if (i420Frame.linesize[2] != _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(i420Frame));
+            //if (i420Frame.data[1] - i420Frame.data[0] != _ySize) throw new ArgumentException("Invalid Y data size.", nameof(i420Frame));
+            //if (i420Frame.data[2] - i420Frame.data[1] != _uSize) throw new ArgumentException("Invalid U data size.", nameof(i420Frame));
 
             if (keyFrame)
             {
