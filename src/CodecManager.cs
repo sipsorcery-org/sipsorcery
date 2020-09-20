@@ -9,32 +9,33 @@ namespace SIPSorceryMedia.Abstractions
         public readonly List<T> SupportedCodecs = new List<T>();
 
         public T SelectedCodec { get; private set; }
-        private List<T> _supportedCodecs = new List<T>();
+        private List<T> _filteredCodecs = new List<T>();
 
         public CodecManager(List<T> supportedCodecs)
         {
             SupportedCodecs = supportedCodecs;
+            _filteredCodecs = new List<T>(SupportedCodecs);
         }
 
         public List<T> GetSourceFormats()
         {
-            return _supportedCodecs;
+            return _filteredCodecs;
         }
 
         public void RestrictCodecs(List<T> codecs)
         {
             if (codecs == null || codecs.Count == 0)
             {
-                _supportedCodecs = new List<T>(SupportedCodecs);
+                _filteredCodecs = new List<T>(SupportedCodecs);
             }
             else
             {
-                _supportedCodecs = new List<T>();
+                _filteredCodecs = new List<T>();
                 foreach (var codec in codecs)
                 {
                     if (SupportedCodecs.Any(x => x.Equals(codec)))
                     {
-                        _supportedCodecs.Add(codec);
+                        _filteredCodecs.Add(codec);
                     }
                     else
                     {
@@ -46,7 +47,7 @@ namespace SIPSorceryMedia.Abstractions
 
         public void SetSelectedCodec(T codec)
         {
-            if(_supportedCodecs.Contains(codec))
+            if(_filteredCodecs.Contains(codec))
             {
                 SelectedCodec = codec;
             }
