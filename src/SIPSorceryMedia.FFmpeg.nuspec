@@ -21,9 +21,10 @@
 		<dependency id="FFmpeg.AutoGen" version="4.3.0.1" />
 	  </group>
     </dependencies>
-	<releaseNotes>-v0.0.2-pre: Added file based source.
+	<releaseNotes>-v0.0.3-pre: Fixed bugs passing frames between file source decoder and video encoder.
+-v0.0.2-pre: Added file based source.
 -v0.0.1-pre: Initial release.</releaseNotes>
-	<version>0.0.2-pre</version>
+	<version>0.0.3-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
