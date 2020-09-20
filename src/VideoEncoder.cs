@@ -8,12 +8,8 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public sealed unsafe class VideoEncoder : IDisposable
     {
-        //private AVCodec* _codec;
         private AVCodecContext* _encoderContext;
         private AVCodecContext* _decoderContext;
-        //private readonly int _frameWidth;
-        //private readonly int _frameHeight;
-        //private readonly int _framesPerSecond;
         private AVCodecID _codecID;
 
         private VideoFrameConverter? _rgbToi420;
@@ -172,8 +168,6 @@ namespace SIPSorceryMedia.FFmpeg
             if (i420Frame.linesize[0] < _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(i420Frame));
             if (i420Frame.linesize[1] < _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(i420Frame));
             if (i420Frame.linesize[2] < _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(i420Frame));
-            if (i420Frame.data[1] - i420Frame.data[0] < _ySize) throw new ArgumentException("Invalid Y data size.", nameof(i420Frame));
-            if (i420Frame.data[2] - i420Frame.data[1] < _uSize) throw new ArgumentException("Invalid U data size.", nameof(i420Frame));
 
             if (keyFrame)
             {
