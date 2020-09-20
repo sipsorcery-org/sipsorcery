@@ -221,9 +221,8 @@ namespace SIPSorceryMedia.FFmpeg
                         int recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, frame);
                         while (recvRes >= 0)
                         {
-                            Console.WriteLine($"video number samples {frame->nb_samples}, pts={frame->pts}, dts={(int)(_videoTimebase * frame->pts * 1000)}, width {frame->width}, height {frame->height}.");
+                            //Console.WriteLine($"video number samples {frame->nb_samples}, pts={frame->pts}, dts={(int)(_videoTimebase * frame->pts * 1000)}, width {frame->width}, height {frame->height}.");
 
-                            //OnVideoFrame?.Invoke(GetBuffer(*frame), frame->width, frame->height);
                             OnVideoFrame?.Invoke(ref *frame);
 
                             double dpts = 0;

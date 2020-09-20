@@ -8,7 +8,7 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public sealed unsafe class VideoEncoder : IDisposable
     {
-        private AVCodec* _codec;
+        //private AVCodec* _codec;
         private AVCodecContext* _encoderContext;
         private AVCodecContext* _decoderContext;
         //private readonly int _frameWidth;
@@ -38,13 +38,13 @@ namespace SIPSorceryMedia.FFmpeg
                 _isEncoderInitialised = true;
 
                 _codecID = codecID;
-                _codec = ffmpeg.avcodec_find_encoder(codecID);
-                if (_codec == null)
+                AVCodec* codec = ffmpeg.avcodec_find_encoder(codecID);
+                if (codec == null)
                 {
                     throw new ApplicationException($"Codec encoder could not be found for {codecID}.");
                 }
 
-                _encoderContext = ffmpeg.avcodec_alloc_context3(_codec);
+                _encoderContext = ffmpeg.avcodec_alloc_context3(codec);
                 if (_encoderContext == null)
                 {
                     throw new ApplicationException("Failed to allocate encoder codec context.");
@@ -67,7 +67,7 @@ namespace SIPSorceryMedia.FFmpeg
                     //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
                 }
 
-                ffmpeg.avcodec_open2(_encoderContext, _codec, null).ThrowExceptionIfError();
+                ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
 
                 _rgbToi420 = new VideoFrameConverter(
                     width, height,
@@ -85,38 +85,27 @@ namespace SIPSorceryMedia.FFmpeg
                 _isDecoderInitialised = true;
 
                 _codecID = codecID;
-                _codec = ffmpeg.avcodec_find_decoder(codecID);
-                if (_codec == null)
+                AVCodec* codec = ffmpeg.avcodec_find_decoder(codecID);
+                if (codec == null)
                 {
                     throw new ApplicationException($"Codec encoder could not be found for {codecID}.");
                 }
 
-                _decoderContext = ffmpeg.avcodec_alloc_context3(_codec);
+                _decoderContext = ffmpeg.avcodec_alloc_context3(codec);
                 if (_decoderContext == null)
                 {
                     throw new ApplicationException("Failed to allocate decoder codec context.");
                 }
 
-                ffmpeg.avcodec_open2(_decoderContext, _codec, null).ThrowExceptionIfError();
+                ffmpeg.avcodec_open2(_decoderContext, codec, null).ThrowExceptionIfError();
             }
-        }
-
-        public void Dispose()
-        {
-            if (_encoderContext != null)
-            {
-                ffmpeg.avcodec_close(_encoderContext);
-                ffmpeg.av_free(_encoderContext);
-            }
-
-            ffmpeg.av_free(_codec);
         }
 
         public string GetCodecName()
         {
             //var namePtr = _codec->name;
             //return Marshal.PtrToStringAnsi((IntPtr)namePtr);
-            return ffmpeg.avcodec_get_name(_codec->id);
+            return ffmpeg.avcodec_get_name(_codecID);
         }
 
         public AVFrame MakeFrame(byte[] i420Buffer, int width, int height)
@@ -170,21 +159,21 @@ namespace SIPSorceryMedia.FFmpeg
                 InitialiseEncoder(codecID, width, height, fps);
             }
 
-            //int _linesizeY = width;
-            //int _linesizeU = width / 2;
-            //int _linesizeV = width / 2;
+            int _linesizeY = width;
+            int _linesizeU = width / 2;
+            int _linesizeV = width / 2;
 
-            //int _ySize = _linesizeY * height;
-            //int _uSize = _linesizeU * height / 2;
+            int _ySize = _linesizeY * height;
+            int _uSize = _linesizeU * height / 2;
 
             if (i420Frame.format != (int)_encoderContext->pix_fmt) throw new ArgumentException("Invalid pixel format.", nameof(i420Frame));
             if (i420Frame.width != width) throw new ArgumentException("Invalid width.", nameof(i420Frame));
             if (i420Frame.height != height) throw new ArgumentException("Invalid height.", nameof(i420Frame));
-            //if (i420Frame.linesize[0] != _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(i420Frame));
-            //if (i420Frame.linesize[1] != _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(i420Frame));
-            //if (i420Frame.linesize[2] != _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(i420Frame));
-            //if (i420Frame.data[1] - i420Frame.data[0] != _ySize) throw new ArgumentException("Invalid Y data size.", nameof(i420Frame));
-            //if (i420Frame.data[2] - i420Frame.data[1] != _uSize) throw new ArgumentException("Invalid U data size.", nameof(i420Frame));
+            if (i420Frame.linesize[0] < _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(i420Frame));
+            if (i420Frame.linesize[1] < _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(i420Frame));
+            if (i420Frame.linesize[2] < _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(i420Frame));
+            if (i420Frame.data[1] - i420Frame.data[0] < _ySize) throw new ArgumentException("Invalid Y data size.", nameof(i420Frame));
+            if (i420Frame.data[2] - i420Frame.data[1] < _uSize) throw new ArgumentException("Invalid U data size.", nameof(i420Frame));
 
             if (keyFrame)
             {
@@ -304,6 +293,27 @@ namespace SIPSorceryMedia.FFmpeg
             finally
             {
                 ffmpeg.av_frame_free(&decodedFrame);
+            }
+        }
+
+        public void Dispose()
+        {
+            logger.LogDebug("VideoEncoder dispose.");
+
+            if (_encoderContext != null)
+            {
+                fixed (AVCodecContext** pCtx = &_encoderContext)
+                {
+                    ffmpeg.avcodec_free_context(pCtx);
+                }
+            }
+
+            if (_decoderContext != null)
+            {
+                fixed (AVCodecContext** pCtx = &_decoderContext)
+                {
+                    ffmpeg.avcodec_free_context(pCtx);
+                }
             }
         }
     }
