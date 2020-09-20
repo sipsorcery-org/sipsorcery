@@ -11,6 +11,7 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public class FileSourceDecoder : IDisposable
     {
+        private const int DEFAULT_VIDEO_FRAME_RATE = 30;
         private const int AUDIO_OUTPUT_SAMPLE_RATE = 8000;
         private const int MIN_SLEEP_MILLISECONDS = 15;
 
@@ -21,14 +22,17 @@ namespace SIPSorceryMedia.FFmpeg
         private int _videoStreamIndex;
         private double _videoTimebase;
         private double _videoAvgFrameRate;
+        private int _maxVideoFrameSpace;
         unsafe private AVCodecContext* _audDecCtx;
         private int _audioStreamIndex;
         private double _audioTimebase;
         unsafe private SwrContext* _swrContext;
 
         private string _sourcePath;
+        private bool _repeat;
         private bool _isInitialised;
         private bool _isStarted;
+        private bool _isPaused;
         private bool _isClosed;
         private bool _isDisposed;
         private Task? _sourceTask;
@@ -43,7 +47,7 @@ namespace SIPSorceryMedia.FFmpeg
             get => _videoAvgFrameRate;
         }
 
-        public FileSourceDecoder(string path)
+        public FileSourceDecoder(string path, bool repeat)
         {
             if (!File.Exists(path))
             {
@@ -51,6 +55,7 @@ namespace SIPSorceryMedia.FFmpeg
             }
 
             _sourcePath = path;
+            _repeat = repeat;
         }
 
         public unsafe void InitialiseSource()
@@ -106,6 +111,7 @@ namespace SIPSorceryMedia.FFmpeg
                 _videoTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->time_base);
                 _videoAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->avg_frame_rate);
                 _audioTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->time_base);
+                _maxVideoFrameSpace = (int)(_videoAvgFrameRate > 0 ? 1000 / _videoAvgFrameRate : 1000 / DEFAULT_VIDEO_FRAME_RATE);
             }
         }
 
@@ -119,11 +125,36 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
+        public void Pause()
+        {
+            if (!_isClosed)
+            {
+                _isPaused = true;
+            }
+        }
+
+        public async Task Resume()
+        {
+            if (_isPaused && !_isClosed)
+            {
+                _isPaused = false;
+
+                if (_sourceTask != null)
+                {
+                    // Wait for the decode loop to finish in case Pause and Resume are called
+                    // in quick succession.
+                    await _sourceTask;
+                }
+
+                _sourceTask = Task.Run(RunDecodeLoop);
+            }
+        }
+
         public async Task Close()
         {
             _isClosed = true;
 
-            if(_sourceTask != null)
+            if (_sourceTask != null)
             {
                 // The decode loop should finish very quickly one the close is signaled.
                 // Wait for it to complete in case the native objects need to be cleaned up.
@@ -143,12 +174,14 @@ namespace SIPSorceryMedia.FFmpeg
                 pkt->data = null;
                 pkt->size = 0;
 
-                long prevVidTs = 0;
+                //long prevVidTs = 0;
                 //long prevAudTs = 0;
+
+            Repeat:
 
                 DateTime startTime = DateTime.Now;
 
-                while (!_isClosed && ffmpeg.av_read_frame(_fmtCtx, pkt) >= 0)
+                while (!_isClosed && !_isPaused && ffmpeg.av_read_frame(_fmtCtx, pkt) >= 0)
                 {
                     if (pkt->stream_index == _videoStreamIndex)
                     {
@@ -196,14 +229,13 @@ namespace SIPSorceryMedia.FFmpeg
                             }
 
                             //Console.WriteLine($"Decoded video frame {frame->width}x{frame->height}, ts {frame->best_effort_timestamp}, delta {frame->best_effort_timestamp - prevVidTs}, dpts {dpts}.");
-                            prevVidTs = frame->best_effort_timestamp;
+                            //prevVidTs = frame->best_effort_timestamp;
 
                             int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
-                            //Console.WriteLine($"sleep {sleep}.");
+                            //Console.WriteLine($"sleep {sleep} {Math.Min(_maxVideoFrameSpace, sleep)}.");
                             if (sleep > MIN_SLEEP_MILLISECONDS)
                             {
-                                //Thread.Sleep((int)sleep);
-                                ffmpeg.av_usleep((uint)(sleep * 1000));
+                                ffmpeg.av_usleep((uint)(Math.Min(_maxVideoFrameSpace, sleep) * 1000));
                             }
 
                             recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, frame);
@@ -220,7 +252,7 @@ namespace SIPSorceryMedia.FFmpeg
                         int recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, frame);
                         while (recvRes >= 0)
                         {
-                            int numDstSamples = (int)ffmpeg.av_rescale_rnd(ffmpeg.swr_get_delay(_swrContext,_audDecCtx->sample_rate) + frame->nb_samples, AUDIO_OUTPUT_SAMPLE_RATE, _audDecCtx->sample_rate, AVRounding.AV_ROUND_UP);
+                            int numDstSamples = (int)ffmpeg.av_rescale_rnd(ffmpeg.swr_get_delay(_swrContext, _audDecCtx->sample_rate) + frame->nb_samples, AUDIO_OUTPUT_SAMPLE_RATE, _audDecCtx->sample_rate, AVRounding.AV_ROUND_UP);
                             int bufferSize = ffmpeg.av_samples_get_buffer_size(null, 1, numDstSamples, AVSampleFormat.AV_SAMPLE_FMT_S16, 1);
 
                             //Console.WriteLine($"audio size {bufferSize}, num src samples {frame->nb_samples}, num dst samples {numDstSamples}, pts={frame->pts}, dts={(int)(_audioTimebase * frame->pts * 1000)}.");
@@ -252,9 +284,28 @@ namespace SIPSorceryMedia.FFmpeg
                     ffmpeg.av_packet_unref(pkt);
                 }
 
-                logger.LogDebug($"FFmpeg end of file for source {_sourcePath}.");
+                if (_isPaused)
+                {
+                    ((int)ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL)).ThrowExceptionIfError();
+                    ffmpeg.avformat_seek_file(_fmtCtx, _videoStreamIndex, 0, 0, _fmtCtx->streams[_videoStreamIndex]->duration, 0).ThrowExceptionIfError();
+                    ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, 0).ThrowExceptionIfError();
+                }
+                else
+                {
+                    logger.LogDebug($"FFmpeg end of file for source {_sourcePath}.");
 
-                OnEndOfFile?.Invoke();
+                    if (!_isClosed && _repeat)
+                    {
+                        ((int)ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL)).ThrowExceptionIfError();
+                        ffmpeg.avformat_seek_file(_fmtCtx, _videoStreamIndex, 0, 0, _fmtCtx->streams[_videoStreamIndex]->duration, 0).ThrowExceptionIfError();
+                        ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, 0).ThrowExceptionIfError();
+                        goto Repeat;
+                    }
+                    else
+                    {
+                        OnEndOfFile?.Invoke();
+                    }
+                }
             }
             finally
             {
@@ -288,11 +339,10 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (_isInitialised && !_isDisposed)
             {
+                _isClosed = true;
                 _isDisposed = true;
 
                 logger.LogDebug("Disposing of FileSourceDecoder.");
-
-                _isClosed = true;
 
                 ffmpeg.avcodec_close(_vidDecCtx);
                 ffmpeg.avcodec_close(_audDecCtx);

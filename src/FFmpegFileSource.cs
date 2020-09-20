@@ -1,66 +1,69 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorceryMedia.FFmpeg
 {
-    public class FFmpegFileSource : IVideoSource, IAudioSource, IDisposable
+    public class FFmpegFileSource : IAudioSource, IVideoSource, IDisposable
     {
         private const int VIDEO_SAMPLING_RATE = 90000;
         private const int DEFAULT_FRAME_RATE = 30;
         private const AudioSamplingRatesEnum AUDIO_SAMPLING_RATE = AudioSamplingRatesEnum.Rate8KHz;
 
-        public ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
-
-        public static readonly List<VideoCodecsEnum> SupportedVideoCodecs = new List<VideoCodecsEnum>
-        {
-            VideoCodecsEnum.VP8,
-            VideoCodecsEnum.H264
-        };
-
-        public static readonly List<AudioCodecsEnum> SupportedAudioCodecs = new List<AudioCodecsEnum>
+        private static List<AudioCodecsEnum> _supportedAudioCodecs = new List<AudioCodecsEnum>
         {
             AudioCodecsEnum.PCMU,
             AudioCodecsEnum.PCMA,
             AudioCodecsEnum.G722
         };
 
-        private VideoCodecsEnum _selectedVideoSourceFormat = VideoCodecsEnum.VP8;
-        private AudioCodecsEnum _sendingAudioFormat = AudioCodecsEnum.PCMU;
+        private static List<VideoCodecsEnum> _supportedVideoCodecs = new List<VideoCodecsEnum>
+        { 
+            VideoCodecsEnum.VP8,
+            VideoCodecsEnum.H264
+        };
+
+        public ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
+
         private bool _isStarted;
+        private bool _isPaused;
         private bool _isClosed;
-        private List<VideoCodecsEnum> _supportedVideoCodecs = new List<VideoCodecsEnum>(SupportedVideoCodecs);
-        private List<AudioCodecsEnum> _supportedAudioCodecs = new List<AudioCodecsEnum>(SupportedAudioCodecs);
-        private bool _forceKeyFrame;
         private FileSourceDecoder _fileSourceDecoder;
         private VideoEncoder _videoEncoder;
         private IAudioEncoder _audioEncoder;
+        private bool _forceKeyFrame;
 
-        public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
+        private CodecManager<AudioCodecsEnum> _audioCodecManager;
+        private CodecManager<VideoCodecsEnum> _videoCodecManager;
+
         public event EncodedSampleDelegate? OnAudioSourceEncodedSample;
+        public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
 
 #pragma warning disable CS0067
-        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
-        public event SourceErrorDelegate? OnVideoSourceError;
         public event RawAudioSampleDelegate? OnAudioSourceRawSample;
         public event SourceErrorDelegate? OnAudioSourceError;
+        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
+        public event SourceErrorDelegate? OnVideoSourceError;
 #pragma warning restore CS0067
 
         public event Action? OnEndOfFile;
 
-        public FFmpegFileSource(string path, IAudioEncoder audioEncoder)
+        public FFmpegFileSource(string path, bool repeat, IAudioEncoder audioEncoder)
         {
             if (!File.Exists(path))
             {
                 throw new ApplicationException($"Requested path for FFmpeg file source could not be found {path}.");
             }
 
+            _audioCodecManager = new CodecManager<AudioCodecsEnum>(_supportedAudioCodecs);
+            _videoCodecManager = new CodecManager<VideoCodecsEnum>(_supportedVideoCodecs);
+
             _audioEncoder = audioEncoder;
-            _fileSourceDecoder = new FileSourceDecoder(path);
+            _fileSourceDecoder = new FileSourceDecoder(path, repeat);
             _videoEncoder = new VideoEncoder();
             _fileSourceDecoder.OnVideoFrame += FileSourceDecdoer_OnVideoFrame;
             _fileSourceDecoder.OnAudioFrame += FileSourceDecdoer_OnAudioFrame;
@@ -77,14 +80,34 @@ namespace SIPSorceryMedia.FFmpeg
             _fileSourceDecoder.InitialiseSource();
         }
 
+        public List<AudioCodecsEnum> GetAudioSourceFormats() => _audioCodecManager.GetSourceFormats();
+        public void SetAudioSourceFormat(AudioCodecsEnum audioFormat) => _audioCodecManager.SetSelectedCodec(audioFormat);
+        public void RestrictCodecs(List<AudioCodecsEnum> codecs) => _audioCodecManager.RestrictCodecs(codecs);
+        public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) => throw new NotImplementedException();
+        public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
+        public bool IsAudioSourcePaused() => _isPaused;
+        public Task StartAudio() => Start();
+        public Task PauseAudio() => Pause();
+        public Task ResumeAudio() => Resume();
+        public Task CloseAudio() => Close();
+
+        public List<VideoCodecsEnum> GetVideoSourceFormats() => _videoCodecManager.GetSourceFormats();
+        public void SetVideoSourceFormat(VideoCodecsEnum videoFormat) => _videoCodecManager.SetSelectedCodec(videoFormat);
+        public void RestrictCodecs(List<VideoCodecsEnum> codecs) => _videoCodecManager.RestrictCodecs(codecs);
+        public void ForceKeyFrame() => _forceKeyFrame = true;
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) => throw new NotImplementedException();
+        public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
+        public bool IsVideoSourcePaused() => _isPaused;
+        public Task StartVideo() => Start();
+        public Task PauseVideo() => Pause();
+        public Task ResumeVideo() => Resume();
+        public Task CloseVideo() => Close();
+
         private void FileSourceDecdoer_OnAudioFrame(byte[] buffer)
         {
             if (OnAudioSourceEncodedSample != null)
             {
-                var encodedSample = _audioEncoder.EncodeAudio(buffer, _sendingAudioFormat, AUDIO_SAMPLING_RATE);
-
-                //Console.WriteLine($"encoded audio size {encodedSample.Length}.");
-
+                var encodedSample = _audioEncoder.EncodeAudio(buffer, _audioCodecManager.SelectedCodec, AUDIO_SAMPLING_RATE);
                 OnAudioSourceEncodedSample((uint)encodedSample.Length, encodedSample);
             }
         }
@@ -100,17 +123,19 @@ namespace SIPSorceryMedia.FFmpeg
                 //Console.WriteLine($"framerate {frameRate}, timestamp duration {timestampDuration}.");
 
                 var frame = _videoEncoder.MakeFrame(buffer, width, height);
-                var encodedSample = _videoEncoder.Encode(FFmpegConvert.GetAVCodecID(_selectedVideoSourceFormat), frame, frameRate, _forceKeyFrame);
-                OnVideoSourceEncodedSample(timestampDuration, encodedSample);
+                var encodedSample = _videoEncoder.Encode(FFmpegConvert.GetAVCodecID(_videoCodecManager.SelectedCodec), frame, frameRate, _forceKeyFrame);
 
-                if(_forceKeyFrame)
+                // Note the event handler can be removed while the encoding is in progress.
+                OnVideoSourceEncodedSample?.Invoke(timestampDuration, encodedSample);
+
+                if (_forceKeyFrame)
                 {
                     _forceKeyFrame = false;
                 }
             }
         }
 
-        public Task StartVideo()
+        public Task Start()
         {
             if (!_isStarted)
             {
@@ -121,7 +146,7 @@ namespace SIPSorceryMedia.FFmpeg
             return Task.CompletedTask;
         }
 
-        public async Task CloseVideo()
+        public async Task Close()
         {
             if (!_isClosed)
             {
@@ -131,120 +156,29 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
+        public Task Pause()
         {
-            throw new NotImplementedException();
-        }
-
-        public void ForceKeyFrame()
-        {
-            _forceKeyFrame = true;
-        }
-
-        public List<VideoCodecsEnum> GetVideoSourceFormats()
-        {
-            return _supportedVideoCodecs;
-        }
-
-        public Task PauseVideo()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void RestrictCodecs(List<VideoCodecsEnum> codecs)
-        {
-            if (codecs == null || codecs.Count == 0)
+            if (!_isPaused)
             {
-                _supportedVideoCodecs = new List<VideoCodecsEnum>(SupportedVideoCodecs);
+                _isPaused = true;
+                _fileSourceDecoder.Pause();
             }
-            else
+
+            return Task.CompletedTask;
+        }
+
+        public async Task Resume()
+        {
+            if (_isPaused && !_isClosed)
             {
-                _supportedVideoCodecs = new List<VideoCodecsEnum>();
-                foreach (var codec in codecs)
-                {
-                    if (SupportedVideoCodecs.Any(x => x == codec))
-                    {
-                        _supportedVideoCodecs.Add(codec);
-                    }
-                    else
-                    {
-                        logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
-                    }
-                }
+                _isPaused = false;
+                await _fileSourceDecoder.Resume();
             }
         }
 
-        public Task ResumeVideo()
+        public bool IsPaused()
         {
-            throw new NotImplementedException();
-        }
-
-        public void SetVideoSourceFormat(VideoCodecsEnum videoFormat)
-        {
-            if (!SupportedVideoCodecs.Any(x => x == videoFormat))
-            {
-                throw new ApplicationException($"The FFmpeg file source does not support video codec {videoFormat}.");
-            }
-
-            _selectedVideoSourceFormat = videoFormat;
-        }
-
-        public Task PauseAudio()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ResumeAudio()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task StartAudio()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task CloseAudio()
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<AudioCodecsEnum> GetAudioSourceFormats()
-        {
-            return _supportedAudioCodecs;
-        }
-
-        public void SetAudioSourceFormat(AudioCodecsEnum audioFormat)
-        {
-            _sendingAudioFormat = audioFormat;
-        }
-
-        public void RestrictCodecs(List<AudioCodecsEnum> codecs)
-        {
-            if (codecs == null || codecs.Count == 0)
-            {
-                _supportedAudioCodecs = new List<AudioCodecsEnum>(SupportedAudioCodecs);
-            }
-            else
-            {
-                _supportedAudioCodecs = new List<AudioCodecsEnum>();
-                foreach (var codec in codecs)
-                {
-                    if (SupportedAudioCodecs.Any(x => x == codec))
-                    {
-                        _supportedAudioCodecs.Add(codec);
-                    }
-                    else
-                    {
-                        logger.LogWarning($"Not including unsupported audio codec {codec} in filtered list.");
-                    }
-                }
-            }
-        }
-
-        public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
-        {
-            throw new NotImplementedException();
+            return _isPaused;
         }
 
         public void Dispose()

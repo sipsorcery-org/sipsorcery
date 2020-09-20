@@ -26,8 +26,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         private VideoCodecsEnum _selectedSinkFormat = VideoCodecsEnum.VP8;
         private VideoCodecsEnum _selectedSourceFormat = VideoCodecsEnum.VP8;
-        //private bool _isInitialised;
         private bool _isStarted;
+        private bool _isPaused;
         private bool _isClosed;
         private List<VideoCodecsEnum> _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
         private bool _forceKeyFrame;
@@ -121,12 +121,14 @@ namespace SIPSorceryMedia.FFmpeg
 
         public Task PauseVideo()
         {
-            throw new NotImplementedException();
+            _isPaused = true;
+            return Task.CompletedTask;
         }
 
         public Task ResumeVideo()
         {
-            throw new NotImplementedException();
+            _isPaused = false;
+            return Task.CompletedTask;
         }
 
         public Task StartVideo()
@@ -178,7 +180,9 @@ namespace SIPSorceryMedia.FFmpeg
                     {
                         //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
                         uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
-                        OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+
+                        // Note the event handler can be removed while the encoding is in progress.
+                        OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
                     }
 
                     if (_forceKeyFrame)
@@ -191,7 +195,17 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void ForceKeyFrame()
         {
-            throw new NotImplementedException();
+            _forceKeyFrame = true;
+        }
+
+        public bool HasEncodedVideoSubscribers()
+        {
+            return OnVideoSourceEncodedSample != null;
+        }
+
+        public bool IsVideoSourcePaused()
+        {
+            return _isPaused;
         }
 
         public void Dispose()

@@ -5,14 +5,12 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Drawing.Text;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using FFmpeg.AutoGen;
 using SIPSorcery.Net;
-using SIPSorcery.Sys;
 using SIPSorceryMedia.FFmpeg;
 
 namespace FFmpegEncodingTest
@@ -206,8 +204,7 @@ namespace FFmpegEncodingTest
 
             FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_DEBUG);
 
-            //_ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_VP8, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
-            _ffmpegEncoder = new VideoEncoder(AVCodecID.AV_CODEC_ID_H264, _testPattern.Width, _testPattern.Height, FRAMES_PER_SECOND);
+            _ffmpegEncoder = new VideoEncoder();
             Console.WriteLine($"Codec name {_ffmpegEncoder.GetCodecName()}.");
 
             _videoFrameConverter = new VideoFrameConverter(
@@ -248,7 +245,7 @@ namespace FFmpegEncodingTest
                         //i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
                         i420Frame.pts = _presentationTimestamp;
 
-                        byte[] encodedBuffer = _ffmpegEncoder.Encode(i420Frame);
+                        byte[] encodedBuffer = _ffmpegEncoder.Encode(AVCodecID.AV_CODEC_ID_VP8, i420Frame, FRAMES_PER_SECOND);
 
                         if (encodedBuffer != null)
                         {
