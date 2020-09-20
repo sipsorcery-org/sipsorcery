@@ -123,8 +123,9 @@ namespace SIPSorcery.Media
         private byte[] _silenceBuffer;                  // PCMU and PCMA have a standardised silence format. When using these codecs the buffer can be constructed.  
         private BinaryReader _streamSourceReader;
         private Timer _streamSourceTimer;
-        private bool _isStarted = false;
-        private bool _isClosed = false;
+        private bool _isStarted;
+        private bool _isPaused;
+        private bool _isClosed;
         private AudioEncoder _audioEncoder;
 
         /// <summary>
@@ -241,15 +242,13 @@ namespace SIPSorcery.Media
 
         public Task PauseAudio()
         {
-            // TODO.
-
+            _isPaused = true;
             return Task.CompletedTask;
         }
 
         public Task ResumeAudio()
         {
-            // TODO.
-
+            _isPaused = false;
             return Task.CompletedTask;
         }
 
@@ -604,6 +603,16 @@ namespace SIPSorcery.Media
         public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
         {
             throw new NotImplementedException();
+        }
+
+        public bool HasEncodedAudioSubscribers()
+        {
+            return OnAudioSourceEncodedSample != null;
+        }
+
+        public bool IsAudioSourcePaused()
+        {
+            return _isPaused;
         }
     }
 }

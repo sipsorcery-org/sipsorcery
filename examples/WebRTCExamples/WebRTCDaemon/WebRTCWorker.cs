@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -52,6 +51,8 @@ namespace WebRTCDaemon
         public WebRTCWorker(ILogger<WebRTCWorker> logger, IConfiguration configuration)
         {
             _logger = logger;
+
+            _logger.LogInformation($"WebRTCWorker starting...");
 
             _certificatePath = configuration["CertificatePath"];
 
@@ -92,6 +93,7 @@ namespace WebRTCDaemon
                 webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
                 webSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(_certificatePath);
                 webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+                webSocketServer.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             }
             else
             {
@@ -152,6 +154,7 @@ namespace WebRTCDaemon
                 {
                     videoSource.OnVideoSourceEncodedSample -= pc.SendVideo;
                     audioSource.OnAudioSourceEncodedSample -= pc.SendAudio;
+                    await CheckForSourceSubscribers();
                 }
                 else if(state == RTCPeerConnectionState.connected)
                 {
@@ -172,13 +175,37 @@ namespace WebRTCDaemon
         {
             if(url == MAX_URL)
             {
-                await _maxSource.StartVideo();
+                _maxSource.ForceKeyFrame();
+                await (_maxSource.IsPaused() ? _maxSource.ResumeVideo() : _maxSource.StartVideo());
             }
             else
             {
+                _testPatternEncoder.ForceKeyFrame();
                 await _testPatternEncoder.StartVideo();
-                await _testPatternSource.StartVideo();
-                await _musicSource.StartAudio();
+                
+                await (_testPatternSource.IsVideoSourcePaused() ? _testPatternSource.ResumeVideo() : _testPatternSource.StartVideo());
+                await (_musicSource.IsAudioSourcePaused() ? _musicSource.ResumeAudio() : _musicSource.StartAudio());
+            }
+        }
+
+        private async Task CheckForSourceSubscribers()
+        {
+            if(!_testPatternEncoder.HasEncodedVideoSubscribers())
+            {
+                _logger.LogInformation("Pausing test pattern video source.");
+                await _testPatternSource.PauseVideo();
+            }
+
+            if(!_musicSource.HasEncodedAudioSubscribers())
+            {
+                _logger.LogInformation("Pausing music audio source.");
+                await _musicSource.PauseAudio();
+            }
+
+            if(!_maxSource.HasEncodedVideoSubscribers())
+            {
+                _logger.LogInformation("Pausing mp4 file source.");
+                _maxSource.Pause();
             }
         }
     }
