@@ -205,7 +205,7 @@ namespace WebRTCDaemon
             if(!_maxSource.HasEncodedVideoSubscribers())
             {
                 _logger.LogInformation("Pausing mp4 file source.");
-                _maxSource.Pause();
+                await _maxSource.Pause();
             }
         }
     }
