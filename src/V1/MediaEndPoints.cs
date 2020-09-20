@@ -103,6 +103,10 @@ namespace SIPSorceryMedia.Abstractions.V1
         void RestrictCodecs(List<AudioCodecsEnum> codecs);
 
         void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
+
+        bool HasEncodedAudioSubscribers();
+
+        bool IsAudioSourcePaused();
     }
 
     public interface IAudioSink
@@ -143,6 +147,10 @@ namespace SIPSorceryMedia.Abstractions.V1
         void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
 
         void ForceKeyFrame();
+
+        bool HasEncodedVideoSubscribers();
+
+        bool IsVideoSourcePaused();
     }
 
     public interface IVideoSink
