@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -139,6 +140,8 @@ namespace WebRTCDaemon
                 audioSource = _musicSource;
             }
 
+            pc.OnVideoFormatsNegotiated += (sdpFormat) => videoSource.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.OnAudioFormatsNegotiated += (sdpFormat) => audioSource.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
             videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 

@@ -27,7 +27,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCGetStarted", "WebRTCG
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCMp4Source", "WebRTCMp4Source\WebRTCMp4Source.csproj", "{E097392E-B5D4-4FEB-83EE-13C73675E3AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCDaemon", "WebRTCDaemon\WebRTCDaemon.csproj", "{BE1E895C-9F1A-499B-A578-3A5DD6523276}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCDaemon", "WebRTCDaemon\WebRTCDaemon.csproj", "{BE1E895C-9F1A-499B-A578-3A5DD6523276}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
