@@ -2456,6 +2456,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioExtrasSource.GetAudioSourceFormats
   nameWithType: AudioExtrasSource.GetAudioSourceFormats
+- uid: SIPSorcery.Media.AudioExtrasSource.HasEncodedAudioSubscribers
+  name: HasEncodedAudioSubscribers()
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_HasEncodedAudioSubscribers
+  commentId: M:SIPSorcery.Media.AudioExtrasSource.HasEncodedAudioSubscribers
+  fullName: SIPSorcery.Media.AudioExtrasSource.HasEncodedAudioSubscribers()
+  nameWithType: AudioExtrasSource.HasEncodedAudioSubscribers()
+- uid: SIPSorcery.Media.AudioExtrasSource.HasEncodedAudioSubscribers*
+  name: HasEncodedAudioSubscribers
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_HasEncodedAudioSubscribers_
+  commentId: Overload:SIPSorcery.Media.AudioExtrasSource.HasEncodedAudioSubscribers
+  isSpec: "True"
+  fullName: SIPSorcery.Media.AudioExtrasSource.HasEncodedAudioSubscribers
+  nameWithType: AudioExtrasSource.HasEncodedAudioSubscribers
+- uid: SIPSorcery.Media.AudioExtrasSource.IsAudioSourcePaused
+  name: IsAudioSourcePaused()
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_IsAudioSourcePaused
+  commentId: M:SIPSorcery.Media.AudioExtrasSource.IsAudioSourcePaused
+  fullName: SIPSorcery.Media.AudioExtrasSource.IsAudioSourcePaused()
+  nameWithType: AudioExtrasSource.IsAudioSourcePaused()
+- uid: SIPSorcery.Media.AudioExtrasSource.IsAudioSourcePaused*
+  name: IsAudioSourcePaused
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_IsAudioSourcePaused_
+  commentId: Overload:SIPSorcery.Media.AudioExtrasSource.IsAudioSourcePaused
+  isSpec: "True"
+  fullName: SIPSorcery.Media.AudioExtrasSource.IsAudioSourcePaused
+  nameWithType: AudioExtrasSource.IsAudioSourcePaused
 - uid: SIPSorcery.Media.AudioExtrasSource.OnAudioSinkError
   name: OnAudioSinkError
   href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_OnAudioSinkError
@@ -3349,6 +3375,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.GetVideoSourceFormats
   nameWithType: VideoTestPatternSource.GetVideoSourceFormats
+- uid: SIPSorcery.Media.VideoTestPatternSource.HasEncodedVideoSubscribers
+  name: HasEncodedVideoSubscribers()
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_HasEncodedVideoSubscribers
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.HasEncodedVideoSubscribers
+  fullName: SIPSorcery.Media.VideoTestPatternSource.HasEncodedVideoSubscribers()
+  nameWithType: VideoTestPatternSource.HasEncodedVideoSubscribers()
+- uid: SIPSorcery.Media.VideoTestPatternSource.HasEncodedVideoSubscribers*
+  name: HasEncodedVideoSubscribers
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_HasEncodedVideoSubscribers_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.HasEncodedVideoSubscribers
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VideoTestPatternSource.HasEncodedVideoSubscribers
+  nameWithType: VideoTestPatternSource.HasEncodedVideoSubscribers
 - uid: SIPSorcery.Media.VideoTestPatternSource.InitialiseVideoSourceDevice
   name: InitialiseVideoSourceDevice()
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_InitialiseVideoSourceDevice
@@ -3362,6 +3401,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.InitialiseVideoSourceDevice
   nameWithType: VideoTestPatternSource.InitialiseVideoSourceDevice
+- uid: SIPSorcery.Media.VideoTestPatternSource.IsVideoSourcePaused
+  name: IsVideoSourcePaused()
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_IsVideoSourcePaused
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.IsVideoSourcePaused
+  fullName: SIPSorcery.Media.VideoTestPatternSource.IsVideoSourcePaused()
+  nameWithType: VideoTestPatternSource.IsVideoSourcePaused()
+- uid: SIPSorcery.Media.VideoTestPatternSource.IsVideoSourcePaused*
+  name: IsVideoSourcePaused
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_IsVideoSourcePaused_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.IsVideoSourcePaused
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VideoTestPatternSource.IsVideoSourcePaused
+  nameWithType: VideoTestPatternSource.IsVideoSourcePaused
 - uid: SIPSorcery.Media.VideoTestPatternSource.logger
   name: logger
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_logger
