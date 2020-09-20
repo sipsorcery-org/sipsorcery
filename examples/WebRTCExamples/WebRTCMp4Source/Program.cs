@@ -74,7 +74,7 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, new AudioEncoder());
+            var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, false, new AudioEncoder());
             mediaFileSource.Initialise();
             mediaFileSource.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.VP8 });
             mediaFileSource.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });

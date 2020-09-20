@@ -57,6 +57,7 @@ namespace SIPSorcery.Media
         private Bitmap _testPattern;
         private Timer _sendTestPatternTimer;
         private bool _isStarted;
+        private bool _isPaused;
         private bool _isClosed;
 
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
@@ -174,12 +175,14 @@ namespace SIPSorcery.Media
 
         public Task PauseVideo()
         {
+            _isPaused = true;
             _sendTestPatternTimer.Change(Timeout.Infinite, Timeout.Infinite);
             return Task.CompletedTask;
         }
 
         public Task ResumeVideo()
         {
+            _isPaused = false;
             _sendTestPatternTimer.Change(0, _frameSpacing);
             return Task.CompletedTask;
         }
@@ -303,6 +306,11 @@ namespace SIPSorcery.Media
             return bgrValues;
         }
 
+        public bool HasEncodedVideoSubscribers()
+        {
+            return false;
+        }
+
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixlFormat)
         {
             throw new NotImplementedException("The test pattern video source does not offer any encoding services for external sources.");
@@ -311,6 +319,11 @@ namespace SIPSorcery.Media
         public Task<bool> InitialiseVideoSourceDevice()
         {
             throw new NotImplementedException("The test pattern video source does not use a device.");
+        }
+
+        public bool IsVideoSourcePaused()
+        {
+            return _isPaused;
         }
 
         public void Dispose()

@@ -67,9 +67,6 @@ namespace SIPSorcery
         private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.0.48";
         private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.0.48";
         private static int SIP_LISTEN_PORT = 5060;
-        private const string MUSIC_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
-        private const string MUSIC_FILE_PCMA = "media/Macroform_-_Simplicity.alaw";
-        private const string MUSIC_FILE_G722 = "media/Macroform_-_Simplicity.g722";
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
