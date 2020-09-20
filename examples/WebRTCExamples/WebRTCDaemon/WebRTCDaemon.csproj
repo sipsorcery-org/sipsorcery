@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
@@ -28,11 +28,8 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
-    <!--<PackageReference Include="SIPSorcery" Version="4.0.75-pre" />-->
+    <PackageReference Include="SIPSorcery" Version="4.0.76-pre" />
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.2-pre" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\SIPSorceryMedia.FFmpeg\src\SIPSorceryMedia.FFmpeg.csproj" />
-    <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
-  </ItemGroup>
 </Project>
