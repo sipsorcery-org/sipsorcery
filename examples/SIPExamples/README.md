@@ -1,6 +1,6 @@
 The examples in this folder contain sample code to demonstrate common SIP/VoIP cases including:
 
-  - [Get Started](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/GetStarted): Simplest example. Demonstrates how to place a SIP call.
+  - [Get Started](GetStarted): Simplest example. Demonstrates how to place a SIP call.
   - [Get Started Video](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/GetStartedVideo): Adds video to the [Get Started](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/GetStarted) example.
   - [SIP Proxy](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/SIPProxy): Very rudimentary example for a SIP Proxy and SIP Registrar. 
   - [Registration Client](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/UserAgentRegister): Demonstrates how to use the `SIPRegistrationUserAgent` class to register with a SIP Registrar server.
