@@ -26,6 +26,7 @@ using Windows.Media.Capture.Frames;
 using Windows.Media.Devices;
 using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows.Codecs;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorceryMedia.Windows
 {
@@ -55,15 +56,14 @@ namespace SIPSorceryMedia.Windows
             VideoCodecsEnum.VP8
         };
 
+        private CodecManager<VideoCodecsEnum> _codecManager;
         private Vp8Codec _vp8Encoder;
         private Vp8Codec _vp8Decoder;
         private bool _forceKeyFrame = false;
-        private VideoCodecsEnum _selectedSinkFormat = VideoCodecsEnum.VP8;
-        private VideoCodecsEnum _selectedSourceFormat = VideoCodecsEnum.VP8;
         private bool _isInitialised;
         private bool _isStarted;
+        private bool _isPaused;
         private bool _isClosed;
-        private List<VideoCodecsEnum> _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
         private SoftwareBitmap _encodeBmp;
         private MediaCapture _mediaCapture;
         private MediaFrameReader _mediaFrameReader;
@@ -110,6 +110,7 @@ namespace SIPSorceryMedia.Windows
         /// be used.</param>
         public WindowsVideoEndPoint(bool encodingOnly = false, uint width = 0, uint height = 0, uint fps = 0)
         {
+            _codecManager = new CodecManager<VideoCodecsEnum>(SupportedCodecs);
             _encodingOnly = encodingOnly;
             _width = width;
             _height = height;
@@ -124,6 +125,18 @@ namespace SIPSorceryMedia.Windows
                 _mediaCapture.Failed += VideoCaptureDevice_Failed;
             }
         }
+
+        public void RestrictCodecs(List<VideoCodecsEnum> codecs) => _codecManager.RestrictCodecs(codecs);
+        public List<VideoCodecsEnum> GetVideoSourceFormats() => _codecManager.GetSourceFormats();
+        public void SetVideoSourceFormat(VideoCodecsEnum videoFormat) => _codecManager.SetSelectedCodec(videoFormat);
+        public List<VideoCodecsEnum> GetVideoSinkFormats() => _codecManager.GetSourceFormats();
+        public void SetVideoSinkFormat(VideoCodecsEnum videoFormat) => _codecManager.SetSelectedCodec(videoFormat);
+
+        public void ForceKeyFrame() => _forceKeyFrame = true;
+        public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
+            throw new ApplicationException("The Windows Video End Point requires full video frames rather than individual RTP packets.");
+        public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
+        public bool IsVideoSourcePaused() => _isPaused;
 
         private async void VideoCaptureDevice_Failed(MediaCapture sender, MediaCaptureFailedEventArgs errorEventArgs)
         {
@@ -165,43 +178,6 @@ namespace SIPSorceryMedia.Windows
             else
             {
                 return Task.FromResult(true);
-            }
-        }
-
-        /// <summary>
-        /// Requests that the next frame encoded is a key frame.
-        /// </summary>
-        public void ForceKeyFrame()
-        {
-            _forceKeyFrame = true;
-        }
-
-        /// <summary>
-        /// Requests that the video sink and source only advertise support for the supplied list of codecs.
-        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
-        /// used.
-        /// </summary>
-        /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
-        public void RestrictCodecs(List<VideoCodecsEnum> codecs)
-        {
-            if (codecs == null || codecs.Count == 0)
-            {
-                _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
-            }
-            else
-            {
-                _supportedCodecs = new List<VideoCodecsEnum>();
-                foreach (var codec in codecs)
-                {
-                    if (SupportedCodecs.Any(x => x == codec))
-                    {
-                        _supportedCodecs.Add(codec);
-                    }
-                    else
-                    {
-                        logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
-                    }
-                }
             }
         }
 
@@ -273,11 +249,6 @@ namespace SIPSorceryMedia.Windows
             };
         }
 
-        public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
-        {
-            throw new ApplicationException("The Windows Video End Point requires full video frames rather than individual RTP packets.");
-        }
-
         public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame)
         {
             if (!_isClosed)
@@ -304,6 +275,8 @@ namespace SIPSorceryMedia.Windows
 
         public Task PauseVideo()
         {
+            _isPaused = true;
+
             if (_mediaFrameReader != null)
             {
                 return _mediaFrameReader.StopAsync().AsTask();
@@ -316,6 +289,8 @@ namespace SIPSorceryMedia.Windows
 
         public Task ResumeVideo()
         {
+            _isPaused = false;
+
             if (_mediaFrameReader != null)
             {
                 return _mediaFrameReader.StartAsync().AsTask();
@@ -364,36 +339,6 @@ namespace SIPSorceryMedia.Windows
                     Dispose();
                 }
             }
-        }
-
-        public List<VideoCodecsEnum> GetVideoSourceFormats()
-        {
-            return _supportedCodecs;
-        }
-
-        public void SetVideoSourceFormat(VideoCodecsEnum videoFormat)
-        {
-            if (videoFormat != VideoCodecsEnum.VP8)
-            {
-                throw new ApplicationException($"The Windows Video Source End Point does not support video codec {videoFormat}.");
-            }
-
-            _selectedSourceFormat = videoFormat;
-        }
-
-        public List<VideoCodecsEnum> GetVideoSinkFormats()
-        {
-            return _supportedCodecs;
-        }
-
-        public void SetVideoSinkFormat(VideoCodecsEnum videoFormat)
-        {
-            if (videoFormat != VideoCodecsEnum.VP8)
-            {
-                throw new ApplicationException($"The Windows Video Sink End Point does not support video codec {videoFormat}.");
-            }
-
-            _selectedSinkFormat = videoFormat;
         }
 
         private async Task CloseVideoCaptureDevice()

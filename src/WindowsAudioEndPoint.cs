@@ -24,6 +24,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NAudio.Wave;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorceryMedia.Windows
@@ -75,14 +76,13 @@ namespace SIPSorceryMedia.Windows
         private WaveInEvent _waveInEvent;
 
         private IAudioEncoder _audioEncoder;
-        private AudioCodecsEnum _selectedSourceFormat = AudioCodecsEnum.PCMU;
-        private AudioCodecsEnum _selectedSinkFormat = AudioCodecsEnum.PCMU;
-        private List<AudioCodecsEnum> _supportedCodecs = new List<AudioCodecsEnum>(SupportedCodecs);
+        private CodecManager<AudioCodecsEnum> _audioCodecManager;
 
         private bool _disableSink;
         private bool _disableSource;
 
         protected bool _isStarted;
+        protected bool _isPaused;
         protected bool _isClosed;
 
         /// <summary>
@@ -120,6 +120,7 @@ namespace SIPSorceryMedia.Windows
         {
             logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
+            _audioCodecManager = new CodecManager<AudioCodecsEnum>(SupportedCodecs);
             _audioEncoder = audioEncoder;
 
             _disableSource = disableSource;
@@ -168,34 +169,16 @@ namespace SIPSorceryMedia.Windows
             }
         }
 
-        /// <summary>
-        /// Requests that the audio sink and source only advertise support for the supplied list of codecs.
-        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
-        /// used.
-        /// </summary>
-        /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
-        public void RestrictCodecs(List<AudioCodecsEnum> codecs)
-        {
-            if (codecs == null || codecs.Count == 0)
-            {
-                _supportedCodecs = new List<AudioCodecsEnum>(SupportedCodecs);
-            }
-            else
-            {
-                _supportedCodecs = new List<AudioCodecsEnum>();
-                foreach (var codec in codecs)
-                {
-                    if (SupportedCodecs.Any(x => x == codec))
-                    {
-                        _supportedCodecs.Add(codec);
-                    }
-                    else
-                    {
-                        logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
-                    }
-                }
-            }
-        }
+        public void RestrictCodecs(List<AudioCodecsEnum> codecs) => _audioCodecManager.RestrictCodecs(codecs);
+        public List<AudioCodecsEnum> GetAudioSourceFormats() => _audioCodecManager.GetSourceFormats();
+        public void SetAudioSourceFormat(AudioCodecsEnum audioFormat) => _audioCodecManager.SetSelectedCodec(audioFormat);
+        public List<AudioCodecsEnum> GetAudioSinkFormats() => _audioCodecManager.GetSourceFormats();
+        public void SetAudioSinkFormat(AudioCodecsEnum audioFormat) => _audioCodecManager.SetSelectedCodec(audioFormat);
+
+        public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
+        public bool IsAudioSourcePaused() => _isPaused;
+        public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) =>
+            throw new NotImplementedException();
 
         public MediaEndPoints ToMediaEndPoints()
         {
@@ -244,12 +227,14 @@ namespace SIPSorceryMedia.Windows
 
         public Task PauseAudio()
         {
+            _isPaused = true;
             _waveInEvent?.StopRecording();
             return Task.CompletedTask;
         }
 
         public Task ResumeAudio()
         {
+            _isPaused = false;
             _waveInEvent?.StartRecording();
             return Task.CompletedTask;
         }
@@ -261,28 +246,8 @@ namespace SIPSorceryMedia.Windows
         {
             //WaveBuffer wavBuffer = new WaveBuffer(args.Buffer.Take(args.BytesRecorded).ToArray());
             //byte[] encodedSample = _audioEncoder.EncodeAudio(wavBuffer.ShortBuffer, _selectedSourceFormat, AudioSourceSamplingRate);
-            byte[] encodedSample = _audioEncoder.EncodeAudio(args.Buffer.Take(args.BytesRecorded).ToArray(), _selectedSourceFormat, AudioSourceSamplingRate);
+            byte[] encodedSample = _audioEncoder.EncodeAudio(args.Buffer.Take(args.BytesRecorded).ToArray(), _audioCodecManager.SelectedCodec, AudioSourceSamplingRate);
             OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
-        }
-
-        public List<AudioCodecsEnum> GetAudioSourceFormats()
-        {
-            return _supportedCodecs;
-        }
-
-        public void SetAudioSourceFormat(AudioCodecsEnum audioFormat)
-        {
-            _selectedSourceFormat = audioFormat;
-        }
-
-        public List<AudioCodecsEnum> GetAudioSinkFormats()
-        {
-            return _supportedCodecs;
-        }
-
-        public void SetAudioSinkFormat(AudioCodecsEnum audioFormat)
-        {
-            _selectedSinkFormat = audioFormat;
         }
 
         /// <summary>
@@ -299,16 +264,11 @@ namespace SIPSorceryMedia.Windows
 
         public void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
         {
-            if (_waveProvider != null && _audioEncoder != null && _audioEncoder.IsSupported(_selectedSinkFormat))
+            if (_waveProvider != null && _audioEncoder != null && _audioEncoder.IsSupported(_audioCodecManager.SelectedCodec))
             {
-                var pcmSample = _audioEncoder.DecodeAudio(payload, _selectedSinkFormat, AudioPlaybackRate);
+                var pcmSample = _audioEncoder.DecodeAudio(payload, _audioCodecManager.SelectedCodec, AudioPlaybackRate);
                 _waveProvider?.AddSamples(pcmSample, 0, pcmSample.Length);
             }
-        }
-
-        public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
-        {
-            throw new NotImplementedException();
         }
     }
 }
