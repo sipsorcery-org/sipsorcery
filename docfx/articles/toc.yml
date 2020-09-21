@@ -9,8 +9,8 @@
       href: sipuseragent.md
     - name: RTP & RTCP Sessions
       href: rtpsession.md
-    - name: WebRTC Session
-      href: webrtcsession.md
+    - name: WebRTC Peer Connection
+      href: rtcpeerconnection.md
 - name: Examples
   href: examples.md
   items:
