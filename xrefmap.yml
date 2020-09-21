@@ -10763,44 +10763,6 @@ references:
   commentId: F:SIPSorcery.Net.RTCSignalingState.stable
   fullName: SIPSorcery.Net.RTCSignalingState.stable
   nameWithType: RTCSignalingState.stable
-- uid: SIPSorcery.net.RTP
-  name: SIPSorcery.net.RTP
-  href: api/SIPSorcery.net.RTP.html
-  commentId: N:SIPSorcery.net.RTP
-  fullName: SIPSorcery.net.RTP
-  nameWithType: SIPSorcery.net.RTP
-- uid: SIPSorcery.net.RTP.RtpVideoFramer
-  name: RtpVideoFramer
-  href: api/SIPSorcery.net.RTP.RtpVideoFramer.html
-  commentId: T:SIPSorcery.net.RTP.RtpVideoFramer
-  fullName: SIPSorcery.net.RTP.RtpVideoFramer
-  nameWithType: RtpVideoFramer
-- uid: SIPSorcery.net.RTP.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
-  name: RtpVideoFramer(VideoCodecsEnum)
-  href: api/SIPSorcery.net.RTP.RtpVideoFramer.html#SIPSorcery_net_RTP_RtpVideoFramer__ctor_SIPSorceryMedia_Abstractions_V1_VideoCodecsEnum_
-  commentId: M:SIPSorcery.net.RTP.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
-  fullName: SIPSorcery.net.RTP.RtpVideoFramer.RtpVideoFramer(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
-  nameWithType: RtpVideoFramer.RtpVideoFramer(VideoCodecsEnum)
-- uid: SIPSorcery.net.RTP.RtpVideoFramer.#ctor*
-  name: RtpVideoFramer
-  href: api/SIPSorcery.net.RTP.RtpVideoFramer.html#SIPSorcery_net_RTP_RtpVideoFramer__ctor_
-  commentId: Overload:SIPSorcery.net.RTP.RtpVideoFramer.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.RtpVideoFramer.RtpVideoFramer
-  nameWithType: RtpVideoFramer.RtpVideoFramer
-- uid: SIPSorcery.net.RTP.RtpVideoFramer.GotRtpPacket(SIPSorcery.Net.RTPPacket)
-  name: GotRtpPacket(RTPPacket)
-  href: api/SIPSorcery.net.RTP.RtpVideoFramer.html#SIPSorcery_net_RTP_RtpVideoFramer_GotRtpPacket_SIPSorcery_Net_RTPPacket_
-  commentId: M:SIPSorcery.net.RTP.RtpVideoFramer.GotRtpPacket(SIPSorcery.Net.RTPPacket)
-  fullName: SIPSorcery.net.RTP.RtpVideoFramer.GotRtpPacket(SIPSorcery.Net.RTPPacket)
-  nameWithType: RtpVideoFramer.GotRtpPacket(RTPPacket)
-- uid: SIPSorcery.net.RTP.RtpVideoFramer.GotRtpPacket*
-  name: GotRtpPacket
-  href: api/SIPSorcery.net.RTP.RtpVideoFramer.html#SIPSorcery_net_RTP_RtpVideoFramer_GotRtpPacket_
-  commentId: Overload:SIPSorcery.net.RTP.RtpVideoFramer.GotRtpPacket
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.RtpVideoFramer.GotRtpPacket
-  nameWithType: RtpVideoFramer.GotRtpPacket
 - uid: SIPSorcery.Net.RTPChannel
   name: RTPChannel
   href: api/SIPSorcery.Net.RTPChannel.html
@@ -12457,6 +12419,38 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.VideoRtcpSession
   nameWithType: RTPSession.VideoRtcpSession
+- uid: SIPSorcery.Net.RtpVideoFramer
+  name: RtpVideoFramer
+  href: api/SIPSorcery.Net.RtpVideoFramer.html
+  commentId: T:SIPSorcery.Net.RtpVideoFramer
+  fullName: SIPSorcery.Net.RtpVideoFramer
+  nameWithType: RtpVideoFramer
+- uid: SIPSorcery.Net.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
+  name: RtpVideoFramer(VideoCodecsEnum)
+  href: api/SIPSorcery.Net.RtpVideoFramer.html#SIPSorcery_Net_RtpVideoFramer__ctor_SIPSorceryMedia_Abstractions_V1_VideoCodecsEnum_
+  commentId: M:SIPSorcery.Net.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
+  fullName: SIPSorcery.Net.RtpVideoFramer.RtpVideoFramer(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
+  nameWithType: RtpVideoFramer.RtpVideoFramer(VideoCodecsEnum)
+- uid: SIPSorcery.Net.RtpVideoFramer.#ctor*
+  name: RtpVideoFramer
+  href: api/SIPSorcery.Net.RtpVideoFramer.html#SIPSorcery_Net_RtpVideoFramer__ctor_
+  commentId: Overload:SIPSorcery.Net.RtpVideoFramer.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpVideoFramer.RtpVideoFramer
+  nameWithType: RtpVideoFramer.RtpVideoFramer
+- uid: SIPSorcery.Net.RtpVideoFramer.GotRtpPacket(SIPSorcery.Net.RTPPacket)
+  name: GotRtpPacket(RTPPacket)
+  href: api/SIPSorcery.Net.RtpVideoFramer.html#SIPSorcery_Net_RtpVideoFramer_GotRtpPacket_SIPSorcery_Net_RTPPacket_
+  commentId: M:SIPSorcery.Net.RtpVideoFramer.GotRtpPacket(SIPSorcery.Net.RTPPacket)
+  fullName: SIPSorcery.Net.RtpVideoFramer.GotRtpPacket(SIPSorcery.Net.RTPPacket)
+  nameWithType: RtpVideoFramer.GotRtpPacket(RTPPacket)
+- uid: SIPSorcery.Net.RtpVideoFramer.GotRtpPacket*
+  name: GotRtpPacket
+  href: api/SIPSorcery.Net.RtpVideoFramer.html#SIPSorcery_Net_RtpVideoFramer_GotRtpPacket_
+  commentId: Overload:SIPSorcery.Net.RtpVideoFramer.GotRtpPacket
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpVideoFramer.GotRtpPacket
+  nameWithType: RtpVideoFramer.GotRtpPacket
 - uid: SIPSorcery.Net.RtpVP8Header
   name: RtpVP8Header
   href: api/SIPSorcery.Net.RtpVP8Header.html
