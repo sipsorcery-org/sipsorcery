@@ -13,7 +13,7 @@ To place a SIP call takes only a small amount of code. The code snippet below is
 
  For non-Windows platforms an alternative is:
 
-  - [SIPSorceryMedia.FFmpeg](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) - it is intended to provide the same capabilities as the Windows specific package for `Linux` and `macOS`. At the time of writing it is still a work in progress.
+  - [SIPSorceryMedia.FFmpeg](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) - it is intended to provide the same capabilities as the `Windows` specific package for `Linux` and `macOS`. At the time of writing it is still a work in progress.
 
 The full example for the code snippet below can be be found in [Getting Started Example](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/GetStarted).
 
@@ -51,7 +51,7 @@ namespace demo
 var userAgent = new SIPUserAgent();
 ````
 
-**Step 2:** The `userAgent ` will be able to place a call and get exchange `RTP` media packets that contain audio and video payloads but it does not know what to do with them. The next line creates a Windows media end point that can obtain audio samples from a microphone and the reverse of playing received audio `RTP` samples on a speaker. For non-Windows platforms it is possible to use a different class as long as it implements the [IAudioSource](https://github.com/sipsorcery/SIPSorceryMedia.Abstractions/blob/a7fbd2e069ed3ca3925644ff80dd1ad8b47c5804/src/V1/MediaEndPoints.cs#L83) and [IAudioSink](https://github.com/sipsorcery/SIPSorceryMedia.Abstractions/blob/a7fbd2e069ed3ca3925644ff80dd1ad8b47c5804/src/V1/MediaEndPoints.cs#L112) interfaces.
+**Step 2:** The `userAgent ` will be able to place a call and exchange `RTP` audio and video but it does not know what to do with them. The next line creates a `Windows` media end point that can obtain audio samples from a microphone and play received audio on a speaker. For non-`Windows` platforms it is possible to use a different class as long as it implements the [IAudioSource](https://github.com/sipsorcery/SIPSorceryMedia.Abstractions/blob/a7fbd2e069ed3ca3925644ff80dd1ad8b47c5804/src/V1/MediaEndPoints.cs#L83) and [IAudioSink](https://github.com/sipsorcery/SIPSorceryMedia.Abstractions/blob/a7fbd2e069ed3ca3925644ff80dd1ad8b47c5804/src/V1/MediaEndPoints.cs#L112) interfaces.
 
 ````csharp
 var winAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
@@ -116,6 +116,8 @@ namespace demo
 
 **Step 1:** Create a @"SIPSorcery.SIP.SIPTransport" instance and add a @"SIPSorcery.SIP.SIPChannel" to it. This step is generally required if the application needs to listen on a specific protocol, address or port. This is relevant for incoming calls since the caller needs to know how to reach the application.
 
+For more information about how the SIP transport and channel mechanisms see the [SIP Transport Layer](transport.md) article.
+
 ````csharp
 var sipTransport = new SIPTransport();
 sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 5060)));
@@ -127,7 +129,7 @@ sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 5060)
 var userAgent = new SIPUserAgent(sipTransport, null, true);
 ````
 
-**Step 3:** Create an event handler for incoming calls received.
+**Step 3:** Create an event handler to receive incoming calls.
 
 ````csharp
 userAgent.OnIncomingCall += async (ua, req) =>
@@ -136,18 +138,18 @@ userAgent.OnIncomingCall += async (ua, req) =>
 }
 ````
 
-**Step 4:** When an incoming call is received the first action to take is to accept it (note that accepted means the answer process has started rather than actually answering). Once a call is accepted different various actions can be taken such as:
+**Step 4:** When an incoming call is received the first action is to accept it (note that accepted means the answer process has started rather than actually answering). Once a call is accepted different actions can be taken such as:
 
  - Display a prompt on the user interface and allow the User to choose an action,
  - Automatically reject the call,
  - Automatically answer the call,
- - Forward teh call to an alternative destination.
+ - Forward the call to an alternative destination.
 
 ````csharp
 var uas = userAgent.AcceptCall(req);
 ````
 
-**Step 5:** To answer the call create a `WindowsAudioEndPoint` and @"SIPSorcery.Media.VoIPMediaSession" to interface with the system audio devices and decode any received `RTP` packets. See the [#Initiating-a-Call] section for more detail. 
+**Step 5:** To answer the call create a `WindowsAudioEndPoint` and @"SIPSorcery.Media.VoIPMediaSession" to interface with the system audio devices and decode any received `RTP` packets. See the [Initiating a Call](#initiating-a-call) section for more detail. 
 
 ````csharp
 WindowsAudioEndPoint winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
@@ -163,7 +165,7 @@ await userAgent.Answer(uas, voipMediaSession);
 
 ## Established Call Actions
 
-Once a call is established the @"SIPSorcery.SIP.App.SIPUserAgent" instance can perform various additional actions such as:
+Once a call is established the @"SIPSorcery.SIP.App.SIPUserAgent" can perform various additional actions such as:
 
  - Hangup,
  - Place on and Off Hold,
@@ -213,7 +215,7 @@ await userAgent.TakeOffHold();
 
 ## Blind Transfer
 
-A Blind Transfer is where the callee is sent a SIP REFER request (see [call flow](callholdtransfer.md#blind-transfer)) specifying a new destination for the call. The call party initiating the transfer does not interact with the transfer destination. The @"SIPSorcery.SIP.App.SIPUserAgent.BlindTransfer(SIPSorcery.SIP.SIPURI,System.TimeSpan,System.Threading.CancellationToken)" method is used to carry out a Blind Transfer on an established call.
+A Blind Transfer is where the callee is sent a SIP REFER request (see [call flow](callholdtransfer.md#blind-transfer)) specifying a new destination for the call. The call party initiating the transfer does not interact with the transfer destination. The @"SIPSorcery.SIP.App.SIPUserAgent.BlindTransfer(SIPSorcery.SIP.SIPURI,System.TimeSpan,System.Threading.CancellationToken,System.String[])" method is used to carry out a Blind Transfer on an established call.
 
 ````csharp
 bool callResult = await userAgent.Call(DESTINATION, null, null, voipMediaSession);
@@ -243,7 +245,7 @@ An Attended Transfer proceeds as follows:
  - A second call to the transfer destination is established,
  - The original callee and the transferee are bridged together. The transferring call party has their call leg terminated.
 
- The @"SIPSorcery.SIP.App.SIPUserAgent.AttendedTransfer(SIPSorcery.SIP.SIPDialogue,System.TimeSpan,System.Threading.CancellationToken)" method is used to carry out an Attended Transfer on two established calls.
+ The @"SIPSorcery.SIP.App.SIPUserAgent.AttendedTransfer(SIPSorcery.SIP.SIPDialogue,System.TimeSpan,System.Threading.CancellationToken,System.String[])" method is used to carry out an Attended Transfer on two established calls.
 
 ````csharp
 bool callResult1 = await userAgent1.Call(DESTINATION, null, null, voipMediaSession1);
