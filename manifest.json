@@ -5042,12 +5042,15 @@
       "version": ""
     },
     {
+      "log_codes": [
+        "InvalidFileLink"
+      ],
       "type": "Conceptual",
       "source_relative_path": "articles/rtpsession.md",
       "output": {
         ".html": {
           "relative_path": "articles/rtpsession.html",
-          "hash": "ZDo9MPu3iz5LRawgIOo6Fw=="
+          "hash": "zFYtkhJuo4vwDIoV4J0Vsw=="
         }
       },
       "is_incremental": false,
@@ -5090,12 +5093,15 @@
       "version": ""
     },
     {
+      "log_codes": [
+        "InvalidFileLink"
+      ],
       "type": "Toc",
       "source_relative_path": "articles/toc.yml",
       "output": {
         ".html": {
           "relative_path": "articles/toc.html",
-          "hash": "m50M3KkbRtLpSTNslAQX0Q=="
+          "hash": "kMULHrHN0t7IK0H/Z22Gtw=="
         }
       },
       "is_incremental": false,
@@ -5115,18 +5121,6 @@
     },
     {
       "type": "Conceptual",
-      "source_relative_path": "articles/webrtcsession.md",
-      "output": {
-        ".html": {
-          "relative_path": "articles/webrtcsession.html",
-          "hash": "dja6H6SehkYoMucJvsPWzA=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "Conceptual",
       "source_relative_path": "articles/websocket-sipchannel.md",
       "output": {
         ".html": {
@@ -5138,12 +5132,15 @@
       "version": ""
     },
     {
+      "log_codes": [
+        "InvalidFileLink"
+      ],
       "type": "Conceptual",
       "source_relative_path": "index.md",
       "output": {
         ".html": {
           "relative_path": "index.html",
-          "hash": "bAE/5YMjNajHPjMyOt4x5g=="
+          "hash": "U/QOfl9S0QNF8M1/Q7j2tA=="
         }
       },
       "is_incremental": false,
@@ -5176,7 +5173,7 @@
         "ConceptualDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 16,
+          "total_file_count": 15,
           "skipped_file_count": 0
         },
         "ManagedReferenceDocumentProcessor": {
