@@ -60,7 +60,7 @@
         <div class="article row grid">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-<h1 id="sipsorcery-guide-and-reference"><strong>SIPSorcery Guide and Reference</strong></h1>
+<h1 id="sipsorcery-guide-and-reference">SIPSorcery Guide and Reference</h1>
 
 <p>This site contains the usage guide and API reference for the SIPSorcery SIP and WebRTC library.</p>
 <p>If you are new to the library here are some recommended starting points:</p>
@@ -69,10 +69,22 @@
 <li>You want to place a SIP call <a href="articles/intro.html">Getting Started</a>.</li>
 <li>You want to perform more advanced SIP operations like transfers, on/off hold etc. <a href="articles/sipuseragent.html">SIPUserAgent</a>.</li>
 <li>You want to use the Real-Time Transport Protocol in your application <a href="articles/rtpsession.html">RTPSession</a>.</li>
-<li>You want to use WebRTC in your application <a href="articles/webrtcsession.md">WebRtcSession</a>.</li>
+<li>You want to use WebRTC in your application <a href="articles/rtcpeerconnection.html">RTCPeerConnection</a>.</li>
 </ul>
 <p>The API reference is available <a href="api/index.html">here</a>.</p>
 <p>The library source code and examples are <a href="https://github.com/sipsorcery/sipsorcery">here</a>.</p>
+<h1 id="cross-platform-audio-and-video">Cross Platform Audio and Video</h1>
+<p>The <code>SIPSorcery</code> libraries have been separated to facilitate cross platform support. The main library is designed to be platform agnostic and work on all platforms that support <code>.NET Standard 2.0</code>.</p>
+<p>The main library can create SIP and WebRTC calls as well as transport the audio and video packets for them. <strong>But it can't generate or do anything useful with the audio or video samples.</strong> For that platform specific libraries that can utilise audio and video devices, such as microphones, speakers and webcams are required.</p>
+<p>In addition most video, and some audio, codecs do not have <code>.NET Core</code> implementations and thus require native libraries to be used. In some cases, such as <code>FFmpeg</code>, the native libraries can be used from <code>.NET</code> applications in a cross platform manner. If a particular native library does not have cross platform packages then it will often mean a platform specific <code>.NET Core</code> library is required.</p>
+<p>The separate <a href="https://github.com/sipsorcery/SIPSorceryMedia.Abstractions">SIPSorceryMedia.Abstractions</a> library contains a set of interfaces that need to implemented in order to be able to generate and process audio and video samples from the main <code>SIPSorcery</code> library.</p>
+<p>At the time of writing two implementations are available with varying degrees of support for different audio/video capabilities and codecs:</p>
+<ul>
+<li><p><a href="https://github.com/sipsorcery/SIPSorceryMedia.Windows">SIPSorceryMedia.Windows</a> - A <code>Windows</code> specific library that makes use of the <a href="https://docs.microsoft.com/en-us/uwp/api/windows.media.capture.mediacapture?view=winrt-19041">MediaCapture</a> control for webcam support and <a href="https://github.com/naudio/NAudio">NAudio</a> for audio support.</p>
+</li>
+<li><p><a href="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg">SIPSorceryMedia.FFmpeg</a> - A cross platform library that is designed to work on any platform that supports <code>.NET Core</code> and can install the <a href="https://www.ffmpeg.org/">FFmpeg</a> libraries.</p>
+</li>
+</ul>
 </article>
           </div>
           

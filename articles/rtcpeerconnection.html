@@ -1,0 +1,319 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>WebRTC RTCPeerConnection </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="WebRTC RTCPeerConnection ">
+    <meta name="generator" content="docfx 2.56.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h1 id="webrtc-rtcpeerconnection">WebRTC RTCPeerConnection</h1>
+
+<p>The most important class in the <code>SIPSorcery</code> library for <code>WebRTC</code> is <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a>. It closely follow the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">W3 RTCPeerConnection Interface</a>.</p>
+<p><code>WebRTC</code> has no equivalent of <code>SIP</code> signaling. Instead the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> is an an enhanced <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a>. That means there is more work to create a <code>WebRTC</code> connection than a <code>SIP</code> call. The demo applications primarily use a simple web socket signaling layer. This is not part of any specification and can be replaced as needed.</p>
+<h2 id="usage">Usage</h2>
+<p>The steps involved in getting a WebRTC connection to a state where audio and video packets can be exchanged are:</p>
+<ul>
+<li>Instantiate the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> instance,</li>
+<li>Add the audio and/or video tracks as required,</li>
+<li>Call the <code>createOffer</code> method to acquire an SDP offer that can be sent to the remote peer,</li>
+<li>Send the SDP offer and get the SDP answer from the remote peer (this exchange is not part of the WebRTC specification and can be done using any signalling layer, examples are SIP, web sockets etc),</li>
+<li>Once the SDP exchange has occurred the ICE checks can start in order to establish the optimal network path between the two peers. ICE candidates typically need to be passed between peers using the signalling layer,</li>
+<li>Once ICE has established a the DTLS handshake will occur,,</li>
+<li>If the DTLS handshake is successful the keying material it produces is used to initialise the SRTP contexts,</li>
+<li>After the SRTP contexts are initialised the RTP media and RTCP packets can be exchanged in the normal manner.</li>
+</ul>
+<p>The code snippets below are from the <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStarted">WebRTC Get Started demo</a>.</p>
+<p>The demo establishes a <code>WebRTC</code> peer connection with a browser and sends audio and video. The demo program uses a video test pattern and for pre-record music file for its sources. This is because the browser will need to use the default system webcam and microphone.</p>
+<p>See the <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCReceiver">WebRTC Receiver demo</a> for an example on how to receive audio and video from a browser.</p>
+<p><strong>Step 1:</strong> Some kind of signaling layer needs to be established so that the <code>WebRTC</code> peers can exchange their SDP payloads and ICE candidates. The snippet below creates a web socket server that can send and receive JSON encoded messages.</p>
+<p>The web socket server will try and establish an <code>RTCPeerConnection</code> with any web socket client that connects.</p>
+<p>The <a class="xref" href="../api/SIPSorcery.Net.WebRTCWebSocketPeer.html">WebRTCWebSocketPeer</a> is a helper class for working with web sockets and <code>WebRTC</code>. It is NOT part of the <code>WebRTC</code> specification. It's role is to pass JSON messages between the two peers.</p>
+<pre><code class="lang-csharp">using System;
+using System.Net;
+using SIPSorcery.Net;
+using WebSocketSharp.Server;
+
+const int WEBSOCKET_PORT = 8081;
+
+// Start web socket.
+Console.WriteLine(&quot;Starting web socket server...&quot;);
+var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+webSocketServer.AddWebSocketService&lt;WebRTCWebSocketPeer&gt;(&quot;/&quot;, (peer) =&gt; peer.CreatePeerConnection = CreatePeerConnection);
+webSocketServer.Start();
+
+Console.WriteLine($&quot;Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...&quot;);
+
+</code></pre>
+<p><strong>Step 2:</strong> When a web socket client connects the <code>CreatePeerConnection</code> method will be called to create and configure a new <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a>.</p>
+<p>The snippet below shows how to create and configure the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a>. The code is not a concise as the equivalent <code>SIP</code> example as again <code>WebRTC</code> does not provide a signaling to abstract away the details, however, the logic can be broken down into manageable chunks and anyone familiar with the [RTCPeerConnection javascript]((<a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface</a>) API should find it similar.</p>
+<pre><code class="lang-csharp">using System;
+using System.Collections.Generic;
+using SIPSorcery.Media;
+using System.Net;
+using SIPSorcery.Net;
+
+private const string STUN_URL = &quot;stun:stun.sipsorcery.com&quot;;
+
+private static RTCPeerConnection CreatePeerConnection()
+{
+    RTCConfiguration config = new RTCConfiguration
+    {
+        iceServers = new List&lt;RTCIceServer&gt; { new RTCIceServer { urls = STUN_URL } }
+    };
+    var pc = new RTCPeerConnection(config);
+
+    var testPatternSource = new VideoTestPatternSource();
+    var windowsVideoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
+    var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+
+    MediaStreamTrack videoTrack = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+    pc.addTrack(videoTrack);
+    MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+    pc.addTrack(audioTrack);
+
+    testPatternSource.OnVideoSourceRawSample += windowsVideoEndPoint.ExternalVideoSourceRawSample;
+    windowsVideoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+    audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+    pc.OnVideoFormatsNegotiated += (sdpFormat) =&gt;
+        windowsVideoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+    pc.onconnectionstatechange += async (state) =&gt;
+    {
+        Console.WriteLine($&quot;Peer connection state change to {state}.&quot;);
+
+        if (state == RTCPeerConnectionState.connected)
+        {
+            await audioSource.StartAudio();
+            await windowsVideoEndPoint.StartVideo();
+            await testPatternSource.StartVideo();
+        }
+        else if (state == RTCPeerConnectionState.failed)
+        {
+            pc.Close(&quot;ice disconnection&quot;);
+        }
+        else if (state == RTCPeerConnectionState.closed)
+        {
+            await testPatternSource.CloseVideo();
+            await windowsVideoEndPoint.CloseVideo();
+            await audioSource.CloseAudio();
+        }
+    };
+
+    // Diagnostics.
+    pc.OnReceiveReport += (re, media, rr) =&gt; Console.WriteLine($&quot;RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}&quot;);
+    pc.OnSendReport += (media, sr) =&gt; Console.WriteLine($&quot;RTCP Send for {media}\n{sr.GetDebugSummary()}&quot;);
+    pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) =&gt; Console.WriteLine($&quot;STUN {msg.Header.MessageType} received from {ep}.&quot;);
+    pc.oniceconnectionstatechange += (state) =&gt; Console.WriteLine($&quot;ICE connection state change to {state}.&quot;);
+
+    return pc;
+}
+</code></pre>
+<p><strong>Step 2.1:</strong> Create the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> object.</p>
+<p>Various configuration options can be supplied when creating the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a>. The most important option is the list of ICE (STUN and TURN) servers. The list of ICE servers can typically be left empty if the peer connection is between two applications on the same machine or network.</p>
+<pre><code class="lang-csharp">using System.Collections.Generic;
+using SIPSorcery.Net;
+
+const string STUN_URL = &quot;stun:stun.sipsorcery.com&quot;;
+
+RTCConfiguration config = new RTCConfiguration
+{
+    iceServers = new List&lt;RTCIceServer&gt; { new RTCIceServer { urls = STUN_URL } }
+};
+var pc = new RTCPeerConnection(config);
+</code></pre>
+<p><strong>Step 2.2:</strong> Set up the audio and video end points. The approach to connecting audio and video end points to the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> is identical to connecting them to the <a href="voipmediasession.md">VoIP Media Session</a>, also see <a href="index.md">overview</a>.</p>
+<p>In the snippet below a video test pattern source is created. It generates a video stream from a static test pattern image overlaid with a constantly updated timestamp. A <code>WindowsVideoEndPoint</code> from the <a href="https://github.com/sipsorcery/SIPSorceryMedia.Windows">SIPSorceryMedia.Windows</a> library is also created. It supplies the <code>VP8</code> video encoding functionality for the test pattern images and also decoding for the <code>VP8</code> video samples received from the browser.</p>
+<p>A pre-recorded music file source is also created to send audio samples to the browser.</p>
+<pre><code class="lang-csharp">using System.Collections.Generic;
+using SIPSorcery.Media;
+using SIPSorcery.Net;
+
+var testPatternSource = new VideoTestPatternSource();
+var windowsVideoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
+var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+</code></pre>
+<p><strong>Step 2.3:</strong> Add the media to the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> object.</p>
+<p>The details about the audio and video streams are needed to generate an SDP offer. Adding the media tracks gives the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> the required information.</p>
+<pre><code class="lang-csharp">MediaStreamTrack videoTrack = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+pc.addTrack(videoTrack);
+MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+pc.addTrack(audioTrack);
+</code></pre>
+<p><strong>Step 2.4:</strong> Hook up the audio and video event handlers.</p>
+<p>This is how the audio and video samples get into and out of the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> object. The <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> object can package and transport audio and video BUT it is not able to generate or consume the samples. Hooking up the media end points fixes that.</p>
+<p>In the snippet below the test pattern source is hooked up to the <code>VP8</code> encoder from the <code>WindowsVideoEndPoint</code> (the <code>VP8</code> codec is from a native library) and then to the @&quot;SIPSorcery.Net.RTCSession.SendVideo(uint,byte[])&quot; which is inherited by <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a>.</p>
+<p><code>[test pattern source] --&gt; [windows video end point VP8 encoder] --&gt; [RTC peer connection SendVideo]</code></p>
+<p>For the audio source the <a class="xref" href="../api/SIPSorcery.Media.MuLawEncoder.html">MuLawEncoder</a> encoder is very simple and does not require a native library.</p>
+<p><code>[music source] --&gt; [RTC peer connection SendAudio]</code></p>
+<p>The final line in the snippet is not related to audio or video samples. Instead it's an event to tell the <code>WindowsVideoEndPoint</code> which codec was negotiated during the SDP exchange. In this cse it's a redundant call since the <code>WindowsVideoEndPoint</code> only supports <code>VP8</code>. The <a href="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg">SIPSorceryMedia.FFmpeg</a> supports <code>VP8</code> and <code>H264</code> and it needs to be informed which codec the <code>WebRTC</code> peers agreed on.</p>
+<pre><code class="lang-csharp">testPatternSource.OnVideoSourceRawSample += windowsVideoEndPoint.ExternalVideoSourceRawSample;
+windowsVideoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+pc.OnVideoFormatsNegotiated += (sdpFormat) =&gt;
+    windowsVideoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+</code></pre>
+<p><strong>Step 2.5:</strong> Hook up the audio and video stop start calls to the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> connection state changes.</p>
+<p>The <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_onconnectionstatechange">onconnectionstatechange</a> is it's most important event. It indicates the connection state between the <code>WebRTC</code> peers. When it's connected audio and video can be exchanged. When it fails or is closed audio and video will stop.</p>
+<p>In the snippet below the 3 media sources are all started when the connection state changes to <code>RTCPeerConnectionState.connected</code> and closed when it changes to <code>RTCPeerConnectionState.closed</code>.</p>
+<pre><code class="lang-csharp">pc.onconnectionstatechange += async (state) =&gt;
+{
+    Console.WriteLine($&quot;Peer connection state change to {state}.&quot;);
+
+    if (state == RTCPeerConnectionState.connected)
+    {
+        await audioSource.StartAudio();
+        await windowsVideoEndPoint.StartVideo();
+        await testPatternSource.StartVideo();
+    }
+    else if (state == RTCPeerConnectionState.failed)
+    {
+        pc.Close(&quot;ice disconnection&quot;);
+    }
+    else if (state == RTCPeerConnectionState.closed)
+    {
+        await testPatternSource.CloseVideo();
+        await windowsVideoEndPoint.CloseVideo();
+        await audioSource.CloseAudio();
+    }
+};
+</code></pre>
+<p><strong>Step 3:</strong> Generate and send SDP offer.</p>
+<p>Once the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> object has been created it is able to generate an SDP offer that can be sent to the remote peer.</p>
+<p>In the <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStarted">WebRTC Get Started demo</a> being described here that logic is not shown as it is contained in the <a class="xref" href="../api/SIPSorcery.Net.WebRTCWebSocketPeer.html">WebRTCWebSocketPeer</a>.</p>
+<p>The snippet below shows how to generate the SDP offer.</p>
+<pre><code class="lang-csharp">var offerSdp = pc.createOffer(null);
+await pc.setLocalDescription(offerSdp);
+</code></pre>
+<p>Once the offer has been acquired it needs to somehow be sent. This can be done using a signaling layer or even copied and pasted into the browser. For this demo JSON encoding over web sockets is used (see <a class="xref" href="../api/SIPSorcery.Net.WebRTCWebSocketPeer.html">WebRTCWebSocketPeer</a> for complete logic).</p>
+<pre><code class="lang-csharp"> Context.WebSocket.Send(JsonConvert.SerializeObject(offerSdp,
+                 new Newtonsoft.Json.Converters.StringEnumConverter()));
+</code></pre>
+<p><strong>Step 4:</strong> Receive SDP answer from remote peer.</p>
+<p>As with sending the SDP offer different approaches can be used to receive the offer. The snippet below shows receiving a JSON encoded web socket messages.</p>
+<p>The answer needs to be set on the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a>. There are a number of things that can go wrong during the SDP negotiation process, such as no compatible codecs. The @&quot;SIPSorcery.Net.SetDescriptionResultEnum` result should always be checked to ensure the negotiation was successful.</p>
+<pre><code class="lang-csharp">RTCSessionDescriptionInit descriptionInit = JsonConvert.DeserializeObject&lt;RTCSessionDescriptionInit&gt;(e.Data);
+var result = _pc.setRemoteDescription(descriptionInit);
+if (result != SetDescriptionResultEnum.OK)
+{
+    logger.LogWarning($&quot;Failed to set remote description, {result}.&quot;);
+    _pc.Close(&quot;failed to set remote description&quot;);
+    this.Close();
+}
+</code></pre>
+<p><strong>Step 5:</strong> Exchange ICE candidates.</p>
+<p>Once the SDP negotiation has succeeded the next step is to determine the optimal network path between the peers. To do that ICE candidates need to be exchanged. Once again this is a signaling function and can be done using different approaches. The code snippet below is using JSON over a web socket connection.</p>
+<p>Sending an ICE candidate.</p>
+<pre><code class="lang-csharp">pc.onicecandidate += (iceCandidate) =&gt;
+{
+    if (pc.signalingState == RTCSignalingState.have_remote_offer)
+    {
+        Context.WebSocket.Send(iceCandidate.toJSON());
+    }
+};
+</code></pre>
+<p>Receiving an ICE candidate.</p>
+<pre><code class="lang-csharp"> logger.LogDebug(&quot;Got remote ICE candidate.&quot;);
+var iceCandidateInit = JsonConvert.DeserializeObject&lt;RTCIceCandidateInit&gt;(e.Data);
+pc.addIceCandidate(iceCandidateInit);
+</code></pre>
+<p><strong>Step 6:</strong> Wait for the connection to establish.</p>
+<p>Once the ICE connection attempts start it should be a matter of waiting for it to complete. Once it does, and providing the audio and video event handlers were hooked up correctly, the browser should display the test pattern video and play music.</p>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/docfx/articles/rtcpeerconnection.md/#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

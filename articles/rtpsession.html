@@ -73,8 +73,8 @@
 <p>In general it is not necessary for an application to use this class directly. It should typically use one of the higher level classes described below. Having an understanding of this class is useful to be aware of how audio and video packets are communicated in near real-time.</p>
 <p>There are currently two higher level classes that wrap the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class for use in common scenarios:</p>
 <ul>
-<li>The <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> class which is the recommended implementation for SIP applications.</li>
-<li>The <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> which is for WebRTC applications.</li>
+<li>The <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> class which is the recommended implementation for SIP applications. See the <a href="voipmediasession.md">VoIP Media Session article</a> for more details.</li>
+<li>The <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> which is for WebRTC applications. See the <a href="rtcpeerconnection.html">WebRTC RTCPeerConnection article</a> for more details.</li>
 </ul>
 <h2 id="features">Features</h2>
 <p>As well as taking care of the plumbing required to send and receive media packets the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class performs a number of additional functions that are required for the correct operation of an RTP connection.</p>
@@ -87,81 +87,7 @@
 <li>Provides a <code>Send</code> method for an RTP event which is utilised to send DTMF tones.</li>
 <li>Provides hooks for setting Secure Real-time Protocol (SRTP) protect and unprotect functions.</li>
 </ul>
-<p>The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class has been updated to support WebRTC sessions which behave differently compared to the original RTP used by most SIP devices. The main change is that WebRTC multiplexes all packets (STUN, RTP (audio and video) and RTCP) on a single connection. Standard RTP only supports a single packet type per connection and uses multiple sockets for RTP and RTCP and if required an additional socket pair for video.</p>
-<h2 id="working-with-cross-platform-media">Working with Cross Platform Media</h2>
-<p>The <code>SIPSorcery</code> libraries have been separated to facilitate cross platform support. The main library is designed to be platform agnostic and work on all platforms that support <code>.NET Standard 2.0</code>.</p>
-<p>The main library can create SIP and WebRTC calls as well as transport the audio and video packets for them. But it can't generate or do anything useful with the audio or video samples in those packets. For that platform specific libraries that can use audio and video devices, such as microphones, speakers and webcams are required.</p>
-<p>In addition most video and some audio codecs do not have <code>.NET Core</code> implementations and require native libraries to be used. In some cases, such as <code>FFmpeg</code>, native libraries can be used from <code>.NET</code> applications in a cross platform manner. If a particular native library does not have cross platform packages then it will often mean a platform specific <code>.NET Core</code> library is required.</p>
-<p>The separate <a href="https://github.com/sipsorcery/SIPSorceryMedia.Abstractions">SIPSorceryMedia.Abstractions</a> library contains a set of interfaces that platform specific libraries need to implement in order to work with the main library.</p>
-<p>At the time of writing two libraries have been created to work with audio and video devices on different platforms:</p>
-<ul>
-<li><p><a href="https://github.com/sipsorcery/SIPSorceryMedia.Windows">SIPSorceryMedia.Windows</a> - A <code>Windows</code> specific library. Makes use UWP classes for webcam capture and <a href="https://github.com/naudio/NAudio">NAudio</a> for microphone capture and speaker playback.</p>
-</li>
-<li><p><a href="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg">SIPSorceryMedia.FFmpeg</a> - A cross platform library that is designed to work on any platform that supports <code>.NET Core</code> and can install the <a href="https://www.ffmpeg.org/">FFmpeg</a> libraries. At the time of writing this library is still a work in progress and does not support audio or video devices.</p>
-</li>
-</ul>
-<h2 id="voipmediasession">VoIPMediaSession</h2>
-<p>The rest of this article describes the <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> class which is designed for use with SIP/VoIP applications. For WebRTC see the <a href="rtcpeerconnection.md">RTCPeerConnection article</a>.</p>
-<p>The <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> class acts as a bridge between the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class and the platform specific media library, such as the <code>SIPSorceryMedia.Windows</code> library.</p>
-<p>The code snippet below shows how to instantiate a <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a>.</p>
-<pre><code class="lang-csharp">using SIPSorcery.Media;
-using SIPSorceryMedia.Windows
-
-var winAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
-var voipMediaSession = new VoIPMediaSession(winAudioEndPoint.ToMediaEndPoints());
-</code></pre>
-<h4 id="controlling-an-rtpavsession">Controlling an RtpAVSession</h4>
-<p>If the <a href="https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs">RtpAVSession</a> is used with the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> class then normally the control functions can all be done via it. If it is used independently then there are methods to:</p>
-<ul>
-<li>Create an SDP offer or answer.</li>
-<li>Set the remote SDP offer or answer.</li>
-<li>Detect whether the remote SDP has put a session on or off hold.</li>
-<li>Send an RTP event for a DTMF tone.</li>
-</ul>
-<h4 id="media-handling">Media Handling</h4>
-<p>Rendering the audio or video packets is the hardest part of using any of the RTP Session classes. The .Net Framework and Core libraries do not provide any audio or video rendering capabilities. To render the media a 3rd party component is required.</p>
-<ul>
-<li>For audio the best option is <a href="https://github.com/naudio/NAudio">NAudio</a>.</li>
-<li>For video the only known option is the companion <a href="https://github.com/sipsorcery/sipsorcery-media">SIPSorceryMedia library</a>. It has functions to decode VP8 packets to RGB frames which can be displayed in a Windows Forms or WPF application.</li>
-</ul>
-<h4 id="audio-capture">Audio Capture</h4>
-<p>The <a href="https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs">RtpAVSession</a> takes an <code>AudioOptions</code> parameter to its constructor that allows the source to be specified. The most common case is capturing from the default system microphone and that is done by setting the audio source to <code>AudioSourcesEnum.Microphone</code>.</p>
-<pre><code class="lang-csharp">using SIPSorcery.Media;
-using SIPSorceryMedia.Windows
-
-var winAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
-var voipMediaSession = new VoIPMediaSession(winAudioEndPoint.ToMediaEndPoints());
-</code></pre>
-<h4 id="audio-rendering">Audio Rendering</h4>
-<p>The <a href="https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs">RtpAVSession</a> automatically plays any received audio packets on the default system speaker.</p>
-<h4 id="video-capture">Video Capture</h4>
-<p>Currently the only video source supported in <a href="https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs">RtpAVSession</a> is a <code>Test Pattern</code> with text overlay.</p>
-<pre><code class="lang-csharp">using System.Net.Sockets;
-using SIPSorcery.Media;
-
-var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, 
-  new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, 
-  new VideoOptions { VideoSource = VideoSourcesEnum.TestPattern } 
-  );
-</code></pre>
-<h4 id="video-rendering">Video Rendering</h4>
-<p>The <a href="https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs">RtpAVSession</a> will supply any video samples it receives and decodes via its <code>OnVideoSampleReady</code> event. The samples are supplied in a BGR24 bitmap format.</p>
-<p>A snippet taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStartedVideo/Program.cs">Getting Started Video</a> that renders the received bitmap in a Windows Forms picture box.</p>
-<pre><code class="lang-csharp">rtpSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =&gt;
-{
-    _picBox.BeginInvoke(new Action(() =&gt;
-    {
-        unsafe
-        {
-            fixed (byte* s = sample)
-            {
-                System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                _picBox.Image = bmpImage;
-            }
-        }
-    }));
-};
-</code></pre>
+<p>The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class has been updated to support WebRTC peer connections which behave differently compared to the original RTP specification, used by most SIP devices. The main change is that WebRTC multiplexes all packets (STUN, RTP (audio and video) and RTCP) on a single connection. Standard RTP only supports a single packet type per connection and uses multiple sockets for RTP and RTCP.</p>
 </article>
           </div>
           
