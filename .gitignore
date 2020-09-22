@@ -168,24 +168,7 @@ bower_components
 /.vs
 *.dll
 *.vs
+*.sdp
+**/.ionide
+**/.vscode
 
-<<<<<<< HEAD
-=======
-docfx/*
-**/.vscode*
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> master
-=======
-*.sdp
-<<<<<<< HEAD
->>>>>>> master
-=======
-*.sdp
-**/.ionide
->>>>>>> master
-=======
-**/.ionide
-.fake
-.ionide
->>>>>>> master
