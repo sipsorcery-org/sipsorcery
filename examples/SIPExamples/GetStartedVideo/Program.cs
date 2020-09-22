@@ -81,16 +81,21 @@ namespace demo
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
-            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
+            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true);
             windowsAudioEndPoint.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
             var windowsVideoEndPoint = new WindowsVideoEndPoint();
+
+            var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(@"C:\Dev\sipsorcery\sipsorcery-core\examples\WebRTCExamples\WebRTCMp4Source\media\max_intro.mp4", true, new AudioEncoder());
+            mediaFileSource.Initialise();
+            mediaFileSource.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.VP8 });
+            mediaFileSource.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
                 AudioSink = windowsAudioEndPoint,
-                AudioSource = windowsAudioEndPoint,
+                AudioSource = mediaFileSource,
                 VideoSink = windowsVideoEndPoint,
-                VideoSource = windowsVideoEndPoint,
+                VideoSource = mediaFileSource,
             };
 
             var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
@@ -120,8 +125,8 @@ namespace demo
                     }));
                 };
 
-                windowsAudioEndPoint.PauseAudio().Wait();
-                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
+                //windowsAudioEndPoint.PauseAudio().Wait();
+                //voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
             }
             else
             {

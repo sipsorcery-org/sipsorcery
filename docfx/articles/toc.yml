@@ -7,9 +7,11 @@
       href: transport.md
     - name: SIP User Agent
       href: sipuseragent.md
-    - name: RTP & RTCP Sessions
+    - name: RTP Session
       href: rtpsession.md
-    - name: WebRTC Peer Connection
+    - name: VoIP Media Session
+      href: voipmediasession.md
+    - name: WebRTC RTCPeerConnection
       href: rtcpeerconnection.md
 - name: Examples
   href: examples.md
