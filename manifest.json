@@ -5050,22 +5050,19 @@
       "output": {
         ".html": {
           "relative_path": "articles/rtcpeerconnection.html",
-          "hash": "HgTxsLyiKhHhWyyJEyJsZg=="
+          "hash": "M92DDgSJPsgWvAtLFk1LlA=="
         }
       },
       "is_incremental": false,
       "version": ""
     },
     {
-      "log_codes": [
-        "InvalidFileLink"
-      ],
       "type": "Conceptual",
       "source_relative_path": "articles/rtpsession.md",
       "output": {
         ".html": {
           "relative_path": "articles/rtpsession.html",
-          "hash": "BH82OqIQwhh/tGATPiuP6A=="
+          "hash": "4tRv5vZFt8DHT0h+PBl7cQ=="
         }
       },
       "is_incremental": false,
@@ -5108,15 +5105,12 @@
       "version": ""
     },
     {
-      "log_codes": [
-        "InvalidFileLink"
-      ],
       "type": "Toc",
       "source_relative_path": "articles/toc.yml",
       "output": {
         ".html": {
           "relative_path": "articles/toc.html",
-          "hash": "s2cPaf93PP4Vrs9HtoU90Q=="
+          "hash": "sQwXLS2+kjaZBL+MM+W5Fw=="
         }
       },
       "is_incremental": false,
@@ -5129,6 +5123,18 @@
         ".html": {
           "relative_path": "articles/transport.html",
           "hash": "mjMKTj6laULkkZXLm1nUKQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "articles/voipmediasession.md",
+      "output": {
+        ".html": {
+          "relative_path": "articles/voipmediasession.html",
+          "hash": "Mxvj93u7sn6stdM3rsnYPA=="
         }
       },
       "is_incremental": false,
@@ -5185,7 +5191,7 @@
         "ConceptualDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 16,
+          "total_file_count": 17,
           "skipped_file_count": 0
         },
         "ManagedReferenceDocumentProcessor": {

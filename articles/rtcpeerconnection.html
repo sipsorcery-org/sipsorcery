@@ -181,7 +181,7 @@ RTCConfiguration config = new RTCConfiguration
 };
 var pc = new RTCPeerConnection(config);
 </code></pre>
-<p><strong>Step 2.2:</strong> Set up the audio and video end points. The approach to connecting audio and video end points to the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> is identical to connecting them to the <a href="voipmediasession.md">VoIP Media Session</a>, also see <a href="index.md">overview</a>.</p>
+<p><strong>Step 2.2:</strong> Set up the audio and video end points. The approach to connecting audio and video end points to the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> is identical to connecting them to the <a href="voipmediasession.html">VoIP Media Session</a>, also see <a href="index.md">overview</a>.</p>
 <p>In the snippet below a video test pattern source is created. It generates a video stream from a static test pattern image overlaid with a constantly updated timestamp. A <code>WindowsVideoEndPoint</code> from the <a href="https://github.com/sipsorcery/SIPSorceryMedia.Windows">SIPSorceryMedia.Windows</a> library is also created. It supplies the <code>VP8</code> video encoding functionality for the test pattern images and also decoding for the <code>VP8</code> video samples received from the browser.</p>
 <p>A pre-recorded music file source is also created to send audio samples to the browser.</p>
 <pre><code class="lang-csharp">using System.Collections.Generic;

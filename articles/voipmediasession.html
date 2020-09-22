@@ -1,0 +1,208 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>VoIP Media Session </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="VoIP Media Session ">
+    <meta name="generator" content="docfx 2.56.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h1 id="voip-media-session">VoIP Media Session</h1>
+
+<p>The rest of this article describes the <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> class which is designed for use with SIP/VoIP applications. For WebRTC see the <a href="rtcpeerconnection.html">RTCPeerConnection article</a>.</p>
+<p>The <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> class acts as a bridge between the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class and a separate media library, such as <a href="https://github.com/sipsorcery/SIPSorceryMedia.Windows">SIPSorceryMedia.Windows</a> or <a href="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg">SIPSorceryMedia.FFmpeg</a>.</p>
+<p>The code snippet below shows how to instantiate an audio only <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a>.</p>
+<pre><code class="lang-csharp">using SIPSorcery.Media;
+
+var audioEndPoint = new SIPSorceryMedia.Windows.WindowsAudioEndPoint(new AudioEncoder());
+var voipMediaSession = new VoIPMediaSession(audioEndPoint.ToMediaEndPoints());
+</code></pre>
+<p>The code snippet below shows how to instantiate an audio and video <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a>.</p>
+<pre><code class="lang-csharp">using SIPSorcery.Media;
+using SIPSorceryMedia.Abstractions.V1;
+
+var audioEndPoint = new SIPSorceryMedia.Windows.WindowsAudioEndPoint(new AudioEncoder());
+var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint();
+
+MediaEndPoints mediaEndPoints = new MediaEndPoints
+{
+    AudioSink = audioEndPoint,
+    AudioSource = audioEndPoint,
+    VideoSink = videoEndPoint,
+    VideoSource = videoEndPoint,
+};
+
+var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+</code></pre>
+<p><strong>A different media library implementation can be used by swapping it in for <code>WindowsAudioEndPoint</code> and/or <code>WindowsVideoEndPoint</code>.</strong></p>
+<p>The code snippet below shows how it's possible to combine different media sinks and sources. In this case the audio and video sources are generated from an <code>mp4</code> file and the <code>SIPSorceryMedia.FFmpeg</code> library while the audio and video samples from the remote party are handled with the <code>SIPSorceryMedia.Windows</code> library.</p>
+<pre><code class="lang-csharp">using System.Collections.Generic;
+using SIPSorcery.Media;
+using SIPSorceryMedia.Abstractions.V1;
+
+var windowsAudioEndPoint = new SIPSorceryMedia.Windows.WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true);
+windowsAudioEndPoint.RestrictCodecs(new List&lt;AudioCodecsEnum&gt; { AudioCodecsEnum.PCMU });
+var windowsVideoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint();
+
+var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(&quot;max_intro.mp4&quot;, true, new AudioEncoder());
+mediaFileSource.Initialise();
+mediaFileSource.RestrictCodecs(new List&lt;VideoCodecsEnum&gt; { VideoCodecsEnum.VP8 });
+mediaFileSource.RestrictCodecs(new List&lt;AudioCodecsEnum&gt; { AudioCodecsEnum.PCMU });
+
+MediaEndPoints mediaEndPoints = new MediaEndPoints
+{
+    AudioSink = windowsAudioEndPoint,
+    AudioSource = mediaFileSource,
+    VideoSink = windowsVideoEndPoint,
+    VideoSource = mediaFileSource,
+};
+
+var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+voipMediaSession.AcceptRtpFromAny = true;
+</code></pre>
+<h2 id="media-control-during-calls">Media Control during Calls</h2>
+<p>Once a <code>SIP</code> call has been established, typically with the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a>, certain events, such as hanging up or placing on hold, need to adjust the way audio and/or video streams are handled.</p>
+<p>The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> uses the <a class="xref" href="../api/SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a> interface to control the <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a>. The reason for an additional interface, instead of relying on, <code>IAudioSink</code> etc, is to combine the signalling and media functions. For example placing a call on hold requires a <code>SIP re-INVITE</code> request to be sent as well as adjusting the media streams.</p>
+<p>Applications do not hav to deal with signalling or media adjustments for standard <code>SIP</code> scenarios - such as on/off hold, transfers and hangup - they are able to be handled automatically by the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a>.</p>
+<p>There are cases where an application may want to adjust the media on a call other than the standard scenarios. For example playing a prompt for an Interactive Voice Response (IVR) system. For those cases the audio or video source can be called directly. The <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/PlaySounds">Play Sounds</a> demo application is a good example.</p>
+<p>It creates a <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> in the standard manner.</p>
+<pre><code class="lang-csharp">var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
+var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
+voipMediaSession.AcceptRtpFromAny = true;
+</code></pre>
+<p>Once the call is established it pauses the microphone capture and switches the audio source to play pre-recorded prompts and signals from an internal generator.</p>
+<pre><code class="lang-csharp">await windowsAudio.PauseAudio();
+
+Console.WriteLine(&quot;Sending welcome message from 8KHz sample.&quot;);
+await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
+
+await Task.Delay(200);
+
+Console.WriteLine(&quot;Sending sine wave.&quot;);
+voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.SineWave);
+
+await Task.Delay(2000);
+
+Console.WriteLine(&quot;Sending white noise signal.&quot;);
+voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.WhiteNoise);
+await Task.Delay(2000);
+
+Console.WriteLine(&quot;Sending pink noise signal.&quot;);
+voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.PinkNoise);
+await Task.Delay(2000);
+
+Console.WriteLine(&quot;Sending silence.&quot;);
+voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Silence);
+
+await Task.Delay(2000);
+
+Console.WriteLine(&quot;Sending goodbye message from 16KHz sample.&quot;);
+await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+
+voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.None);
+
+await Task.Delay(200);
+
+// Switch to the external microphone input source.
+await windowsAudio.ResumeAudio();
+</code></pre>
+<p>The full example for the above code snippet can be found in the <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/PlaySounds">Play Sounds</a> demo.</p>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/docfx/articles/voipmediasession.md/#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
