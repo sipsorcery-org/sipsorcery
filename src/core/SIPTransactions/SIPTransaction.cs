@@ -131,6 +131,7 @@ namespace SIPSorcery.SIP
         internal SIPEndPoint m_ackRequestIPEndPoint;                // Socket the ACK request was sent to.
         public SIPRequest PRackRequest { get; protected set; }      // PRACK request for provisional INVITE transaction responses.
         internal SIPEndPoint m_prackRequestIPEndPoint;              // Socket the PRACK request was sent to.
+        internal bool m_gotPrack;                                   // Records whether a PRACK request was received.
 
         public SIPURI TransactionRequestURI
         {
@@ -479,6 +480,8 @@ namespace SIPSorcery.SIP
         /// <param name="sipRequest">The PRACK request.</param>
         public void PRACKReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
+            m_gotPrack = true;
+
             if (m_transactionState == SIPTransactionStatesEnum.Proceeding && RSeq == sipRequest.Header.RAckRSeq)
             {
                 logger.LogDebug("PRACK request matched the current outstanding provisional response, setting as delivered.");
