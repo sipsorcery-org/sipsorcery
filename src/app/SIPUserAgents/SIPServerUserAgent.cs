@@ -573,7 +573,8 @@ namespace SIPSorcery.SIP.App
                         }
                         else
                         {
-                            SIPRequest byeRequest = GetByeRequest();
+                            //SIPRequest byeRequest = GetByeRequest();
+                            var byeRequest = SIPDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
                             SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
                             byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
                             byeTransaction.SendRequest();
@@ -672,21 +673,21 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private SIPRequest GetByeRequest()
-        {
-            SIPRequest byeRequest = new SIPRequest(SIPMethodsEnum.BYE, SIPDialogue.RemoteTarget);
-            SIPFromHeader byeFromHeader = SIPFromHeader.ParseFromHeader(SIPDialogue.LocalUserField.ToString());
-            SIPToHeader byeToHeader = SIPToHeader.ParseToHeader(SIPDialogue.RemoteUserField.ToString());
-            int cseq = SIPDialogue.CSeq + 1;
+        //private SIPRequest GetByeRequest()
+        //{
+        //    SIPRequest byeRequest = new SIPRequest(SIPMethodsEnum.BYE, SIPDialogue.RemoteTarget);
+        //    SIPFromHeader byeFromHeader = SIPFromHeader.ParseFromHeader(SIPDialogue.LocalUserField.ToString());
+        //    SIPToHeader byeToHeader = SIPToHeader.ParseToHeader(SIPDialogue.RemoteUserField.ToString());
+        //    int cseq = SIPDialogue.CSeq + 1;
 
-            SIPHeader byeHeader = new SIPHeader(byeFromHeader, byeToHeader, cseq, SIPDialogue.CallId);
-            byeHeader.CSeqMethod = SIPMethodsEnum.BYE;
-            byeRequest.Header = byeHeader;
-            byeRequest.Header.Routes = SIPDialogue.RouteSet;
-            byeRequest.Header.ProxySendFrom = SIPDialogue.ProxySendFrom;
-            byeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
+        //    SIPHeader byeHeader = new SIPHeader(byeFromHeader, byeToHeader, cseq, SIPDialogue.CallId);
+        //    byeHeader.CSeqMethod = SIPMethodsEnum.BYE;
+        //    byeRequest.Header = byeHeader;
+        //    byeRequest.Header.Routes = SIPDialogue.RouteSet;
+        //    byeRequest.Header.ProxySendFrom = SIPDialogue.ProxySendFrom;
+        //    byeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
-            return byeRequest;
-        }
+        //    return byeRequest;
+        //}
     }
 }

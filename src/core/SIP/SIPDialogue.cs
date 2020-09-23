@@ -225,7 +225,7 @@ namespace SIPSorcery.SIP
             Inserted = DateTimeOffset.UtcNow;
             Direction = SIPCallDirection.Out;
 
-            if(!uacInviteTransaction.m_sentPrack)
+            if(uacInviteTransaction.m_sentPrack)
             {
                 CSeq++;
             }
