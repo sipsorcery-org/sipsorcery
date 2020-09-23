@@ -179,6 +179,11 @@ namespace SIPSorcery.SIP
             Inserted = DateTimeOffset.UtcNow;
             Direction = SIPCallDirection.In;
 
+            if(uasInviteTransaction.m_gotPrack)
+            {
+                CSeq++;
+            }
+
             RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, uasInviteTransaction.TransactionRequest.RemoteSIPEndPoint.CopyOf());
             ProxySendFrom = uasInviteTransaction.TransactionRequest.Header.ProxyReceivedOn;
             if (uasInviteTransaction.TransactionRequest.Header.Contact != null && uasInviteTransaction.TransactionRequest.Header.Contact.Count > 0)
@@ -219,6 +224,11 @@ namespace SIPSorcery.SIP
             RemoteSDP = uacInviteTransaction.TransactionFinalResponse.Body;
             Inserted = DateTimeOffset.UtcNow;
             Direction = SIPCallDirection.Out;
+
+            if(!uacInviteTransaction.m_sentPrack)
+            {
+                CSeq++;
+            }
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
             if (uacInviteTransaction.TransactionFinalResponse != null)
