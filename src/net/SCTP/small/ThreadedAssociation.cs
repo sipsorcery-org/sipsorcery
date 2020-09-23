@@ -249,7 +249,7 @@ namespace SIPSorcery.Net.Sctp
 
             lock (this)
             {
-                long now = Time.CurrentTimeMillis();
+                long now = TimeExtension.CurrentTimeMillis();
                 d.setTsn(_nearTSN++);
                 d.setGapAck(false);
                 d.setRetryTime(now + getT3() - 1);
@@ -498,7 +498,7 @@ namespace SIPSorcery.Net.Sctp
             {
                 long ackedTo = sack.getCumuTSNAck();
                 int totalAcked = 0;
-                long now = Time.CurrentTimeMillis();
+                long now = TimeExtension.CurrentTimeMillis();
                 // interesting SACK
                 // process acks
                 lock (_inFlight)
@@ -805,7 +805,7 @@ namespace SIPSorcery.Net.Sctp
         {
             if (canSend())
             {
-                long now = Time.CurrentTimeMillis();
+                long now = TimeExtension.CurrentTimeMillis();
                 //logger.LogDebug("retry timer went off at " + now);
                 List<DataChunk> dcs = new List<DataChunk>();
                 int space = _transpMTU - 12; // room for packet header

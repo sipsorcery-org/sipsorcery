@@ -182,7 +182,9 @@ namespace SIPSorcery
                                 };
                                 rtpSession.OnRtpClosed += (reason) => uas?.Hangup(false);
                                 uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+                                await Task.Delay(100);
                                 uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+                                await Task.Delay(100);
 
                                 var answerSdp = rtpSession.CreateAnswer(null);
                                 uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);

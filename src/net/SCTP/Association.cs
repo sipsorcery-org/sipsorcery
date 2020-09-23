@@ -572,7 +572,7 @@ namespace SIPSorcery.Net.Sctp
         private uint howStaleIsMyCookie(CookieHolder cookie)
         {
             uint ret = 0;
-            long now = Time.CurrentTimeMillis();
+            long now = TimeExtension.CurrentTimeMillis();
 
             if ((now - cookie.cookieTime) < VALIDCOOKIELIFE)
             {
@@ -691,7 +691,7 @@ namespace SIPSorcery.Net.Sctp
             iac.setInitiateTag(_myVerTag);
             CookieHolder cookie = new CookieHolder();
             cookie.cookieData = new byte[Association.COOKIESIZE];
-            cookie.cookieTime = Time.CurrentTimeMillis();
+            cookie.cookieTime = TimeExtension.CurrentTimeMillis();
             _random.NextBytes(cookie.cookieData);
             iac.setCookie(cookie.cookieData);
             _cookies.Add(cookie);
