@@ -60,7 +60,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.78-pre: Bug fix for cseq not being incremented for PRACK send or receive.
+    <PackageReleaseNotes>- v4.0.79-pre: Removed SCTP Time class due to conflict with Unity built in type.
+- v4.0.78-pre: Bug fix for cseq not being incremented for PRACK send or receive.
 - v4.0.77-pre: Updated to latest media abstractions package.
 - v4.0.76-pre: Updated to latest media abstractions package.
 - v4.0.75-pre: Added fix for creating self signed X509 certificates on non-Windows platforms. Required for WebRTC DTLS negotiation.
@@ -105,9 +106,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.78-pre</Version>
-    <AssemblyVersion>4.0.78.0</AssemblyVersion>
-    <FileVersion>4.0.78.0</FileVersion>
+    <Version>4.0.79-pre</Version>
+    <AssemblyVersion>4.0.79.0</AssemblyVersion>
+    <FileVersion>4.0.79.0</FileVersion>
   </PropertyGroup>
 
 </Project>
