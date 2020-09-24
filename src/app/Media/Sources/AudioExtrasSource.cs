@@ -27,7 +27,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions.V1;
 
@@ -357,10 +356,13 @@ namespace SIPSorcery.Media
                         {
                             Log.LogWarning($"Music file not set or not found, using default music resource.");
                         }
-
-                        EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
-                        var audioStreamFileInfo = efp.GetFileInfo(MUSIC_RESOURCE_PATH);
-                        _audioStreamReader = new StreamReader(audioStreamFileInfo.CreateReadStream());
+#if !UNITY
+                        //var efp = new Microsoft.Extensions.FileProviders.EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+                        //var audioStreamFileInfo = efp.GetFileInfo(MUSIC_RESOURCE_PATH);
+                        //_audioStreamReader = new StreamReader(audioStreamFileInfo.CreateReadStream());
+#else   
+                        throw new ApplicationException("Cannot load music files from embedded resources in Unity.");
+#endif
                     }
                     else
                     {

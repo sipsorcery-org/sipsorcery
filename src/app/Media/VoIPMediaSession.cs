@@ -49,7 +49,7 @@ namespace SIPSorcery.Media
 
         private static ILogger logger = SIPSorcery.Sys.Log.Logger;
 
-        private VideoTestPatternSource _videoTestPatternSource;
+        //private VideoTestPatternSource _videoTestPatternSource;
         private AudioExtrasSource _audioExtrasSource;
         private bool _videoCaptureDeviceFailed;
 
@@ -60,10 +60,10 @@ namespace SIPSorcery.Media
             get => _audioExtrasSource;
         }
 
-        public VideoTestPatternSource TestPatternSource
-        {
-            get => _videoTestPatternSource;
-        }
+        //public VideoTestPatternSource TestPatternSource
+        //{
+        //    get => _videoTestPatternSource;
+        //}
 
         public event VideoSinkSampleDecodedDelegate OnVideoSinkSample;
 
@@ -101,8 +101,8 @@ namespace SIPSorcery.Media
 
                 // The test pattern source is used as failover if the webcam initialisation fails.
                 // It's also used as the video stream if the call is put on hold.
-                _videoTestPatternSource = new VideoTestPatternSource();
-                _videoTestPatternSource.OnVideoSourceRawSample += Media.VideoSource.ExternalVideoSourceRawSample;
+                //_videoTestPatternSource = new VideoTestPatternSource();
+                //_videoTestPatternSource.OnVideoSourceRawSample += Media.VideoSource.ExternalVideoSourceRawSample;
             }
 
             if (Media.VideoSink != null)
@@ -129,7 +129,7 @@ namespace SIPSorcery.Media
                 logger.LogWarning($"Video source for capture device failure. {errorMessage}");
 
                 // Can't use the webcam, switch to the test pattern source.
-                await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
+               // await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
             }
         }
 
@@ -177,7 +177,7 @@ namespace SIPSorcery.Media
                             logger.LogWarning($"Webcam video source failed before start, switching to test pattern source.");
 
                             // The webcam source failed to start. Switch to a test pattern source.
-                            await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
+                            //await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
                         }
                     }
                 }
@@ -196,11 +196,11 @@ namespace SIPSorcery.Media
                     await _audioExtrasSource.CloseAudio().ConfigureAwait(false);
                 }
 
-                if (_videoTestPatternSource != null)
-                {
-                    await _videoTestPatternSource.CloseVideo().ConfigureAwait(false);
-                    _videoTestPatternSource.OnVideoSourceRawSample -= Media.VideoSource.ExternalVideoSourceRawSample;
-                }
+                //if (_videoTestPatternSource != null)
+                //{
+                //    await _videoTestPatternSource.CloseVideo().ConfigureAwait(false);
+                //    _videoTestPatternSource.OnVideoSourceRawSample -= Media.VideoSource.ExternalVideoSourceRawSample;
+                //}
 
                 if (Media.AudioSource != null)
                 {
@@ -248,11 +248,11 @@ namespace SIPSorcery.Media
             {
                 await Media.VideoSource.PauseVideo();
 
-                _videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH);
-                _videoTestPatternSource.SetFrameRate(TEST_PATTERN_ONHOLD_FPS);
+                //_videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH);
+                //_videoTestPatternSource.SetFrameRate(TEST_PATTERN_ONHOLD_FPS);
 
-                Media.VideoSource.ForceKeyFrame();
-                await _videoTestPatternSource.ResumeVideo();
+                //Media.VideoSource.ForceKeyFrame();
+                //await _videoTestPatternSource.ResumeVideo();
             }
         }
 
@@ -266,10 +266,10 @@ namespace SIPSorcery.Media
 
             if (HasVideo)
             {
-                    await _videoTestPatternSource.PauseVideo();
+                //    await _videoTestPatternSource.PauseVideo();
 
-                _videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH);
-                _videoTestPatternSource.SetFrameRate(TEST_PATTERN_FPS);
+                //_videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH);
+                //_videoTestPatternSource.SetFrameRate(TEST_PATTERN_FPS);
 
                 Media.VideoSource.ForceKeyFrame();
 
@@ -279,7 +279,7 @@ namespace SIPSorcery.Media
                 }
                 else
                 {
-                    await _videoTestPatternSource.ResumeVideo();
+                   //await _videoTestPatternSource.ResumeVideo();
                 }
             }
         }
