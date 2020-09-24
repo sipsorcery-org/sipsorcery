@@ -18,13 +18,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
-using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -64,9 +64,12 @@ namespace SIPSorcery
 
     class Program
     {
-        private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.0.48";
+        //private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.0.48";
+        private static string DEFAULT_CALL_DESTINATION = "sip:aaron@127.0.0.1:7060;transport=tcp";
         private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.0.48";
         private static int SIP_LISTEN_PORT = 5060;
+        private static int SIPS_LISTEN_PORT = 5061;
+        private static string SIPS_CERTIFICATE_PATH = "localhost.pfx";
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
@@ -108,6 +111,9 @@ namespace SIPSorcery
             _sipTransport = new SIPTransport();
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, SIP_LISTEN_PORT)));
+            _sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
+            var localhostCertificate = new X509Certificate2(SIPS_CERTIFICATE_PATH);
+            _sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(IPAddress.Any, SIPS_LISTEN_PORT)));
             // If it's desired to listen on a single IP address use the equivalent of:
             //_sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Parse("192.168.11.50"), SIP_LISTEN_PORT)));
             EnableTraceLogs(_sipTransport, true);
