@@ -12,4 +12,10 @@
     <PackageReference Include="SIPSorcery" Version="4.0.79-pre" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="localhost.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
