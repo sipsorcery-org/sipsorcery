@@ -43,7 +43,7 @@ namespace SIPSorcery.Net
         {
             logger.LogDebug($"OnMessage: {e.Data}");
 
-            if (Regex.Match(e.Data, @"^.*?candidate.*?,").Success)
+            if (Regex.Match(e.Data, @"^[^,]*candidate").Success)
             {
                 logger.LogDebug("Got remote ICE candidate.");
                 var iceCandidateInit = JsonConvert.DeserializeObject<RTCIceCandidateInit>(e.Data);

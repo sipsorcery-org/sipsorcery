@@ -362,7 +362,28 @@ namespace SIPSorcery.Net
             // self sign certificate
             var certificate = certificateGenerator.Generate(signatureFactory);
 
+#if NETFRAMEWORK
+            // corresponding private key
+            var info = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(subjectKeyPair.Private);
+
+            // merge into X509Certificate2
+            var x509 = new X509Certificate2(certificate.GetEncoded());
+
+            var seq = (Asn1Sequence)Asn1Object.FromByteArray(info.ParsePrivateKey().GetDerEncoded());
+            if (seq.Count != 9)
+            {
+                throw new Org.BouncyCastle.OpenSsl.PemException("malformed sequence in RSA private key");
+            }
+
+            var rsa = RsaPrivateKeyStructure.GetInstance(seq); //new RsaPrivateKeyStructure(seq);
+            var rsaparams = new RsaPrivateCrtKeyParameters(
+                rsa.Modulus, rsa.PublicExponent, rsa.PrivateExponent, rsa.Prime1, rsa.Prime2, rsa.Exponent1, rsa.Exponent2, rsa.Coefficient);
+
+            x509.PrivateKey = ToRSA(rsaparams);
+            return x509;
+#else
             return ConvertBouncyCert(certificate, subjectKeyPair);
+#endif
         }
 
         /// <remarks>Plagarised from https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs.
@@ -467,7 +488,7 @@ namespace SIPSorcery.Net
             return subjectKeyPair.Private;
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// This method and the related ones have been copied from the BouncyCode DotNetUtilities 
