@@ -72,50 +72,47 @@ namespace SIPSorcery.Media
 
         public VideoTestPatternSource()
         {
-#if !UNITY
             //var efp = new Microsoft.Extensions.FileProviders.EmbeddedFileProvider(Assembly.GetExecutingAssembly());
             //var testPatternFileInfo = efp.GetFileInfo(TEST_PATTERN_RESOURCE_PATH);
+            var ass = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
+            var testPatternStm = ass.GetManifestResourceStream("SIPSorcery.media.testpattern.jpeg");
 
-
-            //if (testPatternFileInfo == null)
-            //{
-            //    OnVideoSourceError?.Invoke($"Test pattern embedded resource could not be found, {TEST_PATTERN_RESOURCE_PATH}.");
-            //}
-            //else
-            //{
-            //    _testPattern = new Bitmap(testPatternFileInfo.CreateReadStream());
-            //    _sendTestPatternTimer = new Timer(GenerateTestPattern, null, Timeout.Infinite, Timeout.Infinite);
-            //    _frameSpacing = 1000 / DEFAULT_FRAMES_PER_SECOND;
-            //}
-#else
-            throw new ApplicationException("Cannot load test pattern from an embedded resource in Unity.");
-#endif
+            if (testPatternStm == null)
+            {
+                OnVideoSourceError?.Invoke($"Test pattern embedded resource could not be found, {TEST_PATTERN_RESOURCE_PATH}.");
+            }
+            else
+            {
+                _testPattern = new Bitmap(testPatternStm);
+                _sendTestPatternTimer = new Timer(GenerateTestPattern, null, Timeout.Infinite, Timeout.Infinite);
+                _frameSpacing = 1000 / DEFAULT_FRAMES_PER_SECOND;
+            }
         }
 
-        public void SetEmbeddedTestPatternPath(string path)
-        {
-#if !UNITY
-            //var efp = new Microsoft.Extensions.FileProviders.EmbeddedFileProvider(Assembly.GetExecutingAssembly());
-            //var testPattenFileInfo = efp.GetFileInfo(path);
+//        public void SetEmbeddedTestPatternPath(string path)
+//        {
+//#if !UNITY
+//            //var efp = new Microsoft.Extensions.FileProviders.EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+//            //var testPattenFileInfo = efp.GetFileInfo(path);
 
-            //if (testPattenFileInfo == null)
-            //{
-            //    OnVideoSourceError?.Invoke($"Video test pattern source could not locate embedded path {path}.");
-            //}
-            //else
-            //{
-            //    logger.LogDebug($"Test pattern loaded from embedded resource {path}.");
+//            //if (testPattenFileInfo == null)
+//            //{
+//            //    OnVideoSourceError?.Invoke($"Video test pattern source could not locate embedded path {path}.");
+//            //}
+//            //else
+//            //{
+//            //    logger.LogDebug($"Test pattern loaded from embedded resource {path}.");
 
-            //    lock (_sendTestPatternTimer)
-            //    {
-            //        _testPattern?.Dispose();
-            //        _testPattern = new Bitmap(testPattenFileInfo.CreateReadStream());
-            //    }
-            //}
-#else
-            throw new ApplicationException("Cannot load test pattern from an embedded resource in Unity.");
-#endif
-        }
+//            //    lock (_sendTestPatternTimer)
+//            //    {
+//            //        _testPattern?.Dispose();
+//            //        _testPattern = new Bitmap(testPattenFileInfo.CreateReadStream());
+//            //    }
+//            //}
+//#else
+//            throw new ApplicationException("Cannot load test pattern from an embedded resource in Unity.");
+//#endif
+//        }
 
         public void SetTestPatternPath(string path)
         {

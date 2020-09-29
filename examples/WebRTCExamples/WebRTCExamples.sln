@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCMp4Source", "WebRTCMp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCDaemon", "WebRTCDaemon\WebRTCDaemon.csproj", "{BE1E895C-9F1A-499B-A578-3A5DD6523276}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -195,6 +197,18 @@ Global
 		{BE1E895C-9F1A-499B-A578-3A5DD6523276}.Release|x64.Build.0 = Release|Any CPU
 		{BE1E895C-9F1A-499B-A578-3A5DD6523276}.Release|x86.ActiveCfg = Release|Any CPU
 		{BE1E895C-9F1A-499B-A578-3A5DD6523276}.Release|x86.Build.0 = Release|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Debug|x64.Build.0 = Debug|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Debug|x86.Build.0 = Debug|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Release|x64.ActiveCfg = Release|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Release|x64.Build.0 = Release|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Release|x86.ActiveCfg = Release|Any CPU
+		{A6BFFAFD-0D89-4A10-8924-AE6C0E0520CA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

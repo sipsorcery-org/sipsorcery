@@ -18,9 +18,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Newtonsoft.Json;
 using Serilog;
 using SIPSorcery.Net;
 using WebSocketSharp.Server;
@@ -33,23 +38,53 @@ namespace demo
     {
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
+        private const string NODE_DSS_SERVER = "http://192.168.11.50:3000";
+        private const string NODE_DSS_MY_USER = "svr";
+        private const string NODE_DSS_THEIR_USER = "cli";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-        static void Main()
+        static async Task Main()
         {
             Console.WriteLine("WebRTC Test Pattern Server Demo");
 
             logger = AddConsoleLogger();
 
             // Start web socket.
-            Console.WriteLine("Starting web socket server...");
-            var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
-            webSocketServer.Start();
+            //Console.WriteLine("Starting web socket server...");
+            //var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            //webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+            //webSocketServer.Start();
 
-            Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-            Console.WriteLine("Press ctrl-c to exit.");
+            //Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
+            //Console.WriteLine("Press ctrl-c to exit.");
+
+            var nodeDssclient = new HttpClient();
+
+            Console.WriteLine($"node-dss server successfully set to {NODE_DSS_SERVER}.");
+            Console.WriteLine("Press enter to generate offer and send to node server.");
+            Console.ReadLine();
+
+            var pc = CreatePeerConnection();
+
+            var offerSdp = pc.createOffer(null);
+            await pc.setLocalDescription(offerSdp);
+
+            Console.WriteLine($"Our Offer:\n{offerSdp.sdp}");
+
+            var offerJson = JsonConvert.SerializeObject(offerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
+            await SendToNSS(nodeDssclient, offerJson);
+
+            CancellationTokenSource connectedCts = new CancellationTokenSource();
+            pc.onconnectionstatechange += (state) =>
+            {
+                if (!(state == RTCPeerConnectionState.@new || state == RTCPeerConnectionState.connecting))
+                {
+                    logger.LogDebug("cancelling node DSS receive task.");
+                    connectedCts.Cancel();
+                }
+            };
+            await Task.Run(() => ReceiveFromNSS(nodeDssclient, pc), connectedCts.Token);
 
             // Ctrl-c will gracefully exit the call at any point.
             ManualResetEvent exitMre = new ManualResetEvent(false);
@@ -63,6 +98,57 @@ namespace demo
             exitMre.WaitOne();
         }
 
+        private static async Task SendToNSS(HttpClient httpClient, string jsonStr)
+        {
+            var content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
+            var res = await httpClient.PostAsync($"{NODE_DSS_SERVER}/data/{NODE_DSS_THEIR_USER}", content);
+
+            logger.LogDebug($"node-dss POST result {res.StatusCode}.");
+        }
+
+        private static async Task ReceiveFromNSS(HttpClient httpClient, RTCPeerConnection pc)
+        {
+            while (true)
+            {
+                var res = await httpClient.GetAsync($"{NODE_DSS_SERVER}/data/{NODE_DSS_MY_USER}");
+
+                if (res.StatusCode == HttpStatusCode.OK)
+                {
+                    var content = await res.Content.ReadAsStringAsync();
+                    OnMessage(content, pc);
+                }
+                else if (res.StatusCode == HttpStatusCode.NotFound)
+                {
+                    // Expected response when there are no waiting messages for us.
+                    await Task.Delay(500);
+                }
+                else
+                {
+                    throw new ApplicationException($"Get request to node DSS server failed with response code {res.StatusCode}.");
+                }
+            }
+        }
+
+        private static void OnMessage(string jsonStr, RTCPeerConnection pc)
+        {
+            if (Regex.Match(jsonStr, @"^[^,]*candidate").Success)
+            {
+                logger.LogDebug("Got remote ICE candidate.");
+                var iceCandidateInit = JsonConvert.DeserializeObject<RTCIceCandidateInit>(jsonStr);
+                pc.addIceCandidate(iceCandidateInit);
+            }
+            else
+            {
+                RTCSessionDescriptionInit descriptionInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(jsonStr);
+                var result = pc.setRemoteDescription(descriptionInit);
+                if (result != SetDescriptionResultEnum.OK)
+                {
+                    logger.LogWarning($"Failed to set remote description, {result}.");
+                    pc.Close("failed to set remote description");
+                }
+            }
+        }
+
         private static RTCPeerConnection CreatePeerConnection()
         {
             RTCConfiguration config = new RTCConfiguration
@@ -72,8 +158,8 @@ namespace demo
             var pc = new RTCPeerConnection(config);
 
             var testPatternSource = new VideoTestPatternSource();
-            var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
-            //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
+            //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
 
             MediaStreamTrack track = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
