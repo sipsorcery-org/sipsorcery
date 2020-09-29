@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using Windows.UI.Xaml.Controls;
 
 namespace SIPSorceryMedia.Windows.Codecs
 {
@@ -27,8 +28,8 @@ namespace SIPSorceryMedia.Windows.Codecs
             BitmapData bmpDate = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, bmp.PixelFormat);
             IntPtr ptr = bmpDate.Scan0;
             byte[] buffer = new byte[width * height * 4];
+            int posn = 0;
 
-            int cnt = 0;
             for (int y = 0; y <= height - 1; y++)
             {
                 for (int x = 0; x <= width - 1; x++)
@@ -39,11 +40,10 @@ namespace SIPSorceryMedia.Windows.Codecs
                     var g = Marshal.ReadByte(ptr, pos + 1);
                     var b = Marshal.ReadByte(ptr, pos + 2);
 
-                    buffer[cnt + 0] = r; // r
-                    buffer[cnt + 1] = g; // g
-                    buffer[cnt + 2] = b; // b
-                    buffer[cnt + 3] = 0x00;         // a
-                    cnt += 4;
+                    buffer[posn++] = r;
+                    buffer[posn++] = g;
+                    buffer[posn++] = b;
+                    buffer[posn++] = 0x00;
                 }
             }
 
@@ -54,39 +54,35 @@ namespace SIPSorceryMedia.Windows.Codecs
 
         // https://msdn.microsoft.com/ja-jp/library/hh394035(v=vs.92).aspx
         // http://qiita.com/gomachan7/items/54d43693f943a0986e95
-        public static byte[] RGBAtoYUV420Planar(byte[] rgba, int width, int height)
+        public static byte[] RGBAtoI420(byte[] rgba, int width, int height)
         {
-            int frameSize = width * height;
-            int yIndex = 0;
-            int uIndex = frameSize;
-            int vIndex = frameSize + (frameSize / 4);
+            int size = width * height;
+            int uOffset = size;
+            int vOffset = size + size / 4;
             int r, g, b, y, u, v;
-            int index = 0;
+            int posn = 0;
 
             byte[] buffer = new byte[width * height * 3 / 2];
 
-            for (int j = 0; j < height; j++)
+            for (int row = 0; row < height; row++)
             {
-                for (int i = 0; i < width; i++)
+                for (int col = 0; col < width; col++)
                 {
-                    r = rgba[index * 4 + 0] & 0xff;
-                    g = rgba[index * 4 + 1] & 0xff;
-                    b = rgba[index * 4 + 2] & 0xff;
-                    // a = rgba[index * 4 + 3] & 0xff; unused
+                    r = rgba[posn++] & 0xff;
+                    g = rgba[posn++] & 0xff;
+                    b = rgba[posn++] & 0xff;
+                    posn++; // Skip transparency byte.
 
-                    y = (int)(0.257 * r + 0.504 * g + 0.098 * b) + 16;
-                    u = (int)(0.439 * r - 0.368 * g - 0.071 * b) + 128;
-                    v = (int)(-0.148 * r - 0.291 * g + 0.439 * b) + 128;
+                    y = (int)(0.299 * r + 0.587 * g + 0.114 * b);
+                    u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
+                    v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
 
-                    buffer[yIndex++] = (byte)((y < 0) ? 0 : ((y > 255) ? 255 : y));
+                    buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
 
-                    if (j % 2 == 0 && index % 2 == 0)
-                    {
-                        buffer[uIndex++] = (byte)((u < 0) ? 0 : ((u > 255) ? 255 : u));
-                        buffer[vIndex++] = (byte)((v < 0) ? 0 : ((v > 255) ? 255 : v));
-                    }
+                    int uvposn = col / 2 + row / 2 * width / 2;
 
-                    index++;
+                    buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
+                    buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
             }
 
@@ -95,36 +91,32 @@ namespace SIPSorceryMedia.Windows.Codecs
 
         public static byte[] RGBtoI420(byte[] rgb, int width, int height)
         {
-            int frameSize = width * height;
-            int yIndex = 0;
-            int uIndex = frameSize;
-            int vIndex = frameSize + (frameSize / 4);
+            int size = width * height;
+            int uOffset = size;
+            int vOffset = size + size / 4;
             int r, g, b, y, u, v;
-            int index = 0;
+            int posn = 0;
 
             byte[] buffer = new byte[width * height * 3 / 2];
 
-            for (int j = 0; j < height; j++)
+            for (int row = 0; row < height; row++)
             {
-                for (int i = 0; i < width; i++)
+                for (int col = 0; col < width; col++)
                 {
-                    r = rgb[index * 3 + 0] & 0xff;
-                    g = rgb[index * 3 + 1] & 0xff;
-                    b = rgb[index * 3 + 2] & 0xff;
+                    r = rgb[posn++] & 0xff;
+                    g = rgb[posn++] & 0xff;
+                    b = rgb[posn++] & 0xff;
 
-                    y = (int)(0.257 * r + 0.504 * g + 0.098 * b) + 16;
-                    u = (int)(0.439 * r - 0.368 * g - 0.071 * b) + 128;
-                    v = (int)(-0.148 * r - 0.291 * g + 0.439 * b) + 128;
+                    y = (int)(0.299 * r + 0.587 * g + 0.114 * b);
+                    u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
+                    v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
 
-                    buffer[yIndex++] = (byte)((y < 0) ? 0 : ((y > 255) ? 255 : y));
+                   buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
 
-                    if (j % 2 == 0 && index % 2 == 0)
-                    {
-                        buffer[uIndex++] = (byte)((u < 0) ? 0 : ((u > 255) ? 255 : u));
-                        buffer[vIndex++] = (byte)((v < 0) ? 0 : ((v > 255) ? 255 : v));
-                    }
+                    int uvposn = col / 2 + row / 2 * width / 2;
 
-                    index++;
+                    buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
+                    buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
             }
 
@@ -150,12 +142,13 @@ namespace SIPSorceryMedia.Windows.Codecs
                 {
                     y = data[col + row * width];
                     int uvposn = col / 2 + row / 2 * width / 2;
+
                     u = data[uOffset + uvposn] - 128;
                     v = data[vOffset + uvposn] - 128;
 
-                    r = (int)(y + 1.370705f * v);
-                    g = (int)(y - 0.698001f * v + 0.337633f * u);
-                    b = (int)(y + 1.732446f * u);
+                    r = (int)(y + 1.140 * v);
+                    g = (int)(y - 0.395 * u - 0.581 * v);
+                    b = (int)(y + 2.302 * u);
 
                     rgb[posn++] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
                     rgb[posn++] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);

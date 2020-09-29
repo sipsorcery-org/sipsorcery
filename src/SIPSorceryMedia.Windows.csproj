@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.8" />
+    <!--<PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.8" />-->
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.8" />
     <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
@@ -24,12 +24,17 @@
     <EmbeddedResource Remove="packages\**" />
     <None Remove="packages\**" />
     <Compile Remove="codecs\OpenH264Encoder.cs" />
+    <Compile Remove="WindowsVideoEndPoint.cs" />
     <None Remove="icon.png" />
     <None Remove="SIPSorceryMedia.Windows.nuspec" />
     <ContentWithTargetPath Include="@(NativeLibs)">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <TargetPath>%(Filename)%(Extension)</TargetPath>
     </ContentWithTargetPath>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj" />
   </ItemGroup>
 
   <!--<PropertyGroup>
