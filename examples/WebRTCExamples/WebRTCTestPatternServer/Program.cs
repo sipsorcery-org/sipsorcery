@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -32,23 +33,32 @@ namespace demo
     class Program
     {
         private const int WEBSOCKET_PORT = 8081;
+        private const string NODE_DSS_SERVER = "http://192.168.0.50:3000";
+        private const string NODE_DSS_MY_USER = "svr";
+        private const string NODE_DSS_THEIR_USER = "cli";
         private const string STUN_URL = "stun:stun.sipsorcery.com";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-        static void Main()
+        static async Task Main()
         {
             Console.WriteLine("WebRTC Test Pattern Server Demo");
 
             logger = AddConsoleLogger();
 
             // Start web socket.
-            Console.WriteLine("Starting web socket server...");
-            var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
-            webSocketServer.Start();
+            //Console.WriteLine("Starting web socket server...");
+            //var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            //webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+            //webSocketServer.Start();
 
-            Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
+            //Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
+            //Console.WriteLine("Press ctrl-c to exit.");
+
+            var nodeDssWebRTCPeer = new WebRTCNodeDssPeer(NODE_DSS_SERVER, NODE_DSS_MY_USER, NODE_DSS_THEIR_USER, CreatePeerConnection);
+            await nodeDssWebRTCPeer.StartSendOffer();
+
+            Console.WriteLine($"Waiting for node DSS peer to connect...");
             Console.WriteLine("Press ctrl-c to exit.");
 
             // Ctrl-c will gracefully exit the call at any point.
@@ -69,11 +79,13 @@ namespace demo
             {
                 iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
             };
-            var pc = new RTCPeerConnection(config);
+            //var pc = new RTCPeerConnection(config);
+            var pc = new RTCPeerConnection(null);
 
             var testPatternSource = new VideoTestPatternSource();
-            var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
+            var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
 
             MediaStreamTrack track = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
