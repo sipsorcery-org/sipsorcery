@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.8" />
     <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.12-pre" />
+    <!--<PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.12-pre" />-->
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
   </ItemGroup>
 
@@ -24,7 +24,6 @@
     <EmbeddedResource Remove="packages\**" />
     <None Remove="packages\**" />
     <Compile Remove="codecs\OpenH264Encoder.cs" />
-    <Compile Remove="WindowsVideoEndPoint.cs" />
     <None Remove="icon.png" />
     <None Remove="SIPSorceryMedia.Windows.nuspec" />
     <ContentWithTargetPath Include="@(NativeLibs)">
