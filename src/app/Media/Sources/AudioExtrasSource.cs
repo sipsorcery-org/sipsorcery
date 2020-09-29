@@ -27,7 +27,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions.V1;
 
@@ -89,7 +88,7 @@ namespace SIPSorcery.Media
     /// </summary>
     public class AudioExtrasSource : IAudioSource
     {
-        private const string MUSIC_RESOURCE_PATH = "media.Macroform_-_Simplicity.raw";
+        private const string MUSIC_RESOURCE_PATH = "SIPSorcery.media.Macroform_-_Simplicity.raw";
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
         private const AudioSamplingRatesEnum DEFAULT_AUDIO_SAMPLE_RATE = AudioSamplingRatesEnum.Rate8KHz;
         private const int DEFAULT_RTP_TIMESTAMP_RATE = 8000;
@@ -358,9 +357,10 @@ namespace SIPSorcery.Media
                             Log.LogWarning($"Music file not set or not found, using default music resource.");
                         }
 
-                        EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
-                        var audioStreamFileInfo = efp.GetFileInfo(MUSIC_RESOURCE_PATH);
-                        _audioStreamReader = new StreamReader(audioStreamFileInfo.CreateReadStream());
+                        var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
+                        var audioStream = assem.GetManifestResourceStream(MUSIC_RESOURCE_PATH);
+
+                        _audioStreamReader = new StreamReader(audioStream);
                     }
                     else
                     {

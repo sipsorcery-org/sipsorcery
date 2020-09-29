@@ -25,7 +25,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions.V1;
 
@@ -33,8 +32,8 @@ namespace SIPSorcery.Media
 {
     public class VideoTestPatternSource : IVideoSource, IDisposable
     {
-        public const string TEST_PATTERN_RESOURCE_PATH = "media.testpattern.jpeg";
-        public const string TEST_PATTERN_INVERTED_RESOURCE_PATH = "media.testpattern_inverted.jpeg";
+        public const string TEST_PATTERN_RESOURCE_PATH = "SIPSorcery.media.testpattern.jpeg";
+        public const string TEST_PATTERN_INVERTED_RESOURCE_PATH = "SIPSorcery.media.testpattern_inverted.jpeg";
 
         private const int MAXIMUM_FRAMES_PER_SECOND = 30;
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
@@ -73,16 +72,16 @@ namespace SIPSorcery.Media
 
         public VideoTestPatternSource()
         {
-            EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
-            var testPatternFileInfo = efp.GetFileInfo(TEST_PATTERN_RESOURCE_PATH);
+            var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
+            var testPatternStm = assem.GetManifestResourceStream(TEST_PATTERN_RESOURCE_PATH);
 
-            if (testPatternFileInfo == null)
+            if (testPatternStm == null)
             {
                 OnVideoSourceError?.Invoke($"Test pattern embedded resource could not be found, {TEST_PATTERN_RESOURCE_PATH}.");
             }
             else
             {
-                _testPattern = new Bitmap(testPatternFileInfo.CreateReadStream());
+                _testPattern = new Bitmap(testPatternStm);
                 _sendTestPatternTimer = new Timer(GenerateTestPattern, null, Timeout.Infinite, Timeout.Infinite);
                 _frameSpacing = 1000 / DEFAULT_FRAMES_PER_SECOND;
             }
@@ -90,10 +89,10 @@ namespace SIPSorcery.Media
 
         public void SetEmbeddedTestPatternPath(string path)
         {
-            EmbeddedFileProvider efp = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
-            var testPattenFileInfo = efp.GetFileInfo(path);
+            var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
+            var testPatternStm = assem.GetManifestResourceStream(path);
 
-            if (testPattenFileInfo == null)
+            if (testPatternStm == null)
             {
                 OnVideoSourceError?.Invoke($"Video test pattern source could not locate embedded path {path}.");
             }
@@ -104,7 +103,7 @@ namespace SIPSorcery.Media
                 lock (_sendTestPatternTimer)
                 {
                     _testPattern?.Dispose();
-                    _testPattern = new Bitmap(testPattenFileInfo.CreateReadStream());
+                    _testPattern = new Bitmap(testPatternStm);
                 }
             }
         }
