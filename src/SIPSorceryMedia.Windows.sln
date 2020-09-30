@@ -11,6 +11,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Abstraction
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Encoders", "..\..\SIPSorceryMedia.Encoders\src\SIPSorceryMedia.Encoders.csproj", "{99C53B02-87F5-424A-95F5-8592A36CE6F7}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{3C0AB998-716E-4FFD-9742-1470B6E4BE73}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoCaptureTest", "..\test\VideoCaptureTest\VideoCaptureTest.csproj", "{264CD1C2-2725-436E-8DC9-81FF119B95B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,9 +73,24 @@ Global
 		{99C53B02-87F5-424A-95F5-8592A36CE6F7}.Release|x64.Build.0 = Release|Any CPU
 		{99C53B02-87F5-424A-95F5-8592A36CE6F7}.Release|x86.ActiveCfg = Release|Any CPU
 		{99C53B02-87F5-424A-95F5-8592A36CE6F7}.Release|x86.Build.0 = Release|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Debug|x64.Build.0 = Debug|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Debug|x86.Build.0 = Debug|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Release|x64.ActiveCfg = Release|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Release|x64.Build.0 = Release|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Release|x86.ActiveCfg = Release|Any CPU
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{264CD1C2-2725-436E-8DC9-81FF119B95B4} = {3C0AB998-716E-4FFD-9742-1470B6E4BE73}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {49C7CDF5-E940-4CEB-AE5D-4A8377759FC7}
