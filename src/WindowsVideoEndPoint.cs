@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Windows.Graphics.Imaging;
@@ -54,6 +55,9 @@ namespace SIPSorceryMedia.Windows
         private readonly string MF_NV12_PIXEL_FORMAT = MediaEncodingSubtypes.Nv12;
         private const string MF_I420_PIXEL_FORMAT = "{30323449-0000-0010-8000-00AA00389B71}";
 
+        // NV12 seems to be what the Software Bitmaps provided from MF tend to prefer.
+        private readonly vpxmd.VpxImgFmt EncoderInputFormat = vpxmd.VpxImgFmt.VPX_IMG_FMT_NV12;
+
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsVideoEndPoint>();
 
         public static readonly List<VideoCodecsEnum> SupportedCodecs = new List<VideoCodecsEnum>
@@ -64,7 +68,6 @@ namespace SIPSorceryMedia.Windows
         private CodecManager<VideoCodecsEnum> _codecManager;
         private Vp8Codec _vp8Encoder;
         private Vp8Codec _vp8Decoder;
-        private vpxmd.VpxImgFmt _encodeInputFormat;
         private bool _forceKeyFrame = false;
         private bool _isInitialised;
         private bool _isStarted;
@@ -72,7 +75,7 @@ namespace SIPSorceryMedia.Windows
         private bool _isClosed;
         private MediaCapture _mediaCapture;
         private MediaFrameReader _mediaFrameReader;
-        private MediaFrameSource _mediaFrameSource;
+        private SoftwareBitmap _backBuffer;
         private string _videoDeviceID;
         private uint _width = 0;
         private uint _height = 0;
@@ -215,93 +218,73 @@ namespace SIPSorceryMedia.Windows
                 }
             }
 
-            await _mediaCapture.InitializeAsync(mediaCaptureSettings); //.AsTask().ConfigureAwait(false);
-            MediaFrameSource mediaFrameSource = null;
+            await _mediaCapture.InitializeAsync(mediaCaptureSettings);
 
-            if (width == 0 && height == 0 && fps == 0)
+            MediaFrameSourceInfo colorSourceInfo = null;
+            foreach (var srcInfo in _mediaCapture.FrameSources)
             {
-                // If no specific width, height or frame rate was requested still try and find an optimal pixel format.
-                mediaFrameSource = _mediaCapture.FrameSources.FirstOrDefault(source =>
-                    source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
-                    source.Value.Info.SourceKind == MediaFrameSourceKind.Color &&
-                    //source.Value.SupportedFormats.Any(x =>
-                    //    (x.Subtype == MF_NV12_PIXEL_FORMAT || x.Subtype == MF_I420_PIXEL_FORMAT))).Value;
-                    source.Value.SupportedFormats.Any(x =>
-                        (x.Subtype == MediaEncodingSubtypes.Rgb24))).Value;
-
-                if (mediaFrameSource == null)
+                if (srcInfo.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
+                   srcInfo.Value.Info.SourceKind == MediaFrameSourceKind.Color)
                 {
-                    // Couldn't match the pixel format so just accept anything the video device will give us.
-                    mediaFrameSource = _mediaCapture.FrameSources.FirstOrDefault(source =>
-                       source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
-                       source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
-                }
-            }
-            else
-            {
-                // If specific capture settings have been requested then the device needs to be initialised in
-                // exclusive mode as the current settings and format will most likely be changed.
-                mediaFrameSource = _mediaCapture.FrameSources.FirstOrDefault(source =>
-                    source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
-                    source.Value.Info.SourceKind == MediaFrameSourceKind.Color &&
-                    source.Value.SupportedFormats.Any(x =>
-                        (x.Subtype == MF_NV12_PIXEL_FORMAT || x.Subtype == MF_I420_PIXEL_FORMAT) &&
-                        (_width == 0 || x.VideoFormat.Width == _width) &&
-                        (_height == 0 || x.VideoFormat.Height == _height) &&
-                        (_fpsNumerator == 0 || x.FrameRate.Numerator == _fpsNumerator))).Value;
-
-                if (mediaFrameSource == null)
-                {
-                    // Fallback to accepting any pixel format and use a software transform on each frame.
-                    mediaFrameSource = _mediaCapture.FrameSources.FirstOrDefault(source =>
-                    source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
-                    source.Value.Info.SourceKind == MediaFrameSourceKind.Color &&
-                    source.Value.SupportedFormats.Any(x =>
-                        (_width == 0 || x.VideoFormat.Width == _width) &&
-                        (_height == 0 || x.VideoFormat.Height == _height) &&
-                        (_fpsNumerator == 0 || x.FrameRate.Numerator == _fpsNumerator))).Value;
+                    colorSourceInfo = srcInfo.Value.Info;
+                    break;
                 }
             }
 
-            if (mediaFrameSource == null)
+            var colorFrameSource = _mediaCapture.FrameSources[colorSourceInfo.Id];
+
+            var preferredFormat = colorFrameSource.SupportedFormats.Where(format =>
+            {
+                return format.VideoFormat.Width >= _width &&
+                       format.VideoFormat.Width >= _height &&
+                       (format.FrameRate.Numerator / format.FrameRate.Denominator) >= fps
+                        && format.Subtype == MF_NV12_PIXEL_FORMAT;
+            }).FirstOrDefault();
+
+            if (preferredFormat == null)
+            {
+                // Try again without the pixel format.
+                preferredFormat = colorFrameSource.SupportedFormats.Where(format =>
+                {
+                    return format.VideoFormat.Width >= _width &&
+                           format.VideoFormat.Width >= _height &&
+                           (format.FrameRate.Numerator / format.FrameRate.Denominator) >= fps;
+                }).FirstOrDefault();
+            }
+
+            if (preferredFormat == null)
+            {
+                // Still can't get what we want. Log a warning message and take the default.
+                logger.LogWarning($"The video capture device did not support the requested format (or better) {_width}x{_height} {fps}fps. Using default mode.");
+
+                preferredFormat = colorFrameSource.SupportedFormats.First();
+            }
+
+            if (preferredFormat == null)
             {
                 throw new ApplicationException("The video capture device does not support a compatible video format for the requested parameters.");
             }
 
-            _mediaFrameReader = await _mediaCapture.CreateFrameReaderAsync(mediaFrameSource); //.AsTask().ConfigureAwait(false);
+            await colorFrameSource.SetFormatAsync(preferredFormat);
+
+            _mediaFrameReader = await _mediaCapture.CreateFrameReaderAsync(colorFrameSource);
             _mediaFrameReader.AcquisitionMode = MediaFrameReaderAcquisitionMode.Realtime;
 
-            // If there's a format that matches the desired pixel format set that on the media frame source.
-            //var idealFormat = mediaFrameSource.SupportedFormats.FirstOrDefault(x =>
-            //    (x.Subtype == MF_NV12_PIXEL_FORMAT || x.Subtype == MF_I420_PIXEL_FORMAT) &&
-            //    (_width == 0 || x.VideoFormat.Width == _width) &&
-            //    (_height == 0 || x.VideoFormat.Height == _height) &&
-            //    (_fpsNumerator == 0 || x.FrameRate.Numerator == _fpsNumerator));
-
-            //if (idealFormat != null)
-            //{
-            //    await mediaFrameSource.SetFormatAsync(idealFormat); //.AsTask().ConfigureAwait(false);
-            //}
-
-            _mediaFrameSource = mediaFrameSource;
-
             // Frame source and format have now been successfully set.
-            _width = _mediaFrameSource.CurrentFormat.VideoFormat.Width;
-            _height = _mediaFrameSource.CurrentFormat.VideoFormat.Height;
-            _fpsNumerator = _mediaFrameSource.CurrentFormat.FrameRate.Numerator;
-            _fpsDenominator = _mediaFrameSource.CurrentFormat.FrameRate.Denominator;
+            _width = preferredFormat.VideoFormat.Width;
+            _height = preferredFormat.VideoFormat.Height;
+            _fpsNumerator = preferredFormat.FrameRate.Numerator;
+            _fpsDenominator = preferredFormat.FrameRate.Denominator;
 
-            double fpsSelected = _fpsNumerator / _fpsDenominator;
-            string pixFmt = _mediaFrameSource.CurrentFormat.Subtype == MF_I420_PIXEL_FORMAT ? "I420" : _mediaFrameSource.CurrentFormat.Subtype;
-            string deviceName = _mediaFrameSource.Info.DeviceInformation.Name;
-            logger.LogInformation($"Video capture device {deviceName} successfully initialised: {_width}x{_height} {fpsSelected:0.##}fps pixel format {pixFmt}.");
+            //double fpsSelected = _fpsNumerator / _fpsDenominator;
+            //string pixFmt = preferredFormat.Subtype == MF_I420_PIXEL_FORMAT ? "I420" : preferredFormat.Subtype;
+            //string deviceName = colorFrameSource.Info.DeviceInformation.Name;
+            //logger.LogInformation($"Video capture device {deviceName} successfully initialised: {_width}x{_height} {fpsSelected:0.##}fps pixel format {pixFmt}.");
 
-            _encodeInputFormat = _mediaFrameSource.CurrentFormat.Subtype == MF_I420_PIXEL_FORMAT ? vpxmd.VpxImgFmt.VPX_IMG_FMT_I420 : vpxmd.VpxImgFmt.VPX_IMG_FMT_NV12;
-
-            logger.LogInformation($"Video capture device VP8 encoder input format set to {_encodeInputFormat}.");
+            PrintFrameSourceInfo(colorFrameSource);
 
             _vp8Encoder = new Vp8Codec();
-            _vp8Encoder.InitialiseEncoder(_width, _height, _encodeInputFormat);
+            _vp8Encoder.InitialiseEncoder(_width, _height, EncoderInputFormat);
 
             _mediaFrameReader.FrameArrived += FrameArrivedHandler;
 
@@ -478,91 +461,69 @@ namespace SIPSorceryMedia.Windows
         {
             if (!_isClosed)
             {
-                using (var frame = sender.TryAcquireLatestFrame())
+                if (!_isClosed && OnVideoSourceEncodedSample != null)
                 {
-                    if (_isClosed || frame == null || (frame.VideoMediaFrame == null && frame.BufferMediaFrame == null)) return;
-
-                    if (!_isClosed && OnVideoSourceEncodedSample != null)
+                    using (var mediaFrameReference = sender.TryAcquireLatestFrame())
                     {
-                        byte[] encoderInBuffer = null;
+                        var videoMediaFrame = mediaFrameReference?.VideoMediaFrame;
+                        var softwareBitmap = videoMediaFrame?.SoftwareBitmap;
 
-                        if (frame.VideoMediaFrame == null & frame.BufferMediaFrame != null)
+                        if (softwareBitmap == null && videoMediaFrame != null)
                         {
-                            encoderInBuffer = new byte[frame.BufferMediaFrame.Buffer.Length];
-                            frame.BufferMediaFrame.Buffer.CopyTo(encoderInBuffer);
+                            var videoFrame = videoMediaFrame.GetVideoFrame();
+                            softwareBitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(videoFrame.Direct3DSurface);
                         }
-                        else
+
+                        if (softwareBitmap != null)
                         {
-                            VideoMediaFrame vmf = frame.VideoMediaFrame;
-                            var videoFrame = vmf.GetVideoFrame();
-                            var sbmp = await SoftwareBitmap.CreateCopyFromSurfaceAsync(videoFrame.Direct3DSurface);
-                            SoftwareBitmap inputBmp = null;
+                            int width = softwareBitmap.PixelWidth;
+                            int height = softwareBitmap.PixelHeight;
 
-                            try
+                            //logger.LogDebug($"Software bitmap pixel fmt {softwareBitmap.BitmapPixelFormat} {width}x{height}.");
+
+                            if (softwareBitmap.BitmapPixelFormat != BitmapPixelFormat.Nv12)
                             {
-                                if (sbmp == null)
-                                {
-                                    logger.LogWarning("Failed to get bitmap from video frame reader.");
-                                }
-                                else
-                                {
-                                    inputBmp = sbmp;
+                                softwareBitmap = SoftwareBitmap.Convert(softwareBitmap, BitmapPixelFormat.Nv12, BitmapAlphaMode.Ignore);
+                            }
 
-                                    if (_mediaFrameSource.CurrentFormat.Subtype != MF_I420_PIXEL_FORMAT &&
-                                        _mediaFrameSource.CurrentFormat.Subtype != MF_NV12_PIXEL_FORMAT)
-                                    {
-                                        // Frame pixel format needs to be converted to a VP8 encoder compatible format.
-                                        SoftwareBitmap nv12bmp = SoftwareBitmap.Convert(sbmp, BitmapPixelFormat.Nv12);
-                                        inputBmp = nv12bmp;
-                                    }
+                            // Swap the processed frame to _backBuffer and dispose of the unused image.
+                            softwareBitmap = Interlocked.Exchange(ref _backBuffer, softwareBitmap);
+                            softwareBitmap?.Dispose();
 
-                                    using (BitmapBuffer buffer = inputBmp.LockBuffer(BitmapBufferAccessMode.Read))
+                            using (BitmapBuffer buffer = _backBuffer.LockBuffer(BitmapBufferAccessMode.Read))
+                            {
+                                using (var reference = buffer.CreateReference())
+                                {
+                                    unsafe
                                     {
-                                        using (var reference = buffer.CreateReference())
+                                        byte* dataInBytes;
+                                        uint capacity;
+                                        ((IMemoryBufferByteAccess)reference).GetBuffer(out dataInBytes, out capacity);
+
+                                        lock (_vp8Encoder)
                                         {
-                                            unsafe
-                                            {
-                                                byte* dataInBytes;
-                                                uint capacity;
-                                                ((IMemoryBufferByteAccess)reference).GetBuffer(out dataInBytes, out capacity);
+                                            byte[] encoderInBuffer = new byte[capacity];
+                                            Marshal.Copy((IntPtr)dataInBytes, encoderInBuffer, 0, (int)capacity);
 
-                                                encoderInBuffer = new byte[capacity];
-                                                Marshal.Copy((IntPtr)dataInBytes, encoderInBuffer, 0, (int)capacity);
+                                            var encodedBuffer = _vp8Encoder.Encode(encoderInBuffer, _forceKeyFrame);
+
+                                            if (encodedBuffer != null)
+                                            {
+                                                uint fps = (_fpsDenominator > 0 && _fpsNumerator > 0) ? _fpsNumerator / _fpsDenominator : DEFAULT_FRAMES_PER_SECOND;
+                                                uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
+                                                OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+                                            }
+
+                                            if (_forceKeyFrame)
+                                            {
+                                                _forceKeyFrame = false;
                                             }
                                         }
                                     }
                                 }
                             }
-                            finally
-                            {
-                                if (inputBmp != sbmp)
-                                {
-                                    inputBmp?.Dispose();
-                                }
 
-                                sbmp.Dispose();
-                                videoFrame.Dispose();
-                            }
-                        }
-
-                        if (encoderInBuffer != null)
-                        {
-                            lock (_vp8Encoder)
-                            {
-                                var encodedBuffer = _vp8Encoder.Encode(encoderInBuffer, _forceKeyFrame);
-
-                                if (encodedBuffer != null)
-                                {
-                                    uint fps = (_fpsDenominator > 0 && _fpsNumerator > 0) ? _fpsNumerator / _fpsDenominator : DEFAULT_FRAMES_PER_SECOND;
-                                    uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
-                                    OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
-                                }
-
-                                if (_forceKeyFrame)
-                                {
-                                    _forceKeyFrame = false;
-                                }
-                            }
+                            _backBuffer?.Dispose();
                         }
                     }
                 }
@@ -630,6 +591,23 @@ namespace SIPSorceryMedia.Windows
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Diagnostic method to print the details of a video frame source.
+        /// </summary>
+        private void PrintFrameSourceInfo(MediaFrameSource frameSource)
+        {
+            var width = frameSource.CurrentFormat.VideoFormat.Width;
+            var height = frameSource.CurrentFormat.VideoFormat.Height;
+            var fpsNumerator = frameSource.CurrentFormat.FrameRate.Numerator;
+            var fpsDenominator = frameSource.CurrentFormat.FrameRate.Denominator;
+
+            double fps = fpsNumerator / fpsDenominator;
+            string pixFmt = frameSource.CurrentFormat.Subtype;
+            string deviceName = frameSource.Info.DeviceInformation.Name;
+
+            logger.LogInformation($"Video capture device {deviceName} successfully initialised: {width}x{height} {fps:0.##}fps pixel format {pixFmt}.");
         }
 
         public void Dispose()
