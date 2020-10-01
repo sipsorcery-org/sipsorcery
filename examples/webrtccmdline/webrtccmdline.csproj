@@ -4,9 +4,6 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Platforms>AnyCPU</Platforms>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -18,8 +15,12 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SIPSorcery" Version="4.0.70-pre" />
+    <!--<PackageReference Include="SIPSorcery" Version="4.0.80-pre" />-->
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 
   <ItemGroup>

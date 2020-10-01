@@ -10,12 +10,17 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="SIPSorcery" Version="4.0.80-pre" />
+    <!--<PackageReference Include="SIPSorcery" Version="4.0.80-pre" />-->
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.1-pre" />
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.4-pre" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.20-pre" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 
 </Project>

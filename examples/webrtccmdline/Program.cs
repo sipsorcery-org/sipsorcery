@@ -32,6 +32,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Serilog;
 using Serilog.Extensions.Logging;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using WebSocketSharp.Net.WebSockets;
@@ -42,7 +43,7 @@ namespace SIPSorcery.Examples
     public class Options
     {
         [Option("ws", Required = false,
-            HelpText = "Create a web socket server to act as a signalling channel for exchanging SDP and ICE candidates with a remote WebRTC peer.")]
+            HelpText = "(default) Create a web socket server to act as a signalling channel for exchanging SDP and ICE candidates with a remote WebRTC peer.")]
         public bool UseWebSocket { get; set; }
 
         [Option("wss", Required = false,
@@ -62,7 +63,7 @@ namespace SIPSorcery.Examples
         public bool RelayOnly { get; set; }
 
         [Option("nodedss", Required = false,
-            HelpText = "Address of node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://192.168.11.50:3001\".")]
+            HelpText = "Address and ID's for a node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://192.168.11.50:3001;myid;theirid\".")]
         public string NodeDssServer { get; set; }
 
         [Option("icetypes", Required = false,
@@ -111,8 +112,6 @@ namespace SIPSorcery.Examples
 
         private static WebSocketServer _webSocketServer;
         private static RTCIceServer _stunServer;
-        private static Uri _nodeDssUri;
-        private static HttpClient _nodeDssclient;
         private static bool _relayOnly;
 
         /// <summary>
@@ -231,7 +230,7 @@ namespace SIPSorcery.Examples
             }
             else if (options.CreateJsonOffer)
             {
-                var pc = Createpc(null, _stunServer, _relayOnly);
+                var pc = await Createpc(null, _stunServer, _relayOnly);
 
                 var offerSdp = pc.createOffer(null);
                 await pc.setLocalDescription(offerSdp);
@@ -267,10 +266,14 @@ namespace SIPSorcery.Examples
             }
             else if (options.NodeDssServer != null)
             {
-                _nodeDssUri = new Uri(options.NodeDssServer);
-                _nodeDssclient = new HttpClient();
+                string[] fields = options.NodeDssServer.Split(';');
+                if (fields.Length < 3)
+                {
+                    throw new ArgumentException("The 'nodedss' option must contain 3 semi-colon separated fields, e.g. --nodedss=http://127.0.0.1:3000;myid;theirid.");
+                }
 
-                Console.WriteLine($"node-dss server successfully set to {_nodeDssUri}.");
+                var nodeDssPeer = new WebRTCNodeDssPeer(fields[0], fields[1], fields[2], CreatePeerConnection);
+                await nodeDssPeer.Start(exitCts);
             }
 
             _ = Task.Run(() => ProcessInput(exitCts));
@@ -299,7 +302,7 @@ namespace SIPSorcery.Examples
         /// This application spits out a lot of log messages. In an attempt to make command entry slightly more usable
         /// this method attempts to always write the current command input as the bottom line on the console output.
         /// </summary>
-        private static async Task ProcessInput(CancellationTokenSource cts)
+        private static void ProcessInput(CancellationTokenSource cts)
         {
             // Local function to write the current command in the process of being entered.
             Action<int, string> writeCommandPrompt = (lastPromptRow, cmd) =>
@@ -432,83 +435,83 @@ namespace SIPSorcery.Examples
                                 Console.Write(COMMAND_PROMPT);
                                 break;
 
-                            case var x when x.StartsWith("node"):
-                                (_, var sdpType, var myUser, string theirUser) = x.Split(" ", 4, StringSplitOptions.None);
+                            //case var x when x.StartsWith("node"):
+                            //    (_, var sdpType, var myUser, string theirUser) = x.Split(" ", 4, StringSplitOptions.None);
 
-                                if (sdpType == "so")
-                                {
-                                    _peerConnection = Createpc(null, _stunServer, _relayOnly);
+                            //    if (sdpType == "so")
+                            //    {
+                            //        _peerConnection = Createpc(null, _stunServer, _relayOnly);
 
-                                    var offerSdp = _peerConnection.createOffer(null);
-                                    await _peerConnection.setLocalDescription(offerSdp);
+                            //        var offerSdp = _peerConnection.createOffer(null);
+                            //        await _peerConnection.setLocalDescription(offerSdp);
 
-                                    Console.WriteLine($"Our Offer:\n{offerSdp.sdp}");
+                            //        Console.WriteLine($"Our Offer:\n{offerSdp.sdp}");
 
-                                    var offerJson = JsonConvert.SerializeObject(offerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
+                            //        var offerJson = JsonConvert.SerializeObject(offerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
 
-                                    var content = new StringContent(offerJson, Encoding.UTF8, "application/json");
-                                    var res = await _nodeDssclient.PostAsync($"{_nodeDssUri}data/{theirUser}", content);
+                            //        var content = new StringContent(offerJson, Encoding.UTF8, "application/json");
+                            //        var res = await _nodeDssclient.PostAsync($"{_nodeDssUri}data/{theirUser}", content);
 
-                                    Console.WriteLine($"node-dss POST result {res.StatusCode}.");
-                                }
-                                else if (sdpType == "go")
-                                {
-                                    var res = await _nodeDssclient.GetAsync($"{_nodeDssUri}data/{myUser}");
+                            //        Console.WriteLine($"node-dss POST result {res.StatusCode}.");
+                            //    }
+                            //    else if (sdpType == "go")
+                            //    {
+                            //        var res = await _nodeDssclient.GetAsync($"{_nodeDssUri}data/{myUser}");
 
-                                    Console.WriteLine($"node-dss GET result {res.StatusCode}.");
+                            //        Console.WriteLine($"node-dss GET result {res.StatusCode}.");
 
-                                    if (res.StatusCode == HttpStatusCode.OK)
-                                    {
-                                        var content = await res.Content.ReadAsStringAsync();
-                                        RTCSessionDescriptionInit offerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(content);
+                            //        if (res.StatusCode == HttpStatusCode.OK)
+                            //        {
+                            //            var content = await res.Content.ReadAsStringAsync();
+                            //            RTCSessionDescriptionInit offerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(content);
 
-                                        Console.WriteLine($"Remote offer:\n{offerInit.sdp}");
+                            //            Console.WriteLine($"Remote offer:\n{offerInit.sdp}");
 
-                                        _peerConnection = Createpc(null, _stunServer, _relayOnly);
+                            //            _peerConnection = Createpc(null, _stunServer, _relayOnly);
 
-                                        var setRes = _peerConnection.setRemoteDescription(offerInit);
-                                        if (setRes != SetDescriptionResultEnum.OK)
-                                        {
-                                            // No point continuing. Something will need to change and then try again.
-                                            _peerConnection.Close("failed to set remote sdp offer");
-                                        }
-                                        else
-                                        {
-                                            var answer = _peerConnection.createAnswer(null);
-                                            await _peerConnection.setLocalDescription(answer);
+                            //            var setRes = _peerConnection.setRemoteDescription(offerInit);
+                            //            if (setRes != SetDescriptionResultEnum.OK)
+                            //            {
+                            //                // No point continuing. Something will need to change and then try again.
+                            //                _peerConnection.Close("failed to set remote sdp offer");
+                            //            }
+                            //            else
+                            //            {
+                            //                var answer = _peerConnection.createAnswer(null);
+                            //                await _peerConnection.setLocalDescription(answer);
 
-                                            Console.WriteLine($"Our answer:\n{answer.sdp}");
+                            //                Console.WriteLine($"Our answer:\n{answer.sdp}");
 
-                                            var answerJson = JsonConvert.SerializeObject(answer, new Newtonsoft.Json.Converters.StringEnumConverter());
-                                            var answerContent = new StringContent(answerJson, Encoding.UTF8, "application/json");
-                                            var postRes = await _nodeDssclient.PostAsync($"{_nodeDssUri}data/{theirUser}", answerContent);
+                            //                var answerJson = JsonConvert.SerializeObject(answer, new Newtonsoft.Json.Converters.StringEnumConverter());
+                            //                var answerContent = new StringContent(answerJson, Encoding.UTF8, "application/json");
+                            //                var postRes = await _nodeDssclient.PostAsync($"{_nodeDssUri}data/{theirUser}", answerContent);
 
-                                            Console.WriteLine($"node-dss POST result {res.StatusCode}.");
-                                        }
-                                    }
-                                }
-                                else if (sdpType == "ga")
-                                {
-                                    var res = await _nodeDssclient.GetAsync($"{_nodeDssUri}data/{myUser}");
+                            //                Console.WriteLine($"node-dss POST result {res.StatusCode}.");
+                            //            }
+                            //        }
+                            //    }
+                            //    else if (sdpType == "ga")
+                            //    {
+                            //        var res = await _nodeDssclient.GetAsync($"{_nodeDssUri}data/{myUser}");
 
-                                    Console.WriteLine($"node-dss GET result {res.StatusCode}.");
+                            //        Console.WriteLine($"node-dss GET result {res.StatusCode}.");
 
-                                    if (res.StatusCode == HttpStatusCode.OK)
-                                    {
-                                        var content = await res.Content.ReadAsStringAsync();
-                                        RTCSessionDescriptionInit answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(content);
+                            //        if (res.StatusCode == HttpStatusCode.OK)
+                            //        {
+                            //            var content = await res.Content.ReadAsStringAsync();
+                            //            RTCSessionDescriptionInit answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(content);
 
-                                        Console.WriteLine($"Remote answer:\n{answerInit.sdp}");
+                            //            Console.WriteLine($"Remote answer:\n{answerInit.sdp}");
 
-                                        var setRes = _peerConnection.setRemoteDescription(answerInit);
-                                        if (setRes != SetDescriptionResultEnum.OK)
-                                        {
-                                            // No point continuing. Something will need to change and then try again.
-                                            _peerConnection.Close("failed to set remote sdp answer");
-                                        }
-                                    }
-                                }
-                                break;
+                            //            var setRes = _peerConnection.setRemoteDescription(answerInit);
+                            //            if (setRes != SetDescriptionResultEnum.OK)
+                            //            {
+                            //                // No point continuing. Something will need to change and then try again.
+                            //                _peerConnection.Close("failed to set remote sdp answer");
+                            //            }
+                            //        }
+                            //    }
+                            //    break;
 
                             default:
                                 // Command not recognised.
@@ -560,15 +563,14 @@ namespace SIPSorcery.Examples
         private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
-            var pc = Createpc(context, _stunServer, _relayOnly);
-            return Task.FromResult(pc);
+            return Createpc(context, _stunServer, _relayOnly);
         }
 
         private static async Task<RTCPeerConnection> SendOffer(WebSocketContext context)
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
 
-            var pc = Createpc(context, _stunServer, _relayOnly);
+            var pc = await Createpc(context, _stunServer, _relayOnly);
 
             var offerInit = pc.createOffer(_offerOptions);
             await pc.setLocalDescription(offerInit);
@@ -580,7 +582,12 @@ namespace SIPSorcery.Examples
             return pc;
         }
 
-        private static RTCPeerConnection Createpc(WebSocketContext context, RTCIceServer stunServer, bool relayOnly)
+        private static Task<RTCPeerConnection> CreatePeerConnection()
+        {
+            return Createpc(null, null, false);
+        }
+
+        private static Task<RTCPeerConnection> Createpc(WebSocketContext context, RTCIceServer stunServer, bool relayOnly)
         {
             if (_peerConnection != null)
             {
@@ -613,20 +620,33 @@ namespace SIPSorcery.Examples
             var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
             dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
 
-            // Add inactive audio and video tracks.
-            //MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
-            //pc.addTrack(audioTrack);
-            //MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.Inactive);
-            //pc.addTrack(videoTrack);
+            // Add a send-only audio track (this doesn't require any native libraries for encoding so is good for x-platform testing).
+            AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+            audioSource.OnAudioSourceEncodedSample += _peerConnection.SendAudio;
+
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            _peerConnection.addTrack(audioTrack);
+
+            _peerConnection.OnAudioFormatsNegotiated += (sdpFormat) =>
+                audioSource.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
 
             _peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
-            _peerConnection.onconnectionstatechange += (state) =>
+            _peerConnection.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection state changed to {state}.");
 
                 if (state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
                     _peerConnection.Close("remote disconnection");
+                }
+
+                if (state == RTCPeerConnectionState.connected)
+                {
+                    await audioSource.StartAudio();
+                }
+                else if (state == RTCPeerConnectionState.closed)
+                {
+                    await audioSource.CloseAudio();
                 }
             };
             _peerConnection.OnReceiveReport += (ep, type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
@@ -665,7 +685,7 @@ namespace SIPSorcery.Examples
                 };
             };
 
-            return _peerConnection;
+            return Task.FromResult(_peerConnection);
         }
 
         private static async Task WebSocketMessageReceived(WebSocketContext context, RTCPeerConnection pc, string message)
