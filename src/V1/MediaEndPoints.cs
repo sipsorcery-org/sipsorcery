@@ -80,6 +80,24 @@ namespace SIPSorceryMedia.Abstractions.V1
         byte[] DecodeAudio(byte[] encodedSample, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
     }
 
+    public struct VideoSample
+    {
+        public uint Width;
+        public uint Height;
+        public byte[] Sample;
+    }
+
+    public interface IVideoEncoder
+    {
+        bool IsSupported(VideoCodecsEnum codec);
+
+        byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
+
+        void ForceKeyFrame();
+
+        IEnumerable<VideoSample> DecodeVideo(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
+    }
+
     public interface IAudioSource
     {
         event EncodedSampleDelegate OnAudioSourceEncodedSample;
