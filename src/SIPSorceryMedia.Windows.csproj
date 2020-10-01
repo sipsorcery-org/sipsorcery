@@ -1,33 +1,49 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.8" />
     <PackageReference Include="NAudio" Version="1.10.0" />
-    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.14-pre" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.1-pre" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageId>SIPSorceryMedia.Windows</PackageId>
+    <TargetFrameworks>netcoreapp3.1;net461</TargetFrameworks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Aaron Clauson</Authors>
+    <Copyright>Copyright © 2020 Aaron Clauson</Copyright>
+    <Company>SIP Sorcery PTY LTD</Company>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <Title>SIPSorceryMedia.Windows</Title>
+    <Summary>Audio and video end points for Windows capture devices.</Summary>
+    <Description>Provides audio and video encode and decode capabilities plus media end points that can be used with the main SIPSorcery real-time communications library.</Description>
+    <Product>SIPSorceryMedia.Windows</Product>
+    <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl></PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Windows</RepositoryUrl>
+    <Version>0.0.20-pre</Version>
+    <AssemblyVersion>0.0.20.0</AssemblyVersion>
+    <FileVersion>0.0.20.0</FileVersion>
+    <RepositoryBranch>master</RepositoryBranch>
+    <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
+    <PackageReleaseNotes>-v0.0.20-pre: Refactored encoding functions into SIPSorceryMedia.Encoding.
+-v0.0.19-pre: Added support for codec manager.
+-v0.0.18-pre: Added events for video and audio source failures.
+-v0.0.16-pre: Added webcam support.
+-v0.0.15-pre: Initial pre-release</PackageReleaseNotes>
+  </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="icon.png" />
-    <None Remove="SIPSorceryMedia.Windows.nuspec" />
+    <None Include="icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj" />
-    <ProjectReference Include="..\..\SIPSorceryMedia.Encoders\src\SIPSorceryMedia.Encoders.csproj" />
-  </ItemGroup>
-
-  <!--<PropertyGroup>
+  <PropertyGroup>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>-->
+  </PropertyGroup>
 
 </Project>

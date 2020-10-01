@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
