@@ -17,6 +17,7 @@
 
 using System;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using WebSocketSharp;
@@ -34,7 +35,9 @@ namespace SIPSorcery.Net
         private ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private RTCPeerConnection _pc;
-        public Func<RTCPeerConnection> CreatePeerConnection;
+        public RTCPeerConnection RTCPeerConnection => _pc;
+
+        public Func<Task<RTCPeerConnection>> CreatePeerConnection;
 
         public WebRTCWebSocketPeer()
         { }
@@ -68,7 +71,7 @@ namespace SIPSorcery.Net
 
             logger.LogDebug($"Web socket client connection from {Context.UserEndPoint}.");
 
-            _pc = CreatePeerConnection();
+            _pc = await CreatePeerConnection();
 
             var offerSdp = _pc.createOffer(null);
             await _pc.setLocalDescription(offerSdp);
@@ -86,5 +89,33 @@ namespace SIPSorcery.Net
             Context.WebSocket.Send(JsonConvert.SerializeObject(offerSdp,
                  new Newtonsoft.Json.Converters.StringEnumConverter()));
         }
+
+        //private static async Task DoWebSocketReceive(RTCPeerConnection pc, ClientWebSocket ws, CancellationToken ct)
+        //{
+        //    while (!ct.IsCancellationRequested)
+        //    {
+        //        List<byte> currRecv = new List<byte>();
+        //        byte[] buffer = new byte[4096];
+
+        //        var recvResult = await ws.ReceiveAsync(buffer, ct);
+        //        Console.WriteLine($"recvresult {recvResult.Count}, {recvResult.EndOfMessage}.");
+        //        currRecv.AddRange(buffer.Take(recvResult.Count));
+
+        //        while (!recvResult.EndOfMessage)
+        //        {
+        //            recvResult = await ws.ReceiveAsync(buffer, ct);
+        //            Console.WriteLine($"recvresult {recvResult.Count}, {recvResult.EndOfMessage}.");
+        //            currRecv.AddRange(buffer.Take(recvResult.Count));
+        //        }
+
+        //        var jsonMsg = Encoding.UTF8.GetString(currRecv.ToArray());
+        //        string jsonResp = null;// await ProcessMessage(pc, jsonMsg);
+
+        //        if (jsonResp != null)
+        //        {
+        //            await ws.SendAsync(Encoding.UTF8.GetBytes(jsonResp), WebSocketMessageType.Text, true, ct);
+        //        }
+        //    }
+        //}
     }
 }
