@@ -2933,11 +2933,23 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.WebRTCNodeDssPeer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.WebRTCNodeDssPeer.html",
+          "hash": "GXhO58AN56Zs6XNoo+XftQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.WebRTCWebSocketPeer.yml",
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.WebRTCWebSocketPeer.html",
-          "hash": "JhGGh2/9rJ+1VRifOxIVHQ=="
+          "hash": "Mw8YGX+wHDETa/A0kdX9jw=="
         }
       },
       "is_incremental": false,
@@ -2949,7 +2961,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "sB/RTm68WfAlX6semdHffA=="
+          "hash": "XAAs4AQGrvWneadfvQSRrw=="
         }
       },
       "is_incremental": false,
@@ -4929,7 +4941,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "quQ9zRezjacl4JvMZLKHXw=="
+          "hash": "jwb1mAKDQ2XPYT3k8EBEzA=="
         }
       },
       "is_incremental": false,
@@ -5197,7 +5209,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 409,
+          "total_file_count": 410,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
