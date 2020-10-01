@@ -120,19 +120,19 @@ server for the WebRTC signalling.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCNodeDssPeer__ctor_System_String_System_String_System_String_System_Func_SIPSorcery_Net_RTCPeerConnection__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCNodeDssPeer.%23ctor(System.String%2CSystem.String%2CSystem.String%2CSystem.Func%7BSIPSorcery.Net.RTCPeerConnection%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCNodeDssPeer__ctor_System_String_System_String_System_String_System_Func_System_Threading_Tasks_Task_SIPSorcery_Net_RTCPeerConnection___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCNodeDssPeer.%23ctor(System.String%2CSystem.String%2CSystem.String%2CSystem.Func%7BSystem.Threading.Tasks.Task%7BSIPSorcery.Net.RTCPeerConnection%7D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCNodeDssPeer.cs/#L59">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCNodeDssPeer.cs/#L61">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRTCNodeDssPeer__ctor_" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_WebRTCNodeDssPeer__ctor_System_String_System_String_System_String_System_Func_SIPSorcery_Net_RTCPeerConnection__" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.#ctor(System.String,System.String,System.String,System.Func{SIPSorcery.Net.RTCPeerConnection})">WebRTCNodeDssPeer(String, String, String, Func&lt;RTCPeerConnection&gt;)</h4>
+  <h4 id="SIPSorcery_Net_WebRTCNodeDssPeer__ctor_System_String_System_String_System_String_System_Func_System_Threading_Tasks_Task_SIPSorcery_Net_RTCPeerConnection___" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.#ctor(System.String,System.String,System.String,System.Func{System.Threading.Tasks.Task{SIPSorcery.Net.RTCPeerConnection}})">WebRTCNodeDssPeer(String, String, String, Func&lt;Task&lt;RTCPeerConnection&gt;&gt;)</h4>
   <div class="markdown level1 summary"><p>Default constructor.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public WebRTCNodeDssPeer(string nodeDssServer, string ourID, string theirID, Func&lt;RTCPeerConnection&gt; createPeerConnection)</code></pre>
+    <pre><code class="lang-csharp hljs">public WebRTCNodeDssPeer(string nodeDssServer, string ourID, string theirID, Func&lt;Task&lt;RTCPeerConnection&gt;&gt; createPeerConnection)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -163,7 +163,7 @@ server for the WebRTC signalling.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a>&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a>&gt;&gt;</td>
         <td><span class="parametername">createPeerConnection</span></td>
         <td><p>Function delegate used to create a new WebRTC peer connection.</p>
 </td>
@@ -177,7 +177,7 @@ server for the WebRTC signalling.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCNodeDssPeer_RTCPeerConnection.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCNodeDssPeer.RTCPeerConnection%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCNodeDssPeer.cs/#L50">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCNodeDssPeer.cs/#L52">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRTCNodeDssPeer_RTCPeerConnection_" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.RTCPeerConnection*"></a>
   <h4 id="SIPSorcery_Net_WebRTCNodeDssPeer_RTCPeerConnection" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.RTCPeerConnection">RTCPeerConnection</h4>
@@ -206,20 +206,39 @@ server for the WebRTC signalling.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCNodeDssPeer_StartSendOffer.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCNodeDssPeer.StartSendOffer%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCNodeDssPeer_Start_System_Threading_CancellationTokenSource_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCNodeDssPeer.Start(System.Threading.CancellationTokenSource)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCNodeDssPeer.cs/#L89">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCNodeDssPeer.cs/#L93">View Source</a>
   </span>
-  <a id="SIPSorcery_Net_WebRTCNodeDssPeer_StartSendOffer_" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.StartSendOffer*"></a>
-  <h4 id="SIPSorcery_Net_WebRTCNodeDssPeer_StartSendOffer" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.StartSendOffer">StartSendOffer()</h4>
-  <div class="markdown level1 summary"><p>Creates a new WebRTC peer connection and send an SDP offer to the node DSS server.</p>
+  <a id="SIPSorcery_Net_WebRTCNodeDssPeer_Start_" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.Start*"></a>
+  <h4 id="SIPSorcery_Net_WebRTCNodeDssPeer_Start_System_Threading_CancellationTokenSource_" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.Start(System.Threading.CancellationTokenSource)">Start(CancellationTokenSource)</h4>
+  <div class="markdown level1 summary"><p>Creates a new WebRTC peer connection and then starts polling the node DSS server.
+If there is an offer waiting for this peer it will be retrieved and an answer posted.
+If no offer is available we will post one and then poll for the answer,</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Task StartSendOffer()</code></pre>
+    <pre><code class="lang-csharp hljs">public Task Start(CancellationTokenSource cancellation)</code></pre>
   </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationTokenSource</span></td>
+        <td><span class="parametername">cancellation</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
@@ -235,23 +254,6 @@ server for the WebRTC signalling.</p>
       </tr>
     </tbody>
   </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCNodeDssPeer_StartWaitForOffer.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCNodeDssPeer.StartWaitForOffer%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCNodeDssPeer.cs/#L107">View Source</a>
-  </span>
-  <a id="SIPSorcery_Net_WebRTCNodeDssPeer_StartWaitForOffer_" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.StartWaitForOffer*"></a>
-  <h4 id="SIPSorcery_Net_WebRTCNodeDssPeer_StartWaitForOffer" data-uid="SIPSorcery.Net.WebRTCNodeDssPeer.StartWaitForOffer">StartWaitForOffer()</h4>
-  <div class="markdown level1 summary"><p>Creates a new WebRTC peer connection and then starts polling the node DSS server for an SDP offer
-from the remote peer.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void StartWaitForOffer()</code></pre>
-  </div>
 </article>
           </div>
           
