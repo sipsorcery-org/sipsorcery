@@ -23,9 +23,7 @@
     <PackageReference Include="DnsClient" Version="1.4.0-beta-20200801.7" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <!--<PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.12-pre" />-->
-    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.14-pre" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
   </ItemGroup>
@@ -58,7 +56,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.79-pre: Removed SCTP Time class due to conflict with Unity built in type.
+    <PackageReleaseNotes>- v4.0.80-pre: Added webrtc helper class to work with node dss server.
+- v4.0.79-pre: Removed SCTP Time class due to conflict with Unity built in type.
 - v4.0.78-pre: Bug fix for cseq not being incremented for PRACK send or receive.
 - v4.0.77-pre: Updated to latest media abstractions package.
 - v4.0.76-pre: Updated to latest media abstractions package.
@@ -104,9 +103,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.79-pre</Version>
-    <AssemblyVersion>4.0.79.0</AssemblyVersion>
-    <FileVersion>4.0.79.0</FileVersion>
+    <Version>4.0.80-pre</Version>
+    <AssemblyVersion>4.0.80.0</AssemblyVersion>
+    <FileVersion>4.0.80.0</FileVersion>
   </PropertyGroup>
 
 </Project>
