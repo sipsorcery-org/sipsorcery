@@ -38,13 +38,15 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class WebRTCNodeDssPeer
     {
+        private const int NODE_SERVER_POLL_PERIOD = 500; // Period in milliseconds to poll the node server to check for new messages.
+
         private ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private Uri _nodeDssServerUri;
         private string _ourID;
         private string _theirID;
         private bool _isReceiving;
-        private Func<RTCPeerConnection> _createPeerConnection;
+        private Func<Task<RTCPeerConnection>> _createPeerConnection;
 
         private RTCPeerConnection _pc;
         public RTCPeerConnection RTCPeerConnection => _pc;
@@ -60,7 +62,7 @@ namespace SIPSorcery.Net
             string nodeDssServer, 
             string ourID, 
             string theirID,
-            Func<RTCPeerConnection> createPeerConnection)
+            Func<Task<RTCPeerConnection>> createPeerConnection)
         {
             if(string.IsNullOrWhiteSpace(nodeDssServer))
             {
@@ -84,46 +86,44 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Creates a new WebRTC peer connection and then starts polling the node DSS server.
+        /// If there is an offer waiting for this peer it will be retrieved and an answer posted.
+        /// If no offer is available we will post one and then poll for the answer,
+        /// </summary>
+        public async Task Start(CancellationTokenSource cancellation)
+        {
+            var peerConnectedCancellation = new CancellationTokenSource();
+            CancellationTokenSource linkedSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token, peerConnectedCancellation.Token);
+
+            var nodeDssClient = new HttpClient();
+            
+            _pc = await _createPeerConnection();
+            _pc.onconnectionstatechange += (state) =>
+            {
+                if (_isReceiving && !(state == RTCPeerConnectionState.@new || state == RTCPeerConnectionState.connecting))
+                {
+                    logger.LogDebug("cancelling node DSS receive task.");
+                    peerConnectedCancellation?.Cancel();
+                }
+            };
+
+            logger.LogDebug($"node-dss starting receive task for server {_nodeDssServerUri}, our ID {_ourID} and their ID {_theirID}.");
+
+            _ = Task.Run(() => ReceiveFromNSS(nodeDssClient, _pc, linkedSource.Token));
+        }
+
+        /// <summary>
         /// Creates a new WebRTC peer connection and send an SDP offer to the node DSS server.
         /// </summary>
-        public async Task StartSendOffer()
+        private async Task SendOffer(HttpClient httpClient)
         {
-            var nodeDssClient = new HttpClient();
-            _pc = _createPeerConnection();
+            logger.LogDebug("node-dss sending initial SDP offer to server.");
 
             var offerSdp = _pc.createOffer(null);
             await _pc.setLocalDescription(offerSdp);
 
             var offerJson = JsonConvert.SerializeObject(offerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
-            await SendToNSS(nodeDssClient, offerJson);
-
-            StartNodeDssPolling(_pc, nodeDssClient);
-        }
-
-        /// <summary>
-        /// Creates a new WebRTC peer connection and then starts polling the node DSS server for an SDP offer
-        /// from the remote peer.
-        /// </summary>
-        public void StartWaitForOffer()
-        {
-            var nodeDssClient = new HttpClient();
-            var pc = _createPeerConnection();
-
-            StartNodeDssPolling(pc, nodeDssClient);
-        }
-
-        private void StartNodeDssPolling(RTCPeerConnection pc, HttpClient nodeDssClient)
-        {
-            CancellationTokenSource connectedCts = new CancellationTokenSource();
-            pc.onconnectionstatechange += (state) =>
-            {
-                if (_isReceiving && !(state == RTCPeerConnectionState.@new || state == RTCPeerConnectionState.connecting))
-                {
-                    logger.LogDebug("cancelling node DSS receive task.");
-                    connectedCts.Cancel();
-                }
-            };
-            _ = Task.Run(() => ReceiveFromNSS(nodeDssClient, pc, connectedCts.Token));
+            await SendToNSS(httpClient, offerJson);
         }
 
         private async Task SendToNSS(HttpClient httpClient, string jsonStr)
@@ -140,6 +140,8 @@ namespace SIPSorcery.Net
 
             try
             {
+                bool isInitialReceive = true;
+
                 while (!ct.IsCancellationRequested)
                 {
                     var res = await httpClient.GetAsync($"{_nodeDssServerUri}data/{_ourID}");
@@ -156,6 +158,13 @@ namespace SIPSorcery.Net
                     }
                     else if (res.StatusCode == HttpStatusCode.NotFound)
                     {
+                        if(isInitialReceive)
+                        {
+                            // We are the first peer to connect. Send the offer so it will be waiting
+                            // for the remote peer.
+                            await SendOffer(httpClient);
+                        }
+
                         // Expected response when there are no waiting messages for us.
                         await Task.Delay(500);
                     }
@@ -163,6 +172,8 @@ namespace SIPSorcery.Net
                     {
                         throw new ApplicationException($"Get request to node DSS server failed with response code {res.StatusCode}.");
                     }
+
+                    isInitialReceive = false;
                 }
             }
             finally
