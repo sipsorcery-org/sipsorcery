@@ -17,6 +17,7 @@
 
 using System;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using WebSocketSharp;
@@ -34,7 +35,9 @@ namespace SIPSorcery.Net
         private ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private RTCPeerConnection _pc;
-        public Func<RTCPeerConnection> CreatePeerConnection;
+        public RTCPeerConnection RTCPeerConnection => _pc;
+
+        public Func<Task<RTCPeerConnection>> CreatePeerConnection;
 
         public WebRTCWebSocketPeer()
         { }
@@ -68,7 +71,7 @@ namespace SIPSorcery.Net
 
             logger.LogDebug($"Web socket client connection from {Context.UserEndPoint}.");
 
-            _pc = CreatePeerConnection();
+            _pc = await CreatePeerConnection();
 
             var offerSdp = _pc.createOffer(null);
             await _pc.setLocalDescription(offerSdp);

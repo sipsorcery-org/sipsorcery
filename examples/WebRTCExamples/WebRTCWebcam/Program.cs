@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -34,15 +35,33 @@ namespace demo
     {
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
+        //private const string WEBCAM_NAME = "Logitech QuickCam Pro 9000";
+        private const string WEBCAM_NAME = "HD Pro Webcam C920";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-        static void Main()
+        static async Task Main()
         {
             Console.WriteLine("WebRTC Webcam Send Demo");
             Console.WriteLine("Press ctrl-c to exit.");
 
             logger = AddConsoleLogger();
+
+            //var vidCapDevices = await WindowsVideoEndPoint.GetVideoCatpureDevices();
+            //foreach (var dev in vidCapDevices)
+            //{
+            //    logger.LogDebug($"Video capture device name {dev.Name}, ID {dev.ID}.");
+            //}
+
+            //await WindowsVideoEndPoint.ListDevicesAndFormats();
+
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME);
+            //bool initResult = winVideoEP.InitialiseVideoSourceDevice().Result;
+            //if (!initResult)
+            //{
+            //    throw new ApplicationException("Could not initialise video capture device.");
+            //}
+            //await winVideoEP.StartVideo();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -65,7 +84,7 @@ namespace demo
             exitMre.WaitOne();
         }
 
-        private static RTCPeerConnection CreatePeerConnection()
+        private static async Task<RTCPeerConnection> CreatePeerConnection()
         {
             RTCConfiguration config = new RTCConfiguration
             {
@@ -73,7 +92,13 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint();
+            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME);
+            bool initResult = await winVideoEP.InitialiseVideoSourceDevice();
+            if (!initResult)
+            {
+                throw new ApplicationException("Could not initialise video capture device.");
+            }
+
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 640, 480, 30);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 1920, 1080, 30);          
             //await winVideoEP.InitialiseVideoSourceDevice();

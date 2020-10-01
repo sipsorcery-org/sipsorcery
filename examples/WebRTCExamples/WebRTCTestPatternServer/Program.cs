@@ -47,19 +47,19 @@ namespace demo
             logger = AddConsoleLogger();
 
             // Start web socket.
-            //Console.WriteLine("Starting web socket server...");
-            //var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            //webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
-            //webSocketServer.Start();
+            Console.WriteLine("Starting web socket server...");
+            var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+            webSocketServer.Start();
 
-            //Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-            //Console.WriteLine("Press ctrl-c to exit.");
-
-            var nodeDssWebRTCPeer = new WebRTCNodeDssPeer(NODE_DSS_SERVER, NODE_DSS_MY_USER, NODE_DSS_THEIR_USER, CreatePeerConnection);
-            await nodeDssWebRTCPeer.StartSendOffer();
-
-            Console.WriteLine($"Waiting for node DSS peer to connect...");
+            Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
             Console.WriteLine("Press ctrl-c to exit.");
+
+            //var nodeDssWebRTCPeer = new WebRTCNodeDssPeer(NODE_DSS_SERVER, NODE_DSS_MY_USER, NODE_DSS_THEIR_USER, CreatePeerConnection);
+            //await nodeDssWebRTCPeer.StartSendOffer();
+
+            //Console.WriteLine($"Waiting for node DSS peer to connect...");
+            //Console.WriteLine("Press ctrl-c to exit.");
 
             // Ctrl-c will gracefully exit the call at any point.
             ManualResetEvent exitMre = new ManualResetEvent(false);
@@ -73,7 +73,7 @@ namespace demo
             exitMre.WaitOne();
         }
 
-        private static RTCPeerConnection CreatePeerConnection()
+        private static Task<RTCPeerConnection> CreatePeerConnection()
         {
             RTCConfiguration config = new RTCConfiguration
             {
@@ -85,7 +85,8 @@ namespace demo
             var testPatternSource = new VideoTestPatternSource();
             //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
-            var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
+            //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
+            var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
 
             MediaStreamTrack track = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
@@ -120,7 +121,7 @@ namespace demo
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
-            return pc;
+            return Task.FromResult(pc);
         }
 
         /// <summary>

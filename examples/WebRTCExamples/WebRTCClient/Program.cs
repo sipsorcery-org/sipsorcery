@@ -32,7 +32,6 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.FFmpeg;
-using SIPSorceryMedia.Windows;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace demo
@@ -40,10 +39,10 @@ namespace demo
     class Program
     {
         private const string NODE_DSS_SERVER = "http://192.168.0.50:3000";
-        //private const string NODE_DSS_MY_USER = "console";
-        //private const string NODE_DSS_THEIR_USER = "unity";
-        private const string NODE_DSS_MY_USER = "cli";
-        private const string NODE_DSS_THEIR_USER = "svr";
+        private const string NODE_DSS_MY_USER = "console";
+        private const string NODE_DSS_THEIR_USER = "unity";
+        //private const string NODE_DSS_MY_USER = "cli";
+        //private const string NODE_DSS_THEIR_USER = "svr";
 
         private static Microsoft.Extensions.Logging.ILogger logger = null;
 
@@ -81,7 +80,8 @@ namespace demo
         {
             var peerConnection = new RTCPeerConnection(null);
 
-            var videoEP = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
+            var videoEP = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
+            //var videoEP = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
             //var videoEP = new FFmpegVideoEndPoint();
             videoEP.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.VP8 });
 
@@ -101,31 +101,31 @@ namespace demo
             };
 
             // Sink (speaker) only audio end point.
-            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
+            //WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
-            peerConnection.addTrack(audioTrack);
+            //MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
+            //peerConnection.addTrack(audioTrack);
             MediaStreamTrack videoTrack = new MediaStreamTrack(videoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(videoTrack);
 
             peerConnection.OnVideoFrameReceived += videoEP.GotVideoFrame;
             peerConnection.OnVideoFormatsNegotiated += (sdpFormat) => videoEP.SetVideoSinkFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
 
-            peerConnection.OnAudioFormatsNegotiated += (sdpFormat) =>
-                windowsAudioEP.SetAudioSinkFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            //peerConnection.OnAudioFormatsNegotiated += (sdpFormat) =>
+            //    windowsAudioEP.SetAudioSinkFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
             peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
-            peerConnection.onconnectionstatechange += async (state) =>
+            peerConnection.onconnectionstatechange += (state) =>
             {
                 logger.LogDebug($"Peer connection connected changed to {state}.");
 
                 if (state == RTCPeerConnectionState.connected)
                 {
-                    await windowsAudioEP.StartAudio();
+                    //await windowsAudioEP.StartAudio();
                 }
                 else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
                 {
-                    await windowsAudioEP.CloseAudio();
+                    //await windowsAudioEP.CloseAudio();
                 }
             };
 
@@ -140,7 +140,7 @@ namespace demo
                 //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
                 if (media == SDPMediaTypesEnum.audio)
                 {
-                    windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
+                    //windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
                 }
             };
 

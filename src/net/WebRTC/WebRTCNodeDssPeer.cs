@@ -46,6 +46,9 @@ namespace SIPSorcery.Net
         private bool _isReceiving;
         private Func<RTCPeerConnection> _createPeerConnection;
 
+        private RTCPeerConnection _pc;
+        public RTCPeerConnection RTCPeerConnection => _pc;
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -86,15 +89,15 @@ namespace SIPSorcery.Net
         public async Task StartSendOffer()
         {
             var nodeDssClient = new HttpClient();
-            var pc = _createPeerConnection();
+            _pc = _createPeerConnection();
 
-            var offerSdp = pc.createOffer(null);
-            await pc.setLocalDescription(offerSdp);
+            var offerSdp = _pc.createOffer(null);
+            await _pc.setLocalDescription(offerSdp);
 
             var offerJson = JsonConvert.SerializeObject(offerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
             await SendToNSS(nodeDssClient, offerJson);
 
-            StartNodeDssPolling(pc, nodeDssClient);
+            StartNodeDssPolling(_pc, nodeDssClient);
         }
 
         /// <summary>

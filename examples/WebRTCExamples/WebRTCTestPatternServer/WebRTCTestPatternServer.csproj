@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\SIPSorceryMedia.Encoders\src\SIPSorceryMedia.Encoders.csproj" />
     <ProjectReference Include="..\..\..\..\SIPSorceryMedia.Windows\src\SIPSorceryMedia.Windows.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
