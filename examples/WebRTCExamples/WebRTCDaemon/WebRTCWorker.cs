@@ -111,7 +111,7 @@ namespace WebRTCDaemon
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
 
-        private RTCPeerConnection CreatePeerConnection(string url)
+        private Task<RTCPeerConnection> CreatePeerConnection(string url)
         {
             RTCConfiguration config = new RTCConfiguration
             {
@@ -171,7 +171,7 @@ namespace WebRTCDaemon
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => _logger.LogInformation($"ICE connection state change to {state}.");
 
-            return pc;
+            return Task.FromResult(pc);
         }
 
         private async Task StartSource(string url)

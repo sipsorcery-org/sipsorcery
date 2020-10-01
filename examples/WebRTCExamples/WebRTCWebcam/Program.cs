@@ -40,7 +40,7 @@ namespace demo
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-        static async Task Main()
+        static void Main()
         {
             Console.WriteLine("WebRTC Webcam Send Demo");
             Console.WriteLine("Press ctrl-c to exit.");

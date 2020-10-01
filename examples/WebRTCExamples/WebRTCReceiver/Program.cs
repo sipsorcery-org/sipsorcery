@@ -19,6 +19,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -71,7 +72,7 @@ namespace demo
             Application.Run(_form);
         }
 
-        private static RTCPeerConnection CreatePeerConnection()
+        private static Task<RTCPeerConnection> CreatePeerConnection()
         {
             //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint();
             var videoEP = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
@@ -127,7 +128,7 @@ namespace demo
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
-            return pc;
+            return Task.FromResult(pc);
         }
 
         /// <summary>

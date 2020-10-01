@@ -19,13 +19,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Windows;
+using SIPSorceryMedia.Encoders;
 using WebSocketSharp.Server;
 
 namespace demo
@@ -64,7 +65,7 @@ namespace demo
             exitMre.WaitOne();
         }
 
-        private static RTCPeerConnection CreatePeerConnection()
+        private static Task<RTCPeerConnection> CreatePeerConnection()
         {
             RTCConfiguration config = new RTCConfiguration
             {
@@ -73,19 +74,19 @@ namespace demo
             var pc = new RTCPeerConnection(config);
 
             var testPatternSource = new VideoTestPatternSource();
-            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(true);
+            var videoEncoderEndPoint = new VideoEncoderEndPoint();
             var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(videoEncoderEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(videoTrack);
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(audioTrack);
 
-            testPatternSource.OnVideoSourceRawSample += windowsVideoEndPoint.ExternalVideoSourceRawSample;
-            windowsVideoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+            testPatternSource.OnVideoSourceRawSample += videoEncoderEndPoint.ExternalVideoSourceRawSample;
+            videoEncoderEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
             pc.OnVideoFormatsNegotiated += (sdpFormat) =>
-                windowsVideoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+               videoEncoderEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
             pc.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
@@ -93,7 +94,6 @@ namespace demo
                 if (state == RTCPeerConnectionState.connected)
                 {
                     await audioSource.StartAudio();
-                    await windowsVideoEndPoint.StartVideo();
                     await testPatternSource.StartVideo();
                 }
                 else if (state == RTCPeerConnectionState.failed)
@@ -103,7 +103,6 @@ namespace demo
                 else if (state == RTCPeerConnectionState.closed)
                 {
                     await testPatternSource.CloseVideo();
-                    await windowsVideoEndPoint.CloseVideo();
                     await audioSource.CloseAudio();
                 }
             };
@@ -114,7 +113,7 @@ namespace demo
             pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
-            return pc;
+            return Task.FromResult(pc);
         }
 
         /// <summary>

@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -66,7 +67,7 @@ namespace demo
             exitMre.WaitOne();
         }
 
-        private static RTCPeerConnection CreatePeerConnection()
+        private static Task<RTCPeerConnection> CreatePeerConnection()
         {
             RTCConfiguration config = new RTCConfiguration
             {
@@ -114,7 +115,7 @@ namespace demo
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
-            return pc;
+            return Task.FromResult(pc);
         }
 
         /// <summary>
