@@ -350,7 +350,7 @@ namespace SIPSorcery.SIP
                             {
                                 if (aResult.Answers?.Count > 0)
                                 {
-                                    result = GetFromLookupResult(uri.Protocol, aResult.Answers.AaaaRecords().First(), port);
+                                    result = GetFromLookupResult(uri.Protocol, aResult.Answers.AddressRecords().First(), port);
                                 }
                                 else
                                 {
