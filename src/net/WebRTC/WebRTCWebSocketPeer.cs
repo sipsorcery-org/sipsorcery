@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: WebRTCWebSocketPeer.cs
 //
-// Description: This class is not a required component for using WebRTC. It is a
+// Description: This class is NOT a required component for using WebRTC. It is a
 // convenience class provided to assist when using a web socket server for the 
 // WebRTC signalling.
 //
@@ -26,7 +26,7 @@ using WebSocketSharp.Server;
 namespace SIPSorcery.Net
 {
     /// <summary>
-    /// This class is not a required component for using WebRTC. It is a convenience
+    /// This class is NOT a required component for using WebRTC. It is a convenience
     /// class provided to assist when using a web socket server for the  WebRTC 
     /// signalling.
     /// </summary>
@@ -89,33 +89,5 @@ namespace SIPSorcery.Net
             Context.WebSocket.Send(JsonConvert.SerializeObject(offerSdp,
                  new Newtonsoft.Json.Converters.StringEnumConverter()));
         }
-
-        //private static async Task DoWebSocketReceive(RTCPeerConnection pc, ClientWebSocket ws, CancellationToken ct)
-        //{
-        //    while (!ct.IsCancellationRequested)
-        //    {
-        //        List<byte> currRecv = new List<byte>();
-        //        byte[] buffer = new byte[4096];
-
-        //        var recvResult = await ws.ReceiveAsync(buffer, ct);
-        //        Console.WriteLine($"recvresult {recvResult.Count}, {recvResult.EndOfMessage}.");
-        //        currRecv.AddRange(buffer.Take(recvResult.Count));
-
-        //        while (!recvResult.EndOfMessage)
-        //        {
-        //            recvResult = await ws.ReceiveAsync(buffer, ct);
-        //            Console.WriteLine($"recvresult {recvResult.Count}, {recvResult.EndOfMessage}.");
-        //            currRecv.AddRange(buffer.Take(recvResult.Count));
-        //        }
-
-        //        var jsonMsg = Encoding.UTF8.GetString(currRecv.ToArray());
-        //        string jsonResp = null;// await ProcessMessage(pc, jsonMsg);
-
-        //        if (jsonResp != null)
-        //        {
-        //            await ws.SendAsync(Encoding.UTF8.GetBytes(jsonResp), WebSocketMessageType.Text, true, ct);
-        //        }
-        //    }
-        //}
     }
 }

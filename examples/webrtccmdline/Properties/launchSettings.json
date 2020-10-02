@@ -2,7 +2,7 @@
   "profiles": {
     "webrtccmdline": {
       "commandName": "Project",
-      "commandLineArgs": "--ws --stun=\"stun:stun.l.google.com:19302\""
+      "commandLineArgs": "--wsserver=ws://127.0.0.1:8081"
     }
   }
 }

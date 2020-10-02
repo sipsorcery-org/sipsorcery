@@ -50,6 +50,10 @@ namespace SIPSorcery.Examples
             HelpText = "Create a secure web socket server to act as a signalling channel for exchanging SDP and ICE candidates with a remote WebRTC peer.")]
         public bool UseSecureWebSocket { get; set; }
 
+        [Option("wsserver", Required = false,
+           HelpText = "The address of a web socket server to connect to establish a WebRTC connection. Format \"--wsserver=ws://127.0.0.1:8081\".")]
+        public string WebSocketServer { get; set; }
+
         [Option("offer", Required = false,
             HelpText = "Create an initial SDP offer for a remote WebRTC peer. The offer will be serialised as base 64 encoded JSON. An SDP answer in the same format can then be entered.")]
         public bool CreateJsonOffer { get; set; }
@@ -63,7 +67,7 @@ namespace SIPSorcery.Examples
         public bool RelayOnly { get; set; }
 
         [Option("nodedss", Required = false,
-            HelpText = "Address and ID's for a node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://192.168.11.50:3001;myid;theirid\".")]
+            HelpText = "Address and ID's for a node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://127.0.0.1:3001;myid;theirid\".")]
         public string NodeDssServer { get; set; }
 
         [Option("icetypes", Required = false,
@@ -206,27 +210,23 @@ namespace SIPSorcery.Examples
                 // Start web socket.
                 Console.WriteLine("Starting web socket server...");
                 _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, options.UseSecureWebSocket);
-
                 if (options.UseSecureWebSocket)
                 {
-                    _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
+                    _webSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
                     _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
                 }
-
-                //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
-                _webSocketServer.AddWebSocketService<WebRtcClient>("/sendoffer", (client) =>
-                {
-                    client.WebSocketOpened += SendOffer;
-                    client.OnMessageReceived += WebSocketMessageReceived;
-                });
-                _webSocketServer.AddWebSocketService<WebRtcClient>("/receiveoffer", (client) =>
-                {
-                    client.WebSocketOpened += ReceiveOffer;
-                    client.OnMessageReceived += WebSocketMessageReceived;
-                });
+                _webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
                 _webSocketServer.Start();
 
                 Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
+            }
+            else if(!string.IsNullOrWhiteSpace(options.WebSocketServer))
+            {
+                // We are the client for a web socket server. The JSON signalling exchange still occurs the same way as when the web socket
+                // server option is used except that as the web socket client we receive the SDP offer from the server.
+                WebRTCWebSocketClient wsockClient = new WebRTCWebSocketClient(options.WebSocketServer, CreatePeerConnection);
+                await wsockClient.Start(exitCts.Token);
+                Console.WriteLine("web socket client started.");
             }
             else if (options.CreateJsonOffer)
             {
