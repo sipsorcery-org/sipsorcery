@@ -229,5 +229,25 @@ namespace SIPSorcery.SIP.IntegrationTests
                 SIPDns.LookupClient = originalClient;
             }
         }
+
+        /// <summary>
+        /// Tests that a lookup that resolves to a CNAME record works correctly.
+        /// </summary>
+        [Fact]
+        public void LookupCNAMETest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+
+            string hostname = "utest.sipsorcery.com";
+
+            var result = SIPDns.ResolveAsync(SIPURI.ParseSIPURIRelaxed(hostname), false, cts.Token).Result;
+
+            Assert.NotNull(result);
+
+            logger.LogDebug($"resolved to SIP end point {result}.");
+        }
     }
 }
