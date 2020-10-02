@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30523.141
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCTestPatternServerOpenH264", "WebRTCTestPatternServerOpenH264.csproj", "{427552E6-8A91-43D6-A54A-37E2B74042EA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenH264Lib", "..\OpenH264Lib\OpenH264Lib.vcxproj", "{B4FE105E-C607-40DC-A86B-AED03E14D18D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Debug|x64.Build.0 = Debug|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Debug|x86.Build.0 = Debug|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Release|x64.ActiveCfg = Release|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Release|x64.Build.0 = Release|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Release|x86.ActiveCfg = Release|Any CPU
+		{427552E6-8A91-43D6-A54A-37E2B74042EA}.Release|x86.Build.0 = Release|Any CPU
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Debug|x64.ActiveCfg = Debug|x64
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Debug|x64.Build.0 = Debug|x64
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Debug|x86.ActiveCfg = Debug|Win32
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Debug|x86.Build.0 = Debug|Win32
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Release|Any CPU.ActiveCfg = Release|Win32
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Release|x64.ActiveCfg = Release|x64
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Release|x64.Build.0 = Release|x64
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Release|x86.ActiveCfg = Release|Win32
+		{B4FE105E-C607-40DC-A86B-AED03E14D18D}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D495DFA4-DBEB-4F80-BEF4-B81E46FF170F}
+	EndGlobalSection
+EndGlobal
