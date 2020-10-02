@@ -56,7 +56,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.80-pre: Added webrtc helper class to work with node dss server.
+    <PackageReleaseNotes>- v4.0.81-pre: Fix for SIP DNS lookups failing on CNAME records.
+- v4.0.80-pre: Added webrtc helper class to work with node dss server.
 - v4.0.79-pre: Removed SCTP Time class due to conflict with Unity built in type.
 - v4.0.78-pre: Bug fix for cseq not being incremented for PRACK send or receive.
 - v4.0.77-pre: Updated to latest media abstractions package.
@@ -103,9 +104,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.80-pre</Version>
-    <AssemblyVersion>4.0.80.0</AssemblyVersion>
-    <FileVersion>4.0.80.0</FileVersion>
+    <Version>4.0.81-pre</Version>
+    <AssemblyVersion>4.0.81.0</AssemblyVersion>
+    <FileVersion>4.0.81.0</FileVersion>
   </PropertyGroup>
 
 </Project>
