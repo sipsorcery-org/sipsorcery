@@ -325,7 +325,7 @@ namespace SIPSorcery.SIP
                             var aaaaResult = await _lookupClient.QueryAsync(host, UseANYLookups ? QueryType.ANY : QueryType.AAAA, QueryClass.IN, ct).ConfigureAwait(false);
                             if (aaaaResult?.Answers?.Count > 0)
                             {
-                                result = GetFromLookupResult(uri.Protocol, aaaaResult.Answers.OrderByDescending(x => x.RecordType).First(), port);
+                                result = GetFromLookupResult(uri.Protocol, aaaaResult.Answers.AddressRecords().OrderByDescending(x => x.RecordType).First(), port);
                                 isDone = true;
                             }
                             else
