@@ -4,8 +4,8 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
-
 using SIPSorcery.Net;
+using System.Threading;
 
 namespace XamarinDataChannelTest.Models
 {
@@ -51,6 +51,7 @@ namespace XamarinDataChannelTest.Models
         private string _dataChannelLabel;
         public event Action<RTCIceCandidateInit> OnIceCandidateAvailable;
         public string _peerName;
+        private Uri _webSocketServerUri;
 
         private Dictionary<string, RTCDataChannel> _dataChannels = new Dictionary<string, RTCDataChannel>();
 
@@ -68,15 +69,20 @@ namespace XamarinDataChannelTest.Models
                 DnsClient.NameServer.GooglePublicDns2 };
         }
 
-        public WebRTCPeer(string peerName, string dataChannelLabel)
+        public WebRTCPeer(string peerName, string dataChannelLabel, Uri webSocketServerUri)
         {
             _peerName = peerName;
             _dataChannelLabel = dataChannelLabel;
-
-            PeerConnection = Createpc();
+            _webSocketServerUri = webSocketServerUri;
         }
 
-        private RTCPeerConnection Createpc()
+        public Task Connect(CancellationToken ct)
+        {
+            WebRTCWebSocketClient wsClient = new WebRTCWebSocketClient(_webSocketServerUri.ToString(), CreatePeerConnection);
+            return wsClient.Start(ct);
+        }
+
+        public Task<RTCPeerConnection> CreatePeerConnection()
         {
             List<RTCCertificate> presetCertificates = null;
             byte[] dummyCertBytes = Convert.FromBase64String(DUMMY_CERTIFICATE_BASE64);
@@ -87,7 +93,6 @@ namespace XamarinDataChannelTest.Models
             {
                 certificates = presetCertificates,
                 //iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "stun:stun.l.google.com:19302" } }
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "stun:108.177.15.127:19302" } },
                 X_BindAddress = IPAddress.Any
             };
 
@@ -134,7 +139,9 @@ namespace XamarinDataChannelTest.Models
                 _dataChannels.Add(dc.label, dc);
             };
 
-            return pc;
+            PeerConnection = pc;
+
+            return Task.FromResult(pc);
         }
 
         private void DataChannel_onmessage(string message)

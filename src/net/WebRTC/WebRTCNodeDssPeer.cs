@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: WebRTCNodeDssPeer.cs
 //
-// Description: This class is not a required component for using WebRTC. It is a
+// Description: This class is NOT a required component for using WebRTC. It is a
 // convenience class provided to assist when using a nodejs Dead Simple signalling
 // (DSS) server for the WebRTC signalling.
 // See https://github.com/bengreenier/node-dss.
@@ -166,7 +166,7 @@ namespace SIPSorcery.Net
                         }
 
                         // Expected response when there are no waiting messages for us.
-                        await Task.Delay(500);
+                        await Task.Delay(NODE_SERVER_POLL_PERIOD);
                     }
                     else
                     {

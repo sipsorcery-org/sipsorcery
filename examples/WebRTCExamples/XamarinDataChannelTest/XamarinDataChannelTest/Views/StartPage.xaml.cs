@@ -1,11 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Net.WebSockets;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
-using System.Threading.Tasks;
 using Xamarin.Forms;
 using XamarinDataChannelTest.Models;
 using SIPSorcery.Net;
@@ -20,8 +16,9 @@ namespace XamarinDataChannelTest.Views
     {
         public const string DATA_CHANNEL_LABEL = "xdc";
 
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.LogFactory.CreateLogger<StartPage>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<StartPage>();
         private WebRTCPeer _peer;
+        private bool _isWebRTCConnected;
 
         public StartPage()
         {
@@ -34,6 +31,7 @@ namespace XamarinDataChannelTest.Views
 
             this._closeButton.IsVisible = false;
             this._connectButton.IsVisible = true;
+            _isWebRTCConnected = false;
 
             this._status.Text = "Ready";
         }
@@ -41,8 +39,6 @@ namespace XamarinDataChannelTest.Views
         async void OnConnectButtonClicked(object sender, EventArgs args)
         {
             logger.LogDebug($"Attempting to connection to web socket at {this._webSocketURL.Text}.");
-
-            var clientWebSocket = new ClientWebSocket();
 
             if (!Uri.TryCreate(this._webSocketURL.Text, UriKind.Absolute, out var uri))
             {
@@ -55,53 +51,49 @@ namespace XamarinDataChannelTest.Views
 
                 this._status.Text = "Attempting to connect to web socket server.";
 
-                await clientWebSocket.ConnectAsync(uri, CancellationToken.None);
-
-                var buffer = WebSocket.CreateClientBuffer(8192, 8192);
-                int attempts = 0;
-
-                while (true && attempts < 10)
+                try
                 {
-                    WebSocketReceiveResult response = await clientWebSocket.ReceiveAsync(buffer, CancellationToken.None);
+                    _peer = new WebRTCPeer("peer1", DATA_CHANNEL_LABEL, uri);
+                    await _peer.Connect(CancellationToken.None);
 
-                    if (response.EndOfMessage)
+                    if (_peer.PeerConnection.connectionState == RTCPeerConnectionState.connected)
                     {
-                        _peer = new WebRTCPeer("peer1", DATA_CHANNEL_LABEL);
-                       
-                        _peer.PeerConnection.oniceconnectionstatechange += (state) => Device.BeginInvokeOnMainThread(() => this._status.Text = $"ICE connection state {state}.");
+                        _isWebRTCConnected = true;
+                        this._status.Text = "WebRTC peer connection successfully established.";
                         _peer.PeerConnection.onconnectionstatechange += (state) => Device.BeginInvokeOnMainThread(() => this._status.Text = $"Peer connection state {state}.");
-                        _peer.OnDataChannelMessage += (msg_) => Device.BeginInvokeOnMainThread(() => this._dataChannelMessages.Text += $"\n{msg_}");
-
-                        var options = new JsonSerializerOptions();
-                        options.Converters.Add(new JsonStringEnumConverter());
-                        var init = JsonSerializer.Deserialize<RTCSessionDescriptionInit>(buffer.Take(response.Count).ToArray(), options);
-                        _peer.PeerConnection.setRemoteDescription(init);
-
-                        var answer = _peer.PeerConnection.createAnswer(null);
-                        await _peer.PeerConnection.setLocalDescription(answer);
-
-                        var answerJson = JsonSerializer.Serialize<RTCSessionDescriptionInit>(answer, options);
-                        await clientWebSocket.SendAsync(
-                            new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(answerJson)),
-                            WebSocketMessageType.Text, true, CancellationToken.None);
-
-                        attempts = 10;
-                        while (_peer.PeerConnection.connectionState == RTCPeerConnectionState.connecting && attempts < 10)
-                        {
-                            await Task.Delay(1000);
-                            attempts++;
-                        }
-
-                        break;
                     }
                     else
                     {
-                        logger.LogWarning("Failed to get full web socket message from server.");
+                        this._status.Text = "Web socket connection successful, WebRTC peer connecting...";
 
-                        this._status.Text = "Web socket message exchange failed.";
+                        _peer.PeerConnection.onconnectionstatechange += (connState) =>
+                        {
+                            if (_peer.PeerConnection.connectionState == RTCPeerConnectionState.connected)
+                            {
+                                if (!_isWebRTCConnected)
+                                {
+                                    _isWebRTCConnected = true;
+
+                                    this.Dispatcher.BeginInvokeOnMainThread(() => this._status.Text = "WebRTC peer connection successfully established.");
+
+                                    _peer.PeerConnection.onconnectionstatechange += (state) => Device.BeginInvokeOnMainThread(() => this._status.Text = $"Peer connection state {state}.");
+                                    _peer.OnDataChannelMessage += (msg_) => Device.BeginInvokeOnMainThread(() => this._dataChannelMessages.Text += $"\n{msg_}");
+                                }
+                            }
+                            else if (_peer.PeerConnection.connectionState == RTCPeerConnectionState.failed ||
+                                _peer.PeerConnection.connectionState == RTCPeerConnectionState.closed)
+                            {
+                                this.Dispatcher.BeginInvokeOnMainThread(() => this._status.Text = $"WebRTC peer connection attempt failed in state {_peer.PeerConnection.connectionState}.");
+                            }
+                        };
                     }
+                }
+                catch (Exception excp)
+                {
+                    this._status.Text = $"Error connecting. {excp.Message}";
 
-                    attempts++;
+                    this._closeButton.IsVisible = false;
+                    this._connectButton.IsVisible = true;
                 }
             }
         }

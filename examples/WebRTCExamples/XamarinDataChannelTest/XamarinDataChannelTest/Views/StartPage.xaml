@@ -31,7 +31,7 @@
                 VerticalOptions="Start"
                  Clicked="OnCloseButtonClicked" IsVisible="False"/>
             <Label Text="Web Socket URL:" FontAttributes="Bold" FontSize="Large" TextDecorations="Underline" />
-        <Entry x:Name="_webSocketURL" Text="ws://192.168.11.50:8081/sendoffer" />
+        <Entry x:Name="_webSocketURL" Text="ws://192.168.0.50:8081/" />
 
         <Label Text="Data Channel Messages:" FontAttributes="Bold" FontSize="Large" TextDecorations="Underline" />
             <Editor x:Name="_dataChannelMessages" IsReadOnly="True" Text="" HeightRequest="200" VerticalOptions="Start">
