@@ -23849,6 +23849,54 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.WebRTCNodeDssPeer.Start
   nameWithType: WebRTCNodeDssPeer.Start
+- uid: SIPSorcery.Net.WebRTCWebSocketClient
+  name: WebRTCWebSocketClient
+  href: api/SIPSorcery.Net.WebRTCWebSocketClient.html
+  commentId: T:SIPSorcery.Net.WebRTCWebSocketClient
+  fullName: SIPSorcery.Net.WebRTCWebSocketClient
+  nameWithType: WebRTCWebSocketClient
+- uid: SIPSorcery.Net.WebRTCWebSocketClient.#ctor(System.String,System.Func{System.Threading.Tasks.Task{SIPSorcery.Net.RTCPeerConnection}})
+  name: WebRTCWebSocketClient(String, Func<Task<RTCPeerConnection>>)
+  href: api/SIPSorcery.Net.WebRTCWebSocketClient.html#SIPSorcery_Net_WebRTCWebSocketClient__ctor_System_String_System_Func_System_Threading_Tasks_Task_SIPSorcery_Net_RTCPeerConnection___
+  commentId: M:SIPSorcery.Net.WebRTCWebSocketClient.#ctor(System.String,System.Func{System.Threading.Tasks.Task{SIPSorcery.Net.RTCPeerConnection}})
+  name.vb: WebRTCWebSocketClient(String, Func(Of Task(Of RTCPeerConnection)))
+  fullName: SIPSorcery.Net.WebRTCWebSocketClient.WebRTCWebSocketClient(System.String, System.Func<System.Threading.Tasks.Task<SIPSorcery.Net.RTCPeerConnection>>)
+  fullName.vb: SIPSorcery.Net.WebRTCWebSocketClient.WebRTCWebSocketClient(System.String, System.Func(Of System.Threading.Tasks.Task(Of SIPSorcery.Net.RTCPeerConnection)))
+  nameWithType: WebRTCWebSocketClient.WebRTCWebSocketClient(String, Func<Task<RTCPeerConnection>>)
+  nameWithType.vb: WebRTCWebSocketClient.WebRTCWebSocketClient(String, Func(Of Task(Of RTCPeerConnection)))
+- uid: SIPSorcery.Net.WebRTCWebSocketClient.#ctor*
+  name: WebRTCWebSocketClient
+  href: api/SIPSorcery.Net.WebRTCWebSocketClient.html#SIPSorcery_Net_WebRTCWebSocketClient__ctor_
+  commentId: Overload:SIPSorcery.Net.WebRTCWebSocketClient.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCWebSocketClient.WebRTCWebSocketClient
+  nameWithType: WebRTCWebSocketClient.WebRTCWebSocketClient
+- uid: SIPSorcery.Net.WebRTCWebSocketClient.RTCPeerConnection
+  name: RTCPeerConnection
+  href: api/SIPSorcery.Net.WebRTCWebSocketClient.html#SIPSorcery_Net_WebRTCWebSocketClient_RTCPeerConnection
+  commentId: P:SIPSorcery.Net.WebRTCWebSocketClient.RTCPeerConnection
+  fullName: SIPSorcery.Net.WebRTCWebSocketClient.RTCPeerConnection
+  nameWithType: WebRTCWebSocketClient.RTCPeerConnection
+- uid: SIPSorcery.Net.WebRTCWebSocketClient.RTCPeerConnection*
+  name: RTCPeerConnection
+  href: api/SIPSorcery.Net.WebRTCWebSocketClient.html#SIPSorcery_Net_WebRTCWebSocketClient_RTCPeerConnection_
+  commentId: Overload:SIPSorcery.Net.WebRTCWebSocketClient.RTCPeerConnection
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCWebSocketClient.RTCPeerConnection
+  nameWithType: WebRTCWebSocketClient.RTCPeerConnection
+- uid: SIPSorcery.Net.WebRTCWebSocketClient.Start(System.Threading.CancellationToken)
+  name: Start(CancellationToken)
+  href: api/SIPSorcery.Net.WebRTCWebSocketClient.html#SIPSorcery_Net_WebRTCWebSocketClient_Start_System_Threading_CancellationToken_
+  commentId: M:SIPSorcery.Net.WebRTCWebSocketClient.Start(System.Threading.CancellationToken)
+  fullName: SIPSorcery.Net.WebRTCWebSocketClient.Start(System.Threading.CancellationToken)
+  nameWithType: WebRTCWebSocketClient.Start(CancellationToken)
+- uid: SIPSorcery.Net.WebRTCWebSocketClient.Start*
+  name: Start
+  href: api/SIPSorcery.Net.WebRTCWebSocketClient.html#SIPSorcery_Net_WebRTCWebSocketClient_Start_
+  commentId: Overload:SIPSorcery.Net.WebRTCWebSocketClient.Start
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCWebSocketClient.Start
+  nameWithType: WebRTCWebSocketClient.Start
 - uid: SIPSorcery.Net.WebRTCWebSocketPeer
   name: WebRTCWebSocketPeer
   href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html
