@@ -36,7 +36,7 @@ namespace demo
 {
     class Program
     {
-        private const string NODE_DSS_SERVER = "http://192.168.0.50:3000";
+        private const string NODE_DSS_SERVER = "http://127.0.0.1:3000";
         private const string NODE_DSS_MY_USER = "console";
         private const string NODE_DSS_THEIR_USER = "unity";
         //private const string NODE_DSS_MY_USER = "cli";

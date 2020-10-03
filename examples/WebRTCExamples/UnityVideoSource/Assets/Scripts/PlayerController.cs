@@ -101,21 +101,18 @@ public class PlayerController : MonoBehaviour
         _mainCamTexture2D.Apply();
         RenderTexture.active = null;
 
+        // This call to get the raw pixels seems to be the biggest performance hit. On my Win10 i7 machine
+        // frame rate reduces from <200 fps (yes that's correct 200+) to around 20fps with this call.
         var arr = _mainCamTexture2D.GetRawTextureData();
         byte[] flipped = new byte[arr.Length];
 
-        // Unity provides the bitmap in bottom up format. Flip it. 
-        // TODO: Very slow, need another way, perhaps a shader for the GPU?
         int width = _mainCamTexture2D.width;
         int height = _mainCamTexture2D.height;
         int pixelSize = 4;
-        int posn = 0;
+        int stride = width * pixelSize;
         for (int row = height - 1; row >= 0; row--)
         {
-            for (int col = 0; col < width * pixelSize; col++)
-            {
-                flipped[posn++] = arr[row * width * pixelSize + col];
-            }
+            Buffer.BlockCopy(arr, row * stride, flipped, (height - row - 1) * stride, stride);
         }
 
         _webRtcPeer.VideoEncoderEndPoint.ExternalVideoSourceRawSample(FRAMES_PER_SECOND,
@@ -133,7 +130,7 @@ public class PlayerController : MonoBehaviour
 
 public class WebRTCPeer
 {
-    private const string NODE_DSS_SERVER = "http://192.168.0.50:3000";
+    private const string NODE_DSS_SERVER = "http://127.0.0.1:3000";
     private const string NODE_DSS_MY_USER = "unity";
     private const string NODE_DSS_THEIR_USER = "console";
 
@@ -173,7 +170,7 @@ public class WebRTCPeer
         var pc = new SIPSorcery.Net.RTCPeerConnection(null);
 
         // Set up sources and hook up send events to peer connection.
-        AudioExtrasSource audioSrc = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+        AudioExtrasSource audioSrc = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.None });
         audioSrc.OnAudioSourceEncodedSample += pc.SendAudio;
         //var testPatternSource = new VideoTestPatternSource();
         //var videoEncodeEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
