@@ -110,6 +110,12 @@ namespace SIPSorcery.Net
             return Fingerprint(LoadCertificateResource(certificate));
         }
 
+        public static RTCDtlsFingerprint Fingerprint(Org.BouncyCastle.X509.X509Certificate certificate)
+        {
+            var certStruct = X509CertificateStructure.GetInstance(certificate.GetEncoded());
+            return Fingerprint(certStruct);
+        }
+
         public static RTCDtlsFingerprint Fingerprint(X509CertificateStructure c)
         {
             IDigest sha256 = DigestUtilities.GetDigest(HashAlgorithmTag.Sha256.ToString());

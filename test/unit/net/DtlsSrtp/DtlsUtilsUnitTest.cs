@@ -10,10 +10,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -68,8 +66,8 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that the secret key can be loaded from a pfx certificate archive file.
         /// </summary>
         /// <remarks>
-        /// Fails on macOS, see https://github.com/dotnet/runtime/issues/23635. Fixed in .NET Core 5, 
-        /// see https://github.com/dotnet/corefx/pull/42226.
+        /// Fails with netcoreapp on macOS, see https://github.com/dotnet/runtime/issues/23635. Fixed in .NET Core 5, 
+        /// see https://github.com/dotnet/corefx/pull/42226. Works with macOS and mono (net461).
         /// </remarks>
         [Fact]
         public void LoadSecretFromArchiveUnitTest()
@@ -77,20 +75,17 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            //if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            //{
-            //    logger.LogDebug("Test skipped as MacOS is not able to load certificates from a .pfx file pre .NET Core 5.0.");
-            //}
-            //else
-            //{
-                var cert = new X509Certificate2("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
-                Assert.NotNull(cert);
-
-                //var rsaParams = ((RSA)cert.PrivateKey).ExportParameters(true);
-
-                var key = DtlsUtils.LoadPrivateKeyResource(cert);
-                Assert.NotNull(key);
-            //}
+#if NETCORE
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                logger.LogDebug("Test skipped for netcoreapp and MacOS as not able to load certificates from a .pfx file pre .NET Core 5.0.");
+                return;
+            }
+#endif
+            var cert = new X509Certificate2("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
+            Assert.NotNull(cert);
+            var key = DtlsUtils.LoadPrivateKeyResource(cert);
+            Assert.NotNull(key);
         }
 
         /// <summary>
@@ -103,15 +98,31 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
+#if NETCORE
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                logger.LogDebug("Test skipped for netcoreapp and MacOS as not able to load certificates from a .pfx file pre .NET Core 5.0.");
+                return;
+            }
+#endif
+
             var coreFxCert = new X509Certificate2("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
             Assert.NotNull(coreFxCert);
             Assert.NotNull(coreFxCert.PrivateKey);
+
+            string coreFxFingerprint = DtlsUtils.Fingerprint(coreFxCert).ToString();
+            logger.LogDebug($"Core FX certificate fingerprint {coreFxFingerprint}.");
 
             var bcCert = Org.BouncyCastle.Security.DotNetUtilities.FromX509Certificate(coreFxCert);
             Assert.NotNull(bcCert);
 
             var bcKey = Org.BouncyCastle.Security.DotNetUtilities.GetKeyPair(coreFxCert.PrivateKey).Private;
             Assert.NotNull(bcKey);
+
+            string bcFingerprint = DtlsUtils.Fingerprint(bcCert).ToString();
+            logger.LogDebug($"BouncyCastle certificate fingerprint {bcFingerprint}.");
+
+            Assert.Equal(coreFxFingerprint, bcFingerprint);
         }
     }
 }
