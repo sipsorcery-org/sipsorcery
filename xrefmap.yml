@@ -5675,6 +5675,31 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert
   nameWithType: DtlsUtils.CreateSelfSignedCert
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert
+  name: CreateSelfSignedTlsCert()
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert
+  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert()
+  nameWithType: DtlsUtils.CreateSelfSignedTlsCert()
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  name: CreateSelfSignedTlsCert(String, String, AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert(System.String, System.String, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  nameWithType: DtlsUtils.CreateSelfSignedTlsCert(String, String, AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert*
+  name: CreateSelfSignedTlsCert
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert_
+  commentId: Overload:SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert
+  nameWithType: DtlsUtils.CreateSelfSignedTlsCert
+- uid: SIPSorcery.Net.DtlsUtils.DEFAULT_KEY_SIZE
+  name: DEFAULT_KEY_SIZE
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_DEFAULT_KEY_SIZE
+  commentId: F:SIPSorcery.Net.DtlsUtils.DEFAULT_KEY_SIZE
+  fullName: SIPSorcery.Net.DtlsUtils.DEFAULT_KEY_SIZE
+  nameWithType: DtlsUtils.DEFAULT_KEY_SIZE
 - uid: SIPSorcery.Net.DtlsUtils.DigestOf(Org.BouncyCastle.Crypto.IDigest,System.Byte[])
   name: DigestOf(IDigest, Byte[])
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_DigestOf_Org_BouncyCastle_Crypto_IDigest_System_Byte___
@@ -5703,6 +5728,12 @@ references:
   commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)
   fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.Crypto.Tls.Certificate)
   nameWithType: DtlsUtils.Fingerprint(Certificate)
+- uid: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.X509.X509Certificate)
+  name: Fingerprint(X509Certificate)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_Org_BouncyCastle_X509_X509Certificate_
+  commentId: M:SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.X509.X509Certificate)
+  fullName: SIPSorcery.Net.DtlsUtils.Fingerprint(Org.BouncyCastle.X509.X509Certificate)
+  nameWithType: DtlsUtils.Fingerprint(X509Certificate)
 - uid: SIPSorcery.Net.DtlsUtils.Fingerprint(System.Security.Cryptography.X509Certificates.X509Certificate2)
   name: Fingerprint(X509Certificate2)
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_Fingerprint_System_Security_Cryptography_X509Certificates_X509Certificate2_
@@ -9071,19 +9102,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel
   nameWithType: RTCPeerConnection.CreateRtpChannel
-- uid: SIPSorcery.Net.RTCPeerConnection.CurrentCertificate
-  name: CurrentCertificate
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_CurrentCertificate
-  commentId: P:SIPSorcery.Net.RTCPeerConnection.CurrentCertificate
-  fullName: SIPSorcery.Net.RTCPeerConnection.CurrentCertificate
-  nameWithType: RTCPeerConnection.CurrentCertificate
-- uid: SIPSorcery.Net.RTCPeerConnection.CurrentCertificate*
-  name: CurrentCertificate
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_CurrentCertificate_
-  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.CurrentCertificate
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTCPeerConnection.CurrentCertificate
-  nameWithType: RTCPeerConnection.CurrentCertificate
 - uid: SIPSorcery.Net.RTCPeerConnection.currentLocalDescription
   name: currentLocalDescription
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_currentLocalDescription
@@ -9142,6 +9160,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.Dispose
   nameWithType: RTCPeerConnection.Dispose
+- uid: SIPSorcery.Net.RTCPeerConnection.DtlsCertificateFingerprint
+  name: DtlsCertificateFingerprint
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_DtlsCertificateFingerprint
+  commentId: P:SIPSorcery.Net.RTCPeerConnection.DtlsCertificateFingerprint
+  fullName: SIPSorcery.Net.RTCPeerConnection.DtlsCertificateFingerprint
+  nameWithType: RTCPeerConnection.DtlsCertificateFingerprint
+- uid: SIPSorcery.Net.RTCPeerConnection.DtlsCertificateFingerprint*
+  name: DtlsCertificateFingerprint
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_DtlsCertificateFingerprint_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.DtlsCertificateFingerprint
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.DtlsCertificateFingerprint
+  nameWithType: RTCPeerConnection.DtlsCertificateFingerprint
 - uid: SIPSorcery.Net.RTCPeerConnection.getConfiguration
   name: getConfiguration()
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_getConfiguration
