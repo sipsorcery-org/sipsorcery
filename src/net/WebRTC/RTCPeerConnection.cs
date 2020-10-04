@@ -37,6 +37,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
@@ -203,14 +204,20 @@ namespace SIPSorcery.Net
         /// The certificate being used to negotiate the DTLS handshake with the 
         /// remote peer.
         /// </summary>
-        private RTCCertificate _currentCertificate;
-        public RTCCertificate CurrentCertificate
-        {
-            get
-            {
-                return _currentCertificate;
-            }
-        }
+        //private RTCCertificate _currentCertificate;
+        //public RTCCertificate CurrentCertificate
+        //{
+        //    get
+        //    {
+        //        return _currentCertificate;
+        //    }
+        //}
+
+        /// <summary>
+        /// The fingerprint of the certificate being used to negotiate the DTLS handshake with the 
+        /// remote peer.
+        /// </summary>
+        public RTCDtlsFingerprint DtlsCertificateFingerprint { get; private set;}
 
         /// <summary>
         /// Informs the application that session negotiation needs to be done (i.e. a createOffer call 
@@ -289,6 +296,9 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("RTCPeerConnection must have at least one ICE server specified for a relay only transport policy.");
             }
 
+            Org.BouncyCastle.Crypto.Tls.Certificate dtlsCertificate = null;
+            Org.BouncyCastle.Crypto.AsymmetricKeyParameter dtlsPrivateKey = null;
+
             if (configuration != null)
             {
                 _configuration = configuration;
@@ -329,7 +339,8 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        _currentCertificate = usableCert;
+                        dtlsCertificate = DtlsUtils.LoadCertificateChain(usableCert.Certificate);
+                        dtlsPrivateKey = DtlsUtils.LoadPrivateKeyResource(usableCert.Certificate);
                     }
                 }
 
@@ -343,13 +354,15 @@ namespace SIPSorcery.Net
                 _configuration = new RTCConfiguration();
             }
 
-            // No certificate was provided so create a new self signed one.
-            if (_configuration.certificates == null || _configuration.certificates.Count == 0)
+            
+            if (dtlsCertificate == null)
             {
-                _currentCertificate = new RTCCertificate { Certificate = DtlsUtils.CreateSelfSignedCert() };
-                _configuration.certificates = new List<RTCCertificate> { _currentCertificate };
+                // No certificate was provided so create a new self signed one.
+                (dtlsCertificate, dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
             }
 
+            DtlsCertificateFingerprint = DtlsUtils.Fingerprint(dtlsCertificate);
+            
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
 
@@ -393,8 +406,8 @@ namespace SIPSorcery.Net
 
                             _dtlsHandle = new DtlsSrtpTransport(
                                         IceRole == IceRolesEnum.active ?
-                                        (IDtlsSrtpPeer)new DtlsSrtpClient(_currentCertificate.Certificate) :
-                                        (IDtlsSrtpPeer)new DtlsSrtpServer(_currentCertificate.Certificate));
+                                        (IDtlsSrtpPeer)new DtlsSrtpClient(dtlsCertificate, dtlsPrivateKey) :
+                                        (IDtlsSrtpPeer)new DtlsSrtpServer(dtlsCertificate, dtlsPrivateKey));
 
                             _dtlsHandle.OnAlert += OnDtlsAlert;
 
@@ -895,7 +908,8 @@ namespace SIPSorcery.Net
             bool iceCandidatesAdded = false;
             int mediaIndex = 0;
 
-            offerSdp.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
+            //oferSdp.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
+            offerSdp.DtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
 
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)

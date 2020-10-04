@@ -94,13 +94,13 @@ namespace SIPSorcery.Net.UnitTests
 
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
-                certificates = new List<RTCCertificate>
-                {
-                    new RTCCertificate
-                    {
-                        Certificate = DtlsUtils.CreateSelfSignedCert()
-        }
-                },
+                //certificates = new List<RTCCertificate>
+                //{
+                //    new RTCCertificate
+                //    {
+                //        Certificate = DtlsUtils.CreateSelfSignedCert()
+                //    }
+                //},
                 X_UseRtpFeedbackProfile = true
             };
 
