@@ -35,7 +35,8 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DtlsSrtpTransport dtlsTransport = new DtlsSrtpTransport(new DtlsSrtpClient());
+            (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert();
+            DtlsSrtpTransport dtlsTransport = new DtlsSrtpTransport(new DtlsSrtpClient(tlsCert, pvtKey));
 
             Assert.NotNull(dtlsTransport);
         }

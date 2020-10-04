@@ -122,7 +122,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
-        public DtlsSrtpServer() : this(DtlsUtils.CreateSelfSignedCert())
+        public DtlsSrtpServer() : this((Certificate)null, null)
         {
         }
 
@@ -141,6 +141,11 @@ namespace SIPSorcery.Net
 
         public DtlsSrtpServer(Certificate certificateChain, AsymmetricKeyParameter privateKey)
         {
+            if (certificateChain == null && privateKey == null)
+            {
+                (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+            }
+
             this.cipherSuites = base.GetCipherSuites();
 
             this.mPrivateKey = privateKey;
