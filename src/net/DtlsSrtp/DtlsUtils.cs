@@ -362,28 +362,51 @@ namespace SIPSorcery.Net
             // self sign certificate
             var certificate = certificateGenerator.Generate(signatureFactory);
 
-#if NETFRAMEWORK
-            // corresponding private key
-            var info = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(subjectKeyPair.Private);
-
-            // merge into X509Certificate2
-            var x509 = new X509Certificate2(certificate.GetEncoded());
-
-            var seq = (Asn1Sequence)Asn1Object.FromByteArray(info.ParsePrivateKey().GetDerEncoded());
-            if (seq.Count != 9)
+            // Originally pre-processor defines were used to try and pick the supported way to get from a Bouncy Castle
+            // certificate and private key to a .NET certificate. The problem is that setting the private key on a .NET
+            // X509 certificate is possible in .NET Framework but NOT in .NET Core. To complicate matters even further
+            // the workaround in the CovertBouncyCert method of saving a cert + pvt key to a .pfx stream and then
+            // reloading does not work on macOS or Unity (and possibly elsewhere) due to .pfx serialisation not being
+            // compatible. This is the exception from Unity:
+            //
+            // Mono.Security.ASN1..ctor (System.Byte[] data) (at <6a66fe237d4242c9924192d3c28dd540>:0)
+            // Mono.Security.X509.X509Certificate.Parse(System.Byte[] data)(at < 6a66fe237d4242c9924192d3c28dd540 >:0)
+            //
+            // Summary:
+            // .NET Framework
+            //  - Set x509.PrivateKey works.
+            // .NET Standard:
+            //  - Set x509.PrivateKey for a .NET Framework application.
+            //  - Set x509.PrivateKey for a .NET Core application FAILS.
+            // .NET Core:
+            //  - Set x509.PrivateKey for a .NET Core application FAILS.
+            //  - PFX serialisation works on Windows.
+            //  - PFX serialisation FAILS on macOS.
+            try
             {
-                throw new Org.BouncyCastle.OpenSsl.PemException("malformed sequence in RSA private key");
+                // corresponding private key
+                var info = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(subjectKeyPair.Private);
+
+                // merge into X509Certificate2
+                var x509 = new X509Certificate2(certificate.GetEncoded());
+
+                var seq = (Asn1Sequence)Asn1Object.FromByteArray(info.ParsePrivateKey().GetDerEncoded());
+                if (seq.Count != 9)
+                {
+                    throw new Org.BouncyCastle.OpenSsl.PemException("malformed sequence in RSA private key");
+                }
+
+                var rsa = RsaPrivateKeyStructure.GetInstance(seq); //new RsaPrivateKeyStructure(seq);
+                var rsaparams = new RsaPrivateCrtKeyParameters(
+                    rsa.Modulus, rsa.PublicExponent, rsa.PrivateExponent, rsa.Prime1, rsa.Prime2, rsa.Exponent1, rsa.Exponent2, rsa.Coefficient);
+
+                x509.PrivateKey = ToRSA(rsaparams);
+                return x509;
             }
-
-            var rsa = RsaPrivateKeyStructure.GetInstance(seq); //new RsaPrivateKeyStructure(seq);
-            var rsaparams = new RsaPrivateCrtKeyParameters(
-                rsa.Modulus, rsa.PublicExponent, rsa.PrivateExponent, rsa.Prime1, rsa.Prime2, rsa.Exponent1, rsa.Exponent2, rsa.Coefficient);
-
-            x509.PrivateKey = ToRSA(rsaparams);
-            return x509;
-#else
-            return ConvertBouncyCert(certificate, subjectKeyPair);
-#endif
+            catch
+            {
+                return ConvertBouncyCert(certificate, subjectKeyPair);
+            }
         }
 
         /// <remarks>Plagarised from https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs.
