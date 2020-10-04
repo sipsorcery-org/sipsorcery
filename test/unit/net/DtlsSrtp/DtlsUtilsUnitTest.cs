@@ -79,7 +79,7 @@ namespace SIPSorcery.Net.UnitTests
 #if NETCOREAPP
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                logger.LogDebug("Test skipped for netcoreapp and MacOS as not able to load certificates from a .pfx file pre .NET Core 5.0.");
+                logger.LogDebug("Test skipped for netcoreapp and macOS as not able to load certificates from a .pfx file pre .NET Core 5.0.");
                 return;
             }
 #endif
@@ -102,7 +102,7 @@ namespace SIPSorcery.Net.UnitTests
 #if NETCOREAPP
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                logger.LogDebug("Test skipped for netcoreapp and MacOS as not able to load certificates from a .pfx file pre .NET Core 5.0.");
+                logger.LogDebug("Test skipped for netcoreapp and macOS as not able to load certificates from a .pfx file pre .NET Core 5.0.");
                 return;
             }
 #endif
