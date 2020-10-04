@@ -13,6 +13,7 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -36,12 +37,12 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var cert = DtlsUtils.CreateSelfSignedCert();
+            (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert();
 
-            logger.LogDebug(cert.ToString());
+            logger.LogDebug(tlsCert.ToString());
 
-            Assert.NotNull(cert);
-            Assert.NotNull(cert.PrivateKey);
+            Assert.NotNull(tlsCert);
+            Assert.NotNull(pvtKey);
         }
 
         /// <summary>
@@ -53,10 +54,10 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var cert = DtlsUtils.CreateSelfSignedCert();
-            Assert.NotNull(cert);
+            (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert();
+            Assert.NotNull(tlsCert);
 
-            var fingerprint = DtlsUtils.Fingerprint(cert);
+            var fingerprint = DtlsUtils.Fingerprint(tlsCert);
             logger.LogDebug($"Fingerprint {fingerprint}.");
 
             Assert.NotNull(fingerprint.algorithm);
@@ -67,7 +68,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that the secret key can be loaded from a pfx certificate archive file.
         /// </summary>
         /// <remarks>
-        /// Fails on macosx, see https://github.com/dotnet/runtime/issues/23635. Fixed in .NET Core 5, 
+        /// Fails on macOS, see https://github.com/dotnet/runtime/issues/23635. Fixed in .NET Core 5, 
         /// see https://github.com/dotnet/corefx/pull/42226.
         /// </remarks>
         [Fact]
@@ -76,12 +77,12 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                logger.LogDebug("Test skipped as MacOS is not able to load certificates from a .pfx file pre .NET Core 5.0.");
-            }
-            else
-            {
+            //if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            //{
+            //    logger.LogDebug("Test skipped as MacOS is not able to load certificates from a .pfx file pre .NET Core 5.0.");
+            //}
+            //else
+            //{
                 var cert = new X509Certificate2("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
                 Assert.NotNull(cert);
 
@@ -89,7 +90,28 @@ namespace SIPSorcery.Net.UnitTests
 
                 var key = DtlsUtils.LoadPrivateKeyResource(cert);
                 Assert.NotNull(key);
-            }
+            //}
+        }
+
+        /// <summary>
+        /// Checks that converting a .NET Core framework certificate to a Bouncy Castle certificate can encrypt and decrypt
+        /// correctly.
+        /// </summary>
+        [Fact]
+        public void BouncyCertFromCoreFxCert()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var coreFxCert = new X509Certificate2("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
+            Assert.NotNull(coreFxCert);
+            Assert.NotNull(coreFxCert.PrivateKey);
+
+            var bcCert = Org.BouncyCastle.Security.DotNetUtilities.FromX509Certificate(coreFxCert);
+            Assert.NotNull(bcCert);
+
+            var bcKey = Org.BouncyCastle.Security.DotNetUtilities.GetKeyPair(coreFxCert.PrivateKey).Private;
+            Assert.NotNull(bcKey);
         }
     }
 }

@@ -104,7 +104,7 @@ namespace SIPSorcery.Net
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
         public DtlsSrtpClient() :
-            this(DtlsUtils.CreateSelfSignedCert())
+            this(null, null, null)
         {
         }
 
@@ -130,6 +130,11 @@ namespace SIPSorcery.Net
 
         public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData)
         {
+            if(certificateChain == null && privateKey == null)
+            {
+                (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+            }
+
             if (clientSrtpData == null)
             {
                 SecureRandom random = new SecureRandom();
@@ -151,10 +156,8 @@ namespace SIPSorcery.Net
             Fingerprint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
         }
 
-        public DtlsSrtpClient(UseSrtpData clientSrtpData) : this(DtlsUtils.CreateSelfSignedCert())
-        {
-            this.clientSrtpData = clientSrtpData;
-        }
+        public DtlsSrtpClient(UseSrtpData clientSrtpData) : this(null, null, clientSrtpData)
+        { }
 
         public override IDictionary GetClientExtensions()
         {
