@@ -10,6 +10,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -75,7 +76,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-#if NETCORE
+#if NETCOREAPP
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 logger.LogDebug("Test skipped for netcoreapp and MacOS as not able to load certificates from a .pfx file pre .NET Core 5.0.");
@@ -98,7 +99,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-#if NETCORE
+#if NETCOREAPP
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 logger.LogDebug("Test skipped for netcoreapp and MacOS as not able to load certificates from a .pfx file pre .NET Core 5.0.");
