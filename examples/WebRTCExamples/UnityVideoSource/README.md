@@ -16,4 +16,10 @@ The screenshot below shows the game running in the Unity Editor and the same vid
 
 In this case both programs are on the same machine but the point of using WebRTC is that the two programs could be anywhere on the Internet and still able to communicate.
 
+Display in console:
+
 ![Unity game player webrtc source screenshot](unity_webrtc_video_source.png)
+
+Display in browser:
+
+![Unity game player webrtc source screenshot](unity_to_browser.png)

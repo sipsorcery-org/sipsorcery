@@ -20,6 +20,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using CommandLine;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -30,42 +31,65 @@ using Serilog.Extensions.Logging;
 
 namespace demo
 {
+    public class Options
+    {
+        [Option("nodedss", Required = false,
+            HelpText = "Address and ID's for a node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://127.0.0.1:3000;myid;theirid\".")]
+        public string NodeDssServer { get; set; }
+    }
+
     class Program
     {
         private const int WEBSOCKET_PORT = 8081;
-        private const string NODE_DSS_SERVER = "http://192.168.0.50:3000";
-        private const string NODE_DSS_MY_USER = "svr";
-        private const string NODE_DSS_THEIR_USER = "cli";
         private const string STUN_URL = "stun:stun.sipsorcery.com";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-        static void Main()
+        static async Task Main(string[] args)
         {
             Console.WriteLine("WebRTC Test Pattern Server Demo");
 
             logger = AddConsoleLogger();
 
-            // Start web socket.
-            Console.WriteLine("Starting web socket server...");
-            var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
-            webSocketServer.Start();
+            CancellationTokenSource cts = new CancellationTokenSource();
 
-            Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-            Console.WriteLine("Press ctrl-c to exit.");
+            var parseResult = Parser.Default.ParseArguments<Options>(args);
+            var options = (parseResult as Parsed<Options>)?.Value;
 
-            //var nodeDssWebRTCPeer = new WebRTCNodeDssPeer(NODE_DSS_SERVER, NODE_DSS_MY_USER, NODE_DSS_THEIR_USER, CreatePeerConnection);
-            //await nodeDssWebRTCPeer.StartSendOffer();
+            if (options?.NodeDssServer == null)
+            {
+                // Start web socket.
+                Console.WriteLine("Starting web socket server...");
+                var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+                webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+                webSocketServer.Start();
 
-            //Console.WriteLine($"Waiting for node DSS peer to connect...");
-            //Console.WriteLine("Press ctrl-c to exit.");
+                Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
+                Console.WriteLine("Press ctrl-c to exit.");
+            }
+            else
+            {
+                string[] fields = options.NodeDssServer.Split(';');
+                if (fields.Length < 3)
+                {
+                    throw new ArgumentException("The 'nodedss' option must contain 3 semi-colon separated fields, e.g. --nodedss=http://127.0.0.1:3000;myid;theirid.");
+                }
+
+                Console.WriteLine($"Sending offer to node dss server at {fields[0]}, our ID={fields[1]}, their ID={fields[2]}.");
+
+                var nodeDssPeer = new WebRTCNodeDssPeer(fields[0], fields[1], fields[2], CreatePeerConnection);
+                await nodeDssPeer.Start(cts);
+
+                Console.WriteLine($"Waiting for node DSS peer to connect...");
+                Console.WriteLine("Press ctrl-c to exit.");
+            }
 
             // Ctrl-c will gracefully exit the call at any point.
             ManualResetEvent exitMre = new ManualResetEvent(false);
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
+                cts.Cancel();
                 exitMre.Set();
             };
 

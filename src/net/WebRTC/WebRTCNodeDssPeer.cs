@@ -19,6 +19,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +37,8 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class WebRTCNodeDssPeer
     {
-        private const int NODE_SERVER_POLL_PERIOD = 500; // Period in milliseconds to poll the node server to check for new messages.
+        private const int NODE_SERVER_POLL_PERIOD = 500;    // Period in milliseconds to poll the node server to check for new messages.
+        private const int CONNECTION_RETRY_PERIOD = 5000;   // Period in milliseconds to retry if the initial node-dss connection attempt fails.
 
         private ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -142,7 +144,27 @@ namespace SIPSorcery.Net
 
                 while (!ct.IsCancellationRequested)
                 {
-                    var res = await httpClient.GetAsync($"{_nodeDssServerUri}data/{_ourID}");
+                    HttpResponseMessage res = null;
+
+                    try
+                    {
+                        res = await httpClient.GetAsync($"{_nodeDssServerUri}data/{_ourID}", ct);
+                    }
+                    catch (HttpRequestException e)
+                        when (e.InnerException is SocketException && (e.InnerException as SocketException).SocketErrorCode == SocketError.ConnectionRefused)
+                    {
+                        if (isInitialReceive)
+                        {
+                            logger.LogDebug($"node-dss server initial connection attempt failed, will retry in {CONNECTION_RETRY_PERIOD}ms.");
+                            await Task.Delay(CONNECTION_RETRY_PERIOD);
+                            continue;
+                        }
+                        else
+                        {
+                            logger.LogDebug($"node-dss server connection attempt failed.");
+                            break;
+                        }
+                    }
 
                     if (res.StatusCode == HttpStatusCode.OK)
                     {
@@ -176,6 +198,7 @@ namespace SIPSorcery.Net
             }
             finally
             {
+                logger.LogDebug("node-dss receive task exiting.");
                 _isReceiving = false;
             }
         }
