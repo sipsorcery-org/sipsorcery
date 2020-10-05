@@ -115,26 +115,13 @@ namespace SIPSorcery.Net
         /// </summary>
         private async Task SendOffer(HttpClient httpClient)
         {
-            try
-            {
-                logger.LogDebug("node-dss sending initial SDP offer to server.");
+            logger.LogDebug("node-dss sending initial SDP offer to server.");
 
-                var offerSdp = _pc.createOffer(null);
+            var offerSdp = _pc.createOffer(null);
 
-                logger.LogDebug($"Offer SDP type: {offerSdp.type}");
-                logger.LogDebug($"Offer SDP: {offerSdp.sdp}");
+            await _pc.setLocalDescription(offerSdp);
 
-                //var offerJson = JsonConvert.SerializeObject(offerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
-                //var offerJson = JsonConvert.SerializeObject(offerSdp);
-
-                await _pc.setLocalDescription(offerSdp);
-
-                await SendToNSS(httpClient, offerSdp.toJSON());
-            }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception SendOffer. {excp}");
-            }
+            await SendToNSS(httpClient, offerSdp.toJSON());
         }
 
         private async Task SendToNSS(HttpClient httpClient, string jsonStr)
@@ -198,14 +185,12 @@ namespace SIPSorcery.Net
             if (RTCIceCandidateInit.TryParse(jsonStr, out var iceCandidateInit))
             {
                 logger.LogDebug("Got remote ICE candidate.");
-                //var iceCandidateInit = JsonConvert.DeserializeObject<RTCIceCandidateInit>(jsonStr);
                 pc.addIceCandidate(iceCandidateInit);
             }
             else if (RTCSessionDescriptionInit.TryParse(jsonStr, out var descriptionInit))
             {
                 logger.LogDebug($"Got remote SDP, type {descriptionInit.type}.");
 
-                //RTCSessionDescriptionInit descriptionInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(jsonStr);
                 var result = pc.setRemoteDescription(descriptionInit);
                 if (result != SetDescriptionResultEnum.OK)
                 {
@@ -218,7 +203,6 @@ namespace SIPSorcery.Net
                     var answerSdp = pc.createAnswer(null);
                     await pc.setLocalDescription(answerSdp);
 
-                    //return JsonConvert.SerializeObject(answerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
                     return answerSdp.toJSON();
                 }
             }

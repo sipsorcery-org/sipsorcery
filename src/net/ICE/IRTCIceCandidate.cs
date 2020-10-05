@@ -96,8 +96,6 @@ namespace SIPSorcery.Net
             //     $"  \"candidate\": \"{candidate}\"" +
             //     "}";
 
-            //return JsonSerializer.Serialize(this);
-
             return TinyJson.JSONWriter.ToJson(this);
         }
 

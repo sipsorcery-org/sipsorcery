@@ -100,7 +100,6 @@ namespace SIPSorcery.Net
 
         public static bool TryParse(string json, out RTCSessionDescriptionInit init)
         {
-            //init = JsonSerializer.Deserialize<RTCSessionDescriptionInit>(json);
             init = null;
 
             if (string.IsNullOrWhiteSpace(json))

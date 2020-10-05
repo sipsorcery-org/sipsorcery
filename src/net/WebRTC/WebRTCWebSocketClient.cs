@@ -133,12 +133,12 @@ namespace SIPSorcery.Net
             if (RTCIceCandidateInit.TryParse(jsonStr, out var iceCandidateInit))
             {
                 logger.LogDebug("Got remote ICE candidate.");
-                //var iceCandidateInit = JsonConvert.DeserializeObject<RTCIceCandidateInit>(jsonStr);
                 pc.addIceCandidate(iceCandidateInit);
             }
             else if (RTCSessionDescriptionInit.TryParse(jsonStr, out var descriptionInit))
             {
-                //RTCSessionDescriptionInit descriptionInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(jsonStr);
+                logger.LogDebug($"Got remote SDP, type {descriptionInit.type}.");
+
                 var result = pc.setRemoteDescription(descriptionInit);
                 if (result != SetDescriptionResultEnum.OK)
                 {
@@ -151,7 +151,6 @@ namespace SIPSorcery.Net
                     var answerSdp = pc.createAnswer(null);
                     await pc.setLocalDescription(answerSdp).ConfigureAwait(false);
 
-                    //return JsonConvert.SerializeObject(answerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
                     return answerSdp.toJSON();
                 }
             }

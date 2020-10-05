@@ -16,7 +16,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using WebSocketSharp;
@@ -48,12 +47,12 @@ namespace SIPSorcery.Net
             if (RTCIceCandidateInit.TryParse(e.Data, out var iceCandidateInit))
             {
                 logger.LogDebug("Got remote ICE candidate.");
-                //var iceCandidateInit = JsonConvert.DeserializeObject<RTCIceCandidateInit>(e.Data);
                 _pc.addIceCandidate(iceCandidateInit);
             }
             else if (RTCSessionDescriptionInit.TryParse(e.Data, out var descriptionInit))
             {
-                //RTCSessionDescriptionInit descriptionInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(e.Data);
+                logger.LogDebug($"Got remote SDP, type {descriptionInit.type}.");
+
                 var result = _pc.setRemoteDescription(descriptionInit);
                 if (result != SetDescriptionResultEnum.OK)
                 {
@@ -89,8 +88,6 @@ namespace SIPSorcery.Net
             logger.LogDebug($"Sending SDP offer to client {Context.UserEndPoint}.");
             logger.LogDebug(offerSdp.sdp);
 
-            //Context.WebSocket.Send(JsonConvert.SerializeObject(offerSdp,
-            //    new Newtonsoft.Json.Converters.StringEnumConverter()));
             Context.WebSocket.Send(offerSdp.toJSON());
         }
     }
