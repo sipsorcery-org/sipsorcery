@@ -86,6 +86,41 @@ namespace SIPSorcery.Net
         public string sdpMid { get; set; }
         public ushort sdpMLineIndex { get; set; }
         public string usernameFragment { get; set; }
+
+        public string toJSON()
+        {
+            //return "{" +
+            //     $"  \"sdpMid\": \"{sdpMid ?? sdpMLineIndex.ToString()}\"," +
+            //     $"  \"sdpMLineIndex\": {sdpMLineIndex}," +
+            //     $"  \"usernameFragment\": \"{usernameFragment}\"," +
+            //     $"  \"candidate\": \"{candidate}\"" +
+            //     "}";
+
+            //return JsonSerializer.Serialize(this);
+
+            return TinyJson.JSONWriter.ToJson(this);
+        }
+
+        public static bool TryParse(string json, out RTCIceCandidateInit init)
+        {
+            //init = JsonSerializer.Deserialize< RTCIceCandidateInit>(json);
+
+            init = null;
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+            else
+            {
+                init = TinyJson.JSONParser.FromJson<RTCIceCandidateInit>(json);
+
+                // To qualify as parsed all required fields must be set.
+                return init != null &&
+                init.candidate != null &&
+                init.sdpMid != null;
+            }
+        }
     }
 
     /// <summary>

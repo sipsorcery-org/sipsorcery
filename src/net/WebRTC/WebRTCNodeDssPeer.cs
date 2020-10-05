@@ -20,11 +20,9 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace SIPSorcery.Net
 {
@@ -59,17 +57,17 @@ namespace SIPSorcery.Net
         /// <param name="theirID">The arbitrary ID the remote peer is using.</param>
         /// <param name="createPeerConnection">Function delegate used to create a new WebRTC peer connection.</param>
         public WebRTCNodeDssPeer(
-            string nodeDssServer, 
-            string ourID, 
+            string nodeDssServer,
+            string ourID,
             string theirID,
             Func<Task<RTCPeerConnection>> createPeerConnection)
         {
-            if(string.IsNullOrWhiteSpace(nodeDssServer))
+            if (string.IsNullOrWhiteSpace(nodeDssServer))
             {
                 throw new ArgumentNullException("The node DSS server URI must be supplied.");
             }
 
-            if(string.IsNullOrWhiteSpace(ourID))
+            if (string.IsNullOrWhiteSpace(ourID))
             {
                 throw new ArgumentNullException("ourID");
             }
@@ -96,7 +94,7 @@ namespace SIPSorcery.Net
             CancellationTokenSource linkedSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token, peerConnectedCancellation.Token);
 
             var nodeDssClient = new HttpClient();
-            
+
             _pc = await _createPeerConnection();
             _pc.onconnectionstatechange += (state) =>
             {
@@ -117,13 +115,26 @@ namespace SIPSorcery.Net
         /// </summary>
         private async Task SendOffer(HttpClient httpClient)
         {
-            logger.LogDebug("node-dss sending initial SDP offer to server.");
+            try
+            {
+                logger.LogDebug("node-dss sending initial SDP offer to server.");
 
-            var offerSdp = _pc.createOffer(null);
-            await _pc.setLocalDescription(offerSdp);
+                var offerSdp = _pc.createOffer(null);
 
-            var offerJson = JsonConvert.SerializeObject(offerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
-            await SendToNSS(httpClient, offerJson);
+                logger.LogDebug($"Offer SDP type: {offerSdp.type}");
+                logger.LogDebug($"Offer SDP: {offerSdp.sdp}");
+
+                //var offerJson = JsonConvert.SerializeObject(offerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
+                //var offerJson = JsonConvert.SerializeObject(offerSdp);
+
+                await _pc.setLocalDescription(offerSdp);
+
+                await SendToNSS(httpClient, offerSdp.toJSON());
+            }
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception SendOffer. {excp}");
+            }
         }
 
         private async Task SendToNSS(HttpClient httpClient, string jsonStr)
@@ -151,14 +162,14 @@ namespace SIPSorcery.Net
                         var content = await res.Content.ReadAsStringAsync();
                         var resp = await OnMessage(content, pc);
 
-                        if(resp != null)
+                        if (resp != null)
                         {
                             await SendToNSS(httpClient, resp);
                         }
                     }
                     else if (res.StatusCode == HttpStatusCode.NotFound)
                     {
-                        if(isInitialReceive)
+                        if (isInitialReceive)
                         {
                             // We are the first peer to connect. Send the offer so it will be waiting
                             // for the remote peer.
@@ -184,15 +195,17 @@ namespace SIPSorcery.Net
 
         private async Task<string> OnMessage(string jsonStr, RTCPeerConnection pc)
         {
-            if (Regex.Match(jsonStr, @"^[^,]*candidate").Success)
+            if (RTCIceCandidateInit.TryParse(jsonStr, out var iceCandidateInit))
             {
                 logger.LogDebug("Got remote ICE candidate.");
-                var iceCandidateInit = JsonConvert.DeserializeObject<RTCIceCandidateInit>(jsonStr);
+                //var iceCandidateInit = JsonConvert.DeserializeObject<RTCIceCandidateInit>(jsonStr);
                 pc.addIceCandidate(iceCandidateInit);
             }
-            else
+            else if (RTCSessionDescriptionInit.TryParse(jsonStr, out var descriptionInit))
             {
-                RTCSessionDescriptionInit descriptionInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(jsonStr);
+                logger.LogDebug($"Got remote SDP, type {descriptionInit.type}.");
+
+                //RTCSessionDescriptionInit descriptionInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(jsonStr);
                 var result = pc.setRemoteDescription(descriptionInit);
                 if (result != SetDescriptionResultEnum.OK)
                 {
@@ -200,13 +213,18 @@ namespace SIPSorcery.Net
                     pc.Close("failed to set remote description");
                 }
 
-                if(descriptionInit.type == RTCSdpType.offer)
+                if (descriptionInit.type == RTCSdpType.offer)
                 {
                     var answerSdp = pc.createAnswer(null);
                     await pc.setLocalDescription(answerSdp);
 
-                    return JsonConvert.SerializeObject(answerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
+                    //return JsonConvert.SerializeObject(answerSdp, new Newtonsoft.Json.Converters.StringEnumConverter());
+                    return answerSdp.toJSON();
                 }
+            }
+            else
+            {
+                logger.LogWarning($"node-dss could not parse JSON message. {jsonStr}");
             }
 
             return null;

@@ -111,5 +111,35 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug(candidateA.ToString());
             logger.LogDebug(candidateB.ToString());
         }
+
+        /// <summary>
+        /// Tests that serialising to JSON a candidate works correctly.
+        /// </summary>
+        [Fact]
+        public void ToJsonUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
+
+            Assert.NotNull(candidate);
+            Assert.Equal(RTCIceCandidateType.host, candidate.type);
+            Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
+
+            logger.LogDebug(candidate.toJSON());
+
+            bool parseResult = RTCIceCandidateInit.TryParse(candidate.toJSON(), out var init);
+
+            Assert.True(parseResult);
+
+            Assert.Equal(0, init.sdpMLineIndex);
+            Assert.Equal("0", init.sdpMid);
+
+            var initCandidate = RTCIceCandidate.Parse(init.candidate);
+
+            Assert.Equal(RTCIceCandidateType.host, initCandidate.type);
+            Assert.Equal(RTCIceProtocol.udp, initCandidate.protocol);
+        }
     }
 }
