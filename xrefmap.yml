@@ -8503,6 +8503,35 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidateInit.sdpMLineIndex
   nameWithType: RTCIceCandidateInit.sdpMLineIndex
+- uid: SIPSorcery.Net.RTCIceCandidateInit.toJSON
+  name: toJSON()
+  href: api/SIPSorcery.Net.RTCIceCandidateInit.html#SIPSorcery_Net_RTCIceCandidateInit_toJSON
+  commentId: M:SIPSorcery.Net.RTCIceCandidateInit.toJSON
+  fullName: SIPSorcery.Net.RTCIceCandidateInit.toJSON()
+  nameWithType: RTCIceCandidateInit.toJSON()
+- uid: SIPSorcery.Net.RTCIceCandidateInit.toJSON*
+  name: toJSON
+  href: api/SIPSorcery.Net.RTCIceCandidateInit.html#SIPSorcery_Net_RTCIceCandidateInit_toJSON_
+  commentId: Overload:SIPSorcery.Net.RTCIceCandidateInit.toJSON
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCIceCandidateInit.toJSON
+  nameWithType: RTCIceCandidateInit.toJSON
+- uid: SIPSorcery.Net.RTCIceCandidateInit.TryParse(System.String,SIPSorcery.Net.RTCIceCandidateInit@)
+  name: TryParse(String, out RTCIceCandidateInit)
+  href: api/SIPSorcery.Net.RTCIceCandidateInit.html#SIPSorcery_Net_RTCIceCandidateInit_TryParse_System_String_SIPSorcery_Net_RTCIceCandidateInit__
+  commentId: M:SIPSorcery.Net.RTCIceCandidateInit.TryParse(System.String,SIPSorcery.Net.RTCIceCandidateInit@)
+  name.vb: TryParse(String, ByRef RTCIceCandidateInit)
+  fullName: SIPSorcery.Net.RTCIceCandidateInit.TryParse(System.String, out SIPSorcery.Net.RTCIceCandidateInit)
+  fullName.vb: SIPSorcery.Net.RTCIceCandidateInit.TryParse(System.String, ByRef SIPSorcery.Net.RTCIceCandidateInit)
+  nameWithType: RTCIceCandidateInit.TryParse(String, out RTCIceCandidateInit)
+  nameWithType.vb: RTCIceCandidateInit.TryParse(String, ByRef RTCIceCandidateInit)
+- uid: SIPSorcery.Net.RTCIceCandidateInit.TryParse*
+  name: TryParse
+  href: api/SIPSorcery.Net.RTCIceCandidateInit.html#SIPSorcery_Net_RTCIceCandidateInit_TryParse_
+  commentId: Overload:SIPSorcery.Net.RTCIceCandidateInit.TryParse
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCIceCandidateInit.TryParse
+  nameWithType: RTCIceCandidateInit.TryParse
 - uid: SIPSorcery.Net.RTCIceCandidateInit.usernameFragment
   name: usernameFragment
   href: api/SIPSorcery.Net.RTCIceCandidateInit.html#SIPSorcery_Net_RTCIceCandidateInit_usernameFragment
@@ -10739,6 +10768,35 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCSessionDescriptionInit.sdp
   nameWithType: RTCSessionDescriptionInit.sdp
+- uid: SIPSorcery.Net.RTCSessionDescriptionInit.toJSON
+  name: toJSON()
+  href: api/SIPSorcery.Net.RTCSessionDescriptionInit.html#SIPSorcery_Net_RTCSessionDescriptionInit_toJSON
+  commentId: M:SIPSorcery.Net.RTCSessionDescriptionInit.toJSON
+  fullName: SIPSorcery.Net.RTCSessionDescriptionInit.toJSON()
+  nameWithType: RTCSessionDescriptionInit.toJSON()
+- uid: SIPSorcery.Net.RTCSessionDescriptionInit.toJSON*
+  name: toJSON
+  href: api/SIPSorcery.Net.RTCSessionDescriptionInit.html#SIPSorcery_Net_RTCSessionDescriptionInit_toJSON_
+  commentId: Overload:SIPSorcery.Net.RTCSessionDescriptionInit.toJSON
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCSessionDescriptionInit.toJSON
+  nameWithType: RTCSessionDescriptionInit.toJSON
+- uid: SIPSorcery.Net.RTCSessionDescriptionInit.TryParse(System.String,SIPSorcery.Net.RTCSessionDescriptionInit@)
+  name: TryParse(String, out RTCSessionDescriptionInit)
+  href: api/SIPSorcery.Net.RTCSessionDescriptionInit.html#SIPSorcery_Net_RTCSessionDescriptionInit_TryParse_System_String_SIPSorcery_Net_RTCSessionDescriptionInit__
+  commentId: M:SIPSorcery.Net.RTCSessionDescriptionInit.TryParse(System.String,SIPSorcery.Net.RTCSessionDescriptionInit@)
+  name.vb: TryParse(String, ByRef RTCSessionDescriptionInit)
+  fullName: SIPSorcery.Net.RTCSessionDescriptionInit.TryParse(System.String, out SIPSorcery.Net.RTCSessionDescriptionInit)
+  fullName.vb: SIPSorcery.Net.RTCSessionDescriptionInit.TryParse(System.String, ByRef SIPSorcery.Net.RTCSessionDescriptionInit)
+  nameWithType: RTCSessionDescriptionInit.TryParse(String, out RTCSessionDescriptionInit)
+  nameWithType.vb: RTCSessionDescriptionInit.TryParse(String, ByRef RTCSessionDescriptionInit)
+- uid: SIPSorcery.Net.RTCSessionDescriptionInit.TryParse*
+  name: TryParse
+  href: api/SIPSorcery.Net.RTCSessionDescriptionInit.html#SIPSorcery_Net_RTCSessionDescriptionInit_TryParse_
+  commentId: Overload:SIPSorcery.Net.RTCSessionDescriptionInit.TryParse
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCSessionDescriptionInit.TryParse
+  nameWithType: RTCSessionDescriptionInit.TryParse
 - uid: SIPSorcery.Net.RTCSessionDescriptionInit.type
   name: type
   href: api/SIPSorcery.Net.RTCSessionDescriptionInit.html#SIPSorcery_Net_RTCSessionDescriptionInit_type
@@ -38883,3 +38941,50 @@ references:
   commentId: F:SIPSorcery.Sys.UDPPacket.SourcePort
   fullName: SIPSorcery.Sys.UDPPacket.SourcePort
   nameWithType: UDPPacket.SourcePort
+- uid: TinyJson
+  name: TinyJson
+  href: api/TinyJson.html
+  commentId: N:TinyJson
+  fullName: TinyJson
+  nameWithType: TinyJson
+- uid: TinyJson.JSONParser
+  name: JSONParser
+  href: api/TinyJson.JSONParser.html
+  commentId: T:TinyJson.JSONParser
+  fullName: TinyJson.JSONParser
+  nameWithType: JSONParser
+- uid: TinyJson.JSONParser.FromJson*
+  name: FromJson
+  href: api/TinyJson.JSONParser.html#TinyJson_JSONParser_FromJson_
+  commentId: Overload:TinyJson.JSONParser.FromJson
+  isSpec: "True"
+  fullName: TinyJson.JSONParser.FromJson
+  nameWithType: JSONParser.FromJson
+- uid: TinyJson.JSONParser.FromJson``1(System.String)
+  name: FromJson<T>(String)
+  href: api/TinyJson.JSONParser.html#TinyJson_JSONParser_FromJson__1_System_String_
+  commentId: M:TinyJson.JSONParser.FromJson``1(System.String)
+  name.vb: FromJson(Of T)(String)
+  fullName: TinyJson.JSONParser.FromJson<T>(System.String)
+  fullName.vb: TinyJson.JSONParser.FromJson(Of T)(System.String)
+  nameWithType: JSONParser.FromJson<T>(String)
+  nameWithType.vb: JSONParser.FromJson(Of T)(String)
+- uid: TinyJson.JSONWriter
+  name: JSONWriter
+  href: api/TinyJson.JSONWriter.html
+  commentId: T:TinyJson.JSONWriter
+  fullName: TinyJson.JSONWriter
+  nameWithType: JSONWriter
+- uid: TinyJson.JSONWriter.ToJson(System.Object)
+  name: ToJson(Object)
+  href: api/TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_System_Object_
+  commentId: M:TinyJson.JSONWriter.ToJson(System.Object)
+  fullName: TinyJson.JSONWriter.ToJson(System.Object)
+  nameWithType: JSONWriter.ToJson(Object)
+- uid: TinyJson.JSONWriter.ToJson*
+  name: ToJson
+  href: api/TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_
+  commentId: Overload:TinyJson.JSONWriter.ToJson
+  isSpec: "True"
+  fullName: TinyJson.JSONWriter.ToJson
+  nameWithType: JSONWriter.ToJson
