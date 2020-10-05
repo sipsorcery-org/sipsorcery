@@ -79,28 +79,6 @@ namespace SIPSorcery.Examples
         public string AcceptIceTypes { get; set; }
     }
 
-    public class WebRtcClient : WebSocketBehavior
-    {
-        public RTCPeerConnection pc;
-
-        public event Func<WebSocketContext, Task<RTCPeerConnection>> WebSocketOpened;
-        public event Func<WebSocketContext, RTCPeerConnection, string, Task> OnMessageReceived;
-
-        public WebRtcClient()
-        { }
-
-        protected override void OnMessage(WebSocketSharp.MessageEventArgs e)
-        {
-            OnMessageReceived(this.Context, pc, e.Data);
-        }
-
-        protected override async void OnOpen()
-        {
-            base.OnOpen();
-            pc = await WebSocketOpened(this.Context);
-        }
-    }
-
     class Program
     {
         private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
