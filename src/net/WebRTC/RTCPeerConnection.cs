@@ -37,7 +37,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
@@ -88,6 +87,34 @@ namespace SIPSorcery.Net
         /// A string representation of the Session Description.
         /// </summary>
         public string sdp { get; set; }
+
+        public string toJSON()
+        {
+            //return "{" +
+            //    $"  \"type\": \"{type}\"," +
+            //    $"  \"sdp\": \"{sdp.Replace(SDP.CRLF, @"\\n").Replace("\"", "\\\"")}\"" +
+            //    "}";
+
+            return TinyJson.JSONWriter.ToJson(this);
+        }
+
+        public static bool TryParse(string json, out RTCSessionDescriptionInit init)
+        {
+            init = null;
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+            else
+            {
+                init = TinyJson.JSONParser.FromJson<RTCSessionDescriptionInit>(json);
+
+                // To qualify as parsed all required fields must be set.
+                return init != null &&
+                    init.sdp != null;
+            }
+        }
     }
 
     /// <summary>
@@ -217,7 +244,7 @@ namespace SIPSorcery.Net
         /// The fingerprint of the certificate being used to negotiate the DTLS handshake with the 
         /// remote peer.
         /// </summary>
-        public RTCDtlsFingerprint DtlsCertificateFingerprint { get; private set;}
+        public RTCDtlsFingerprint DtlsCertificateFingerprint { get; private set; }
 
         /// <summary>
         /// Informs the application that session negotiation needs to be done (i.e. a createOffer call 
@@ -354,7 +381,7 @@ namespace SIPSorcery.Net
                 _configuration = new RTCConfiguration();
             }
 
-            
+
             if (dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
@@ -362,7 +389,7 @@ namespace SIPSorcery.Net
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(dtlsCertificate);
-            
+
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
 
@@ -760,33 +787,25 @@ namespace SIPSorcery.Net
         /// controls over the generated offer SDP.</param>
         public RTCSessionDescriptionInit createOffer(RTCOfferOptions options)
         {
-            try
+            var audioCapabilities = AudioLocalTrack?.Capabilities;
+            var videoCapabilities = VideoLocalTrack?.Capabilities;
+
+            List<MediaStreamTrack> localTracks = GetLocalTracks();
+            bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
+            var offerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities, excludeIceCandidates);
+
+            foreach (var ann in offerSdp.Media)
             {
-                var audioCapabilities = AudioLocalTrack?.Capabilities;
-                var videoCapabilities = VideoLocalTrack?.Capabilities;
-
-                List<MediaStreamTrack> localTracks = GetLocalTracks();
-                bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
-                var offerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities, excludeIceCandidates);
-
-                foreach (var ann in offerSdp.Media)
-                {
-                    ann.AddExtra($"{ICE_SETUP_ATTRIBUTE}{IceRole}");
-                }
-
-                RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
-                {
-                    type = RTCSdpType.offer,
-                    sdp = offerSdp.ToString()
-                };
-
-                return initDescription;
+                ann.AddExtra($"{ICE_SETUP_ATTRIBUTE}{IceRole}");
             }
-            catch (Exception excp)
+
+            RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
             {
-                logger.LogError("Exception createOffer. " + excp);
-                throw;
-            }
+                type = RTCSdpType.offer,
+                sdp = offerSdp.ToString()
+            };
+
+            return initDescription;
         }
 
         /// <summary>
@@ -897,8 +916,8 @@ namespace SIPSorcery.Net
         ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
         ///   agent and the ICE processing MUST continue as usual."
         /// </remarks>
-        private SDP createBaseSdp(List<MediaStreamTrack> tracks, 
-            List<SDPMediaFormat> audioCapabilities, 
+        private SDP createBaseSdp(List<MediaStreamTrack> tracks,
+            List<SDPMediaFormat> audioCapabilities,
             List<SDPMediaFormat> videoCapabilities,
             bool excludeIceCandidates = false)
         {

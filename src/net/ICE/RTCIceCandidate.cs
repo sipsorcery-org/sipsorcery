@@ -21,7 +21,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using Newtonsoft.Json;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -288,8 +287,7 @@ namespace SIPSorcery.Net
                 candidate = CANDIDATE_PREFIX + ":" + this.ToString()
             };
 
-            return JsonConvert.SerializeObject(rtcCandInit,
-                     new Newtonsoft.Json.Converters.StringEnumConverter());
+            return rtcCandInit.toJSON();
         }
 
         /// <summary>

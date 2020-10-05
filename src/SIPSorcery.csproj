@@ -21,7 +21,6 @@
   <ItemGroup>
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.6.7" />
     <PackageReference Include="DnsClient" Version="1.4.0-beta-20200801.7" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.14-pre" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
