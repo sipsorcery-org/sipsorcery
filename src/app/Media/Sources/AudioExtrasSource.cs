@@ -414,7 +414,7 @@ namespace SIPSorcery.Media
                     if (bytesRead > 0)
                     {
                         byte[] encodedSample = _audioEncoder.EncodeAudio(sample, _sendingFormat, AudioSamplingRatesEnum.Rate8KHz);
-                        OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
+                        OnAudioSourceEncodedSample?.Invoke(sampleSize, encodedSample);
                     }
 
                     if (bytesRead == 0 || _audioStreamReader.EndOfStream)
@@ -526,7 +526,7 @@ namespace SIPSorcery.Media
 
                         //OnAudioSourceRawSample?.Invoke(_streamSourceSampleRate, AUDIO_SAMPLE_PERIOD_MILLISECONDS, sample);
                         byte[] encodedSample = _audioEncoder.EncodeAudio(sample, _sendingFormat, _streamSourceSampleRate);
-                        OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
+                        OnAudioSourceEncodedSample?.Invoke((uint) sampleSize, encodedSample);
 
                         if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
                         {
