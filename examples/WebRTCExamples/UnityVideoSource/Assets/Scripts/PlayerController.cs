@@ -102,7 +102,7 @@ public class PlayerController : MonoBehaviour
         RenderTexture.active = null;
 
         // This call to get the raw pixels seems to be the biggest performance hit. On my Win10 i7 machine
-        // frame rate reduces from <200 fps (yes that's correct 200+) to around 20fps with this call.
+        // frame rate reduces from approx. 200 fps to around 20fps with this call.
         var arr = _mainCamTexture2D.GetRawTextureData();
         byte[] flipped = new byte[arr.Length];
 
