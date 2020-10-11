@@ -21,6 +21,7 @@ namespace SIPSorceryMedia.Abstractions.V1
         Rgb = 0,        // 24 bits per pixel.
         Bgr = 1,        // 24 bits per pixel.
         Bgra = 2,       // 32 bits per pixel.
+        I420 = 3
     }
 
     public enum AudioCodecsEnum
