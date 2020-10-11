@@ -248,7 +248,7 @@ namespace SIPSorcery.Media
             {
                 await Media.VideoSource.PauseVideo();
 
-                _videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH);
+                //_videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH);
                 _videoTestPatternSource.SetFrameRate(TEST_PATTERN_ONHOLD_FPS);
 
                 Media.VideoSource.ForceKeyFrame();
@@ -268,7 +268,7 @@ namespace SIPSorcery.Media
             {
                     await _videoTestPatternSource.PauseVideo();
 
-                _videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH);
+                //_videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH);
                 _videoTestPatternSource.SetFrameRate(TEST_PATTERN_FPS);
 
                 Media.VideoSource.ForceKeyFrame();

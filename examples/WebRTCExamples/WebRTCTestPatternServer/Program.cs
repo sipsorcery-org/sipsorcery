@@ -45,6 +45,9 @@ namespace demo
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
+        private static int _frameCount = 0;
+        private static DateTime _startTime;
+
         static async Task Main(string[] args)
         {
             Console.WriteLine("WebRTC Test Pattern Server Demo");
@@ -107,6 +110,8 @@ namespace demo
             var pc = new RTCPeerConnection(null);
 
             var testPatternSource = new VideoTestPatternSource();
+            //testPatternSource.SetFrameRate(60);
+            //testPatternSource.SetMaxFrameRate(true);
             //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
@@ -116,6 +121,7 @@ namespace demo
             pc.addTrack(track);
 
             testPatternSource.OnVideoSourceRawSample += videoEndPoint.ExternalVideoSourceRawSample;
+            testPatternSource.OnVideoSourceRawSample += TestPatternSource_OnVideoSourceRawSample;
             videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
             pc.OnVideoFormatsNegotiated += (sdpFormat) => videoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
             
@@ -146,6 +152,24 @@ namespace demo
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
             return Task.FromResult(pc);
+        }
+
+        private static void TestPatternSource_OnVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, SIPSorceryMedia.Abstractions.V1.VideoPixelFormatsEnum pixelFormat)
+        {
+            if(_startTime == DateTime.MinValue)
+            {
+                _startTime = DateTime.Now;
+            }
+
+            _frameCount++;
+
+            if (DateTime.Now.Subtract(_startTime).TotalSeconds > 5)
+            {
+                double fps = _frameCount / DateTime.Now.Subtract(_startTime).TotalSeconds;
+                Console.WriteLine($"Frame rate {fps:0.##}fps.");
+                _startTime = DateTime.Now;
+                _frameCount = 0;
+            }
         }
 
         /// <summary>

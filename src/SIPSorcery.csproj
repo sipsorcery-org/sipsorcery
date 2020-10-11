@@ -10,11 +10,9 @@
     <None Remove="core\SIPEvents\Dialog\EventDialogSchema.xsd" />
     <None Remove="core\SIPEvents\Presence\PIDFSchema.xsd" />
     <None Remove="media\Macroform_-_Simplicity.raw" />
-    <None Remove="media\testpattern.jpeg" />
-    <None Remove="media\testpattern_inverted.jpeg" />
+    <None Remove="media\testpattern.i420" />
     <EmbeddedResource Include="media\Macroform_-_Simplicity.raw" />
-    <EmbeddedResource Include="media\testpattern.jpeg" />
-    <EmbeddedResource Include="media\testpattern_inverted.jpeg" />
+    <EmbeddedResource Include="media\testpattern.i420" />
     <None Include="icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
@@ -22,9 +20,12 @@
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.6.7" />
     <PackageReference Include="DnsClient" Version="1.4.0-beta-20200801.7" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.14-pre" />
+    <!--<PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.14-pre" />-->
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
-    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -39,8 +40,7 @@
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorcery</Title>
     <Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
-    <Description>
-      Real-time communications library with full support for the Session Initiation Protocol (SIP) and WebRTC. No wrappers and no native libraries required.
+    <Description>Real-time communications library with full support for the Session Initiation Protocol (SIP) and WebRTC. No wrappers and no native libraries required.
     </Description>
     <Company>SIP Sorcery PTY LTD</Company>
     <Product>SIPSorcery</Product>
