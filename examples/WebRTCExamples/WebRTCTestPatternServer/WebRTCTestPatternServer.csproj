@@ -17,8 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\SIPSorceryMedia.Encoders\src\SIPSorceryMedia.Encoders.csproj" />
-    <ProjectReference Include="..\..\..\..\SIPSorceryMedia.FFmpeg\src\SIPSorceryMedia.FFmpeg.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 

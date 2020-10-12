@@ -20,12 +20,8 @@
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.6.7" />
     <PackageReference Include="DnsClient" Version="1.4.0-beta-20200801.7" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <!--<PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.15-pre" />-->
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.16-pre" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -55,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.81-pre: Fix for SIP DNS lookups failing on CNAME records.
+    <PackageReleaseNotes>- v4.0.82-pre: Improvement to H264 packetisation. Added ability to set audio extras source sample period.
+- v4.0.81-pre: Fix for SIP DNS lookups failing on CNAME records.
 - v4.0.80-pre: Added webrtc helper class to work with node dss server.
 - v4.0.79-pre: Removed SCTP Time class due to conflict with Unity built in type.
 - v4.0.78-pre: Bug fix for cseq not being incremented for PRACK send or receive.
@@ -103,9 +100,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.81-pre</Version>
-    <AssemblyVersion>4.0.81.0</AssemblyVersion>
-    <FileVersion>4.0.81.0</FileVersion>
+    <Version>4.0.82-pre</Version>
+    <AssemblyVersion>4.0.82.0</AssemblyVersion>
+    <FileVersion>4.0.82.0</FileVersion>
   </PropertyGroup>
 
 </Project>

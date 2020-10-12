@@ -112,7 +112,7 @@ namespace demo
 
             var testPatternSource = new VideoTestPatternSource();
             //testPatternSource.SetFrameRate(60);
-            //testPatternSource.SetMaxFrameRate(true);
+            testPatternSource.SetMaxFrameRate(true);
             var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             videoEndPoint.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.H264 });
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
