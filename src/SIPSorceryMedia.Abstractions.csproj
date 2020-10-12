@@ -14,21 +14,20 @@
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorceryMedia.Abstractions</Title>
     <Summary>A set of interfaces and common structures used for building media end points for the SIPSorcery library.</Summary>
-    <Description>
-      Don't reference this package unless you are building a media end point to work with the SIPSorcery real-time communications library. In most cases a concrete implementation
-      package such as SIPSorceryMedia.Windows should be referenced.
+    <Description>Don't reference this package unless you are building a media end point to work with the SIPSorcery real-time communications library. In most cases a concrete implementation package such as SIPSorceryMedia.Windows should be referenced.
     </Description>
     <Product>SIPSorceryMedia.Abstractions</Product>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Abstractions</RepositoryUrl>
-    <Version>0.0.14-pre</Version>
-    <AssemblyVersion>0.0.14.0</AssemblyVersion>
-    <FileVersion>0.0.14.0</FileVersion>
+    <Version>0.0.15-pre</Version>
+    <AssemblyVersion>0.0.15.0</AssemblyVersion>
+    <FileVersion>0.0.15.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
-    <PackageReleaseNotes>-0.0.14-pre: Added video encoder interface.
+    <PackageReleaseNotes>-0.0.15-pre: Added I420 pixel format.
+-0.0.14-pre: Added video encoder interface.
 -0.0.12-pre: Fixed bug in codec manager class.
 -0.0.11-pre: Added codec manager helper class.
 -0.0.10-pre: Added log factory singleton.
