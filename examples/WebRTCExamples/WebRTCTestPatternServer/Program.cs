@@ -112,10 +112,10 @@ namespace demo
             var testPatternSource = new VideoTestPatternSource();
             //testPatternSource.SetFrameRate(60);
             //testPatternSource.SetMaxFrameRate(true);
-            //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
-            var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
+            //var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
 
             MediaStreamTrack track = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);

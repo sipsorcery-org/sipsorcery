@@ -1582,6 +1582,7 @@ namespace SIPSorcery.Net
                 // Parse NALs from H264 access unit, encoded as an Annex B bitstream.
                 // NALs are delimited by 0x000001 or 0x00000001.
                 int currPosn = 0;
+                List<byte[]> nals = new List<byte[]>();
                 for (int i = 0; i < accessUnit.Length; i++)
                 {
                     if (accessUnit[i] == 0x00)
@@ -1597,7 +1598,7 @@ namespace SIPSorcery.Net
                             int endPosn = nalStart - ((zeroes == 2) ? 3 : 4);
                             int nalSize = endPosn - currPosn;
 
-                            SendH264Nal(duration, payloadTypeID, accessUnit.Skip(currPosn).Take(nalSize).ToArray(), dstEndPoint, videoTrack);
+                            nals.Add(accessUnit.Skip(currPosn).Take(nalSize).ToArray());
                         }
 
                         currPosn = nalStart;
@@ -1610,7 +1611,13 @@ namespace SIPSorcery.Net
 
                 if (currPosn < accessUnit.Length)
                 {
-                    SendH264Nal(duration, payloadTypeID, accessUnit.Skip(currPosn).ToArray(), dstEndPoint, videoTrack);
+                    nals.Add(accessUnit.Skip(currPosn).ToArray());
+                }
+
+                for (int i = 0; i < nals.Count; i++)
+                {
+                    bool isLastNal = i == nals.Count - 1;
+                    SendH264Nal(duration, payloadTypeID, nals[i], isLastNal, dstEndPoint, videoTrack);
                 }
             }
         }
@@ -1621,6 +1628,7 @@ namespace SIPSorcery.Net
         /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
         /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
         /// <param name="nal">The buffer containing the NAL to send.</param>
+        /// <param name="isLastNal"> Control if markbit can be 1 and if we can increment timestamp after send</param>
         /// <param name="dstEndPoint">The destination end point to send to.</param>
         /// <param name="videoTrack">The video track to send on.</param>
         /// <remarks>
@@ -1688,7 +1696,7 @@ namespace SIPSorcery.Net
         /// R: Reserved bit must be 0.
         /// Type: The NAL unit payload type, comes from NAL packet (NOTE: this IS the type of the NAL message).
         /// </remarks>
-        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, IPEndPoint dstEndPoint, MediaStreamTrack videoTrack)
+        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal, IPEndPoint dstEndPoint, MediaStreamTrack videoTrack)
         {
             //logger.LogDebug($"Send NAL {nal.Length}.");
 
@@ -1707,7 +1715,7 @@ namespace SIPSorcery.Net
 
                 //byte stapAByte = (byte)(firstHdrByte + 24);
                 //byte[] h264RtpHdr = new byte[] { stapAByte, (byte)(nal.Length >> 8 & 0xff), (byte)(nal.Length & 0xff) };
-                int markerBit = 1;   // There is only ever one packet in a STAP-A.
+                int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
 
                 //Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, 3);
                 Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
@@ -1734,7 +1742,7 @@ namespace SIPSorcery.Net
 
                     bool isFirstPacket = index == 0;
                     bool isFinalPacket = (index + 1) * RTP_MAX_PAYLOAD >= nal.Length;
-                    int markerBit = (isFinalPacket) ? 1 : 0;
+                    int markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
 
                     byte fuIndicator = (byte)(firstHdrByte + 28);
                     byte fuHeader = nalType;
@@ -1760,7 +1768,10 @@ namespace SIPSorcery.Net
                 }
             }
 
-            videoTrack.Timestamp += duration;
+            if (isLastNal)
+            {
+                videoTrack.Timestamp += duration;
+            }
         }
 
         /// <summary>
@@ -2154,7 +2165,7 @@ namespace SIPSorcery.Net
                                 // things like the common codec, DTMF support etc. are not known.
 
                                 SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
-                               
+
                                 // For video RTP packets an attempt will be made to collate into frames. It's up to the application
                                 // whether it wants to subscribe to frames of RTP packets.
                                 if (mediaType == SDPMediaTypesEnum.video)

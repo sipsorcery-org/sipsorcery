@@ -35,8 +35,8 @@ namespace demo
     {
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
-        //private const string MP4_PATH = "media/max_intro.mp4";
-        private const string MP4_PATH = "media/big_buck_bunny.mp4";
+        private const string MP4_PATH = "media/max_intro.mp4";
+        //private const string MP4_PATH = "media/big_buck_bunny.mp4";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
@@ -77,7 +77,7 @@ namespace demo
 
             var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, false, new AudioEncoder());
             mediaFileSource.Initialise();
-            mediaFileSource.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.H264 });
+            mediaFileSource.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.VP8 });
             mediaFileSource.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
             mediaFileSource.OnEndOfFile += () => pc.Close("source eof");
 
