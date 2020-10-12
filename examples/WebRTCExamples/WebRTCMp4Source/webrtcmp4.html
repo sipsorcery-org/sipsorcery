@@ -31,6 +31,7 @@
                 }
                 else {
                     await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+                    console.log("remote sdp:\n" + pc.remoteDescription.sdp);
                     pc.createAnswer()
                         .then((answer) => pc.setLocalDescription(answer))
                         .then(() => ws.send(JSON.stringify(pc.localDescription)));
