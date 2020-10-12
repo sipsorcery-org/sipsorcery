@@ -2401,6 +2401,43 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioExtrasSource.AudioExtrasSource
   nameWithType: AudioExtrasSource.AudioExtrasSource
+- uid: SIPSorcery.Media.AudioExtrasSource._audioSamplePeriodMilliseconds
+  name: _audioSamplePeriodMilliseconds
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource__audioSamplePeriodMilliseconds
+  commentId: F:SIPSorcery.Media.AudioExtrasSource._audioSamplePeriodMilliseconds
+  fullName: SIPSorcery.Media.AudioExtrasSource._audioSamplePeriodMilliseconds
+  nameWithType: AudioExtrasSource._audioSamplePeriodMilliseconds
+- uid: SIPSorcery.Media.AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_DEFAULT
+  name: AUDIO_SAMPLE_PERIOD_MILLISECONDS_DEFAULT
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_AUDIO_SAMPLE_PERIOD_MILLISECONDS_DEFAULT
+  commentId: F:SIPSorcery.Media.AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_DEFAULT
+  fullName: SIPSorcery.Media.AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_DEFAULT
+  nameWithType: AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_DEFAULT
+- uid: SIPSorcery.Media.AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX
+  name: AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX
+  commentId: F:SIPSorcery.Media.AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX
+  fullName: SIPSorcery.Media.AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX
+  nameWithType: AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX
+- uid: SIPSorcery.Media.AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN
+  name: AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN
+  commentId: F:SIPSorcery.Media.AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN
+  fullName: SIPSorcery.Media.AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN
+  nameWithType: AudioExtrasSource.AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN
+- uid: SIPSorcery.Media.AudioExtrasSource.AudioSamplePeriodMilliseconds
+  name: AudioSamplePeriodMilliseconds
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_AudioSamplePeriodMilliseconds
+  commentId: P:SIPSorcery.Media.AudioExtrasSource.AudioSamplePeriodMilliseconds
+  fullName: SIPSorcery.Media.AudioExtrasSource.AudioSamplePeriodMilliseconds
+  nameWithType: AudioExtrasSource.AudioSamplePeriodMilliseconds
+- uid: SIPSorcery.Media.AudioExtrasSource.AudioSamplePeriodMilliseconds*
+  name: AudioSamplePeriodMilliseconds
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_AudioSamplePeriodMilliseconds_
+  commentId: Overload:SIPSorcery.Media.AudioExtrasSource.AudioSamplePeriodMilliseconds
+  isSpec: "True"
+  fullName: SIPSorcery.Media.AudioExtrasSource.AudioSamplePeriodMilliseconds
+  nameWithType: AudioExtrasSource.AudioSamplePeriodMilliseconds
 - uid: SIPSorcery.Media.AudioExtrasSource.CancelSendAudioFromStream
   name: CancelSendAudioFromStream()
   href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_CancelSendAudioFromStream
@@ -3307,6 +3344,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.VideoTestPatternSource
   nameWithType: VideoTestPatternSource.VideoTestPatternSource
+- uid: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420(System.Byte[],System.Int32,System.Int32)
+  name: BGRtoI420(Byte[], Int32, Int32)
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_BGRtoI420_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.BGRtoI420(System.Byte[],System.Int32,System.Int32)
+  name.vb: BGRtoI420(Byte(), Int32, Int32)
+  fullName: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420(System.Byte(), System.Int32, System.Int32)
+  nameWithType: VideoTestPatternSource.BGRtoI420(Byte[], Int32, Int32)
+  nameWithType.vb: VideoTestPatternSource.BGRtoI420(Byte(), Int32, Int32)
+- uid: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420*
+  name: BGRtoI420
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_BGRtoI420_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.BGRtoI420
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420
+  nameWithType: VideoTestPatternSource.BGRtoI420
 - uid: SIPSorcery.Media.VideoTestPatternSource.CloseVideo
   name: CloseVideo()
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_CloseVideo
@@ -3480,19 +3533,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.ResumeVideo
   nameWithType: VideoTestPatternSource.ResumeVideo
-- uid: SIPSorcery.Media.VideoTestPatternSource.SetEmbeddedTestPatternPath(System.String)
-  name: SetEmbeddedTestPatternPath(String)
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetEmbeddedTestPatternPath_System_String_
-  commentId: M:SIPSorcery.Media.VideoTestPatternSource.SetEmbeddedTestPatternPath(System.String)
-  fullName: SIPSorcery.Media.VideoTestPatternSource.SetEmbeddedTestPatternPath(System.String)
-  nameWithType: VideoTestPatternSource.SetEmbeddedTestPatternPath(String)
-- uid: SIPSorcery.Media.VideoTestPatternSource.SetEmbeddedTestPatternPath*
-  name: SetEmbeddedTestPatternPath
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetEmbeddedTestPatternPath_
-  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.SetEmbeddedTestPatternPath
-  isSpec: "True"
-  fullName: SIPSorcery.Media.VideoTestPatternSource.SetEmbeddedTestPatternPath
-  nameWithType: VideoTestPatternSource.SetEmbeddedTestPatternPath
 - uid: SIPSorcery.Media.VideoTestPatternSource.SetFrameRate(System.Int32)
   name: SetFrameRate(Int32)
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetFrameRate_System_Int32_
@@ -3506,19 +3546,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.SetFrameRate
   nameWithType: VideoTestPatternSource.SetFrameRate
-- uid: SIPSorcery.Media.VideoTestPatternSource.SetTestPatternPath(System.String)
-  name: SetTestPatternPath(String)
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetTestPatternPath_System_String_
-  commentId: M:SIPSorcery.Media.VideoTestPatternSource.SetTestPatternPath(System.String)
-  fullName: SIPSorcery.Media.VideoTestPatternSource.SetTestPatternPath(System.String)
-  nameWithType: VideoTestPatternSource.SetTestPatternPath(String)
-- uid: SIPSorcery.Media.VideoTestPatternSource.SetTestPatternPath*
-  name: SetTestPatternPath
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetTestPatternPath_
-  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.SetTestPatternPath
+- uid: SIPSorcery.Media.VideoTestPatternSource.SetMaxFrameRate(System.Boolean)
+  name: SetMaxFrameRate(Boolean)
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetMaxFrameRate_System_Boolean_
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.SetMaxFrameRate(System.Boolean)
+  fullName: SIPSorcery.Media.VideoTestPatternSource.SetMaxFrameRate(System.Boolean)
+  nameWithType: VideoTestPatternSource.SetMaxFrameRate(Boolean)
+- uid: SIPSorcery.Media.VideoTestPatternSource.SetMaxFrameRate*
+  name: SetMaxFrameRate
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetMaxFrameRate_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.SetMaxFrameRate
   isSpec: "True"
-  fullName: SIPSorcery.Media.VideoTestPatternSource.SetTestPatternPath
-  nameWithType: VideoTestPatternSource.SetTestPatternPath
+  fullName: SIPSorcery.Media.VideoTestPatternSource.SetMaxFrameRate
+  nameWithType: VideoTestPatternSource.SetMaxFrameRate
 - uid: SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
   name: SetVideoSourceFormat(VideoCodecsEnum)
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetVideoSourceFormat_SIPSorceryMedia_Abstractions_V1_VideoCodecsEnum_
@@ -3532,6 +3572,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat
   nameWithType: VideoTestPatternSource.SetVideoSourceFormat
+- uid: SIPSorcery.Media.VideoTestPatternSource.StampI420Buffer(System.Byte[],System.Int32,System.Int32,System.Int32)
+  name: StampI420Buffer(Byte[], Int32, Int32, Int32)
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_StampI420Buffer_System_Byte___System_Int32_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.StampI420Buffer(System.Byte[],System.Int32,System.Int32,System.Int32)
+  name.vb: StampI420Buffer(Byte(), Int32, Int32, Int32)
+  fullName: SIPSorcery.Media.VideoTestPatternSource.StampI420Buffer(System.Byte[], System.Int32, System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Media.VideoTestPatternSource.StampI420Buffer(System.Byte(), System.Int32, System.Int32, System.Int32)
+  nameWithType: VideoTestPatternSource.StampI420Buffer(Byte[], Int32, Int32, Int32)
+  nameWithType.vb: VideoTestPatternSource.StampI420Buffer(Byte(), Int32, Int32, Int32)
+- uid: SIPSorcery.Media.VideoTestPatternSource.StampI420Buffer*
+  name: StampI420Buffer
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_StampI420Buffer_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.StampI420Buffer
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VideoTestPatternSource.StampI420Buffer
+  nameWithType: VideoTestPatternSource.StampI420Buffer
 - uid: SIPSorcery.Media.VideoTestPatternSource.StartVideo
   name: StartVideo()
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_StartVideo
@@ -3551,18 +3607,24 @@ references:
   commentId: F:SIPSorcery.Media.VideoTestPatternSource.SupportedCodecs
   fullName: SIPSorcery.Media.VideoTestPatternSource.SupportedCodecs
   nameWithType: VideoTestPatternSource.SupportedCodecs
-- uid: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH
-  name: TEST_PATTERN_INVERTED_RESOURCE_PATH
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_TEST_PATTERN_INVERTED_RESOURCE_PATH
-  commentId: F:SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH
-  fullName: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH
-  nameWithType: VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH
+- uid: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_HEIGHT
+  name: TEST_PATTERN_HEIGHT
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_TEST_PATTERN_HEIGHT
+  commentId: F:SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_HEIGHT
+  fullName: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_HEIGHT
+  nameWithType: VideoTestPatternSource.TEST_PATTERN_HEIGHT
 - uid: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH
   name: TEST_PATTERN_RESOURCE_PATH
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_TEST_PATTERN_RESOURCE_PATH
   commentId: F:SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH
   fullName: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH
   nameWithType: VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH
+- uid: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_WIDTH
+  name: TEST_PATTERN_WIDTH
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_TEST_PATTERN_WIDTH
+  commentId: F:SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_WIDTH
+  fullName: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_WIDTH
+  nameWithType: VideoTestPatternSource.TEST_PATTERN_WIDTH
 - uid: SIPSorcery.Media.VoIPMediaSession
   name: VoIPMediaSession
   href: api/SIPSorcery.Media.VoIPMediaSession.html
