@@ -133,6 +133,11 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 InitialiseEncoder(codecID, width, height, fps);
             }
+            else if(_encoderContext->width != width || _encoderContext->height != height)
+            {
+                _encoderContext->width = width;
+                _encoderContext->height = height;
+            }
 
             var i420Frame = MakeFrame(i420, width, height);
             return Encode(codecID, i420Frame, fps, keyFrame);

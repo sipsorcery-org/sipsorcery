@@ -125,12 +125,15 @@ namespace SIPSorceryMedia.FFmpeg
                 //var frame = _videoEncoder.MakeFrame(buffer, width, height);
                 var encodedSample = _videoEncoder.Encode(FFmpegConvert.GetAVCodecID(_videoCodecManager.SelectedCodec), frame, frameRate, _forceKeyFrame);
 
-                // Note the event handler can be removed while the encoding is in progress.
-                OnVideoSourceEncodedSample?.Invoke(timestampDuration, encodedSample);
-
-                if (_forceKeyFrame)
+                if (encodedSample != null)
                 {
-                    _forceKeyFrame = false;
+                    // Note the event handler can be removed while the encoding is in progress.
+                    OnVideoSourceEncodedSample?.Invoke(timestampDuration, encodedSample);
+
+                    if (_forceKeyFrame)
+                    {
+                        _forceKeyFrame = false;
+                    }
                 }
             }
         }

@@ -320,23 +320,23 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        private unsafe byte[] GetBuffer(AVFrame frame)
-        {
-            int outputBufferSize = ffmpeg.av_image_get_buffer_size((AVPixelFormat)frame.format, frame.width, frame.height, 1);
-            byte[] buffer = new byte[outputBufferSize];
+        //private unsafe byte[] GetBuffer(AVFrame frame)
+        //{
+        //    int outputBufferSize = ffmpeg.av_image_get_buffer_size((AVPixelFormat)frame.format, frame.width, frame.height, 1);
+        //    byte[] buffer = new byte[outputBufferSize];
 
-            byte_ptrArray4 data = new byte_ptrArray4();
-            data.UpdateFrom(frame.data.ToArray());
-            int_array4 lineSz = new int_array4();
-            lineSz.UpdateFrom(frame.linesize.ToArray());
+        //    byte_ptrArray4 data = new byte_ptrArray4();
+        //    data.UpdateFrom(frame.data.ToArray());
+        //    int_array4 lineSz = new int_array4();
+        //    lineSz.UpdateFrom(frame.linesize.ToArray());
 
-            fixed (byte* pBuffer = buffer)
-            {
-                ffmpeg.av_image_copy_to_buffer(pBuffer, buffer.Length, data, lineSz, (AVPixelFormat)frame.format, frame.width, frame.height, 1).ThrowExceptionIfError();
-            }
+        //    fixed (byte* pBuffer = buffer)
+        //    {
+        //        ffmpeg.av_image_copy_to_buffer(pBuffer, buffer.Length, data, lineSz, (AVPixelFormat)frame.format, frame.width, frame.height, 1).ThrowExceptionIfError();
+        //    }
 
-            return buffer;
-        }
+        //    return buffer;
+        //}
 
         public unsafe void Dispose()
         {
