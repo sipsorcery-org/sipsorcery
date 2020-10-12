@@ -12,7 +12,6 @@ using System.Threading;
 
 public class PlayerController : MonoBehaviour
 {
-    private const string DUPLICATE_CAMERA_NAME = "MainCameraDuplicate";
     private const int FRAMES_PER_SECOND = 30; // TODO: Measure instead of hard coding.
 
     public float speed = 0f;
@@ -23,6 +22,10 @@ public class PlayerController : MonoBehaviour
     private int count;
     private float movementX;
     private float movementY;
+
+#pragma warning disable 0649
+    [SerializeField] private Camera cam;
+#pragma warning restore 0649
 
     private RenderTexture _mainCamDupRenderTexture;
     private Texture2D _mainCamTexture2D;
@@ -43,18 +46,9 @@ public class PlayerController : MonoBehaviour
         SetCountText();
         winTextObject.SetActive(false);
 
-        if (_mainCamTexture2D == null)
-        {
-            foreach (var cam in FindObjectsOfType<Camera>())
-            {
-                if (cam.name == DUPLICATE_CAMERA_NAME)
-                {
-                    var texture = cam.targetTexture;
-                    _mainCamDupRenderTexture = texture;
-                    _mainCamTexture2D = new Texture2D(texture.width, texture.height);
-                }
-            }
-        }
+        var texture = cam.targetTexture;
+        _mainCamDupRenderTexture = texture;
+        _mainCamTexture2D = new Texture2D(texture.width, texture.height);
 
         await _webRtcPeer.Start();
     }
@@ -102,7 +96,7 @@ public class PlayerController : MonoBehaviour
         RenderTexture.active = null;
 
         // This call to get the raw pixels seems to be the biggest performance hit. On my Win10 i7 machine
-        // frame rate reduces from <200 fps (yes that's correct 200+) to around 20fps with this call.
+        // frame rate reduces from approx. 200 fps to around 20fps with this call.
         var arr = _mainCamTexture2D.GetRawTextureData();
         byte[] flipped = new byte[arr.Length];
 
@@ -173,8 +167,8 @@ public class WebRTCPeer
         AudioExtrasSource audioSrc = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.None });
         audioSrc.OnAudioSourceEncodedSample += pc.SendAudio;
         //var testPatternSource = new VideoTestPatternSource();
-        //var videoEncodeEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
-        //testPatternSource.OnVideoSourceRawSample += videoEncodeEndPoint.ExternalVideoSourceRawSample;
+        //testPatternSource.SetMaxFrameRate(true);
+        //testPatternSource.OnVideoSourceRawSample += VideoEncoderEndPoint.ExternalVideoSourceRawSample;
         VideoEncoderEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
 
         // Add tracks.
@@ -201,7 +195,7 @@ public class WebRTCPeer
             else if (state == SIPSorcery.Net.RTCPeerConnectionState.closed || state == SIPSorcery.Net.RTCPeerConnectionState.failed)
             {
                 await audioSrc.CloseAudio();
-                //await testPatternSource.StartVideo();
+                //await testPatternSource.CloseVideo();
             }
         };
 

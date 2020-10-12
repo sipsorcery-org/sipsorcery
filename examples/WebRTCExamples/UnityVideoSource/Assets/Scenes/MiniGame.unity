@@ -1548,6 +1548,7 @@ MonoBehaviour:
   speed: 10
   countText: {fileID: 1479004887}
   winTextObject: {fileID: 1502961301}
+  cam: {fileID: 1341888339}
 --- !u!114 &1391703701
 MonoBehaviour:
   m_ObjectHideFlags: 0

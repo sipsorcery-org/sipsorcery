@@ -90,7 +90,7 @@
                         .then(() => { sendSignal(JSON.stringify(pc.localDescription)) });
                 }
             }
-            pollNodeDss();
+             pollNodeDss(NODE_DSS_POLL_PERIOD);
         }
 
        async function onError(xhr, status, error) {

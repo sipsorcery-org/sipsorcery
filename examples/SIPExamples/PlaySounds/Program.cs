@@ -64,6 +64,7 @@ namespace demo
             var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
             var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
+            //voipMediaSession.AudioExtrasSource.AudioSamplePeriodMilliseconds = 20;
 
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
@@ -121,6 +122,11 @@ namespace demo
                 voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Silence);
 
                 await Task.Delay(2000);
+
+                Console.WriteLine("Playing music.");
+                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
+
+                await Task.Delay(5000);
 
                 Console.WriteLine("Sending goodbye message from 16KHz sample.");
                 await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);

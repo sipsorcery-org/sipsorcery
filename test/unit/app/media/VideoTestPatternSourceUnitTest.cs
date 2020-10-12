@@ -33,7 +33,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         /// Checks that the VideoTestPatternSource class can be instantiated. The constructor creates a
         /// bitmap from an embedded resource so the unit test checks that works correctly.
         /// </summary>
-        [Fact(Skip = "GDI+ failure on non-Windows platforms")]
+        [Fact]
         public void CanInstantiateUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);

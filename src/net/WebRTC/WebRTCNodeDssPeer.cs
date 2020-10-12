@@ -169,24 +169,27 @@ namespace SIPSorcery.Net
                     if (res.StatusCode == HttpStatusCode.OK)
                     {
                         var content = await res.Content.ReadAsStringAsync();
-                        var resp = await OnMessage(content, pc);
 
-                        if (resp != null)
+                        if (!string.IsNullOrEmpty(content))
                         {
-                            await SendToNSS(httpClient, resp);
+                            var resp = await OnMessage(content, pc);
+
+                            if (resp != null)
+                            {
+                                await SendToNSS(httpClient, resp);
+                            }
                         }
-                    }
-                    else if (res.StatusCode == HttpStatusCode.NotFound)
-                    {
-                        if (isInitialReceive)
+                        else if (isInitialReceive)
                         {
                             // We are the first peer to connect. Send the offer so it will be waiting
                             // for the remote peer.
                             await SendOffer(httpClient);
                         }
-
-                        // Expected response when there are no waiting messages for us.
-                        await Task.Delay(NODE_SERVER_POLL_PERIOD);
+                        else
+                        {
+                            // There are no waiting messages for us.
+                            await Task.Delay(NODE_SERVER_POLL_PERIOD);
+                        }
                     }
                     else
                     {
