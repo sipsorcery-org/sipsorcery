@@ -27,6 +27,7 @@ using Serilog;
 using SIPSorcery.Net;
 using WebSocketSharp.Server;
 using SIPSorcery.Media;
+using SIPSorceryMedia.Abstractions.V1;
 using Serilog.Extensions.Logging;
 
 namespace demo
@@ -112,10 +113,11 @@ namespace demo
             var testPatternSource = new VideoTestPatternSource();
             //testPatternSource.SetFrameRate(60);
             //testPatternSource.SetMaxFrameRate(true);
-            //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            videoEndPoint.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.H264 });
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
-            var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
+            //var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
 
             MediaStreamTrack track = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
