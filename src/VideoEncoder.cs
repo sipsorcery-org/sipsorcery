@@ -127,22 +127,15 @@ namespace SIPSorceryMedia.FFmpeg
             return i420Frame;
         }
 
-        public byte[]? Encode(AVCodecID codecID, byte[] rgb, int width, int height, int fps, bool keyFrame = false)
+        public byte[]? Encode(AVCodecID codecID, byte[] i420, int width, int height, int fps, bool keyFrame = false)
         {
             if (!_isEncoderInitialised)
             {
                 InitialiseEncoder(codecID, width, height, fps);
             }
 
-            if (_rgbToi420 != null)
-            {
-                var i420Frame = _rgbToi420.Convert(rgb);
-                return Encode(codecID, i420Frame, fps, keyFrame);
-            }
-            else
-            {
-                return null;
-            }
+            var i420Frame = MakeFrame(i420, width, height);
+            return Encode(codecID, i420Frame, fps, keyFrame);
         }
 
         public byte[]? Encode(AVCodecID codecID, AVFrame i420Frame, int fps, bool keyFrame = false)

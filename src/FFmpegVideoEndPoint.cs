@@ -126,7 +126,8 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
 
-                    byte[]? encodedBuffer = _ffmpegEncoder.Encode(FFmpegConvert.GetAVCodecID(_codecManager.SelectedCodec), sample, width, height, (int)fps, _forceKeyFrame);
+                    var i420Buffer = PixelConverter.ToI420(width, height, sample, pixelFormat);
+                    byte[]? encodedBuffer = _ffmpegEncoder. Encode(FFmpegConvert.GetAVCodecID(_codecManager.SelectedCodec), i420Buffer, width, height, (int)fps, _forceKeyFrame);
 
                     if (encodedBuffer != null)
                     {
