@@ -68,9 +68,6 @@ namespace SIPSorcery.SIP
             IsReliable = false;
             m_cts = new CancellationTokenSource();
 
-            //m_udpSocket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            //m_udpSocket.Bind(endPoint);
-
             m_udpSocket = NetServices.CreateBoundUdpSocket(endPoint.Port, endPoint.Address, false, useDualMode);
             if (endPoint.Port == 0)
             {
