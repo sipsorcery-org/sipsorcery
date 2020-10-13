@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -66,6 +67,8 @@ namespace SIPSorcery.SIP
         /// </summary>
         public static bool UseANYLookups = false;
 
+        //public static List<DnsClient.NameServer> DefaultNameServers { get; set; }
+
         private static LookupClient _lookupClient;
         public static LookupClient LookupClient
         {
@@ -83,6 +86,7 @@ namespace SIPSorcery.SIP
 
         static SIPDns()
         {
+            //LookupClientOptions clientOptions = new LookupClientOptions(DnsClient.NameServer.GooglePublicDns)
             LookupClientOptions clientOptions = new LookupClientOptions()
             {
                 Retries = DNS_RETRIES_PER_SERVER,
