@@ -63,12 +63,15 @@ namespace SIPSorcery.SIP.UnitTests
 
             TaskCompletionSource<bool> gotMessage = new TaskCompletionSource<bool>();
             SIPEndPoint receivedFromEP = null;
+            SIPEndPoint receivedOnEP = null;
             udpChan2.SIPMessageReceived = (SIPChannel sipChannel, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer) =>
             {
                 logger.LogDebug($"SIP message received from {remoteEndPoint}.");
+                logger.LogDebug($"SIP message received on {localSIPEndPoint}.");
                 logger.LogDebug(Encoding.UTF8.GetString(buffer));
 
                 receivedFromEP = remoteEndPoint;
+                receivedOnEP = localSIPEndPoint;
                 gotMessage.SetResult(true);
                 return Task.CompletedTask;
             };
@@ -87,7 +90,9 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(res);
             Assert.NotNull(receivedFromEP);
+            Assert.NotNull(receivedOnEP);
             Assert.Equal(IPAddress.Loopback, receivedFromEP.Address);
+            Assert.Equal(IPAddress.Loopback, receivedOnEP.Address);
 
             udpChan1.Close();
             udpChan2.Close();
