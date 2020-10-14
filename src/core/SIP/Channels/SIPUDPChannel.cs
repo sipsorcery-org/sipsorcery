@@ -91,7 +91,7 @@ namespace SIPSorcery.SIP
             try
             {
                 EndPoint recvEndPoint = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                m_udpSocket.BeginReceiveMessageFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveMessageFrom, null);
+                m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
             }
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
             catch (Exception excp)
@@ -105,7 +105,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void EndReceiveMessageFrom(IAsyncResult ar)
+        private void EndReceiveFrom(IAsyncResult ar)
         {
             EndPoint remoteEP = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
 
@@ -115,7 +115,7 @@ namespace SIPSorcery.SIP
                 {
                     SocketFlags flags = SocketFlags.None;
 
-                    int bytesRead = m_udpSocket.EndReceiveMessageFrom(ar, ref flags, ref remoteEP, out var packetInfo);
+                    int bytesRead = m_udpSocket.EndReceiveFrom(ar, ref remoteEP);
 
                     if (flags == SocketFlags.Truncated)
                     {
@@ -124,8 +124,19 @@ namespace SIPSorcery.SIP
 
                     if (bytesRead > 0)
                     {
+                        // In addition to the not in the RTPChannel class about IPPacketInformation some versions of the mono runtime
+                        // on Android are unable to use Begin/EndReceiveMessageFrom. 
+                        // See https://github.com/sipsorcery/sipsorcery/issues/302.
+                        // Those specific Begin/End calls were being used to get the packet information and identify which local
+                        // IP address a receive occurred on. Upon investigation it does not seem that the local IP address is 
+                        // required on incoming SIP packets. The outgoing socket was previously chosen based on this address but
+                        // subsequent to https://github.com/sipsorcery/sipsorcery/issues/97 the mechanism has changed.
+                        // The calls have been changed to Begin/EndReceiveFrom in order to support Android. The consequence is the localEndPoint
+                        // parameter for the SIPMessageReceived will have an IP address of 0.0.0.0 or [::0] if wildcard addresses are in use.
+
                         SIPEndPoint remoteEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, remoteEP as IPEndPoint, ID, null);
-                        SIPEndPoint localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(packetInfo.Address, Port), ID, null);
+                        //SIPEndPoint localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(packetInfo.Address, Port), ID, null);
+                        SIPEndPoint localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(ListeningIPAddress, Port), ID, null);
                         byte[] sipMsgBuffer = new byte[bytesRead];
                         Buffer.BlockCopy(m_recvBuffer, 0, sipMsgBuffer, 0, bytesRead);
                         SIPMessageReceived?.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);
@@ -136,7 +147,7 @@ namespace SIPSorcery.SIP
             {
                 // This exception can occur as the result of a Send operation. It's caused by an ICMP packet from a remote host
                 // rejecting an incoming UDP packet. If that happens we want to stop further sends to the socket for a short period.
-                logger.LogWarning($"SocketException SIPUDPChannel EndReceiveMessageFrom from {remoteEP} ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                logger.LogWarning($"SocketException SIPUDPChannel EndReceiveFrom from {remoteEP} ({sockExcp.ErrorCode}). {sockExcp.Message}");
                 if (remoteEP != null)
                 {
                     m_sendFailures.TryAdd(remoteEP as IPEndPoint, DateTime.Now);
@@ -146,7 +157,7 @@ namespace SIPSorcery.SIP
             { }
             catch (Exception excp)
             {
-                logger.LogError($"Exception SIPUDPChannel EndReceiveMessageFrom. {excp.Message}");
+                logger.LogError($"Exception SIPUDPChannel EndReceiveFrom. {excp.Message}");
             }
             finally
             {
