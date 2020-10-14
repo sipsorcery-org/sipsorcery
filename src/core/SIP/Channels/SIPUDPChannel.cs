@@ -91,7 +91,7 @@ namespace SIPSorcery.SIP
             try
             {
                 EndPoint recvEndPoint = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                m_udpSocket.BeginReceiveMessageFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveMessageFrom, null);
+                m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
             }
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
             catch (Exception excp)
@@ -105,7 +105,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void EndReceiveMessageFrom(IAsyncResult ar)
+        private void EndReceiveFrom(IAsyncResult ar)
         {
             EndPoint remoteEP = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
 
@@ -115,7 +115,7 @@ namespace SIPSorcery.SIP
                 {
                     SocketFlags flags = SocketFlags.None;
 
-                    int bytesRead = m_udpSocket.EndReceiveMessageFrom(ar, ref flags, ref remoteEP, out var packetInfo);
+                    int bytesRead = m_udpSocket.EndReceiveFrom(ar, ref remoteEP);
 
                     if (flags == SocketFlags.Truncated)
                     {
@@ -125,7 +125,7 @@ namespace SIPSorcery.SIP
                     if (bytesRead > 0)
                     {
                         SIPEndPoint remoteEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, remoteEP as IPEndPoint, ID, null);
-                        SIPEndPoint localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(packetInfo.Address, Port), ID, null);
+                        SIPEndPoint localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(ListeningIPAddress, Port), ID, null);
                         byte[] sipMsgBuffer = new byte[bytesRead];
                         Buffer.BlockCopy(m_recvBuffer, 0, sipMsgBuffer, 0, bytesRead);
                         SIPMessageReceived?.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);

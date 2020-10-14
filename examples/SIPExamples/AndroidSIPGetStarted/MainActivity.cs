@@ -27,18 +27,20 @@ namespace AndroidSIPGetStarted
             var statusScroll = FindViewById<ScrollView>(Resource.Id.statusScroll);
             var statusText = FindViewById<TextView>(Resource.Id.statusTextView);
 
+            // Catch the internal sipsorcery log messages.
             Action<string> logDelegate = (str) =>
             {
                 this.RunOnUiThread(() =>
                 {
                     statusText.Append(str);
                     statusScroll.FullScroll(FocusSearchDirection.Down);
-                    //statusScroll.ScrollTo(0, statusText.Bottom);
                 });
             };
-
             SIPSorcery.LogFactory.Set(new TextViewLoggerFactory(logDelegate));
+
             var userAgent = new SIPUserAgent();
+            userAgent.ClientCallFailed += (uac, error, sipResponse) => logDelegate($"Call failed {error}.");
+            userAgent.OnCallHungup += (dialog) => logDelegate($"Call hungup.");
 
             callButton.Click += async (sender, e) =>
             {
@@ -57,7 +59,19 @@ namespace AndroidSIPGetStarted
                 cancelButton.Enabled = false;
                 callButton.Enabled = true;
 
-                logDelegate("Cancelled.\n");
+                if(userAgent != null)
+                {
+                    if (userAgent.IsCalling || userAgent.IsRinging)
+                    {
+                        logDelegate("Cancelling in progress call.");
+                        userAgent.Cancel();
+                    }
+                    else if (userAgent.IsCallActive)
+                    {
+                        logDelegate("Hanging up established call.");
+                        userAgent.Hangup();
+                    }
+                };
             };
         }
 

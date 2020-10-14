@@ -419,7 +419,7 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendMusicSample(object state)
         {
-            if (!_streamSendInProgress)
+            if (!_streamSendInProgress && _audioStreamTimer != null)
             {
                 lock (_audioStreamTimer)
                 {
