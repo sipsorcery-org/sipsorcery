@@ -86,8 +86,8 @@ namespace SIPSorcery.SIP
 
         static SIPDns()
         {
-            //LookupClientOptions clientOptions = new LookupClientOptions(DnsClient.NameServer.GooglePublicDns)
-            LookupClientOptions clientOptions = new LookupClientOptions()
+            var nameServers = NameServer.ResolveNameServers(skipIPv6SiteLocal: true, fallbackToGooglePublicDns: true);
+            LookupClientOptions clientOptions = new LookupClientOptions(nameServers.ToArray())
             {
                 Retries = DNS_RETRIES_PER_SERVER,
                 Timeout = TimeSpan.FromSeconds(DNS_TIMEOUT_SECONDS),

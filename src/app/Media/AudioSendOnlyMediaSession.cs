@@ -28,6 +28,9 @@ namespace SIPSorcery.Media
             AudioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
 
             base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
+
+            var audioTrack = new MediaStreamTrack(AudioExtrasSource.GetAudioSourceFormats());
+            base.addTrack(audioTrack);
         }
 
         private void AudioFormatsNegotiated(List<SDPMediaFormat> audoFormats)
