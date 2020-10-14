@@ -92,7 +92,7 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.NotNull(receivedFromEP);
             Assert.NotNull(receivedOnEP);
             Assert.Equal(IPAddress.Loopback, receivedFromEP.Address);
-            Assert.Equal(IPAddress.Loopback, receivedOnEP.Address);
+            Assert.Equal(IPAddress.Any, receivedOnEP.Address);
 
             udpChan1.Close();
             udpChan2.Close();

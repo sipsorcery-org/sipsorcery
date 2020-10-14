@@ -33,7 +33,6 @@ namespace AndroidSIPGetStarted
                 {
                     statusText.Append(str);
                     statusScroll.FullScroll(FocusSearchDirection.Down);
-                    //statusScroll.ScrollTo(0, statusText.Bottom);
                 });
             };
 

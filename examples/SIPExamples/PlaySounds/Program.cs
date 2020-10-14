@@ -147,11 +147,11 @@ namespace demo
 
             Console.WriteLine("Exiting...");
 
-            if (userAgent?.IsHangingUp == true)
-            {
+            //if (userAgent?.IsHangingUp == true)
+            //{
                 Console.WriteLine("Waiting 1s for the call hangup or cancel to complete...");
                 await Task.Delay(1000);
-            }
+            //}
 
             // Clean up.
             sipTransport.Shutdown();
