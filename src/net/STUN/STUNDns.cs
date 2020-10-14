@@ -59,7 +59,8 @@ namespace SIPSorcery.Net
 
         static STUNDns()
         {
-            LookupClientOptions clientOptions = new LookupClientOptions()
+            var nameServers = NameServer.ResolveNameServers(skipIPv6SiteLocal: true, fallbackToGooglePublicDns: true);
+            LookupClientOptions clientOptions = new LookupClientOptions(nameServers.ToArray())
             {
                 Retries = DNS_RETRIES_PER_SERVER,
                 Timeout = TimeSpan.FromSeconds(DNS_TIMEOUT_SECONDS),

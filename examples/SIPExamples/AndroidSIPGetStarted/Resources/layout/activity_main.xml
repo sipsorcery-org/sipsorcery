@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
+    <TextView
+        android:text="Enter Destination"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/enterDestinationLabel" />
+
+    <EditText
+        android:text="sip:aaron@192.168.0.50:6060"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/enterDestinationLabel"
+        android:id="@+id/callDestination" />
+
+    <Button
+        android:text="Call"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/callDestination"
+        android:id="@+id/callButton" />
+
+    <Button
+        android:text="Cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/cancelButton"
+        android:layout_marginRight="0.0dp" 
+        android:enabled="false"/>
+
+    <ScrollView
+        android:id="@+id/statusScroll"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="vertical"
+        android:fillViewport="true">
+        <TextView
+            android:text=""
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/statusTextView"
+            android:layout_weight="1.0" />
+    </ScrollView>
+
+</LinearLayout>
