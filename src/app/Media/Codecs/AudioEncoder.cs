@@ -15,7 +15,7 @@
 
 using System;
 using System.Linq;
-using System.Runtime.InteropServices;
+using System.Net;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
@@ -138,14 +138,17 @@ namespace SIPSorcery.Media
                 // When netstandard2.1 can be used.
                 //return MemoryMarshal.Cast<short, byte>(pcm)
 
-                byte[] slinBuffer = new byte[pcm.Length * 2];
-                for (int index = 0; index < pcm.Length; index++)
-                {
-                    slinBuffer[index * 2] = (byte)(pcm[index] >> 8);
-                    slinBuffer[index * 2 + 1] = (byte)pcm[index];
-                }
+                //byte[] slinBuffer = new byte[pcm.Length * 2];
+                //for (int index = 0; index < pcm.Length; index++)
+                //{
+                //    //slinBuffer[index * 2] = (byte)(pcm[index] >> 8);
+                //    //slinBuffer[index * 2 + 1] = (byte)pcm[index];
 
-                return slinBuffer;
+                //}
+
+                //return slinBuffer;
+
+                return pcm.SelectMany(x => BitConverter.GetBytes(IPAddress.HostToNetworkOrder(x))).ToArray();
             }
             else
             {
