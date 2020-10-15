@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -30,8 +31,15 @@ namespace SIPSorceryMedia.Abstractions.V1
         G722 = 9,
         PCMA = 8,
         OPUS = 111,
+        L8 = 118,       // 8 bit signed linear.
+        L16 = 119,      // 16 bit Signed linear.
 
-        Unknown = 999,
+        /// <summary>
+        /// Use for audio codecs that are not supported in the above list. A dynamic
+        /// codec requires at least a format attribute to be specified with it and 
+        /// it will be up to the application to encode/decode.
+        /// </summary>
+        Dynamic = 128,
     }
 
     public enum VideoCodecsEnum
@@ -39,28 +47,157 @@ namespace SIPSorceryMedia.Abstractions.V1
         VP8 = 100,
         H264 = 102,
 
-        Unknown = 999,
+        /// <summary>
+        /// Use for video codecs that are not supported in the above list. A dynamic
+        /// codec requires at least a format attribute to be specified with it and 
+        /// it will be up to the application to encode/decode.
+        /// </summary>
+        Dynamic = 128,
     }
 
-    //public struct AudioFormat
-    //{
-    //    public string Name { get; set; }
-    //    public int PayloadID { get; set; }
-    //    public AudioCodecsEnum Codec { get; set; }
-    //    public AudioSamplingRatesEnum Rate { get; set; }
-    //    public int BitsPerSample { get; set; }
-    //    public Dictionary<string, string> CustomProperties { get; set; }
-    //}
+    public struct AudioFormat
+    {
+        public const int DYNAMIC_ID_MIN = 96;
+        public const int DYNAMIC_ID_MAX = 127;
 
-    //public struct VideoFormat
-    //{
-    //    public string Name { get; set; }
-    //    public int PayloadID { get; set; }
-    //    public VideoCodecsEnum Codec { get; set; }
-    //    public int FrameRate { get; set; }
-    //    public int BitsPerSample { get; set; }
-    //    public Dictionary<string, string> CustomProperties { get; set; }
-    //}
+        public AudioCodecsEnum Codec { get; set; }
+
+        /// <summary>
+        /// The format ID for the codec. If this is a well known codec it should be set to the
+        /// value from the codec enum. If the codec is a dynamic it must be set between 96–127
+        /// inclusive.
+        /// </summary>
+        public int FormatID { get; set; }
+
+        /// <summary>
+        /// The official name for the codec. This field is critical for dynamic codecs
+        /// where it is used to match the codecs in the SDP offer/answer.
+        /// </summary>
+        public string FormatName { get; set; }
+
+        /// <summary>
+        /// This is the "a=rtpmap" format attribute that will be set in the SDP offer/answer.
+        /// </summary>
+        /// <remarks>
+        /// Example:
+        /// a=rtpmap:109 opus/48000/2
+        /// </remarks>
+        public string FormatAttribute { get; set; }
+
+        /// <summary>
+        /// This is the "a=fmtp" format parameter that will be set in the SDP offer/answer.
+        /// </summary>
+        public string FormatParameterAttribute { get; set; }
+
+        /// <summary>
+        /// Creates a new audio format based on a well known codec.
+        /// </summary>
+        public AudioFormat(AudioCodecsEnum codec, string formatAttribute = null, string formatParameterAttribute = null)
+        {
+            Codec = codec;
+            FormatID = (int)codec;
+            FormatName = codec.ToString();
+            FormatAttribute = formatAttribute;
+            FormatParameterAttribute = formatParameterAttribute;
+        }
+
+        /// <summary>
+        /// Creates a new audio format based on a dynamic codec (or an unsupported well known codec).
+        /// </summary>
+        public AudioFormat(int formatID, string formatName, string formatAttribute, string formatParameterAttribute)
+        {
+            if (formatID < 0)
+            {
+                // Note format ID's less than the dynamic start range are allowed as the codec list
+                // does not currently support all well known codecs.
+                throw new ApplicationException("The format ID for an AudioFormat must be greater than 0.");
+            }
+            else if (formatID > DYNAMIC_ID_MAX)
+            {
+                throw new ApplicationException($"The format ID for an AudioFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
+            }
+
+            FormatID = formatID;
+            FormatName = formatName;
+            Codec = AudioCodecsEnum.Dynamic;
+            FormatAttribute = formatAttribute;
+            FormatParameterAttribute = formatParameterAttribute;
+        }
+    }
+
+    public struct VideoFormat
+    {
+        public const int DYNAMIC_ID_MIN = 96;
+        public const int DYNAMIC_ID_MAX = 127;
+
+        public VideoCodecsEnum Codec { get; set; }
+
+        /// <summary>
+        /// The format ID for the codec. If this is a well known codec it should be set to the
+        /// value from the codec enum. If the codec is a dynamic it must be set between 96–127
+        /// inclusive.
+        /// </summary>
+        public int FormatID { get; set; }
+
+        /// <summary>
+        /// The official name for the codec. This field is critical for dynamic codecs
+        /// where it is used to match the codecs in the SDP offer/answer.
+        /// </summary>
+        public string FormatName { get; set; }
+
+        /// <summary>
+        /// This is the "a=rtpmap" format attribute that will be set in the SDP offer/answer.
+        /// </summary>
+        /// <remarks>
+        /// Example:
+        /// a=rtpmap:102 H264/90000
+        /// </remarks>
+        public string FormatAttribute { get; set; }
+
+        /// <summary>
+        /// This is the "a=fmtp" format parameter that will be set in the SDP offer/answer.
+        /// </summary>
+        /// <remarks>
+        /// Example:
+        /// a=fmtp:102 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f"
+        /// </remarks>
+        public string FormatParameterAttribute { get; set; }
+
+        /// <summary>
+        /// Creates a new video format based on a well known codec.
+        /// </summary>
+        public VideoFormat(VideoCodecsEnum codec, string formatAttribute = null, string formatParameterAttribute = null)
+        {
+            Codec = codec;
+            FormatID = (int)codec;
+            FormatName = codec.ToString();
+            FormatAttribute = formatAttribute;
+            FormatParameterAttribute = formatParameterAttribute;
+        }
+
+        /// <summary>
+        /// Creates a new video format based on a dynamic codec (or an unsupported well known codec).
+        /// </summary>
+        public VideoFormat(int formatID, string formatName, string formatAttribute, string formatParameterAttribute)
+        {
+            if (formatID < 0)
+            {
+                // Note format ID's less than the dynamic start range are allowed as the codec list
+                // does not currently support all well known codecs.
+                throw new ApplicationException("The format ID for a VideoFormat must be greater than 0.");
+            }
+            else if (formatID > DYNAMIC_ID_MAX)
+            {
+                throw new ApplicationException($"The format ID for a VideoFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
+            }
+
+            FormatID = formatID;
+            FormatName = formatName;
+            Codec = VideoCodecsEnum.Dynamic;
+            FormatAttribute = formatAttribute;
+            FormatParameterAttribute = formatParameterAttribute;
+        }
+    }
 
     public class MediaEndPoints
     {
@@ -75,9 +212,9 @@ namespace SIPSorceryMedia.Abstractions.V1
         bool IsSupported(AudioCodecsEnum codec);
 
         byte[] EncodeAudio(byte[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
-        
+
         byte[] EncodeAudio(short[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
-     
+
         byte[] DecodeAudio(byte[] encodedSample, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
     }
 
@@ -115,11 +252,11 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         Task CloseAudio();
 
-        List<AudioCodecsEnum> GetAudioSourceFormats();
+        List<AudioFormat> GetAudioSourceFormats();
 
-        void SetAudioSourceFormat(AudioCodecsEnum audioFormat);
+        void SetAudioSourceFormat(AudioFormat audioFormat);
 
-        void RestrictCodecs(List<AudioCodecsEnum> codecs);
+        void RestrictFormats(Func<AudioFormat, bool> filter);
 
         void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
 
@@ -132,13 +269,13 @@ namespace SIPSorceryMedia.Abstractions.V1
     {
         event SourceErrorDelegate OnAudioSinkError;
 
-        List<AudioCodecsEnum> GetAudioSinkFormats();
+        List<AudioFormat> GetAudioSinkFormats();
 
-        void SetAudioSinkFormat(AudioCodecsEnum audioFormat);
+        void SetAudioSinkFormat(AudioFormat audioFormat);
 
         void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
 
-        void RestrictCodecs(List<AudioCodecsEnum> codecs);
+        void RestrictFormats(Func<AudioFormat, bool> filter);
     }
 
     public interface IVideoSource
@@ -157,11 +294,11 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         Task CloseVideo();
 
-        List<VideoCodecsEnum> GetVideoSourceFormats();
+        List<VideoFormat> GetVideoSourceFormats();
 
-        void SetVideoSourceFormat(VideoCodecsEnum videoFormat);
+        void SetVideoSourceFormat(VideoFormat videoFormat);
 
-        void RestrictCodecs(List<VideoCodecsEnum> codecs);
+        void RestrictFormats(Func<VideoFormat, bool> filter);
 
         void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
 
@@ -183,10 +320,10 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload);
 
-        List<VideoCodecsEnum> GetVideoSinkFormats();
+        List<VideoFormat> GetVideoSinkFormats();
 
-        void SetVideoSinkFormat(VideoCodecsEnum videoFormat);
+        void SetVideoSinkFormat(VideoFormat videoFormat);
 
-        void RestrictCodecs(List<VideoCodecsEnum> codecs);
+        void RestrictFormats(Func<VideoFormat, bool> filter);
     }
 }
