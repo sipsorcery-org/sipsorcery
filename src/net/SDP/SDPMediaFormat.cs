@@ -48,6 +48,8 @@ namespace SIPSorcery.Net
         H264 = 102,
         H265 = 103,
         OPUS = 111,
+        L8 = 118,   // Audio 8 bit signed linear (uncompressed).
+        L16 = 119,  // Audio 16 bit signed linear (uncompressed).
 
         Unknown = 999,
     }
@@ -80,7 +82,7 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Attempts to get the RTP clock rate of known payload types. Generally this will be the same
-        /// as the clock rate but in some cases for seemingly historical reasons they are different
+        /// as the clock rate but in some cases for seemingly historical reasons they are different.
         /// </summary>
         /// <param name="mediaType">The media type to get the clock rate for.</param>
         /// <returns>An integer representing the payload type's RTP timestamp frequency or 0
@@ -121,42 +123,46 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Maps an audio SDP media type to an audio codec.
+        /// Maps an audio SDP media type to an media abstraction layer audio format.
         /// </summary>
-        /// <param name="sdpFormat">The SDP format to match to an audio codec.</param>
-        /// <returns>A matching audio codec.</returns>
-        public static AudioCodecsEnum GetAudioCodecForSdpFormat(SDPMediaFormatsEnum sdpFormat)
+        /// <param name="sdpFormat">The SDP format to map to an audio format.</param>
+        /// <returns>An audio format value.</returns>
+        public static AudioFormat GetAudioFormatForSdpFormat(SDPMediaFormat sdpFormat)
         {
-            switch(sdpFormat)
+            switch(sdpFormat.FormatCodec)
             {
                 case SDPMediaFormatsEnum.G722:
-                    return AudioCodecsEnum.G722;
+                    return new AudioFormat(AudioCodecsEnum.G722, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 case SDPMediaFormatsEnum.PCMA:
-                    return AudioCodecsEnum.PCMA;
+                    return new AudioFormat(AudioCodecsEnum.PCMA, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 case SDPMediaFormatsEnum.PCMU:
-                    return AudioCodecsEnum.PCMU;
+                    return new AudioFormat(AudioCodecsEnum.PCMU, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 case SDPMediaFormatsEnum.OPUS:
-                    return AudioCodecsEnum.OPUS;
+                    return new AudioFormat(AudioCodecsEnum.OPUS, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
+                case SDPMediaFormatsEnum.L8:
+                    return new AudioFormat(AudioCodecsEnum.L8, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
+                case SDPMediaFormatsEnum.L16:
+                    return new AudioFormat(AudioCodecsEnum.L16, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 default:
-                    return AudioCodecsEnum.Unknown;
+                    return new AudioFormat(Convert.ToInt32(sdpFormat.FormatID), sdpFormat.Name, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
             }
         }
 
         /// <summary>
-        /// Maps a video SDP media type to a video codec.
+        /// Maps a video SDP media type to an media abstraction layer video format.
         /// </summary>
-        /// <param name="sdpFormat">The SDP format to match to a video codec.</param>
-        /// <returns>A matching video codec.</returns>
-        public static VideoCodecsEnum GetVideoCodecForSdpFormat(SDPMediaFormatsEnum sdpFormat)
+        /// <param name="sdpFormat">The SDP format to map to a video format.</param>
+        /// <returns>A video format value.</returns>
+        public static VideoFormat GetVideoFormatForSdpFormat(SDPMediaFormat sdpFormat)
         {
-            switch (sdpFormat)
+            switch (sdpFormat.FormatCodec)
             {
                 case SDPMediaFormatsEnum.H264:
-                    return VideoCodecsEnum.H264;
+                    return new VideoFormat(VideoCodecsEnum.H264, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 case SDPMediaFormatsEnum.VP8:
-                    return VideoCodecsEnum.VP8;
+                    return new VideoFormat(VideoCodecsEnum.VP8, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 default:
-                    return VideoCodecsEnum.Unknown;
+                    return new VideoFormat(Convert.ToInt32(sdpFormat), sdpFormat.Name, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
             }
         }
     }
@@ -169,8 +175,6 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SDPMediaFormat
     {
-        private const int DYNAMIC_ATTRIBUTES_START = 96;
-
         /// <summary>
         /// The mandatory ID for the media format. Warning, even though some ID's are normally used to represent
         /// a standard media type, e.g "0" for "PCMU" etc, there is no guarantee that's the case. "0" can be used
@@ -367,11 +371,10 @@ namespace SIPSorcery.Net
 
             List<SDPMediaFormat> compatible = new List<SDPMediaFormat>();
 
-            foreach (var format in a)
+            foreach (var format in a.Where(x => x.FormatAttribute == null || !x.FormatAttribute.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE)))
             {
                 // TODO: Need to compare all aspects of the format not just the codec.
-                if (format.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) != true
-                    && b.Any(x => (x.FormatCodec != SDPMediaFormatsEnum.Unknown && x.FormatCodec == format.FormatCodec)
+                if ( b.Any(x => (x.FormatCodec != SDPMediaFormatsEnum.Unknown && x.FormatCodec == format.FormatCodec)
                     || (x.Name != null && format.Name != null && x.Name.ToLower() == format.Name.ToLower())))
                 {
                     compatible.Add(format);

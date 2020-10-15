@@ -636,7 +636,8 @@ namespace SIPSorcery.Net
                             }
 
                             // Check that there is at least one compatible non-"RTP Event" audio codec.
-                            var audioCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats) :
+                            var audioCompatibleFormats = sdpType == SdpType.answer ? 
+                                SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats) :
                                 SDPMediaFormat.GetCompatibleFormats(audioAnnounce.MediaFormats, AudioLocalTrack.Capabilities);
 
                             if (audioCompatibleFormats?.Count == 0)
@@ -648,12 +649,13 @@ namespace SIPSorcery.Net
                                 // Set the local audio capabilities to the common set.
                                 AudioLocalTrack.Capabilities = audioCompatibleFormats;
 
+                                // Fire this without any common RTP event format included.
+                                OnAudioFormatsNegotiated?.Invoke(AudioLocalTrack.Capabilities);
+
                                 if (commonEventFormat != null)
                                 {
                                     AudioLocalTrack.Capabilities.Add(commonEventFormat);
                                 }
-
-                                OnAudioFormatsNegotiated?.Invoke(AudioLocalTrack.Capabilities);
                             }
 
                             var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connectionAddress;

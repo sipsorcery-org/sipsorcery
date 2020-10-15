@@ -9,6 +9,7 @@
 //
 // History:
 // 26 Aug 2020	Aaron Clauson	Refactored from RTPSession.
+// 15 Oct 2020  Aaron Clauson   Added media format map lookup class.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -22,6 +23,95 @@ using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Net
 {
+    public static class MediaFormatMap
+    {
+        public static SDPMediaFormat GetSdpFormat(AudioCodecsEnum audioCodec)
+        {
+            switch(audioCodec)
+            {
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.PCMU);
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.PCMA);
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.G722);
+                default:
+                    throw new ApplicationException($"Cannot return a default SDP format for an unknown or dynamic audio codec {audioCodec}.");
+            }
+        }
+
+        public static SDPMediaFormat GetSdpFormat(AudioFormat audioFormat)
+        {
+            SDPMediaFormat sdpFormat = null;
+
+            switch (audioFormat.Codec)
+            {
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.PCMU);
+                    break;
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.PCMA);
+                    break;
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.G722);
+                    break;
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.L8:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.L8);
+                    break;
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.L16:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.L16);
+                    break;
+                default:
+                    sdpFormat = new SDPMediaFormat(audioFormat.FormatID, audioFormat.FormatName);
+                    break;
+            }
+
+            sdpFormat.FormatAttribute = audioFormat.FormatAttribute;
+            sdpFormat.FormatParameterAttribute = audioFormat.FormatParameterAttribute;
+
+            return sdpFormat;
+        }
+
+        public static SDPMediaFormat GetSdpFormat(VideoCodecsEnum videoCodec)
+        {
+            switch (videoCodec)
+            {
+                case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.H264)
+                    {
+                        FormatParameterAttribute = "packetization-mode=1"
+                    };
+                case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.VP8:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.VP8);
+                default:
+                    throw new ApplicationException($"Cannot return a default SDP format for an unknown or dynamic video codec {videoCodec}.");
+            }
+        }
+
+        public static SDPMediaFormat GetSdpFormat(VideoFormat videoFormat)
+        {
+            SDPMediaFormat sdpFormat = null;
+
+            switch (videoFormat.Codec)
+            {
+                case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.VP8:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.VP8);
+                    break;
+                case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.H264);
+                    break;
+                default:
+                    sdpFormat = new SDPMediaFormat(videoFormat.FormatID, videoFormat.FormatName);
+                    break;
+            }
+
+            sdpFormat.FormatAttribute = videoFormat.FormatAttribute;
+            sdpFormat.FormatParameterAttribute = videoFormat.FormatParameterAttribute;
+
+            return sdpFormat;
+        }
+    }
+
     public class MediaStreamTrack
     {
         /// <summary>
@@ -123,45 +213,62 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Add a local audio track.
         /// </summary>
+        /// <param name="codec">The default audio codec that the local application supports.</param>
+        /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
+        /// send and receive or only one of.</param>
+        public MediaStreamTrack(
+            AudioCodecsEnum codec,
+            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
+            this(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { MediaFormatMap.GetSdpFormat(codec) }, streamStatus)
+        { }
+
+        /// <summary>
+        /// Add a local audio track.
+        /// </summary>
+        /// <param name="codecs">The default audio codecs that the local application supports.</param>
+        /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
+        /// send and receive or only one of.</param>
+        public MediaStreamTrack(
+            List<AudioCodecsEnum> codecs,
+            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
+            this(SDPMediaTypesEnum.audio, false, codecs.Select(x => MediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+        { }
+
+        /// <summary>
+        /// Add a local audio track.
+        /// </summary>
         /// <param name="audioFormats">The audio formats that the local application supports.</param>
         /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
         /// send and receive or only one of.</param>
         public MediaStreamTrack(
-            List<AudioCodecsEnum> audioFormats,
-            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
-        {
-            Kind = SDPMediaTypesEnum.audio;
-            IsRemote = false;
-            StreamStatus = streamStatus;
-            DefaultStreamStatus = streamStatus;
-            Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
-            SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+        List<AudioFormat> formats,
+        MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
+             this(SDPMediaTypesEnum.audio, false, formats.Select(x => MediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+        { }
 
-            if (audioFormats != null && audioFormats.Count > 0)
-            {
-                Capabilities = new List<SDPMediaFormat>();
+        /// <summary>
+        /// Add a local video track.
+        /// </summary>
+        /// <param name="codec">The default video codec that the local application supports.</param>
+        /// <param name="streamStatus">Optional. The stream status for the video track, e.g. whether
+        /// send and receive or only one of.</param>
+        public MediaStreamTrack(
+           VideoCodecsEnum codec,
+           MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
+            this(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { MediaFormatMap.GetSdpFormat(codec) }, streamStatus)
+        { }
 
-                foreach (var format in audioFormats)
-                {
-                    switch (format)
-                    {
-                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
-                            Capabilities.Add(new SDPMediaFormat(SDPMediaFormatsEnum.PCMU));
-                            break;
-                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
-                            Capabilities.Add(new SDPMediaFormat(SDPMediaFormatsEnum.PCMA));
-                            break;
-                        case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
-                            Capabilities.Add(new SDPMediaFormat(SDPMediaFormatsEnum.G722));
-                            break;
-                        default:
-                            // Audio codec without encoder support. It will be up to the application
-                            // to package appropriately and send via SendRawRtp calls.
-                            break;
-                    }
-                }
-            }
-        }
+        /// <summary>
+        /// Add a local video track.
+        /// </summary>
+        /// <param name="videoFormats">The default video codecs that the local application supports.</param>
+        /// <param name="streamStatus">Optional. The stream status for the video track, e.g. whether
+        /// send and receive or only one of.</param>
+        public MediaStreamTrack(
+           List<VideoCodecsEnum> codecs,
+           MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
+            this(SDPMediaTypesEnum.video, false, codecs.Select(x => MediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+        { }
 
         /// <summary>
         /// Add a local video track.
@@ -170,42 +277,10 @@ namespace SIPSorcery.Net
         /// <param name="streamStatus">Optional. The stream status for the video track, e.g. whether
         /// send and receive or only one of.</param>
         public MediaStreamTrack(
-            List<VideoCodecsEnum> videoFormats,
-            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
-        {
-            Kind = SDPMediaTypesEnum.video;
-            IsRemote = false;
-            StreamStatus = streamStatus;
-            DefaultStreamStatus = streamStatus;
-            Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
-            SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
-
-            if (videoFormats != null && videoFormats.Count > 0)
-            {
-                Capabilities = new List<SDPMediaFormat>();
-
-                foreach (var format in videoFormats)
-                {
-                    switch (format)
-                    {
-                        case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.VP8:
-                            Capabilities.Add(new SDPMediaFormat(SDPMediaFormatsEnum.VP8));
-                            break;
-                        case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264:
-                            Capabilities.Add(
-                                new SDPMediaFormat(SDPMediaFormatsEnum.H264)
-                                {
-                                    FormatParameterAttribute = "packetization-mode=1"
-                                });
-                            break;
-                        default:
-                            // Video codec without inbuilt packetisation support. It will be up to the application
-                            // to package appropriately and send via SendRawRtp calls.
-                            break;
-                    }
-                }
-            }
-        }
+        List<VideoFormat> formats,
+        MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
+             this(SDPMediaTypesEnum.video, false, formats.Select(x => MediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+        { }
 
         /// <summary>
         /// Checks whether the payload ID in an RTP packet received from the remote call party
@@ -217,19 +292,6 @@ namespace SIPSorcery.Net
         {
             return Capabilities.Any(x => x.FormatID == payloadID.ToString());
         }
-
-        /// <summary>
-        /// Creates and returns a copy of the media stream track.
-        /// </summary>
-        //public MediaStreamTrack CopyOf()
-        //{
-        //    List<SDPMediaFormat> capabilitiesCopy = new List<SDPMediaFormat>(Capabilities);
-        //    var copy = new MediaStreamTrack(Kind, IsRemote, capabilitiesCopy, StreamStatus);
-        //    copy.Ssrc = Ssrc;
-        //    copy.SeqNum = SeqNum;
-        //    copy.Timestamp = Timestamp;
-        //    return copy;
-        //}
 
         /// <summary>
         /// Checks whether a SSRC value from an RTP header or RTCP report matches

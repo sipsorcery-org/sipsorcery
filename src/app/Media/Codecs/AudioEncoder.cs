@@ -14,6 +14,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
+using System.Runtime.InteropServices;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
@@ -29,7 +31,7 @@ namespace SIPSorcery.Media
 
         public bool IsSupported(AudioCodecsEnum codec)
         {
-            switch(codec)
+            switch (codec)
             {
                 case AudioCodecsEnum.G722:
                 case AudioCodecsEnum.PCMA:
@@ -42,15 +44,23 @@ namespace SIPSorcery.Media
 
         public byte[] EncodeAudio(byte[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate)
         {
-            // Convert buffer into a PCM sample (array of signed shorts) that's
-            // suitable for input into the chosen encoder.
-            short[] pcmSigned = new short[pcm.Length / 2];
-            for (int i = 0; i < pcmSigned.Length; i++)
+            if (codec == AudioCodecsEnum.L8 ||
+                codec == AudioCodecsEnum.L16)
             {
-                pcmSigned[i] = BitConverter.ToInt16(pcm, i * 2);
+                return pcm;
             }
+            else
+            {
+                // Convert buffer into a PCM sample (array of signed shorts) that's
+                // suitable for input into the chosen encoder.
+                short[] pcmSigned = new short[pcm.Length / 2];
+                for (int i = 0; i < pcmSigned.Length; i++)
+                {
+                    pcmSigned[i] = BitConverter.ToInt16(pcm, i * 2);
+                }
 
-            return EncodeAudio(pcmSigned, codec, sampleRate);
+                return EncodeAudio(pcmSigned, codec, sampleRate);
+            }
         }
 
         public byte[] EncodeAudio(short[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate)
@@ -122,6 +132,20 @@ namespace SIPSorcery.Media
                 }
 
                 return encodedSample;
+            }
+            else if (codec == AudioCodecsEnum.L16)
+            {
+                // When netstandard2.1 can be used.
+                //return MemoryMarshal.Cast<short, byte>(pcm)
+
+                byte[] slinBuffer = new byte[pcm.Length * 2];
+                for (int index = 0; index < pcm.Length; index++)
+                {
+                    slinBuffer[index * 2] = (byte)(pcm[index] >> 8);
+                    slinBuffer[index * 2 + 1] = (byte)pcm[index];
+                }
+
+                return slinBuffer;
             }
             else
             {

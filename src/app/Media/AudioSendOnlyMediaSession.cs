@@ -35,9 +35,9 @@ namespace SIPSorcery.Media
 
         private void AudioFormatsNegotiated(List<SDPMediaFormat> audoFormats)
         {
-            var audioCodec = SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audoFormats.First().FormatCodec);
-            logger.LogDebug($"Setting audio source format to {audioCodec}.");
-            AudioExtrasSource.SetAudioSourceFormat(audioCodec);
+            var audioFormat = SDPMediaFormatInfo.GetAudioFormatForSdpFormat(audoFormats.First());
+            logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec}.");
+            AudioExtrasSource.SetAudioSourceFormat(audioFormat);
         }
 
         public async override Task Start()

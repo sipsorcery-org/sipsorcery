@@ -1459,14 +1459,15 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    logger.LogDebug($"Call attempt was answered with {sipResponse.ShortDescription} but an {setDescriptionResult} error occurred setting the remote description.");
+                    logger.LogWarning($"Call attempt was answered with {sipResponse.ShortDescription} but an {setDescriptionResult} error occurred setting the remote description.");
                     ClientCallFailed?.Invoke(uac, $"Failed to set the remote description {setDescriptionResult}", sipResponse);
+                    uac.SIPDialogue?.Hangup(this.m_transport, this.m_outboundProxy);
                     CallEnded();
                 }
             }
             else
             {
-                logger.LogDebug($"Call attempt was answered with failure response {sipResponse.ShortDescription}.");
+                logger.LogWarning($"Call attempt was answered with failure response {sipResponse.ShortDescription}.");
                 ClientCallFailed?.Invoke(uac, sipResponse.ReasonPhrase, sipResponse);
                 CallEnded();
             }

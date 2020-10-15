@@ -436,7 +436,7 @@ a=sendrecv";
                 logger.LogDebug("Request received: " + req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
-                var serverAudioSession = CreateMockVoIPMediaEndPoint(new List<AudioCodecsEnum>{ AudioCodecsEnum.PCMU });
+                var serverAudioSession = CreateMockVoIPMediaEndPoint(format => format.Codec == AudioCodecsEnum.PCMU);
 
                 var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
 
@@ -449,7 +449,7 @@ a=sendrecv";
 
             logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
 
-            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint(new List<AudioCodecsEnum> { AudioCodecsEnum.G722 });
+            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint(format => format.Codec == AudioCodecsEnum.G722);
             var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
 
             logger.LogDebug($"Client agent answer result {callResult }.");
@@ -782,10 +782,10 @@ a=sendrecv";
             return new MockMediaSession();
         }
 
-        private VoIPMediaSession CreateMockVoIPMediaEndPoint(List<AudioCodecsEnum> supportedCodecs = null)
+        private VoIPMediaSession CreateMockVoIPMediaEndPoint(Func<AudioFormat, bool> audioFormatFilter = null)
         {
             var audioSource = new AudioExtrasSource();
-            audioSource.RestrictCodecs(supportedCodecs);
+            audioSource.RestrictFormats(audioFormatFilter);
 
             MediaEndPoints mockEndPoints = new MediaEndPoints
             {
