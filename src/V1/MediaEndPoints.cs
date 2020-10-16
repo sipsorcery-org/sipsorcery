@@ -27,11 +27,13 @@ namespace SIPSorceryMedia.Abstractions.V1
 
     public enum AudioCodecsEnum
     {
+        // Well known codecs, format ID "should" not change.
         PCMU = 0,
         G722 = 9,
         PCMA = 8,
+
+        // Dynamic codecs, format ID can change.
         OPUS = 111,
-        L8 = 118,       // 8 bit signed linear.
         L16 = 119,      // 16 bit Signed linear.
 
         /// <summary>
@@ -77,6 +79,7 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         /// <summary>
         /// This is the "a=rtpmap" format attribute that will be set in the SDP offer/answer.
+        /// This field should be set WITHOUT the "a=rtpmap:" prefix.
         /// </summary>
         /// <remarks>
         /// Example:
@@ -86,7 +89,11 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         /// <summary>
         /// This is the "a=fmtp" format parameter that will be set in the SDP offer/answer.
+        /// This field should be set WITHOUT the "a=fmtp:" prefix.
         /// </summary>
+        /// <example>
+        /// a=fmtp:97 emphasis=50-15
+        /// </example>
         public string FormatParameterAttribute { get; set; }
 
         /// <summary>
@@ -147,6 +154,7 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         /// <summary>
         /// This is the "a=rtpmap" format attribute that will be set in the SDP offer/answer.
+        /// This field should be set WITHOUT the "a=rtpmap:" prefix.
         /// </summary>
         /// <remarks>
         /// Example:
@@ -156,6 +164,7 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         /// <summary>
         /// This is the "a=fmtp" format parameter that will be set in the SDP offer/answer.
+        /// This field should be set WITHOUT the "a=fmtp:" prefix.
         /// </summary>
         /// <remarks>
         /// Example:
@@ -209,13 +218,28 @@ namespace SIPSorceryMedia.Abstractions.V1
 
     public interface IAudioEncoder
     {
-        bool IsSupported(AudioCodecsEnum codec);
+        /// <summary>
+        /// Checks whether the encoder supports a particular audio format.
+        /// </summary>
+        /// <param name="format">The audio format to check support for.</param>
+        /// <returns>True if the encode and decode operations are supported for the audio format.</returns>
+        bool IsSupported(AudioFormat format);
 
-        byte[] EncodeAudio(byte[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
+        /// <summary>
+        /// Encodes 16bit signed PCM samples.
+        /// </summary>
+        /// <param name="pcm">An array of 16 bit signed audio samples.</param>
+        /// <param name="format">The audio format to encode the PCM sample to.</param>
+        /// <returns>A byte array containing the encoded sample.</returns>
+        byte[] EncodeAudio(short[] pcm, AudioFormat format);
 
-        byte[] EncodeAudio(short[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
-
-        byte[] DecodeAudio(byte[] encodedSample, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate);
+        /// <summary>
+        /// Decodes to 16bit signed PCM samples.
+        /// </summary>
+        /// <param name="encodedSample">The byte array containing the encoded sample.</param>
+        /// <param name="format">The audio format of the encoded sample.</param>
+        /// <returns>An array containing the 16 bit signed PCM samples.</returns>
+        short[] DecodeAudio(byte[] encodedSample, AudioFormat format);
     }
 
     public struct VideoSample
