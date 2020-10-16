@@ -13,8 +13,8 @@ namespace SIPSorceryMedia.Abstractions.V1
 
     public enum AudioSamplingRatesEnum
     {
-        Rate8KHz = 0,
-        Rate16KHz = 1,
+        Rate8KHz = 8000,
+        Rate16KHz = 16000,
     }
 
     public enum VideoPixelFormatsEnum
