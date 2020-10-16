@@ -48,7 +48,6 @@ namespace SIPSorcery.Net
         H264 = 102,
         H265 = 103,
         OPUS = 111,
-        L8 = 118,   // Audio 8 bit signed linear (uncompressed).
         L16 = 119,  // Audio 16 bit signed linear (uncompressed).
 
         Unknown = 999,
@@ -122,6 +121,29 @@ namespace SIPSorcery.Net
             }
         }
 
+        public static AudioSamplingRatesEnum GetRtpClockRate(AudioFormat format)
+        {
+            switch(format.Codec)
+            {
+                case AudioCodecsEnum.PCMA:
+                case AudioCodecsEnum.PCMU:
+                    return AudioSamplingRatesEnum.Rate8KHz;
+                case AudioCodecsEnum.G722:
+                case AudioCodecsEnum.L16:
+                    switch (format.FormatAttribute)
+                    {
+                        case var att when string.IsNullOrWhiteSpace(att):
+                            return AudioSamplingRatesEnum.Rate8KHz;
+                        case var att when SDPFormatAttribute.TryParseFormatAttribute(att, out var fAtt):
+                            return fAtt.ClockRate == 16000 ? AudioSamplingRatesEnum.Rate16KHz : AudioSamplingRatesEnum.Rate8KHz;
+                        default:
+                            return AudioSamplingRatesEnum.Rate8KHz;
+                    }
+                default:
+                    return AudioSamplingRatesEnum.Rate8KHz;
+            }
+        }
+
         /// <summary>
         /// Maps an audio SDP media type to an media abstraction layer audio format.
         /// </summary>
@@ -139,8 +161,6 @@ namespace SIPSorcery.Net
                     return new AudioFormat(AudioCodecsEnum.PCMU, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 case SDPMediaFormatsEnum.OPUS:
                     return new AudioFormat(AudioCodecsEnum.OPUS, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
-                case SDPMediaFormatsEnum.L8:
-                    return new AudioFormat(AudioCodecsEnum.L8, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 case SDPMediaFormatsEnum.L16:
                     return new AudioFormat(AudioCodecsEnum.L16, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 default:
@@ -163,6 +183,38 @@ namespace SIPSorcery.Net
                     return new VideoFormat(VideoCodecsEnum.VP8, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
                 default:
                     return new VideoFormat(Convert.ToInt32(sdpFormat), sdpFormat.Name, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
+            }
+        }
+    }
+
+    public struct SDPFormatAttribute
+    {
+        public static readonly SDPFormatAttribute Empty = new SDPFormatAttribute { ClockRate = 0, Name = null };
+
+        //public string FormatID;
+        public string Name;
+        public int ClockRate;
+
+        public static bool TryParseFormatAttribute(string attribute, out SDPFormatAttribute formatAttribute)
+        {
+            formatAttribute = SDPFormatAttribute.Empty;
+
+            Match attributeMatch = Regex.Match(attribute, @"(?<name>[a-zA-Z0-9\-]+)/(?<clockrate>\d+)\s*");
+            if (attributeMatch.Success)
+            {
+                formatAttribute.Name = attributeMatch.Result("${name}");
+
+                int clockRate;
+                if (int.TryParse(attributeMatch.Result("${clockrate}"), out clockRate))
+                {
+                    formatAttribute.ClockRate = clockRate;
+                }
+
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
     }
@@ -291,17 +343,12 @@ namespace SIPSorcery.Net
         {
             FormatAttribute = attribute;
 
-            Match attributeMatch = Regex.Match(attribute, @"(?<name>[a-zA-Z0-9\-]+)/(?<clockrate>\d+)\s*");
-            if (attributeMatch.Success)
+            if (SDPFormatAttribute.TryParseFormatAttribute(attribute, out var parsedAttribute))
             {
-                Name = attributeMatch.Result("${name}");
+                Name = parsedAttribute.Name;
+                ClockRate = parsedAttribute.ClockRate;
                 FormatCodec = GetFormatCodec(Name);
-                int clockRate;
-                if (Int32.TryParse(attributeMatch.Result("${clockrate}"), out clockRate))
-                {
-                    ClockRate = clockRate;
-                }
-            }
+            }  
         }
 
         public void SetFormatParameterAttribute(string attribute)

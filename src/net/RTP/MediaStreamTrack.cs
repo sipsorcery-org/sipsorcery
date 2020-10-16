@@ -55,9 +55,6 @@ namespace SIPSorcery.Net
                 case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
                     sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.G722);
                     break;
-                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.L8:
-                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.L8);
-                    break;
                 case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.L16:
                     sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.L16);
                     break;

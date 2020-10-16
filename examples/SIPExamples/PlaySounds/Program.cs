@@ -38,8 +38,8 @@ namespace demo
         //private static string DESTINATION = "1@127.0.0.1";
         //private static string DESTINATION = "sip:pcdodo@192.168.0.50";
         //private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
-        //private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
-        private static string DESTINATION = "sip:7001@192.168.0.48";
+        private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
+        //private static string DESTINATION = "sip:7002@192.168.0.48";
         private static SIPEndPoint OUTBOUND_PROXY = null;
 
         private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
@@ -64,7 +64,9 @@ namespace demo
             //var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
             //var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             var audioExtrasSource = new AudioExtrasSource();
-            audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.L16 );
+            audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+            //audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.L16 && format.FormatAttribute.Contains("8000"));
+            //audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.L16 && format.FormatAttribute.Contains("16000") );
             var voipMediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
             voipMediaSession.AcceptRtpFromAny = true;
             //voipMediaSession.AudioExtrasSource.AudioSamplePeriodMilliseconds = 20;
@@ -105,39 +107,39 @@ namespace demo
                 try
                 {
                     //Console.WriteLine("Sending welcome message from 8KHz sample.");
-                    //await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
+                    await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
 
-                    //await Task.Delay(200, exitCts.Token);
+                    await Task.Delay(200, exitCts.Token);
 
                     Console.WriteLine("Sending sine wave.");
                     voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.SineWave);
 
-                    //await Task.Delay(5000, exitCts.Token);
+                    await Task.Delay(5000, exitCts.Token);
 
-                    //Console.WriteLine("Sending white noise signal.");
-                    //voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.WhiteNoise);
-                    //await Task.Delay(2000, exitCts.Token);
+                    Console.WriteLine("Sending white noise signal.");
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.WhiteNoise);
+                    await Task.Delay(2000, exitCts.Token);
 
-                    //Console.WriteLine("Sending pink noise signal.");
-                    //voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.PinkNoise);
-                    //await Task.Delay(2000, exitCts.Token);
+                    Console.WriteLine("Sending pink noise signal.");
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.PinkNoise);
+                    await Task.Delay(2000, exitCts.Token);
 
-                    //Console.WriteLine("Sending silence.");
-                    //voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Silence);
+                    Console.WriteLine("Sending silence.");
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Silence);
 
-                    //await Task.Delay(2000, exitCts.Token);
+                    await Task.Delay(2000, exitCts.Token);
 
-                    //Console.WriteLine("Playing music.");
-                    //voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
+                    Console.WriteLine("Playing music.");
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
 
-                    //await Task.Delay(5000, exitCts.Token);
+                    await Task.Delay(5000, exitCts.Token);
 
-                    //Console.WriteLine("Sending goodbye message from 16KHz sample.");
-                    //await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+                    Console.WriteLine("Sending goodbye message from 16KHz sample.");
+                    await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
 
-                    //voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.None);
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.None);
 
-                    //await Task.Delay(200, exitCts.Token);
+                    await Task.Delay(200, exitCts.Token);
                 }
                 catch (System.Threading.Tasks.TaskCanceledException)
                 { }

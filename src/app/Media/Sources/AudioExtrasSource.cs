@@ -28,6 +28,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
@@ -78,7 +79,7 @@ namespace SIPSorcery.Media
         /// The sampling rate used to generate the input or if the source is
         /// being generated the sample rate to generate it at.
         /// </summary>
-        public AudioSamplingRatesEnum AudioInputSamplingRate = AudioSamplingRatesEnum.Rate8KHz;
+        public AudioSamplingRatesEnum MusicInputSamplingRate = AudioSamplingRatesEnum.Rate8KHz;
 
         /// <summary>
         /// If the audio source is set to music this must be the path to a raw PCM 8K sampled file.
@@ -99,14 +100,6 @@ namespace SIPSorcery.Media
         public const int AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX = 500;
 
         private const string MUSIC_RESOURCE_PATH = "SIPSorcery.media.Macroform_-_Simplicity.raw";
-        private const AudioSamplingRatesEnum DEFAULT_AUDIO_SAMPLE_RATE = AudioSamplingRatesEnum.Rate8KHz;
-        private const int DEFAULT_RTP_TIMESTAMP_RATE = 8000;
-        private const int MUSIC_FILE_SAMPLE_RATE = 8000;
-
-        private static readonly byte PCMU_SILENCE_BYTE_ZERO = 0x7F;
-        private static readonly byte PCMU_SILENCE_BYTE_ONE = 0xFF;
-        private static readonly byte PCMA_SILENCE_BYTE_ZERO = 0x55;
-        private static readonly byte PCMA_SILENCE_BYTE_ONE = 0xD5;
         private static float LINEAR_MAXIMUM = 32767f;
 
         private static ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -116,30 +109,27 @@ namespace SIPSorcery.Media
             new AudioFormat(AudioCodecsEnum.PCMU),
             new AudioFormat(AudioCodecsEnum.PCMA),
             new AudioFormat(AudioCodecsEnum.G722),
-            new AudioFormat(AudioCodecsEnum.L8, "L8/8000"),
+            new AudioFormat(AudioCodecsEnum.L16, "L16/8000"),
             new AudioFormat(AudioCodecsEnum.L16, "L16/16000")
         };
 
         private List<AudioFormat> _supportedFormats = new List<AudioFormat>(SupportedFormats);
-        private StreamReader _audioStreamReader;
+        private BinaryReader _musicStreamReader;
         private SignalGenerator _signalGenerator;
-        private Timer _audioStreamTimer;
+        private Timer _sendSampleTimer;
         private AudioSourceOptions _audioOpts;
         private AudioFormat _sendingFormat;             // The codec that was selected to send with during the SDP negotiation.
-        private int _sendingAudioRtpRate = DEFAULT_RTP_TIMESTAMP_RATE;      // 8Khz for both G711 and G722. Future codecs could have different values.
-        private bool _streamSendInProgress;             // When a send for stream is in progress it takes precedence over the existing audio source.
-        private byte[] _silenceBuffer;                  // PCMU and PCMA have a standardised silence format. When using these codecs the buffer can be constructed.  
-        private BinaryReader _streamSourceReader;
-        private Timer _streamSourceTimer;
         private bool _isStarted;
         private bool _isPaused;
         private bool _isClosed;
         private AudioEncoder _audioEncoder;
 
-        /// <summary>
-        /// The sample rate of the source stream.
-        /// </summary>
-        private AudioSamplingRatesEnum _streamSourceSampleRate;
+        // Fields for interrupting the main audio source with a different stream. For example playing
+        // an announcement over music etc.
+        private Timer _streamSourceTimer;
+        private BinaryReader _streamSourceReader;
+        private bool _streamSendInProgress;             // When a send for stream is in progress it takes precedence over the existing audio source.
+        private AudioSamplingRatesEnum _streamSourceRate = AudioSamplingRatesEnum.Rate8KHz;
 
         /// <summary>
         /// Fires when the current send audio from stream operation completes. Send from
@@ -241,8 +231,8 @@ namespace SIPSorcery.Media
             if (!_isClosed)
             {
                 _isClosed = true;
-                _audioStreamTimer?.Dispose();
-                _audioStreamReader?.Close();
+                _sendSampleTimer?.Dispose();
+                _musicStreamReader?.Close();
                 StopSendFromAudioStream();
             }
 
@@ -337,8 +327,8 @@ namespace SIPSorcery.Media
             // If required start the audio source.
             if (sourceOptions != null)
             {
-                _audioStreamTimer?.Dispose();
-                _audioStreamReader?.Close();
+                _sendSampleTimer?.Dispose();
+                _musicStreamReader?.Close();
                 StopSendFromAudioStream();
 
                 _audioOpts = sourceOptions;
@@ -349,13 +339,14 @@ namespace SIPSorcery.Media
                 }
                 else if (_audioOpts.AudioSource == AudioSourcesEnum.Silence)
                 {
-                    _audioStreamTimer = new Timer(SendSilenceSample, null, 0, _audioSamplePeriodMilliseconds);
+                    _sendSampleTimer = new Timer(SendSilenceSample, null, 0, _audioSamplePeriodMilliseconds);
                 }
                 else if (_audioOpts.AudioSource == AudioSourcesEnum.PinkNoise ||
                      _audioOpts.AudioSource == AudioSourcesEnum.WhiteNoise ||
                     _audioOpts.AudioSource == AudioSourcesEnum.SineWave)
                 {
-                    int sourceSampleRate = _audioOpts.AudioInputSamplingRate == AudioSamplingRatesEnum.Rate8KHz ? 8000 : 16000;
+                    AudioSamplingRatesEnum sendSampleRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat);
+                    int sourceSampleRate = sendSampleRate == AudioSamplingRatesEnum.Rate8KHz ? 8000 : 16000;
                     _signalGenerator = new SignalGenerator(sourceSampleRate, 1);
 
                     switch (_audioOpts.AudioSource)
@@ -372,7 +363,7 @@ namespace SIPSorcery.Media
                             break;
                     }
 
-                    _audioStreamTimer = new Timer(SendSignalGeneratorSample, null, 0, _audioSamplePeriodMilliseconds);
+                    _sendSampleTimer = new Timer(SendSignalGeneratorSample, null, 0, _audioSamplePeriodMilliseconds);
                 }
                 else if (_audioOpts.AudioSource == AudioSourcesEnum.Music)
                 {
@@ -386,14 +377,14 @@ namespace SIPSorcery.Media
                         var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
                         var audioStream = assem.GetManifestResourceStream(MUSIC_RESOURCE_PATH);
 
-                        _audioStreamReader = new StreamReader(audioStream);
+                        _musicStreamReader = new BinaryReader(audioStream);
                     }
                     else
                     {
-                        _audioStreamReader = new StreamReader(_audioOpts.MusicFile);
+                        _musicStreamReader = new BinaryReader(new FileStream(_audioOpts.MusicFile, FileMode.Open, FileAccess.Read));
                     }
 
-                    _audioStreamTimer = new Timer(SendMusicSample, null, 0, _audioSamplePeriodMilliseconds);
+                    _sendSampleTimer = new Timer(SendMusicSample, null, 0, _audioSamplePeriodMilliseconds);
                 }
             }
         }
@@ -413,8 +404,8 @@ namespace SIPSorcery.Media
                 Log.LogDebug($"Sending audio stream length {audioStream.Length}.");
 
                 _streamSendInProgress = true;
+                _streamSourceRate = streamSampleRate;
 
-                _streamSourceSampleRate = streamSampleRate;
                 _streamSourceReader = new BinaryReader(audioStream);
                 _streamSourceTimer = new Timer(SendStreamSample, null, Timeout.Infinite, Timeout.Infinite);
             }
@@ -427,22 +418,18 @@ namespace SIPSorcery.Media
         {
             if (!_isClosed && !_streamSendInProgress)
             {
-                lock (_audioStreamTimer)
+                lock (_sendSampleTimer)
                 {
-                    int sampleRate = MUSIC_FILE_SAMPLE_RATE;
-                    uint sampleSize = (uint)(sampleRate / 1000 * _audioSamplePeriodMilliseconds);
-                    byte[] sample = new byte[sampleSize * 2];
+                    var pcm = GetPcmSampleFromReader(_musicStreamReader, _audioOpts.MusicInputSamplingRate, out int samplesRead);
 
-                    int bytesRead = _audioStreamReader.BaseStream.Read(sample, 0, sample.Length);
-
-                    if (bytesRead > 0)
+                    if (samplesRead > 0)
                     {
-                        EncodeAndSendSample(sample, AudioSamplingRatesEnum.Rate8KHz);
+                        EncodeAndSend(pcm, _audioOpts.MusicInputSamplingRate);
                     }
 
-                    if (bytesRead == 0 || _audioStreamReader.EndOfStream)
+                    if (samplesRead == 0)
                     {
-                        _audioStreamReader.BaseStream.Position = 0;
+                        _musicStreamReader.BaseStream.Position = 0;
                     }
                 }
             }
@@ -455,47 +442,13 @@ namespace SIPSorcery.Media
         {
             if (!_isClosed && !_streamSendInProgress)
             {
-                lock (_audioStreamTimer)
+                lock (_sendSampleTimer)
                 {
-                    uint outputBufferSize = (uint)(_sendingAudioRtpRate / 1000 * _audioSamplePeriodMilliseconds);
-                    int sourceSampleRate = _audioOpts.AudioInputSamplingRate == AudioSamplingRatesEnum.Rate8KHz ? 8000 : 16000;
+                    AudioSamplingRatesEnum sendSampleRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat);
+                    int sendRateHz = sendSampleRate == AudioSamplingRatesEnum.Rate8KHz ? 8000 : 16000;
+                    short[] silencePcm = new short[sendRateHz / 1000 * _audioSamplePeriodMilliseconds];
 
-                    if (_sendingFormat.Codec == AudioCodecsEnum.G722)
-                    {
-                        int inputBufferSize = sourceSampleRate / 1000 * _audioSamplePeriodMilliseconds;
-                        short[] silencePcm = new short[inputBufferSize];
-
-                        //byte[] encodedSample = _audioEncoder.EncodeAudio(silencePcm, AudioCodecsEnum.G722, _sourceAudioSampleRate);
-                        //OnAudioSourceEncodedSample?.Invoke(outputBufferSize, encodedSample);
-                        EncodeAndSendSample(silencePcm, _audioOpts.AudioInputSamplingRate);
-                    }
-                    else if (_sendingFormat.Codec == AudioCodecsEnum.PCMU
-                            || _sendingFormat.Codec == AudioCodecsEnum.PCMA)
-                    {
-                        if (_silenceBuffer == null || _silenceBuffer.Length != outputBufferSize)
-                        {
-                            _silenceBuffer = new byte[outputBufferSize];
-                            SetSilenceBuffer(_silenceBuffer, 0);
-                        }
-
-                        // No encoding required for PCMU/PCMA silence.
-                        OnAudioSourceEncodedSample?.Invoke(outputBufferSize, _silenceBuffer);
-                    }
-                    else if (_sendingFormat.Codec == AudioCodecsEnum.L8 
-                        || _sendingFormat.Codec == AudioCodecsEnum.L16)
-                    {
-                        // The zero buffer values already represent silence for signed linear.
-                        if (_silenceBuffer == null || _silenceBuffer.Length != outputBufferSize)
-                        {
-                            _silenceBuffer = new byte[outputBufferSize];
-                        }
-
-                        OnAudioSourceEncodedSample?.Invoke(outputBufferSize, _silenceBuffer);
-                    }
-                    else
-                    {
-                        Log.LogWarning($"SendSilenceSample does not know how to encode {_sendingFormat}.");
-                    }
+                    EncodeAndSend(silencePcm, sendSampleRate);
                 }
             }
         }
@@ -507,21 +460,18 @@ namespace SIPSorcery.Media
         {
             if (!_isClosed && !_streamSendInProgress)
             {
-                lock (_audioStreamTimer)
+                lock (_sendSampleTimer)
                 {
-                    int sourceSampleRate = _audioOpts.AudioInputSamplingRate == AudioSamplingRatesEnum.Rate8KHz ? 8000 : 16000;
+                    AudioSamplingRatesEnum sendSampleRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat);
+                    int sourceSampleRate = sendSampleRate == AudioSamplingRatesEnum.Rate8KHz ? 8000 : 16000;
                     int inputBufferSize = sourceSampleRate / 1000 * _audioSamplePeriodMilliseconds;
 
-                    // Get the signal generator to generate the samples and then convert from
-                    // signed linear to PCM.
+                    // Get the signal generator to generate the samples and then convert from signed linear to PCM.
                     float[] linear = new float[inputBufferSize];
                     _signalGenerator.Read(linear, 0, inputBufferSize);
                     short[] pcm = linear.Select(x => (short)(x * LINEAR_MAXIMUM)).ToArray();
 
-                    EncodeAndSendSample(pcm, _audioOpts.AudioInputSamplingRate);
-
-                    //byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _sendingFormat.Codec, _sourceAudioSampleRate);
-                    //OnAudioSourceEncodedSample?.Invoke(outputBufferSize, encodedSample);
+                    EncodeAndSend(pcm, sendSampleRate);
                 }
             }
         }
@@ -531,72 +481,72 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendStreamSample(object state)
         {
-            lock (_streamSourceTimer)
+            if (!_isClosed)
             {
-                if (_streamSourceReader?.BaseStream?.CanRead == true)
+                lock (_streamSourceTimer)
                 {
-                    int sampleRate = (_streamSourceSampleRate == AudioSamplingRatesEnum.Rate8KHz) ? 8000 : 16000;
-                    int sampleSize = sampleRate / 1000 * _audioSamplePeriodMilliseconds;
-                    short[] sample = new short[sampleSize];
-                    int samplesRead = 0;
-
-                    for (int i = 0; i < sampleSize && _streamSourceReader.BaseStream.Position < _streamSourceReader.BaseStream.Length; i++)
+                    if (_streamSourceReader?.BaseStream?.CanRead == true)
                     {
-                        sample[samplesRead++] = _streamSourceReader.ReadInt16();
-                    }
+                        var pcm = GetPcmSampleFromReader(_streamSourceReader, _streamSourceRate, out int samplesRead);
 
-                    if (samplesRead > 0)
-                    {
-                        //Log.LogDebug($"Audio stream reader bytes read {samplesRead}, sample rate{_streamSourceSampleRate}, sending codec {_sendingFormat}.");
-
-                        if (samplesRead < sample.Length)
+                        if (samplesRead > 0)
                         {
-                            // If the sending codec supports it fill up any short samples with silence.
-                            // Note for signed linear, silence is represented by 0 so nothing needs to be done.
-                            if (_sendingFormat.Codec == AudioCodecsEnum.PCMU ||
-                                _sendingFormat.Codec == AudioCodecsEnum.PCMU)
+                            EncodeAndSend(pcm, _streamSourceRate);
+
+                            if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
                             {
-                                SetSilenceBuffer(sample, samplesRead);
+                                Log.LogDebug("Send audio from stream completed.");
+                                StopSendFromAudioStream();
                             }
                         }
-
-                        byte[] encodedSample = _audioEncoder.EncodeAudio(sample, _sendingFormat.Codec, _streamSourceSampleRate);
-                        OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
-
-                        if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
+                        else
                         {
-                            Log.LogDebug("Send audio from stream completed.");
+                            Log.LogWarning("Failed to read from audio stream source.");
                             StopSendFromAudioStream();
                         }
                     }
                     else
                     {
-                        Log.LogWarning("Failed to read from audio stream source.");
+                        Log.LogWarning("Failed to read from audio stream source, stream null or closed.");
                         StopSendFromAudioStream();
                     }
                 }
-                else
+            }
+        }
+
+        private short[] GetPcmSampleFromReader(BinaryReader binaryReader, AudioSamplingRatesEnum inputSampleRate, out int samplesRead)
+        {
+            samplesRead = 0;
+
+            if (binaryReader?.BaseStream?.CanRead == true)
+            {
+                int sampleRate = (inputSampleRate == AudioSamplingRatesEnum.Rate8KHz) ? 8000 : 16000;
+                int sampleSize = sampleRate / 1000 * _audioSamplePeriodMilliseconds;
+                short[] pcm = new short[sampleSize];
+
+                for (int i = 0; i < sampleSize && binaryReader.BaseStream.Position < binaryReader.BaseStream.Length; i++)
                 {
-                    Log.LogWarning("Failed to read from audio stream source, stream null or closed.");
-                    StopSendFromAudioStream();
+                    pcm[samplesRead++] = binaryReader.ReadInt16();
                 }
+
+                return pcm;
             }
+
+            return null;
         }
 
-        private void EncodeAndSendSample(short[] pcmSample, AudioSamplingRatesEnum inputSamplingRate)
+        private void EncodeAndSend(short[] pcm, AudioSamplingRatesEnum inputSampleRate)
         {
-            if (pcmSample.Length > 0)
+            if (pcm.Length > 0)
             {
-                byte[] encodedSample = _audioEncoder.EncodeAudio(pcmSample, _sendingFormat.Codec, inputSamplingRate);
-                OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
-            }
-        }
+                AudioSamplingRatesEnum sendSampleRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat);
 
-        private void EncodeAndSendSample(byte[] pcmSample, AudioSamplingRatesEnum inputSamplingRate)
-        {
-            if (pcmSample.Length > 0)
-            {
-                byte[] encodedSample = _audioEncoder.EncodeAudio(pcmSample, _sendingFormat.Codec, inputSamplingRate);
+                if (inputSampleRate != sendSampleRate)
+                {
+                    pcm = _audioEncoder.Resample(pcm, inputSampleRate, sendSampleRate);
+                }
+
+                byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _sendingFormat);
                 OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
             }
         }
@@ -611,54 +561,6 @@ namespace SIPSorcery.Media
             _streamSendInProgress = false;
 
             OnSendFromAudioStreamComplete?.Invoke();
-        }
-
-        /// <summary>
-        /// Fills up the silence buffer for the sending format and period.
-        /// </summary>
-        /// <param name="length">The required length for the silence buffer.</param>
-        private void SetSilenceBuffer(short[] buffer, int startPosn)
-        {
-            for (int index = startPosn; index < buffer.Length - 1; index++)
-            {
-                if (_sendingFormat.Codec == AudioCodecsEnum.PCMA)
-                {
-                    buffer[index] = (short)(PCMA_SILENCE_BYTE_ONE << 8 & 0xff00 + PCMA_SILENCE_BYTE_ZERO & 0x00ff);
-                }
-                else if (_sendingFormat.Codec == AudioCodecsEnum.PCMU)
-                {
-                    buffer[index] = (short)(PCMU_SILENCE_BYTE_ONE << 8 & 0xff00 + PCMU_SILENCE_BYTE_ZERO & 0x00ff);
-                }
-
-                // When C#8 can be used.
-                //buffer[index] = _sendingFormat switch
-                //{
-                //    AudioCodecsEnum.PCMA => (short)(PCMA_SILENCE_BYTE_ONE << 8 & 0xff00 + PCMA_SILENCE_BYTE_ZERO & 0x00ff),
-                //    AudioCodecsEnum.PCMU => (short)(PCMU_SILENCE_BYTE_ONE << 8 & 0xff00 + PCMU_SILENCE_BYTE_ZERO & 0x00ff),
-                //    _ => throw new ApplicationException("Can't create a silence buffer for {_sendingFormat}.");
-                //}
-            }
-        }
-
-        /// <summary>
-        /// Fills up the silence buffer for the sending format and period.
-        /// </summary>
-        /// <param name="length">The required length for the silence buffer.</param>
-        private void SetSilenceBuffer(byte[] buffer, int startPosn)
-        {
-            for (int index = startPosn; index < buffer.Length - 1; index += 2)
-            {
-                if (_sendingFormat.Codec == AudioCodecsEnum.PCMA)
-                {
-                    buffer[index] = PCMA_SILENCE_BYTE_ZERO;
-                    buffer[index + 1] = PCMA_SILENCE_BYTE_ONE;
-                }
-                else if (_sendingFormat.Codec == AudioCodecsEnum.PCMU)
-                {
-                    buffer[index] = PCMU_SILENCE_BYTE_ZERO;
-                    buffer[index + 1] = PCMU_SILENCE_BYTE_ONE;
-                }
-            }
         }
     }
 }
