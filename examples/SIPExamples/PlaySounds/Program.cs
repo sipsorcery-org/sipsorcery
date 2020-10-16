@@ -64,7 +64,9 @@ namespace demo
             //var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
             //var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             var audioExtrasSource = new AudioExtrasSource();
-            audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+            //audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+            //audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.G722);
+            //audioExtrasSource.RestrictFormats(format => format.FormatID == 121);
             //audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.L16 && format.FormatAttribute.Contains("8000"));
             //audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.L16 && format.FormatAttribute.Contains("16000") );
             var voipMediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });

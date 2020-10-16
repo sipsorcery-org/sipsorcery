@@ -636,9 +636,9 @@ namespace SIPSorcery.Net
                             }
 
                             // Check that there is at least one compatible non-"RTP Event" audio codec.
-                            var audioCompatibleFormats = sdpType == SdpType.answer ? 
-                                SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats) :
-                                SDPMediaFormat.GetCompatibleFormats(audioAnnounce.MediaFormats, AudioLocalTrack.Capabilities);
+                            var audioCompatibleFormats = sdpType == SdpType.answer ?
+                                SDPMediaFormat.GetCompatibleFormats(audioAnnounce.MediaFormats, AudioLocalTrack.Capabilities) :
+                                SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats);
 
                             if (audioCompatibleFormats?.Count == 0)
                             {
@@ -725,8 +725,10 @@ namespace SIPSorcery.Net
                         else
                         {
                             // Check that there is at least one compatible video codec.
-                            var videoCompatibleFormats = sdpType == SdpType.answer ? SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, videoAnnounce.MediaFormats) :
-                                 SDPMediaFormat.GetCompatibleFormats(videoAnnounce.MediaFormats, VideoLocalTrack.Capabilities);
+                            var videoCompatibleFormats = sdpType == SdpType.answer ?
+                                SDPMediaFormat.GetCompatibleFormats(videoAnnounce.MediaFormats, VideoLocalTrack.Capabilities) :
+                                SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, videoAnnounce.MediaFormats);
+                                 ;
 
                             if (videoCompatibleFormats?.Count == 0)
                             {

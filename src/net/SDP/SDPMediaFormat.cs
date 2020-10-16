@@ -100,48 +100,152 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Attempts to get the RTP clock rate of known payload types. Generally this will be the same
-        /// as the clock rate but in some cases for seemingly historical reasons they are different
+        /// Attempts to get the required sampling rate for an audio format. This is the 
+        /// rate required for the samples contained in the RTP payloads. The rate is almost
+        /// always the same as the RTP clock rate with the only known exception being G722
+        /// which uses an 8KHz clock rate but requires 16Khz output samples.
         /// </summary>
-        /// <param name="mediaType">The media type to get the clock rate for.</param>
-        /// <returns>An integer representing the payload type's RTP timestamp frequency or 0
-        /// if it's not known.</returns>
-        public static int GetRtpDefaultClockRate(AudioCodecsEnum codec)
+        /// <param name="format">The audio format to get the clock rate for.</param>
+        /// <returns>The required sampling rate for RTP payloads using the audio format.</returns>
+        public static int GetAudioSamplingRate(AudioFormat format)
         {
-            switch (codec)
+            if(format.Codec == AudioCodecsEnum.G722 && 
+                (format.FormatAttribute == null || format.FormatAttribute == "G722/8000"))
             {
-                case AudioCodecsEnum.PCMA:
-                case AudioCodecsEnum.PCMU:
-                case AudioCodecsEnum.G722:
-                    return 8000;
-                case AudioCodecsEnum.OPUS:
-                    return 48000;
-                default:
-                    return 8000;
+                return 16000;
+            }
+            else
+            {
+                return GetRtpClockRate(format);
             }
         }
 
-        public static AudioSamplingRatesEnum GetRtpClockRate(AudioFormat format)
+        public static int GetRtpClockRate(AudioFormat format)
         {
-            switch(format.Codec)
+            if (string.IsNullOrWhiteSpace(format.FormatAttribute) ||
+                !SDPFormatAttribute.TryParseFormatAttribute(format.FormatAttribute, out var fmtAtt))
             {
-                case AudioCodecsEnum.PCMA:
-                case AudioCodecsEnum.PCMU:
-                    return AudioSamplingRatesEnum.Rate8KHz;
-                case AudioCodecsEnum.G722:
-                case AudioCodecsEnum.L16:
-                    switch (format.FormatAttribute)
-                    {
-                        case var att when string.IsNullOrWhiteSpace(att):
-                            return AudioSamplingRatesEnum.Rate8KHz;
-                        case var att when SDPFormatAttribute.TryParseFormatAttribute(att, out var fAtt):
-                            return fAtt.ClockRate == 16000 ? AudioSamplingRatesEnum.Rate16KHz : AudioSamplingRatesEnum.Rate8KHz;
-                        default:
-                            return AudioSamplingRatesEnum.Rate8KHz;
-                    }
-                default:
-                    return AudioSamplingRatesEnum.Rate8KHz;
+                switch (format.Codec)
+                {
+                    case AudioCodecsEnum.PCMA:
+                    case AudioCodecsEnum.PCMU:
+                    case AudioCodecsEnum.G722:
+                        return 8000;
+                    case AudioCodecsEnum.L16:
+                        return 16000;
+                    default:
+                        return 8000;
+                }
             }
+            else
+            {
+                return (fmtAtt.ClockRate != 0) ? fmtAtt.ClockRate : 8000;
+            }
+        }
+    }
+
+    public static class MediaFormatMap
+    {
+        public static AudioCodecsEnum GetAudioCodec(SDPMediaFormatsEnum sdpMediaFormat)
+        {
+            switch (sdpMediaFormat)
+            {
+                case SDPMediaFormatsEnum.G722:
+                    return AudioCodecsEnum.G722;
+                case SDPMediaFormatsEnum.PCMA:
+                    return AudioCodecsEnum.PCMA;
+                case SDPMediaFormatsEnum.PCMU:
+                    return AudioCodecsEnum.PCMU;
+                case SDPMediaFormatsEnum.OPUS:
+                    return AudioCodecsEnum.OPUS;
+                case SDPMediaFormatsEnum.L16:
+                    return AudioCodecsEnum.L16;
+                default:
+                    return AudioCodecsEnum.Dynamic;
+            }
+        }
+
+        public static SDPMediaFormat GetSdpFormat(AudioCodecsEnum audioCodec)
+        {
+            switch (audioCodec)
+            {
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.PCMU);
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.PCMA);
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.G722);
+                default:
+                    throw new ApplicationException($"Cannot return a default SDP format for an unknown or dynamic audio codec {audioCodec}.");
+            }
+        }
+
+        public static SDPMediaFormat GetSdpFormat(AudioFormat audioFormat)
+        {
+            SDPMediaFormat sdpFormat = null;
+
+            switch (audioFormat.Codec)
+            {
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMU:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.PCMU);
+                    break;
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.PCMA:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.PCMA);
+                    break;
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.G722:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.G722);
+                    break;
+                case SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum.L16:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.L16);
+                    break;
+                default:
+                    sdpFormat = new SDPMediaFormat(audioFormat.FormatID, audioFormat.FormatName);
+                    break;
+            }
+
+            sdpFormat.FormatAttribute = audioFormat.FormatAttribute;
+            sdpFormat.FormatParameterAttribute = audioFormat.FormatParameterAttribute;
+
+            return sdpFormat;
+        }
+
+        public static SDPMediaFormat GetSdpFormat(VideoCodecsEnum videoCodec)
+        {
+            switch (videoCodec)
+            {
+                case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.H264)
+                    {
+                        FormatParameterAttribute = "packetization-mode=1"
+                    };
+                case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.VP8:
+                    return new SDPMediaFormat(SDPMediaFormatsEnum.VP8);
+                default:
+                    throw new ApplicationException($"Cannot return a default SDP format for an unknown or dynamic video codec {videoCodec}.");
+            }
+        }
+
+        public static SDPMediaFormat GetSdpFormat(VideoFormat videoFormat)
+        {
+            SDPMediaFormat sdpFormat = null;
+
+            switch (videoFormat.Codec)
+            {
+                case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.VP8:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.VP8);
+                    break;
+                case SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264:
+                    sdpFormat = new SDPMediaFormat(SDPMediaFormatsEnum.H264);
+                    break;
+                default:
+                    sdpFormat = new SDPMediaFormat(videoFormat.FormatID, videoFormat.FormatName);
+                    break;
+            }
+
+            sdpFormat.FormatAttribute = videoFormat.FormatAttribute;
+            sdpFormat.FormatParameterAttribute = videoFormat.FormatParameterAttribute;
+
+            return sdpFormat;
         }
 
         /// <summary>
@@ -151,20 +255,17 @@ namespace SIPSorcery.Net
         /// <returns>An audio format value.</returns>
         public static AudioFormat GetAudioFormatForSdpFormat(SDPMediaFormat sdpFormat)
         {
-            switch(sdpFormat.FormatCodec)
+            var audioCodec = GetAudioCodec(sdpFormat.FormatCodec);
+
+            if (audioCodec != AudioCodecsEnum.Dynamic)
             {
-                case SDPMediaFormatsEnum.G722:
-                    return new AudioFormat(AudioCodecsEnum.G722, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
-                case SDPMediaFormatsEnum.PCMA:
-                    return new AudioFormat(AudioCodecsEnum.PCMA, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
-                case SDPMediaFormatsEnum.PCMU:
-                    return new AudioFormat(AudioCodecsEnum.PCMU, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
-                case SDPMediaFormatsEnum.OPUS:
-                    return new AudioFormat(AudioCodecsEnum.OPUS, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
-                case SDPMediaFormatsEnum.L16:
-                    return new AudioFormat(AudioCodecsEnum.L16, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
-                default:
-                    return new AudioFormat(Convert.ToInt32(sdpFormat.FormatID), sdpFormat.Name, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
+                int.TryParse(sdpFormat.FormatID, out int formatID);
+                return new AudioFormat(audioCodec, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute) 
+                    { FormatID = formatID != 0 ? formatID : (int)audioCodec };
+            }
+            else
+            {
+                return new AudioFormat(Convert.ToInt32(sdpFormat.FormatID), sdpFormat.Name, sdpFormat.FormatAttribute, sdpFormat.FormatParameterAttribute);
             }
         }
 
@@ -420,9 +521,10 @@ namespace SIPSorcery.Net
 
             foreach (var format in a.Where(x => x.FormatAttribute == null || !x.FormatAttribute.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE)))
             {
-                // TODO: Need to compare all aspects of the format not just the codec.
-                if ( b.Any(x => (x.FormatCodec != SDPMediaFormatsEnum.Unknown && x.FormatCodec == format.FormatCodec)
-                    || (x.Name != null && format.Name != null && x.Name.ToLower() == format.Name.ToLower())))
+                if ( b.Any(x => 
+                (x.FormatCodec != SDPMediaFormatsEnum.Unknown && x.FormatCodec == format.FormatCodec)
+                    || (x.Name != null && format.Name != null && x.Name.ToLower() == format.Name.ToLower())
+                 && x.ClockRate == format.ClockRate))
                 {
                     compatible.Add(format);
                 }
