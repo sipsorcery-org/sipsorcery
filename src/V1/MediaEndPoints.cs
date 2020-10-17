@@ -300,6 +300,14 @@ namespace SIPSorceryMedia.Abstractions.V1
         void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
 
         void RestrictFormats(Func<AudioFormat, bool> filter);
+
+        Task PauseAudioSink();
+
+        Task ResumeAudioSink();
+
+        Task StartAudioSink();
+
+        Task CloseAudioSink();
     }
 
     public interface IVideoSource
@@ -349,5 +357,13 @@ namespace SIPSorceryMedia.Abstractions.V1
         void SetVideoSinkFormat(VideoFormat videoFormat);
 
         void RestrictFormats(Func<VideoFormat, bool> filter);
+
+        Task PauseVideoSink();
+
+        Task ResumeVideoSink();
+
+        Task StartVideoSink();
+
+        Task CloseVideooSink();
     }
 }
