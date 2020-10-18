@@ -62,7 +62,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The media capabilities supported by this track.
         /// </summary>
-        public List<SDPMediaFormat> Capabilities { get; internal set; }
+        public List<SDPAudioVideoMediaFormat> Capabilities { get; internal set; }
 
         /// <summary>
         /// Represents the original and default stream status for the track. This is set
@@ -105,7 +105,7 @@ namespace SIPSorcery.Net
         public MediaStreamTrack(
             SDPMediaTypesEnum kind,
             bool isRemote,
-            List<SDPMediaFormat> capabilities,
+            List<SDPAudioVideoMediaFormat> capabilities,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
         {
             Kind = kind;
@@ -124,25 +124,13 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Add a local audio track.
         /// </summary>
-        /// <param name="codec">The default audio codec that the local application supports.</param>
+        /// <param name="format">The audio format that the local application supports.</param>
         /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
         /// send and receive or only one of.</param>
         public MediaStreamTrack(
-            AudioCodecsEnum codec,
+            AudioFormat format,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-            this(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { MediaFormatMap.GetSdpFormat(codec) }, streamStatus)
-        { }
-
-        /// <summary>
-        /// Add a local audio track.
-        /// </summary>
-        /// <param name="codecs">The default audio codecs that the local application supports.</param>
-        /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
-        /// send and receive or only one of.</param>
-        public MediaStreamTrack(
-            List<AudioCodecsEnum> codecs,
-            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-            this(SDPMediaTypesEnum.audio, false, codecs.Select(x => MediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+            this(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { SDPMediaFormatMap.GetSdpFormat(format) }, streamStatus)
         { }
 
         /// <summary>
@@ -154,31 +142,19 @@ namespace SIPSorcery.Net
         public MediaStreamTrack(
         List<AudioFormat> formats,
         MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-             this(SDPMediaTypesEnum.audio, false, formats.Select(x => MediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+             this(SDPMediaTypesEnum.audio, false, formats.Select(x => SDPMediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
         { }
 
         /// <summary>
         /// Add a local video track.
         /// </summary>
-        /// <param name="codec">The default video codec that the local application supports.</param>
+        /// <param name="format">The video format that the local application supports.</param>
         /// <param name="streamStatus">Optional. The stream status for the video track, e.g. whether
         /// send and receive or only one of.</param>
         public MediaStreamTrack(
-           VideoCodecsEnum codec,
+           VideoFormat format,
            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-            this(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { MediaFormatMap.GetSdpFormat(codec) }, streamStatus)
-        { }
-
-        /// <summary>
-        /// Add a local video track.
-        /// </summary>
-        /// <param name="videoFormats">The default video codecs that the local application supports.</param>
-        /// <param name="streamStatus">Optional. The stream status for the video track, e.g. whether
-        /// send and receive or only one of.</param>
-        public MediaStreamTrack(
-           List<VideoCodecsEnum> codecs,
-           MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-            this(SDPMediaTypesEnum.video, false, codecs.Select(x => MediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+            this(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { SDPMediaFormatMap.GetSdpFormat(format) }, streamStatus)
         { }
 
         /// <summary>
@@ -190,7 +166,7 @@ namespace SIPSorcery.Net
         public MediaStreamTrack(
         List<VideoFormat> formats,
         MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-             this(SDPMediaTypesEnum.video, false, formats.Select(x => MediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+             this(SDPMediaTypesEnum.video, false, formats.Select(x => SDPMediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
         { }
 
         /// <summary>
@@ -201,7 +177,7 @@ namespace SIPSorcery.Net
         /// <returns>True if the payload ID matches one of the codecs for this stream. False if not.</returns>
         public bool IsPayloadIDMatch(int payloadID)
         {
-            return Capabilities.Any(x => x.FormatID == payloadID.ToString());
+            return Capabilities.Any(x => x.ID == payloadID);
         }
 
         /// <summary>

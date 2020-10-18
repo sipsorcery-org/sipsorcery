@@ -541,7 +541,7 @@ a=sendrecv";
             var uas = userAgent.AcceptCall(inviteReq);
 
             RTPSession rtpSession = new RTPSession(false, false, false);
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(audioTrack);
 
             var result = await userAgent.Answer(uas, rtpSession);
@@ -600,7 +600,7 @@ a=sendrecv";
 
                 SIPUserAgent userAgent = new SIPUserAgent(callerTransport, null);
 
-                MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+                MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
                 rtpSession.addTrack(audioTrack);
 
                 SIPURI dstUri = new SIPURI(SIPSchemesEnum.sip, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);
@@ -665,7 +665,7 @@ a=sendrecv";
 
                 SIPUserAgent userAgent = new SIPUserAgent(callerTransport, null);
 
-                MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+                MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
                 rtpSession.addTrack(audioTrack);
 
                 SIPURI dstUri = new SIPURI(SIPSchemesEnum.sip, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);

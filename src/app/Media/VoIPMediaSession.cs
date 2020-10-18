@@ -133,18 +133,18 @@ namespace SIPSorcery.Media
             }
         }
 
-        private void AudioFormatsNegotiated(List<SDPMediaFormat> audoFormats)
+        private void AudioFormatsNegotiated(List<AudioFormat> audoFormats)
         {
-            var audioFormat = MediaFormatMap.GetAudioFormatForSdpFormat(audoFormats.First());
-            logger.LogDebug($"Setting audio sink and source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.FormatAttribute}.");
+            var audioFormat = audoFormats.First();
+            logger.LogDebug($"Setting audio sink and source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
             Media.AudioSink?.SetAudioSinkFormat(audioFormat);
             Media.AudioSource?.SetAudioSourceFormat(audioFormat);
             _audioExtrasSource.SetAudioSourceFormat(audioFormat);
         }
 
-        private void VideoFormatsNegotiated(List<SDPMediaFormat> videoFormats)
+        private void VideoFormatsNegotiated(List<VideoFormat> videoFormats)
         {
-            var videoFormat = MediaFormatMap.GetVideoFormatForSdpFormat(videoFormats.First());
+            var videoFormat = videoFormats.First();
             logger.LogDebug($"Setting video sink and source format to {videoFormat.FormatID}:{videoFormat.Codec}.");
             Media.VideoSink?.SetVideoSinkFormat(videoFormat);
             Media.VideoSource?.SetVideoSourceFormat(videoFormat);

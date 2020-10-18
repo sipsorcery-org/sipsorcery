@@ -30,7 +30,7 @@ namespace SIPSorcery.Net
         public int HeaderExtensionFlag = 0;                     // 1 bit.
         public int CSRCCount = 0;                               // 4 bits
         public int MarkerBit = 0;                               // 1 bit.
-        public int PayloadType = (int)SDPMediaFormatsEnum.PCMU; // 7 bits.
+        public int PayloadType = 0;                             // 7 bits.
         public UInt16 SequenceNumber;                           // 16 bits.
         public uint Timestamp;                                  // 32 bits.
         public uint SyncSource;                                 // 32 bits.

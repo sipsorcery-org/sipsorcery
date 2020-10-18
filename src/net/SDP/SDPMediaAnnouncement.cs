@@ -17,7 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -62,6 +64,8 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
 
         public const string m_CRLF = "\r\n";
+
+        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         public SDPConnectionInformation Connection;
 
@@ -112,10 +116,11 @@ namespace SIPSorcery.Net
         public List<SDPSsrcAttribute> SsrcAttributes = new List<SDPSsrcAttribute>();
 
         public List<string> BandwidthAttributes = new List<string>();
-        public List<SDPMediaFormat> MediaFormats = new List<SDPMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
+        public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
         public List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
         public List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
         public List<string> IceCandidates;
+        public List<SDPApplicationMediaFormat> ApplicationMediaFormats = new List<SDPApplicationMediaFormat>(); // List of media formats for "application media announcements.
 
         /// <summary>
         /// The stream status of this media announcement. Note that None means no explicit value has been set
@@ -136,11 +141,25 @@ namespace SIPSorcery.Net
             Connection = connection;
         }
 
-        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPMediaFormat> mediaFormats)
+        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPAudioVideoMediaFormat> mediaFormats)
         {
             Media = mediaType;
             Port = port;
-            MediaFormats = mediaFormats;
+
+            foreach (var fmt in mediaFormats)
+            {
+                if (!MediaFormats.ContainsKey(fmt.ID))
+                {
+                    MediaFormats.Add(fmt.ID, fmt);
+                }
+            }
+        }
+
+        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPApplicationMediaFormat> appMediaFormats)
+        {
+            Media = mediaType;
+            Port = port;
+            ApplicationMediaFormats = appMediaFormats;
         }
 
         public void ParseMediaFormats(string formatList)
@@ -152,66 +171,27 @@ namespace SIPSorcery.Net
                 {
                     foreach (string formatID in formatIDs)
                     {
-                        int format;
-                        if (Int32.TryParse(formatID, out format))
+                        if (Media == SDPMediaTypesEnum.application)
                         {
-                            MediaFormats.Add(new SDPMediaFormat(format));
+                            ApplicationMediaFormats.Add(new SDPApplicationMediaFormat(formatID));
                         }
                         else
                         {
-                            MediaFormats.Add(new SDPMediaFormat(formatID));
+                            if (Int32.TryParse(formatID, out int id) 
+                                && !MediaFormats.ContainsKey(id) 
+                                && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
+                            {
+                                if (Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatID, out var wellKnown))
+                                {
+                                    MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
+                                }
+                                else
+                                {
+                                    logger.LogWarning($"Excluding unrecognised well known media format ID {id}.");
+                                }
+                            }
                         }
                     }
-                }
-            }
-        }
-
-        public bool HasMediaFormat(int formatID)
-        {
-            return HasMediaFormat(formatID.ToString());
-        }
-
-        public void AddFormatAttribute(int formatID, string formatAttribute)
-        {
-            AddFormatAttribute(formatID.ToString(), formatAttribute);
-        }
-
-        public void AddFormatParameterAttribute(int formatID, string formatAttribute)
-        {
-            AddFormatParameterAttribute(formatID.ToString(), formatAttribute);
-        }
-
-        public bool HasMediaFormat(string formatID)
-        {
-            foreach (SDPMediaFormat mediaFormat in MediaFormats)
-            {
-                if (mediaFormat.FormatID == formatID)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public void AddFormatAttribute(string formatID, string formatAttribute)
-        {
-            for (int index = 0; index < MediaFormats.Count; index++)
-            {
-                if (MediaFormats[index].FormatID == formatID)
-                {
-                    MediaFormats[index].SetFormatAttribute(formatAttribute);
-                }
-            }
-        }
-
-        public void AddFormatParameterAttribute(string formatID, string formatAttribute)
-        {
-            for (int index = 0; index < MediaFormats.Count; index++)
-            {
-                if (MediaFormats[index].FormatID == formatID)
-                {
-                    MediaFormats[index].SetFormatParameterAttribute(formatAttribute);
                 }
             }
         }
@@ -292,7 +272,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            // If the "sctpmap" attribute is set use it instead of the separate "sctpport" and "max-message-size"
+            // If the "sctpmap" attribute is set, use it instead of the separate "sctpport" and "max-message-size"
             // attributes. They both contain the same information. The "sctpmap" is the legacy attribute and if
             // an application sets it then it's likely to be for a specific reason.
             if (SctpMap != null)
@@ -317,41 +297,71 @@ namespace SIPSorcery.Net
 
         public string GetFormatListToString()
         {
-            string mediaFormatList = null;
-            foreach (SDPMediaFormat mediaFormat in MediaFormats)
+            if (Media == SDPMediaTypesEnum.application)
             {
-                mediaFormatList += mediaFormat.FormatID + " ";
-            }
+                StringBuilder sb = new StringBuilder();
+                foreach(SDPApplicationMediaFormat appFormat in ApplicationMediaFormats)
+                {
+                    sb.Append(appFormat.ID);
+                    sb.Append(" ");
+                }
 
-            return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
+                return sb.ToString().Trim();
+            }
+            else
+            {
+                string mediaFormatList = null;
+                foreach (var mediaFormat in MediaFormats)
+                {
+                    mediaFormatList += mediaFormat.Key + " ";
+                }
+
+                return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
+            }
         }
 
         public string GetFormatListAttributesToString()
         {
-            string formatAttributes = null;
-
-            if (MediaFormats != null)
+            if (Media == SDPMediaTypesEnum.application)
             {
-                foreach (SDPMediaFormat mediaFormat in MediaFormats.Where(x => x.IsStandardAttribute == false))
+                if (ApplicationMediaFormats.Count > 0)
                 {
-                    if (mediaFormat.FormatAttribute != null)
+                    StringBuilder sb = new StringBuilder();
+                    foreach (SDPApplicationMediaFormat appFormat in ApplicationMediaFormats.Where(x => x.Rtpmap != null))
                     {
-                        formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatAttribute + m_CRLF;
-                    }
-                    else if (Media == SDPMediaTypesEnum.audio || Media == SDPMediaTypesEnum.video)
-                    {
-                        // If no format attribute is specified then a default one can be constructed for dynamic audio and video types.
-                        formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.Name + "/" + mediaFormat.ClockRate + m_CRLF;
+                        sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.ID} {appFormat.Rtpmap}{m_CRLF}");
+                        if(appFormat.Fmtmp != null)
+                        {
+                            sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX}{appFormat.ID} {appFormat.Fmtmp}{m_CRLF}");
+                        }
                     }
 
-                    if (mediaFormat.FormatParameterAttribute != null)
-                    {
-                        formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatParameterAttribute + m_CRLF;
-                    }
+                    return sb.ToString();
+                }
+                else
+                {
+                    return null;
                 }
             }
+            else
+            {
+                string formatAttributes = null;
 
-            return formatAttributes;
+                if (MediaFormats != null)
+                {
+                    foreach (var mediaFormat in MediaFormats.Where(x => x.Key >= SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN).Select(y => y.Value))
+                    {
+                        formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
+
+                        if (mediaFormat.Fmtp != null)
+                        {
+                            formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Fmtp + m_CRLF;
+                        }
+                    }
+                }
+
+                return formatAttributes;
+            }
         }
 
         public void AddExtra(string attribute)
@@ -408,15 +418,11 @@ namespace SIPSorcery.Net
         /// <returns>If found the format ID for telephone events or -1 if not.</returns>
         public int GetTelephoneEventFormatID()
         {
-            foreach (var mediaFormat in MediaFormats)
+            foreach (var mediaFormat in MediaFormats.Values)
             {
-                if (mediaFormat.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true)
+                if (mediaFormat.Name()?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true)
                 {
-                    if (int.TryParse(mediaFormat.FormatID, out var remoteRtpEventPayloadID))
-                    {
-                        return remoteRtpEventPayloadID;
-                    }
-                    break;
+                    return mediaFormat.ID;
                 }
             }
 

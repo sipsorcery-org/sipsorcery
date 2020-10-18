@@ -29,6 +29,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
@@ -109,8 +110,8 @@ namespace SIPSorcery.Media
             new AudioFormat(AudioCodecsEnum.PCMU),
             new AudioFormat(AudioCodecsEnum.PCMA),
             new AudioFormat(AudioCodecsEnum.G722),
-            new AudioFormat(117, "L16",  "L16/16000", null),
-            new AudioFormat(AudioCodecsEnum.L16, "L16/8000"),
+            new AudioFormat(AudioCodecsEnum.L16, 117, 16000),
+            new AudioFormat(AudioCodecsEnum.L16, 16000),
             
             // Not recommended due to very very crude up-sampling in AudioEncoder class. PR's welcome :).
             //new AudioFormat(121, "L16", "L16/48000", null),
@@ -348,8 +349,7 @@ namespace SIPSorcery.Media
                      _audioOpts.AudioSource == AudioSourcesEnum.WhiteNoise ||
                     _audioOpts.AudioSource == AudioSourcesEnum.SineWave)
                 {
-                    int outputSampleRate = SDPMediaFormatInfo.GetAudioSamplingRate(_sendingFormat);
-                    _signalGenerator = new SignalGenerator(outputSampleRate, 1);
+                    _signalGenerator = new SignalGenerator(_sendingFormat.ClockRate, 1);
 
                     switch (_audioOpts.AudioSource)
                     {
@@ -446,10 +446,8 @@ namespace SIPSorcery.Media
             {
                 lock (_sendSampleTimer)
                 {
-                    int outputSampleRate = SDPMediaFormatInfo.GetAudioSamplingRate(_sendingFormat);
-                    short[] silencePcm = new short[outputSampleRate / 1000 * _audioSamplePeriodMilliseconds];
-
-                    EncodeAndSend(silencePcm, outputSampleRate);
+                    short[] silencePcm = new short[_sendingFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
+                    EncodeAndSend(silencePcm, _sendingFormat.ClockRate);
                 }
             }
         }
@@ -463,15 +461,12 @@ namespace SIPSorcery.Media
             {
                 lock (_sendSampleTimer)
                 {
-                    int outputSampleRate = SDPMediaFormatInfo.GetAudioSamplingRate(_sendingFormat);
-                    int inputBufferSize = outputSampleRate / 1000 * _audioSamplePeriodMilliseconds;
-
                     // Get the signal generator to generate the samples and then convert from signed linear to PCM.
-                    float[] linear = new float[inputBufferSize];
-                    _signalGenerator.Read(linear, 0, inputBufferSize);
+                    float[] linear = new float[_sendingFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
+                    _signalGenerator.Read(linear, 0, linear.Length);
                     short[] pcm = linear.Select(x => (short)(x * LINEAR_MAXIMUM)).ToArray();
 
-                    EncodeAndSend(pcm, outputSampleRate);
+                    EncodeAndSend(pcm, _sendingFormat.ClockRate);
                 }
             }
         }
@@ -539,17 +534,14 @@ namespace SIPSorcery.Media
         {
             if (pcm.Length > 0)
             {
-                int outputSampleRate = SDPMediaFormatInfo.GetAudioSamplingRate(_sendingFormat);
-
-                if (pcmSampleRate != outputSampleRate)
+                if (pcmSampleRate != _sendingFormat.ClockRate)
                 {
-                    pcm = _audioEncoder.Resample(pcm, pcmSampleRate, outputSampleRate);
+                    pcm = _audioEncoder.Resample(pcm, pcmSampleRate, _sendingFormat.ClockRate);
                 }
 
                 byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _sendingFormat);
 
-                int rtpRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat);
-                uint rtpUnits = (uint)(rtpRate / 1000 * _audioSamplePeriodMilliseconds);
+                uint rtpUnits = (uint)(_sendingFormat.RtpClockRate / 1000 * _audioSamplePeriodMilliseconds);
 
                 OnAudioSourceEncodedSample?.Invoke(rtpUnits, encodedSample);
             }

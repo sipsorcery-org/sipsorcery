@@ -68,7 +68,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
-            var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
             pc.addTrack(audioTrack);
             var offer = pc.createOffer(new RTCOfferOptions());
 
@@ -98,14 +98,14 @@ namespace SIPSorcery.Net.UnitTests
             };
 
             RTCPeerConnection pcSrc = new RTCPeerConnection(pcConfiguration);
-            var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
             pcSrc.addTrack(videoTrackSrc);
             var offer = pcSrc.createOffer(new RTCOfferOptions());
 
             logger.LogDebug($"offer: {offer.sdp}");
 
             RTCPeerConnection pcDst = new RTCPeerConnection(pcConfiguration);
-            var videoTrackDst = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            var videoTrackDst = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
             pcDst.addTrack(videoTrackDst);
 
             var setOfferResult = pcDst.setRemoteDescription(offer);

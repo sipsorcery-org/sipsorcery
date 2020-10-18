@@ -659,7 +659,7 @@ namespace SIPSorcery.Net
                     // Check for data channel announcements.
                     if (ann.Media == SDPMediaTypesEnum.application &&
                     ann.MediaFormats.Count() == 1 &&
-                    ann.MediaFormats.Single().FormatID == SDP_DATACHANNEL_FORMAT_ID)
+                    ann.ApplicationMediaFormats.Single().ID == SDP_DATACHANNEL_FORMAT_ID)
                     {
                         if (ann.Transport == RTP_MEDIA_DATACHANNEL_DTLS_PROFILE ||
                             ann.Transport == RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE)
@@ -844,9 +844,9 @@ namespace SIPSorcery.Net
             else
             {
                 var audioCapabilities = (AudioLocalTrack != null && AudioRemoteTrack != null) ?
-                    SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, AudioRemoteTrack.Capabilities) : null;
+                    SDPAudioVideoMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, AudioRemoteTrack.Capabilities) : null;
                 var videoCapabilities = (VideoLocalTrack != null && VideoRemoteTrack != null) ?
-                    SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities) : null;
+                    SDPAudioVideoMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities) : null;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
                 bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
@@ -917,8 +917,8 @@ namespace SIPSorcery.Net
         ///   agent and the ICE processing MUST continue as usual."
         /// </remarks>
         private SDP createBaseSdp(List<MediaStreamTrack> tracks,
-            List<SDPMediaFormat> audioCapabilities,
-            List<SDPMediaFormat> videoCapabilities,
+            List<SDPAudioVideoMediaFormat> audioCapabilities,
+            List<SDPAudioVideoMediaFormat> videoCapabilities,
             bool excludeIceCandidates = false)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
@@ -1002,7 +1002,7 @@ namespace SIPSorcery.Net
                     SDPMediaAnnouncement dataChannelAnnouncement = new SDPMediaAnnouncement(
                         SDPMediaTypesEnum.application,
                         SDP.IGNORE_RTP_PORT_NUMBER,
-                        new List<SDPMediaFormat> { new SDPMediaFormat(SDP_DATACHANNEL_FORMAT_ID) });
+                        new List<SDPApplicationMediaFormat> { new SDPApplicationMediaFormat(SDP_DATACHANNEL_FORMAT_ID) });
                     dataChannelAnnouncement.Transport = RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE;
                     dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
 
