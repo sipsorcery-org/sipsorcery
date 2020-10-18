@@ -61,6 +61,10 @@ namespace SIPSorceryMedia.Abstractions.V1
     {
         public const int DYNAMIC_ID_MIN = 96;
         public const int DYNAMIC_ID_MAX = 127;
+        public const int DEFAULT_CLOCK_RATE = 8000;
+        public const int DEFAULT_CHANNEL_COUNT = 1;
+
+        public static readonly AudioFormat Empty = new AudioFormat() { FormatID = -1 };
 
         public AudioCodecsEnum Codec { get; set; }
 
@@ -78,40 +82,94 @@ namespace SIPSorceryMedia.Abstractions.V1
         public string FormatName { get; set; }
 
         /// <summary>
-        /// This is the "a=rtpmap" format attribute that will be set in the SDP offer/answer.
-        /// This field should be set WITHOUT the "a=rtpmap:" prefix.
+        /// The rate used to set RTP timestamps and to be set in the SDP format
+        /// attribute for this format. It should almost always be the same as the
+        /// <seealso cref="ClockRate"/>. An example of where it's not is G722 which
+        /// uses a sample rate of 16KHz but an RTP rate of 8KHz for historical reasons.
         /// </summary>
-        /// <remarks>
-        /// Example:
+        /// <example>
+        /// In the SDP format attribute below the RTP clock rate is 48000.
         /// a=rtpmap:109 opus/48000/2
-        /// </remarks>
-        public string FormatAttribute { get; set; }
+        /// </example>
+        public int RtpClockRate { get; set; }
 
         /// <summary>
-        /// This is the "a=fmtp" format parameter that will be set in the SDP offer/answer.
+        /// The rate used by decoded samples for this audio format.
+        /// </summary>
+        public int ClockRate { get; set; }
+
+        /// <summary>
+        /// The number of channels for the audio format.
+        /// </summary>
+        /// <example>
+        /// In the SDP format attribute below the channel count is 2.
+        /// Note for single channel codecs the parameter is typically omitted from the
+        /// SDP format attribute.
+        /// a=rtpmap:109 opus/48000/2
+        /// </example>
+        public int ChannelCount { get; set; }
+
+        /// <summary>
+        /// This is the string that goes in the SDP "a=fmtp" parameter.
         /// This field should be set WITHOUT the "a=fmtp:" prefix.
         /// </summary>
         /// <example>
+        /// In the case below this filed should be set as "emphasis=50-15".
         /// a=fmtp:97 emphasis=50-15
         /// </example>
-        public string FormatParameterAttribute { get; set; }
+        public string Parameters { get; set; }
 
         /// <summary>
         /// Creates a new audio format based on a well known codec.
         /// </summary>
-        public AudioFormat(AudioCodecsEnum codec, string formatAttribute = null, string formatParameterAttribute = null)
+        public AudioFormat(AudioCodecsEnum codec) :
+            this(codec, (int)codec)
+        { 
+            // G722 is the only known instance where a codecs default parameters assume 
+            // a sample rate of 16KHz but 8KHz timestamps.
+            if(codec == AudioCodecsEnum.G722)
+            {
+                ClockRate = 16000;
+            }
+        }
+
+        /// <summary>
+        /// Creates a new audio format based on a well known codec.
+        /// </summary>
+        public AudioFormat(AudioCodecsEnum codec, int clockRate) :
+            this(codec, (int)codec, clockRate)
+        { }
+
+        /// <summary>
+        /// Creates a new audio format based on a well known codec.
+        /// </summary>
+        public AudioFormat(AudioCodecsEnum codec, int formatID, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
         {
             Codec = codec;
-            FormatID = (int)codec;
+            FormatID = formatID;
             FormatName = codec.ToString();
-            FormatAttribute = formatAttribute;
-            FormatParameterAttribute = formatParameterAttribute;
+            ClockRate = clockRate;
+            RtpClockRate = clockRate;
+            ChannelCount = DEFAULT_CHANNEL_COUNT;
+            Parameters = parameters;
         }
 
         /// <summary>
         /// Creates a new audio format based on a dynamic codec (or an unsupported well known codec).
         /// </summary>
-        public AudioFormat(int formatID, string formatName, string formatAttribute, string formatParameterAttribute)
+        public AudioFormat(
+            int formatID, 
+            string formatName, 
+            int clockRate = DEFAULT_CLOCK_RATE, 
+            int channelCount = DEFAULT_CHANNEL_COUNT, 
+            string parameters = null) :
+            this(formatID, formatName, clockRate, clockRate, channelCount, parameters)
+        { }
+
+        /// <summary>
+        /// Creates a new audio format based on a dynamic codec (or an unsupported well known codec).
+        /// </summary>
+        public AudioFormat(int formatID, string formatName, int clockRate, int rtpClockRate, int channelCount, string parameters)
         {
             if (formatID < 0)
             {
@@ -126,9 +184,19 @@ namespace SIPSorceryMedia.Abstractions.V1
 
             FormatID = formatID;
             FormatName = formatName;
-            Codec = AudioCodecsEnum.Dynamic;
-            FormatAttribute = formatAttribute;
-            FormatParameterAttribute = formatParameterAttribute;
+            ClockRate = clockRate;
+            RtpClockRate = rtpClockRate;
+            ChannelCount = channelCount;
+            Parameters = parameters;
+
+            if(Enum.TryParse<AudioCodecsEnum>(FormatName, out var audioCodec))
+            {
+                Codec = audioCodec;
+            }
+            else
+            {
+                Codec = AudioCodecsEnum.Dynamic;
+            }
         }
     }
 
@@ -136,6 +204,9 @@ namespace SIPSorceryMedia.Abstractions.V1
     {
         public const int DYNAMIC_ID_MIN = 96;
         public const int DYNAMIC_ID_MAX = 127;
+        public const int DEFAULT_CLOCK_RATE = 90000;
+
+        public static readonly VideoFormat Empty = new VideoFormat() { FormatID = -1 };
 
         public VideoCodecsEnum Codec { get; set; }
 
@@ -153,58 +224,79 @@ namespace SIPSorceryMedia.Abstractions.V1
         public string FormatName { get; set; }
 
         /// <summary>
-        /// This is the "a=rtpmap" format attribute that will be set in the SDP offer/answer.
-        /// This field should be set WITHOUT the "a=rtpmap:" prefix.
+        /// The rate used by decoded samples for this video format.
         /// </summary>
         /// <remarks>
-        /// Example:
+        /// Example, 90000 is the clock rate:
         /// a=rtpmap:102 H264/90000
         /// </remarks>
-        public string FormatAttribute { get; set; }
+        public int ClockRate { get; set; }
 
         /// <summary>
         /// This is the "a=fmtp" format parameter that will be set in the SDP offer/answer.
-        /// This field should be set WITHOUT the "a=fmtp:" prefix.
+        /// This field should be set WITHOUT the "a=fmtp:0" prefix.
         /// </summary>
         /// <remarks>
         /// Example:
         /// a=fmtp:102 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f"
         /// </remarks>
-        public string FormatParameterAttribute { get; set; }
+        public string Parameters{ get; set; }
 
         /// <summary>
         /// Creates a new video format based on a well known codec.
         /// </summary>
-        public VideoFormat(VideoCodecsEnum codec, string formatAttribute = null, string formatParameterAttribute = null)
+        public VideoFormat(VideoCodecsEnum codec) :
+            this(codec, (int)codec)
+        { }
+
+        /// <summary>
+        /// Creates a new video format based on a well known codec.
+        /// </summary>
+        public VideoFormat(VideoCodecsEnum codec, int clockRate) :
+            this(codec, (int)codec, clockRate)
+        { }
+
+        /// <summary>
+        /// Creates a new video format based on a well known codec.
+        /// </summary>
+        public VideoFormat(VideoCodecsEnum codec, int formatID, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
         {
             Codec = codec;
-            FormatID = (int)codec;
+            FormatID = formatID;
             FormatName = codec.ToString();
-            FormatAttribute = formatAttribute;
-            FormatParameterAttribute = formatParameterAttribute;
+            ClockRate = clockRate;
+            Parameters = parameters;
         }
 
         /// <summary>
         /// Creates a new video format based on a dynamic codec (or an unsupported well known codec).
         /// </summary>
-        public VideoFormat(int formatID, string formatName, string formatAttribute, string formatParameterAttribute)
+        public VideoFormat(int formatID, string formatName, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
         {
             if (formatID < 0)
             {
                 // Note format ID's less than the dynamic start range are allowed as the codec list
                 // does not currently support all well known codecs.
-                throw new ApplicationException("The format ID for a VideoFormat must be greater than 0.");
+                throw new ApplicationException("The format ID for an VideoFormat must be greater than 0.");
             }
             else if (formatID > DYNAMIC_ID_MAX)
             {
-                throw new ApplicationException($"The format ID for a VideoFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
+                throw new ApplicationException($"The format ID for an VideoFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
             }
 
             FormatID = formatID;
             FormatName = formatName;
-            Codec = VideoCodecsEnum.Dynamic;
-            FormatAttribute = formatAttribute;
-            FormatParameterAttribute = formatParameterAttribute;
+            ClockRate = clockRate;
+            Parameters = parameters;
+
+            if (Enum.TryParse<VideoCodecsEnum>(FormatName, out var videoCodec))
+            {
+                Codec = videoCodec;
+            }
+            else
+            {
+                Codec = VideoCodecsEnum.Dynamic;
+            }
         }
     }
 
@@ -364,6 +456,6 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         Task StartVideoSink();
 
-        Task CloseVideooSink();
+        Task CloseVideoSink();
     }
 }
