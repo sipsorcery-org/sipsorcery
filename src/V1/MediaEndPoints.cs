@@ -25,36 +25,112 @@ namespace SIPSorceryMedia.Abstractions.V1
         I420 = 3
     }
 
+    /// <summary>
+    /// A list of standard media formats that can be identified by an ID if
+    /// there is no qualifying format attribute provided.
+    /// </summary>
+    /// <remarks>
+    /// For definition of well known types see: https://tools.ietf.org/html/rfc3551#section-6.
+    /// </remarks>
+    public enum SDPWellKnownMediaFormatsEnum
+    {
+        PCMU = 0,       // Audio (8000/1).
+        GSM = 3,        // Audio (8000/1).
+        G723 = 4,       // Audio (8000/1).
+        DVI4 = 5,       // Audio (8000/1).
+        DVI4_16K = 6,   // Audio (16000/1).
+        LPC = 7,        // Audio (8000/1).
+        PCMA = 8,       // Audio (8000/1).
+        G722 = 9,       // Audio (8000/1).
+        L16_2 = 10,     // Audio (44100/2).
+        L16 = 11,       // Audio (44100/1).
+        QCELP = 12,     // Audio (8000/1).
+        CN = 13,        // Audio (8000/1).
+        MPA = 14,       // Audio (90000/*).
+        G728 = 15,      // Audio (8000/1).
+        DVI4_11K = 16,  // Audio (11025/1).
+        DVI4_22K = 17,  // Audio (22050/1).
+        G729 = 18,      // Audio (8000/1).
+
+        CELB = 24,  // Video (90000).
+        JPEG = 26,  // Video (90000).
+        NV = 28,    // Video (90000).
+        H261 = 31,  // Video (90000).
+        MPV = 32,   // Video (90000).
+        MP2T = 33,  // Audio/Video (90000).
+        H263 = 34,  // Video (90000).
+    }
+
+    public static class AudioVideoWellKnown
+    {
+        public static Dictionary<SDPWellKnownMediaFormatsEnum, AudioFormat> WellKnownAudioFormats =
+            new Dictionary<SDPWellKnownMediaFormatsEnum, AudioFormat> {
+                { SDPWellKnownMediaFormatsEnum.PCMU,     new AudioFormat(AudioCodecsEnum.PCMU, 0, 8000, 1)},
+                { SDPWellKnownMediaFormatsEnum.GSM,      new AudioFormat(AudioCodecsEnum.GSM,  3, 8000, 1)},
+                { SDPWellKnownMediaFormatsEnum.G723,     new AudioFormat(AudioCodecsEnum.G723, 4, 8000, 1)},
+                { SDPWellKnownMediaFormatsEnum.DVI4,     new AudioFormat(AudioCodecsEnum.DVI4, 5, 8000, 1)},
+                { SDPWellKnownMediaFormatsEnum.DVI4_16K, new AudioFormat(AudioCodecsEnum.DVI4, 6, 16000, 1)},
+                { SDPWellKnownMediaFormatsEnum.LPC,      new AudioFormat(AudioCodecsEnum.LPC,  7, 8000, 1)},
+                { SDPWellKnownMediaFormatsEnum.PCMA,     new AudioFormat(AudioCodecsEnum.PCMA, 8, 8000, 1)},
+                { SDPWellKnownMediaFormatsEnum.G722,     new AudioFormat(AudioCodecsEnum.G722, 9, 16000, 8000, 1, null)},
+                { SDPWellKnownMediaFormatsEnum.L16_2,    new AudioFormat(AudioCodecsEnum.L16,  10, 44100, 2)},
+                { SDPWellKnownMediaFormatsEnum.L16,      new AudioFormat(AudioCodecsEnum.L16,  11, 44100, 1)},
+                { SDPWellKnownMediaFormatsEnum.QCELP,    new AudioFormat(AudioCodecsEnum.QCELP,12, 8000, 1)},
+                { SDPWellKnownMediaFormatsEnum.CN,       new AudioFormat(AudioCodecsEnum.CN,   13, 8000, 1)},
+                { SDPWellKnownMediaFormatsEnum.MPA,      new AudioFormat(AudioCodecsEnum.MPA,  14, 90000, 1)},
+                { SDPWellKnownMediaFormatsEnum.G728,     new AudioFormat(AudioCodecsEnum.G728, 15, 8000, 1)},
+                { SDPWellKnownMediaFormatsEnum.DVI4_11K, new AudioFormat(AudioCodecsEnum.DVI4, 16, 11025, 1)},
+                { SDPWellKnownMediaFormatsEnum.DVI4_22K, new AudioFormat(AudioCodecsEnum.DVI4, 17, 22050, 1)},
+                { SDPWellKnownMediaFormatsEnum.G729,     new AudioFormat(AudioCodecsEnum.G729, 18, 8000, 1)},
+            };
+
+        public static Dictionary<SDPWellKnownMediaFormatsEnum, VideoFormat> WellKnownVideoFormats =
+           new Dictionary<SDPWellKnownMediaFormatsEnum, VideoFormat> {
+                { SDPWellKnownMediaFormatsEnum.CELB,     new VideoFormat(VideoCodecsEnum.CELB, 24, 90000)},
+                { SDPWellKnownMediaFormatsEnum.JPEG,     new VideoFormat(VideoCodecsEnum.JPEG, 26, 90000)},
+                { SDPWellKnownMediaFormatsEnum.NV,       new VideoFormat(VideoCodecsEnum.NV,   28, 90000)},
+                { SDPWellKnownMediaFormatsEnum.H261,     new VideoFormat(VideoCodecsEnum.H261, 31, 90000)},
+                { SDPWellKnownMediaFormatsEnum.MPV,      new VideoFormat(VideoCodecsEnum.MPV,  32, 90000)},
+                { SDPWellKnownMediaFormatsEnum.MP2T,     new VideoFormat(VideoCodecsEnum.MP2T, 33, 90000)},
+                { SDPWellKnownMediaFormatsEnum.H263,     new VideoFormat(VideoCodecsEnum.H263, 34, 90000)}
+           };
+    }
+
     public enum AudioCodecsEnum
     {
-        // Well known codecs, format ID "should" not change.
-        PCMU = 0,
-        G722 = 9,
-        PCMA = 8,
+        PCMU,
+        GSM,
+        G723,
+        DVI4,
+        LPC,
+        PCMA,
+        G722,
+        L16,
+        QCELP,
+        CN,
+        MPA,
+        G728,
+        G729,
+        OPUS,
 
-        // Dynamic codecs, format ID can change.
-        OPUS = 111,
-        L16 = 119,      // 16 bit Signed linear.
-
-        /// <summary>
-        /// Use for audio codecs that are not supported in the above list. A dynamic
-        /// codec requires at least a format attribute to be specified with it and 
-        /// it will be up to the application to encode/decode.
-        /// </summary>
-        Dynamic = 128,
+        Unknown
     }
 
     public enum VideoCodecsEnum
     {
-        VP8 = 100,
-        H264 = 102,
+        CELB,
+        JPEG,
+        NV,
+        H261,
+        MPV,
+        MP2T,
+        H263,
+        VP8,
+        VP9,
+        H264,
+        H265,
 
-        /// <summary>
-        /// Use for video codecs that are not supported in the above list. A dynamic
-        /// codec requires at least a format attribute to be specified with it and 
-        /// it will be up to the application to encode/decode.
-        /// </summary>
-        Dynamic = 128,
+        Unknown
     }
 
     public struct AudioFormat
@@ -120,37 +196,48 @@ namespace SIPSorceryMedia.Abstractions.V1
         public string Parameters { get; set; }
 
         /// <summary>
-        /// Creates a new audio format based on a well known codec.
+        /// Creates a new audio format based on a well known SDP format.
         /// </summary>
-        public AudioFormat(AudioCodecsEnum codec) :
-            this(codec, (int)codec)
-        { 
-            // G722 is the only known instance where a codecs default parameters assume 
-            // a sample rate of 16KHz but 8KHz timestamps.
-            if(codec == AudioCodecsEnum.G722)
-            {
-                ClockRate = 16000;
-            }
-        }
-
-        /// <summary>
-        /// Creates a new audio format based on a well known codec.
-        /// </summary>
-        public AudioFormat(AudioCodecsEnum codec, int clockRate) :
-            this(codec, (int)codec, clockRate)
+        public AudioFormat(SDPWellKnownMediaFormatsEnum wellKnown) :
+            this(AudioVideoWellKnown.WellKnownAudioFormats[wellKnown])
         { }
 
         /// <summary>
         /// Creates a new audio format based on a well known codec.
         /// </summary>
-        public AudioFormat(AudioCodecsEnum codec, int formatID, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
+        //public AudioFormat(AudioCodecsEnum codec, int clockRate, int channelCount) :
+        //    this(codec, (int)codec, clockRate, channelCount, null)
+        //{ }
+
+        /// <summary>
+        /// Creates a new audio format based on a well known codec.
+        /// </summary>
+        public AudioFormat(
+            AudioCodecsEnum codec,
+            int formatID,
+            int clockRate = DEFAULT_CLOCK_RATE,
+            int channelCount = DEFAULT_CHANNEL_COUNT,
+            string parameters = null) :
+            this(codec, formatID, clockRate, clockRate, channelCount, parameters)
+        { }
+
+        /// <summary>
+        /// Creates a new audio format based on a well known codec.
+        /// </summary>
+        public AudioFormat(
+            AudioCodecsEnum codec,
+            int formatID,
+            int clockRate,
+            int rtpClockRate,
+            int channelCount,
+            string parameters)
         {
             Codec = codec;
             FormatID = formatID;
             FormatName = codec.ToString();
             ClockRate = clockRate;
-            RtpClockRate = clockRate;
-            ChannelCount = DEFAULT_CHANNEL_COUNT;
+            RtpClockRate = rtpClockRate;
+            ChannelCount = channelCount;
             Parameters = parameters;
         }
 
@@ -158,10 +245,10 @@ namespace SIPSorceryMedia.Abstractions.V1
         /// Creates a new audio format based on a dynamic codec (or an unsupported well known codec).
         /// </summary>
         public AudioFormat(
-            int formatID, 
-            string formatName, 
-            int clockRate = DEFAULT_CLOCK_RATE, 
-            int channelCount = DEFAULT_CHANNEL_COUNT, 
+            int formatID,
+            string formatName,
+            int clockRate = DEFAULT_CLOCK_RATE,
+            int channelCount = DEFAULT_CHANNEL_COUNT,
             string parameters = null) :
             this(formatID, formatName, clockRate, clockRate, channelCount, parameters)
         { }
@@ -189,15 +276,19 @@ namespace SIPSorceryMedia.Abstractions.V1
             ChannelCount = channelCount;
             Parameters = parameters;
 
-            if(Enum.TryParse<AudioCodecsEnum>(FormatName, out var audioCodec))
+            if (Enum.TryParse<AudioCodecsEnum>(FormatName, out var audioCodec))
             {
                 Codec = audioCodec;
             }
             else
             {
-                Codec = AudioCodecsEnum.Dynamic;
+                Codec = AudioCodecsEnum.Unknown;
             }
         }
+
+        public AudioFormat(AudioFormat format)
+            : this(format.Codec, format.FormatID, format.ClockRate, format.ChannelCount, format.Parameters)
+        { }
     }
 
     public struct VideoFormat
@@ -240,13 +331,13 @@ namespace SIPSorceryMedia.Abstractions.V1
         /// Example:
         /// a=fmtp:102 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f"
         /// </remarks>
-        public string Parameters{ get; set; }
+        public string Parameters { get; set; }
 
         /// <summary>
-        /// Creates a new video format based on a well known codec.
+        /// Creates a new video format based on a well known SDP format.
         /// </summary>
-        public VideoFormat(VideoCodecsEnum codec) :
-            this(codec, (int)codec)
+        public VideoFormat(SDPWellKnownMediaFormatsEnum wellKnown) :
+            this(AudioVideoWellKnown.WellKnownVideoFormats[wellKnown])
         { }
 
         /// <summary>
@@ -295,9 +386,13 @@ namespace SIPSorceryMedia.Abstractions.V1
             }
             else
             {
-                Codec = VideoCodecsEnum.Dynamic;
+                Codec = VideoCodecsEnum.Unknown;
             }
         }
+
+        public VideoFormat(VideoFormat format)
+            : this(format.Codec, format.FormatID, format.ClockRate, format.Parameters)
+        { }
     }
 
     public class MediaEndPoints
