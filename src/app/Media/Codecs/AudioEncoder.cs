@@ -37,6 +37,7 @@ namespace SIPSorcery.Media
                 case AudioCodecsEnum.PCMA:
                 case AudioCodecsEnum.PCMU:
                 case AudioCodecsEnum.L16:
+                case AudioCodecsEnum.PCM_S16LE:
                     return true;
                 default:
                     return false;
@@ -71,7 +72,26 @@ namespace SIPSorcery.Media
             {
                 // When netstandard2.1 can be used.
                 //return MemoryMarshal.Cast<short, byte>(pcm)
-                return pcm.SelectMany(x => BitConverter.GetBytes(IPAddress.HostToNetworkOrder(x))).ToArray();
+
+                if (BitConverter.IsLittleEndian)
+                {
+                    return pcm.SelectMany(x => BitConverter.GetBytes(IPAddress.HostToNetworkOrder(x))).ToArray();
+                }
+                else
+                {
+                    return pcm.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
+                }
+            }
+            else if (format.Codec == AudioCodecsEnum.PCM_S16LE)
+            {
+                if (BitConverter.IsLittleEndian)
+                {
+                    return pcm.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
+                }
+                else
+                {
+                    return pcm.SelectMany(x => BitConverter.GetBytes(IPAddress.HostToNetworkOrder(x))).ToArray();
+                }
             }
             else
             {
@@ -110,7 +130,25 @@ namespace SIPSorcery.Media
             }
             else if(format.Codec == AudioCodecsEnum.L16)
             {
-                return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(encodedSample, i*2)).ToArray();
+                if (BitConverter.IsLittleEndian)
+                {
+                    return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => IPAddress.HostToNetworkOrder(BitConverter.ToInt16(encodedSample, i * 2))).ToArray();
+                }
+                else
+                {
+                    return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(encodedSample, i * 2)).ToArray();
+                }
+            }
+            else if (format.Codec == AudioCodecsEnum.PCM_S16LE)
+            {
+                if (BitConverter.IsLittleEndian)
+                {
+                    return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(encodedSample, i * 2)).ToArray();
+                }
+                else
+                {
+                    return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => IPAddress.HostToNetworkOrder(BitConverter.ToInt16(encodedSample, i * 2))).ToArray();
+                }
             }
             else
             {

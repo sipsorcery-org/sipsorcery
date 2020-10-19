@@ -28,8 +28,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
@@ -248,13 +246,21 @@ namespace SIPSorcery.Media
         /// </summary>
         public Task StartAudio()
         {
-            if (!_isStarted)
+            if (_sendingFormat.IsEmpty())
             {
-                _isStarted = true;
-                SetSource(_audioOpts);
+                throw new ApplicationException("The sending format for the Audio Extras Source has not been set. Cannot start source.");
+            }
+            else
+            {
+                if (!_isStarted)
+                {
+                    _isStarted = true;
+                    SetSource(_audioOpts);
+                }
+
+                return Task.CompletedTask;
             }
 
-            return Task.CompletedTask;
         }
 
         public Task PauseAudio()
