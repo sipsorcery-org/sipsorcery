@@ -51,6 +51,7 @@ namespace SIPSorceryMedia.Windows
     {
         private const int VIDEO_SAMPLING_RATE = 90000;
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
+        private const int VP8_FORMATID = 96;
         private readonly string MF_NV12_PIXEL_FORMAT = MediaEncodingSubtypes.Nv12;
         private const string MF_I420_PIXEL_FORMAT = "{30323449-0000-0010-8000-00AA00389B71}";
 
@@ -59,12 +60,12 @@ namespace SIPSorceryMedia.Windows
 
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsVideoEndPoint>();
 
-        public static readonly List<VideoCodecsEnum> SupportedCodecs = new List<VideoCodecsEnum>
+        public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {
-            VideoCodecsEnum.VP8
+            new VideoFormat(VideoCodecsEnum.VP8, VP8_FORMATID, VIDEO_SAMPLING_RATE)
         };
 
-        private CodecManager<VideoCodecsEnum> _codecManager;
+        private MediaFormatManager<VideoFormat> _videoFormatManager;
         private Vp8Codec _vp8Encoder;
         private Vp8Codec _vp8Decoder;
         private bool _forceKeyFrame = false;
@@ -117,7 +118,7 @@ namespace SIPSorceryMedia.Windows
         /// be used.</param>
         public WindowsVideoEndPoint(string videoDeviceID = null, uint width = 0, uint height = 0, uint fps = 0)
         {
-            _codecManager = new CodecManager<VideoCodecsEnum>(SupportedCodecs);
+            _videoFormatManager = new MediaFormatManager<VideoFormat>(SupportedFormats);
             _videoDeviceID = videoDeviceID;
             _width = width;
             _height = height;
@@ -130,11 +131,11 @@ namespace SIPSorceryMedia.Windows
             _mediaCapture.Failed += VideoCaptureDevice_Failed;
         }
 
-        public void RestrictCodecs(List<VideoCodecsEnum> codecs) => _codecManager.RestrictCodecs(codecs);
-        public List<VideoCodecsEnum> GetVideoSourceFormats() => _codecManager.GetSourceFormats();
-        public void SetVideoSourceFormat(VideoCodecsEnum videoFormat) => _codecManager.SetSelectedCodec(videoFormat);
-        public List<VideoCodecsEnum> GetVideoSinkFormats() => _codecManager.GetSourceFormats();
-        public void SetVideoSinkFormat(VideoCodecsEnum videoFormat) => _codecManager.SetSelectedCodec(videoFormat);
+        public void RestrictFormats(Func<VideoFormat, bool> filter) => _videoFormatManager.RestrictFormats(filter);
+        public List<VideoFormat> GetVideoSourceFormats() => _videoFormatManager.GetSourceFormats();
+        public void SetVideoSourceFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
+        public List<VideoFormat> GetVideoSinkFormats() => _videoFormatManager.GetSourceFormats();
+        public void SetVideoSinkFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
              throw new ApplicationException("The Windows Video End Point does not support external samples. Use the video end point from SIPSorceryMedia.Encoders.");
 
@@ -613,6 +614,41 @@ namespace SIPSorceryMedia.Windows
         {
             _vp8Encoder?.Dispose();
             _vp8Decoder?.Dispose();
+        }
+
+        //List<VideoFormat> IVideoSink.GetVideoSinkFormats()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void SetVideoSinkFormat(VideoFormat videoFormat)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void RestrictFormats(Func<VideoFormat, bool> filter)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        public Task PauseVideoSink()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task ResumeVideoSink()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task StartVideoSink()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task CloseVideoSink()
+        {
+            return Task.CompletedTask;
         }
     }
 }
