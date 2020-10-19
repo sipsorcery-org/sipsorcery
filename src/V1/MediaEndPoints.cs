@@ -113,6 +113,8 @@ namespace SIPSorceryMedia.Abstractions.V1
         G729,
         OPUS,
 
+        PCM_S16LE,  // PCM signed 16-bit little-endian (equivalent to FFmpeg s16le).
+
         Unknown
     }
 
@@ -140,7 +142,7 @@ namespace SIPSorceryMedia.Abstractions.V1
         public const int DEFAULT_CLOCK_RATE = 8000;
         public const int DEFAULT_CHANNEL_COUNT = 1;
 
-        public static readonly AudioFormat Empty = new AudioFormat() { FormatID = -1 };
+        public static readonly AudioFormat Empty = new AudioFormat();
 
         public AudioCodecsEnum Codec { get; set; }
 
@@ -195,19 +197,14 @@ namespace SIPSorceryMedia.Abstractions.V1
         /// </example>
         public string Parameters { get; set; }
 
+        private bool _isNonEmpty;
+
         /// <summary>
         /// Creates a new audio format based on a well known SDP format.
         /// </summary>
         public AudioFormat(SDPWellKnownMediaFormatsEnum wellKnown) :
             this(AudioVideoWellKnown.WellKnownAudioFormats[wellKnown])
         { }
-
-        /// <summary>
-        /// Creates a new audio format based on a well known codec.
-        /// </summary>
-        //public AudioFormat(AudioCodecsEnum codec, int clockRate, int channelCount) :
-        //    this(codec, (int)codec, clockRate, channelCount, null)
-        //{ }
 
         /// <summary>
         /// Creates a new audio format based on a well known codec.
@@ -231,15 +228,8 @@ namespace SIPSorceryMedia.Abstractions.V1
             int rtpClockRate,
             int channelCount,
             string parameters)
-        {
-            Codec = codec;
-            FormatID = formatID;
-            FormatName = codec.ToString();
-            ClockRate = clockRate;
-            RtpClockRate = rtpClockRate;
-            ChannelCount = channelCount;
-            Parameters = parameters;
-        }
+             : this(formatID, codec.ToString(), clockRate, rtpClockRate, channelCount, parameters)
+        { }
 
         /// <summary>
         /// Creates a new audio format based on a dynamic codec (or an unsupported well known codec).
@@ -251,6 +241,10 @@ namespace SIPSorceryMedia.Abstractions.V1
             int channelCount = DEFAULT_CHANNEL_COUNT,
             string parameters = null) :
             this(formatID, formatName, clockRate, clockRate, channelCount, parameters)
+        { }
+
+        public AudioFormat(AudioFormat format)
+            : this(format.FormatID, format.FormatName, format.ClockRate, format.RtpClockRate, format.ChannelCount, format.Parameters)
         { }
 
         /// <summary>
@@ -268,6 +262,22 @@ namespace SIPSorceryMedia.Abstractions.V1
             {
                 throw new ApplicationException($"The format ID for an AudioFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
             }
+            else if (string.IsNullOrWhiteSpace(formatName))
+            {
+                throw new ApplicationException($"The format name must be provided for an AudioFormat.");
+            }
+            else if(clockRate <= 0)
+            {
+                throw new ApplicationException($"The clock rate for an AudioFormat must be greater than 0.");
+            }
+            else if (rtpClockRate <= 0)
+            {
+                throw new ApplicationException($"The RTP clock rate for an AudioFormat must be greater than 0.");
+            }
+            else if (channelCount <= 0)
+            {
+                throw new ApplicationException($"The channel count for an AudioFormat must be greater than 0.");
+            }
 
             FormatID = formatID;
             FormatName = formatName;
@@ -275,6 +285,7 @@ namespace SIPSorceryMedia.Abstractions.V1
             RtpClockRate = rtpClockRate;
             ChannelCount = channelCount;
             Parameters = parameters;
+            _isNonEmpty = true;
 
             if (Enum.TryParse<AudioCodecsEnum>(FormatName, out var audioCodec))
             {
@@ -286,9 +297,7 @@ namespace SIPSorceryMedia.Abstractions.V1
             }
         }
 
-        public AudioFormat(AudioFormat format)
-            : this(format.Codec, format.FormatID, format.ClockRate, format.ChannelCount, format.Parameters)
-        { }
+        public bool IsEmpty() => !_isNonEmpty;
     }
 
     public struct VideoFormat
@@ -297,7 +306,7 @@ namespace SIPSorceryMedia.Abstractions.V1
         public const int DYNAMIC_ID_MAX = 127;
         public const int DEFAULT_CLOCK_RATE = 90000;
 
-        public static readonly VideoFormat Empty = new VideoFormat() { FormatID = -1 };
+        public static readonly VideoFormat Empty = new VideoFormat();
 
         public VideoCodecsEnum Codec { get; set; }
 
@@ -333,6 +342,8 @@ namespace SIPSorceryMedia.Abstractions.V1
         /// </remarks>
         public string Parameters { get; set; }
 
+        private bool _isNonEmpty;
+
         /// <summary>
         /// Creates a new video format based on a well known SDP format.
         /// </summary>
@@ -343,21 +354,13 @@ namespace SIPSorceryMedia.Abstractions.V1
         /// <summary>
         /// Creates a new video format based on a well known codec.
         /// </summary>
-        public VideoFormat(VideoCodecsEnum codec, int clockRate) :
-            this(codec, (int)codec, clockRate)
+        public VideoFormat(VideoCodecsEnum codec, int formatID, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
+            : this(formatID, codec.ToString(), clockRate, parameters)
         { }
 
-        /// <summary>
-        /// Creates a new video format based on a well known codec.
-        /// </summary>
-        public VideoFormat(VideoCodecsEnum codec, int formatID, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
-        {
-            Codec = codec;
-            FormatID = formatID;
-            FormatName = codec.ToString();
-            ClockRate = clockRate;
-            Parameters = parameters;
-        }
+        public VideoFormat(VideoFormat format)
+            : this(format.FormatID, format.FormatName, format.ClockRate, format.Parameters)
+        { }
 
         /// <summary>
         /// Creates a new video format based on a dynamic codec (or an unsupported well known codec).
@@ -374,11 +377,20 @@ namespace SIPSorceryMedia.Abstractions.V1
             {
                 throw new ApplicationException($"The format ID for an VideoFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
             }
+            else if (string.IsNullOrWhiteSpace(formatName))
+            {
+                throw new ApplicationException($"The format name must be provided for a VideoFormat.");
+            }
+            else if (clockRate <= 0)
+            {
+                throw new ApplicationException($"The clock rate for a VideoFormat must be greater than 0.");
+            }
 
             FormatID = formatID;
             FormatName = formatName;
             ClockRate = clockRate;
             Parameters = parameters;
+            _isNonEmpty = true;
 
             if (Enum.TryParse<VideoCodecsEnum>(FormatName, out var videoCodec))
             {
@@ -390,9 +402,7 @@ namespace SIPSorceryMedia.Abstractions.V1
             }
         }
 
-        public VideoFormat(VideoFormat format)
-            : this(format.Codec, format.FormatID, format.ClockRate, format.Parameters)
-        { }
+        public bool IsEmpty() => !_isNonEmpty;
     }
 
     public class MediaEndPoints
