@@ -275,7 +275,16 @@ namespace SIPSorceryMedia.Windows
                     // TODO: Use NAudio to resample.
                 }
 
-                var pcmBytes = pcmSample.SelectMany(x => BitConverter.GetBytes(IPAddress.HostToNetworkOrder(x))).ToArray();
+                byte[] pcmBytes = null;
+                if (BitConverter.IsLittleEndian)
+                {
+                    pcmBytes = pcmSample.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
+                }
+                else
+                {
+                    pcmBytes = pcmSample.SelectMany(x => BitConverter.GetBytes(IPAddress.HostToNetworkOrder(x))).ToArray();
+                }
+
                 _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);
             }
         }

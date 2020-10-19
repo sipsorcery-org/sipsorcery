@@ -100,6 +100,9 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
 
+        /// <summary>
+        /// This event will be fired if there is a problem acquiring the capture device.
+        /// </summary>
         public event SourceErrorDelegate OnVideoSourceError;
 
         /// <summary>
@@ -307,9 +310,10 @@ namespace SIPSorceryMedia.Windows
                 {
                     foreach (var decodedFrame in decodedFrames)
                     {
-                        byte[] rgb = PixelConverter.I420toRGB(decodedFrame, (int)width, (int)height);
+                        // Windows bitmaps expect BGR when supplying System.Drawing.Imaging.PixelFormat.Format24bppRgb. 
+                        byte[] bgr = PixelConverter.I420toBGR(decodedFrame, (int)width, (int)height);
                         //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
-                        OnVideoSinkDecodedSample(rgb, width, height, (int)(width * 3), VideoPixelFormatsEnum.Rgb);
+                        OnVideoSinkDecodedSample(bgr, width, height, (int)(width * 3), VideoPixelFormatsEnum.Bgr);
                     }
                 }
             }
