@@ -107,13 +107,13 @@ namespace SIPSorcery.Media
 
         public static readonly List<AudioFormat> SupportedFormats = new List<AudioFormat>
         {
-            new AudioFormat(AudioCodecsEnum.PCMU),
-            new AudioFormat(AudioCodecsEnum.PCMA),
-            new AudioFormat(AudioCodecsEnum.G722),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
             new AudioFormat(AudioCodecsEnum.L16, 117, 16000),
-            new AudioFormat(AudioCodecsEnum.L16, 16000),
+            new AudioFormat(AudioCodecsEnum.L16, 118, 8000),
             
-            // Not recommended due to very very crude up-sampling in AudioEncoder class. PR's welcome :).
+            // Not recommended due to very, very crude up-sampling in AudioEncoder class. PR's welcome :).
             //new AudioFormat(121, "L16", "L16/48000", null),
         };
 

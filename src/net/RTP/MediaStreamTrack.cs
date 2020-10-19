@@ -130,7 +130,7 @@ namespace SIPSorcery.Net
         public MediaStreamTrack(
             AudioFormat format,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-            this(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { SDPMediaFormatMap.GetSdpFormat(format) }, streamStatus)
+            this(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format) }, streamStatus)
         { }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace SIPSorcery.Net
         public MediaStreamTrack(
         List<AudioFormat> formats,
         MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-             this(SDPMediaTypesEnum.audio, false, formats.Select(x => SDPMediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+             this(SDPMediaTypesEnum.audio, false, formats.Select(x => new SDPAudioVideoMediaFormat(x)).ToList(), streamStatus)
         { }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace SIPSorcery.Net
         public MediaStreamTrack(
            VideoFormat format,
            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-            this(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { SDPMediaFormatMap.GetSdpFormat(format) }, streamStatus)
+            this(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format) }, streamStatus)
         { }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace SIPSorcery.Net
         public MediaStreamTrack(
         List<VideoFormat> formats,
         MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-             this(SDPMediaTypesEnum.video, false, formats.Select(x => SDPMediaFormatMap.GetSdpFormat(x)).ToList(), streamStatus)
+             this(SDPMediaTypesEnum.video, false, formats.Select(x => new SDPAudioVideoMediaFormat(x)).ToList(), streamStatus)
         { }
 
         /// <summary>

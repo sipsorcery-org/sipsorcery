@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Net
 {

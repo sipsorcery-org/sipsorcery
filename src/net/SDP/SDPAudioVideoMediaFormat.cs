@@ -22,151 +22,6 @@ using SIPSorceryMedia.Abstractions.V1;
 namespace SIPSorcery.Net
 {
     /// <summary>
-    /// A list of standard media formats that can be identified by an ID if
-    /// there is no qualifying format attribute provided.
-    /// </summary>
-    /// <remarks>
-    /// For definition of well known types see: https://tools.ietf.org/html/rfc3551#section-6.
-    /// </remarks>
-    public enum SDPWellKnownMediaFormatsEnum
-    {
-        PCMU    = 0,   // Audio (8000/1).
-        GSM     = 3,   // Audio (8000/1).
-        G723    = 4,   // Audio (8000/1).
-        DVI4    = 5,   // Audio (8000/1).
-        DVI4_16 = 6,   // Audio (16000/1).
-        LPC     = 7,   // Audio (8000/1).
-        PCMA    = 8,   // Audio (8000/1).
-        G722    = 9,   // Audio (8000/1).
-        L16_2   = 10,  // Audio (44100/2).
-        L16     = 11,  // Audio (44100/1).
-        QCELP   = 12,  // Audio (8000/1).
-        CN      = 13,  // Audio (8000/1).
-        MPA     = 14,  // Audio (90000/*).
-        G728    = 15,  // Audio (8000/1).
-        DVI4_11 = 16,  // Audio (11025/1).
-        DVI4_22 = 17,  // Audio (22050/1).
-        G729    = 18,  // Audio (8000/1).
-
-        CELB    = 24,  // Video (90000).
-        JPEG    = 26,  // Video (90000).
-        NV      = 28,  // Video (90000).
-        H261    = 31,  // Video (90000).
-        MPV     = 32,  // Video (90000).
-        MP2T    = 33,  // Audio/Video (90000).
-        H263    = 34,  // Video (90000).
-    }
-
-    public static class SDPMediaFormatMap
-    {
-        public static bool TryGetAudioCodec(SDPWellKnownMediaFormatsEnum wellKnownFormat, out AudioCodecsEnum audioCodec)
-        {
-            audioCodec = AudioCodecsEnum.Dynamic;
-
-            switch (wellKnownFormat)
-            {
-                case SDPWellKnownMediaFormatsEnum.G722:
-                    audioCodec = AudioCodecsEnum.G722;
-                    return true;
-                case SDPWellKnownMediaFormatsEnum.PCMA:
-                    audioCodec = AudioCodecsEnum.PCMA;
-                    return true;
-                case SDPWellKnownMediaFormatsEnum.PCMU:
-                    audioCodec = AudioCodecsEnum.PCMU;
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        public static SDPAudioVideoMediaFormat GetSdpFormat(AudioFormat audioFormat)
-        {
-            if (audioFormat.FormatID < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
-            {
-                return new SDPAudioVideoMediaFormat((SDPWellKnownMediaFormatsEnum)audioFormat.FormatID);
-            }
-            else
-            {
-                var sdpFormat = new SDPAudioVideoMediaFormat(audioFormat.FormatID, 
-                    audioFormat.FormatName, 
-                    audioFormat.ClockRate, 
-                    audioFormat.ChannelCount, 
-                    audioFormat.Parameters);
-                return sdpFormat;
-            }
-        }
-
-        public static SDPAudioVideoMediaFormat GetSdpFormat(VideoFormat videoFormat)
-        {
-            if (videoFormat.FormatID < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
-            {
-                return new SDPAudioVideoMediaFormat((SDPWellKnownMediaFormatsEnum)videoFormat.FormatID);
-            }
-            else
-            {
-                var sdpFormat = new SDPAudioVideoMediaFormat(videoFormat.FormatID, 
-                    videoFormat.FormatName, 
-                    videoFormat.ClockRate, 
-                    1,
-                    videoFormat.Parameters);
-                return sdpFormat;
-            }
-        }
-
-        /// <summary>
-        /// Maps an audio SDP media type to an media abstraction layer audio format.
-        /// </summary>
-        /// <param name="sdpFormat">The SDP format to map to an audio format.</param>
-        /// <returns>An audio format value.</returns>
-        public static AudioFormat GetAudioFormatForSdpFormat(SDPAudioVideoMediaFormat sdpFormat)
-        {
-            if (sdpFormat.ID < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN
-                && Enum.TryParse<SDPWellKnownMediaFormatsEnum>(sdpFormat.Name(), out var wellKnownFormat)
-                && TryGetAudioCodec(wellKnownFormat, out var audioCodec))
-            {
-                return new AudioFormat(audioCodec);
-            }
-            else
-            {
-                if (SDPAudioVideoMediaFormat.TryParseRtpmap(sdpFormat.Rtpmap, out var name, out int clockRate, out int channels))
-                {
-                    return new AudioFormat(sdpFormat.ID, name, clockRate, clockRate, channels, sdpFormat.Fmtp);
-                }
-                else
-                {
-                    return AudioFormat.Empty;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Maps a video SDP media type to an video format.
-        /// </summary>
-        /// <param name="sdpFormat">The SDP format to map to a video format.</param>
-        /// <returns>A video format value.</returns>
-        public static VideoFormat GetVideoFormatForSdpFormat(SDPAudioVideoMediaFormat sdpFormat)
-        {
-            //int clockRate = VideoFormat.DEFAULT_CLOCK_RATE;
-
-            //if (sdpFormat.RtpmapProperties != null)
-            //{
-            //    SDPMediaFormat.TryParseRtpmap(sdpFormat.RtpmapProperties, out clockRate, out _);
-            //}
-
-            //return new VideoFormat(sdpFormat.FormatID, sdpFormat.Name, clockRate, sdpFormat.FmtpProperties);
-
-            if (SDPAudioVideoMediaFormat.TryParseRtpmap(sdpFormat.Rtpmap, out var name, out int clockRate, out int channels))
-            {
-                return new VideoFormat(sdpFormat.ID, name, clockRate, sdpFormat.Fmtp);
-            }
-            else
-            {
-                return VideoFormat.Empty;
-            }
-        }
-    }
-
-    /// <summary>
     /// Represents a single media format within a media announcement. Often the whole media format can
     /// be represented and described by a single character, e.g. "0" without additional info represents
     /// standard "PCMU", "8" represents "PCMA" etc. For other media types that have variable parameters
@@ -286,7 +141,7 @@ namespace SIPSorcery.Net
         /// Creates a new SDP media format for a dynamic media type. Dynamic media types are those that use 
         /// ID's between 96 and 127 inclusive and require an rtpmap attribute and optionally an fmtp attribute.
         /// </summary>
-        public SDPAudioVideoMediaFormat(int id, string name, int clockRate, int channels = 1, string fmtp = null)
+        public SDPAudioVideoMediaFormat(int id, string name, int clockRate, int channels = DEFAULT_AUDIO_CHANNEL_COUNT, string fmtp = null)
         {
             if (id < 0 || id > DYNAMIC_ID_MAX)
             {
@@ -298,11 +153,67 @@ namespace SIPSorcery.Net
             }
 
             ID = id;
-            Rtpmap = (channels == 1) ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
+            Rtpmap = null;
             Fmtp = fmtp;
             _isEmpty = false;
+
+            Rtpmap = InitRtpmap(name, clockRate, channels);
         }
 
+        /// <summary>
+        /// Creates a new SDP media format from a Audio Format instance. The Audio Format contains the 
+        /// equivalent information to the SDP format object but has well defined audio properties separate
+        /// from the SDP serialisation.
+        /// </summary>
+        /// <param name="audioFormat">The Audio Format to map to an SDP format.</param>
+        public SDPAudioVideoMediaFormat(AudioFormat audioFormat)
+        {
+            if (audioFormat.FormatID < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
+            {
+                ID = audioFormat.FormatID;
+                Rtpmap = null;
+                Fmtp = null;
+                _isEmpty = false;
+            }
+            else
+            {
+                ID = audioFormat.FormatID;
+                Rtpmap = null;
+                Fmtp = audioFormat.Parameters;
+                _isEmpty = false;
+
+                Rtpmap = InitRtpmap(audioFormat.FormatName, audioFormat.ClockRate, audioFormat.ChannelCount);
+            }
+        }
+
+        /// <summary>
+        /// Creates a new SDP media format from a Video Format instance. The Video Format contains the 
+        /// equivalent information to the SDP format object but has well defined video properties separate
+        /// from the SDP serialisation.
+        /// </summary>
+        /// <param name="videoFormat">The Video Format to map to an SDP format.</param>
+        public SDPAudioVideoMediaFormat(VideoFormat videoFormat)
+        {
+            if (videoFormat.FormatID < DYNAMIC_ID_MIN)
+            {
+                ID = videoFormat.FormatID;
+                Rtpmap = null;
+                Fmtp = null;
+                _isEmpty = false;
+            }
+            else
+            {
+                ID = videoFormat.FormatID;
+                Rtpmap = null;
+                Fmtp = videoFormat.Parameters;
+                _isEmpty = false;
+
+                Rtpmap = InitRtpmap(videoFormat.FormatName, videoFormat.ClockRate);
+            }
+        }
+
+        private string InitRtpmap(string name, int clockRate, int channels = DEFAULT_AUDIO_CHANNEL_COUNT)
+            => (channels == 1) ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
         public bool IsEmpty() => _isEmpty;
         public int ClockRate() => TryParseRtpmap(Rtpmap, out _, out var clockRate, out _) ? clockRate : 0;
         public int Channels() => TryParseRtpmap(Rtpmap, out _, out _, out var channels) ? channels : 0;
@@ -336,6 +247,47 @@ namespace SIPSorcery.Net
 
         public SDPAudioVideoMediaFormat WithUpdatedFmtp(string fmtp, SDPAudioVideoMediaFormat format) =>
             new SDPAudioVideoMediaFormat(format.ID, format.Rtpmap, fmtp);
+
+        /// <summary>
+        /// Maps an audio SDP media type to a media abstraction layer audio format.
+        /// </summary>
+        /// <returns>An audio format value.</returns>
+        public AudioFormat ToAudioFormat()
+        {
+            if (ID < DYNAMIC_ID_MIN
+                && Enum.TryParse<SDPWellKnownMediaFormatsEnum>(Name(), out var wellKnownFormat)
+                && AudioVideoWellKnown.WellKnownAudioFormats.ContainsKey(wellKnownFormat))
+            {
+                return AudioVideoWellKnown.WellKnownAudioFormats[wellKnownFormat];
+            }
+            else
+            {
+                if (TryParseRtpmap(Rtpmap, out var name, out int clockRate, out int channels))
+                {
+                    return new AudioFormat(ID, name, clockRate, clockRate, channels, Fmtp);
+                }
+                else
+                {
+                    return AudioFormat.Empty;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Maps a video SDP media type to a media abstraction layer video format.
+        /// </summary>
+        /// <returns>A video format value.</returns>
+        public VideoFormat ToVideoFormat()
+        {
+            if (TryParseRtpmap(Rtpmap, out var name, out int clockRate, out _))
+            {
+                return new VideoFormat(ID, name, clockRate, Fmtp);
+            }
+            else
+            {
+                return VideoFormat.Empty;
+            }
+        }
 
         /// <summary>
         /// For two formats to be a match only the codec and rtpmap parameters need to match. The

@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorceryMedia.Abstractions.V1;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests

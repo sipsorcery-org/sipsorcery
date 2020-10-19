@@ -649,7 +649,7 @@ namespace SIPSorcery.Net
                                 AudioLocalTrack.Capabilities = audioCompatibleFormats;
 
                                 // Fire this without any common RTP event format included.
-                                OnAudioFormatsNegotiated?.Invoke(AudioLocalTrack.Capabilities.Select(x => SDPMediaFormatMap.GetAudioFormatForSdpFormat(x)).ToList());
+                                OnAudioFormatsNegotiated?.Invoke(AudioLocalTrack.Capabilities.Select(x => x.ToAudioFormat()).ToList());
 
                                 if (!commonEventFormat.IsEmpty())
                                 {
@@ -737,7 +737,7 @@ namespace SIPSorcery.Net
                                 // Set the local video capabilities to the common set.
                                 VideoLocalTrack.Capabilities = videoCompatibleFormats;
 
-                                OnVideoFormatsNegotiated?.Invoke(VideoLocalTrack.Capabilities.Select(x => SDPMediaFormatMap.GetVideoFormatForSdpFormat(x)).ToList());
+                                OnVideoFormatsNegotiated?.Invoke(VideoLocalTrack.Capabilities.Select(x => x.ToVideoFormat()).ToList());
                             }
 
                             var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connectionAddress;

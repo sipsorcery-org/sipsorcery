@@ -12,6 +12,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions.V1;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
