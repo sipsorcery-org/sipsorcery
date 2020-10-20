@@ -72,26 +72,14 @@ namespace SIPSorcery.Media
             {
                 // When netstandard2.1 can be used.
                 //return MemoryMarshal.Cast<short, byte>(pcm)
-
-                if (BitConverter.IsLittleEndian)
-                {
-                    return pcm.SelectMany(x => BitConverter.GetBytes(IPAddress.HostToNetworkOrder(x))).ToArray();
-                }
-                else
-                {
-                    return pcm.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
-                }
+                
+                // Put on the wire in network byte order (big endian).
+                return pcm.SelectMany(x => new byte[] { (byte)(x >> 8), (byte)(x) } ).ToArray();
             }
             else if (format.Codec == AudioCodecsEnum.PCM_S16LE)
             {
-                if (BitConverter.IsLittleEndian)
-                {
-                    return pcm.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
-                }
-                else
-                {
-                    return pcm.SelectMany(x => BitConverter.GetBytes(IPAddress.HostToNetworkOrder(x))).ToArray();
-                }
+                // Put on the wire as little endian.
+                return pcm.SelectMany(x => new byte[] { (byte)(x), (byte)(x >> 8) }).ToArray();
             }
             else
             {
@@ -130,25 +118,14 @@ namespace SIPSorcery.Media
             }
             else if(format.Codec == AudioCodecsEnum.L16)
             {
-                if (BitConverter.IsLittleEndian)
-                {
-                    return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => IPAddress.HostToNetworkOrder(BitConverter.ToInt16(encodedSample, i * 2))).ToArray();
-                }
-                else
-                {
-                    return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(encodedSample, i * 2)).ToArray();
-                }
+                // Samples are on the wire as big endian.
+                return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => (short)(encodedSample[i * 2] << 8 | encodedSample[i * 2 + 1])).ToArray();
             }
             else if (format.Codec == AudioCodecsEnum.PCM_S16LE)
             {
-                if (BitConverter.IsLittleEndian)
-                {
-                    return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(encodedSample, i * 2)).ToArray();
-                }
-                else
-                {
-                    return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => IPAddress.HostToNetworkOrder(BitConverter.ToInt16(encodedSample, i * 2))).ToArray();
-                }
+                // Samples are on the wire as little endian (well unlikely to be on the wire in this case but when they 
+                // arrive from somewhere like the SkypeBot SDK they will be in little endian format).
+                return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => (short)(encodedSample[i * 2 + 1] << 8 | encodedSample[i * 2])).ToArray();
             }
             else
             {
