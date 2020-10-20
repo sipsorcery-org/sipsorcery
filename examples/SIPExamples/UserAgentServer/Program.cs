@@ -147,7 +147,7 @@ namespace SIPSorcery
                         var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
                         IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
 
-                        if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
+                        if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.MediaFormats.Any(x => x.Key == (int)SDPWellKnownMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"Client offer contained PCMU audio codec.");
                             AudioExtrasSource extrasSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });

@@ -77,7 +77,7 @@ namespace SIPSorcery.Examples
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         private static WebSocketServer _webSocketServer;
-        private static SDPMediaFormat _ffmpegVideoFormat;
+        private static SDPAudioVideoMediaFormat _ffmpegVideoFormat;
         private static RTPSession _ffmpegListener;
 
         static async Task Main(string[] args)
@@ -123,7 +123,7 @@ namespace SIPSorcery.Examples
             {
                 var sdp = SDP.ParseSDPDescription(File.ReadAllText(FFMPEG_SDP_FILE));
                 var videoAnn = sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video);
-                if(videoAnn.MediaFormats.First().Name.ToLower() != videoCodec)
+                if(videoAnn.MediaFormats.Values.First().Name().ToLower() != videoCodec)
                 {
                     logger.LogWarning($"Removing existing ffmpeg SDP file {FFMPEG_SDP_FILE} due to codec mismatch.");
                     File.Delete(FFMPEG_SDP_FILE);
@@ -141,7 +141,7 @@ namespace SIPSorcery.Examples
 
             await Task.Run(() => StartFfmpegListener(FFMPEG_SDP_FILE, exitCts.Token));
 
-            Console.WriteLine($"ffmpeg listener successfully created on port {FFMPEG_DEFAULT_RTP_PORT} with video format {_ffmpegVideoFormat.Name}.");
+            Console.WriteLine($"ffmpeg listener successfully created on port {FFMPEG_DEFAULT_RTP_PORT} with video format {_ffmpegVideoFormat.Name()}.");
 
             _webSocketServer.Start();
 
@@ -167,11 +167,11 @@ namespace SIPSorcery.Examples
 
                 // The SDP is only expected to contain a single video media announcement.
                 var videoAnn = sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video);
-                _ffmpegVideoFormat = videoAnn.MediaFormats.First();
+                _ffmpegVideoFormat = videoAnn.MediaFormats.Values.First();
 
                 _ffmpegListener = new RTPSession(false, false, false, IPAddress.Loopback, FFMPEG_DEFAULT_RTP_PORT);
                 _ffmpegListener.AcceptRtpFromAny = true;
-                MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { _ffmpegVideoFormat }, MediaStreamStatusEnum.RecvOnly);
+                MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { _ffmpegVideoFormat }, MediaStreamStatusEnum.RecvOnly);
                 _ffmpegListener.addTrack(videoTrack);
 
                 _ffmpegListener.SetRemoteDescription(SIP.App.SdpType.answer, sdp);
@@ -218,11 +218,11 @@ namespace SIPSorcery.Examples
             return pc;
         }
 
-        private static RTCPeerConnection Createpc(WebSocketContext context, SDPMediaFormat videoFormat)
+        private static RTCPeerConnection Createpc(WebSocketContext context, SDPAudioVideoMediaFormat videoFormat)
         {
             var pc = new RTCPeerConnection(null);
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { videoFormat }, MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { videoFormat }, MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
 
             pc.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");

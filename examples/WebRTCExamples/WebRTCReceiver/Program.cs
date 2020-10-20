@@ -41,7 +41,6 @@ namespace demo
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-        //[STAThread]
         static void Main()
         {
             Console.WriteLine("WebRTC Receive Demo");
@@ -76,7 +75,7 @@ namespace demo
         {
             //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint();
             var videoEP = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
-            videoEP.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.VP8 });
+            videoEP.RestrictFormats(format =>  format.Codec == VideoCodecsEnum.VP8);
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {
@@ -100,13 +99,14 @@ namespace demo
             var pc = new RTCPeerConnection(config);
 
             // Add local receive only tracks. This ensures that the SDP answer includes only the codecs we support.
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, 
+                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(audioTrack);
             MediaStreamTrack videoTrack = new MediaStreamTrack(videoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(videoTrack);
 
             pc.OnVideoFrameReceived += videoEP.GotVideoFrame;
-            pc.OnVideoFormatsNegotiated += (sdpFormat) => videoEP.SetVideoSinkFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.OnVideoFormatsNegotiated += (formats) => videoEP.SetVideoSinkFormat(formats.First());
 
             pc.onconnectionstatechange += async (state) =>
             {

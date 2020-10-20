@@ -76,22 +76,16 @@ namespace SIPSorcery.Examples
         /// codecs. It was observed to select the wrong codec for the RTP header payload ID it was 
         /// receiving. It may be that ffplay decides it can choose it's favorite codec and the remote
         /// party will honor that. The simple fix is to filter to a single audio and video codec.
-        /// </summary>
-        private static List<SDPMediaFormatsEnum> AudioFormatsFilter = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.OPUS };
-        private static List<SDPMediaFormatsEnum> VideoFormatsFilter = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.VP9 };
-
-        /// <summary>
+        ///
         /// Set the codecs sent when the offer is made to the remote peer. Note that no encoding/decoding is
         /// done by this program. ffplay will need to support the selected codec.
         /// </summary>
-        private static List<SDPMediaFormat> AudioOfferFormats = new List<SDPMediaFormat> {
-            new SDPMediaFormat(SDPMediaFormatsEnum.OPUS)
-            {
-                FormatID = "111",
-                FormatAttribute = "opus/48000/2",
-                FormatParameterAttribute = "minptime=10;useinbandfec=1",
-            }};
-        private static List<SDPMediaFormat> VideoOfferFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP9) };
+        private static List<SDPAudioVideoMediaFormat> AudioOfferFormats = new List<SDPAudioVideoMediaFormat> {
+            new SDPAudioVideoMediaFormat(111, "OPUS", 48000, 2, "minptime=10;useinbandfec=1")
+        };
+        private static List<SDPAudioVideoMediaFormat> VideoOfferFormats = new List<SDPAudioVideoMediaFormat> { 
+            new SDPAudioVideoMediaFormat(100, "VP9", 90000) 
+        };
 
         static async Task Main()
         {
@@ -201,7 +195,7 @@ namespace SIPSorcery.Examples
                 {
                     logger.LogDebug("Creating RTP session for ffplay.");
 
-                    var rtpSession = CreateRtpSession(pc.AudioLocalTrack?.Capabilities, pc.VideoLocalTrack?.Capabilities);
+                    var rtpSession = CreateRtpSession(pc.AudioLocalTrack?.Capabilities,                       pc.VideoLocalTrack?.Capabilities);
                     pc.OnRtpPacketReceived += (rep, media, rtpPkt) =>
                     {
                         if (media == SDPMediaTypesEnum.audio && rtpSession.AudioDestinationEndPoint != null)
@@ -224,7 +218,7 @@ namespace SIPSorcery.Examples
             return pc;
         }
 
-        private static RTPSession CreateRtpSession(List<SDPMediaFormat> audioFormats, List<SDPMediaFormat> videoFormats)
+        private static RTPSession CreateRtpSession(List<SDPAudioVideoMediaFormat> audioFormats, List<SDPAudioVideoMediaFormat> videoFormats)
         {
             var rtpSession = new RTPSession(false, false, false, IPAddress.Loopback);
             bool hasAudio = false;
@@ -292,8 +286,7 @@ namespace SIPSorcery.Examples
 
                     foreach (var ann in remoteSdp.Media)
                     {
-                        var capbilities = FilterCodecs(ann.Media, ann.MediaFormats);
-                        MediaStreamTrack track = new MediaStreamTrack(ann.Media, false, capbilities, MediaStreamStatusEnum.RecvOnly);
+                        MediaStreamTrack track = new MediaStreamTrack(ann.Media, false, ann.MediaFormats.Values.ToList(), MediaStreamStatusEnum.RecvOnly);
                         pc.addTrack(track);
                     }
 
@@ -333,56 +326,6 @@ namespace SIPSorcery.Examples
             catch (Exception excp)
             {
                 logger.LogError("Exception WebSocketMessageReceived. " + excp.Message);
-            }
-        }
-
-        private static List<SDPMediaFormat> FilterCodecs(SDPMediaTypesEnum mediaType, List<SDPMediaFormat> formats)
-        {
-            if (mediaType == SDPMediaTypesEnum.audio)
-            {
-                if (AudioFormatsFilter.Count == 0)
-                {
-                    return formats;
-                }
-                else
-                {
-                    var audioFormats = new List<SDPMediaFormat>();
-
-                    foreach (var format in formats)
-                    {
-                        if (AudioFormatsFilter.Any(x => x == format.FormatCodec))
-                        {
-                            audioFormats.Add(format);
-                        }
-                    }
-
-                    return audioFormats;
-                }
-            }
-            else if (mediaType == SDPMediaTypesEnum.video)
-            {
-                if (VideoFormatsFilter.Count == 0)
-                {
-                    return formats;
-                }
-                else
-                {
-                    var videoFormats = new List<SDPMediaFormat>();
-
-                    foreach (var format in formats)
-                    {
-                        if (VideoFormatsFilter.Any(x => x == format.FormatCodec))
-                        {
-                            videoFormats.Add(format);
-                        }
-                    }
-
-                    return videoFormats;
-                }
-            }
-            else
-            {
-                return formats;
             }
         }
 

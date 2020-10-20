@@ -14,7 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -37,11 +37,10 @@ namespace demo
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
         private static int OUT_SAMPLE_RATE = 48000;
-        private static int RTP_SAMPLE_RATE = SDPMediaFormatInfo.GetClockRate(SDPMediaFormatsEnum.PCMU);
 
         private static WaveFormat _format_s16le48k = new WaveFormat(OUT_SAMPLE_RATE, 16, 1);
         private static WaveFileWriter _waveFile;
-        private static double _ratio = (double)(OUT_SAMPLE_RATE / RTP_SAMPLE_RATE);
+        private static double _ratio = double.NaN;
 
         static async Task Main()
         {
@@ -63,10 +62,13 @@ namespace demo
             //EnableTraceLogs(sipTransport);
 
             var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-            var audioCodecs = new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU };
             AudioExtrasSource audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions);
-            audioExtrasSource.RestrictCodecs(audioCodecs);
+            audioExtrasSource.RestrictFormats((format) => format.Codec == AudioCodecsEnum.PCMU);
             var rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
+            rtpSession.OnAudioFormatsNegotiated += (formats) =>
+            {
+                _ratio = (double)(OUT_SAMPLE_RATE / formats.First().RtpClockRate);
+            };
             rtpSession.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
 
             // Place the call and wait for the result.
@@ -90,7 +92,7 @@ namespace demo
         {
             //Log.LogDebug($"{kind} RTP packet received {pkt.Header.SequenceNumber}.");
 
-            if (kind == SDPMediaTypesEnum.audio)
+            if (kind == SDPMediaTypesEnum.audio && _ratio != double.NaN)
             {
                 var sample = pkt.Payload;
 

@@ -26,6 +26,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Media;
+using SIPSorceryMedia.Windows;
 using WebSocketSharp.Server;
 
 namespace demo
@@ -71,7 +72,9 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+            //AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+            //audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+            WindowsAudioEndPoint audioSource = new WindowsAudioEndPoint(new AudioEncoder());
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);

@@ -28,8 +28,8 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorceryMedia.Windows;
 using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Windows;
 
 namespace demo
 {
@@ -61,15 +61,10 @@ namespace demo
             userAgent.ClientCallFailed += (uac, error, sipResponse) => exitCts.Cancel();
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
-            //var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
-            //var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
-            var audioExtrasSource = new AudioExtrasSource();
-            //audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
-            audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.L16);
-            //audioExtrasSource.RestrictFormats(format => format.FormatID >= 118);
-            //audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.L16 && format.FormatAttribute.Contains("8000"));
-            //audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.L16 && format.FormatAttribute.Contains("16000") );
-            var voipMediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
+            var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
+            var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
+            //windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+            //voipMediaSession.AudioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
             voipMediaSession.AcceptRtpFromAny = true;
             //voipMediaSession.AudioExtrasSource.AudioSamplePeriodMilliseconds = 20;
 
@@ -105,7 +100,7 @@ namespace demo
             {
                 Console.WriteLine($"Call to {DESTINATION} succeeded.");
 
-                //await windowsAudio.PauseAudio();
+                await windowsAudio.PauseAudio();
                 try
                 {
                     //Console.WriteLine("Sending welcome message from 8KHz sample.");
@@ -147,7 +142,7 @@ namespace demo
                 { }
 
                 // Switch to the external microphone input source.
-                //await windowsAudio.ResumeAudio();
+                await windowsAudio.ResumeAudio();
 
                 exitCts.Token.WaitHandle.WaitOne();
             }
@@ -158,11 +153,11 @@ namespace demo
 
             Console.WriteLine("Exiting...");
 
-            //if (userAgent?.IsHangingUp == true)
-            //{
+            if (userAgent?.IsHangingUp == true)
+            {
                 Console.WriteLine("Waiting 1s for the call hangup or cancel to complete...");
                 await Task.Delay(1000);
-            //}
+            }
 
             // Clean up.
             sipTransport.Shutdown();

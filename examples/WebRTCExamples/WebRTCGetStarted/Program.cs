@@ -85,8 +85,8 @@ namespace demo
             testPatternSource.OnVideoSourceRawSample += videoEncoderEndPoint.ExternalVideoSourceRawSample;
             videoEncoderEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
-            pc.OnVideoFormatsNegotiated += (sdpFormat) =>
-               videoEncoderEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.OnVideoFormatsNegotiated += (formats) =>
+               videoEncoderEndPoint.SetVideoSourceFormat(formats.First());
             pc.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
