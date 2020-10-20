@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
@@ -14,18 +15,20 @@ namespace SIPSorceryMedia.FFmpeg
         private const int VIDEO_SAMPLING_RATE = 90000;
         private const int DEFAULT_FRAME_RATE = 30;
         private const AudioSamplingRatesEnum AUDIO_SAMPLING_RATE = AudioSamplingRatesEnum.Rate8KHz;
+        private const int VP8_INITIAL_FORMATID = 96;
+        private const int H264_INITIAL_FORMATID = 100;
 
-        private static List<AudioCodecsEnum> _supportedAudioCodecs = new List<AudioCodecsEnum>
+        private static List<AudioFormat> _supportedAudioFormats = new List<AudioFormat>
         {
-            AudioCodecsEnum.PCMU,
-            AudioCodecsEnum.PCMA,
-            AudioCodecsEnum.G722
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.G722)
         };
 
-        private static List<VideoCodecsEnum> _supportedVideoCodecs = new List<VideoCodecsEnum>
-        { 
-            VideoCodecsEnum.VP8,
-            VideoCodecsEnum.H264
+        private static List<VideoFormat> _supportedVideoFormats = new List<VideoFormat>
+        {
+            new VideoFormat(VideoCodecsEnum.VP8, VP8_INITIAL_FORMATID, VIDEO_SAMPLING_RATE),
+            new VideoFormat(VideoCodecsEnum.H264, H264_INITIAL_FORMATID, VIDEO_SAMPLING_RATE)
         };
 
         public ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
@@ -38,8 +41,8 @@ namespace SIPSorceryMedia.FFmpeg
         private IAudioEncoder _audioEncoder;
         private bool _forceKeyFrame;
 
-        private CodecManager<AudioCodecsEnum> _audioCodecManager;
-        private CodecManager<VideoCodecsEnum> _videoCodecManager;
+        private MediaFormatManager<AudioFormat> _audioFormatManager;
+        private MediaFormatManager<VideoFormat> _videoFormatManager;
 
         public event EncodedSampleDelegate? OnAudioSourceEncodedSample;
         public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
@@ -60,14 +63,14 @@ namespace SIPSorceryMedia.FFmpeg
                 throw new ApplicationException($"Requested path for FFmpeg file source could not be found {path}.");
             }
 
-            _audioCodecManager = new CodecManager<AudioCodecsEnum>(_supportedAudioCodecs);
-            _videoCodecManager = new CodecManager<VideoCodecsEnum>(_supportedVideoCodecs);
+            _audioFormatManager = new MediaFormatManager<AudioFormat>(_supportedAudioFormats);
+            _videoFormatManager = new MediaFormatManager<VideoFormat>(_supportedVideoFormats);
 
             _audioEncoder = audioEncoder;
             _fileSourceDecoder = new FileSourceDecoder(path, repeat);
             _videoEncoder = new VideoEncoder();
-            _fileSourceDecoder.OnVideoFrame += FileSourceDecdoer_OnVideoFrame;
-            _fileSourceDecoder.OnAudioFrame += FileSourceDecdoer_OnAudioFrame;
+            _fileSourceDecoder.OnVideoFrame += FileSourceDecoder_OnVideoFrame;
+            _fileSourceDecoder.OnAudioFrame += FileSourceDecoder_OnAudioFrame;
             _fileSourceDecoder.OnEndOfFile += () =>
             {
                 logger.LogDebug($"File source decode complete for {path}.");
@@ -79,9 +82,13 @@ namespace SIPSorceryMedia.FFmpeg
         public void Initialise() => _fileSourceDecoder.InitialiseSource();
         public bool IsPaused() => _isPaused;
 
-        public List<AudioCodecsEnum> GetAudioSourceFormats() => _audioCodecManager.GetSourceFormats();
-        public void SetAudioSourceFormat(AudioCodecsEnum audioFormat) => _audioCodecManager.SetSelectedCodec(audioFormat);
-        public void RestrictCodecs(List<AudioCodecsEnum> codecs) => _audioCodecManager.RestrictCodecs(codecs);
+        public List<AudioFormat> GetAudioSourceFormats() => _audioFormatManager.GetSourceFormats();
+        public void SetAudioSourceFormat(AudioFormat audioFormat)
+        {
+            logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
+            _audioFormatManager.SetSelectedFormat(audioFormat);
+        }
+        public void RestrictFormats(Func<AudioFormat, bool> filter) => _audioFormatManager.RestrictFormats(filter);
         public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) => throw new NotImplementedException();
         public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
         public bool IsAudioSourcePaused() => _isPaused;
@@ -90,9 +97,13 @@ namespace SIPSorceryMedia.FFmpeg
         public Task ResumeAudio() => Resume();
         public Task CloseAudio() => Close();
 
-        public List<VideoCodecsEnum> GetVideoSourceFormats() => _videoCodecManager.GetSourceFormats();
-        public void SetVideoSourceFormat(VideoCodecsEnum videoFormat) => _videoCodecManager.SetSelectedCodec(videoFormat);
-        public void RestrictCodecs(List<VideoCodecsEnum> codecs) => _videoCodecManager.RestrictCodecs(codecs);
+        public List<VideoFormat> GetVideoSourceFormats() => _videoFormatManager.GetSourceFormats();
+        public void SetVideoSourceFormat(VideoFormat videoFormat)
+        {
+            logger.LogDebug($"Setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
+            _videoFormatManager.SetSelectedFormat(videoFormat);
+        }
+        public void RestrictFormats(Func<VideoFormat, bool> filter) => _videoFormatManager.RestrictFormats(filter);
         public void ForceKeyFrame() => _forceKeyFrame = true;
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) => throw new NotImplementedException();
         public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
@@ -102,17 +113,19 @@ namespace SIPSorceryMedia.FFmpeg
         public Task ResumeVideo() => Resume();
         public Task CloseVideo() => Close();
 
-        private void FileSourceDecdoer_OnAudioFrame(byte[] buffer)
+        private void FileSourceDecoder_OnAudioFrame(byte[] buffer)
         {
-            if (OnAudioSourceEncodedSample != null)
+            if (OnAudioSourceEncodedSample != null && buffer.Length > 0)
             {
-                var encodedSample = _audioEncoder.EncodeAudio(buffer, _audioCodecManager.SelectedCodec, AUDIO_SAMPLING_RATE);
+                // FFmpeg AV_SAMPLE_FMT_S16 will store the bytes in the correct endianess for the underlying platform.
+                short[] pcm = buffer.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(buffer, i * 2)).ToArray();
+                var encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
                 OnAudioSourceEncodedSample((uint)encodedSample.Length, encodedSample);
             }
         }
 
         //private void FileSourceDecdoer_OnVideoFrame(byte[] buffer, int width, int height)
-        private void FileSourceDecdoer_OnVideoFrame(ref AVFrame frame)
+        private void FileSourceDecoder_OnVideoFrame(ref AVFrame frame)
         {
             if (OnVideoSourceEncodedSample != null)
             {
@@ -123,7 +136,7 @@ namespace SIPSorceryMedia.FFmpeg
                 //Console.WriteLine($"framerate {frameRate}, timestamp duration {timestampDuration}.");
 
                 //var frame = _videoEncoder.MakeFrame(buffer, width, height);
-                var encodedSample = _videoEncoder.Encode(FFmpegConvert.GetAVCodecID(_videoCodecManager.SelectedCodec), frame, frameRate, _forceKeyFrame);
+                var encodedSample = _videoEncoder.Encode(FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec), frame, frameRate, _forceKeyFrame);
 
                 if (encodedSample != null)
                 {

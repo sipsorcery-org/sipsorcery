@@ -13,18 +13,20 @@ namespace SIPSorceryMedia.FFmpeg
     {
         private const int VIDEO_SAMPLING_RATE = 90000;
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
+        private const int VP8_INITIAL_FORMATID = 96;
+        private const int H264_INITIAL_FORMATID = 100;
 
         public ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
 
-        public static readonly List<VideoCodecsEnum> SupportedCodecs = new List<VideoCodecsEnum>
+        public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {
-            VideoCodecsEnum.VP8,
-            VideoCodecsEnum.H264
+            new VideoFormat(VideoCodecsEnum.VP8, VP8_INITIAL_FORMATID, VIDEO_SAMPLING_RATE),
+            new VideoFormat(VideoCodecsEnum.H264, H264_INITIAL_FORMATID, VIDEO_SAMPLING_RATE)
         };
 
         private VideoEncoder _ffmpegEncoder;
 
-        private CodecManager<VideoCodecsEnum> _codecManager;
+        private MediaFormatManager<VideoFormat> _videoFormatManager;
         private bool _isStarted;
         private bool _isPaused;
         private bool _isClosed;
@@ -40,7 +42,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public FFmpegVideoEndPoint()
         {
-            _codecManager = new CodecManager<VideoCodecsEnum>(SupportedCodecs);
+            _videoFormatManager = new MediaFormatManager<VideoFormat>(SupportedFormats);
             _ffmpegEncoder = new VideoEncoder();
         }
 
@@ -53,11 +55,11 @@ namespace SIPSorceryMedia.FFmpeg
             };
         }
 
-        public List<VideoCodecsEnum> GetVideoSinkFormats() => _codecManager.GetSourceFormats();
-        public void SetVideoSinkFormat(VideoCodecsEnum videoFormat) => _codecManager.SetSelectedCodec(videoFormat);
-        public void RestrictCodecs(List<VideoCodecsEnum> codecs) => _codecManager.RestrictCodecs(codecs);
-        public List<VideoCodecsEnum> GetVideoSourceFormats() => _codecManager.GetSourceFormats();
-        public void SetVideoSourceFormat(VideoCodecsEnum videoFormat) => _codecManager.SetSelectedCodec(videoFormat);
+        public List<VideoFormat> GetVideoSinkFormats() => _videoFormatManager.GetSourceFormats();
+        public void SetVideoSinkFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
+        public void RestrictFormats(Func<VideoFormat, bool> filter) => _videoFormatManager.RestrictFormats(filter);
+        public List<VideoFormat> GetVideoSourceFormats() => _videoFormatManager.GetSourceFormats();
+        public void SetVideoSourceFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
         public void ForceKeyFrame() => _forceKeyFrame = true;
         public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
         public bool IsVideoSourcePaused() => _isPaused;
@@ -68,7 +70,7 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isClosed)
             {
-                AVCodecID codecID = FFmpegConvert.GetAVCodecID(_codecManager.SelectedCodec);
+                AVCodecID codecID = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
 
                 var rgbFrames = _ffmpegEncoder.Decode(codecID, payload, out var width, out var height);
 
@@ -127,7 +129,7 @@ namespace SIPSorceryMedia.FFmpeg
                     uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
 
                     var i420Buffer = PixelConverter.ToI420(width, height, sample, pixelFormat);
-                    byte[]? encodedBuffer = _ffmpegEncoder. Encode(FFmpegConvert.GetAVCodecID(_codecManager.SelectedCodec), i420Buffer, width, height, (int)fps, _forceKeyFrame);
+                    byte[]? encodedBuffer = _ffmpegEncoder. Encode(FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec), i420Buffer, width, height, (int)fps, _forceKeyFrame);
 
                     if (encodedBuffer != null)
                     {
@@ -149,6 +151,26 @@ namespace SIPSorceryMedia.FFmpeg
         public void Dispose()
         {
             _ffmpegEncoder?.Dispose();
+        }
+
+        public Task PauseVideoSink()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task ResumeVideoSink()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task StartVideoSink()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task CloseVideoSink()
+        {
+            return Task.CompletedTask;
         }
     }
 }
