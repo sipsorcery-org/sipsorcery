@@ -39,7 +39,8 @@ namespace WebRTCDaemon
         private const string MP4_PATH = "media/max_intro.mp4";
         private const string MAX_URL = "max";
         private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.VP8;
-        private const AudioCodecsEnum AUDIO_CODEC = AudioCodecsEnum.PCMU;
+        private const int VP8_OFFERED_FORMATID = 96;
+        private const SDPWellKnownMediaFormatsEnum AUDIO_FORMAT = SDPWellKnownMediaFormatsEnum.PCMU;
 
         private readonly ILogger<WebRTCWorker> _logger;
 
@@ -75,9 +76,9 @@ namespace WebRTCDaemon
             
             // The same  sources are used for all connected peers (broadcast) so the codecs need 
             // to be restricted to a single well supported option.
-            _musicSource.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
-            _maxSource.RestrictCodecs(new List<VideoCodecsEnum> { VIDEO_CODEC });
-            _testPatternEncoder.RestrictCodecs(new List<VideoCodecsEnum> { VIDEO_CODEC });
+            _musicSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+            _maxSource.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+            _testPatternEncoder.RestrictFormats(format => format.Codec == VIDEO_CODEC);
 
             // Start web socket.
             _logger.LogInformation("Starting web socket server...");
@@ -121,9 +122,9 @@ namespace WebRTCDaemon
 
             //mediaFileSource.OnEndOfFile += () => pc.Close("source eof");
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(new List<VideoCodecsEnum> { VIDEO_CODEC }, MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(new List<VideoFormat> { new VideoFormat(VIDEO_CODEC, VP8_OFFERED_FORMATID) }, MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
-            MediaStreamTrack audioTrack = new MediaStreamTrack(new List<AudioCodecsEnum> { AUDIO_CODEC }, MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(new List<AudioFormat> { new AudioFormat(AUDIO_FORMAT) }, MediaStreamStatusEnum.SendOnly);
             pc.addTrack(audioTrack);
 
             IVideoSource videoSource = null;
@@ -140,8 +141,8 @@ namespace WebRTCDaemon
                 audioSource = _musicSource;
             }
 
-            pc.OnVideoFormatsNegotiated += (sdpFormat) => videoSource.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
-            pc.OnAudioFormatsNegotiated += (sdpFormat) => audioSource.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.OnVideoFormatsNegotiated += (formats) => videoSource.SetVideoSourceFormat(formats.First());
+            pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
             videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 

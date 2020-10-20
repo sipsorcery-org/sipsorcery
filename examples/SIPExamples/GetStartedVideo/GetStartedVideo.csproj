@@ -15,6 +15,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     <PackageReference Include="SIPSorcery" Version="4.0.79-pre" />
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.19-pre" />
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.4-pre" />
@@ -38,6 +39,11 @@
     <ProjectReference Include="..\..\..\..\SIPSorceryMedia.Encoders\src\SIPSorceryMedia.Encoders.csproj" />
     <ProjectReference Include="..\..\..\..\SIPSorceryMedia.Windows\src\SIPSorceryMedia.Windows.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
+>>>>>>> master
+=======
+    <PackageReference Include="SIPSorcery" Version="4.0.84-pre" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.4-pre" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.23-pre" />
 >>>>>>> master
   </ItemGroup>
 
