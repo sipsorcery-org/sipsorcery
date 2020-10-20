@@ -113,7 +113,7 @@ namespace SIPSorceryMedia.Abstractions.V1
         G729,
         OPUS,
 
-        PCM_S16LE,  // PCM signed 16-bit little-endian (equivalent to FFmpeg s16le).
+        PCM_S16LE,  // PCM signed 16-bit little-endian (equivalent to FFmpeg s16le). For use with Azure, not likely to be supported in VoIP/WebRTC.
 
         Unknown
     }
