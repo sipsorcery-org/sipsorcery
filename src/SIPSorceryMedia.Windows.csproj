@@ -25,12 +25,13 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Windows</RepositoryUrl>
-    <Version>0.0.21-pre</Version>
-    <AssemblyVersion>0.0.21.0</AssemblyVersion>
-    <FileVersion>0.0.21.0</FileVersion>
+    <Version>0.0.23-pre</Version>
+    <AssemblyVersion>0.0.23.0</AssemblyVersion>
+    <FileVersion>0.0.23.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-    <PackageReleaseNotes>-v0.0.21-pre: Updated to use latest abstractions and encoding packages.
+    <PackageReleaseNotes>-v0.0.23-pre: Updated for SDP refactor in main library for improved audio and video format management.
+-v0.0.21-pre: Updated to use latest abstractions and encoding packages.
 -v0.0.20-pre: Refactored encoding functions into SIPSorceryMedia.Encoding.
 -v0.0.19-pre: Added support for codec manager.
 -v0.0.18-pre: Added events for video and audio source failures.
