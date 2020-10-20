@@ -53,11 +53,11 @@ namespace SIPSorceryMedia.Windows
             DEVICE_BITS_PER_SAMPLE,
             DEVICE_CHANNELS);
 
-        public static readonly List<AudioCodecsEnum> SupportedCodecs = new List<AudioCodecsEnum>
+        public static readonly List<AudioFormat> SupportedFormats = new List<AudioFormat>
         {
-            AudioCodecsEnum.PCMU,
-            AudioCodecsEnum.PCMA,
-            AudioCodecsEnum.G722
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.G722)
         };
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace SIPSorceryMedia.Windows
         private WaveInEvent _waveInEvent;
 
         private IAudioEncoder _audioEncoder;
-        private CodecManager<AudioCodecsEnum> _audioCodecManager;
+        private MediaFormatManager<AudioFormat> _audioFormatManager;
 
         private bool _disableSink;
         private bool _disableSource;
@@ -120,7 +120,7 @@ namespace SIPSorceryMedia.Windows
         {
             logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
-            _audioCodecManager = new CodecManager<AudioCodecsEnum>(SupportedCodecs);
+            _audioFormatManager = new MediaFormatManager<AudioFormat>(SupportedFormats);
             _audioEncoder = audioEncoder;
 
             _disableSource = disableSource;
@@ -159,21 +159,23 @@ namespace SIPSorceryMedia.Windows
                     }
                     else
                     {
+                        logger.LogWarning($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
                         OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
                     }
                 }
                 else
                 {
+                    logger.LogWarning("No audio capture devices are available.");
                     OnAudioSourceError?.Invoke("No audio capture devices are available.");
                 }
             }
         }
 
-        public void RestrictCodecs(List<AudioCodecsEnum> codecs) => _audioCodecManager.RestrictCodecs(codecs);
-        public List<AudioCodecsEnum> GetAudioSourceFormats() => _audioCodecManager.GetSourceFormats();
-        public void SetAudioSourceFormat(AudioCodecsEnum audioFormat) => _audioCodecManager.SetSelectedCodec(audioFormat);
-        public List<AudioCodecsEnum> GetAudioSinkFormats() => _audioCodecManager.GetSourceFormats();
-        public void SetAudioSinkFormat(AudioCodecsEnum audioFormat) => _audioCodecManager.SetSelectedCodec(audioFormat);
+        public void RestrictFormats(Func<AudioFormat, bool> filter) => _audioFormatManager.RestrictFormats(filter);
+        public List<AudioFormat> GetAudioSourceFormats() => _audioFormatManager.GetSourceFormats();
+        public void SetAudioSourceFormat(AudioFormat audioFormat) => _audioFormatManager.SetSelectedFormat(audioFormat);
+        public List<AudioFormat> GetAudioSinkFormats() => _audioFormatManager.GetSourceFormats();
+        public void SetAudioSinkFormat(AudioFormat audioFormat) => _audioFormatManager.SetSelectedFormat(audioFormat);
 
         public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
         public bool IsAudioSourcePaused() => _isPaused;
@@ -244,9 +246,9 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         private void LocalAudioSampleAvailable(object sender, WaveInEventArgs args)
         {
-            //WaveBuffer wavBuffer = new WaveBuffer(args.Buffer.Take(args.BytesRecorded).ToArray());
-            //byte[] encodedSample = _audioEncoder.EncodeAudio(wavBuffer.ShortBuffer, _selectedSourceFormat, AudioSourceSamplingRate);
-            byte[] encodedSample = _audioEncoder.EncodeAudio(args.Buffer.Take(args.BytesRecorded).ToArray(), _audioCodecManager.SelectedCodec, AudioSourceSamplingRate);
+            WaveBuffer wavBuffer = new WaveBuffer(args.Buffer.Take(args.BytesRecorded).ToArray());
+            byte[] encodedSample = _audioEncoder.EncodeAudio(wavBuffer.ShortBuffer, _audioFormatManager.SelectedFormat);
+            //byte[] encodedSample = _audioEncoder.EncodeAudio(args.Buffer.Take(args.BytesRecorded).ToArray(), _audioFormatManager.SelectedFormat);
             OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
         }
 
@@ -264,11 +266,39 @@ namespace SIPSorceryMedia.Windows
 
         public void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
         {
-            if (_waveProvider != null && _audioEncoder != null && _audioEncoder.IsSupported(_audioCodecManager.SelectedCodec))
+            if (_waveProvider != null && _audioEncoder != null)
             {
-                var pcmSample = _audioEncoder.DecodeAudio(payload, _audioCodecManager.SelectedCodec, AudioPlaybackRate);
-                _waveProvider?.AddSamples(pcmSample, 0, pcmSample.Length);
+                var pcmSample = _audioEncoder.DecodeAudio(payload, _audioFormatManager.SelectedFormat);
+                
+                if((int)AudioPlaybackRate != _audioFormatManager.SelectedFormat.ClockRate)
+                {
+                    // TODO: Use NAudio to resample.
+                }
+
+                byte[] pcmBytes = pcmSample.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
+
+                _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);
             }
+        }
+
+        public Task PauseAudioSink()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task ResumeAudioSink()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task StartAudioSink()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task CloseAudioSink()
+        {
+            return Task.CompletedTask;
         }
     }
 }
