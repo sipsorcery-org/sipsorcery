@@ -16,13 +16,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-//using System.Drawing.Drawing2D;
-//using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -39,22 +33,12 @@ namespace SIPSorcery.Media
         private const int MAXIMUM_FRAMES_PER_SECOND = 60;           // Note the Threading.Timer's maximum callback rate is approx 60/s so allowing higher has no effect.
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
         private const int MINIMUM_FRAMES_PER_SECOND = 1;
-        //private const float TEXT_SIZE_PERCENTAGE = 0.035f;          // Height of text as a percentage of the total image height
-        //private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f;     // Black text outline thickness is set as a percentage of text height in pixels
-        //private const int TEXT_MARGIN_PIXELS = 5;
-        //private const int POINTS_PER_INCH = 72;
         private const int STAMP_BOX_SIZE = 20;
         private const int STAMP_BOX_PADDING = 10;
         private const int TIMER_DISPOSE_WAIT_MILLISECONDS = 1000;
 
         public static ILogger logger = Sys.Log.Logger;
 
-        public static readonly List<VideoCodecsEnum> SupportedCodecs = new List<VideoCodecsEnum>
-        {
-            VideoCodecsEnum.VP8
-        };
-
-        private List<VideoCodecsEnum> _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
         private int _frameSpacing;
         private byte[] _testI420Buffer;
         private Timer _sendTestPatternTimer;
@@ -67,8 +51,8 @@ namespace SIPSorcery.Media
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
 
         /// <summary>
-        /// This video source DOES NOT generate encoded samples. Subscribe to the raw samples
-        /// event and pass to an encoder.
+        /// This video source DOES NOT generate encoded samples. Hook an encoder up to
+        /// <seealso cref="OnVideoSourceRawSample"/>.
         /// </summary>
         [Obsolete("This video source is not currently capable of generating encoded samples.")]
         public event EncodedSampleDelegate OnVideoSourceEncodedSample { add { } remove { } }
@@ -86,9 +70,6 @@ namespace SIPSorcery.Media
             }
             else
             {
-                //Bitmap testPattern = new Bitmap(testPatternStm);
-                //LoadI420Buffer(testPattern);
-                //testPattern.Dispose();
                 _testI420Buffer = new byte[TEST_PATTERN_WIDTH * TEST_PATTERN_HEIGHT * 3 / 2];
                 testPatternStm.Read(_testI420Buffer, 0, _testI420Buffer.Length);
                 testPatternStm.Close();
@@ -103,11 +84,13 @@ namespace SIPSorcery.Media
         public Task<bool> InitialiseVideoSourceDevice() =>
             throw new NotImplementedException("The test pattern video source does not use a device.");
         public bool IsVideoSourcePaused() => _isPaused;
-        public List<VideoCodecsEnum> GetVideoSourceFormats() =>
+        public List<VideoFormat> GetVideoSourceFormats() =>
             throw new NotImplementedException("This source can only supply raw RGB bitmap samples.");
-        public void SetVideoSourceFormat(VideoCodecsEnum videoFormat) =>
+        public void SetVideoSourceFormat(VideoFormat videoFormat) =>
             throw new NotImplementedException("This source can only supply raw RGB bitmap samples.");
         public void ForceKeyFrame() =>
+            throw new NotImplementedException("This source does not have any video encoding capabilities.");
+        public void RestrictFormats(Func<VideoFormat, bool> filter) =>
             throw new NotImplementedException("This source does not have any video encoding capabilities.");
 
         //public void SetEmbeddedTestPatternPath(string path)
@@ -199,28 +182,28 @@ namespace SIPSorcery.Media
         /// used.
         /// </summary>
         /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
-        public void RestrictCodecs(List<VideoCodecsEnum> codecs)
-        {
-            if (codecs == null || codecs.Count == 0)
-            {
-                _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
-            }
-            else
-            {
-                _supportedCodecs = new List<VideoCodecsEnum>();
-                foreach (var codec in codecs)
-                {
-                    if (SupportedCodecs.Any(x => x == codec))
-                    {
-                        _supportedCodecs.Add(codec);
-                    }
-                    else
-                    {
-                        logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
-                    }
-                }
-            }
-        }
+        //public void RestrictCodecs(List<VideoCodecsEnum> codecs)
+        //{
+        //    if (codecs == null || codecs.Count == 0)
+        //    {
+        //        _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
+        //    }
+        //    else
+        //    {
+        //        _supportedCodecs = new List<VideoCodecsEnum>();
+        //        foreach (var codec in codecs)
+        //        {
+        //            if (SupportedCodecs.Any(x => x == codec))
+        //            {
+        //                _supportedCodecs.Add(codec);
+        //            }
+        //            else
+        //            {
+        //                logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
+        //            }
+        //        }
+        //    }
+        //}
 
         public Task PauseVideo()
         {

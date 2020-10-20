@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
 {
@@ -33,11 +34,11 @@ namespace SIPSorcery.Media
             base.addTrack(audioTrack);
         }
 
-        private void AudioFormatsNegotiated(List<SDPMediaFormat> audoFormats)
+        private void AudioFormatsNegotiated(List<AudioFormat> audoFormats)
         {
-            var audioCodec = SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audoFormats.First().FormatCodec);
-            logger.LogDebug($"Setting audio source format to {audioCodec}.");
-            AudioExtrasSource.SetAudioSourceFormat(audioCodec);
+            var audioFormat = audoFormats.First();
+            logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec}.");
+            AudioExtrasSource.SetAudioSourceFormat(audioFormat);
         }
 
         public async override Task Start()

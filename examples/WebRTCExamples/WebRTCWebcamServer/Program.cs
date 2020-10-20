@@ -111,8 +111,11 @@ namespace demo
 
             winVideoEP.OnVideoSourceEncodedSample += pc.SendVideo;
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
-            pc.OnVideoFormatsNegotiated += (sdpFormat) =>
-                 winVideoEP.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.OnVideoFormatsNegotiated += (videoFormats) =>
+                 winVideoEP.SetVideoSourceFormat(videoFormats.First());
+            pc.OnAudioFormatsNegotiated += (audioFormats) =>
+                audioSource.SetAudioSourceFormat(audioFormats.First());
+
             pc.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");

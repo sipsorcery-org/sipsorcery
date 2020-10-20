@@ -118,8 +118,8 @@ namespace demo
             MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
 
-            peerConnection.OnAudioFormatsNegotiated += (sdpFormat) =>
-                windowsAudioEP.SetAudioSinkFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            peerConnection.OnAudioFormatsNegotiated += (audioFormats) =>
+                windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");

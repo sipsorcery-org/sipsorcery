@@ -77,8 +77,8 @@ namespace demo
 
             var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, false, new AudioEncoder());
             mediaFileSource.Initialise();
-            mediaFileSource.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.VP8 });
-            mediaFileSource.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
+            mediaFileSource.RestrictFormats(x => x.Codec == VideoCodecsEnum.VP8);
+            mediaFileSource.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
             mediaFileSource.OnEndOfFile += () => pc.Close("source eof");
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(mediaFileSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
@@ -88,8 +88,8 @@ namespace demo
 
             mediaFileSource.OnVideoSourceEncodedSample += pc.SendVideo;
             mediaFileSource.OnAudioSourceEncodedSample += pc.SendAudio;
-            pc.OnVideoFormatsNegotiated += (sdpFormat) => mediaFileSource.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
-            pc.OnAudioFormatsNegotiated += (sdpFormat) => mediaFileSource.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.OnVideoFormatsNegotiated += (videoFormats) => mediaFileSource.SetVideoSourceFormat(videoFormats.First());
+            pc.OnAudioFormatsNegotiated += (audioFormats) => mediaFileSource.SetAudioSourceFormat(audioFormats.First());
 
             pc.onconnectionstatechange += async (state) =>
             {

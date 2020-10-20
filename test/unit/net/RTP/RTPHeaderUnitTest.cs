@@ -11,6 +11,7 @@
 
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorceryMedia.Abstractions.V1;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -87,7 +88,7 @@ namespace SIPSorcery.Net.UnitTests
             src.HeaderExtensionFlag = 1;
             src.MarkerBit = 1;
             src.CSRCCount = 3;
-            src.PayloadType = (int)SDPMediaFormatsEnum.PCMA;
+            src.PayloadType = (int)SDPWellKnownMediaFormatsEnum.PCMA;
 
             byte[] headerBuffer = src.GetHeader(1, 0, 1);
 
