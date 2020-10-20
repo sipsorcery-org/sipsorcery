@@ -4,8 +4,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.8" />
     <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
-    <!--<PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.16-pre" />-->
-    <!--<PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.3-pre" />-->
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.18-pre" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.4-pre" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -40,11 +40,6 @@
 
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj" />
-    <ProjectReference Include="..\..\SIPSorceryMedia.Encoders\src\SIPSorceryMedia.Encoders.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
