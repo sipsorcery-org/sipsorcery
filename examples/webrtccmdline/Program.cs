@@ -604,8 +604,8 @@ namespace SIPSorcery.Examples
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             _peerConnection.addTrack(audioTrack);
 
-            _peerConnection.OnAudioFormatsNegotiated += (sdpFormat) =>
-                audioSource.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            _peerConnection.OnAudioFormatsNegotiated += (formats) =>
+                audioSource.SetAudioSourceFormat(formats.First());
 
             _peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
             _peerConnection.onconnectionstatechange += async (state) =>

@@ -18,7 +18,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +25,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
@@ -62,11 +62,13 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
-            var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             //windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
-            //voipMediaSession.AudioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+            var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
             //voipMediaSession.AudioExtrasSource.AudioSamplePeriodMilliseconds = 20;
+            //voipMediaSession.AudioLocalTrack.Capabilities.Clear();
+            //voipMediaSession.AudioLocalTrack.Capabilities.Add(
+            //    new SDPAudioVideoMediaFormat(new AudioFormat(AudioCodecsEnum.L16, 118, 8000)));
 
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {

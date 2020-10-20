@@ -393,7 +393,7 @@ namespace SIPSorcery
 
                 var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
                 var audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions);
-                audioExtrasSource.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
+                audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
                 var voipMediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
 
                 var result = await ua.Call(dst.ToString(), null, null, voipMediaSession);

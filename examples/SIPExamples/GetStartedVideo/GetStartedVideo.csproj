@@ -43,7 +43,11 @@
 =======
     <PackageReference Include="SIPSorcery" Version="4.0.84-pre" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.4-pre" />
+<<<<<<< HEAD
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.23-pre" />
+>>>>>>> master
+=======
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.24-pre" />
 >>>>>>> master
   </ItemGroup>
 
