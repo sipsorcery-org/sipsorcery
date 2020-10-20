@@ -31,7 +31,6 @@ namespace SIPSorceryMedia.Windows
 {
     public class WindowsAudioEndPoint : IAudioSource, IAudioSink
     {
-        private const int DEVICE_PLAYBACK_RATE = 8000;
         private const int DEVICE_BITS_PER_SAMPLE = 16;
         private const int DEVICE_CHANNELS = 1;
         private const int INPUT_BUFFERS = 2;          // See https://github.com/sipsorcery/sipsorcery/pull/148.
@@ -49,7 +48,7 @@ namespace SIPSorceryMedia.Windows
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
         private static readonly WaveFormat _waveFormat = new WaveFormat(
-            DEVICE_PLAYBACK_RATE,
+            (int)AudioSourceSamplingRate,
             DEVICE_BITS_PER_SAMPLE,
             DEVICE_CHANNELS);
 
@@ -246,9 +245,14 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         private void LocalAudioSampleAvailable(object sender, WaveInEventArgs args)
         {
-            WaveBuffer wavBuffer = new WaveBuffer(args.Buffer.Take(args.BytesRecorded).ToArray());
-            byte[] encodedSample = _audioEncoder.EncodeAudio(wavBuffer.ShortBuffer, _audioFormatManager.SelectedFormat);
-            //byte[] encodedSample = _audioEncoder.EncodeAudio(args.Buffer.Take(args.BytesRecorded).ToArray(), _audioFormatManager.SelectedFormat);
+            // Note NAudio.Wave.WaveBuffer.ShortBuffer does not take into account little endian.
+            // https://github.com/naudio/NAudio/blob/master/NAudio/Wave/WaveOutputs/WaveBuffer.cs
+            // WaveBuffer wavBuffer = new WaveBuffer(args.Buffer.Take(args.BytesRecorded).ToArray());
+            // byte[] encodedSample = _audioEncoder.EncodeAudio(wavBuffer.ShortBuffer, _audioFormatManager.SelectedFormat);
+
+            byte[] buffer = args.Buffer.Take(args.BytesRecorded).ToArray();
+            short[] pcm = buffer.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(buffer, i * 2)).ToArray();
+            byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
             OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
         }
 
