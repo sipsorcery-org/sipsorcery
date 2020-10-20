@@ -323,22 +323,26 @@ namespace SIPSorcery.Net
         /// <returns>A list of media formats that are compatible for BOTH lists.</returns>
         public static List<SDPAudioVideoMediaFormat> GetCompatibleFormats(List<SDPAudioVideoMediaFormat> a, List<SDPAudioVideoMediaFormat> b)
         {
+            List<SDPAudioVideoMediaFormat> compatible = new List<SDPAudioVideoMediaFormat>();
+
             if (a == null || a.Count == 0)
             {
-                throw new ArgumentNullException("a", "The first media format list supplied was empty.");
+                // Preferable to return an empty list.
+                //throw new ArgumentNullException("a", "The first media format list supplied was empty.");
             }
             else if (b == null || b.Count == 0)
             {
-                throw new ArgumentNullException("b", "The second media format list supplied was empty.");
+                // Preferable to return an empty list.
+                //throw new ArgumentNullException("b", "The second media format list supplied was empty.");
             }
-
-            List<SDPAudioVideoMediaFormat> compatible = new List<SDPAudioVideoMediaFormat>();
-
-            foreach (var format in a.Where(x => x.Name() != SDP.TELEPHONE_EVENT_ATTRIBUTE))
+            else
             {
-                if (b.Any(x => SDPAudioVideoMediaFormat.AreMatch(format, x)))
+                foreach (var format in a.Where(x => x.Name() != SDP.TELEPHONE_EVENT_ATTRIBUTE))
                 {
-                    compatible.Add(format);
+                    if (b.Any(x => SDPAudioVideoMediaFormat.AreMatch(format, x)))
+                    {
+                        compatible.Add(format);
+                    }
                 }
             }
 
