@@ -15,27 +15,26 @@
 	<tags>WebRTC VoIP SIPSorcery Media Windows</tags>
 	<dependencies>
       <group targetFramework="netcoreapp3.1">
-	    <dependency id="Microsoft.Extensions.Logging" version="3.1.8" />
 	    <dependency id="Microsoft.Extensions.Logging.Abstractions" version="3.1.8" />
 		<dependency id="NAudio" version="1.10.0" />
-		<dependency id="System.Drawing.Common" version="4.7.0" />
-		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.10-pre" />
+		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.18-pre" />
+		<dependency id="SIPSorceryMedia.Encoders" version="0.0.4-pre" />
 		<dependency id="Microsoft.Windows.SDK.Contracts" version="10.0.19041.1" />
 	  </group>
-	 <group targetFramework="net472">
-	 	<dependency id="Microsoft.Extensions.Logging" version="3.1.8" />
+	 <group targetFramework="net461">
 	    <dependency id="Microsoft.Extensions.Logging.Abstractions" version="3.1.8" />
 		<dependency id="NAudio" version="1.10.0" />
-		<dependency id="System.Drawing.Common" version="4.7.0" />
-		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.12-pre" />
+		<dependency id="SIPSorceryMedia.Abstractions" version="0.0.18-pre" />
+		<dependency id="SIPSorceryMedia.Encoders" version="0.0.4-pre" />
 		<dependency id="Microsoft.Windows.SDK.Contracts" version="10.0.19041.1" />
 	  </group>
     </dependencies>
-	<releaseNotes>-v0.0.19-pre: Added support for codec manager.
+	<releaseNotes>-v0.0.22-pre: Updated for SDP refactor in main library for improved audio and video format management.
+-v0.0.19-pre: Added support for codec manager.
 -v0.0.18-pre: Added events for video and audio source failures.
 -v0.0.16-pre: Added webcam support.
 -v0.0.15-pre: Initial pre-release</releaseNotes>
-	<version>0.0.19-pre</version>
+	<version>0.0.22-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
