@@ -2322,15 +2322,15 @@ references:
   commentId: T:SIPSorcery.Media.AudioEncoder
   fullName: SIPSorcery.Media.AudioEncoder
   nameWithType: AudioEncoder
-- uid: SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum,SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  name: DecodeAudio(Byte[], AudioCodecsEnum, AudioSamplingRatesEnum)
-  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_DecodeAudio_System_Byte___SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_
-  commentId: M:SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum,SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  name.vb: DecodeAudio(Byte(), AudioCodecsEnum, AudioSamplingRatesEnum)
-  fullName: SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[], SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum, SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  fullName.vb: SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte(), SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum, SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  nameWithType: AudioEncoder.DecodeAudio(Byte[], AudioCodecsEnum, AudioSamplingRatesEnum)
-  nameWithType.vb: AudioEncoder.DecodeAudio(Byte(), AudioCodecsEnum, AudioSamplingRatesEnum)
+- uid: SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  name: DecodeAudio(Byte[], AudioFormat)
+  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_DecodeAudio_System_Byte___SIPSorceryMedia_Abstractions_V1_AudioFormat_
+  commentId: M:SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  name.vb: DecodeAudio(Byte(), AudioFormat)
+  fullName: SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[], SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  fullName.vb: SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte(), SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  nameWithType: AudioEncoder.DecodeAudio(Byte[], AudioFormat)
+  nameWithType.vb: AudioEncoder.DecodeAudio(Byte(), AudioFormat)
 - uid: SIPSorcery.Media.AudioEncoder.DecodeAudio*
   name: DecodeAudio
   href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_DecodeAudio_
@@ -2338,24 +2338,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioEncoder.DecodeAudio
   nameWithType: AudioEncoder.DecodeAudio
-- uid: SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum,SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  name: EncodeAudio(Byte[], AudioCodecsEnum, AudioSamplingRatesEnum)
-  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Byte___SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_
-  commentId: M:SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum,SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  name.vb: EncodeAudio(Byte(), AudioCodecsEnum, AudioSamplingRatesEnum)
-  fullName: SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Byte[], SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum, SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  fullName.vb: SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Byte(), SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum, SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  nameWithType: AudioEncoder.EncodeAudio(Byte[], AudioCodecsEnum, AudioSamplingRatesEnum)
-  nameWithType.vb: AudioEncoder.EncodeAudio(Byte(), AudioCodecsEnum, AudioSamplingRatesEnum)
-- uid: SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16[],SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum,SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  name: EncodeAudio(Int16[], AudioCodecsEnum, AudioSamplingRatesEnum)
-  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Int16___SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_
-  commentId: M:SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16[],SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum,SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  name.vb: EncodeAudio(Int16(), AudioCodecsEnum, AudioSamplingRatesEnum)
-  fullName: SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16[], SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum, SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  fullName.vb: SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16(), SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum, SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)
-  nameWithType: AudioEncoder.EncodeAudio(Int16[], AudioCodecsEnum, AudioSamplingRatesEnum)
-  nameWithType.vb: AudioEncoder.EncodeAudio(Int16(), AudioCodecsEnum, AudioSamplingRatesEnum)
+- uid: SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16[],SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  name: EncodeAudio(Int16[], AudioFormat)
+  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Int16___SIPSorceryMedia_Abstractions_V1_AudioFormat_
+  commentId: M:SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16[],SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  name.vb: EncodeAudio(Int16(), AudioFormat)
+  fullName: SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16[], SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  fullName.vb: SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16(), SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  nameWithType: AudioEncoder.EncodeAudio(Int16[], AudioFormat)
+  nameWithType.vb: AudioEncoder.EncodeAudio(Int16(), AudioFormat)
 - uid: SIPSorcery.Media.AudioEncoder.EncodeAudio*
   name: EncodeAudio
   href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_EncodeAudio_
@@ -2363,12 +2354,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioEncoder.EncodeAudio
   nameWithType: AudioEncoder.EncodeAudio
-- uid: SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)
-  name: IsSupported(AudioCodecsEnum)
-  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_IsSupported_SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_
-  commentId: M:SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)
-  fullName: SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)
-  nameWithType: AudioEncoder.IsSupported(AudioCodecsEnum)
+- uid: SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  name: IsSupported(AudioFormat)
+  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_IsSupported_SIPSorceryMedia_Abstractions_V1_AudioFormat_
+  commentId: M:SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  fullName: SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  nameWithType: AudioEncoder.IsSupported(AudioFormat)
 - uid: SIPSorcery.Media.AudioEncoder.IsSupported*
   name: IsSupported
   href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_IsSupported_
@@ -2376,6 +2367,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioEncoder.IsSupported
   nameWithType: AudioEncoder.IsSupported
+- uid: SIPSorcery.Media.AudioEncoder.Resample(System.Int16[],System.Int32,System.Int32)
+  name: Resample(Int16[], Int32, Int32)
+  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_Resample_System_Int16___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Media.AudioEncoder.Resample(System.Int16[],System.Int32,System.Int32)
+  name.vb: Resample(Int16(), Int32, Int32)
+  fullName: SIPSorcery.Media.AudioEncoder.Resample(System.Int16[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Media.AudioEncoder.Resample(System.Int16(), System.Int32, System.Int32)
+  nameWithType: AudioEncoder.Resample(Int16[], Int32, Int32)
+  nameWithType.vb: AudioEncoder.Resample(Int16(), Int32, Int32)
+- uid: SIPSorcery.Media.AudioEncoder.Resample*
+  name: Resample
+  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_Resample_
+  commentId: Overload:SIPSorcery.Media.AudioEncoder.Resample
+  isSpec: "True"
+  fullName: SIPSorcery.Media.AudioEncoder.Resample
+  nameWithType: AudioEncoder.Resample
 - uid: SIPSorcery.Media.AudioExtrasSource
   name: AudioExtrasSource
   href: api/SIPSorcery.Media.AudioExtrasSource.html
@@ -2562,22 +2569,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioExtrasSource.PauseAudio
   nameWithType: AudioExtrasSource.PauseAudio
-- uid: SIPSorcery.Media.AudioExtrasSource.RestrictCodecs(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum})
-  name: RestrictCodecs(List<AudioCodecsEnum>)
-  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_RestrictCodecs_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum__
-  commentId: M:SIPSorcery.Media.AudioExtrasSource.RestrictCodecs(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum})
-  name.vb: RestrictCodecs(List(Of AudioCodecsEnum))
-  fullName: SIPSorcery.Media.AudioExtrasSource.RestrictCodecs(System.Collections.Generic.List<SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum>)
-  fullName.vb: SIPSorcery.Media.AudioExtrasSource.RestrictCodecs(System.Collections.Generic.List(Of SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum))
-  nameWithType: AudioExtrasSource.RestrictCodecs(List<AudioCodecsEnum>)
-  nameWithType.vb: AudioExtrasSource.RestrictCodecs(List(Of AudioCodecsEnum))
-- uid: SIPSorcery.Media.AudioExtrasSource.RestrictCodecs*
-  name: RestrictCodecs
-  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_RestrictCodecs_
-  commentId: Overload:SIPSorcery.Media.AudioExtrasSource.RestrictCodecs
+- uid: SIPSorcery.Media.AudioExtrasSource.RestrictFormats(System.Func{SIPSorceryMedia.Abstractions.V1.AudioFormat,System.Boolean})
+  name: RestrictFormats(Func<AudioFormat, Boolean>)
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_RestrictFormats_System_Func_SIPSorceryMedia_Abstractions_V1_AudioFormat_System_Boolean__
+  commentId: M:SIPSorcery.Media.AudioExtrasSource.RestrictFormats(System.Func{SIPSorceryMedia.Abstractions.V1.AudioFormat,System.Boolean})
+  name.vb: RestrictFormats(Func(Of AudioFormat, Boolean))
+  fullName: SIPSorcery.Media.AudioExtrasSource.RestrictFormats(System.Func<SIPSorceryMedia.Abstractions.V1.AudioFormat, System.Boolean>)
+  fullName.vb: SIPSorcery.Media.AudioExtrasSource.RestrictFormats(System.Func(Of SIPSorceryMedia.Abstractions.V1.AudioFormat, System.Boolean))
+  nameWithType: AudioExtrasSource.RestrictFormats(Func<AudioFormat, Boolean>)
+  nameWithType.vb: AudioExtrasSource.RestrictFormats(Func(Of AudioFormat, Boolean))
+- uid: SIPSorcery.Media.AudioExtrasSource.RestrictFormats*
+  name: RestrictFormats
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_RestrictFormats_
+  commentId: Overload:SIPSorcery.Media.AudioExtrasSource.RestrictFormats
   isSpec: "True"
-  fullName: SIPSorcery.Media.AudioExtrasSource.RestrictCodecs
-  nameWithType: AudioExtrasSource.RestrictCodecs
+  fullName: SIPSorcery.Media.AudioExtrasSource.RestrictFormats
+  nameWithType: AudioExtrasSource.RestrictFormats
 - uid: SIPSorcery.Media.AudioExtrasSource.ResumeAudio
   name: ResumeAudio()
   href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_ResumeAudio
@@ -2604,12 +2611,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioExtrasSource.SendAudioFromStream
   nameWithType: AudioExtrasSource.SendAudioFromStream
-- uid: SIPSorcery.Media.AudioExtrasSource.SetAudioSourceFormat(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)
-  name: SetAudioSourceFormat(AudioCodecsEnum)
-  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_SetAudioSourceFormat_SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_
-  commentId: M:SIPSorcery.Media.AudioExtrasSource.SetAudioSourceFormat(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)
-  fullName: SIPSorcery.Media.AudioExtrasSource.SetAudioSourceFormat(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)
-  nameWithType: AudioExtrasSource.SetAudioSourceFormat(AudioCodecsEnum)
+- uid: SIPSorcery.Media.AudioExtrasSource.SetAudioSourceFormat(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  name: SetAudioSourceFormat(AudioFormat)
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_SetAudioSourceFormat_SIPSorceryMedia_Abstractions_V1_AudioFormat_
+  commentId: M:SIPSorcery.Media.AudioExtrasSource.SetAudioSourceFormat(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  fullName: SIPSorcery.Media.AudioExtrasSource.SetAudioSourceFormat(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  nameWithType: AudioExtrasSource.SetAudioSourceFormat(AudioFormat)
 - uid: SIPSorcery.Media.AudioExtrasSource.SetAudioSourceFormat*
   name: SetAudioSourceFormat
   href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_SetAudioSourceFormat_
@@ -2649,12 +2656,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioExtrasSource.StartAudio
   nameWithType: AudioExtrasSource.StartAudio
-- uid: SIPSorcery.Media.AudioExtrasSource.SupportedCodecs
-  name: SupportedCodecs
-  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_SupportedCodecs
-  commentId: F:SIPSorcery.Media.AudioExtrasSource.SupportedCodecs
-  fullName: SIPSorcery.Media.AudioExtrasSource.SupportedCodecs
-  nameWithType: AudioExtrasSource.SupportedCodecs
+- uid: SIPSorcery.Media.AudioExtrasSource.SupportedFormats
+  name: SupportedFormats
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_SupportedFormats
+  commentId: F:SIPSorcery.Media.AudioExtrasSource.SupportedFormats
+  fullName: SIPSorcery.Media.AudioExtrasSource.SupportedFormats
+  nameWithType: AudioExtrasSource.SupportedFormats
 - uid: SIPSorcery.Media.AudioSendOnlyMediaSession
   name: AudioSendOnlyMediaSession
   href: api/SIPSorcery.Media.AudioSendOnlyMediaSession.html
@@ -2731,6 +2738,12 @@ references:
   commentId: F:SIPSorcery.Media.AudioSourceOptions.MusicFile
   fullName: SIPSorcery.Media.AudioSourceOptions.MusicFile
   nameWithType: AudioSourceOptions.MusicFile
+- uid: SIPSorcery.Media.AudioSourceOptions.MusicInputSamplingRate
+  name: MusicInputSamplingRate
+  href: api/SIPSorcery.Media.AudioSourceOptions.html#SIPSorcery_Media_AudioSourceOptions_MusicInputSamplingRate
+  commentId: F:SIPSorcery.Media.AudioSourceOptions.MusicInputSamplingRate
+  fullName: SIPSorcery.Media.AudioSourceOptions.MusicInputSamplingRate
+  nameWithType: AudioSourceOptions.MusicInputSamplingRate
 - uid: SIPSorcery.Media.AudioSourcesEnum
   name: AudioSourcesEnum
   href: api/SIPSorcery.Media.AudioSourcesEnum.html
@@ -3504,22 +3517,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.PauseVideo
   nameWithType: VideoTestPatternSource.PauseVideo
-- uid: SIPSorcery.Media.VideoTestPatternSource.RestrictCodecs(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum})
-  name: RestrictCodecs(List<VideoCodecsEnum>)
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_RestrictCodecs_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_V1_VideoCodecsEnum__
-  commentId: M:SIPSorcery.Media.VideoTestPatternSource.RestrictCodecs(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum})
-  name.vb: RestrictCodecs(List(Of VideoCodecsEnum))
-  fullName: SIPSorcery.Media.VideoTestPatternSource.RestrictCodecs(System.Collections.Generic.List<SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum>)
-  fullName.vb: SIPSorcery.Media.VideoTestPatternSource.RestrictCodecs(System.Collections.Generic.List(Of SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum))
-  nameWithType: VideoTestPatternSource.RestrictCodecs(List<VideoCodecsEnum>)
-  nameWithType.vb: VideoTestPatternSource.RestrictCodecs(List(Of VideoCodecsEnum))
-- uid: SIPSorcery.Media.VideoTestPatternSource.RestrictCodecs*
-  name: RestrictCodecs
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_RestrictCodecs_
-  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.RestrictCodecs
+- uid: SIPSorcery.Media.VideoTestPatternSource.RestrictFormats(System.Func{SIPSorceryMedia.Abstractions.V1.VideoFormat,System.Boolean})
+  name: RestrictFormats(Func<VideoFormat, Boolean>)
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_RestrictFormats_System_Func_SIPSorceryMedia_Abstractions_V1_VideoFormat_System_Boolean__
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.RestrictFormats(System.Func{SIPSorceryMedia.Abstractions.V1.VideoFormat,System.Boolean})
+  name.vb: RestrictFormats(Func(Of VideoFormat, Boolean))
+  fullName: SIPSorcery.Media.VideoTestPatternSource.RestrictFormats(System.Func<SIPSorceryMedia.Abstractions.V1.VideoFormat, System.Boolean>)
+  fullName.vb: SIPSorcery.Media.VideoTestPatternSource.RestrictFormats(System.Func(Of SIPSorceryMedia.Abstractions.V1.VideoFormat, System.Boolean))
+  nameWithType: VideoTestPatternSource.RestrictFormats(Func<VideoFormat, Boolean>)
+  nameWithType.vb: VideoTestPatternSource.RestrictFormats(Func(Of VideoFormat, Boolean))
+- uid: SIPSorcery.Media.VideoTestPatternSource.RestrictFormats*
+  name: RestrictFormats
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_RestrictFormats_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.RestrictFormats
   isSpec: "True"
-  fullName: SIPSorcery.Media.VideoTestPatternSource.RestrictCodecs
-  nameWithType: VideoTestPatternSource.RestrictCodecs
+  fullName: SIPSorcery.Media.VideoTestPatternSource.RestrictFormats
+  nameWithType: VideoTestPatternSource.RestrictFormats
 - uid: SIPSorcery.Media.VideoTestPatternSource.ResumeVideo
   name: ResumeVideo()
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_ResumeVideo
@@ -3559,12 +3572,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.SetMaxFrameRate
   nameWithType: VideoTestPatternSource.SetMaxFrameRate
-- uid: SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
-  name: SetVideoSourceFormat(VideoCodecsEnum)
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetVideoSourceFormat_SIPSorceryMedia_Abstractions_V1_VideoCodecsEnum_
-  commentId: M:SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
-  fullName: SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)
-  nameWithType: VideoTestPatternSource.SetVideoSourceFormat(VideoCodecsEnum)
+- uid: SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat(SIPSorceryMedia.Abstractions.V1.VideoFormat)
+  name: SetVideoSourceFormat(VideoFormat)
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetVideoSourceFormat_SIPSorceryMedia_Abstractions_V1_VideoFormat_
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat(SIPSorceryMedia.Abstractions.V1.VideoFormat)
+  fullName: SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat(SIPSorceryMedia.Abstractions.V1.VideoFormat)
+  nameWithType: VideoTestPatternSource.SetVideoSourceFormat(VideoFormat)
 - uid: SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat*
   name: SetVideoSourceFormat
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetVideoSourceFormat_
@@ -3601,12 +3614,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.StartVideo
   nameWithType: VideoTestPatternSource.StartVideo
-- uid: SIPSorcery.Media.VideoTestPatternSource.SupportedCodecs
-  name: SupportedCodecs
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SupportedCodecs
-  commentId: F:SIPSorcery.Media.VideoTestPatternSource.SupportedCodecs
-  fullName: SIPSorcery.Media.VideoTestPatternSource.SupportedCodecs
-  nameWithType: VideoTestPatternSource.SupportedCodecs
 - uid: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_HEIGHT
   name: TEST_PATTERN_HEIGHT
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_TEST_PATTERN_HEIGHT
@@ -6705,33 +6712,45 @@ references:
   commentId: T:SIPSorcery.Net.MediaStreamTrack
   fullName: SIPSorcery.Net.MediaStreamTrack
   nameWithType: MediaStreamTrack
-- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum)
-  name: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPMediaFormat>, MediaStreamStatusEnum)
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_
-  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum)
-  name.vb: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPMediaFormat), MediaStreamStatusEnum)
-  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormat>, SIPSorcery.Net.MediaStreamStatusEnum)
-  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormat), SIPSorcery.Net.MediaStreamStatusEnum)
-  nameWithType: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPMediaFormat>, MediaStreamStatusEnum)
-  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPMediaFormat), MediaStreamStatusEnum)
-- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum},SIPSorcery.Net.MediaStreamStatusEnum)
-  name: MediaStreamTrack(List<AudioCodecsEnum>, MediaStreamStatusEnum)
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum__SIPSorcery_Net_MediaStreamStatusEnum_
-  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum},SIPSorcery.Net.MediaStreamStatusEnum)
-  name.vb: MediaStreamTrack(List(Of AudioCodecsEnum), MediaStreamStatusEnum)
-  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.Collections.Generic.List<SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum>, SIPSorcery.Net.MediaStreamStatusEnum)
-  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.Collections.Generic.List(Of SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum), SIPSorcery.Net.MediaStreamStatusEnum)
-  nameWithType: MediaStreamTrack.MediaStreamTrack(List<AudioCodecsEnum>, MediaStreamStatusEnum)
-  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(List(Of AudioCodecsEnum), MediaStreamStatusEnum)
-- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum},SIPSorcery.Net.MediaStreamStatusEnum)
-  name: MediaStreamTrack(List<VideoCodecsEnum>, MediaStreamStatusEnum)
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_V1_VideoCodecsEnum__SIPSorcery_Net_MediaStreamStatusEnum_
-  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum},SIPSorcery.Net.MediaStreamStatusEnum)
-  name.vb: MediaStreamTrack(List(Of VideoCodecsEnum), MediaStreamStatusEnum)
-  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.Collections.Generic.List<SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum>, SIPSorcery.Net.MediaStreamStatusEnum)
-  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.Collections.Generic.List(Of SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum), SIPSorcery.Net.MediaStreamStatusEnum)
-  nameWithType: MediaStreamTrack.MediaStreamTrack(List<VideoCodecsEnum>, MediaStreamStatusEnum)
-  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(List(Of VideoCodecsEnum), MediaStreamStatusEnum)
+- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum)
+  name: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum)
+  name.vb: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum)
+  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>, SIPSorcery.Net.MediaStreamStatusEnum)
+  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat), SIPSorcery.Net.MediaStreamStatusEnum)
+  nameWithType: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum)
+  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum)
+- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat,SIPSorcery.Net.MediaStreamStatusEnum)
+  name: MediaStreamTrack(AudioFormat, MediaStreamStatusEnum)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_V1_AudioFormat_SIPSorcery_Net_MediaStreamStatusEnum_
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat,SIPSorcery.Net.MediaStreamStatusEnum)
+  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorceryMedia.Abstractions.V1.AudioFormat, SIPSorcery.Net.MediaStreamStatusEnum)
+  nameWithType: MediaStreamTrack.MediaStreamTrack(AudioFormat, MediaStreamStatusEnum)
+- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.V1.VideoFormat,SIPSorcery.Net.MediaStreamStatusEnum)
+  name: MediaStreamTrack(VideoFormat, MediaStreamStatusEnum)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_V1_VideoFormat_SIPSorcery_Net_MediaStreamStatusEnum_
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.V1.VideoFormat,SIPSorcery.Net.MediaStreamStatusEnum)
+  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorceryMedia.Abstractions.V1.VideoFormat, SIPSorcery.Net.MediaStreamStatusEnum)
+  nameWithType: MediaStreamTrack.MediaStreamTrack(VideoFormat, MediaStreamStatusEnum)
+- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.AudioFormat},SIPSorcery.Net.MediaStreamStatusEnum)
+  name: MediaStreamTrack(List<AudioFormat>, MediaStreamStatusEnum)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_V1_AudioFormat__SIPSorcery_Net_MediaStreamStatusEnum_
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.AudioFormat},SIPSorcery.Net.MediaStreamStatusEnum)
+  name.vb: MediaStreamTrack(List(Of AudioFormat), MediaStreamStatusEnum)
+  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.Collections.Generic.List<SIPSorceryMedia.Abstractions.V1.AudioFormat>, SIPSorcery.Net.MediaStreamStatusEnum)
+  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.Collections.Generic.List(Of SIPSorceryMedia.Abstractions.V1.AudioFormat), SIPSorcery.Net.MediaStreamStatusEnum)
+  nameWithType: MediaStreamTrack.MediaStreamTrack(List<AudioFormat>, MediaStreamStatusEnum)
+  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(List(Of AudioFormat), MediaStreamStatusEnum)
+- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.VideoFormat},SIPSorcery.Net.MediaStreamStatusEnum)
+  name: MediaStreamTrack(List<VideoFormat>, MediaStreamStatusEnum)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_V1_VideoFormat__SIPSorcery_Net_MediaStreamStatusEnum_
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.V1.VideoFormat},SIPSorcery.Net.MediaStreamStatusEnum)
+  name.vb: MediaStreamTrack(List(Of VideoFormat), MediaStreamStatusEnum)
+  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.Collections.Generic.List<SIPSorceryMedia.Abstractions.V1.VideoFormat>, SIPSorcery.Net.MediaStreamStatusEnum)
+  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.Collections.Generic.List(Of SIPSorceryMedia.Abstractions.V1.VideoFormat), SIPSorcery.Net.MediaStreamStatusEnum)
+  nameWithType: MediaStreamTrack.MediaStreamTrack(List<VideoFormat>, MediaStreamStatusEnum)
+  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(List(Of VideoFormat), MediaStreamStatusEnum)
 - uid: SIPSorcery.Net.MediaStreamTrack.#ctor*
   name: MediaStreamTrack
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_
@@ -19474,6 +19493,327 @@ references:
   commentId: F:SIPSorcery.Net.SDP.Version
   fullName: SIPSorcery.Net.SDP.Version
   nameWithType: SDP.Version
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat
+  name: SDPApplicationMediaFormat
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html
+  commentId: T:SIPSorcery.Net.SDPApplicationMediaFormat
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat
+  nameWithType: SDPApplicationMediaFormat
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.#ctor(System.String)
+  name: SDPApplicationMediaFormat(String)
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat__ctor_System_String_
+  commentId: M:SIPSorcery.Net.SDPApplicationMediaFormat.#ctor(System.String)
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.SDPApplicationMediaFormat(System.String)
+  nameWithType: SDPApplicationMediaFormat.SDPApplicationMediaFormat(String)
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.#ctor*
+  name: SDPApplicationMediaFormat
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat__ctor_
+  commentId: Overload:SIPSorcery.Net.SDPApplicationMediaFormat.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.SDPApplicationMediaFormat
+  nameWithType: SDPApplicationMediaFormat.SDPApplicationMediaFormat
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.Fmtmp
+  name: Fmtmp
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_Fmtmp
+  commentId: F:SIPSorcery.Net.SDPApplicationMediaFormat.Fmtmp
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.Fmtmp
+  nameWithType: SDPApplicationMediaFormat.Fmtmp
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.ID
+  name: ID
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_ID
+  commentId: F:SIPSorcery.Net.SDPApplicationMediaFormat.ID
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.ID
+  nameWithType: SDPApplicationMediaFormat.ID
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.Rtpmap
+  name: Rtpmap
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_Rtpmap
+  commentId: F:SIPSorcery.Net.SDPApplicationMediaFormat.Rtpmap
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.Rtpmap
+  nameWithType: SDPApplicationMediaFormat.Rtpmap
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat
+  name: SDPAudioVideoMediaFormat
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html
+  commentId: T:SIPSorcery.Net.SDPAudioVideoMediaFormat
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat
+  nameWithType: SDPAudioVideoMediaFormat
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  name: SDPAudioVideoMediaFormat(AudioFormat)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_SIPSorceryMedia_Abstractions_V1_AudioFormat_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(AudioFormat)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorceryMedia.Abstractions.V1.SDPWellKnownMediaFormatsEnum)
+  name: SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_SIPSorceryMedia_Abstractions_V1_SDPWellKnownMediaFormatsEnum_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorceryMedia.Abstractions.V1.SDPWellKnownMediaFormatsEnum)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(SIPSorceryMedia.Abstractions.V1.SDPWellKnownMediaFormatsEnum)
+  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorceryMedia.Abstractions.V1.VideoFormat)
+  name: SDPAudioVideoMediaFormat(VideoFormat)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_SIPSorceryMedia_Abstractions_V1_VideoFormat_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorceryMedia.Abstractions.V1.VideoFormat)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(SIPSorceryMedia.Abstractions.V1.VideoFormat)
+  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(VideoFormat)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(System.Int32,System.String,System.Int32,System.Int32,System.String)
+  name: SDPAudioVideoMediaFormat(Int32, String, Int32, Int32, String)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_System_Int32_System_String_System_Int32_System_Int32_System_String_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(System.Int32,System.String,System.Int32,System.Int32,System.String)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(System.Int32, System.String, System.Int32, System.Int32, System.String)
+  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(Int32, String, Int32, Int32, String)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(System.Int32,System.String,System.String)
+  name: SDPAudioVideoMediaFormat(Int32, String, String)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_System_Int32_System_String_System_String_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(System.Int32,System.String,System.String)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(System.Int32, System.String, System.String)
+  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(Int32, String, String)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor*
+  name: SDPAudioVideoMediaFormat
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat
+  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.AreMatch(SIPSorcery.Net.SDPAudioVideoMediaFormat,SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  name: AreMatch(SDPAudioVideoMediaFormat, SDPAudioVideoMediaFormat)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_AreMatch_SIPSorcery_Net_SDPAudioVideoMediaFormat_SIPSorcery_Net_SDPAudioVideoMediaFormat_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.AreMatch(SIPSorcery.Net.SDPAudioVideoMediaFormat,SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.AreMatch(SIPSorcery.Net.SDPAudioVideoMediaFormat, SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  nameWithType: SDPAudioVideoMediaFormat.AreMatch(SDPAudioVideoMediaFormat, SDPAudioVideoMediaFormat)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.AreMatch*
+  name: AreMatch
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_AreMatch_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.AreMatch
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.AreMatch
+  nameWithType: SDPAudioVideoMediaFormat.AreMatch
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Channels
+  name: Channels()
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Channels
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.Channels
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Channels()
+  nameWithType: SDPAudioVideoMediaFormat.Channels()
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Channels*
+  name: Channels
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Channels_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.Channels
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Channels
+  nameWithType: SDPAudioVideoMediaFormat.Channels
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ClockRate
+  name: ClockRate()
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ClockRate
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.ClockRate
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.ClockRate()
+  nameWithType: SDPAudioVideoMediaFormat.ClockRate()
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ClockRate*
+  name: ClockRate
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ClockRate_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.ClockRate
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.ClockRate
+  nameWithType: SDPAudioVideoMediaFormat.ClockRate
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT
+  name: DEFAULT_AUDIO_CHANNEL_COUNT
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_DEFAULT_AUDIO_CHANNEL_COUNT
+  commentId: F:SIPSorcery.Net.SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT
+  nameWithType: SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.DYNAMIC_ID_MAX
+  name: DYNAMIC_ID_MAX
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_DYNAMIC_ID_MAX
+  commentId: F:SIPSorcery.Net.SDPAudioVideoMediaFormat.DYNAMIC_ID_MAX
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.DYNAMIC_ID_MAX
+  nameWithType: SDPAudioVideoMediaFormat.DYNAMIC_ID_MAX
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN
+  name: DYNAMIC_ID_MIN
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_DYNAMIC_ID_MIN
+  commentId: F:SIPSorcery.Net.SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN
+  nameWithType: SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Empty
+  name: Empty
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Empty
+  commentId: F:SIPSorcery.Net.SDPAudioVideoMediaFormat.Empty
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Empty
+  nameWithType: SDPAudioVideoMediaFormat.Empty
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Fmtp
+  name: Fmtp
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Fmtp
+  commentId: P:SIPSorcery.Net.SDPAudioVideoMediaFormat.Fmtp
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Fmtp
+  nameWithType: SDPAudioVideoMediaFormat.Fmtp
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Fmtp*
+  name: Fmtp
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Fmtp_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.Fmtp
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Fmtp
+  nameWithType: SDPAudioVideoMediaFormat.Fmtp
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat})
+  name: GetCommonRtpEventFormat(List<SDPAudioVideoMediaFormat>, List<SDPAudioVideoMediaFormat>)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_GetCommonRtpEventFormat_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat})
+  name.vb: GetCommonRtpEventFormat(List(Of SDPAudioVideoMediaFormat), List(Of SDPAudioVideoMediaFormat))
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>, System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>)
+  fullName.vb: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat), System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat))
+  nameWithType: SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(List<SDPAudioVideoMediaFormat>, List<SDPAudioVideoMediaFormat>)
+  nameWithType.vb: SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(List(Of SDPAudioVideoMediaFormat), List(Of SDPAudioVideoMediaFormat))
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCommonRtpEventFormat*
+  name: GetCommonRtpEventFormat
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_GetCommonRtpEventFormat_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCommonRtpEventFormat
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCommonRtpEventFormat
+  nameWithType: SDPAudioVideoMediaFormat.GetCommonRtpEventFormat
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCompatibleFormats(System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat})
+  name: GetCompatibleFormats(List<SDPAudioVideoMediaFormat>, List<SDPAudioVideoMediaFormat>)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_GetCompatibleFormats_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCompatibleFormats(System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat})
+  name.vb: GetCompatibleFormats(List(Of SDPAudioVideoMediaFormat), List(Of SDPAudioVideoMediaFormat))
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCompatibleFormats(System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>, System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>)
+  fullName.vb: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCompatibleFormats(System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat), System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat))
+  nameWithType: SDPAudioVideoMediaFormat.GetCompatibleFormats(List<SDPAudioVideoMediaFormat>, List<SDPAudioVideoMediaFormat>)
+  nameWithType.vb: SDPAudioVideoMediaFormat.GetCompatibleFormats(List(Of SDPAudioVideoMediaFormat), List(Of SDPAudioVideoMediaFormat))
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCompatibleFormats*
+  name: GetCompatibleFormats
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_GetCompatibleFormats_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCompatibleFormats
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.GetCompatibleFormats
+  nameWithType: SDPAudioVideoMediaFormat.GetCompatibleFormats
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ID
+  name: ID
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ID
+  commentId: P:SIPSorcery.Net.SDPAudioVideoMediaFormat.ID
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.ID
+  nameWithType: SDPAudioVideoMediaFormat.ID
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ID*
+  name: ID
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ID_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.ID
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.ID
+  nameWithType: SDPAudioVideoMediaFormat.ID
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.IsEmpty
+  name: IsEmpty()
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_IsEmpty
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.IsEmpty
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.IsEmpty()
+  nameWithType: SDPAudioVideoMediaFormat.IsEmpty()
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.IsEmpty*
+  name: IsEmpty
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_IsEmpty_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.IsEmpty
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.IsEmpty
+  nameWithType: SDPAudioVideoMediaFormat.IsEmpty
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Name
+  name: Name()
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Name
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.Name
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Name()
+  nameWithType: SDPAudioVideoMediaFormat.Name()
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Name*
+  name: Name
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Name_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.Name
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Name
+  nameWithType: SDPAudioVideoMediaFormat.Name
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Rtpmap
+  name: Rtpmap
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Rtpmap
+  commentId: P:SIPSorcery.Net.SDPAudioVideoMediaFormat.Rtpmap
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Rtpmap
+  nameWithType: SDPAudioVideoMediaFormat.Rtpmap
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Rtpmap*
+  name: Rtpmap
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Rtpmap_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.Rtpmap
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Rtpmap
+  nameWithType: SDPAudioVideoMediaFormat.Rtpmap
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToAudioFormat
+  name: ToAudioFormat()
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ToAudioFormat
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.ToAudioFormat
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToAudioFormat()
+  nameWithType: SDPAudioVideoMediaFormat.ToAudioFormat()
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToAudioFormat*
+  name: ToAudioFormat
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ToAudioFormat_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.ToAudioFormat
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToAudioFormat
+  nameWithType: SDPAudioVideoMediaFormat.ToAudioFormat
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToVideoFormat
+  name: ToVideoFormat()
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ToVideoFormat
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.ToVideoFormat
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToVideoFormat()
+  nameWithType: SDPAudioVideoMediaFormat.ToVideoFormat()
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToVideoFormat*
+  name: ToVideoFormat
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ToVideoFormat_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.ToVideoFormat
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToVideoFormat
+  nameWithType: SDPAudioVideoMediaFormat.ToVideoFormat
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.TryParseRtpmap(System.String,System.String@,System.Int32@,System.Int32@)
+  name: TryParseRtpmap(String, out String, out Int32, out Int32)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_TryParseRtpmap_System_String_System_String__System_Int32__System_Int32__
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.TryParseRtpmap(System.String,System.String@,System.Int32@,System.Int32@)
+  name.vb: TryParseRtpmap(String, ByRef String, ByRef Int32, ByRef Int32)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.TryParseRtpmap(System.String, out System.String, out System.Int32, out System.Int32)
+  fullName.vb: SIPSorcery.Net.SDPAudioVideoMediaFormat.TryParseRtpmap(System.String, ByRef System.String, ByRef System.Int32, ByRef System.Int32)
+  nameWithType: SDPAudioVideoMediaFormat.TryParseRtpmap(String, out String, out Int32, out Int32)
+  nameWithType.vb: SDPAudioVideoMediaFormat.TryParseRtpmap(String, ByRef String, ByRef Int32, ByRef Int32)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.TryParseRtpmap*
+  name: TryParseRtpmap
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_TryParseRtpmap_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.TryParseRtpmap
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.TryParseRtpmap
+  nameWithType: SDPAudioVideoMediaFormat.TryParseRtpmap
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp(System.String,SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  name: WithUpdatedFmtp(String, SDPAudioVideoMediaFormat)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedFmtp_System_String_SIPSorcery_Net_SDPAudioVideoMediaFormat_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp(System.String,SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp(System.String, SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedFmtp(String, SDPAudioVideoMediaFormat)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp*
+  name: WithUpdatedFmtp
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedFmtp_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp
+  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedFmtp
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID(System.Int32,SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  name: WithUpdatedID(Int32, SDPAudioVideoMediaFormat)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedID_System_Int32_SIPSorcery_Net_SDPAudioVideoMediaFormat_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID(System.Int32,SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID(System.Int32, SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedID(Int32, SDPAudioVideoMediaFormat)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID*
+  name: WithUpdatedID
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedID_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID
+  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedID
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap(System.String,SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  name: WithUpdatedRtpmap(String, SDPAudioVideoMediaFormat)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedRtpmap_System_String_SIPSorcery_Net_SDPAudioVideoMediaFormat_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap(System.String,SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap(System.String, SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedRtpmap(String, SDPAudioVideoMediaFormat)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap*
+  name: WithUpdatedRtpmap
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedRtpmap_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap
+  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedRtpmap
 - uid: SIPSorcery.Net.SDPConnectionInformation
   name: SDPConnectionInformation
   href: api/SIPSorcery.Net.SDPConnectionInformation.html
@@ -19573,15 +19913,24 @@ references:
   commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPConnectionInformation)
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPConnectionInformation)
   nameWithType: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPConnectionInformation)
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat})
-  name: SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List<SDPMediaFormat>)
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__
-  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat})
-  name.vb: SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List(Of SDPMediaFormat))
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormat>)
-  fullName.vb: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormat))
-  nameWithType: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List<SDPMediaFormat>)
-  nameWithType.vb: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List(Of SDPMediaFormat))
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{SIPSorcery.Net.SDPApplicationMediaFormat})
+  name: SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List<SDPApplicationMediaFormat>)
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_System_Collections_Generic_List_SIPSorcery_Net_SDPApplicationMediaFormat__
+  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{SIPSorcery.Net.SDPApplicationMediaFormat})
+  name.vb: SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List(Of SDPApplicationMediaFormat))
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.Collections.Generic.List<SIPSorcery.Net.SDPApplicationMediaFormat>)
+  fullName.vb: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.Collections.Generic.List(Of SIPSorcery.Net.SDPApplicationMediaFormat))
+  nameWithType: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List<SDPApplicationMediaFormat>)
+  nameWithType.vb: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List(Of SDPApplicationMediaFormat))
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat})
+  name: SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List<SDPAudioVideoMediaFormat>)
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__
+  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat})
+  name.vb: SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List(Of SDPAudioVideoMediaFormat))
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>)
+  fullName.vb: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat))
+  nameWithType: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List<SDPAudioVideoMediaFormat>)
+  nameWithType.vb: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List(Of SDPAudioVideoMediaFormat))
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.#ctor(System.Int32)
   name: SDPMediaAnnouncement(Int32)
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement__ctor_System_Int32_
@@ -19621,44 +19970,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddExtra
   nameWithType: SDPMediaAnnouncement.AddExtra
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.Int32,System.String)
-  name: AddFormatAttribute(Int32, String)
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatAttribute_System_Int32_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.Int32,System.String)
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.Int32, System.String)
-  nameWithType: SDPMediaAnnouncement.AddFormatAttribute(Int32, String)
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.String,System.String)
-  name: AddFormatAttribute(String, String)
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatAttribute_System_String_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.String,System.String)
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.String, System.String)
-  nameWithType: SDPMediaAnnouncement.AddFormatAttribute(String, String)
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute*
-  name: AddFormatAttribute
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatAttribute_
-  commentId: Overload:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute
-  nameWithType: SDPMediaAnnouncement.AddFormatAttribute
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.Int32,System.String)
-  name: AddFormatParameterAttribute(Int32, String)
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatParameterAttribute_System_Int32_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.Int32,System.String)
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.Int32, System.String)
-  nameWithType: SDPMediaAnnouncement.AddFormatParameterAttribute(Int32, String)
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.String,System.String)
-  name: AddFormatParameterAttribute(String, String)
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatParameterAttribute_System_String_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.String,System.String)
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.String, System.String)
-  nameWithType: SDPMediaAnnouncement.AddFormatParameterAttribute(String, String)
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute*
-  name: AddFormatParameterAttribute
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatParameterAttribute_
-  commentId: Overload:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute
-  nameWithType: SDPMediaAnnouncement.AddFormatParameterAttribute
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.ApplicationMediaFormats
+  name: ApplicationMediaFormats
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_ApplicationMediaFormats
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.ApplicationMediaFormats
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.ApplicationMediaFormats
+  nameWithType: SDPMediaAnnouncement.ApplicationMediaFormats
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.BandwidthAttributes
   name: BandwidthAttributes
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_BandwidthAttributes
@@ -19748,25 +20065,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.HasCryptoLine
   nameWithType: SDPMediaAnnouncement.HasCryptoLine
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.Int32)
-  name: HasMediaFormat(Int32)
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_HasMediaFormat_System_Int32_
-  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.Int32)
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.Int32)
-  nameWithType: SDPMediaAnnouncement.HasMediaFormat(Int32)
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.String)
-  name: HasMediaFormat(String)
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_HasMediaFormat_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.String)
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.String)
-  nameWithType: SDPMediaAnnouncement.HasMediaFormat(String)
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat*
-  name: HasMediaFormat
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_HasMediaFormat_
-  commentId: Overload:SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat
-  nameWithType: SDPMediaAnnouncement.HasMediaFormat
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.IceCandidates
   name: IceCandidates
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_IceCandidates
@@ -19956,387 +20254,6 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.Transport
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.Transport
   nameWithType: SDPMediaAnnouncement.Transport
-- uid: SIPSorcery.Net.SDPMediaFormat
-  name: SDPMediaFormat
-  href: api/SIPSorcery.Net.SDPMediaFormat.html
-  commentId: T:SIPSorcery.Net.SDPMediaFormat
-  fullName: SIPSorcery.Net.SDPMediaFormat
-  nameWithType: SDPMediaFormat
-- uid: SIPSorcery.Net.SDPMediaFormat.#ctor(SIPSorcery.Net.SDPMediaFormatsEnum)
-  name: SDPMediaFormat(SDPMediaFormatsEnum)
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat__ctor_SIPSorcery_Net_SDPMediaFormatsEnum_
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.#ctor(SIPSorcery.Net.SDPMediaFormatsEnum)
-  fullName: SIPSorcery.Net.SDPMediaFormat.SDPMediaFormat(SIPSorcery.Net.SDPMediaFormatsEnum)
-  nameWithType: SDPMediaFormat.SDPMediaFormat(SDPMediaFormatsEnum)
-- uid: SIPSorcery.Net.SDPMediaFormat.#ctor(System.Int32)
-  name: SDPMediaFormat(Int32)
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat__ctor_System_Int32_
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.#ctor(System.Int32)
-  fullName: SIPSorcery.Net.SDPMediaFormat.SDPMediaFormat(System.Int32)
-  nameWithType: SDPMediaFormat.SDPMediaFormat(Int32)
-- uid: SIPSorcery.Net.SDPMediaFormat.#ctor(System.Int32,System.String)
-  name: SDPMediaFormat(Int32, String)
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat__ctor_System_Int32_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.#ctor(System.Int32,System.String)
-  fullName: SIPSorcery.Net.SDPMediaFormat.SDPMediaFormat(System.Int32, System.String)
-  nameWithType: SDPMediaFormat.SDPMediaFormat(Int32, String)
-- uid: SIPSorcery.Net.SDPMediaFormat.#ctor(System.Int32,System.String,System.Int32)
-  name: SDPMediaFormat(Int32, String, Int32)
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat__ctor_System_Int32_System_String_System_Int32_
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.#ctor(System.Int32,System.String,System.Int32)
-  fullName: SIPSorcery.Net.SDPMediaFormat.SDPMediaFormat(System.Int32, System.String, System.Int32)
-  nameWithType: SDPMediaFormat.SDPMediaFormat(Int32, String, Int32)
-- uid: SIPSorcery.Net.SDPMediaFormat.#ctor(System.String)
-  name: SDPMediaFormat(String)
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat__ctor_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.#ctor(System.String)
-  fullName: SIPSorcery.Net.SDPMediaFormat.SDPMediaFormat(System.String)
-  nameWithType: SDPMediaFormat.SDPMediaFormat(String)
-- uid: SIPSorcery.Net.SDPMediaFormat.#ctor*
-  name: SDPMediaFormat
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat__ctor_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.SDPMediaFormat
-  nameWithType: SDPMediaFormat.SDPMediaFormat
-- uid: SIPSorcery.Net.SDPMediaFormat.ClockRate
-  name: ClockRate
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_ClockRate
-  commentId: P:SIPSorcery.Net.SDPMediaFormat.ClockRate
-  fullName: SIPSorcery.Net.SDPMediaFormat.ClockRate
-  nameWithType: SDPMediaFormat.ClockRate
-- uid: SIPSorcery.Net.SDPMediaFormat.ClockRate*
-  name: ClockRate
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_ClockRate_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.ClockRate
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.ClockRate
-  nameWithType: SDPMediaFormat.ClockRate
-- uid: SIPSorcery.Net.SDPMediaFormat.DefaultClockRate
-  name: DefaultClockRate
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_DefaultClockRate
-  commentId: P:SIPSorcery.Net.SDPMediaFormat.DefaultClockRate
-  fullName: SIPSorcery.Net.SDPMediaFormat.DefaultClockRate
-  nameWithType: SDPMediaFormat.DefaultClockRate
-- uid: SIPSorcery.Net.SDPMediaFormat.DefaultClockRate*
-  name: DefaultClockRate
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_DefaultClockRate_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.DefaultClockRate
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.DefaultClockRate
-  nameWithType: SDPMediaFormat.DefaultClockRate
-- uid: SIPSorcery.Net.SDPMediaFormat.FormatAttribute
-  name: FormatAttribute
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_FormatAttribute
-  commentId: P:SIPSorcery.Net.SDPMediaFormat.FormatAttribute
-  fullName: SIPSorcery.Net.SDPMediaFormat.FormatAttribute
-  nameWithType: SDPMediaFormat.FormatAttribute
-- uid: SIPSorcery.Net.SDPMediaFormat.FormatAttribute*
-  name: FormatAttribute
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_FormatAttribute_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.FormatAttribute
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.FormatAttribute
-  nameWithType: SDPMediaFormat.FormatAttribute
-- uid: SIPSorcery.Net.SDPMediaFormat.FormatCodec
-  name: FormatCodec
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_FormatCodec
-  commentId: F:SIPSorcery.Net.SDPMediaFormat.FormatCodec
-  fullName: SIPSorcery.Net.SDPMediaFormat.FormatCodec
-  nameWithType: SDPMediaFormat.FormatCodec
-- uid: SIPSorcery.Net.SDPMediaFormat.FormatID
-  name: FormatID
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_FormatID
-  commentId: F:SIPSorcery.Net.SDPMediaFormat.FormatID
-  fullName: SIPSorcery.Net.SDPMediaFormat.FormatID
-  nameWithType: SDPMediaFormat.FormatID
-- uid: SIPSorcery.Net.SDPMediaFormat.FormatParameterAttribute
-  name: FormatParameterAttribute
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_FormatParameterAttribute
-  commentId: P:SIPSorcery.Net.SDPMediaFormat.FormatParameterAttribute
-  fullName: SIPSorcery.Net.SDPMediaFormat.FormatParameterAttribute
-  nameWithType: SDPMediaFormat.FormatParameterAttribute
-- uid: SIPSorcery.Net.SDPMediaFormat.FormatParameterAttribute*
-  name: FormatParameterAttribute
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_FormatParameterAttribute_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.FormatParameterAttribute
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.FormatParameterAttribute
-  nameWithType: SDPMediaFormat.FormatParameterAttribute
-- uid: SIPSorcery.Net.SDPMediaFormat.GetClockRate
-  name: GetClockRate()
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetClockRate
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.GetClockRate
-  fullName: SIPSorcery.Net.SDPMediaFormat.GetClockRate()
-  nameWithType: SDPMediaFormat.GetClockRate()
-- uid: SIPSorcery.Net.SDPMediaFormat.GetClockRate*
-  name: GetClockRate
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetClockRate_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.GetClockRate
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.GetClockRate
-  nameWithType: SDPMediaFormat.GetClockRate
-- uid: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats(System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat})
-  name: GetCompatibleFormats(List<SDPMediaFormat>, List<SDPMediaFormat>)
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetCompatibleFormats_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats(System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat})
-  name.vb: GetCompatibleFormats(List(Of SDPMediaFormat), List(Of SDPMediaFormat))
-  fullName: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats(System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormat>, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormat>)
-  fullName.vb: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats(System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormat), System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormat))
-  nameWithType: SDPMediaFormat.GetCompatibleFormats(List<SDPMediaFormat>, List<SDPMediaFormat>)
-  nameWithType.vb: SDPMediaFormat.GetCompatibleFormats(List(Of SDPMediaFormat), List(Of SDPMediaFormat))
-- uid: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats*
-  name: GetCompatibleFormats
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetCompatibleFormats_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats
-  nameWithType: SDPMediaFormat.GetCompatibleFormats
-- uid: SIPSorcery.Net.SDPMediaFormat.GetFormatCodec(System.String)
-  name: GetFormatCodec(String)
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetFormatCodec_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.GetFormatCodec(System.String)
-  fullName: SIPSorcery.Net.SDPMediaFormat.GetFormatCodec(System.String)
-  nameWithType: SDPMediaFormat.GetFormatCodec(String)
-- uid: SIPSorcery.Net.SDPMediaFormat.GetFormatCodec*
-  name: GetFormatCodec
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetFormatCodec_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.GetFormatCodec
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.GetFormatCodec
-  nameWithType: SDPMediaFormat.GetFormatCodec
-- uid: SIPSorcery.Net.SDPMediaFormat.IsStandardAttribute
-  name: IsStandardAttribute
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_IsStandardAttribute
-  commentId: P:SIPSorcery.Net.SDPMediaFormat.IsStandardAttribute
-  fullName: SIPSorcery.Net.SDPMediaFormat.IsStandardAttribute
-  nameWithType: SDPMediaFormat.IsStandardAttribute
-- uid: SIPSorcery.Net.SDPMediaFormat.IsStandardAttribute*
-  name: IsStandardAttribute
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_IsStandardAttribute_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.IsStandardAttribute
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.IsStandardAttribute
-  nameWithType: SDPMediaFormat.IsStandardAttribute
-- uid: SIPSorcery.Net.SDPMediaFormat.Name
-  name: Name
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_Name
-  commentId: P:SIPSorcery.Net.SDPMediaFormat.Name
-  fullName: SIPSorcery.Net.SDPMediaFormat.Name
-  nameWithType: SDPMediaFormat.Name
-- uid: SIPSorcery.Net.SDPMediaFormat.Name*
-  name: Name
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_Name_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.Name
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.Name
-  nameWithType: SDPMediaFormat.Name
-- uid: SIPSorcery.Net.SDPMediaFormat.SetFormatAttribute(System.String)
-  name: SetFormatAttribute(String)
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_SetFormatAttribute_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.SetFormatAttribute(System.String)
-  fullName: SIPSorcery.Net.SDPMediaFormat.SetFormatAttribute(System.String)
-  nameWithType: SDPMediaFormat.SetFormatAttribute(String)
-- uid: SIPSorcery.Net.SDPMediaFormat.SetFormatAttribute*
-  name: SetFormatAttribute
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_SetFormatAttribute_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.SetFormatAttribute
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.SetFormatAttribute
-  nameWithType: SDPMediaFormat.SetFormatAttribute
-- uid: SIPSorcery.Net.SDPMediaFormat.SetFormatParameterAttribute(System.String)
-  name: SetFormatParameterAttribute(String)
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_SetFormatParameterAttribute_System_String_
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.SetFormatParameterAttribute(System.String)
-  fullName: SIPSorcery.Net.SDPMediaFormat.SetFormatParameterAttribute(System.String)
-  nameWithType: SDPMediaFormat.SetFormatParameterAttribute(String)
-- uid: SIPSorcery.Net.SDPMediaFormat.SetFormatParameterAttribute*
-  name: SetFormatParameterAttribute
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_SetFormatParameterAttribute_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.SetFormatParameterAttribute
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.SetFormatParameterAttribute
-  nameWithType: SDPMediaFormat.SetFormatParameterAttribute
-- uid: SIPSorcery.Net.SDPMediaFormat.ToString
-  name: ToString()
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_ToString
-  commentId: M:SIPSorcery.Net.SDPMediaFormat.ToString
-  fullName: SIPSorcery.Net.SDPMediaFormat.ToString()
-  nameWithType: SDPMediaFormat.ToString()
-- uid: SIPSorcery.Net.SDPMediaFormat.ToString*
-  name: ToString
-  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_ToString_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.ToString
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormat.ToString
-  nameWithType: SDPMediaFormat.ToString
-- uid: SIPSorcery.Net.SDPMediaFormatInfo
-  name: SDPMediaFormatInfo
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html
-  commentId: T:SIPSorcery.Net.SDPMediaFormatInfo
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo
-  nameWithType: SDPMediaFormatInfo
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)
-  name: GetAudioCodecForSdpFormat(SDPMediaFormatsEnum)
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetAudioCodecForSdpFormat_SIPSorcery_Net_SDPMediaFormatsEnum_
-  commentId: M:SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)
-  nameWithType: SDPMediaFormatInfo.GetAudioCodecForSdpFormat(SDPMediaFormatsEnum)
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat*
-  name: GetAudioCodecForSdpFormat
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetAudioCodecForSdpFormat_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat
-  nameWithType: SDPMediaFormatInfo.GetAudioCodecForSdpFormat
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)
-  name: GetClockRate(SDPMediaFormatsEnum)
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetClockRate_SIPSorcery_Net_SDPMediaFormatsEnum_
-  commentId: M:SIPSorcery.Net.SDPMediaFormatInfo.GetClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)
-  nameWithType: SDPMediaFormatInfo.GetClockRate(SDPMediaFormatsEnum)
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetClockRate*
-  name: GetClockRate
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetClockRate_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormatInfo.GetClockRate
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetClockRate
-  nameWithType: SDPMediaFormatInfo.GetClockRate
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)
-  name: GetRtpClockRate(SDPMediaFormatsEnum)
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetRtpClockRate_SIPSorcery_Net_SDPMediaFormatsEnum_
-  commentId: M:SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)
-  nameWithType: SDPMediaFormatInfo.GetRtpClockRate(SDPMediaFormatsEnum)
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate*
-  name: GetRtpClockRate
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetRtpClockRate_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate
-  nameWithType: SDPMediaFormatInfo.GetRtpClockRate
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpDefaultClockRate(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)
-  name: GetRtpDefaultClockRate(AudioCodecsEnum)
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetRtpDefaultClockRate_SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_
-  commentId: M:SIPSorcery.Net.SDPMediaFormatInfo.GetRtpDefaultClockRate(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpDefaultClockRate(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)
-  nameWithType: SDPMediaFormatInfo.GetRtpDefaultClockRate(AudioCodecsEnum)
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpDefaultClockRate*
-  name: GetRtpDefaultClockRate
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetRtpDefaultClockRate_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormatInfo.GetRtpDefaultClockRate
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpDefaultClockRate
-  nameWithType: SDPMediaFormatInfo.GetRtpDefaultClockRate
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)
-  name: GetVideoCodecForSdpFormat(SDPMediaFormatsEnum)
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetVideoCodecForSdpFormat_SIPSorcery_Net_SDPMediaFormatsEnum_
-  commentId: M:SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat(SIPSorcery.Net.SDPMediaFormatsEnum)
-  nameWithType: SDPMediaFormatInfo.GetVideoCodecForSdpFormat(SDPMediaFormatsEnum)
-- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat*
-  name: GetVideoCodecForSdpFormat
-  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetVideoCodecForSdpFormat_
-  commentId: Overload:SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat
-  nameWithType: SDPMediaFormatInfo.GetVideoCodecForSdpFormat
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum
-  name: SDPMediaFormatsEnum
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html
-  commentId: T:SIPSorcery.Net.SDPMediaFormatsEnum
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum
-  nameWithType: SDPMediaFormatsEnum
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.G722
-  name: G722
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_G722
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.G722
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.G722
-  nameWithType: SDPMediaFormatsEnum.G722
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.G723
-  name: G723
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_G723
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.G723
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.G723
-  nameWithType: SDPMediaFormatsEnum.G723
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.G729
-  name: G729
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_G729
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.G729
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.G729
-  nameWithType: SDPMediaFormatsEnum.G729
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.GSM
-  name: GSM
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_GSM
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.GSM
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.GSM
-  nameWithType: SDPMediaFormatsEnum.GSM
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.H263
-  name: H263
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_H263
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.H263
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.H263
-  nameWithType: SDPMediaFormatsEnum.H263
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.H264
-  name: H264
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_H264
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.H264
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.H264
-  nameWithType: SDPMediaFormatsEnum.H264
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.H265
-  name: H265
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_H265
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.H265
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.H265
-  nameWithType: SDPMediaFormatsEnum.H265
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.JPEG
-  name: JPEG
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_JPEG
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.JPEG
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.JPEG
-  nameWithType: SDPMediaFormatsEnum.JPEG
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.OPUS
-  name: OPUS
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_OPUS
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.OPUS
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.OPUS
-  nameWithType: SDPMediaFormatsEnum.OPUS
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.PCMA
-  name: PCMA
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_PCMA
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.PCMA
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.PCMA
-  nameWithType: SDPMediaFormatsEnum.PCMA
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.PCMU
-  name: PCMU
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_PCMU
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.PCMU
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.PCMU
-  nameWithType: SDPMediaFormatsEnum.PCMU
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.Telephone_Event
-  name: Telephone_Event
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_Telephone_Event
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.Telephone_Event
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.Telephone_Event
-  nameWithType: SDPMediaFormatsEnum.Telephone_Event
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.Unknown
-  name: Unknown
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_Unknown
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.Unknown
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.Unknown
-  nameWithType: SDPMediaFormatsEnum.Unknown
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.VP8
-  name: VP8
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_VP8
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.VP8
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.VP8
-  nameWithType: SDPMediaFormatsEnum.VP8
-- uid: SIPSorcery.Net.SDPMediaFormatsEnum.VP9
-  name: VP9
-  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_VP9
-  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.VP9
-  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.VP9
-  nameWithType: SDPMediaFormatsEnum.VP9
 - uid: SIPSorcery.Net.SDPMediaTypes
   name: SDPMediaTypes
   href: api/SIPSorcery.Net.SDPMediaTypes.html

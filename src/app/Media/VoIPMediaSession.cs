@@ -133,21 +133,21 @@ namespace SIPSorcery.Media
             }
         }
 
-        private void AudioFormatsNegotiated(List<SDPMediaFormat> audoFormats)
+        private void AudioFormatsNegotiated(List<AudioFormat> audoFormats)
         {
-            var audioCodec = SDPMediaFormatInfo.GetAudioCodecForSdpFormat(audoFormats.First().FormatCodec);
-            logger.LogDebug($"Setting audio sink and source format to {audioCodec}.");
-            Media.AudioSink?.SetAudioSinkFormat(audioCodec);
-            Media.AudioSource?.SetAudioSourceFormat(audioCodec);
-            _audioExtrasSource.SetAudioSourceFormat(audioCodec);
+            var audioFormat = audoFormats.First();
+            logger.LogDebug($"Setting audio sink and source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
+            Media.AudioSink?.SetAudioSinkFormat(audioFormat);
+            Media.AudioSource?.SetAudioSourceFormat(audioFormat);
+            _audioExtrasSource.SetAudioSourceFormat(audioFormat);
         }
 
-        private void VideoFormatsNegotiated(List<SDPMediaFormat> videoFormats)
+        private void VideoFormatsNegotiated(List<VideoFormat> videoFormats)
         {
-            var videoCodec = SDPMediaFormatInfo.GetVideoCodecForSdpFormat(videoFormats.First().FormatCodec);
-            logger.LogDebug($"Setting video sink and source format to {videoCodec}.");
-            Media.VideoSink?.SetVideoSinkFormat(videoCodec);
-            Media.VideoSource?.SetVideoSourceFormat(videoCodec);
+            var videoFormat = videoFormats.First();
+            logger.LogDebug($"Setting video sink and source format to {videoFormat.FormatID}:{videoFormat.Codec}.");
+            Media.VideoSink?.SetVideoSinkFormat(videoFormat);
+            Media.VideoSource?.SetVideoSourceFormat(videoFormat);
         }
 
         public async override Task Start()

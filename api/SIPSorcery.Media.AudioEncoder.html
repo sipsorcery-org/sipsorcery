@@ -118,19 +118,19 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_DecodeAudio_System_Byte___SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte%5B%5D%2CSIPSorceryMedia.Abstractions.V1.AudioCodecsEnum%2CSIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_DecodeAudio_System_Byte___SIPSorceryMedia_Abstractions_V1_AudioFormat_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte%5B%5D%2CSIPSorceryMedia.Abstractions.V1.AudioFormat)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L138">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L96">View Source</a>
   </span>
   <a id="SIPSorcery_Media_AudioEncoder_DecodeAudio_" data-uid="SIPSorcery.Media.AudioEncoder.DecodeAudio*"></a>
-  <h4 id="SIPSorcery_Media_AudioEncoder_DecodeAudio_System_Byte___SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_" data-uid="SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum,SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)">DecodeAudio(Byte[], AudioCodecsEnum, AudioSamplingRatesEnum)</h4>
+  <h4 id="SIPSorcery_Media_AudioEncoder_DecodeAudio_System_Byte___SIPSorceryMedia_Abstractions_V1_AudioFormat_" data-uid="SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.V1.AudioFormat)">DecodeAudio(Byte[], AudioFormat)</h4>
   <div class="markdown level1 summary"><p>Event handler for receiving RTP packets from the remote party.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public byte[] DecodeAudio(byte[] encodedSample, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate)</code></pre>
+    <pre><code class="lang-csharp hljs">public short[] DecodeAudio(byte[] encodedSample, AudioFormat format)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -148,16 +148,11 @@
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum</span></td>
-        <td><span class="parametername">codec</span></td>
-        <td><p>The encoding codec of the packets.</p>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioFormat</span></td>
+        <td><span class="parametername">format</span></td>
+        <td><p>The audio format of the encoded packets.</p>
 </td>
       </tr>
-      <tr>
-        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum</span></td>
-        <td><span class="parametername">sampleRate</span></td>
-        <td></td>
-      </tr>
     </tbody>
   </table>
   <h5 class="returns">Returns</h5>
@@ -170,82 +165,25 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="xref">System.Int16</span>[]</td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Byte___SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Byte%5B%5D%2CSIPSorceryMedia.Abstractions.V1.AudioCodecsEnum%2CSIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Int16___SIPSorceryMedia_Abstractions_V1_AudioFormat_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16%5B%5D%2CSIPSorceryMedia.Abstractions.V1.AudioFormat)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L43">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L47">View Source</a>
   </span>
   <a id="SIPSorcery_Media_AudioEncoder_EncodeAudio_" data-uid="SIPSorcery.Media.AudioEncoder.EncodeAudio*"></a>
-  <h4 id="SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Byte___SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_" data-uid="SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum,SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)">EncodeAudio(Byte[], AudioCodecsEnum, AudioSamplingRatesEnum)</h4>
+  <h4 id="SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Int16___SIPSorceryMedia_Abstractions_V1_AudioFormat_" data-uid="SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16[],SIPSorceryMedia.Abstractions.V1.AudioFormat)">EncodeAudio(Int16[], AudioFormat)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public byte[] EncodeAudio(byte[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Byte</span>[]</td>
-        <td><span class="parametername">pcm</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum</span></td>
-        <td><span class="parametername">codec</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum</span></td>
-        <td><span class="parametername">sampleRate</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Byte</span>[]</td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Int16___SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16%5B%5D%2CSIPSorceryMedia.Abstractions.V1.AudioCodecsEnum%2CSIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L56">View Source</a>
-  </span>
-  <a id="SIPSorcery_Media_AudioEncoder_EncodeAudio_" data-uid="SIPSorcery.Media.AudioEncoder.EncodeAudio*"></a>
-  <h4 id="SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Int16___SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_" data-uid="SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16[],SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum,SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum)">EncodeAudio(Int16[], AudioCodecsEnum, AudioSamplingRatesEnum)</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public byte[] EncodeAudio(short[] pcm, AudioCodecsEnum codec, AudioSamplingRatesEnum sampleRate)</code></pre>
+    <pre><code class="lang-csharp hljs">public byte[] EncodeAudio(short[] pcm, AudioFormat format)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -263,13 +201,8 @@
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum</span></td>
-        <td><span class="parametername">codec</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum</span></td>
-        <td><span class="parametername">sampleRate</span></td>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioFormat</span></td>
+        <td><span class="parametername">format</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -291,18 +224,18 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_IsSupported_SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_IsSupported_SIPSorceryMedia_Abstractions_V1_AudioFormat_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioFormat)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L30">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L32">View Source</a>
   </span>
   <a id="SIPSorcery_Media_AudioEncoder_IsSupported_" data-uid="SIPSorcery.Media.AudioEncoder.IsSupported*"></a>
-  <h4 id="SIPSorcery_Media_AudioEncoder_IsSupported_SIPSorceryMedia_Abstractions_V1_AudioCodecsEnum_" data-uid="SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum)">IsSupported(AudioCodecsEnum)</h4>
+  <h4 id="SIPSorcery_Media_AudioEncoder_IsSupported_SIPSorceryMedia_Abstractions_V1_AudioFormat_" data-uid="SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.V1.AudioFormat)">IsSupported(AudioFormat)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool IsSupported(AudioCodecsEnum codec)</code></pre>
+    <pre><code class="lang-csharp hljs">public bool IsSupported(AudioFormat format)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -315,8 +248,8 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioCodecsEnum</span></td>
-        <td><span class="parametername">codec</span></td>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.AudioFormat</span></td>
+        <td><span class="parametername">format</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -332,6 +265,63 @@
     <tbody>
       <tr>
         <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_Resample_System_Int16___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.Resample(System.Int16%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L136">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_AudioEncoder_Resample_" data-uid="SIPSorcery.Media.AudioEncoder.Resample*"></a>
+  <h4 id="SIPSorcery_Media_AudioEncoder_Resample_System_Int16___System_Int32_System_Int32_" data-uid="SIPSorcery.Media.AudioEncoder.Resample(System.Int16[],System.Int32,System.Int32)">Resample(Int16[], Int32, Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public short[] Resample(short[] pcm, int inRate, int outRate)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int16</span>[]</td>
+        <td><span class="parametername">pcm</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">inRate</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">outRate</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int16</span>[]</td>
         <td></td>
       </tr>
     </tbody>
@@ -355,7 +345,7 @@
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L21" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L23" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

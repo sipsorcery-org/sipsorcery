@@ -25,6 +25,7 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.UnitTests
 {
@@ -164,7 +165,7 @@ namespace SIPSorcery.UnitTests
             SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
                 SDPMediaTypesEnum.audio,
                1234,
-               new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+               new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
 
             audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
 
@@ -183,7 +184,7 @@ namespace SIPSorcery.UnitTests
             SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
                 SDPMediaTypesEnum.audio,
                1234,
-               new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+               new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
 
             audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
 

@@ -77,8 +77,7 @@ namespace demo
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(audioTrack);
 
-            pc.OnAudioFormatsNegotiated += (sdpFormat) =>
-                audioSource.SetAudioSourceFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.OnAudioFormatsNegotiated += (audioFormats) => audioSource.SetAudioSourceFormat(audioFormats.First());
 
             pc.onconnectionstatechange += async (state) =>
             {
