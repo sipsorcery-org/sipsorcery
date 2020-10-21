@@ -114,7 +114,7 @@ namespace demo
             //testPatternSource.SetFrameRate(60);
             testPatternSource.SetMaxFrameRate(true);
             var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
-            videoEndPoint.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.H264 });
+            videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
             //var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
@@ -125,7 +125,7 @@ namespace demo
             testPatternSource.OnVideoSourceRawSample += videoEndPoint.ExternalVideoSourceRawSample;
             testPatternSource.OnVideoSourceRawSample += TestPatternSource_OnVideoSourceRawSample;
             videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
-            pc.OnVideoFormatsNegotiated += (sdpFormat) => videoEndPoint.SetVideoSourceFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSourceFormat(formats.First());
             
             pc.onconnectionstatechange += async (state) =>
             {

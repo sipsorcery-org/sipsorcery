@@ -22,25 +22,25 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorceryMedia.Windows;
 using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Windows;
 
 namespace demo
 {
     class Program
     {
         //private static string DESTINATION = "1@127.0.0.1";
-        private static string DESTINATION = "sip:pcdodo@192.168.0.50";
-        private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
-        //private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
-        //private static string DESTINATION = "sip:aaron@192.168.0.50:7060";
-        //private static SIPEndPoint OUTBOUND_PROXY = null;
+        //private static string DESTINATION = "sip:pcdodo@192.168.0.50";
+        //private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
+        private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
+        //private static string DESTINATION = "sip:7002@192.168.0.48";
+        private static SIPEndPoint OUTBOUND_PROXY = null;
 
         private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
         private const string GOODBYE_16K = "Sounds/goodbye16k.raw";
@@ -62,9 +62,13 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
+            //windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
             var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
             //voipMediaSession.AudioExtrasSource.AudioSamplePeriodMilliseconds = 20;
+            //voipMediaSession.AudioLocalTrack.Capabilities.Clear();
+            //voipMediaSession.AudioLocalTrack.Capabilities.Add(
+            //    new SDPAudioVideoMediaFormat(new AudioFormat(AudioCodecsEnum.L16, 118, 8000)));
 
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
@@ -99,41 +103,45 @@ namespace demo
                 Console.WriteLine($"Call to {DESTINATION} succeeded.");
 
                 await windowsAudio.PauseAudio();
+                try
+                {
+                    //Console.WriteLine("Sending welcome message from 8KHz sample.");
+                    await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
 
-                Console.WriteLine("Sending welcome message from 8KHz sample.");
-                await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
+                    await Task.Delay(200, exitCts.Token);
 
-                await Task.Delay(200);
+                    Console.WriteLine("Sending sine wave.");
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.SineWave);
 
-                Console.WriteLine("Sending sine wave.");
-                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.SineWave);
+                    await Task.Delay(5000, exitCts.Token);
 
-                await Task.Delay(2000);
+                    Console.WriteLine("Sending white noise signal.");
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.WhiteNoise);
+                    await Task.Delay(2000, exitCts.Token);
 
-                Console.WriteLine("Sending white noise signal.");
-                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.WhiteNoise);
-                await Task.Delay(2000);
+                    Console.WriteLine("Sending pink noise signal.");
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.PinkNoise);
+                    await Task.Delay(2000, exitCts.Token);
 
-                Console.WriteLine("Sending pink noise signal.");
-                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.PinkNoise);
-                await Task.Delay(2000);
+                    Console.WriteLine("Sending silence.");
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Silence);
 
-                Console.WriteLine("Sending silence.");
-                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Silence);
+                    await Task.Delay(2000, exitCts.Token);
 
-                await Task.Delay(2000);
+                    Console.WriteLine("Playing music.");
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
 
-                Console.WriteLine("Playing music.");
-                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
+                    await Task.Delay(5000, exitCts.Token);
 
-                await Task.Delay(5000);
+                    Console.WriteLine("Sending goodbye message from 16KHz sample.");
+                    await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
 
-                Console.WriteLine("Sending goodbye message from 16KHz sample.");
-                await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.None);
 
-                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.None);
-
-                await Task.Delay(200);
+                    await Task.Delay(200, exitCts.Token);
+                }
+                catch (System.Threading.Tasks.TaskCanceledException)
+                { }
 
                 // Switch to the external microphone input source.
                 await windowsAudio.ResumeAudio();
@@ -147,11 +155,11 @@ namespace demo
 
             Console.WriteLine("Exiting...");
 
-            //if (userAgent?.IsHangingUp == true)
-            //{
+            if (userAgent?.IsHangingUp == true)
+            {
                 Console.WriteLine("Waiting 1s for the call hangup or cancel to complete...");
                 await Task.Delay(1000);
-            //}
+            }
 
             // Clean up.
             sipTransport.Shutdown();

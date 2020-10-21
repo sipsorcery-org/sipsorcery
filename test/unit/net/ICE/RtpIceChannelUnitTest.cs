@@ -18,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorceryMedia.Abstractions.V1;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -44,7 +45,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPSession rtpSession = new RTPSession(true, true, true);
 
             // Add a track to the session in order to initialise the RTPChannel.
-            MediaStreamTrack dummyTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack dummyTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(dummyTrack);
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);

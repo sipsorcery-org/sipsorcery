@@ -16,7 +16,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -81,7 +80,7 @@ namespace demo
             var videoEP = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
             //var videoEP = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
             //var videoEP = new FFmpegVideoEndPoint();
-            videoEP.RestrictCodecs(new List<VideoCodecsEnum> { VideoCodecsEnum.VP8 });
+            videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {
@@ -107,9 +106,10 @@ namespace demo
             peerConnection.addTrack(videoTrack);
 
             peerConnection.OnVideoFrameReceived += videoEP.GotVideoFrame;
-            peerConnection.OnVideoFormatsNegotiated += (sdpFormat) => videoEP.SetVideoSinkFormat(SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
-            peerConnection.OnAudioFormatsNegotiated += (sdpFormat) =>
-                windowsAudioEP.SetAudioSinkFormat(SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
+            peerConnection.OnVideoFormatsNegotiated += (formats) => 
+                videoEP.SetVideoSinkFormat(formats.First());
+            peerConnection.OnAudioFormatsNegotiated += (formats) =>
+                windowsAudioEP.SetAudioSinkFormat(formats.First());
 
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
             peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");

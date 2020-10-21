@@ -30,6 +30,7 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
+using Windows.UI.Text.Core;
 
 namespace demo
 {
@@ -50,6 +51,7 @@ namespace demo
             Console.WriteLine("Press ctrl-c to exit.");
 
             Log = AddConsoleLogger();
+            ManualResetEvent exitMRE = new ManualResetEvent(false);
 
             _sipTransport = new SIPTransport();
 
@@ -81,9 +83,18 @@ namespace demo
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
+            userAgent.OnCallHungup += (dialog) => exitMRE.Set();
             var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
-            windowsAudioEndPoint.RestrictCodecs(new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU });
+            windowsAudioEndPoint.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
             var windowsVideoEndPoint = new WindowsVideoEndPoint();
+            windowsVideoEndPoint.OnVideoSourceError += (err) =>
+            {
+                Log.LogError($"Video source error. {err}");
+                if (userAgent.IsCallActive)
+                {
+                    userAgent.Hangup();
+                }
+            };
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
@@ -100,24 +111,25 @@ namespace demo
             Task<bool> callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
             callTask.Wait(CALL_TIMEOUT_SECONDS * 1000);
 
-            ManualResetEvent exitMRE = new ManualResetEvent(false);
-
             if (callTask.Result)
             {
                 Log.LogInformation("Call attempt successful.");
                 windowsVideoEndPoint.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
                 {
-                    _picBox.BeginInvoke(new Action(() =>
+                    if (_form?.Handle != null && _picBox != null)
                     {
-                        unsafe
+                        _picBox.BeginInvoke(new Action(() =>
                         {
-                            fixed (byte* s = bmp)
+                            unsafe
                             {
-                                System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                _picBox.Image = bmpImage;
+                                fixed (byte* s = bmp)
+                                {
+                                    System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                    _picBox.Image = bmpImage;
+                                }
                             }
-                        }
-                    }));
+                        }));
+                    }
                 };
 
                 windowsAudioEndPoint.PauseAudio().Wait();
