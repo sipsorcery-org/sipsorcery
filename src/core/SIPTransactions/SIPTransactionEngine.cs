@@ -186,7 +186,7 @@ namespace SIPSorcery.SIP
                     {
                         foreach (var (_, transaction) in m_pendingTransactions)
                         {
-                            if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
+                            if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer && transaction.ReliableProvisionalResponse != null)
                             {
                                 if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
                                     transaction.ReliableProvisionalResponse.Header.From.FromTag == sipRequest.Header.From.FromTag &&

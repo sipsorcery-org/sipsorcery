@@ -213,9 +213,9 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Puts the remote call party on hold.
         /// </summary>
-        public void PutOnHold()
+        public async Task PutOnHold()
         { 
-            MediaSession.PutOnHold();
+            await MediaSession.PutOnHold();
             m_userAgent.PutOnHold();
             StatusMessage(this, "Local party put on hold");
         }

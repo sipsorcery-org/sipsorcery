@@ -438,7 +438,7 @@ a=sendrecv";
                 var uas = userAgentServer.AcceptCall(req);
                 var serverAudioSession = CreateMockVoIPMediaEndPoint(format => format.Codec == AudioCodecsEnum.PCMU);
 
-                var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
+                var answerResult = await userAgentServer.Answer(uas, serverAudioSession).ConfigureAwait(false);
 
                 logger.LogDebug($"Server agent answer result {answerResult}.");
 
@@ -504,7 +504,9 @@ a=sendrecv";
 
         /// <summary>
         /// Tests that the SIPUserAgent can correctly handle the condition where the port number
-        /// supplied in the remote SDP is invalid.
+        /// supplied in the remote SDP is invalid. Originally the behaviour was to reject the SDP
+        /// with the invalid port number. That has now been changed to use the SDP "ignore" port
+        /// number and wait for the port to be set by some other means.
         /// </summary>
         [Fact]
         public async Task HandleInvalidSdpPortOnAnswerUnitTest()
@@ -546,7 +548,7 @@ a=sendrecv";
 
             var result = await userAgent.Answer(uas, rtpSession);
 
-            Assert.False(result);
+            Assert.True(result);
 
             rtpSession.Close("normal");
         }
@@ -617,7 +619,9 @@ a=sendrecv";
 
         /// <summary>
         /// Tests that the SIPUserAgent can correctly handle the condition where the port number
-        /// supplied in the remote SDP is invalid when a call attempt is made.
+        /// supplied in the remote SDP is invalid when a call attempt is made. Originally the 
+        /// behaviour was to reject the SDP with the invalid port number. That has now been changed 
+        /// to use the SDP "ignore" port number and wait for the port to be set by some other means.
         /// </summary>
         [Fact]
         public async Task HandleInvalidSdpPortOnPlaceCallUnitTest()
@@ -670,7 +674,7 @@ a=sendrecv";
 
                 SIPURI dstUri = new SIPURI(SIPSchemesEnum.sip, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);
                 var result = await userAgent.Call(dstUri.ToString(), null, null, rtpSession);
-                Assert.False(result);
+                Assert.True(result);
             }
             finally
             {

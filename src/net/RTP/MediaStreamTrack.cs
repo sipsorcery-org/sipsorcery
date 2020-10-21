@@ -96,17 +96,20 @@ namespace SIPSorcery.Net
         /// stream per media type.</param>
         /// <param name="isRemote">True if this track corresponds to a media announcement from the 
         /// remote party.</param>
-        /// <param name="Capabilities">The capabilities for the track being added. Where the same media
+        /// <param name="capabilities">The capabilities for the track being added. Where the same media
         /// type is supported locally and remotely only the mutual capabilities can be used. This will
         /// occur if we receive an SDP offer (add track initiated by the remote party) and we need
         /// to remove capabilities we don't support.</param>
         /// <param name="streamStatus">The initial stream status for the media track. Defaults to
         /// send receive.</param>
+        /// <param name="ssrcAttributes">If th track is being created from an SDP announcement this
+        /// parameter contains a list of </param>
         public MediaStreamTrack(
             SDPMediaTypesEnum kind,
             bool isRemote,
             List<SDPAudioVideoMediaFormat> capabilities,
-            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
+            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv,
+            List<SDPSsrcAttribute> ssrcAttributes = null)
         {
             Kind = kind;
             IsRemote = isRemote;
@@ -118,6 +121,16 @@ namespace SIPSorcery.Net
             {
                 Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
                 SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+            }
+
+            // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
+            // RTP and RTCP packets received from the remote party.
+            if (ssrcAttributes?.Count > 0)
+            {
+                foreach (var ssrcAttr in ssrcAttributes)
+                {
+                    SdpSsrc.Add(ssrcAttr.SSRC, ssrcAttr);
+                }
             }
         }
 
@@ -177,7 +190,7 @@ namespace SIPSorcery.Net
         /// <returns>True if the payload ID matches one of the codecs for this stream. False if not.</returns>
         public bool IsPayloadIDMatch(int payloadID)
         {
-            return Capabilities.Any(x => x.ID == payloadID);
+            return Capabilities?.Any(x => x.ID == payloadID) == true;
         }
 
         /// <summary>
