@@ -387,22 +387,22 @@ a=sendrecv";
             SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
             SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
 
-            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            bool answerResult = false;
+
+            userAgentServer.OnIncomingCall += async (ua, req) =>
             {
                 logger.LogDebug("Request received: " + req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
-                var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
+                answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
 
                 logger.LogDebug($"Server agent answer result {answerResult}.");
-
-                Assert.True(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug($"Attempting call to {dstUri}.");
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
             var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
@@ -410,6 +410,7 @@ a=sendrecv";
             logger.LogDebug($"Client agent answer result {callResult }.");
 
             Assert.True(callResult);
+            Assert.True(answerResult);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
         }
@@ -418,7 +419,7 @@ a=sendrecv";
         /// Tests that the SIPUserAgent can correctly deal with a call failure due to a mismatched audio codec.
         /// </summary>
         [Fact]
-        public async Task PlaceCallMismatchedCapabilitiesUnitTest()
+        public void PlaceCallMismatchedCapabilitiesUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -431,26 +432,24 @@ a=sendrecv";
             SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
             SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
 
-            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            userAgentServer.OnIncomingCall += async (ua, req) =>
             {
                 logger.LogDebug("Request received: " + req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverAudioSession = CreateMockVoIPMediaEndPoint(format => format.Codec == AudioCodecsEnum.PCMU);
 
-                var answerResult = await userAgentServer.Answer(uas, serverAudioSession).ConfigureAwait(false);
+                var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
 
                 logger.LogDebug($"Server agent answer result {answerResult}.");
-
-                Assert.False(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug($"Attempting call to {dstUri}.");
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint(format => format.Codec == AudioCodecsEnum.G722);
-            var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
+            var callResult = userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint).Result;
 
             logger.LogDebug($"Client agent answer result {callResult }.");
 

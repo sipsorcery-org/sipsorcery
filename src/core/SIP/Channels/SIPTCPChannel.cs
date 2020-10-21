@@ -584,9 +584,9 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Gets fired when a suspected SIP message is extracted from the TCP data stream.
         /// </summary>
-        protected Task SIPTCPMessageReceived(SIPChannel channel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
+        protected void SIPTCPMessageReceived(SIPChannel channel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
-            return SIPMessageReceived?.Invoke(channel, localEndPoint, remoteEndPoint, buffer);
+            SIPMessageReceived?.Invoke(channel, localEndPoint, remoteEndPoint, buffer);
         }
 
         /// <summary>

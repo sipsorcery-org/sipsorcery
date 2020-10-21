@@ -639,7 +639,8 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                if (VideoLocalTrack == null && AudioLocalTrack.Capabilities?.Count == 0)
+                if (VideoLocalTrack == null 
+                    && AudioLocalTrack.Capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
                 {
                     return SetDescriptionResultEnum.AudioIncompatible;
                 }

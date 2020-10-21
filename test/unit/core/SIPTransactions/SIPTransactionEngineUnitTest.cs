@@ -128,7 +128,6 @@ namespace SIPSorcery.SIP.UnitTests
                         logger.LogDebug("Server new call received.");
                         var busyResponse = SIPResponse.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                         (sipTransaction as UASInviteTransaction).SendFinalResponse(busyResponse);
-                        return Task.FromResult(SocketError.Success);
                     };
                     serverTransaction.TransactionStateChanged += (tx) =>
                     {
@@ -141,8 +140,6 @@ namespace SIPSorcery.SIP.UnitTests
                         }
                     };
                     serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
-
-                    return Task.FromResult(0);
                 };
 
                 SIPURI dummyURI = new SIPURI("dummy", serverTransport.GetSIPChannels().First().ListeningEndPoint.ToString(), null, SIPSchemesEnum.sip);

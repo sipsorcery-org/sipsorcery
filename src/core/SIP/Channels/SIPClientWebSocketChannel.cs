@@ -427,7 +427,7 @@ namespace SIPSorcery.SIP
                 if (SIPMessageReceived != null)
                 {
                     clientConn.LastTransmission = DateTime.Now;
-                    SIPMessageReceived(recvChannel, clientConn.LocalEndPoint, clientConn.RemoteEndPoint, sipMsgBuffer).Wait();
+                    SIPMessageReceived(recvChannel, clientConn.LocalEndPoint, clientConn.RemoteEndPoint, sipMsgBuffer);
                 }
 
                 clientConn.RecvStartPosn += (sipMsgBuffer.Length + bytesSkipped);

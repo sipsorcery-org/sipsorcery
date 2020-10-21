@@ -73,7 +73,6 @@ namespace SIPSorcery.SIP.UnitTests
                 receivedFromEP = remoteEndPoint;
                 receivedOnEP = localSIPEndPoint;
                 gotMessage.SetResult(true);
-                return Task.CompletedTask;
             };
 
             var dstEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.Loopback, udpChan2.Port);

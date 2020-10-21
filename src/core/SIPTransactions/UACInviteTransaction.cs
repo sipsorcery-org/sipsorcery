@@ -81,10 +81,9 @@ namespace SIPSorcery.SIP
             base.SendReliableRequest();
         }
 
-        private Task<SocketError> UACInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        private void UACInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
             logger.LogWarning("UACInviteTransaction received unexpected request, " + sipRequest.Method + " from " + remoteEndPoint.ToString() + ", ignoring.");
-            return Task.FromResult(SocketError.Fault);
         }
 
         private void UACInviteTransaction_TransactionTimedOut(SIPTransaction sipTransaction)
@@ -101,7 +100,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private async Task<SocketError> UACInviteTransaction_TransactionInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private async void UACInviteTransaction_TransactionInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -122,23 +121,15 @@ namespace SIPSorcery.SIP
                     CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase, localEP, remoteEP);
                 }
 
-                if (UACInviteTransactionInformationResponseReceived != null)
-                {
-                    return await UACInviteTransactionInformationResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse).ConfigureAwait(false);
-                }
-                else
-                {
-                    return SocketError.Success;
-                }
+                UACInviteTransactionInformationResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception UACInviteTransaction_TransactionInformationResponseReceived. " + excp.Message);
-                return SocketError.Fault;
             }
         }
 
-        private async Task<SocketError> UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private async void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -168,19 +159,11 @@ namespace SIPSorcery.SIP
                     CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, localEP, remoteEP);
                 }
 
-                if (UACInviteTransactionFinalResponseReceived != null)
-                {
-                    return await UACInviteTransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse).ConfigureAwait(false);
-                }
-                else
-                {
-                    return SocketError.Success;
-                }
+                UACInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
             }
             catch (Exception excp)
             {
                 logger.LogError($"Exception UACInviteTransaction_TransactionFinalResponseReceived. {excp.Message}");
-                return SocketError.Fault;
             }
         }
 
@@ -353,8 +336,8 @@ namespace SIPSorcery.SIP
         {
             m_sentPrack = true;
 
-           // PRACK requests create a new transaction and get routed based on SIP request fields.
-           var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI);
+            // PRACK requests create a new transaction and get routed based on SIP request fields.
+            var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI);
 
             prackRequest.Header.RAckRSeq = progressResponse.Header.RSeq;
             prackRequest.Header.RAckCSeq = progressResponse.Header.CSeq;

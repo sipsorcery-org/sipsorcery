@@ -346,7 +346,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private Task<SocketError> ServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private void ServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -456,17 +456,14 @@ namespace SIPSorcery.SIP.App
 
                     CallAnswered?.Invoke(this, sipResponse);
                 }
-
-                return Task.FromResult(SocketError.Success);
             }
             catch (Exception excp)
             {
                 logger.LogDebug("Exception ServerFinalResponseReceived. " + excp.Message);
-                return Task.FromResult(SocketError.Fault);
             }
         }
 
-        private Task<SocketError> ServerInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private void ServerInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             logger.LogDebug("Information response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + m_serverTransaction.TransactionRequest.URI.ToString() + ".");
 
@@ -486,8 +483,6 @@ namespace SIPSorcery.SIP.App
                     CallTrying?.Invoke(this, sipResponse);
                 }
             }
-
-            return Task.FromResult(SocketError.Success);
         }
 
         private void ServerTimedOut(SIPTransaction sipTransaction)
@@ -498,7 +493,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private Task<SocketError> ByeServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private void ByeServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -523,13 +518,10 @@ namespace SIPSorcery.SIP.App
                     authByeTransaction.NonInviteTransactionTimedOut += (tx) => logger.LogDebug($"Authenticated Bye request for {m_sipCallDescriptor.Uri} timed out.");
                     authByeTransaction.SendRequest();
                 }
-
-                return Task.FromResult(SocketError.Success);
             }
             catch (Exception excp)
             {
                 logger.LogError($"Exception ByServerFinalResponseReceived. {excp.Message}");
-                return Task.FromResult(SocketError.Fault);
             }
         }
 

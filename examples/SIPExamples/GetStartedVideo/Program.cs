@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Threading;
@@ -30,7 +29,6 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
-using Windows.UI.Text.Core;
 
 namespace demo
 {
@@ -162,15 +160,13 @@ namespace demo
             _sipTransport.Shutdown();
         }
 
-        private static Task OnSIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private static void OnSIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (sipRequest.Method == SIPMethodsEnum.INFO)
             {
                 var notImplResp = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
-                return _sipTransport.SendResponseAsync(notImplResp);
+                _sipTransport.SendResponseAsync(notImplResp);
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>

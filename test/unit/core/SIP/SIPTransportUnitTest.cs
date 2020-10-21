@@ -502,16 +502,12 @@ serverReadyEvent);
                         logger.LogWarning($"TcpTrickleReceiveTest: FAILED to set result on CompletionSource.");
                     }
                 }
-
-                return Task.FromResult(0);
             };
 
             transport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
             {
                 logger.LogDebug($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
                 logger.LogDebug(sipResponse.ToString());
-
-                return Task.FromResult(0);
             };
 
             if (!tcpChannel.ConnectClientAsync(actualEP, null, null).Wait(TimeSpan.FromMilliseconds(TRANSPORT_TEST_TIMEOUT)))
@@ -560,7 +556,7 @@ serverReadyEvent);
             sipTransport.SIPTransportRequestReceived += (localSIPEndPoint, remoteEndPoint, sipRequest) =>
             {
                 SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                return sipTransport.SendResponseAsync(optionsResponse);
+                sipTransport.SendResponseAsync(optionsResponse);
             };
 
             SIPResponse rtnResponse = null;
@@ -569,7 +565,6 @@ serverReadyEvent);
             {
                 rtnResponse = sipResponse;
                 gotResponseMre.Set();
-                return Task.CompletedTask;
             };
 
             var serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, clientChannel.ListeningSIPEndPoint);
@@ -613,14 +608,13 @@ serverReadyEvent);
                 optionsResponse.Header.UnknownHeaders.Add($"X-Response-Random:{Crypto.GetRandomString(1000)}");
                 optionsResponse.Header.UnknownHeaders.Add("X-Response-Final: TheEnd");
 
-                return sipTransport.SendResponseAsync(optionsResponse);
+                sipTransport.SendResponseAsync(optionsResponse);
             };
 
             sipTransport.SIPTransportResponseReceived += (localSIPEndPoint, remoteEndPoint, sipResponse) =>
             {
                 receivedResponse = sipResponse;
                 gotResponseMre.Set();
-                return Task.CompletedTask;
             };
 
             var serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, clientChannel.ListeningSIPEndPoint);
@@ -670,10 +664,8 @@ serverReadyEvent);
                     {
                         SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         logger.LogDebug(optionsResponse.ToString());
-                        return serverSIPTransport.SendResponseAsync(optionsResponse);
+                        serverSIPTransport.SendResponseAsync(optionsResponse);
                     }
-
-                    return Task.CompletedTask;
                 };
 
                 serverSIPTransport.SIPRequestInTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -741,8 +733,6 @@ serverReadyEvent);
                             logger.LogWarning($"RunClient on test channel {testClientChannel.ListeningSIPEndPoint} FAILED to set result on CompletionSource.");
                         }
                     }
-
-                    return Task.CompletedTask;
                 };
 
                 clientSIPTransport.SIPRequestOutTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>

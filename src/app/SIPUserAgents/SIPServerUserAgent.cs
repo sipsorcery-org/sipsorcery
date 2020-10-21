@@ -448,14 +448,12 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private Task<SocketError> OnAckAnswerReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        private void OnAckAnswerReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
             SIPDialogue = new SIPDialogue(m_uasTransaction);
             SIPDialogue.TransferMode = m_transferMode;
 
             OnDialogueCreated?.Invoke(SIPDialogue);
-
-            return Task.FromResult(SocketError.Success);
         }
 
         public void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body)
@@ -589,7 +587,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private Task<SocketError> ByeServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private void ByeServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -614,13 +612,10 @@ namespace SIPSorcery.SIP.App
                     SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, authByeRequest, null);
                     authByeTransaction.SendRequest();
                 }
-
-                return Task.FromResult(SocketError.Success);
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception ByServerFinalResponseReceived. " + excp.Message);
-                return Task.FromResult(SocketError.Fault);
             }
         }
 

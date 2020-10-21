@@ -89,9 +89,9 @@ namespace SIPSorcery.SIP
             sipTransport.AddTransaction(this);
         }
 
-        private Task<SocketError> UASInviteTransaction_OnAckRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        private void UASInviteTransaction_OnAckRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
-            return OnAckReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
+            OnAckReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
         private void UASInviteTransaction_TransactionRemoved(SIPTransaction transaction)
@@ -109,13 +109,12 @@ namespace SIPSorcery.SIP
             CDR?.TimedOut();
         }
 
-        private Task<SocketError> UASInviteTransaction_TransactionResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private void UASInviteTransaction_TransactionResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             logger.LogWarning("UASInviteTransaction received unexpected response, " + sipResponse.ReasonPhrase + " from " + remoteEndPoint.ToString() + ", ignoring.");
-            return Task.FromResult(SocketError.Fault);
         }
 
-        private Task<SocketError> UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        private void UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
             try
             {
@@ -147,13 +146,10 @@ namespace SIPSorcery.SIP
                         SendFinalResponse(declinedResponse);
                     }
                 }
-
-                return Task.FromResult(SocketError.Success);
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception UASInviteTransaction GotRequest. " + excp.Message);
-                return Task.FromResult(SocketError.Fault);
             }
         }
 

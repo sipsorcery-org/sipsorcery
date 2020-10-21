@@ -348,7 +348,7 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Creates a new instance where the user agent has exclusive control of the SIP transport.
-        /// This is significant for incoming requests. WIth exclusive control the agent knows that
+        /// This is significant for incoming requests. With exclusive control the agent knows that
         /// any request are for it and can handle accordingly. If the transport needs to be shared 
         /// amongst multiple user agents use the alternative constructor.
         /// </summary>
@@ -841,8 +841,6 @@ namespace SIPSorcery.SIP.App
                     {
                         transferAccepted.TrySetResult(false);
                     }
-
-                    return Task.FromResult(SocketError.Success);
                 };
 
                 referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandler;
@@ -872,7 +870,10 @@ namespace SIPSorcery.SIP.App
         /// application to deal with.
         /// </summary>
         /// <param name="sipRequest">The in dialog request received.</param>
-        private async Task DialogRequestReceivedAsync(SIPRequest sipRequest)
+        /// <remarks>
+        /// Will only ever be called from the main SIP transport thread. No async required.
+        /// </remarks>
+        private void DialogRequestReceived(SIPRequest sipRequest)
         {
             if (sipRequest.Method == SIPMethodsEnum.BYE)
             {
@@ -953,7 +954,7 @@ namespace SIPSorcery.SIP.App
                     {
                         // The application is going to handle the re-INVITE request. We'll send a Trying response as a precursor.
                         SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
-                        await reInviteTransaction.SendProvisionalResponse(tryingResponse).ConfigureAwait(false);
+                        reInviteTransaction.SendProvisionalResponse(tryingResponse).Wait();
                         OnReinviteRequest.Invoke(reInviteTransaction);
                     }
                 }
@@ -965,13 +966,13 @@ namespace SIPSorcery.SIP.App
                 okResponse.Body = m_sipDialogue.RemoteSDP;
                 okResponse.Header.ContentLength = okResponse.Body.Length;
                 okResponse.Header.ContentType = m_sdpContentType;
-                await SendResponseAsync(okResponse).ConfigureAwait(false);
+                SendResponseAsync(okResponse).Wait();
             }
             else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
             {
                 //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MESSAGE for call " + sipRequest.URI.ToString() + ": " + sipRequest.Body + ".", dialogue.Owner));
                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                await m_transport.SendResponseAsync(okResponse).ConfigureAwait(false);
+                SendResponseAsync(okResponse).Wait();
             }
             else if (sipRequest.Method == SIPMethodsEnum.REFER)
             {
@@ -980,7 +981,7 @@ namespace SIPSorcery.SIP.App
             else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
             {
                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                await SendResponseAsync(okResponse).ConfigureAwait(false);
+                SendResponseAsync(okResponse).Wait();
 
                 if (sipRequest.Body?.Length > 0 && sipRequest.Header.ContentType?.Contains(m_sipReferContentType) == true)
                 {
@@ -1183,7 +1184,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the request came from.</param>
         /// <param name="sipRequest">The SIP request.</param>
-        private async Task SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (m_sipDialogue != null)
             {
@@ -1195,7 +1196,7 @@ namespace SIPSorcery.SIP.App
                 {
                     try
                     {
-                        await DialogRequestReceivedAsync(sipRequest).ConfigureAwait(false);
+                        DialogRequestReceived(sipRequest);
                     }
                     catch (Exception excp)
                     {
@@ -1227,7 +1228,7 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         logger.LogDebug($"Proceeding with attended transfer INVITE received from {remoteEndPoint}.");
-                        await AcceptAttendedTransfer(uas).ConfigureAwait(false);
+                        AcceptAttendedTransfer(uas).Wait();
                     }
                 }
             }
@@ -1261,7 +1262,7 @@ namespace SIPSorcery.SIP.App
                 // If the transport is exclusive this is the only user agent listening and if it's not handling the request
                 // nothing is.
                 var notSupportedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                await m_transport.SendResponseAsync(notSupportedResponse).ConfigureAwait(false);
+                SendResponseAsync(notSupportedResponse).Wait();
             }
         }
 
@@ -1334,7 +1335,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="remoteEndPoint">The remote end point the response came from.</param>
         /// <param name="sipTransaction">The UAS transaction the response is part of.</param>
         /// <param name="sipResponse">The SIP response.</param>
-        private Task<SocketError> ReinviteRequestFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private void ReinviteRequestFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
             {
@@ -1356,8 +1357,6 @@ namespace SIPSorcery.SIP.App
             {
                 logger.LogWarning($"Re-INVITE request failed with response {sipResponse.ShortDescription}.");
             }
-
-            return Task.FromResult(SocketError.Success);
         }
 
         /// <summary>

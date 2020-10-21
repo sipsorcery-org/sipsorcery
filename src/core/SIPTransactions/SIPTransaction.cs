@@ -272,7 +272,7 @@ namespace SIPSorcery.SIP
             TransactionRequestReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
-        public Task<SocketError> GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
+        public async void GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
             if (TransactionState == SIPTransactionStatesEnum.Completed || TransactionState == SIPTransactionStatesEnum.Confirmed)
             {
@@ -283,16 +283,12 @@ namespace SIPSorcery.SIP
                 {
                     if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
                     {
-                        return ResendPrackRequest();
+                        await ResendPrackRequest();
                     }
                     else
                     {
-                        return ResendAckRequest();
+                        await ResendAckRequest();
                     }
-                }
-                else
-                {
-                    return Task.FromResult(SocketError.Success);
                 }
             }
             else
@@ -302,7 +298,7 @@ namespace SIPSorcery.SIP
                 if (sipResponse.StatusCode >= 100 && sipResponse.StatusCode <= 199)
                 {
                     UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
-                    return TransactionInformationResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
+                    TransactionInformationResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
                 }
                 else
                 {
@@ -318,7 +314,7 @@ namespace SIPSorcery.SIP
                         UpdateTransactionState(SIPTransactionStatesEnum.Completed);
                     }
 
-                    return TransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
+                    TransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
                 }
             }
         }

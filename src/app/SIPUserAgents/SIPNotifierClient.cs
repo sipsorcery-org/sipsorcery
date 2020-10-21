@@ -281,15 +281,12 @@ namespace SIPSorcery.SIP.App
 
         private void SubsribeTransactionTimedOut(SIPTransaction sipTransaction)
         {
-            if (SubscriptionFailed != null)
-            {
-                SubscriptionFailed(m_resourceURI, SIPResponseStatusCodesEnum.ServerTimeout, "Subscription request to " + m_resourceURI.ToString() + " timed out.");
-            }
+            SubscriptionFailed?.Invoke(m_resourceURI, SIPResponseStatusCodesEnum.ServerTimeout, "Subscription request to " + m_resourceURI.ToString() + " timed out.");
 
             m_waitForSubscribeResponse.Set();
         }
 
-        private Task<SocketError> SubscribeTransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private void SubscribeTransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -389,16 +386,12 @@ namespace SIPSorcery.SIP.App
                     SubscriptionFailed(m_resourceURI, sipResponse.Status, "Subscribe failed with response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
                     m_waitForSubscribeResponse.Set();
                 }
-
-                return Task.FromResult(SocketError.Success);
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception SubscribeTransactionFinalResponseReceived. " + excp.Message);
                 SubscriptionFailed(m_resourceURI, SIPResponseStatusCodesEnum.InternalServerError, "Exception processing subscribe response. " + excp.Message);
                 m_waitForSubscribeResponse.Set();
-
-                return Task.FromResult(SocketError.Fault);
             }
         }
     }
