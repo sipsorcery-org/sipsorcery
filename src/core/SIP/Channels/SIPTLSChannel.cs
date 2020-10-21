@@ -229,7 +229,7 @@ namespace SIPSorcery.SIP
             else
             {
                 logger.LogWarning(String.Format("Certificate error: {0}", sslPolicyErrors));
-                return true;
+                return false;
             }
         }
 
