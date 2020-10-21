@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.84-pre: Refactored SDP media format handling to improve audio and video format management.
+    <PackageReleaseNotes>- v4.0.85-pre: Refactored setting remote SDP offer in RTP session to fix a softphone bug.
+- v4.0.84-pre: Refactored SDP media format handling to improve audio and video format management.
 - v4.0.83-pre: Fix in SIP DNS and SIP UDP receive to work on Android.
 - v4.0.82-pre: Improvement to H264 packetisation. Added ability to set audio extras source sample period.
 - v4.0.81-pre: Fix for SIP DNS lookups failing on CNAME records.
@@ -102,9 +103,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.84-pre</Version>
-    <AssemblyVersion>4.0.84.0</AssemblyVersion>
-    <FileVersion>4.0.84.0</FileVersion>
+    <Version>4.0.85-pre</Version>
+    <AssemblyVersion>4.0.85.0</AssemblyVersion>
+    <FileVersion>4.0.85.0</FileVersion>
   </PropertyGroup>
 
 </Project>
