@@ -337,7 +337,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                foreach (var format in a.Where(x => x.Name() != SDP.TELEPHONE_EVENT_ATTRIBUTE))
+                foreach (var format in a)
                 {
                     if (b.Any(x => SDPAudioVideoMediaFormat.AreMatch(format, x)))
                     {

@@ -206,7 +206,7 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
-            Assert.Equal(SetDescriptionResultEnum.InvalidAudioPort, result);
+            Assert.Equal(SDP.IGNORE_RTP_PORT_NUMBER, localSession.AudioDestinationEndPoint.Port);
 
             localSession.Close("normal");
         }
