@@ -6712,15 +6712,15 @@ references:
   commentId: T:SIPSorcery.Net.MediaStreamTrack
   fullName: SIPSorcery.Net.MediaStreamTrack
   nameWithType: MediaStreamTrack
-- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum)
-  name: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum)
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_
-  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum)
-  name.vb: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum)
-  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>, SIPSorcery.Net.MediaStreamStatusEnum)
-  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat), SIPSorcery.Net.MediaStreamStatusEnum)
-  nameWithType: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum)
-  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum)
+- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute})
+  name: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum, List<SDPSsrcAttribute>)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPSsrcAttribute__
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute})
+  name.vb: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum, List(Of SDPSsrcAttribute))
+  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>, SIPSorcery.Net.MediaStreamStatusEnum, System.Collections.Generic.List<SIPSorcery.Net.SDPSsrcAttribute>)
+  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat), SIPSorcery.Net.MediaStreamStatusEnum, System.Collections.Generic.List(Of SIPSorcery.Net.SDPSsrcAttribute))
+  nameWithType: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum, List<SDPSsrcAttribute>)
+  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum, List(Of SDPSsrcAttribute))
 - uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat,SIPSorcery.Net.MediaStreamStatusEnum)
   name: MediaStreamTrack(AudioFormat, MediaStreamStatusEnum)
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_V1_AudioFormat_SIPSorcery_Net_MediaStreamStatusEnum_
@@ -21059,18 +21059,6 @@ references:
   commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.Error
   fullName: SIPSorcery.Net.SetDescriptionResultEnum.Error
   nameWithType: SetDescriptionResultEnum.Error
-- uid: SIPSorcery.Net.SetDescriptionResultEnum.InvalidAudioPort
-  name: InvalidAudioPort
-  href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_InvalidAudioPort
-  commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.InvalidAudioPort
-  fullName: SIPSorcery.Net.SetDescriptionResultEnum.InvalidAudioPort
-  nameWithType: SetDescriptionResultEnum.InvalidAudioPort
-- uid: SIPSorcery.Net.SetDescriptionResultEnum.InvalidVideoPort
-  name: InvalidVideoPort
-  href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_InvalidVideoPort
-  commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.InvalidVideoPort
-  fullName: SIPSorcery.Net.SetDescriptionResultEnum.InvalidVideoPort
-  nameWithType: SetDescriptionResultEnum.InvalidVideoPort
 - uid: SIPSorcery.Net.SetDescriptionResultEnum.NoLocalMedia
   name: NoLocalMedia
   href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_NoLocalMedia
