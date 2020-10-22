@@ -111,8 +111,8 @@ namespace demo
             var pc = new RTCPeerConnection(null);
 
             var testPatternSource = new VideoTestPatternSource();
-            //testPatternSource.SetFrameRate(60);
-            testPatternSource.SetMaxFrameRate(true);
+            testPatternSource.SetFrameRate(60);
+            //testPatternSource.SetMaxFrameRate(true);
             var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
