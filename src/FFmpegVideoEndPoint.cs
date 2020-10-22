@@ -115,6 +115,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (!_isClosed)
             {
                 _isClosed = true;
+                _ffmpegEncoder?.Dispose();
             }
 
             return Task.CompletedTask;
