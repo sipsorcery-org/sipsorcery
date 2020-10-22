@@ -21089,6 +21089,12 @@ references:
   commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.VideoIncompatible
   fullName: SIPSorcery.Net.SetDescriptionResultEnum.VideoIncompatible
   nameWithType: SetDescriptionResultEnum.VideoIncompatible
+- uid: SIPSorcery.Net.SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer
+  name: WrongSdpTypeOfferAfterOffer
+  href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_WrongSdpTypeOfferAfterOffer
+  commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer
+  fullName: SIPSorcery.Net.SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer
+  nameWithType: SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer
 - uid: SIPSorcery.Net.SrtcpCryptoContext
   name: SrtcpCryptoContext
   href: api/SIPSorcery.Net.SrtcpCryptoContext.html
@@ -23978,6 +23984,32 @@ references:
   commentId: F:SIPSorcery.Net.WebRTCWebSocketPeer.CreatePeerConnection
   fullName: SIPSorcery.Net.WebRTCWebSocketPeer.CreatePeerConnection
   nameWithType: WebRTCWebSocketPeer.CreatePeerConnection
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.FilterRemoteICECandidates
+  name: FilterRemoteICECandidates
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_FilterRemoteICECandidates
+  commentId: P:SIPSorcery.Net.WebRTCWebSocketPeer.FilterRemoteICECandidates
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.FilterRemoteICECandidates
+  nameWithType: WebRTCWebSocketPeer.FilterRemoteICECandidates
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.FilterRemoteICECandidates*
+  name: FilterRemoteICECandidates
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_FilterRemoteICECandidates_
+  commentId: Overload:SIPSorcery.Net.WebRTCWebSocketPeer.FilterRemoteICECandidates
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.FilterRemoteICECandidates
+  nameWithType: WebRTCWebSocketPeer.FilterRemoteICECandidates
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.OfferOptions
+  name: OfferOptions
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_OfferOptions
+  commentId: P:SIPSorcery.Net.WebRTCWebSocketPeer.OfferOptions
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.OfferOptions
+  nameWithType: WebRTCWebSocketPeer.OfferOptions
+- uid: SIPSorcery.Net.WebRTCWebSocketPeer.OfferOptions*
+  name: OfferOptions
+  href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_OfferOptions_
+  commentId: Overload:SIPSorcery.Net.WebRTCWebSocketPeer.OfferOptions
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCWebSocketPeer.OfferOptions
+  nameWithType: WebRTCWebSocketPeer.OfferOptions
 - uid: SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage(WebSocketSharp.MessageEventArgs)
   name: OnMessage(MessageEventArgs)
   href: api/SIPSorcery.Net.WebRTCWebSocketPeer.html#SIPSorcery_Net_WebRTCWebSocketPeer_OnMessage_WebSocketSharp_MessageEventArgs_

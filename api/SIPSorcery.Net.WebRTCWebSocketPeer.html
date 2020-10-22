@@ -215,7 +215,7 @@ signalling.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCWebSocketPeer__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCWebSocketPeer.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L40">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L52">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRTCWebSocketPeer__ctor_" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.#ctor*"></a>
   <h4 id="SIPSorcery_Net_WebRTCWebSocketPeer__ctor" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.#ctor">WebRTCWebSocketPeer()</h4>
@@ -232,7 +232,7 @@ signalling.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCWebSocketPeer_CreatePeerConnection.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCWebSocketPeer.CreatePeerConnection%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L38">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L50">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRTCWebSocketPeer_CreatePeerConnection" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.CreatePeerConnection">CreatePeerConnection</h4>
   <div class="markdown level1 summary"></div>
@@ -258,6 +258,70 @@ signalling.</p>
   </table>
   <h3 id="properties">Properties
   </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCWebSocketPeer_FilterRemoteICECandidates.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCWebSocketPeer.FilterRemoteICECandidates%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L48">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_WebRTCWebSocketPeer_FilterRemoteICECandidates_" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.FilterRemoteICECandidates*"></a>
+  <h4 id="SIPSorcery_Net_WebRTCWebSocketPeer_FilterRemoteICECandidates" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.FilterRemoteICECandidates">FilterRemoteICECandidates</h4>
+  <div class="markdown level1 summary"><p>Optional filter that can be applied to remote ICE candidates. The filter is
+primarily intended for use in testing. In real application scenarios it's
+normally desirable to accept all remote ICE candidates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Func&lt;RTCIceCandidateInit, bool&gt; FilterRemoteICECandidates { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceCandidateInit.html">RTCIceCandidateInit</a>, <span class="xref">System.Boolean</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCWebSocketPeer_OfferOptions.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCWebSocketPeer.OfferOptions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L41">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_WebRTCWebSocketPeer_OfferOptions_" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.OfferOptions*"></a>
+  <h4 id="SIPSorcery_Net_WebRTCWebSocketPeer_OfferOptions" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.OfferOptions">OfferOptions</h4>
+  <div class="markdown level1 summary"><p>Optional property to allow the peer connection SDP offer options to be set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCOfferOptions OfferOptions { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCOfferOptions.html">RTCOfferOptions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCWebSocketPeer_RTCPeerConnection.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCWebSocketPeer.RTCPeerConnection%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
@@ -295,7 +359,7 @@ signalling.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCWebSocketPeer_OnMessage_WebSocketSharp_MessageEventArgs_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage(WebSocketSharp.MessageEventArgs)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L43">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L55">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRTCWebSocketPeer_OnMessage_" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage*"></a>
   <h4 id="SIPSorcery_Net_WebRTCWebSocketPeer_OnMessage_WebSocketSharp_MessageEventArgs_" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.OnMessage(WebSocketSharp.MessageEventArgs)">OnMessage(MessageEventArgs)</h4>
@@ -329,7 +393,7 @@ signalling.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRTCWebSocketPeer_OnOpen.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRTCWebSocketPeer.OnOpen%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L70">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRTCWebSocketPeer.cs/#L96">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRTCWebSocketPeer_OnOpen_" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.OnOpen*"></a>
   <h4 id="SIPSorcery_Net_WebRTCWebSocketPeer_OnOpen" data-uid="SIPSorcery.Net.WebRTCWebSocketPeer.OnOpen">OnOpen()</h4>
