@@ -1600,7 +1600,17 @@ namespace SIPSorcery.Net
             // Send a STUN binding request.
             STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
-            byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
+
+            byte[] stunReqBytes = null;
+
+            if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+            {
+                stunReqBytes = GetAuthenticatedStunRequest(stunRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+            }
+            else
+            {
+                stunReqBytes = stunRequest.ToByteBuffer(null, false);
+            }
 
             var sendResult = base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, stunReqBytes);
 

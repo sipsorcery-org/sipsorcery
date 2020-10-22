@@ -296,11 +296,7 @@ namespace SIPSorcery.Net
                         if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE)
                         {
                             // Set the authentication properties authenticate.
-                            var nonceAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Nonce);
-                            Nonce = nonceAttribute?.Value;
-
-                            var realmAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Realm);
-                            Realm = realmAttribute?.Value;
+                            SetAuthenticationFields(stunResponse);
 
                             // Set a new transaction ID.
                             GenerateNewTransactionID();
@@ -333,9 +329,28 @@ namespace SIPSorcery.Net
                 {
                     ErrorResponseCount++;
 
-                    logger.LogWarning($"STUN binding error response received for ICE server check to {_uri}.");
-                    // The STUN response is for a check sent to an ICE server.
-                    Error = SocketError.ConnectionRefused;
+                    if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                    {
+                        var errCodeAttribute = stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+
+                        if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE)
+                        {
+                            SetAuthenticationFields(stunResponse);
+
+                            // Set a new transaction ID.
+                            GenerateNewTransactionID();
+                        }
+                        else
+                        {
+                            logger.LogWarning($"ICE session received an error response for a Binding request to {_uri}, error {errCodeAttribute.ErrorCode} {errCodeAttribute.ReasonPhrase}.");
+                        }
+                    }
+                    else
+                    {
+                        logger.LogWarning($"STUN binding error response received for ICE server check to {_uri}.");
+                        // The STUN response is for a check sent to an ICE server.
+                        Error = SocketError.ConnectionRefused;
+                    }
                 }
                 else
                 {
@@ -345,6 +360,20 @@ namespace SIPSorcery.Net
             }
 
             return candidatesAvailable;
+        }
+
+        /// <summary>
+        /// Extracts the fields required for authentication from a STUN error response.
+        /// </summary>
+        /// <param name="stunResponse">The STUN authentication required error response.</param>
+        internal void SetAuthenticationFields(STUNMessage stunResponse)
+        {
+            // Set the authentication properties authenticate.
+            var nonceAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Nonce);
+            Nonce = nonceAttribute?.Value;
+
+            var realmAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Realm);
+            Realm = realmAttribute?.Value;
         }
     }
 }
