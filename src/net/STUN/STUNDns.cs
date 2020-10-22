@@ -169,7 +169,7 @@ namespace SIPSorcery.Net
                             var result = await _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower()).ConfigureAwait(false);
                             if (result == null || result.Count() == 0)
                             {
-                                logger.LogDebug($"STUNDns SRV lookup returned no results for {uri}.");
+                                //logger.LogDebug($"STUNDns SRV lookup returned no results for {uri}.");
                             }
                             else
                             {
