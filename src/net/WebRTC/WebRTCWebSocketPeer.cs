@@ -35,6 +35,18 @@ namespace SIPSorcery.Net
         private RTCPeerConnection _pc;
         public RTCPeerConnection RTCPeerConnection => _pc;
 
+        /// <summary>
+        /// Optional property to allow the peer connection SDP offer options to be set.
+        /// </summary>
+        public RTCOfferOptions OfferOptions {get; set;}
+
+        /// <summary>
+        /// Optional filter that can be applied to remote ICE candidates. The filter is 
+        /// primarily intended for use in testing. In real application scenarios it's 
+        /// normally desirable to accept all remote ICE candidates.
+        /// </summary>
+        public Func<RTCIceCandidateInit, bool> FilterRemoteICECandidates { get; set; }
+
         public Func<Task<RTCPeerConnection>> CreatePeerConnection;
 
         public WebRTCWebSocketPeer()
@@ -47,7 +59,21 @@ namespace SIPSorcery.Net
             if (RTCIceCandidateInit.TryParse(e.Data, out var iceCandidateInit))
             {
                 logger.LogDebug("Got remote ICE candidate.");
-                _pc.addIceCandidate(iceCandidateInit);
+
+                bool useCandidate = true;
+                if(FilterRemoteICECandidates != null && !string.IsNullOrWhiteSpace(iceCandidateInit.candidate))
+                {
+                    useCandidate = FilterRemoteICECandidates(iceCandidateInit);
+                }
+
+                if (!useCandidate)
+                {
+                    logger.LogDebug($"WebRTCWebSocketPeer excluding ICE candidate due to filter: {iceCandidateInit.candidate}");
+                }
+                else
+                {
+                    _pc.addIceCandidate(iceCandidateInit);
+                }
             }
             else if (RTCSessionDescriptionInit.TryParse(e.Data, out var descriptionInit))
             {
@@ -75,7 +101,7 @@ namespace SIPSorcery.Net
 
             _pc = await CreatePeerConnection();
 
-            var offerSdp = _pc.createOffer(null);
+            var offerSdp = _pc.createOffer(OfferOptions);
             await _pc.setLocalDescription(offerSdp);
             _pc.onicecandidate += (iceCandidate) =>
             {

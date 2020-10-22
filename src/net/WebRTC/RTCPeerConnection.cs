@@ -400,7 +400,7 @@ namespace SIPSorcery.Net
             _rtpIceChannel = GetRtpChannel();
 
             _rtpIceChannel.OnIceCandidate += (candidate) => _onIceCandidate?.Invoke(candidate);
-            _rtpIceChannel.OnIceConnectionStateChange += (state) =>
+            _rtpIceChannel.OnIceConnectionStateChange += async (state) =>
             {
                 if (iceConnectionState == RTCIceConnectionState.connected &&
                     state == RTCIceConnectionState.connected)
@@ -439,27 +439,26 @@ namespace SIPSorcery.Net
                             _dtlsHandle.OnAlert += OnDtlsAlert;
 
                             logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
-                            Task.Run<bool>(() => DoDtlsHandshake(_dtlsHandle))
-                            .ContinueWith(t =>
+
+                            try
                             {
-                                if (t.IsFaulted)
-                                {
-                                    logger.LogWarning($"RTCPeerConnection DTLS handshake task completed in a faulted state. {t.Exception?.Flatten().Message}");
+                                bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle));
 
-                                    connectionState = RTCPeerConnectionState.failed;
-                                    onconnectionstatechange?.Invoke(connectionState);
-                                }
-                                else
-                                {
-                                    connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
-                                    onconnectionstatechange?.Invoke(connectionState);
+                                connectionState = (handshakeResult) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
+                                onconnectionstatechange?.Invoke(connectionState);
 
-                                    if (connectionState == RTCPeerConnectionState.connected && RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
-                                    {
-                                        InitialiseSctpAssociation();
-                                    }
-                                }
-                            });
+                               if (connectionState == RTCPeerConnectionState.connected && RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
+                               {
+                                    InitialiseSctpAssociation();
+                               }
+                            }
+                            catch (Exception excp)
+                            {
+                                logger.LogWarning($"RTCPeerConnection DTLS handshake failed. {excp.Message}");
+
+                                connectionState = RTCPeerConnectionState.failed;
+                                onconnectionstatechange?.Invoke(connectionState);
+                            }
                         }
                     }
 
@@ -540,14 +539,14 @@ namespace SIPSorcery.Net
                 }
             };
 
-            Task.Run(_peerSctpAssociation.Associate).ContinueWith(
-                u =>
-                {
-                    if (u.IsFaulted)
-                    {
-                        logger.LogWarning($"SCTP exception initialising association. {u.Exception?.Flatten().Message}");
-                    }
-                }).ConfigureAwait(false);
+            try
+            { 
+                _peerSctpAssociation.Associate();
+            }
+            catch(Exception excp)
+            {
+                logger.LogWarning($"SCTP exception initialising association. {excp.Message}");
+            }
         }
 
         /// <summary>
@@ -639,6 +638,16 @@ namespace SIPSorcery.Net
             SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
             SdpType sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
+
+            switch(signalingState)
+            {
+                case var sigState when sigState == RTCSignalingState.have_local_offer && sdpType == SdpType.offer:
+                    logger.LogWarning($"RTCPeerConnection received an SDP offer but was already in {sigState} state. Remote offer rejected.");
+                    return SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer;
+                default:
+                    break;
+            }
+
             var setResult = base.SetRemoteDescription(sdpType, remoteSdp);
 
             if (setResult == SetDescriptionResultEnum.OK)
@@ -658,8 +667,8 @@ namespace SIPSorcery.Net
 
                     // Check for data channel announcements.
                     if (ann.Media == SDPMediaTypesEnum.application &&
-                    ann.MediaFormats.Count() == 1 &&
-                    ann.ApplicationMediaFormats.Single().ID == SDP_DATACHANNEL_FORMAT_ID)
+                        ann.MediaFormats.Count() == 1 &&
+                        ann.ApplicationMediaFormats.Single().ID == SDP_DATACHANNEL_FORMAT_ID)
                     {
                         if (ann.Transport == RTP_MEDIA_DATACHANNEL_DTLS_PROFILE ||
                             ann.Transport == RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE)

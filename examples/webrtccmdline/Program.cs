@@ -192,12 +192,20 @@ namespace SIPSorcery.Examples
                     _webSocketServer.SslConfiguration.ServerCertificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
                     _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
                 }
-                _webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+                _webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) =>
+                {
+                    peer.OfferOptions = _offerOptions;
+                    if (_acceptIceTypes != null && _acceptIceTypes.Count > 0)
+                    {
+                        peer.FilterRemoteICECandidates = (init) => _acceptIceTypes.Any(x => x == RTCIceCandidate.Parse(init.candidate).type);
+                    }
+                    peer.CreatePeerConnection = CreatePeerConnection;
+                });
                 _webSocketServer.Start();
 
                 Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
             }
-            else if(!string.IsNullOrWhiteSpace(options.WebSocketServer))
+            else if (!string.IsNullOrWhiteSpace(options.WebSocketServer))
             {
                 // We are the client for a web socket server. The JSON signalling exchange still occurs the same way as when the web socket
                 // server option is used except that as the web socket client we receive the SDP offer from the server.
@@ -537,31 +545,9 @@ namespace SIPSorcery.Examples
             }
         }
 
-        private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
-        {
-            logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
-            return Createpc(context, _stunServer, _relayOnly);
-        }
-
-        private static async Task<RTCPeerConnection> SendOffer(WebSocketContext context)
-        {
-            logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
-
-            var pc = await Createpc(context, _stunServer, _relayOnly);
-
-            var offerInit = pc.createOffer(_offerOptions);
-            await pc.setLocalDescription(offerInit);
-
-            logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
-
-            context.WebSocket.Send(JsonConvert.SerializeObject(offerInit, new Newtonsoft.Json.Converters.StringEnumConverter()));
-
-            return pc;
-        }
-
         private static Task<RTCPeerConnection> CreatePeerConnection()
         {
-            return Createpc(null, null, false);
+            return Createpc(null, _stunServer, false);
         }
 
         private static Task<RTCPeerConnection> Createpc(WebSocketContext context, RTCIceServer stunServer, bool relayOnly)
@@ -580,10 +566,9 @@ namespace SIPSorcery.Examples
 
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
-                certificates = presetCertificates,
+                //certificates = presetCertificates,
                 //X_RemoteSignallingAddress = (context != null) ? context.UserEndPoint.Address : null,
                 iceServers = stunServer != null ? new List<RTCIceServer> { stunServer } : null,
-                //iceTransportPolicy = RTCIceTransportPolicy.all,
                 iceTransportPolicy = relayOnly ? RTCIceTransportPolicy.relay : RTCIceTransportPolicy.all,
                 //X_BindAddress = IPAddress.Any, // NOTE: Not reqd. Using this to filter out IPv6 addresses so can test with Pion.
             };
@@ -594,11 +579,11 @@ namespace SIPSorcery.Examples
             _peerConnection.GetRtpChannel().MdnsResolve = MdnsResolve;
             //_peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message type {msg.Header.MessageType}.");
 
-            var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
-            dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
+            //var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
+            //dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
 
             // Add a send-only audio track (this doesn't require any native libraries for encoding so is good for x-platform testing).
-            AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+            AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
             audioSource.OnAudioSourceEncodedSample += _peerConnection.SendAudio;
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
@@ -626,29 +611,9 @@ namespace SIPSorcery.Examples
                     await audioSource.CloseAudio();
                 }
             };
-            _peerConnection.OnReceiveReport += (ep, type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
+            _peerConnection.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+            _peerConnection.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
             _peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
-
-            _peerConnection.onicecandidate += (candidate) =>
-            {
-                if (_peerConnection.signalingState == RTCSignalingState.have_local_offer ||
-                    _peerConnection.signalingState == RTCSignalingState.have_remote_offer)
-                {
-                    if (context != null &&
-                    (_iceTypes.Count == 0 || _iceTypes.Any(x => x == candidate.type)))
-                    {
-                        var candidateInit = new RTCIceCandidateInit
-                        {
-                            sdpMid = candidate.sdpMid,
-                            sdpMLineIndex = candidate.sdpMLineIndex,
-                            usernameFragment = candidate.usernameFragment,
-                            candidate = "candidate:" + candidate.ToString()
-                        };
-
-                        context.WebSocket.Send(JsonConvert.SerializeObject(candidateInit));
-                    }
-                }
-            };
 
             // Peer ICE connection state changes are for ICE events such as the STUN checks completing.
             _peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
@@ -663,80 +628,6 @@ namespace SIPSorcery.Examples
             };
 
             return Task.FromResult(_peerConnection);
-        }
-
-        private static async Task WebSocketMessageReceived(WebSocketContext context, RTCPeerConnection pc, string message)
-        {
-            try
-            {
-                if (pc.localDescription == null)
-                {
-                    //logger.LogDebug("Offer SDP: " + message);
-                    logger.LogDebug("Offer SDP received.");
-
-                    // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
-                    // the remote tracks so that the media announcement in the SDP answer are in the same order.
-                    var offerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
-
-                    logger.LogDebug(SDP.ParseSDPDescription(offerInit.sdp).ToString());
-
-                    var res = pc.setRemoteDescription(offerInit);
-
-                    if (res != SetDescriptionResultEnum.OK)
-                    {
-                        // No point continuing. Something will need to change and then try again.
-                        pc.Close("failed to set remote sdp");
-                    }
-                    else
-                    {
-                        var answer = pc.createAnswer(_answerOptions);
-                        await pc.setLocalDescription(answer);
-
-                        context.WebSocket.Send(JsonConvert.SerializeObject(answer, new Newtonsoft.Json.Converters.StringEnumConverter()));
-                    }
-                }
-                else if (pc.remoteDescription == null)
-                {
-                    logger.LogDebug("Answer SDP received:");
-
-                    var answerInit = JsonConvert.DeserializeObject<RTCSessionDescriptionInit>(message, new Newtonsoft.Json.Converters.StringEnumConverter());
-
-                    logger.LogDebug(SDP.ParseSDPDescription(answerInit.sdp).ToString());
-
-                    var res = pc.setRemoteDescription(answerInit);
-                    if (res != SetDescriptionResultEnum.OK)
-                    {
-                        // No point continuing. Something will need to change and then try again.
-                        pc.Close("failed to set remote sdp");
-                    }
-                }
-                else
-                {
-                    logger.LogDebug("ICE Candidate: " + message);
-
-                    if (string.IsNullOrWhiteSpace(message) || message.Trim().ToLower() == SDP.END_ICE_CANDIDATES_ATTRIBUTE)
-                    {
-                        logger.LogDebug("End of candidates message received.");
-                    }
-                    else
-                    {
-                        var candInit = Newtonsoft.Json.JsonConvert.DeserializeObject<RTCIceCandidateInit>(message);
-
-                        if (_acceptIceTypes.Count > 0 && !_acceptIceTypes.Any(x => x == RTCIceCandidate.Parse(candInit.candidate).type))
-                        {
-                            logger.LogDebug($"Ignoring remote ICE candidate as type not in accept list.");
-                        }
-                        else
-                        {
-                            pc.addIceCandidate(candInit);
-                        }
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception WebSocketMessageReceived. " + excp.Message);
-            }
         }
 
         private static async Task<IPAddress> MdnsResolve(string service)

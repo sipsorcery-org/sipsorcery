@@ -2,7 +2,7 @@
   "profiles": {
     "webrtccmdline": {
       "commandName": "Project",
-      "commandLineArgs": "--wsserver=ws://127.0.0.1:8081"
+      "commandLineArgs": "--stun=stun:stun.sipsorcery.com --ws --icetypes=srflx"
     }
   }
 }
