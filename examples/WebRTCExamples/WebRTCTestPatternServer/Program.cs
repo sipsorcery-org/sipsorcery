@@ -61,15 +61,16 @@ namespace demo
             var parseResult = Parser.Default.ParseArguments<Options>(args);
             var options = (parseResult as Parsed<Options>)?.Value;
 
-            X509Certificate2 cert = new X509Certificate2("localhost.pfx", "", X509KeyStorageFlags.Exportable);
-            if (cert == null)
-            {
-                Console.WriteLine("Could not load certificate file.");
-            }
-            else
-            {
-                Console.WriteLine($"Certificate file successfully loaded {cert.Thumbprint}, have private key {cert.HasPrivateKey}.");
-            }
+            //X509Certificate2 cert = new X509Certificate2("localhost.pfx", "", X509KeyStorageFlags.Exportable);
+            //if (cert == null)
+            //{
+            //    Console.WriteLine("Could not load certificate file.");
+            //}
+            //else
+            //{
+            //    Console.WriteLine($"Certificate file successfully loaded {cert.Thumbprint}, have private key {cert.HasPrivateKey}.");
+            //}
+            X509Certificate2 cert = null;
 
             if (options?.NodeDssServer == null)
             {
@@ -114,13 +115,13 @@ namespace demo
 
         private static Task<RTCPeerConnection> CreatePeerConnection(X509Certificate2 cert)
         {
-            RTCConfiguration config = new RTCConfiguration
-            {
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } },
-                certificates = new List<RTCCertificate> { new RTCCertificate { Certificate = cert } }
-            };
-            var pc = new RTCPeerConnection(config);
-            //var pc = new RTCPeerConnection(null);
+            //RTCConfiguration config = new RTCConfiguration
+            //{
+            //    iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } },
+            //    certificates = new List<RTCCertificate> { new RTCCertificate { Certificate = cert } }
+            //};
+            //var pc = new RTCPeerConnection(config);
+            var pc = new RTCPeerConnection(null);
 
             var testPatternSource = new VideoTestPatternSource();
             testPatternSource.SetFrameRate(60);
