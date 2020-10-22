@@ -93,6 +93,11 @@ namespace SIPSorcery.Net
         /// SCTP over DTLS is supported, no TCP option).
         /// </summary>
         DataChannelTransportNotSupported,
+
+        /// <summary>
+        /// An SDP offer was received when the local agent had already entered have local offer state.
+        /// </summary>
+        WrongSdpTypeOfferAfterOffer,
     }
 
     /// <summary>
@@ -612,7 +617,7 @@ namespace SIPSorcery.Net
                             SetLocalTrackStreamStatus(AudioLocalTrack, remoteTrack.StreamStatus, remoteAudioRtpEP);
                             if (remoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive && AudioLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                             {
-                                remoteAudioRtcpEP = new IPEndPoint(remoteAudioRtpEP.Address, remoteAudioRtpEP.Port + 1);
+                                remoteAudioRtcpEP = (m_isRtcpMultiplexed) ? remoteAudioRtpEP : new IPEndPoint(remoteAudioRtpEP.Address, remoteAudioRtpEP.Port + 1);
                             }
                         }
                     }
@@ -633,7 +638,7 @@ namespace SIPSorcery.Net
                             SetLocalTrackStreamStatus(VideoLocalTrack, remoteTrack.StreamStatus, remoteVideoRtpEP);
                             if (remoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive && VideoLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                             {
-                                remoteVideoRtcpEP = new IPEndPoint(remoteVideoRtpEP.Address, remoteVideoRtpEP.Port + 1);
+                                remoteVideoRtcpEP = (m_isRtcpMultiplexed) ? remoteVideoRtpEP : new IPEndPoint(remoteVideoRtpEP.Address, remoteVideoRtpEP.Port + 1);
                             }
                         }
                     }

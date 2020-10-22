@@ -16,4 +16,10 @@
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.6-pre" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="localhost.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
