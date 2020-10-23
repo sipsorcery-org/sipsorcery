@@ -1,0 +1,49 @@
+<html> 
+  <head>
+    <script src="sip-0.16.0.js" type="text/javascript"></script>
+	<script>
+        const transportOptions = {
+            server: "ws://localhost:8081"
+        };
+        const userAgent = new SIP.UserAgent({ transportOptions });
+
+        function StartCall() {
+            var options = {
+                media: {
+                    local: {
+                        //video: document.getElementById('localVideo')
+                        audio: document.getElementById('audioCtl')
+                    },
+                    remote: {
+                        //video: document.getElementById('remoteVideo'),
+                        // This is necessary to do an audio/video call as opposed to just a video call
+                        audio: document.getElementById('audioCtl')
+                    }
+                },
+                //ua: {}
+            };
+
+
+            userAgent.start().then(() => {
+                const target = SIP.UserAgent.makeURI("sip:bob@example.com");
+
+                const inviter = new SIP.Inviter(userAgent, target);
+                inviter.invite();
+            });
+        }
+
+        function StopCall() {
+            userAgent.stop();
+        }
+	</script>
+  </head>
+  <body>
+      <!--<video id="remoteVideo"></video>
+        <video id="localVideo" muted="muted"></video>-->
+      <audio controls autoplay="autoplay" id="audioCtl"></audio>
+      <br />
+      <button onclick="StartCall()">Start Call</button>
+      <button onclick="StopCall()">Stop Call</button>
+
+  </body>
+</html>
