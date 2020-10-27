@@ -34,7 +34,11 @@
                     await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
                     pc.createAnswer()
                         .then((answer) => pc.setLocalDescription(answer))
-                        .then(() => ws.send(JSON.stringify(pc.localDescription)));
+                        .then(() => ws.send(JSON.stringify(pc.localDescription)))
+                        .then(() => {
+                            console.log(`Remote Offer: ${pc.remoteDescription.sdp}`);
+                            console.log(`Local Answer: ${pc.localDescription.sdp}`);
+                        });
                 }
             };
         };

@@ -403,35 +403,42 @@ t=0 0
 m=video 60638 RTP/AVP 100
 a=rtpmap:100 VP8/90000
 a=sendrecv
-m=audio 60640 RTP/AVP 0
+m=audio 60640 RTP/AVP 0 111
 a=rtpmap:0 PCMU/8000
+a=rtpmap:111 OPUS/48000/2
 a=sendrecv";
 
             // Create a local session and add the video track first.
-            RTPSession localSession = new RTPSession(false, false, false);
-            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
-            localSession.addTrack(localAudioTrack);
+            RTPSession rtpSession = new RTPSession(false, false, false);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { 
+                new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                new SDPAudioVideoMediaFormat(110, "OPUS/48000/2")
+            });
+            rtpSession.addTrack(localAudioTrack);
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
-            localSession.addTrack(localVideoTrack);
+            rtpSession.addTrack(localVideoTrack);
 
             var offer = SDP.ParseSDPDescription(remoteSdp);
 
             logger.LogDebug($"Remote offer: {offer}");
 
-            var result = localSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+            var result = rtpSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.OK, result);
 
-            var answer = localSession.CreateAnswer(null);
+            var answer = rtpSession.CreateAnswer(null);
 
             logger.LogDebug($"Local answer: {answer}");
+
+            Assert.Equal(111, rtpSession.AudioLocalTrack.Capabilities.Single(x => x.Name() == "OPUS").ID);
+            Assert.Equal(100, rtpSession.VideoLocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
 
             //Assert.True(SDPAudioVideoMediaFormat.AreMatch(offer.Media.Single(x => x.Media == SDPMediaTypesEnum.audio)., answer.Media.First().Media));
             //Assert.Equal(offer.Media.Last().Media, answer.Media.Last().Media);
 
-            localSession.Close("normal");
+            rtpSession.Close("normal");
         }
     }
 }
