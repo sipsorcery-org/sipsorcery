@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Threading;
@@ -30,8 +29,6 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Windows;
-using Windows.UI.Text.Core;
-
 namespace demo
 {
     class Program

@@ -987,6 +987,11 @@ namespace SIPSorcery.SIP.App
                     OnTransferNotify?.Invoke(sipRequest.Body);
                 }
             }
+            else if (m_isTransportExclusive)
+            {
+                SIPResponse notSupportedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
+                await m_transport.SendResponseAsync(notSupportedResponse).ConfigureAwait(false);
+            }
         }
 
         /// <summary>
