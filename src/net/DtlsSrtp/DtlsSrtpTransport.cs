@@ -18,7 +18,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
@@ -36,6 +35,8 @@ namespace SIPSorcery.Net
         public const int DTLS_RECEIVE_ERROR_CODE = -1;
 
         private static readonly ILogger logger = Log.Logger;
+
+        private static readonly Random random = new Random();
 
         private IPacketTransformer srtpEncoder;
         private IPacketTransformer srtpDecoder;
@@ -468,6 +469,9 @@ namespace SIPSorcery.Net
                 // The timeout for the handshake applies from when it started rather than
                 // for each individual receive..
                 int millisecondsRemaining = GetMillisecondsRemaining();
+
+                //Handshake reliable contains too long default backoff times
+                waitMillis = System.Math.Max(100, waitMillis / (random.Next(100, 1000)));
 
                 if (millisecondsRemaining <= 0)
                 {
