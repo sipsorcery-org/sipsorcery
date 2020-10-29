@@ -21,5 +21,23 @@ namespace iOSSIPGetStarted
             base.DidReceiveMemoryWarning ();
             // Release any cached data, images, etc that aren't in use.
         }
+
+        /// <summary>
+        /// Call button click.
+        /// </summary>
+        /// <param name="sender"></param>
+        partial void UIButton201_TouchUpInside(UIButton sender)
+        {
+            
+        }
+
+        /// <summary>
+        /// Cancel button click.
+        /// </summary>
+        /// <param name="sender"></param>
+        partial void UIButton202_TouchUpInside(UIButton sender)
+        {
+            
+        }
     }
 }
