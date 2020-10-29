@@ -1,6 +1,6 @@
 ﻿using UIKit;
 
-namespace iOSSIPGetStarted
+namespace iOSXamTest
 {
     public class Application
     {

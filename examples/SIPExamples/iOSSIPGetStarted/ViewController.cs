@@ -1,54 +1,47 @@
 ﻿using Foundation;
 using System;
-using System.Threading.Tasks;
 using UIKit;
 using SIPSorcery.Media;
 using SIPSorcery.SIP.App;
 
-namespace iOSSIPGetStarted
+namespace iOSXamTest
 {
     public partial class ViewController : UIViewController
     {
-        SIPUserAgent _userAgent;
+        SIPUserAgent _userAgent = new SIPUserAgent();
 
-        public ViewController (IntPtr handle) : base (handle)
+        public ViewController(IntPtr handle) : base(handle)
         {
-            _userAgent = new SIPUserAgent();
-            CancelButton.Enabled = false;
         }
 
-        public override void ViewDidLoad ()
+        public override void ViewDidLoad()
         {
-            base.ViewDidLoad ();
+            base.ViewDidLoad();
             // Perform any additional setup after loading the view, typically from a nib.
+
+            _userAgent = new SIPUserAgent();
         }
 
-        public override void DidReceiveMemoryWarning ()
+        public override void DidReceiveMemoryWarning()
         {
-            base.DidReceiveMemoryWarning ();
+            base.DidReceiveMemoryWarning();
             // Release any cached data, images, etc that aren't in use.
         }
 
         /// <summary>
-        /// Cancel button click.
+        /// Call Buttton Click.
         /// </summary>
         /// <param name="sender"></param>
-        partial void UIButton201_TouchUpInside(UIButton sender)
+        partial void UIButton199_TouchUpInside(UIButton sender)
         {
-            CallButton.Enabled = true;
-            CancelButton.Enabled = false;
+            System.Diagnostics.Debug.WriteLine("Call Button Click");
+
+            _userAgent.Call(DestinationText.Text, null, null, new AudioSendOnlyMediaSession());
         }
 
-        /// <summary>
-        /// Call button click.
-        /// </summary>
-        /// <param name="sender"></param>
-        partial void UIButton202_TouchUpInside(UIButton sender)
+        partial void CancelButton_TouchUpInside(UIButton sender)
         {
-            CancelButton.Enabled = true;
-            CallButton.Enabled = false;
-
-            var callResult = _userAgent.Call(DestinationTextBox.Text, null, null, new AudioSendOnlyMediaSession());
+            System.Diagnostics.Debug.WriteLine("Cancel Button Click");
         }
     }
 }

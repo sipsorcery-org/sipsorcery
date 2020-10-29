@@ -9,7 +9,7 @@ using System;
 using System.CodeDom.Compiler;
 using UIKit;
 
-namespace iOSSIPGetStarted
+namespace iOSXamTest
 {
     [Register ("ViewController")]
     partial class ViewController
@@ -24,15 +24,19 @@ namespace iOSSIPGetStarted
 
         [Outlet]
         [GeneratedCode ("iOS Designer", "1.0")]
-        UIKit.UITextField DestinationTextBox { get; set; }
+        UIKit.UITextField DestinationText { get; set; }
 
-        [Action ("UIButton201_TouchUpInside:")]
+        [Outlet]
         [GeneratedCode ("iOS Designer", "1.0")]
-        partial void UIButton201_TouchUpInside (UIKit.UIButton sender);
+        UIKit.UITextView LogTextView { get; set; }
 
-        [Action ("UIButton202_TouchUpInside:")]
+        [Action ("CancelButton_TouchUpInside:")]
         [GeneratedCode ("iOS Designer", "1.0")]
-        partial void UIButton202_TouchUpInside (UIKit.UIButton sender);
+        partial void CancelButton_TouchUpInside (UIKit.UIButton sender);
+
+        [Action ("UIButton199_TouchUpInside:")]
+        [GeneratedCode ("iOS Designer", "1.0")]
+        partial void UIButton199_TouchUpInside (UIKit.UIButton sender);
 
         void ReleaseDesignerOutlets ()
         {
@@ -46,9 +50,14 @@ namespace iOSSIPGetStarted
                 CancelButton = null;
             }
 
-            if (DestinationTextBox != null) {
-                DestinationTextBox.Dispose ();
-                DestinationTextBox = null;
+            if (DestinationText != null) {
+                DestinationText.Dispose ();
+                DestinationText = null;
+            }
+
+            if (LogTextView != null) {
+                LogTextView.Dispose ();
+                LogTextView = null;
             }
         }
     }

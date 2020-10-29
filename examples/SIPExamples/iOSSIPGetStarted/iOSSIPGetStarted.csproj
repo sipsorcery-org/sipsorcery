@@ -3,12 +3,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">iPhoneSimulator</Platform>
-    <ProjectGuid>{2FEA2FFC-AB79-4330-9FBF-798DDA5C0FBC}</ProjectGuid>
+    <ProjectGuid>{EA27B273-3BCE-47C2-B7FA-2FD281F06CB9}</ProjectGuid>
     <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <TemplateGuid>{edc1b0fa-90cd-4038-8fad-98fe74adb368}</TemplateGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>iOSSIPGetStarted</RootNamespace>
-    <AssemblyName>iOSSIPGetStarted</AssemblyName>
+    <RootNamespace>iOSXamTest</RootNamespace>
+    <AssemblyName>iOSXamTest</AssemblyName>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
     <MtouchEnableSGenConc>true</MtouchEnableSGenConc>
     <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
@@ -136,7 +136,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj">
-      <Project>{72433f94-bbe2-4d50-92c4-5cd9ecfbc173}</Project>
+      <Project>{5d3ca7d1-7ee0-427a-b214-0ec9d8b48229}</Project>
       <Name>SIPSorcery</Name>
     </ProjectReference>
   </ItemGroup>
