@@ -22,6 +22,10 @@ namespace iOSSIPGetStarted
         [GeneratedCode ("iOS Designer", "1.0")]
         UIKit.UIButton CancelButton { get; set; }
 
+        [Outlet]
+        [GeneratedCode ("iOS Designer", "1.0")]
+        UIKit.UITextField DestinationTextBox { get; set; }
+
         [Action ("UIButton201_TouchUpInside:")]
         [GeneratedCode ("iOS Designer", "1.0")]
         partial void UIButton201_TouchUpInside (UIKit.UIButton sender);
@@ -40,6 +44,11 @@ namespace iOSSIPGetStarted
             if (CancelButton != null) {
                 CancelButton.Dispose ();
                 CancelButton = null;
+            }
+
+            if (DestinationTextBox != null) {
+                DestinationTextBox.Dispose ();
+                DestinationTextBox = null;
             }
         }
     }
