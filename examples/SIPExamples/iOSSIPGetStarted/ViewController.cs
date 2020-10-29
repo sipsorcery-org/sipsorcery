@@ -30,36 +30,25 @@ namespace iOSSIPGetStarted
         }
 
         /// <summary>
-        /// Call button click.
+        /// Cancel button click.
         /// </summary>
         /// <param name="sender"></param>
         partial void UIButton201_TouchUpInside(UIButton sender)
         {
-            // DestinationTextBox.Text 
-            CallButton.Enabled = false;
-            CancelButton.Enabled = true;
-
-            Task.Run(async () =>
-            {
-                try
-                {
-                    var callResult = await _userAgent.Call(DestinationTextBox.Text, null, null, new AudioSendOnlyMediaSession());
-                }
-                catch(Exception excp)
-                {
-                    Console.WriteLine($"Exception {excp}");
-                }
-            });
+            CallButton.Enabled = true;
+            CancelButton.Enabled = false;
         }
 
         /// <summary>
-        /// Cancel button click.
+        /// Call button click.
         /// </summary>
         /// <param name="sender"></param>
         partial void UIButton202_TouchUpInside(UIButton sender)
         {
-            CancelButton.Enabled = false;
-            CallButton.Enabled = true;
+            CancelButton.Enabled = true;
+            CallButton.Enabled = false;
+
+            var callResult = _userAgent.Call(DestinationTextBox.Text, null, null, new AudioSendOnlyMediaSession());
         }
     }
 }
