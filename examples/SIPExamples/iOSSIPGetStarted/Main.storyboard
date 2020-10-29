@@ -59,6 +59,10 @@
                             </button>
                         </subviews>
                     </view>
+                    <connections>
+                        <outlet property="CancelButton" destination="202" id="name-outlet-202"/>
+                        <outlet property="CallButton" destination="201" id="name-outlet-201"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
