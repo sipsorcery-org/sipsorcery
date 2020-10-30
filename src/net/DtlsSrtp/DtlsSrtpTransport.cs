@@ -32,7 +32,8 @@ namespace SIPSorcery.Net
         public const int MAX_IP_OVERHEAD = MIN_IP_OVERHEAD + 64;
         public const int UDP_OVERHEAD = 8;
         public const int DEFAULT_TIMEOUT_MILLISECONDS = 20000;
-        public const int DTLS_RECEIVE_ERROR_CODE = -1;
+        public const int DTLS_RETRANSMISSION_CODE = -1;
+        public const int DTLS_RECEIVE_ERROR_CODE = -2;
 
         private static readonly ILogger logger = Log.Logger;
 
@@ -459,7 +460,7 @@ namespace SIPSorcery.Net
             }
             catch (ObjectDisposedException) { }
             catch (ArgumentNullException) { }
-            return 0;
+            return DTLS_RETRANSMISSION_CODE;
         }
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
