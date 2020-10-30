@@ -5194,6 +5194,12 @@ references:
   commentId: F:SIPSorcery.Net.DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE
   fullName: SIPSorcery.Net.DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE
   nameWithType: DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE
+- uid: SIPSorcery.Net.DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE
+  name: DTLS_RETRANSMISSION_CODE
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DTLS_RETRANSMISSION_CODE
+  commentId: F:SIPSorcery.Net.DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE
+  nameWithType: DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE
 - uid: SIPSorcery.Net.DtlsSrtpTransport.GenerateRtcpDecoder
   name: GenerateRtcpDecoder()
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_GenerateRtcpDecoder
