@@ -45,7 +45,7 @@ namespace SIPSorcery.SIP
         /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to 
         /// the application to explicitly call the SendACK request.</param>
         /// <param name="disablePrackSupport">If set to true then PRACK support will not be set in the initial INVITE request.</param>
-        internal UACInviteTransaction(SIPTransport sipTransport,
+        public UACInviteTransaction(SIPTransport sipTransport,
             SIPRequest sipRequest,
             SIPEndPoint outboundProxy,
             bool sendOkAckManually = false,
