@@ -37343,6 +37343,19 @@ references:
   commentId: T:SIPSorcery.SIP.UACInviteTransaction
   fullName: SIPSorcery.SIP.UACInviteTransaction
   nameWithType: UACInviteTransaction
+- uid: SIPSorcery.SIP.UACInviteTransaction.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean,System.Boolean)
+  name: UACInviteTransaction(SIPTransport, SIPRequest, SIPEndPoint, Boolean, Boolean)
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.SIP.UACInviteTransaction.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean,System.Boolean)
+  fullName: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransaction(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPEndPoint, System.Boolean, System.Boolean)
+  nameWithType: UACInviteTransaction.UACInviteTransaction(SIPTransport, SIPRequest, SIPEndPoint, Boolean, Boolean)
+- uid: SIPSorcery.SIP.UACInviteTransaction.#ctor*
+  name: UACInviteTransaction
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction__ctor_
+  commentId: Overload:SIPSorcery.SIP.UACInviteTransaction.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransaction
+  nameWithType: UACInviteTransaction.UACInviteTransaction
 - uid: SIPSorcery.SIP.UACInviteTransaction.CancelCall(System.String)
   name: CancelCall(String)
   href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_CancelCall_System_String_
