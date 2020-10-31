@@ -604,7 +604,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            AudioLocalTrack.Capabilities = NegotiateFormats(sdpType, announcement, AudioLocalTrack?.Capabilities);
+                            AudioLocalTrack.Capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(announcement.MediaFormats.Values.ToList(), AudioLocalTrack?.Capabilities);
                             remoteAudioRtpEP = GetAnnouncementRTPDestination(announcement, connectionAddress);
 
                             // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
@@ -632,7 +632,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            VideoLocalTrack.Capabilities = NegotiateFormats(sdpType, announcement, VideoLocalTrack?.Capabilities);
+                            VideoLocalTrack.Capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(announcement.MediaFormats.Values.ToList(), VideoLocalTrack?.Capabilities);
                             remoteVideoRtpEP = GetAnnouncementRTPDestination(announcement, connectionAddress);
 
                             SetLocalTrackStreamStatus(VideoLocalTrack, remoteTrack.StreamStatus, remoteVideoRtpEP);
@@ -706,17 +706,6 @@ namespace SIPSorcery.Net
                 VideoLocalTrack.StreamStatus = status;
                 m_sdpAnnouncementVersion++;
             }
-        }
-
-        private List<SDPAudioVideoMediaFormat> NegotiateFormats(
-            SdpType sdpType,
-            SDPMediaAnnouncement announcement,
-            List<SDPAudioVideoMediaFormat> localCapabilities)
-        {
-            // The media formats from the SDP answer take priority.
-            return sdpType == SdpType.answer ?
-                SDPAudioVideoMediaFormat.GetCompatibleFormats(announcement.MediaFormats.Values.ToList(), localCapabilities) :
-                SDPAudioVideoMediaFormat.GetCompatibleFormats(localCapabilities, announcement.MediaFormats.Values.ToList());
         }
 
         private IPEndPoint GetAnnouncementRTPDestination(
