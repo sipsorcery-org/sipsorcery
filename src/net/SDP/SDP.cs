@@ -194,8 +194,8 @@ namespace SIPSorcery.Net
 
         public static SDP ParseSDPDescription(string sdpDescription)
         {
-            try
-            {
+            //try
+            //{
                 if (sdpDescription != null && sdpDescription.Trim().Length > 0)
                 {
                     SDP sdp = new SDP();
@@ -373,7 +373,7 @@ namespace SIPSorcery.Net
                                                 }
                                                 else
                                                 {
-                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(id, rtpmap, null));
+                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, id, rtpmap, null));
                                                 }
                                             }
                                             else
@@ -420,7 +420,7 @@ namespace SIPSorcery.Net
                                                 }
                                                 else
                                                 {
-                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(id, null, fmtp));
+                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, id, null, fmtp));
                                                 }
                                             }
                                             else
@@ -613,12 +613,12 @@ namespace SIPSorcery.Net
                 {
                     return null;
                 }
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception ParseSDPDescription. " + excp.Message);
-                throw excp;
-            }
+            //}
+            //catch (Exception excp)
+            //{
+            //    logger.LogError("Exception ParseSDPDescription. " + excp.Message);
+            //    throw excp;
+            //}
         }
 
         public void AddExtra(string attribute)
