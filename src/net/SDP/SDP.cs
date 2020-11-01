@@ -194,8 +194,8 @@ namespace SIPSorcery.Net
 
         public static SDP ParseSDPDescription(string sdpDescription)
         {
-            //try
-            //{
+            try
+            {
                 if (sdpDescription != null && sdpDescription.Trim().Length > 0)
                 {
                     SDP sdp = new SDP();
@@ -613,12 +613,12 @@ namespace SIPSorcery.Net
                 {
                     return null;
                 }
-            //}
-            //catch (Exception excp)
-            //{
-            //    logger.LogError("Exception ParseSDPDescription. " + excp.Message);
-            //    throw excp;
-            //}
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception ParseSDPDescription. " + excp.Message);
+                throw excp;
+            }
         }
 
         public void AddExtra(string attribute)
