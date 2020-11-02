@@ -1607,7 +1607,7 @@ namespace SIPSorcery.SIP.App
 
             if (IsOnLocalHold && IsOnRemoteHold)
             {
-                streamStatus = MediaStreamStatusEnum.None;
+                streamStatus = MediaStreamStatusEnum.Inactive;
             }
             else if (!IsOnLocalHold && !IsOnRemoteHold)
             {

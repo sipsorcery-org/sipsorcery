@@ -50,11 +50,10 @@ namespace SIPSorcery.Net
     /// </summary>
     public enum MediaStreamStatusEnum
     {
-        None = 0,
-        SendRecv = 1,   // The offerer is prepared to send and receive packets.
-        SendOnly = 2,   // The offerer only wishes to send RTP packets. They will probably ignore any received.
-        RecvOnly = 3,   // The offerer only wishes to receive RTP packets. They will not send.
-        Inactive = 4    // The offerer is not ready to send or receive packets.
+        SendRecv = 0,   // The offerer is prepared to send and receive packets.
+        SendOnly = 1,   // The offerer only wishes to send RTP packets. They will probably ignore any received.
+        RecvOnly = 2,   // The offerer only wishes to receive RTP packets. They will not send.
+        Inactive = 3    // The offerer is not ready to send or receive packets.
     }
 
     public class MediaStreamStatusType
@@ -72,7 +71,7 @@ namespace SIPSorcery.Net
         /// <returns>True if the attribute matched or false if not.</returns>
         public static bool IsMediaStreamStatusAttribute(string attributeString, out MediaStreamStatusEnum mediaStreamStatus)
         {
-            mediaStreamStatus = MediaStreamStatusEnum.None;
+            mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
 
             if (string.IsNullOrEmpty(attributeString))
             {
@@ -118,7 +117,8 @@ namespace SIPSorcery.Net
                 case MediaStreamStatusEnum.Inactive:
                     return INACTIVE_ATTRIBUTE;
                 default:
-                    return null;
+                    // Default is to use sendrecv.
+                    return SEND_RECV_ATTRIBUTE;
             }
         }
     }
