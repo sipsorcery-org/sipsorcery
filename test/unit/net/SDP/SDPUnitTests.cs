@@ -479,6 +479,67 @@ namespace SIPSorcery.Net.UnitTests
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
             Assert.Equal(MediaStreamStatusEnum.RecvOnly, sdp.SessionMediaStreamStatus);
+            Assert.Equal(MediaStreamStatusEnum.RecvOnly, sdp.Media.First().MediaStreamStatus);
+        }
+
+        /// <summary>
+        /// Tests that the media stream status for an announcement is set correctly when it
+        /// differs from the session status.
+        /// </summary>
+        [Fact]
+        public void GetAnnMediaSteamDiffToStreamStatusUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "a=recvonly" + m_CRLF +
+                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=silenceSupp:off - - - -" + m_CRLF +
+                "a=ptime:20" + m_CRLF +
+                "a=sendonly";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Assert.Equal(MediaStreamStatusEnum.RecvOnly, sdp.SessionMediaStreamStatus);
+            Assert.Equal(MediaStreamStatusEnum.SendOnly, sdp.Media.First().MediaStreamStatus);
+        }
+
+        /// <summary>
+        /// Tests that the media stream status for an announcement is set correctly when there
+        /// is no session of announcement attribute.
+        /// </summary>
+        [Fact]
+        public void GetAnnMediaSteamNotreamStatusAttributesUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=silenceSupp:off - - - -" + m_CRLF +
+                "a=ptime:20";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Assert.Null(sdp.SessionMediaStreamStatus);
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, sdp.Media.First().MediaStreamStatus);
         }
 
         /// <summary>
@@ -912,7 +973,6 @@ a=sendrecv";
             Assert.Equal(96, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Key);
             Assert.Equal("H263-1998", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Name());
         }
-
 
         /// <summary>
         /// Tests that parsing an SDP media format attribute where the name has additional information following a '/'

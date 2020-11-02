@@ -13,11 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions.V1;
 using Xunit;
 
@@ -49,8 +45,10 @@ namespace SIPSorcery.Net.UnitTests
 
             var audioFormat = pcmu.ToAudioFormat();
 
+            Assert.Equal(SDPMediaTypesEnum.audio, pcmu.Kind);
             Assert.Equal(AudioCodecsEnum.PCMU, audioFormat.Codec);
             Assert.Equal(8000, audioFormat.ClockRate);
+            Assert.Equal("PCMU/8000", pcmu.Rtpmap);
         }
     }
 }

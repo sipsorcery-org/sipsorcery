@@ -484,8 +484,92 @@ a=rtpmap:111 OPUS/48000/2";
             Assert.NotNull(rtpSession.AudioRemoteTrack);
             Assert.Equal(MediaStreamStatusEnum.SendRecv, rtpSession.AudioRemoteTrack.StreamStatus);
 
-            //Assert.True(SDPAudioVideoMediaFormat.AreMatch(offer.Media.Single(x => x.Media == SDPMediaTypesEnum.audio)., answer.Media.First().Media));
-            //Assert.Equal(offer.Media.Last().Media, answer.Media.Last().Media);
+            rtpSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Checks that the selected audio format is chosen correctly when setting the remote description.
+        /// </summary>
+        [Fact]
+        public void CheckSelectedAudioForamtAttributeUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string remoteSdp =
+            @"v=0
+o=- 1986548327 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 60640 RTP/AVP 0 111 8
+a=rtpmap:0 PCMU/8000
+a=rtpmap:111 OPUS/48000/2";
+
+            // Create a local session with an audio track.
+            RTPSession rtpSession = new RTPSession(false, false, false);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPWellKnownMediaFormatsEnum.PCMA, SDPWellKnownMediaFormatsEnum.G723);
+            rtpSession.addTrack(localAudioTrack);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = rtpSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+            Assert.Equal(8, rtpSession.AudioLocalTrack.Capabilities.Single(x => x.Name() == "PCMA").ID);
+            Assert.Equal("PCMA", rtpSession.GetSendingFormat(SDPMediaTypesEnum.audio).Name());
+
+            rtpSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Checks that the selected audio format is chosen correctly when the remote description
+        /// has used a well known ID for a different media type.
+        /// </summary>
+        [Fact]
+        public void ModifiedWellKnownFormatIDUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string remoteSdp =
+            @"v=0
+o=- 1986548327 0 IN IP4 127.0.0.1
+c=IN IP4 127.0.0.1
+m=audio 60640 RTP/AVP 8 12
+a=rtpmap:8 OPUS/48000/2
+a=rtpmap:12 PCMA/8000";
+
+            // Create a local session with an audio track.
+            RTPSession rtpSession = new RTPSession(false, false, false);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(
+                SDPWellKnownMediaFormatsEnum.PCMU,
+                SDPWellKnownMediaFormatsEnum.PCMA, 
+                SDPWellKnownMediaFormatsEnum.G722);
+            rtpSession.addTrack(localAudioTrack);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = rtpSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+            Assert.Equal(12, rtpSession.AudioLocalTrack.Capabilities.Single(x => x.Name() == "PCMA").ID);
+            Assert.Equal("PCMA", rtpSession.GetSendingFormat(SDPMediaTypesEnum.audio).Name());
+
+            var answer = rtpSession.CreateAnswer(null);
+
+            logger.LogDebug($"Local answer: {answer}");
+
+            Assert.Equal(12, answer.Media.Single().MediaFormats.Single().Key);
+            Assert.Equal("PCMA", answer.Media.Single().MediaFormats.Single().Value.Name());
 
             rtpSession.Close("normal");
         }
