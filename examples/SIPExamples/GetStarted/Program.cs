@@ -53,7 +53,7 @@ namespace demo
             var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
             var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
-            
+
             // Place the call and wait for the result.
             var callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
 

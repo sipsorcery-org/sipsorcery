@@ -182,7 +182,8 @@ namespace SIPSorcery.Net
                                 && !MediaFormats.ContainsKey(id) 
                                 && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
                             {
-                                if (Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatID, out var wellKnown))
+                                if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), id) &&
+                                    Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatID, out var wellKnown))
                                 {
                                     MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
                                 }
@@ -350,9 +351,19 @@ namespace SIPSorcery.Net
 
                 if (MediaFormats != null)
                 {
-                    foreach (var mediaFormat in MediaFormats.Where(x => x.Key >= SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN).Select(y => y.Value))
+                    //foreach (var mediaFormat in MediaFormats.Where(x => x.Key >= SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN).Select(y => y.Value))
+                    foreach (var mediaFormat in MediaFormats.Select(y => y.Value))
                     {
-                        formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
+                        if (mediaFormat.Rtpmap == null)
+                        {
+                            // Well known media formats are not required to add an rtpmap but we do so any way as some SIP
+                            // stacks don't work without it.
+                            formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Name() + "/" + mediaFormat.ClockRate() + m_CRLF;
+                        }
+                        else
+                        {
+                            formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
+                        }
 
                         if (mediaFormat.Fmtp != null)
                         {
