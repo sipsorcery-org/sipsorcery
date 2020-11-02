@@ -302,9 +302,9 @@ namespace SIPSorcery
             List<AudioCodecsEnum> codecs = new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU, AudioCodecsEnum.PCMA, AudioCodecsEnum.G722 };
 
             var audioSource = AudioSourcesEnum.SineWave;
-            if (string.IsNullOrEmpty(dst) || !Enum.TryParse<AudioSourcesEnum>(dst, out audioSource))
+            if (string.IsNullOrEmpty(dst) || !Enum.IsDefined(typeof(AudioSourcesEnum), dst) || !Enum.TryParse(dst, out audioSource))
             {
-                audioSource = AudioSourcesEnum.Silence;
+                audioSource = AudioSourcesEnum.Music;
             }
 
             Log.LogInformation($"RTP audio session source set to {audioSource}.");
