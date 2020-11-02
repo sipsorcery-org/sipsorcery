@@ -142,7 +142,8 @@ namespace SIPSorceryMedia.Abstractions.V1
         public const int DEFAULT_CLOCK_RATE = 8000;
         public const int DEFAULT_CHANNEL_COUNT = 1;
 
-        public static readonly AudioFormat Empty = new AudioFormat();
+        public static readonly AudioFormat Empty = new AudioFormat()
+            { _isNonEmpty = false, ClockRate = DEFAULT_CLOCK_RATE, ChannelCount = DEFAULT_CHANNEL_COUNT };
 
         public AudioCodecsEnum Codec { get; set; }
 
@@ -306,9 +307,10 @@ namespace SIPSorceryMedia.Abstractions.V1
         public const int DYNAMIC_ID_MAX = 127;
         public const int DEFAULT_CLOCK_RATE = 90000;
 
-        public static readonly VideoFormat Empty = new VideoFormat();
+        public static readonly VideoFormat Empty = new VideoFormat()
+            { _isNonEmpty = false, ClockRate = DEFAULT_CLOCK_RATE };
 
-        public VideoCodecsEnum Codec { get; set; }
+    public VideoCodecsEnum Codec { get; set; }
 
         /// <summary>
         /// The format ID for the codec. If this is a well known codec it should be set to the
