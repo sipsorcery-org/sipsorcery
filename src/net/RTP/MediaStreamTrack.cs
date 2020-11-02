@@ -183,6 +183,16 @@ namespace SIPSorcery.Net
         { }
 
         /// <summary>
+        /// Adds a local audio track based on one or more well known audio formats.
+        /// There is no equivalent for a local video track as there is no support in this library for any of
+        /// the well known video formats.
+        /// </summary>
+        /// <param name="wellKnownAudioFormats">One or more well known audio formats.</param>
+        public MediaStreamTrack(params SDPWellKnownMediaFormatsEnum[] wellKnownAudioFormats)
+            : this(wellKnownAudioFormats.Select(x => new AudioFormat(x)).ToList())
+        { }
+
+        /// <summary>
         /// Checks whether the payload ID in an RTP packet received from the remote call party
         /// is in this track's list.
         /// </summary>
