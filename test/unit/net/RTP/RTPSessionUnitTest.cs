@@ -440,5 +440,54 @@ a=sendrecv";
 
             rtpSession.Close("normal");
         }
+
+        /// <summary>
+        /// Checks that accepting a remote offer works correctly when no media stream attribute is present.
+        /// </summary>
+        [Fact]
+        public void SetRemoteSDPNoMediaStreamAttributeUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string remoteSdp =
+            @"v=0
+o=- 1986548327 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 60640 RTP/AVP 0 111
+a=rtpmap:0 PCMU/8000
+a=rtpmap:111 OPUS/48000/2";
+
+            // Create a local session with an audio track.
+            RTPSession rtpSession = new RTPSession(false, false, false);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU));
+            rtpSession.addTrack(localAudioTrack);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = rtpSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = rtpSession.CreateAnswer(null);
+
+            logger.LogDebug($"Local answer: {answer}");
+
+            Assert.Equal(0, rtpSession.AudioLocalTrack.Capabilities.Single(x => x.Name() == "PCMU").ID);
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, rtpSession.AudioLocalTrack.StreamStatus);
+            Assert.NotNull(rtpSession.AudioRemoteTrack);
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, rtpSession.AudioRemoteTrack.StreamStatus);
+
+            //Assert.True(SDPAudioVideoMediaFormat.AreMatch(offer.Media.Single(x => x.Media == SDPMediaTypesEnum.audio)., answer.Media.First().Media));
+            //Assert.Equal(offer.Media.Last().Media, answer.Media.Last().Media);
+
+            rtpSession.Close("normal");
+        }
     }
 }
