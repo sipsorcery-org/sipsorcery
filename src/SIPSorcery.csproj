@@ -20,7 +20,7 @@
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.8" />
     <PackageReference Include="DnsClient" Version="1.4.0-beta-20200801.7" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.18-pre" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.19-pre" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.86-pre: Fixed bug negotiating SDP format IDs.
+    <PackageReleaseNotes>- v4.0.87-re: Fixed bug not correctly processing missing SDP stream attribute.
+- v4.0.86-pre: Fixed bug negotiating SDP format IDs.
 - v4.0.85-pre: Refactored setting remote SDP offer in RTP session to fix a softphone bug.
 - v4.0.84-pre: Refactored SDP media format handling to improve audio and video format management.
 - v4.0.83-pre: Fix in SIP DNS and SIP UDP receive to work on Android.
@@ -104,9 +105,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.86-pre</Version>
-    <AssemblyVersion>4.0.86.0</AssemblyVersion>
-    <FileVersion>4.0.86.0</FileVersion>
+    <Version>4.0.87-pre</Version>
+    <AssemblyVersion>4.0.87.0</AssemblyVersion>
+    <FileVersion>4.0.87.0</FileVersion>
   </PropertyGroup>
 
 </Project>
