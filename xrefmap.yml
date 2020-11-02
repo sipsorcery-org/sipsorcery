@@ -6727,6 +6727,15 @@ references:
   commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat,SIPSorcery.Net.MediaStreamStatusEnum)
   fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorceryMedia.Abstractions.V1.AudioFormat, SIPSorcery.Net.MediaStreamStatusEnum)
   nameWithType: MediaStreamTrack.MediaStreamTrack(AudioFormat, MediaStreamStatusEnum)
+- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.V1.SDPWellKnownMediaFormatsEnum[])
+  name: MediaStreamTrack(SDPWellKnownMediaFormatsEnum[])
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_V1_SDPWellKnownMediaFormatsEnum___
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.V1.SDPWellKnownMediaFormatsEnum[])
+  name.vb: MediaStreamTrack(SDPWellKnownMediaFormatsEnum())
+  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorceryMedia.Abstractions.V1.SDPWellKnownMediaFormatsEnum[])
+  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorceryMedia.Abstractions.V1.SDPWellKnownMediaFormatsEnum())
+  nameWithType: MediaStreamTrack.MediaStreamTrack(SDPWellKnownMediaFormatsEnum[])
+  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(SDPWellKnownMediaFormatsEnum())
 - uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.V1.VideoFormat,SIPSorcery.Net.MediaStreamStatusEnum)
   name: MediaStreamTrack(VideoFormat, MediaStreamStatusEnum)
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_V1_VideoFormat_SIPSorcery_Net_MediaStreamStatusEnum_
