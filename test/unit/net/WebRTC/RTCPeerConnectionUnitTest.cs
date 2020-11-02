@@ -100,14 +100,14 @@ namespace SIPSorcery.Net.UnitTests
             };
 
             RTCPeerConnection pcSrc = new RTCPeerConnection(pcConfiguration);
-            var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pcSrc.addTrack(videoTrackSrc);
             var offer = pcSrc.createOffer(new RTCOfferOptions());
 
             logger.LogDebug($"offer: {offer.sdp}");
 
             RTCPeerConnection pcDst = new RTCPeerConnection(pcConfiguration);
-            var videoTrackDst = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            var videoTrackDst = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pcDst.addTrack(videoTrackDst);
 
             var setOfferResult = pcDst.setRemoteDescription(offer);
@@ -177,10 +177,10 @@ a=rtpmap:100 VP8/90000";
             RTCPeerConnection pc = new RTCPeerConnection(null);
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> {
                 new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                new SDPAudioVideoMediaFormat(110, "OPUS/48000/2")
+                new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 110, "OPUS/48000/2")
             });
             pc.addTrack(localAudioTrack);
-            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
             var offer = SDP.ParseSDPDescription(remoteSdp);
@@ -256,7 +256,7 @@ a=rtpmap:100 VP8/90000";
 
             // Create a local session and add the video track first.
             RTCPeerConnection pc = new RTCPeerConnection(null);
-            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
             var offer = SDP.ParseSDPDescription(remoteSdp);

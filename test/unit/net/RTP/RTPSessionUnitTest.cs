@@ -161,7 +161,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPSession remoteSession = new RTPSession(false, false, false);
             // The track for the track for the remote session is still local relative to the session it's being added to.
-            MediaStreamTrack remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            MediaStreamTrack remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             remoteSession.addTrack(remoteVideoTrack);
 
             var result = localSession.SetRemoteDescription(SIP.App.SdpType.offer, remoteSession.CreateOffer(IPAddress.Loopback));
@@ -288,7 +288,7 @@ namespace SIPSorcery.Net.UnitTests
             // The track for the track for the remote session is still local relative to the session it's being added to.
             MediaStreamTrack remoteAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
             remoteSession.addTrack(remoteAudioTrack);
-            MediaStreamTrack remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            MediaStreamTrack remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             remoteSession.addTrack(remoteVideoTrack);
 
             var offer = remoteSession.CreateOffer(IPAddress.Loopback);
@@ -324,7 +324,7 @@ namespace SIPSorcery.Net.UnitTests
 
             // A local session is created but only has a video track added to it.
             RTPSession localSession = new RTPSession(false, false, false);
-            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             localSession.addTrack(localVideoTrack);
 
             // Create a remote session with both audio and video tracks.
@@ -332,7 +332,7 @@ namespace SIPSorcery.Net.UnitTests
             // The track for the track for the remote session is still local relative to the session it's being added to.
             MediaStreamTrack remoteAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
             remoteSession.addTrack(remoteAudioTrack);
-            MediaStreamTrack remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            MediaStreamTrack remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             remoteSession.addTrack(remoteVideoTrack);
 
             var offer = remoteSession.CreateOffer(IPAddress.Loopback);
@@ -412,10 +412,10 @@ a=sendrecv";
             RTPSession rtpSession = new RTPSession(false, false, false);
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { 
                 new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                new SDPAudioVideoMediaFormat(110, "OPUS/48000/2")
+                new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 110, "OPUS/48000/2")
             });
             rtpSession.addTrack(localAudioTrack);
-            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             rtpSession.addTrack(localVideoTrack);
 
             var offer = SDP.ParseSDPDescription(remoteSdp);

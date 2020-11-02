@@ -798,6 +798,7 @@ namespace SIPSorcery.Net
                         !AudioLocalTrack.Capabilities.Any(x => x.ID == DTMF_EVENT_PAYLOAD_ID))
                     {
                         SDPAudioVideoMediaFormat rtpEventFormat = new SDPAudioVideoMediaFormat(
+                            SDPMediaTypesEnum.audio,
                             DTMF_EVENT_PAYLOAD_ID,
                             SDP.TELEPHONE_EVENT_ATTRIBUTE,
                             DEFAULT_AUDIO_CLOCK_RATE,

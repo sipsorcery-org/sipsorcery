@@ -33,7 +33,7 @@ namespace SIPSorcery.Net.UnitTests
         public void JsonRoundtripUnitTest()
         {
             RTCPeerConnection pcSrc = new RTCPeerConnection(null);
-            var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(96, "VP8", 90000) });
+            var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pcSrc.addTrack(videoTrackSrc);
             
             var offer = pcSrc.createOffer(new RTCOfferOptions());

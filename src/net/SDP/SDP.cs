@@ -373,7 +373,7 @@ namespace SIPSorcery.Net
                                                 }
                                                 else
                                                 {
-                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(id, rtpmap, null));
+                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, id, rtpmap, null));
                                                 }
                                             }
                                             else
@@ -420,7 +420,7 @@ namespace SIPSorcery.Net
                                                 }
                                                 else
                                                 {
-                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(id, null, fmtp));
+                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, id, null, fmtp));
                                                 }
                                             }
                                             else
