@@ -6629,12 +6629,6 @@ references:
   commentId: F:SIPSorcery.Net.MediaStreamStatusEnum.Inactive
   fullName: SIPSorcery.Net.MediaStreamStatusEnum.Inactive
   nameWithType: MediaStreamStatusEnum.Inactive
-- uid: SIPSorcery.Net.MediaStreamStatusEnum.None
-  name: None
-  href: api/SIPSorcery.Net.MediaStreamStatusEnum.html#SIPSorcery_Net_MediaStreamStatusEnum_None
-  commentId: F:SIPSorcery.Net.MediaStreamStatusEnum.None
-  fullName: SIPSorcery.Net.MediaStreamStatusEnum.None
-  nameWithType: MediaStreamStatusEnum.None
 - uid: SIPSorcery.Net.MediaStreamStatusEnum.RecvOnly
   name: RecvOnly
   href: api/SIPSorcery.Net.MediaStreamStatusEnum.html#SIPSorcery_Net_MediaStreamStatusEnum_RecvOnly
