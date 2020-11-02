@@ -881,7 +881,7 @@ namespace SIPSorcery.Net
         {
             if (localTrack != null)
             {
-                if (remoteTrackStatus == MediaStreamStatusEnum.Inactive || remoteTrackStatus == MediaStreamStatusEnum.None)
+                if (remoteTrackStatus == MediaStreamStatusEnum.Inactive)
                 {
                     // The remote party does not support this media type. Set the local stream status to inactive.
                     localTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
@@ -2183,7 +2183,11 @@ namespace SIPSorcery.Net
                 return SDPMediaTypesEnum.video;
             }
 
-            logger.LogWarning($"An RTP packet with payload ID {header.PayloadType} was received that could not be matched to an audio or video stream.");
+            if (RemoteDescription != null)
+            {
+                logger.LogWarning($"An RTP packet with payload ID {header.PayloadType} was received that could not be matched to an audio or video stream.");
+            }
+
             return null;
         }
 

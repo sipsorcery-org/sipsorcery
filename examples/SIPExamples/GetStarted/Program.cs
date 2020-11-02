@@ -31,9 +31,9 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
-        //private static string DESTINATION = "sip:*61@192.168.0.48";
-        private static SIPEndPoint OUTBOUND_PROXY = null; // SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
+        //private static string DESTINATION = "time@sipsorcery.com";
+        private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
+        private static SIPEndPoint OUTBOUND_PROXY = null;// SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.147:5060");
 
         static async Task Main()
         {
