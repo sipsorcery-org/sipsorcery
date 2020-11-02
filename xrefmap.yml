@@ -19542,6 +19542,18 @@ references:
   commentId: T:SIPSorcery.Net.SDPAudioVideoMediaFormat
   fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat
   nameWithType: SDPAudioVideoMediaFormat
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.String,System.Int32,System.Int32,System.String)
+  name: SDPAudioVideoMediaFormat(SDPMediaTypesEnum, Int32, String, Int32, Int32, String)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_System_String_System_Int32_System_Int32_System_String_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.String,System.Int32,System.Int32,System.String)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.String, System.Int32, System.Int32, System.String)
+  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(SDPMediaTypesEnum, Int32, String, Int32, Int32, String)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.String,System.String)
+  name: SDPAudioVideoMediaFormat(SDPMediaTypesEnum, Int32, String, String)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_System_String_System_String_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.String,System.String)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.String, System.String)
+  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(SDPMediaTypesEnum, Int32, String, String)
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat)
   name: SDPAudioVideoMediaFormat(AudioFormat)
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_SIPSorceryMedia_Abstractions_V1_AudioFormat_
@@ -19560,18 +19572,6 @@ references:
   commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(SIPSorceryMedia.Abstractions.V1.VideoFormat)
   fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(SIPSorceryMedia.Abstractions.V1.VideoFormat)
   nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(VideoFormat)
-- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(System.Int32,System.String,System.Int32,System.Int32,System.String)
-  name: SDPAudioVideoMediaFormat(Int32, String, Int32, Int32, String)
-  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_System_Int32_System_String_System_Int32_System_Int32_System_String_
-  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(System.Int32,System.String,System.Int32,System.Int32,System.String)
-  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(System.Int32, System.String, System.Int32, System.Int32, System.String)
-  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(Int32, String, Int32, Int32, String)
-- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(System.Int32,System.String,System.String)
-  name: SDPAudioVideoMediaFormat(Int32, String, String)
-  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_System_Int32_System_String_System_String_
-  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor(System.Int32,System.String,System.String)
-  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(System.Int32, System.String, System.String)
-  nameWithType: SDPAudioVideoMediaFormat.SDPAudioVideoMediaFormat(Int32, String, String)
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.#ctor*
   name: SDPAudioVideoMediaFormat
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat__ctor_
@@ -19713,6 +19713,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.IsEmpty
   nameWithType: SDPAudioVideoMediaFormat.IsEmpty
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Kind
+  name: Kind
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Kind
+  commentId: P:SIPSorcery.Net.SDPAudioVideoMediaFormat.Kind
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Kind
+  nameWithType: SDPAudioVideoMediaFormat.Kind
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Kind*
+  name: Kind
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Kind_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.Kind
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Kind
+  nameWithType: SDPAudioVideoMediaFormat.Kind
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.Name
   name: Name()
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_Name
