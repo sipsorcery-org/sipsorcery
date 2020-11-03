@@ -31,6 +31,8 @@ namespace SIPSorcery.SIP
 
         override protected string ProtDescr { get; } = "TLS";
 
+        public bool BypassCertificateValidation { get; set; } = true;
+
         public SIPTLSChannel(IPEndPoint endPoint)
             : base(endPoint, SIPProtocolsEnum.tls, false)
         {
@@ -229,7 +231,7 @@ namespace SIPSorcery.SIP
             else
             {
                 logger.LogWarning(String.Format("Certificate error: {0}", sslPolicyErrors));
-                return false;
+                return BypassCertificateValidation;
             }
         }
 
