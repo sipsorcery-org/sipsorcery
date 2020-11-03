@@ -34822,6 +34822,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel
   nameWithType: SIPTLSChannel.SIPTLSChannel
+- uid: SIPSorcery.SIP.SIPTLSChannel.BypassCertificateValidation
+  name: BypassCertificateValidation
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_BypassCertificateValidation
+  commentId: P:SIPSorcery.SIP.SIPTLSChannel.BypassCertificateValidation
+  fullName: SIPSorcery.SIP.SIPTLSChannel.BypassCertificateValidation
+  nameWithType: SIPTLSChannel.BypassCertificateValidation
+- uid: SIPSorcery.SIP.SIPTLSChannel.BypassCertificateValidation*
+  name: BypassCertificateValidation
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_BypassCertificateValidation_
+  commentId: Overload:SIPSorcery.SIP.SIPTLSChannel.BypassCertificateValidation
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTLSChannel.BypassCertificateValidation
+  nameWithType: SIPTLSChannel.BypassCertificateValidation
 - uid: SIPSorcery.SIP.SIPTLSChannel.IsProtocolSupported(SIPSorcery.SIP.SIPProtocolsEnum)
   name: IsProtocolSupported(SIPProtocolsEnum)
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_IsProtocolSupported_SIPSorcery_SIP_SIPProtocolsEnum_
