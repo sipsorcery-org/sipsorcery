@@ -448,7 +448,7 @@ namespace SIPSorceryMedia.Abstractions.V1
         public byte[] Sample;
     }
 
-    public interface IVideoEncoder
+    public interface IVideoEncoder : IDisposable
     {
         bool IsSupported(VideoCodecsEnum codec);
 
