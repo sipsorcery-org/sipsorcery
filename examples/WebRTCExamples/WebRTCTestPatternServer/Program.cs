@@ -123,22 +123,21 @@ namespace demo
             //var pc = new RTCPeerConnection(config);
             var pc = new RTCPeerConnection(null);
 
-            var testPatternSource = new VideoTestPatternSource();
+            var testPatternSource = new VideoTestPatternSource(new SIPSorceryMedia.Encoders.VideoEncoder());
             testPatternSource.SetFrameRate(60);
             //testPatternSource.SetMaxFrameRate(true);
-            var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
-            videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
-            //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
+            //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            //videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
             //var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
 
-            MediaStreamTrack track = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack track = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
 
-            testPatternSource.OnVideoSourceRawSample += videoEndPoint.ExternalVideoSourceRawSample;
-            testPatternSource.OnVideoSourceRawSample += TestPatternSource_OnVideoSourceRawSample;
-            videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
-            pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSourceFormat(formats.First());
+            //testPatternSource.OnVideoSourceRawSample += videoEndPoint.ExternalVideoSourceRawSample;
+            testPatternSource.OnVideoSourceRawSample += MesasureTestPatternSourceFrameRate;
+            testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
+            pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
             
             pc.onconnectionstatechange += async (state) =>
             {
@@ -151,12 +150,12 @@ namespace demo
                 else if (state == RTCPeerConnectionState.closed)
                 {
                     await testPatternSource.CloseVideo();
-                    await videoEndPoint.CloseVideo();
-                    videoEndPoint.Dispose();
+                    await testPatternSource.CloseVideo();
+                    testPatternSource.Dispose();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    await videoEndPoint.StartVideo();
+                    await testPatternSource.StartVideo();
                     await testPatternSource.StartVideo();
                 }
             };
@@ -170,7 +169,7 @@ namespace demo
             return Task.FromResult(pc);
         }
 
-        private static void TestPatternSource_OnVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, SIPSorceryMedia.Abstractions.V1.VideoPixelFormatsEnum pixelFormat)
+        private static void MesasureTestPatternSourceFrameRate(uint durationMilliseconds, int width, int height, byte[] sample, SIPSorceryMedia.Abstractions.V1.VideoPixelFormatsEnum pixelFormat)
         {
             if(_startTime == DateTime.MinValue)
             {

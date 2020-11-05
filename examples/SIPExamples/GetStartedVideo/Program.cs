@@ -28,7 +28,9 @@ using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.Windows;
+
 namespace demo
 {
     class Program
@@ -84,14 +86,17 @@ namespace demo
             var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
             windowsAudioEndPoint.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
             var windowsVideoEndPoint = new WindowsVideoEndPoint();
-            windowsVideoEndPoint.OnVideoSourceError += (err) =>
-            {
-                Log.LogError($"Video source error. {err}");
-                if (userAgent.IsCallActive)
-                {
-                    userAgent.Hangup();
-                }
-            };
+            //windowsVideoEndPoint.OnVideoSourceError += (err) =>
+            //{
+            //    Log.LogError($"Video source error. {err}");
+            //    if (userAgent.IsCallActive)
+            //    {
+            //        userAgent.Hangup();
+            //    }
+            //};
+
+            // Fallback to a test pattern source if accessing the Windows webcam fails.
+            var testPattern = new VideoTestPatternSource(new VideoEncoder());
 
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
@@ -101,7 +106,7 @@ namespace demo
                 VideoSource = windowsVideoEndPoint,
             };
 
-            var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+            var voipMediaSession = new VoIPMediaSession(mediaEndPoints, testPattern);
             voipMediaSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.
