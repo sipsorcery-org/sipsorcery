@@ -9,6 +9,7 @@
 //
 // History:
 // 04 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 05 Nov 2020  Aaron Clauson   Added video encoder parameter.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,6 +21,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
@@ -30,14 +32,21 @@ namespace SIPSorcery.Media
         public const int TEST_PATTERN_WIDTH = 640;
         public const int TEST_PATTERN_HEIGHT = 480;
 
+        private const int VIDEO_SAMPLING_RATE = 90000;
         private const int MAXIMUM_FRAMES_PER_SECOND = 60;           // Note the Threading.Timer's maximum callback rate is approx 60/s so allowing higher has no effect.
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
         private const int MINIMUM_FRAMES_PER_SECOND = 1;
         private const int STAMP_BOX_SIZE = 20;
         private const int STAMP_BOX_PADDING = 10;
         private const int TIMER_DISPOSE_WAIT_MILLISECONDS = 1000;
+        private const int VP8_SUGGESTED_FORMAT_ID = 96;
 
         public static ILogger logger = Sys.Log.Logger;
+
+        public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
+        {
+            new VideoFormat(VideoCodecsEnum.VP8, VP8_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE)
+        };
 
         private int _frameSpacing;
         private byte[] _testI420Buffer;
@@ -47,20 +56,30 @@ namespace SIPSorcery.Media
         private bool _isClosed;
         private bool _isMaxFrameRate;
         private int _frameCount;
+        private IVideoEncoder _videoEncoder;
+        private MediaFormatManager<VideoFormat> _formatManager;
 
+        /// <summary>
+        /// Unencoded test pattern samples.
+        /// </summary>
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
 
         /// <summary>
-        /// This video source DOES NOT generate encoded samples. Hook an encoder up to
-        /// <seealso cref="OnVideoSourceRawSample"/>.
+        /// If a video encoder has been set then this event contains the encoded video
+        /// samples.
         /// </summary>
-        [Obsolete("This video source is not currently capable of generating encoded samples.")]
-        public event EncodedSampleDelegate OnVideoSourceEncodedSample { add { } remove { } }
+        public event EncodedSampleDelegate OnVideoSourceEncodedSample;
 
         public event SourceErrorDelegate OnVideoSourceError;
 
-        public VideoTestPatternSource()
+        public VideoTestPatternSource(IVideoEncoder encoder = null)
         {
+            if (encoder != null)
+            {
+                _videoEncoder = encoder;
+                _formatManager = new MediaFormatManager<VideoFormat>(SupportedFormats);
+            }
+
             var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
             var testPatternStm = assem.GetManifestResourceStream(TEST_PATTERN_RESOURCE_PATH);
 
@@ -78,20 +97,19 @@ namespace SIPSorcery.Media
             }
         }
 
-        public bool HasEncodedVideoSubscribers() => false;
+        public void RestrictFormats(Func<VideoFormat, bool> filter) => _formatManager.RestrictFormats(filter);
+        public List<VideoFormat> GetVideoSourceFormats() => _formatManager.GetSourceFormats();
+        public void SetVideoSourceFormat(VideoFormat videoFormat) => _formatManager.SetSelectedFormat(videoFormat);
+        public List<VideoFormat> GetVideoSinkFormats() => _formatManager.GetSourceFormats();
+        public void SetVideoSinkFormat(VideoFormat videoFormat) => _formatManager.SetSelectedFormat(videoFormat);
+
+        public void ForceKeyFrame() => _videoEncoder?.ForceKeyFrame();
+        public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixlFormat) =>
             throw new NotImplementedException("The test pattern video source does not offer any encoding services for external sources.");
         public Task<bool> InitialiseVideoSourceDevice() =>
             throw new NotImplementedException("The test pattern video source does not use a device.");
         public bool IsVideoSourcePaused() => _isPaused;
-        public List<VideoFormat> GetVideoSourceFormats() =>
-            throw new NotImplementedException("This source can only supply raw RGB bitmap samples.");
-        public void SetVideoSourceFormat(VideoFormat videoFormat) =>
-            throw new NotImplementedException("This source can only supply raw RGB bitmap samples.");
-        public void ForceKeyFrame() =>
-            throw new NotImplementedException("This source does not have any video encoding capabilities.");
-        public void RestrictFormats(Func<VideoFormat, bool> filter) =>
-            throw new NotImplementedException("This source does not have any video encoding capabilities.");
 
         //public void SetEmbeddedTestPatternPath(string path)
         //{
@@ -176,35 +194,6 @@ namespace SIPSorcery.Media
             }
         }
 
-        /// <summary>
-        /// Requests that the video sink and source only advertise support for the supplied list of codecs.
-        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
-        /// used.
-        /// </summary>
-        /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
-        //public void RestrictCodecs(List<VideoCodecsEnum> codecs)
-        //{
-        //    if (codecs == null || codecs.Count == 0)
-        //    {
-        //        _supportedCodecs = new List<VideoCodecsEnum>(SupportedCodecs);
-        //    }
-        //    else
-        //    {
-        //        _supportedCodecs = new List<VideoCodecsEnum>();
-        //        foreach (var codec in codecs)
-        //        {
-        //            if (SupportedCodecs.Any(x => x == codec))
-        //            {
-        //                _supportedCodecs.Add(codec);
-        //            }
-        //            else
-        //            {
-        //                logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
-        //            }
-        //        }
-        //    }
-        //}
-
         public Task PauseVideo()
         {
             _isPaused = true;
@@ -272,7 +261,7 @@ namespace SIPSorcery.Media
         {
             lock (_sendTestPatternTimer)
             {
-                if (!_isClosed && OnVideoSourceRawSample != null)
+                if (!_isClosed && (OnVideoSourceRawSample != null || OnVideoSourceEncodedSample != null))
                 {
                     _frameCount++;
 
@@ -282,9 +271,21 @@ namespace SIPSorcery.Media
                     //OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, _testPattern.Width, _testPattern.Height, BitmapToBGR24(stampedTestPattern as Bitmap), VideoPixelFormatsEnum.Bgr);
                     //stampedTestPattern?.Dispose();
                     //OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, _testPatternWidth, _testPatternHeight, _testPatternI420, VideoPixelFormatsEnum.I420);
-
                     StampI420Buffer(_testI420Buffer, TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _frameCount);
+
                     OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420);
+
+                    if (_videoEncoder != null && OnVideoSourceEncodedSample != null)
+                    {
+                        var encodedBuffer = _videoEncoder.EncodeVideo(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8);
+
+                        if (encodedBuffer != null)
+                        {
+                            uint fps = (_frameSpacing > 0) ? 1000 / (uint)_frameSpacing : DEFAULT_FRAMES_PER_SECOND;
+                            uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
+                            OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+                        }
+                    }
 
                     if (_frameCount == int.MaxValue)
                     {
@@ -411,6 +412,7 @@ namespace SIPSorcery.Media
         {
             _isClosed = true;
             _sendTestPatternTimer?.Dispose();
+            _videoEncoder?.Dispose();
         }
     }
 }

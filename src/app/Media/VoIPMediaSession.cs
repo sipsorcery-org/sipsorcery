@@ -67,10 +67,15 @@ namespace SIPSorcery.Media
 
         public event VideoSinkSampleDecodedDelegate OnVideoSinkSample;
 
+        public VoIPMediaSession(MediaEndPoints mediaEndPoint, VideoTestPatternSource testPatternSource)
+            : this(mediaEndPoint, null, 0, testPatternSource)
+        { }
+
         public VoIPMediaSession(
             MediaEndPoints mediaEndPoint,
             IPAddress bindAddress = null,
-            int bindPort = 0)
+            int bindPort = 0,
+             VideoTestPatternSource testPatternSource = null)
             : base(false, false, false, bindAddress, bindPort)
         {
             if (mediaEndPoint == null)
@@ -99,10 +104,14 @@ namespace SIPSorcery.Media
                 Media.VideoSource.OnVideoSourceEncodedSample += base.SendVideo;
                 Media.VideoSource.OnVideoSourceError += VideoSource_OnVideoSourceError;
 
-                // The test pattern source is used as failover if the webcam initialisation fails.
-                // It's also used as the video stream if the call is put on hold.
-                _videoTestPatternSource = new VideoTestPatternSource();
-                _videoTestPatternSource.OnVideoSourceRawSample += Media.VideoSource.ExternalVideoSourceRawSample;
+                if (testPatternSource != null)
+                {
+                    // The test pattern source is used as failover if the webcam initialisation fails.
+                    // It's also used as the video stream if the call is put on hold.
+                    _videoTestPatternSource = testPatternSource;
+                    _videoTestPatternSource.OnVideoSourceEncodedSample += base.SendVideo;
+                    //_videoTestPatternSource.OnVideoSourceRawSample += Media.VideoSource.ExternalVideoSourceRawSample;
+                }
             }
 
             if (Media.VideoSink != null)

@@ -28,7 +28,9 @@ using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.Windows;
+
 namespace demo
 {
     class Program
@@ -89,14 +91,17 @@ namespace demo
             windowsAudioEndPoint.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
 >>>>>>> master
             var windowsVideoEndPoint = new WindowsVideoEndPoint();
-            windowsVideoEndPoint.OnVideoSourceError += (err) =>
-            {
-                Log.LogError($"Video source error. {err}");
-                if (userAgent.IsCallActive)
-                {
-                    userAgent.Hangup();
-                }
-            };
+            //windowsVideoEndPoint.OnVideoSourceError += (err) =>
+            //{
+            //    Log.LogError($"Video source error. {err}");
+            //    if (userAgent.IsCallActive)
+            //    {
+            //        userAgent.Hangup();
+            //    }
+            //};
+
+            // Fallback to a test pattern source if accessing the Windows webcam fails.
+            var testPattern = new VideoTestPatternSource(new VideoEncoder());
 
             var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(@"C:\Dev\sipsorcery\sipsorcery-core\examples\WebRTCExamples\WebRTCMp4Source\media\max_intro.mp4", true, new AudioEncoder());
             mediaFileSource.Initialise();
@@ -111,7 +116,7 @@ namespace demo
                 VideoSource = mediaFileSource,
             };
 
-            var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+            var voipMediaSession = new VoIPMediaSession(mediaEndPoints, testPattern);
             voipMediaSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.

@@ -81,10 +81,10 @@ namespace SIPSorcery.Examples
         /// done by this program. ffplay will need to support the selected codec.
         /// </summary>
         private static List<SDPAudioVideoMediaFormat> AudioOfferFormats = new List<SDPAudioVideoMediaFormat> {
-            new SDPAudioVideoMediaFormat(111, "OPUS", 48000, 2, "minptime=10;useinbandfec=1")
+            new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 111, "OPUS", 48000, 2, "minptime=10;useinbandfec=1")
         };
         private static List<SDPAudioVideoMediaFormat> VideoOfferFormats = new List<SDPAudioVideoMediaFormat> { 
-            new SDPAudioVideoMediaFormat(100, "VP9", 90000) 
+            new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 100, "VP9", 90000) 
         };
 
         static async Task Main()

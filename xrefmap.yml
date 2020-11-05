@@ -3344,12 +3344,12 @@ references:
   commentId: T:SIPSorcery.Media.VideoTestPatternSource
   fullName: SIPSorcery.Media.VideoTestPatternSource
   nameWithType: VideoTestPatternSource
-- uid: SIPSorcery.Media.VideoTestPatternSource.#ctor
-  name: VideoTestPatternSource()
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource__ctor
-  commentId: M:SIPSorcery.Media.VideoTestPatternSource.#ctor
-  fullName: SIPSorcery.Media.VideoTestPatternSource.VideoTestPatternSource()
-  nameWithType: VideoTestPatternSource.VideoTestPatternSource()
+- uid: SIPSorcery.Media.VideoTestPatternSource.#ctor(SIPSorceryMedia.Abstractions.V1.IVideoEncoder)
+  name: VideoTestPatternSource(IVideoEncoder)
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource__ctor_SIPSorceryMedia_Abstractions_V1_IVideoEncoder_
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.#ctor(SIPSorceryMedia.Abstractions.V1.IVideoEncoder)
+  fullName: SIPSorcery.Media.VideoTestPatternSource.VideoTestPatternSource(SIPSorceryMedia.Abstractions.V1.IVideoEncoder)
+  nameWithType: VideoTestPatternSource.VideoTestPatternSource(IVideoEncoder)
 - uid: SIPSorcery.Media.VideoTestPatternSource.#ctor*
   name: VideoTestPatternSource
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource__ctor_
@@ -3428,6 +3428,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.ForceKeyFrame
   nameWithType: VideoTestPatternSource.ForceKeyFrame
+- uid: SIPSorcery.Media.VideoTestPatternSource.GetVideoSinkFormats
+  name: GetVideoSinkFormats()
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_GetVideoSinkFormats
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.GetVideoSinkFormats
+  fullName: SIPSorcery.Media.VideoTestPatternSource.GetVideoSinkFormats()
+  nameWithType: VideoTestPatternSource.GetVideoSinkFormats()
+- uid: SIPSorcery.Media.VideoTestPatternSource.GetVideoSinkFormats*
+  name: GetVideoSinkFormats
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_GetVideoSinkFormats_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.GetVideoSinkFormats
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VideoTestPatternSource.GetVideoSinkFormats
+  nameWithType: VideoTestPatternSource.GetVideoSinkFormats
 - uid: SIPSorcery.Media.VideoTestPatternSource.GetVideoSourceFormats
   name: GetVideoSourceFormats()
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_GetVideoSourceFormats
@@ -3572,6 +3585,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.SetMaxFrameRate
   nameWithType: VideoTestPatternSource.SetMaxFrameRate
+- uid: SIPSorcery.Media.VideoTestPatternSource.SetVideoSinkFormat(SIPSorceryMedia.Abstractions.V1.VideoFormat)
+  name: SetVideoSinkFormat(VideoFormat)
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetVideoSinkFormat_SIPSorceryMedia_Abstractions_V1_VideoFormat_
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.SetVideoSinkFormat(SIPSorceryMedia.Abstractions.V1.VideoFormat)
+  fullName: SIPSorcery.Media.VideoTestPatternSource.SetVideoSinkFormat(SIPSorceryMedia.Abstractions.V1.VideoFormat)
+  nameWithType: VideoTestPatternSource.SetVideoSinkFormat(VideoFormat)
+- uid: SIPSorcery.Media.VideoTestPatternSource.SetVideoSinkFormat*
+  name: SetVideoSinkFormat
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetVideoSinkFormat_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.SetVideoSinkFormat
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VideoTestPatternSource.SetVideoSinkFormat
+  nameWithType: VideoTestPatternSource.SetVideoSinkFormat
 - uid: SIPSorcery.Media.VideoTestPatternSource.SetVideoSourceFormat(SIPSorceryMedia.Abstractions.V1.VideoFormat)
   name: SetVideoSourceFormat(VideoFormat)
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SetVideoSourceFormat_SIPSorceryMedia_Abstractions_V1_VideoFormat_
@@ -3614,6 +3640,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.StartVideo
   nameWithType: VideoTestPatternSource.StartVideo
+- uid: SIPSorcery.Media.VideoTestPatternSource.SupportedFormats
+  name: SupportedFormats
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_SupportedFormats
+  commentId: F:SIPSorcery.Media.VideoTestPatternSource.SupportedFormats
+  fullName: SIPSorcery.Media.VideoTestPatternSource.SupportedFormats
+  nameWithType: VideoTestPatternSource.SupportedFormats
 - uid: SIPSorcery.Media.VideoTestPatternSource.TEST_PATTERN_HEIGHT
   name: TEST_PATTERN_HEIGHT
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_TEST_PATTERN_HEIGHT
@@ -3638,12 +3670,18 @@ references:
   commentId: T:SIPSorcery.Media.VoIPMediaSession
   fullName: SIPSorcery.Media.VoIPMediaSession
   nameWithType: VoIPMediaSession
-- uid: SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorceryMedia.Abstractions.V1.MediaEndPoints,System.Net.IPAddress,System.Int32)
-  name: VoIPMediaSession(MediaEndPoints, IPAddress, Int32)
-  href: api/SIPSorcery.Media.VoIPMediaSession.html#SIPSorcery_Media_VoIPMediaSession__ctor_SIPSorceryMedia_Abstractions_V1_MediaEndPoints_System_Net_IPAddress_System_Int32_
-  commentId: M:SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorceryMedia.Abstractions.V1.MediaEndPoints,System.Net.IPAddress,System.Int32)
-  fullName: SIPSorcery.Media.VoIPMediaSession.VoIPMediaSession(SIPSorceryMedia.Abstractions.V1.MediaEndPoints, System.Net.IPAddress, System.Int32)
-  nameWithType: VoIPMediaSession.VoIPMediaSession(MediaEndPoints, IPAddress, Int32)
+- uid: SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorceryMedia.Abstractions.V1.MediaEndPoints,SIPSorcery.Media.VideoTestPatternSource)
+  name: VoIPMediaSession(MediaEndPoints, VideoTestPatternSource)
+  href: api/SIPSorcery.Media.VoIPMediaSession.html#SIPSorcery_Media_VoIPMediaSession__ctor_SIPSorceryMedia_Abstractions_V1_MediaEndPoints_SIPSorcery_Media_VideoTestPatternSource_
+  commentId: M:SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorceryMedia.Abstractions.V1.MediaEndPoints,SIPSorcery.Media.VideoTestPatternSource)
+  fullName: SIPSorcery.Media.VoIPMediaSession.VoIPMediaSession(SIPSorceryMedia.Abstractions.V1.MediaEndPoints, SIPSorcery.Media.VideoTestPatternSource)
+  nameWithType: VoIPMediaSession.VoIPMediaSession(MediaEndPoints, VideoTestPatternSource)
+- uid: SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorceryMedia.Abstractions.V1.MediaEndPoints,System.Net.IPAddress,System.Int32,SIPSorcery.Media.VideoTestPatternSource)
+  name: VoIPMediaSession(MediaEndPoints, IPAddress, Int32, VideoTestPatternSource)
+  href: api/SIPSorcery.Media.VoIPMediaSession.html#SIPSorcery_Media_VoIPMediaSession__ctor_SIPSorceryMedia_Abstractions_V1_MediaEndPoints_System_Net_IPAddress_System_Int32_SIPSorcery_Media_VideoTestPatternSource_
+  commentId: M:SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorceryMedia.Abstractions.V1.MediaEndPoints,System.Net.IPAddress,System.Int32,SIPSorcery.Media.VideoTestPatternSource)
+  fullName: SIPSorcery.Media.VoIPMediaSession.VoIPMediaSession(SIPSorceryMedia.Abstractions.V1.MediaEndPoints, System.Net.IPAddress, System.Int32, SIPSorcery.Media.VideoTestPatternSource)
+  nameWithType: VoIPMediaSession.VoIPMediaSession(MediaEndPoints, IPAddress, Int32, VideoTestPatternSource)
 - uid: SIPSorcery.Media.VoIPMediaSession.#ctor*
   name: VoIPMediaSession
   href: api/SIPSorcery.Media.VoIPMediaSession.html#SIPSorcery_Media_VoIPMediaSession__ctor_
