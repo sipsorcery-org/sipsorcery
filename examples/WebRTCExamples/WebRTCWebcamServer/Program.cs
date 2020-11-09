@@ -93,15 +93,12 @@ namespace demo
             var pc = new RTCPeerConnection(config);
 
             WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME);
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME, 1920, 1080, 30);
             bool initResult = await winVideoEP.InitialiseVideoSourceDevice();
             if (!initResult)
             {
                 throw new ApplicationException("Could not initialise video capture device.");
             }
-
-            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 640, 480, 30);
-            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 1920, 1080, 30);          
-            //await winVideoEP.InitialiseVideoSourceDevice();
             var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
