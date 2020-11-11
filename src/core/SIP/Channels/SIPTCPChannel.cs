@@ -162,7 +162,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPTCPChannel Initialise. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 

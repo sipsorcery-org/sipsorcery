@@ -247,7 +247,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPResponse.GetResponse. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 

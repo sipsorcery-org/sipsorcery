@@ -619,7 +619,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError("Exception ParseSDPDescription. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 

@@ -229,7 +229,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError($"Exception Get2xxAckRequest. {excp.Message}");
-                throw excp;
+                throw;
             }
         }
 

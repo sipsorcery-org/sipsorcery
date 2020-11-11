@@ -319,7 +319,7 @@ namespace SIPSorcery.Net.Sctp
                                     logger.LogDebug("tick time out");
                                     break;
                                 default:
-                                    throw e;
+                                    throw;
                             }
                         }
                     }

@@ -197,7 +197,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception AddSIPChannel. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -281,7 +281,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPTransport ReceiveMessage. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 

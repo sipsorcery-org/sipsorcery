@@ -623,7 +623,7 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError("Exception GetRegistrationRequest. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -655,7 +655,7 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError("Exception GetAuthenticatedRegistrationRequest. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
     }

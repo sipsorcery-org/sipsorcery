@@ -395,7 +395,7 @@ namespace SIPSorcery.Net
                     catch (Exception parseExcp)
                     {
                         logger.LogError("Error parsing RTSP header " + headerLine + ". " + parseExcp.Message);
-                        throw parseExcp;
+                        throw;
                     }
                 }
 
@@ -403,14 +403,14 @@ namespace SIPSorcery.Net
 
                 return rtspHeader;
             }
-            catch (ApplicationException appHeaderExcp)
+            catch (ApplicationException)
             {
-                throw appHeaderExcp;
+                throw;
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception ParseRTSPHeaders. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -433,7 +433,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError("Exception RTSPHeader ToString. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
     }

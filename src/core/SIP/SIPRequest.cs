@@ -156,7 +156,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPRequest ToString. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
