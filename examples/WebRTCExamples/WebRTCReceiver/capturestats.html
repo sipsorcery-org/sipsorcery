@@ -34,7 +34,20 @@
             pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
             pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
             pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
-            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
+            pc.onconnectionstatechange = () => {
+				console.log("onconnectionstatechange: " + pc.connectionState);
+				if(pc.connectionState === "connected") {
+					pc.getSenders().forEach(sender => {
+						if(sender.track.kind === "video") {
+							console.log(sender);
+							console.log(sender.getParameters());
+							const params = sender.getParameters();
+							console.log(`is active: ${params.encodings[0].active}.`);
+							console.log(`maxBitrate: ${params.encodings[0].maxBitrate}.`);
+						}
+					});
+				}
+			}
 
             // Add local capture streams to peer connection.
             captureStm.getTracks().forEach(track => pc.addTrack(track, captureStm));
@@ -49,7 +62,9 @@
                     console.log(`Remote Offer: ${JSON.parse(evt.data).sdp}`);
                     await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
                     pc.createAnswer()
-                        .then((answer) => pc.setLocalDescription(answer))
+                        .then((answer) => {
+							pc.setLocalDescription(answer);
+						})
                         .then(() => ws.send(JSON.stringify(pc.localDescription)));
                 }
             };
