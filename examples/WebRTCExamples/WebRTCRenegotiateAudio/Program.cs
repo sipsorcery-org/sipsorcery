@@ -1,14 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example WebRTC server application that serves a sine wave 
-// audio stream to a WebRTC enabled browser.
+// Description: An example WebRTC server application that re-negotiates the audio
+// format by initiating a second SDP exchange once the call has been estbalished.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 28 Jul 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 11 Nov 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -27,6 +27,7 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Media;
 using SIPSorceryMedia.Windows;
+using SIPSorceryMedia.Abstractions.V1;
 using WebSocketSharp.Server;
 
 namespace demo
@@ -40,7 +41,7 @@ namespace demo
 
         static void Main()
         {
-            Console.WriteLine("WebRTC Audio Server Example Program");
+            Console.WriteLine("WebRTC Audio Re-negotiate Example Program");
             
             logger = AddConsoleLogger();
 
@@ -72,9 +73,8 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            //AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
-            //audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
             WindowsAudioEndPoint audioSource = new WindowsAudioEndPoint(new AudioEncoder());
+            audioSource.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
