@@ -183,7 +183,7 @@ namespace SIPSorcery.Net.UnitTests
 
         /// <summary>
         /// Tests that the message integrity attribute is being correctly generated. The original STUN request packet
-        /// was capture on the wire from the Google Chrom WebRTC stack.
+        /// was capture on the wire from the Google Chrome WebRTC stack.
         /// </summary>
         [Fact]
         public void TestMessageIntegrityAttributeForBindingRequest()
