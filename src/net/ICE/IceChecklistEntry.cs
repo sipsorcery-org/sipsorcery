@@ -143,10 +143,10 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc8445#section-6.1.2.3.
         /// </remarks>
-        public ulong Priority =>
+        public uint Priority =>
                 ((2 << 32) * Math.Min(LocalPriority, RemotePriority) +
                 2 * Math.Max(LocalPriority, RemotePriority) +
-                (ulong)((IsLocalController) ? LocalPriority > RemotePriority ? 1 : 0
+                (uint)((IsLocalController) ? LocalPriority > RemotePriority ? 1 : 0
                     : RemotePriority > LocalPriority ? 1 : 0));
 
         /// <summary>
