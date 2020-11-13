@@ -372,5 +372,22 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(stunRequest.isFingerprintValid);
             Assert.True(stunRequest.CheckIntegrity(System.Text.Encoding.UTF8.GetBytes(icePassword)));
         }
+
+        /// <summary>
+        /// Checks that the length of the PRIORITY attribute is correct after round tripping.
+        /// </summary>
+        [Fact]
+        public void CheckPriorityAttributeLengthUnitTest()
+        {
+            STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
+            stunRequest.AddUsernameAttribute("dummy:dummy");
+            stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(1234U)));
+            stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.UseCandidate, null));
+            byte[] stunReqBytes = stunRequest.ToByteBufferStringKey("dummy", true);
+
+            var stunReq = STUNMessage.ParseSTUNMessage(stunReqBytes, stunReqBytes.Length);
+
+            Assert.Equal(4, stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.Priority).Value.Length);
+        }
     }
 }
