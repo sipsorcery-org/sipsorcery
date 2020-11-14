@@ -12,8 +12,8 @@ environment:
     secure: 21m76jAVvcu7oACAHFnfCBltcwon+r5ZI3avfRmrNFAqJMn6RfLXwpBhPcJ617tD
 image: Visual Studio 2019
 configuration: Release
-before_build:
-- cmd: nuget restore -DisableParallelProcessing src\SIPSorcery.sln
+#before_build:
+#- cmd: nuget restore -DisableParallelProcessing src\SIPSorcery.sln
 build:
   project: src\SIPSorcery.sln
   publish_nuget: true
