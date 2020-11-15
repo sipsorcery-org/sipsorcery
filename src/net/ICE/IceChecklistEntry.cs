@@ -202,9 +202,6 @@ namespace SIPSorcery.Net
             RemoteCandidate = remoteCandidate;
             IsLocalController = isLocalController;
 
-            var controllingCandidate = (isLocalController) ? localCandidate : remoteCandidate;
-            var controlledCandidate = (isLocalController) ? remoteCandidate : localCandidate;
-
             LocalPriority = localCandidate.priority;
             RemotePriority = remoteCandidate.priority;
         }
