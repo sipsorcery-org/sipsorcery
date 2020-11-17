@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.29911.98
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Abstractions", "SIPSorceryMedia.Abstractions.csproj", "{AD739E3C-9E13-40C2-8BA7-F01D3A1F9E13}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{B09FE54D-B4C6-42E1-AE97-1B9BFD3C1864}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorceryMedia.Abstractions.UnitTest", "..\test\SIPSorceryMedia.Abstractions.UnitTest\SIPSorceryMedia.Abstractions.UnitTest.csproj", "{FEAB6969-23E0-407D-A9E5-B08188FB927A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +19,16 @@ Global
 		{AD739E3C-9E13-40C2-8BA7-F01D3A1F9E13}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD739E3C-9E13-40C2-8BA7-F01D3A1F9E13}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD739E3C-9E13-40C2-8BA7-F01D3A1F9E13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEAB6969-23E0-407D-A9E5-B08188FB927A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEAB6969-23E0-407D-A9E5-B08188FB927A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEAB6969-23E0-407D-A9E5-B08188FB927A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEAB6969-23E0-407D-A9E5-B08188FB927A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FEAB6969-23E0-407D-A9E5-B08188FB927A} = {B09FE54D-B4C6-42E1-AE97-1B9BFD3C1864}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AD4124F4-E4BA-4005-9411-4CAC6D56F4EB}
