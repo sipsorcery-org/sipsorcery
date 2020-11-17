@@ -25,6 +25,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.Windows;
 
 namespace demo
@@ -51,12 +52,17 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
+            var testPattern = new VideoTestPatternSource(new VideoEncoder());
 
             var pc = new RTCPeerConnection(null);
             pc.OnAudioFormatsNegotiated += (formats) =>
             {
                 windowsAudio.SetAudioSinkFormat(formats.First());
                 windowsAudio.SetAudioSourceFormat(formats.First());
+            };
+            pc.OnVideoFormatsNegotiated += (formats) =>
+            {
+                testPattern.SetVideoSourceFormat(formats.First());
             };
             pc.OnRtpPacketReceived += (remoteEndPoint, mediaType, rtpPacket) =>
             {
@@ -72,6 +78,10 @@ namespace demo
             pc.addTrack(audioTrack);
             windowsAudio.OnAudioSourceEncodedSample += pc.SendAudio;
 
+            var videoTrack = new MediaStreamTrack(testPattern.GetVideoSourceFormats());
+            pc.addTrack(videoTrack);
+            testPattern.OnVideoSourceEncodedSample += pc.SendVideo;
+
             // Diagnostics.
             pc.OnReceiveReport += (re, media, rr) => Console.WriteLine($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
             pc.OnSendReport += (media, sr) => Console.WriteLine($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
@@ -83,7 +93,7 @@ namespace demo
             {
                 Console.WriteLine($"Peer connection state change to {state}.");
 
-                if(state == RTCPeerConnectionState.connected)
+                if (state == RTCPeerConnectionState.connected)
                 {
                     windowsAudio.StartAudio();
                 }
