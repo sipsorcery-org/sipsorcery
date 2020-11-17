@@ -17,10 +17,13 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CommandLine;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -31,6 +34,17 @@ using WebSocketSharp.Server;
 
 namespace demo
 {
+    public class Options
+    {
+        [Option("cert", Required = false,
+            HelpText = "Path to a `.pfx` certificate archive for the web socket server listener. Format \"--cert=mycertificate.pfx.")]
+        public string WSSCertificate { get; set; }
+
+        [Option("ipv6", Required = false,
+            HelpText = "If set the web socket server will listen on IPv6 instead of IPv4.")]
+        public bool UseIPv6 { get; set; }
+    }
+
     class Program
     {
         private const string STUN_URL = "stun:stun.sipsorcery.com";
@@ -41,19 +55,29 @@ namespace demo
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-        static void Main()
+        static void Main(string[] args)
         {
             Console.WriteLine("WebRTC Receive Demo");
 
             logger = AddConsoleLogger();
 
+            var parseResult = Parser.Default.ParseArguments<Options>(args);
+            var options = (parseResult as Parsed<Options>)?.Value;
+            X509Certificate2 wssCertificate = (options.WSSCertificate != null) ? LoadCertificate(options.WSSCertificate) : null;
+
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            var webSocketServer = new WebSocketServer((options.UseIPv6) ? IPAddress.IPv6Any : IPAddress.Any, WEBSOCKET_PORT, wssCertificate != null);
+            if (webSocketServer.IsSecure)
+            {
+                webSocketServer.SslConfiguration.ServerCertificate = wssCertificate;
+                webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+                webSocketServer.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+            }
             webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
             webSocketServer.Start();
 
-            Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
+            Console.WriteLine($"Waiting for web socket connections on {(webSocketServer.IsSecure ? "wss" : "ws")}://{webSocketServer.Address}:{webSocketServer.Port}...");
 
             // Open a Window to display the video feed from the WebRTC peer.
             _form = new Form();
@@ -75,7 +99,7 @@ namespace demo
         {
             //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint();
             var videoEP = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
-            videoEP.RestrictFormats(format =>  format.Codec == VideoCodecsEnum.VP8);
+            videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {
@@ -99,7 +123,7 @@ namespace demo
             var pc = new RTCPeerConnection(config);
 
             // Add local receive only tracks. This ensures that the SDP answer includes only the codecs we support.
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, 
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false,
                 new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(audioTrack);
             MediaStreamTrack videoTrack = new MediaStreamTrack(videoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
@@ -130,6 +154,28 @@ namespace demo
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
             return Task.FromResult(pc);
+        }
+
+        private static X509Certificate2 LoadCertificate(string path)
+        {
+            if (!File.Exists(path))
+            {
+                logger.LogWarning($"No certificate file could be found at {path}.");
+                return null;
+            }
+            else
+            {
+                X509Certificate2 cert = new X509Certificate2(path, "", X509KeyStorageFlags.Exportable);
+                if (cert == null)
+                {
+                    logger.LogWarning($"Failed to load X509 certificate from file {path}.");
+                }
+                else
+                {
+                    logger.LogInformation($"Certificate file successfully loaded {cert.Subject}, thumbprint {cert.Thumbprint}, has private key {cert.HasPrivateKey}.");
+                }
+                return cert;
+            }
         }
 
         /// <summary>

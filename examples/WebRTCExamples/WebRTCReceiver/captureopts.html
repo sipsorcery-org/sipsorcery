@@ -12,15 +12,29 @@
 
         async function start() {
 
+            // Construct the audio and video capture options from the HTML inputs.
+            let videoResFn = function (videoResStr) {
+                switch (videoResStr) {
+                    case "default": return true;
+                    case "240p": return { width: 320, height: 240 };
+                    case "480p": return { width: 640, height: 480 };
+                    case "720p": return { width: 1280, height: 720 };
+                    case "1080p": return { width: 1920, height: 1080 };
+                    default: return { width: 640, height: 480 };
+                }
+            };
+
+            let captureOptions = {
+                audio: document.querySelector('input[name="captureAudio"]').checked,
+                video:
+                    document.querySelector('input[name="captureVideo"]').checked ?
+                        videoResFn(document.querySelector('input[name="videoResolution"]:checked').value) : false
+            };
+
+            console.log(captureOptions);
+
             // Request access to required audio/video capture devices.
-            var captureStm = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    width: 1920,
-                    height: 1080,
-                    frameRate: 30
-                },
-                audio: true
-            });
+            let captureStm = await navigator.mediaDevices.getUserMedia(captureOptions);
             document.querySelector('#videoCtl').srcObject = captureStm; // No remote streams so render local ones.
 
             pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
@@ -35,19 +49,19 @@
             pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
             pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
             pc.onconnectionstatechange = () => {
-				console.log("onconnectionstatechange: " + pc.connectionState);
-				if(pc.connectionState === "connected") {
-					pc.getSenders().forEach(sender => {
-						if(sender.track.kind === "video") {
-							console.log(sender);
-							console.log(sender.getParameters());
-							const params = sender.getParameters();
-							console.log(`is active: ${params.encodings[0].active}.`);
-							console.log(`maxBitrate: ${params.encodings[0].maxBitrate}.`);
-						}
-					});
-				}
-			}
+                console.log("onconnectionstatechange: " + pc.connectionState);
+                if (pc.connectionState === "connected") {
+                    pc.getSenders().forEach(sender => {
+                        if (sender.track.kind === "video") {
+                            console.log(sender);
+                            console.log(sender.getParameters());
+                            const params = sender.getParameters();
+                            console.log(`is active: ${params.encodings[0].active}.`);
+                            console.log(`maxBitrate: ${params.encodings[0].maxBitrate}.`);
+                        }
+                    });
+                }
+            }
 
             // Add local capture streams to peer connection.
             captureStm.getTracks().forEach(track => pc.addTrack(track, captureStm));
@@ -63,14 +77,17 @@
                     await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
                     pc.createAnswer()
                         .then((answer) => {
-							pc.setLocalDescription(answer);
-						})
+                            pc.setLocalDescription(answer);
+                        })
                         .then(() => ws.send(JSON.stringify(pc.localDescription)));
                 }
             };
         };
 
         async function closePeer() {
+            document.querySelector('#videoCtl').srcObject.getTracks().forEach(function (track) {
+                track.stop();
+            });
             pc.getSenders().forEach(sender => {
                 sender.track.stop();
                 pc.removeTrack(sender);
@@ -91,7 +108,7 @@
                 //    console.log(enc);
                 //    console.log(`maxBitrate=${enc.maxBitrate}.`);
                 //});
-                
+
                 sender.getStats().then(stats => {
                     stats.forEach(report => {
                         if (report.type === "outbound-rtp" && report.kind === "video") {
@@ -112,11 +129,26 @@
     </script>
 </head>
 <body>
-    <video controls autoplay="autoplay" id="videoCtl" width="1920" height="1080"></video>
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
     <div>
         <input type="text" id="websockurl" size="40" />
         <button type="button" class="btn btn-success" onclick="start();">Start</button>
         <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+    <div>
+        <fieldset style="width: 400px">
+            <legend>Capture Options:</legend>
+            <input type="checkbox" checked="checked" name="captureAudio" /> Audio <br />
+            <input type="checkbox" checked="checked" name="captureVideo" onchange="document.querySelector('#videoResOptions').disabled=!this.checked" /> Video <br />
+            <fieldset style="width: 200px" id="videoResOptions">
+                <legend>Video Resolution:</legend>
+                <input type="radio" name="videoResolution" checked="checked" value="default" /> Default<br />
+                <input type="radio" name="videoResolution" value="240p" /> 240p (320x240)<br />
+                <input type="radio" name="videoResolution" value="480p" /> 480p (640x480)<br />
+                <input type="radio" name="videoResolution" value="720p" /> 720p (1280x720)<br />
+                <input type="radio" name="videoResolution" value="1080p" /> 1080p (1920x1080)<br />
+            </fieldset>
+        </fieldset>
     </div>
     <div>
         Video Bandwidth (bps): <span id="videoBandwidth"></span>

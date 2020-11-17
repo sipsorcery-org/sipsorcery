@@ -168,7 +168,7 @@ namespace SIPSorcery.SIP.App
             m_expiry = m_originalExpiry;
             m_exit = false;
             int callbackPeriod = (m_expiry - REGISTRATION_HEAD_TIME) * 1000;
-            logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR.ToString()}, callback period {callbackPeriod}ms.");
+            logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR}, callback period {callbackPeriod}ms.");
 
             if (callbackPeriod < REGISTER_MINIMUM_EXPIRY * 1000)
             {
@@ -214,7 +214,7 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             logger.LogDebug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + m_registerFailureRetryInterval + "s.");
-                            m_registrationTimer.Change((m_expiry - REGISTRATION_HEAD_TIME) * 1000, Timeout.Infinite);
+                            m_registrationTimer.Change(m_registerFailureRetryInterval * 1000, Timeout.Infinite);
                         }
                     }
                 }
@@ -239,7 +239,7 @@ namespace SIPSorcery.SIP.App
 
             if (newExpiry != m_expiry)
             {
-                logger.LogInformation($"Expiry for registration agent for {m_sipAccountAOR.ToString()} updated from {m_expiry} to {newExpiry}.");
+                logger.LogInformation($"Expiry for registration agent for {m_sipAccountAOR} updated from {m_expiry} to {newExpiry}.");
 
                 m_expiry = newExpiry;
 
@@ -623,7 +623,7 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError("Exception GetRegistrationRequest. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -655,7 +655,7 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError("Exception GetAuthenticatedRegistrationRequest. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
     }

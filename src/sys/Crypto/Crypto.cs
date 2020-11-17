@@ -36,55 +36,55 @@ namespace SIPSorcery.Sys
         private static Random _rng = new Random();
         private static RNGCryptoServiceProvider m_randomProvider = new RNGCryptoServiceProvider();
 
-        public static string RSAEncrypt(string xmlKey, string plainText)
-        {
-            return Convert.ToBase64String(RSAEncryptRaw(xmlKey, plainText));
-        }
+        //public static string RSAEncrypt(string xmlKey, string plainText)
+        //{
+        //    return Convert.ToBase64String(RSAEncryptRaw(xmlKey, plainText));
+        //}
 
-        public static byte[] RSAEncryptRaw(string xmlKey, string plainText)
-        {
-            try
-            {
-                RSACryptoServiceProvider key = GetRSAProvider(xmlKey);
+        //public static byte[] RSAEncryptRaw(string xmlKey, string plainText)
+        //{
+        //    try
+        //    {
+        //        RSACryptoServiceProvider key = GetRSAProvider(xmlKey);
 
-                return key.Encrypt(Encoding.ASCII.GetBytes(plainText), true);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception RSAEncrypt. " + excp.Message);
-                throw excp;
-            }
-        }
+        //        return key.Encrypt(Encoding.ASCII.GetBytes(plainText), true);
+        //    }
+        //    catch (Exception excp)
+        //    {
+        //        logger.LogError("Exception RSAEncrypt. " + excp.Message);
+        //        throw;
+        //    }
+        //}
 
-        public static string RSADecrypt(string xmlKey, string cypherText)
-        {
-            return Encoding.ASCII.GetString(RSADecryptRaw(xmlKey, Convert.FromBase64String((cypherText))));
-        }
+        //public static string RSADecrypt(string xmlKey, string cypherText)
+        //{
+        //    return Encoding.ASCII.GetString(RSADecryptRaw(xmlKey, Convert.FromBase64String((cypherText))));
+        //}
 
-        public static byte[] RSADecryptRaw(string xmlKey, byte[] cypher)
-        {
-            try
-            {
-                RSACryptoServiceProvider key = GetRSAProvider(xmlKey);
+        //public static byte[] RSADecryptRaw(string xmlKey, byte[] cypher)
+        //{
+        //    try
+        //    {
+        //        RSACryptoServiceProvider key = GetRSAProvider(xmlKey);
 
-                return key.Decrypt(cypher, true);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception RSADecrypt. " + excp.Message);
-                throw excp;
-            }
-        }
+        //        return key.Decrypt(cypher, true);
+        //    }
+        //    catch (Exception excp)
+        //    {
+        //        logger.LogError("Exception RSADecrypt. " + excp.Message);
+        //        throw;
+        //    }
+        //}
 
-        public static RSACryptoServiceProvider GetRSAProvider(string xmlKey)
-        {
-            CspParameters cspParam = new CspParameters();
-            cspParam.Flags = CspProviderFlags.UseMachineKeyStore;
-            RSACryptoServiceProvider key = new RSACryptoServiceProvider(cspParam);
-            key.FromXmlString(xmlKey);
+        //public static RSACryptoServiceProvider GetRSAProvider(string xmlKey)
+        //{
+        //    CspParameters cspParam = new CspParameters();
+        //    cspParam.Flags = CspProviderFlags.UseMachineKeyStore;
+        //    RSACryptoServiceProvider key = new RSACryptoServiceProvider(cspParam);
+        //    key.FromXmlString(xmlKey);
 
-            return key;
-        }
+        //    return key;
+        //}
 
         public static string SymmetricEncrypt(string key, string iv, string plainText)
         {

@@ -334,65 +334,73 @@ namespace SIPSorcery.Media
         /// <param name="sourceOptions">The new audio source.</param>
         public void SetSource(AudioSourceOptions sourceOptions)
         {
-            // If required start the audio source.
-            if (sourceOptions != null)
+            if (!_isStarted)
             {
-                _sendSampleTimer?.Dispose();
-                _musicStreamReader?.Close();
-                StopSendFromAudioStream();
-
+                // Audio source is being adjusted prior to starting.
                 _audioOpts = sourceOptions;
+            }
+            else
+            {
+                // If required start the audio source.
+                if (sourceOptions != null)
+                {
+                    _sendSampleTimer?.Dispose();
+                    _musicStreamReader?.Close();
+                    StopSendFromAudioStream();
 
-                if (_audioOpts.AudioSource == AudioSourcesEnum.None)
-                {
-                    // Do nothing, all other sources have already been stopped.
-                }
-                else if (_audioOpts.AudioSource == AudioSourcesEnum.Silence)
-                {
-                    _sendSampleTimer = new Timer(SendSilenceSample, null, 0, _audioSamplePeriodMilliseconds);
-                }
-                else if (_audioOpts.AudioSource == AudioSourcesEnum.PinkNoise ||
-                     _audioOpts.AudioSource == AudioSourcesEnum.WhiteNoise ||
-                    _audioOpts.AudioSource == AudioSourcesEnum.SineWave)
-                {
-                    _signalGenerator = new SignalGenerator(_sendingFormat.ClockRate, 1);
+                    _audioOpts = sourceOptions;
 
-                    switch (_audioOpts.AudioSource)
+                    if (_audioOpts.AudioSource == AudioSourcesEnum.None)
                     {
-                        case AudioSourcesEnum.PinkNoise:
-                            _signalGenerator.Type = SignalGeneratorType.Pink;
-                            break;
-                        case AudioSourcesEnum.SineWave:
-                            _signalGenerator.Type = SignalGeneratorType.Sin;
-                            break;
-                        case AudioSourcesEnum.WhiteNoise:
-                        default:
-                            _signalGenerator.Type = SignalGeneratorType.White;
-                            break;
+                        // Do nothing, all other sources have already been stopped.
                     }
-
-                    _sendSampleTimer = new Timer(SendSignalGeneratorSample, null, 0, _audioSamplePeriodMilliseconds);
-                }
-                else if (_audioOpts.AudioSource == AudioSourcesEnum.Music)
-                {
-                    if (string.IsNullOrWhiteSpace(_audioOpts.MusicFile) || !File.Exists(_audioOpts.MusicFile))
+                    else if (_audioOpts.AudioSource == AudioSourcesEnum.Silence)
                     {
-                        if (!string.IsNullOrWhiteSpace(_audioOpts.MusicFile))
+                        _sendSampleTimer = new Timer(SendSilenceSample, null, 0, _audioSamplePeriodMilliseconds);
+                    }
+                    else if (_audioOpts.AudioSource == AudioSourcesEnum.PinkNoise ||
+                         _audioOpts.AudioSource == AudioSourcesEnum.WhiteNoise ||
+                         _audioOpts.AudioSource == AudioSourcesEnum.SineWave)
+                    {
+                        _signalGenerator = new SignalGenerator(_sendingFormat.ClockRate, 1);
+
+                        switch (_audioOpts.AudioSource)
                         {
-                            Log.LogWarning($"Music file not set or not found, using default music resource.");
+                            case AudioSourcesEnum.PinkNoise:
+                                _signalGenerator.Type = SignalGeneratorType.Pink;
+                                break;
+                            case AudioSourcesEnum.SineWave:
+                                _signalGenerator.Type = SignalGeneratorType.Sin;
+                                break;
+                            case AudioSourcesEnum.WhiteNoise:
+                            default:
+                                _signalGenerator.Type = SignalGeneratorType.White;
+                                break;
                         }
 
-                        var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
-                        var audioStream = assem.GetManifestResourceStream(MUSIC_RESOURCE_PATH);
-
-                        _musicStreamReader = new BinaryReader(audioStream);
+                        _sendSampleTimer = new Timer(SendSignalGeneratorSample, null, 0, _audioSamplePeriodMilliseconds);
                     }
-                    else
+                    else if (_audioOpts.AudioSource == AudioSourcesEnum.Music)
                     {
-                        _musicStreamReader = new BinaryReader(new FileStream(_audioOpts.MusicFile, FileMode.Open, FileAccess.Read));
-                    }
+                        if (string.IsNullOrWhiteSpace(_audioOpts.MusicFile) || !File.Exists(_audioOpts.MusicFile))
+                        {
+                            if (!string.IsNullOrWhiteSpace(_audioOpts.MusicFile))
+                            {
+                                Log.LogWarning($"Music file not set or not found, using default music resource.");
+                            }
 
-                    _sendSampleTimer = new Timer(SendMusicSample, null, 0, _audioSamplePeriodMilliseconds);
+                            var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
+                            var audioStream = assem.GetManifestResourceStream(MUSIC_RESOURCE_PATH);
+
+                            _musicStreamReader = new BinaryReader(audioStream);
+                        }
+                        else
+                        {
+                            _musicStreamReader = new BinaryReader(new FileStream(_audioOpts.MusicFile, FileMode.Open, FileAccess.Read));
+                        }
+
+                        _sendSampleTimer = new Timer(SendMusicSample, null, 0, _audioSamplePeriodMilliseconds);
+                    }
                 }
             }
         }

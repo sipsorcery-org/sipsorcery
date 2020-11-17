@@ -4113,6 +4113,19 @@ references:
   commentId: F:SIPSorcery.Net.ChecklistEntry.FirstCheckSentAt
   fullName: SIPSorcery.Net.ChecklistEntry.FirstCheckSentAt
   nameWithType: ChecklistEntry.FirstCheckSentAt
+- uid: SIPSorcery.Net.ChecklistEntry.IsLocalController
+  name: IsLocalController
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_IsLocalController
+  commentId: P:SIPSorcery.Net.ChecklistEntry.IsLocalController
+  fullName: SIPSorcery.Net.ChecklistEntry.IsLocalController
+  nameWithType: ChecklistEntry.IsLocalController
+- uid: SIPSorcery.Net.ChecklistEntry.IsLocalController*
+  name: IsLocalController
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_IsLocalController_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.IsLocalController
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.IsLocalController
+  nameWithType: ChecklistEntry.IsLocalController
 - uid: SIPSorcery.Net.ChecklistEntry.LastCheckSentAt
   name: LastCheckSentAt
   href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LastCheckSentAt
@@ -4138,6 +4151,19 @@ references:
   commentId: F:SIPSorcery.Net.ChecklistEntry.LocalCandidate
   fullName: SIPSorcery.Net.ChecklistEntry.LocalCandidate
   nameWithType: ChecklistEntry.LocalCandidate
+- uid: SIPSorcery.Net.ChecklistEntry.LocalPriority
+  name: LocalPriority
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LocalPriority
+  commentId: P:SIPSorcery.Net.ChecklistEntry.LocalPriority
+  fullName: SIPSorcery.Net.ChecklistEntry.LocalPriority
+  nameWithType: ChecklistEntry.LocalPriority
+- uid: SIPSorcery.Net.ChecklistEntry.LocalPriority*
+  name: LocalPriority
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LocalPriority_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.LocalPriority
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.LocalPriority
+  nameWithType: ChecklistEntry.LocalPriority
 - uid: SIPSorcery.Net.ChecklistEntry.Nominated
   name: Nominated
   href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_Nominated
@@ -4163,6 +4189,19 @@ references:
   commentId: F:SIPSorcery.Net.ChecklistEntry.RemoteCandidate
   fullName: SIPSorcery.Net.ChecklistEntry.RemoteCandidate
   nameWithType: ChecklistEntry.RemoteCandidate
+- uid: SIPSorcery.Net.ChecklistEntry.RemotePriority
+  name: RemotePriority
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_RemotePriority
+  commentId: P:SIPSorcery.Net.ChecklistEntry.RemotePriority
+  fullName: SIPSorcery.Net.ChecklistEntry.RemotePriority
+  nameWithType: ChecklistEntry.RemotePriority
+- uid: SIPSorcery.Net.ChecklistEntry.RemotePriority*
+  name: RemotePriority
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_RemotePriority_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.RemotePriority
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.RemotePriority
+  nameWithType: ChecklistEntry.RemotePriority
 - uid: SIPSorcery.Net.ChecklistEntry.RequestTransactionID
   name: RequestTransactionID
   href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_RequestTransactionID
@@ -37942,19 +37981,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.Crypto.GetRandomUInt16
   nameWithType: Crypto.GetRandomUInt16
-- uid: SIPSorcery.Sys.Crypto.GetRSAProvider(System.String)
-  name: GetRSAProvider(String)
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetRSAProvider_System_String_
-  commentId: M:SIPSorcery.Sys.Crypto.GetRSAProvider(System.String)
-  fullName: SIPSorcery.Sys.Crypto.GetRSAProvider(System.String)
-  nameWithType: Crypto.GetRSAProvider(String)
-- uid: SIPSorcery.Sys.Crypto.GetRSAProvider*
-  name: GetRSAProvider
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetRSAProvider_
-  commentId: Overload:SIPSorcery.Sys.Crypto.GetRSAProvider
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.Crypto.GetRSAProvider
-  nameWithType: Crypto.GetRSAProvider
 - uid: SIPSorcery.Sys.Crypto.GetSHAHash(System.String[])
   name: GetSHAHash(String[])
   href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetSHAHash_System_String___
@@ -38016,61 +38042,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.Crypto.LoadCertificate
   nameWithType: Crypto.LoadCertificate
-- uid: SIPSorcery.Sys.Crypto.RSADecrypt(System.String,System.String)
-  name: RSADecrypt(String, String)
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_RSADecrypt_System_String_System_String_
-  commentId: M:SIPSorcery.Sys.Crypto.RSADecrypt(System.String,System.String)
-  fullName: SIPSorcery.Sys.Crypto.RSADecrypt(System.String, System.String)
-  nameWithType: Crypto.RSADecrypt(String, String)
-- uid: SIPSorcery.Sys.Crypto.RSADecrypt*
-  name: RSADecrypt
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_RSADecrypt_
-  commentId: Overload:SIPSorcery.Sys.Crypto.RSADecrypt
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.Crypto.RSADecrypt
-  nameWithType: Crypto.RSADecrypt
-- uid: SIPSorcery.Sys.Crypto.RSADecryptRaw(System.String,System.Byte[])
-  name: RSADecryptRaw(String, Byte[])
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_RSADecryptRaw_System_String_System_Byte___
-  commentId: M:SIPSorcery.Sys.Crypto.RSADecryptRaw(System.String,System.Byte[])
-  name.vb: RSADecryptRaw(String, Byte())
-  fullName: SIPSorcery.Sys.Crypto.RSADecryptRaw(System.String, System.Byte[])
-  fullName.vb: SIPSorcery.Sys.Crypto.RSADecryptRaw(System.String, System.Byte())
-  nameWithType: Crypto.RSADecryptRaw(String, Byte[])
-  nameWithType.vb: Crypto.RSADecryptRaw(String, Byte())
-- uid: SIPSorcery.Sys.Crypto.RSADecryptRaw*
-  name: RSADecryptRaw
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_RSADecryptRaw_
-  commentId: Overload:SIPSorcery.Sys.Crypto.RSADecryptRaw
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.Crypto.RSADecryptRaw
-  nameWithType: Crypto.RSADecryptRaw
-- uid: SIPSorcery.Sys.Crypto.RSAEncrypt(System.String,System.String)
-  name: RSAEncrypt(String, String)
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_RSAEncrypt_System_String_System_String_
-  commentId: M:SIPSorcery.Sys.Crypto.RSAEncrypt(System.String,System.String)
-  fullName: SIPSorcery.Sys.Crypto.RSAEncrypt(System.String, System.String)
-  nameWithType: Crypto.RSAEncrypt(String, String)
-- uid: SIPSorcery.Sys.Crypto.RSAEncrypt*
-  name: RSAEncrypt
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_RSAEncrypt_
-  commentId: Overload:SIPSorcery.Sys.Crypto.RSAEncrypt
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.Crypto.RSAEncrypt
-  nameWithType: Crypto.RSAEncrypt
-- uid: SIPSorcery.Sys.Crypto.RSAEncryptRaw(System.String,System.String)
-  name: RSAEncryptRaw(String, String)
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_RSAEncryptRaw_System_String_System_String_
-  commentId: M:SIPSorcery.Sys.Crypto.RSAEncryptRaw(System.String,System.String)
-  fullName: SIPSorcery.Sys.Crypto.RSAEncryptRaw(System.String, System.String)
-  nameWithType: Crypto.RSAEncryptRaw(String, String)
-- uid: SIPSorcery.Sys.Crypto.RSAEncryptRaw*
-  name: RSAEncryptRaw
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_RSAEncryptRaw_
-  commentId: Overload:SIPSorcery.Sys.Crypto.RSAEncryptRaw
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.Crypto.RSAEncryptRaw
-  nameWithType: Crypto.RSAEncryptRaw
 - uid: SIPSorcery.Sys.Crypto.SymmetricDecrypt(System.String,System.String,System.Byte[])
   name: SymmetricDecrypt(String, String, Byte[])
   href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_SymmetricDecrypt_System_String_System_String_System_Byte___

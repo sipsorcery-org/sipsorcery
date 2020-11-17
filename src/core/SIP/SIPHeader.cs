@@ -717,9 +717,9 @@ namespace SIPSorcery.SIP
 
                 return contactHeaderList;
             }
-            catch (SIPValidationException sipValidationExcp)
+            catch (SIPValidationException)
             {
-                throw sipValidationExcp;
+                throw;
             }
             catch (Exception excp)
             {
@@ -2161,7 +2161,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPHeader ToString. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 

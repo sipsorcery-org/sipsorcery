@@ -61,7 +61,15 @@
 =======
     <PackageReference Include="SIPSorcery" Version="4.0.88-pre" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.5-pre" />
+<<<<<<< HEAD
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.25-pre" />
+>>>>>>> master
+=======
+    <!--<PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.25-pre" />-->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\SIPSorceryMedia.Windows\src\SIPSorceryMedia.Windows.csproj" />
 >>>>>>> master
   </ItemGroup>
 
