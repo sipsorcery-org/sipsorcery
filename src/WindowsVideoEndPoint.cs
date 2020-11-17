@@ -82,13 +82,15 @@ namespace SIPSorceryMedia.Windows
         private uint _fpsNumerator = 0;
         private uint _fpsDenominator = 1;
         private bool _videoCaptureDeviceFailed;
+        private DateTime _lastFrameAt = DateTime.MinValue;
 
         /// <summary>
-        /// This video source DOES NOT generate raw samples. Subscribe to the encoded samples event
-        /// to get samples ready for passing to the RTP transport layer.
+        /// This event is fired when local video samples are available. The samples
+        /// are for applications that wish to display the local video stream. The 
+        /// <seealso cref="OnVideoSourceEncodedSample"/> event is fired after the sample
+        /// has been encoded and is ready for transmission.
         /// </summary>
-        [Obsolete("This video source only generates encoded samples. No raw video samples will be supplied to this event.")]
-        public event RawVideoSampleDelegate OnVideoSourceRawSample { add { } remove { } }
+        public event RawVideoSampleDelegate OnVideoSourceRawSample;
 
         /// <summary>
         /// This event will be fired whenever a video sample is encoded and is ready to transmit to the remote party.
@@ -207,7 +209,7 @@ namespace SIPSorceryMedia.Windows
 
             if (_videoDeviceID != null)
             {
-                var vidCapDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
+                var vidCapDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture).AsTask().ConfigureAwait(false);
                 var vidDevice = vidCapDevices.FirstOrDefault(x => x.Id == _videoDeviceID || x.Name == _videoDeviceID);
 
                 if (vidDevice == null)
@@ -221,7 +223,7 @@ namespace SIPSorceryMedia.Windows
                 }
             }
 
-            await _mediaCapture.InitializeAsync(mediaCaptureSettings);
+            await _mediaCapture.InitializeAsync(mediaCaptureSettings).AsTask().ConfigureAwait(false);
 
             MediaFrameSourceInfo colorSourceInfo = null;
             foreach (var srcInfo in _mediaCapture.FrameSources)
@@ -268,9 +270,9 @@ namespace SIPSorceryMedia.Windows
                 throw new ApplicationException("The video capture device does not support a compatible video format for the requested parameters.");
             }
 
-            await colorFrameSource.SetFormatAsync(preferredFormat);
+            await colorFrameSource.SetFormatAsync(preferredFormat).AsTask().ConfigureAwait(false);
 
-            _mediaFrameReader = await _mediaCapture.CreateFrameReaderAsync(colorFrameSource);
+            _mediaFrameReader = await _mediaCapture.CreateFrameReaderAsync(colorFrameSource).AsTask().ConfigureAwait(false);
             _mediaFrameReader.AcquisitionMode = MediaFrameReaderAcquisitionMode.Realtime;
 
             // Frame source and format have now been successfully set.
@@ -465,7 +467,7 @@ namespace SIPSorceryMedia.Windows
         {
             if (!_isClosed)
             {
-                if (!_isClosed && OnVideoSourceEncodedSample != null)
+                if (!_isClosed && (OnVideoSourceEncodedSample != null || OnVideoSourceRawSample != null))
                 {
                     using (var mediaFrameReference = sender.TryAcquireLatestFrame())
                     {
@@ -483,8 +485,6 @@ namespace SIPSorceryMedia.Windows
                             int width = softwareBitmap.PixelWidth;
                             int height = softwareBitmap.PixelHeight;
 
-                            //logger.LogDebug($"Software bitmap pixel fmt {softwareBitmap.BitmapPixelFormat} {width}x{height}.");
-
                             if (softwareBitmap.BitmapPixelFormat != BitmapPixelFormat.Nv12)
                             {
                                 softwareBitmap = SoftwareBitmap.Convert(softwareBitmap, BitmapPixelFormat.Nv12, BitmapAlphaMode.Ignore);
@@ -492,7 +492,6 @@ namespace SIPSorceryMedia.Windows
 
                             // Swap the processed frame to _backBuffer and dispose of the unused image.
                             softwareBitmap = Interlocked.Exchange(ref _backBuffer, softwareBitmap);
-                            softwareBitmap?.Dispose();
 
                             using (BitmapBuffer buffer = _backBuffer.LockBuffer(BitmapBufferAccessMode.Read))
                             {
@@ -503,32 +502,50 @@ namespace SIPSorceryMedia.Windows
                                         byte* dataInBytes;
                                         uint capacity;
                                         ((IMemoryBufferByteAccess)reference).GetBuffer(out dataInBytes, out capacity);
+                                        byte[] nv12Buffer = new byte[capacity];
+                                        Marshal.Copy((IntPtr)dataInBytes, nv12Buffer, 0, (int)capacity);
 
-                                        lock (_vp8Encoder)
+                                        if (OnVideoSourceEncodedSample != null)
                                         {
-                                            byte[] encoderInBuffer = new byte[capacity];
-                                            Marshal.Copy((IntPtr)dataInBytes, encoderInBuffer, 0, (int)capacity);
-
-                                            var encodedBuffer = _vp8Encoder.Encode(encoderInBuffer, _forceKeyFrame);
-
-                                            if (encodedBuffer != null)
+                                            lock (_vp8Encoder)
                                             {
-                                                uint fps = (_fpsDenominator > 0 && _fpsNumerator > 0) ? _fpsNumerator / _fpsDenominator : DEFAULT_FRAMES_PER_SECOND;
-                                                uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
-                                                OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+                                                var encodedBuffer = _vp8Encoder.Encode(nv12Buffer, _forceKeyFrame);
+
+                                                if (encodedBuffer != null)
+                                                {
+                                                    uint fps = (_fpsDenominator > 0 && _fpsNumerator > 0) ? _fpsNumerator / _fpsDenominator : DEFAULT_FRAMES_PER_SECOND;
+                                                    uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
+                                                    OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+                                                }
+
+                                                if (_forceKeyFrame)
+                                                {
+                                                    _forceKeyFrame = false;
+                                                }
+                                            }
+                                        }
+
+                                        if (OnVideoSourceRawSample != null)
+                                        {
+                                            uint frameSpacing = 0;
+                                            if (_lastFrameAt != DateTime.MinValue)
+                                            {
+                                                frameSpacing = Convert.ToUInt32(DateTime.Now.Subtract(_lastFrameAt).TotalMilliseconds);
                                             }
 
-                                            if (_forceKeyFrame)
-                                            {
-                                                _forceKeyFrame = false;
-                                            }
+                                            var bgrBuffer = PixelConverter.NV12toBGR(nv12Buffer, width, height);
+
+                                            OnVideoSourceRawSample(frameSpacing, width, height, bgrBuffer, VideoPixelFormatsEnum.Bgr);
                                         }
                                     }
                                 }
                             }
 
                             _backBuffer?.Dispose();
+                            softwareBitmap?.Dispose();
                         }
+
+                        _lastFrameAt = DateTime.Now;
                     }
                 }
             }
