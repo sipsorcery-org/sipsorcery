@@ -21,12 +21,13 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Abstractions</RepositoryUrl>
-    <Version>0.0.20-pre</Version>
-    <AssemblyVersion>0.0.20.0</AssemblyVersion>
-    <FileVersion>0.0.20.0</FileVersion>
+    <Version>0.0.21-pre</Version>
+    <AssemblyVersion>0.0.21.0</AssemblyVersion>
+    <FileVersion>0.0.21.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
-    <PackageReleaseNotes>-0.0.20-pre: Added IDisposable as required interface for IVideoEncoder.
+    <PackageReleaseNotes>-0.0.21-pre: Added NV12 pixel conversion.
+-0.0.20-pre: Added IDisposable as required interface for IVideoEncoder.
 -0.0.19-pre: Set a default clock rate on the empty media formats as a fallback.
 -0.0.18-pre: Improvements to API after SDP refactor in main library. 
 -0.0.17-pre: Expanded audio and video codecs to formats to increase flexibility.
