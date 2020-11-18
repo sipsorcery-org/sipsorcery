@@ -9278,6 +9278,12 @@ references:
   commentId: M:SIPSorcery.Net.RTCPeerConnection.createOffer(SIPSorcery.Net.RTCOfferOptions)
   fullName: SIPSorcery.Net.RTCPeerConnection.createOffer(SIPSorcery.Net.RTCOfferOptions)
   nameWithType: RTCPeerConnection.createOffer(RTCOfferOptions)
+- uid: SIPSorcery.Net.RTCPeerConnection.CreateOffer(System.Net.IPAddress)
+  name: CreateOffer(IPAddress)
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_CreateOffer_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.CreateOffer(System.Net.IPAddress)
+  fullName: SIPSorcery.Net.RTCPeerConnection.CreateOffer(System.Net.IPAddress)
+  nameWithType: RTCPeerConnection.CreateOffer(IPAddress)
 - uid: SIPSorcery.Net.RTCPeerConnection.createOffer*
   name: createOffer
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_createOffer_
@@ -9285,6 +9291,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.createOffer
   nameWithType: RTCPeerConnection.createOffer
+- uid: SIPSorcery.Net.RTCPeerConnection.CreateOffer*
+  name: CreateOffer
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_CreateOffer_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.CreateOffer
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.CreateOffer
+  nameWithType: RTCPeerConnection.CreateOffer
 - uid: SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)
   name: CreateRtpChannel(SDPMediaTypesEnum)
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_CreateRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_
