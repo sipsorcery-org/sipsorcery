@@ -4,6 +4,44 @@
 // Description: A demo program to place a SIP call to Asterisk and use an RTP 
 // channel that supports ICE.
 //
+// The key point for this demo is the RTCPeerConnection instance passed to
+// the SIPUserAgent to manage the RTP channels and media. Typically a 
+// VoIPMediaSession or RTPSession is used for SIP. In this demo because an
+// ICE connection is desired on the RTP channel the RTCPeerConnection, which
+// is more commonly used for WebRTC, is employed.
+//
+// Note: As of 18 Nov 2020 this demo program is able to establish an RTP
+// ICE connected channel with Asterisk 18.0.1 BUT the audio and video 
+// streams do not get through to the recipient on the other end of the 
+// Asterisk bridge. 
+//
+// The relevant sections from /etc/asterisk/pjsip.conf:
+//
+//[joeb]
+//type = aor
+//max_contacts = 5
+//remove_existing = yes
+//
+//[joeb]
+//type = auth
+//auth_type = userpass
+//username = joeb
+//password = password
+//
+//[joeb]
+//type = endpoint
+//aors = joeb
+//auth = joeb
+//dtls_auto_generate_cert = yes
+//webrtc = yes
+//context = default
+//allow = all
+//direct_media = no
+//ice_support = yes
+//
+// For /etc/astersik/rtp.conf:
+//icesupport=true 
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
@@ -26,13 +64,12 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Encoders;
-using SIPSorceryMedia.Windows;
 
 namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "sip:*61@192.168.0.48";
+        private static string DESTINATION = "sip:7001@192.168.0.48";
         private static string USERNAME = "joeb";
         private static string PASSWORD = "password";
 
@@ -49,36 +86,26 @@ namespace demo
 
             var userAgent = new SIPUserAgent(sipTransport, null);
             userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
-            userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
+            userAgent.OnCallHungup += async (dialog) =>
+            {
+                // Give time for the BYE response before exiting.
+                await Task.Delay(1000);
+                exitCts.Cancel();
+            };
 
-            var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
+            var audioExtras = new AudioExtrasSource();
+            audioExtras.SetSource(AudioSourcesEnum.PinkNoise);
             var testPattern = new VideoTestPatternSource(new VideoEncoder());
 
             var pc = new RTCPeerConnection(null);
-            pc.OnAudioFormatsNegotiated += (formats) =>
-            {
-                windowsAudio.SetAudioSinkFormat(formats.First());
-                windowsAudio.SetAudioSourceFormat(formats.First());
-            };
-            pc.OnVideoFormatsNegotiated += (formats) =>
-            {
-                testPattern.SetVideoSourceFormat(formats.First());
-            };
-            pc.OnRtpPacketReceived += (remoteEndPoint, mediaType, rtpPacket) =>
-            {
-                if (mediaType == SDPMediaTypesEnum.audio)
-                {
-                    var hdr = rtpPacket.Header;
-                    bool marker = rtpPacket.Header.MarkerBit > 0;
-                    windowsAudio.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
-                }
-            };
+            pc.OnAudioFormatsNegotiated += (formats) => audioExtras.SetAudioSourceFormat(formats.First());
+            pc.OnVideoFormatsNegotiated += (formats) => testPattern.SetVideoSourceFormat(formats.First());
 
-            var audioTrack = new MediaStreamTrack(windowsAudio.GetAudioSourceFormats());
+            var audioTrack = new MediaStreamTrack(audioExtras.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(audioTrack);
-            windowsAudio.OnAudioSourceEncodedSample += pc.SendAudio;
+            audioExtras.OnAudioSourceEncodedSample += pc.SendAudio;
 
-            var videoTrack = new MediaStreamTrack(testPattern.GetVideoSourceFormats());
+            var videoTrack = new MediaStreamTrack(testPattern.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
             testPattern.OnVideoSourceEncodedSample += pc.SendVideo;
 
@@ -95,7 +122,8 @@ namespace demo
 
                 if (state == RTCPeerConnectionState.connected)
                 {
-                    windowsAudio.StartAudio();
+                    audioExtras.StartAudio();
+                    testPattern.StartVideo();
                 }
                 else if (state == RTCPeerConnectionState.failed)
                 {
