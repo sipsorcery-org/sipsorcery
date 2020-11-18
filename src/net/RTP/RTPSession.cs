@@ -462,7 +462,7 @@ namespace SIPSorcery.Net
         /// the kernel routing table will be used to determine the local IP address used
         /// for Internet access.</param>
         /// <returns>A task that when complete contains the SDP offer.</returns>
-        public SDP CreateOffer(IPAddress connectionAddress)
+        public virtual SDP CreateOffer(IPAddress connectionAddress)
         {
             if (AudioLocalTrack == null && VideoLocalTrack == null)
             {

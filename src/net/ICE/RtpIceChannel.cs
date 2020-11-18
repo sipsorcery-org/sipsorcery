@@ -1146,7 +1146,10 @@ namespace SIPSorcery.Net
                         // No checklist entries were made available before the failed timeout.
 
                         _checklistState = ChecklistState.Failed;
-                        IceConnectionState = RTCIceConnectionState.disconnected;
+                        //IceConnectionState = RTCIceConnectionState.disconnected;
+                        // No point going to and ICE disconnected state as there was never a connection and therefore
+                        // nothing ot monitor for a re-connection.
+                        IceConnectionState = RTCIceConnectionState.failed;
                         OnIceConnectionStateChange?.Invoke(IceConnectionState);
                     }
                 }

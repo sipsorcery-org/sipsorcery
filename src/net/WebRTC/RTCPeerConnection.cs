@@ -823,6 +823,24 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="connectionAddress">Not used.</param>
         /// <returns>An SDP payload to answer an offer from the remote party.</returns>
+        public override SDP CreateOffer(IPAddress connectionAddress)
+        {
+            var result = createOffer(null);
+
+            if (result?.sdp != null)
+            {
+                return SDP.ParseSDPDescription(result.sdp);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Convenience overload to suit SIP/VoIP callers.
+        /// TODO: Consolidate with createAnswer.
+        /// </summary>
+        /// <param name="connectionAddress">Not used.</param>
+        /// <returns>An SDP payload to answer an offer from the remote party.</returns>
         public override SDP CreateAnswer(IPAddress connectionAddress)
         {
             var result = createAnswer(null);
