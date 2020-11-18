@@ -14,9 +14,5 @@
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.27-pre" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
-  </ItemGroup>
-
 
 </Project>
