@@ -203,6 +203,10 @@ namespace SIPSorcery.Net
                     int mLineIndex = 0;
                     SDPMediaAnnouncement activeAnnouncement = null;
 
+                    // If a media announcement fmtp atribute is found before the rtpmap it will be stored
+                    // in this dictionary. A dynamic media format type cannot be created without an rtpmap.
+                    Dictionary<int, string> _pendingFmtp = new Dictionary<int, string>();
+
                     string[] sdpLines = Regex.Split(sdpDescription, CRLF);
 
                     foreach (string sdpLine in sdpLines)
@@ -375,7 +379,8 @@ namespace SIPSorcery.Net
                                                 }
                                                 else
                                                 {
-                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, id, rtpmap, null));
+                                                    string fmtp = _pendingFmtp.ContainsKey(id) ? _pendingFmtp[id] : null;
+                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, id, rtpmap, fmtp));
                                                 }
                                             }
                                             else
@@ -422,7 +427,12 @@ namespace SIPSorcery.Net
                                                 }
                                                 else
                                                 {
-                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, id, null, fmtp));
+                                                    // Store the fmtp attribute for use when the rtpmap attribute turns up.
+                                                    if(_pendingFmtp.ContainsKey(id))
+                                                    {
+                                                        _pendingFmtp.Remove(id);
+                                                    }
+                                                    _pendingFmtp.Add(id, fmtp);
                                                 }
                                             }
                                             else

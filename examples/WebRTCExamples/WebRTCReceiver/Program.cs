@@ -97,8 +97,8 @@ namespace demo
 
         private static Task<RTCPeerConnection> CreatePeerConnection()
         {
-            //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint();
-            var videoEP = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint();
+            //var videoEP = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>

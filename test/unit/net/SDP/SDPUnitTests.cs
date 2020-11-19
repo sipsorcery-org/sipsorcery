@@ -1004,5 +1004,46 @@ a=sendrecv";
             Assert.Equal(111, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats.Single().Key);
             Assert.Equal("opus", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats.Single().Value.Name());
         }
+
+
+        /// <summary>
+        /// Tests that parsing an SDP media format attribute which specifies a dynamic media format fmtp in advance of the 
+        /// rtpmap works correctly..
+        /// </summary>
+        [Fact]
+        public void ParseOfferWithFmtpPreceedingRtmapTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=mozilla...THIS_IS_SDPARTA-80.0.1 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+a=sendrecv
+a=fingerprint:sha-256 46:7C:4B:FD:47:E1:22:16:28:FC:52:94:C8:9D:7D:24:2F:C3:A8:66:02:17:0D:41:DF:34:99:1C:48:CB:9F:D5
+a=group:BUNDLE 0
+a=ice-options:trickle
+a=msid-semantic:WMS *
+m=video 9 UDP/TLS/RTP/SAVP 96
+c=IN IP4 0.0.0.0
+a=recvonly
+a=fmtp:96 max-fs=12288;max-fr=60
+a=ice-pwd:8136ef42e22d9d6b31d23b39a662bf8d
+a=ice-ufrag:2cbeec1e
+a=mid:0
+a=rtcp-mux
+a=rtpmap:96 VP8/90000
+a=setup:active
+a=ssrc:2404235415 cname:{7c06c5db-d3db-4891-b729-df4919014c3f}";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Assert.Equal(96, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Key);
+            Assert.Equal("VP8", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Name());
+            Assert.Equal("VP8/90000", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Rtpmap);
+            Assert.Equal("max-fs=12288;max-fr=60", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Fmtp);
+        }
     }
 }
