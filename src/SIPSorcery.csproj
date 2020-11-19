@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.90-pre: Allow SIP User Agent to use RTP ICE channel.
+    <PackageReleaseNotes>v4.0.91-pre: Fixed bug parsing FireFox SDP where fmtp was prior to rtpmap.
+- v4.0.90-pre: Allow SIP User Agent to use RTP ICE channel.
 - v4.0.89-pre: Updated to latest media abstractions package.
 - v4.0.88-pre: Added video encoder parameter to test pattern source.
 - v4.0.87-pre: Fixed bug not correctly processing missing SDP stream attribute.
@@ -108,9 +109,9 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.90-pre</Version>
-    <AssemblyVersion>4.0.90.0</AssemblyVersion>
-    <FileVersion>4.0.90.0</FileVersion>
+    <Version>4.0.91-pre</Version>
+    <AssemblyVersion>4.0.91.0</AssemblyVersion>
+    <FileVersion>4.0.91.0</FileVersion>
   </PropertyGroup>
 
 </Project>
