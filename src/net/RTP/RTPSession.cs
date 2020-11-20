@@ -590,7 +590,8 @@ namespace SIPSorcery.Net
 
                 foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio || x.Media == SDPMediaTypesEnum.video))
                 {
-                    var remoteTrack = new MediaStreamTrack(announcement.Media, true, announcement.MediaFormats.Values.ToList(), announcement.MediaStreamStatus, announcement.SsrcAttributes);
+                    MediaStreamStatusEnum mediaStreamStatus = announcement.MediaStreamStatus.HasValue ? announcement.MediaStreamStatus.Value : MediaStreamStatusEnum.SendRecv;
+                    var remoteTrack = new MediaStreamTrack(announcement.Media, true, announcement.MediaFormats.Values.ToList(), mediaStreamStatus, announcement.SsrcAttributes);
                     addTrack(remoteTrack);
 
                     if (announcement.Media == SDPMediaTypesEnum.audio)

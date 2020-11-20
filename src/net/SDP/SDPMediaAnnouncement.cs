@@ -63,6 +63,7 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
         public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
         public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
+        public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
         public const string m_CRLF = "\r\n";
 
@@ -134,9 +135,9 @@ namespace SIPSorcery.Net
         public List<string> IceCandidates;
 
         /// <summary>
-        /// The stream status of this media announcement. If no value is explicitly set then the default is sendrecv.
+        /// The stream status of this media announcement.
         /// </summary>
-        public MediaStreamStatusEnum MediaStreamStatus { get; set; } = MediaStreamStatusEnum.SendRecv;
+        public MediaStreamStatusEnum? MediaStreamStatus { get; set; }
 
         public SDPMediaAnnouncement()
         { }
@@ -155,6 +156,7 @@ namespace SIPSorcery.Net
         {
             Media = mediaType;
             Port = port;
+            MediaStreamStatus = DEFAULT_STREAM_STATUS;
 
             foreach (var fmt in mediaFormats)
             {
@@ -260,7 +262,10 @@ namespace SIPSorcery.Net
                 announcement += desc.ToString() + m_CRLF;
             }
 
-            announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus) + m_CRLF;
+            if (MediaStreamStatus != null)
+            {
+                announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value) + m_CRLF;
+            }
 
             if (SsrcGroupID != null && SsrcAttributes.Count > 0)
             {
