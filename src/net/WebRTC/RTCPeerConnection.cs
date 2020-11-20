@@ -668,7 +668,7 @@ namespace SIPSorcery.Net
                     // Check for data channel announcements.
                     if (ann.Media == SDPMediaTypesEnum.application &&
                         ann.MediaFormats.Count() == 1 &&
-                        ann.ApplicationMediaFormats.Single().ID == SDP_DATACHANNEL_FORMAT_ID)
+                        ann.ApplicationMediaFormats.Single().Key == SDP_DATACHANNEL_FORMAT_ID)
                     {
                         if (ann.Transport == RTP_MEDIA_DATACHANNEL_DTLS_PROFILE ||
                             ann.Transport == RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE)

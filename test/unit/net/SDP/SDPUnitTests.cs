@@ -1008,7 +1008,7 @@ a=sendrecv";
 
         /// <summary>
         /// Tests that parsing an SDP media format attribute which specifies a dynamic media format fmtp in advance of the 
-        /// rtpmap works correctly..
+        /// rtpmap works correctly.
         /// </summary>
         [Fact]
         public void ParseOfferWithFmtpPreceedingRtmapTest()
@@ -1044,6 +1044,43 @@ a=ssrc:2404235415 cname:{7c06c5db-d3db-4891-b729-df4919014c3f}";
             Assert.Equal("VP8", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Name());
             Assert.Equal("VP8/90000", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Rtpmap);
             Assert.Equal("max-fs=12288;max-fr=60", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Fmtp);
+        }
+
+
+        /// <summary>
+        /// Tests that parsing an SDP media format attribute for a Mission Critical Push To Talk (MCPTT)
+        /// announcement works correctly.
+        /// </summary>
+        [Fact]
+        public void ParseMcpttTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=root 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+m=audio 55316 RTP/AVP 0 101
+a=rtpmap:0 PCMU/8000
+a=label:1
+i=speech
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+a=sendrecv
+m=application 55317 udp MCPTT
+a=fmtp:MCPTT mc_queueing;mc_priority=4";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("MCPTT", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Key);
+            Assert.Equal("mc_queueing;mc_priority=4", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Value.Fmtp);
         }
     }
 }

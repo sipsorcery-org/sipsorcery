@@ -117,11 +117,21 @@ namespace SIPSorcery.Net
         public List<SDPSsrcAttribute> SsrcAttributes = new List<SDPSsrcAttribute>();
 
         public List<string> BandwidthAttributes = new List<string>();
-        public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
+
+        /// <summary>
+        ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
+        /// </summary>
+        public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
+
+        /// <summary>
+        /// List of media formats for "application media announcements. Application media announcements have different
+        /// semantics to audio/video announcements. They can also use aribtrary strings as the format ID.
+        /// </summary>
+        public Dictionary<string, SDPApplicationMediaFormat> ApplicationMediaFormats = new Dictionary<string, SDPApplicationMediaFormat>();
+
         public List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
         public List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
         public List<string> IceCandidates;
-        public List<SDPApplicationMediaFormat> ApplicationMediaFormats = new List<SDPApplicationMediaFormat>(); // List of media formats for "application media announcements.
 
         /// <summary>
         /// The stream status of this media announcement. If no value is explicitly set then the default is sendrecv.
@@ -159,7 +169,14 @@ namespace SIPSorcery.Net
         {
             Media = mediaType;
             Port = port;
-            ApplicationMediaFormats = appMediaFormats;
+
+            foreach (var fmt in appMediaFormats)
+            {
+                if (!ApplicationMediaFormats.ContainsKey(fmt.ID))
+                {
+                    ApplicationMediaFormats.Add(fmt.ID, fmt);
+                }
+            }
         }
 
         public void ParseMediaFormats(string formatList)
@@ -173,7 +190,7 @@ namespace SIPSorcery.Net
                     {
                         if (Media == SDPMediaTypesEnum.application)
                         {
-                            ApplicationMediaFormats.Add(new SDPApplicationMediaFormat(formatID));
+                            ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
                         }
                         else
                         {
@@ -298,9 +315,9 @@ namespace SIPSorcery.Net
             if (Media == SDPMediaTypesEnum.application)
             {
                 StringBuilder sb = new StringBuilder();
-                foreach (SDPApplicationMediaFormat appFormat in ApplicationMediaFormats)
+                foreach (var appFormat in ApplicationMediaFormats)
                 {
-                    sb.Append(appFormat.ID);
+                    sb.Append(appFormat.Key);
                     sb.Append(" ");
                 }
 
@@ -325,12 +342,16 @@ namespace SIPSorcery.Net
                 if (ApplicationMediaFormats.Count > 0)
                 {
                     StringBuilder sb = new StringBuilder();
-                    foreach (SDPApplicationMediaFormat appFormat in ApplicationMediaFormats.Where(x => x.Rtpmap != null))
+                    foreach (var appFormat in ApplicationMediaFormats)
                     {
-                        sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.ID} {appFormat.Rtpmap}{m_CRLF}");
-                        if (appFormat.Fmtmp != null)
+                        if (appFormat.Value.Rtpmap != null)
                         {
-                            sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX}{appFormat.ID} {appFormat.Fmtmp}{m_CRLF}");
+                            sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Rtpmap}{m_CRLF}");
+                        }
+
+                        if (appFormat.Value.Fmtp != null)
+                        {
+                            sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Fmtp}{m_CRLF}");
                         }
                     }
 
@@ -347,7 +368,6 @@ namespace SIPSorcery.Net
 
                 if (MediaFormats != null)
                 {
-                    //foreach (var mediaFormat in MediaFormats.Where(x => x.Key >= SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN).Select(y => y.Value))
                     foreach (var mediaFormat in MediaFormats.Select(y => y.Value))
                     {
                         if (mediaFormat.Rtpmap == null)
