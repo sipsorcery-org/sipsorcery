@@ -124,6 +124,7 @@ namespace SIPSorcery.Net
         public const int IGNORE_RTP_PORT_NUMBER = 9;
         public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const int MEDIA_INDEX_NOT_PRESENT = -1;
+        public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
         // ICE attributes.
         public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
@@ -278,8 +279,11 @@ namespace SIPSorcery.Net
                                     Int32.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
                                     announcement.Transport = mediaMatch.Result("${transport}");
                                     announcement.ParseMediaFormats(mediaMatch.Result("${formats}"));
-                                    announcement.MediaStreamStatus = sdp.SessionMediaStreamStatus != null ? sdp.SessionMediaStreamStatus.Value :
-                                        MediaStreamStatusEnum.SendRecv;
+                                    if (announcement.Media == SDPMediaTypesEnum.audio || announcement.Media == SDPMediaTypesEnum.video)
+                                    {
+                                        announcement.MediaStreamStatus = sdp.SessionMediaStreamStatus != null ? sdp.SessionMediaStreamStatus.Value :
+                                            MediaStreamStatusEnum.SendRecv;
+                                    }
                                     sdp.Media.Add(announcement);
 
                                     activeAnnouncement = announcement;
@@ -789,12 +793,12 @@ namespace SIPSorcery.Net
 
             if (announcements == null || announcements.Count() < announcementIndex + 1)
             {
-                return MediaStreamStatusEnum.SendRecv;
+                return DEFAULT_STREAM_STATUS;
             }
             else
             {
                 var announcement = announcements[announcementIndex];
-                return announcement.MediaStreamStatus;
+                return announcement.MediaStreamStatus.HasValue ? announcement.MediaStreamStatus.Value : DEFAULT_STREAM_STATUS;
             }
         }
 
