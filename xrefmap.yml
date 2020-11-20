@@ -19296,6 +19296,12 @@ references:
   commentId: F:SIPSorcery.Net.SDP.CRLF
   fullName: SIPSorcery.Net.SDP.CRLF
   nameWithType: SDP.CRLF
+- uid: SIPSorcery.Net.SDP.DEFAULT_STREAM_STATUS
+  name: DEFAULT_STREAM_STATUS
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_DEFAULT_STREAM_STATUS
+  commentId: F:SIPSorcery.Net.SDP.DEFAULT_STREAM_STATUS
+  fullName: SIPSorcery.Net.SDP.DEFAULT_STREAM_STATUS
+  nameWithType: SDP.DEFAULT_STREAM_STATUS
 - uid: SIPSorcery.Net.SDP.DEFAULT_TIMING
   name: DEFAULT_TIMING
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_DEFAULT_TIMING
@@ -20145,6 +20151,12 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.Connection
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.Connection
   nameWithType: SDPMediaAnnouncement.Connection
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.DEFAULT_STREAM_STATUS
+  name: DEFAULT_STREAM_STATUS
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_DEFAULT_STREAM_STATUS
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.DEFAULT_STREAM_STATUS
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.DEFAULT_STREAM_STATUS
+  nameWithType: SDPMediaAnnouncement.DEFAULT_STREAM_STATUS
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.DtlsFingerprint
   name: DtlsFingerprint
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_DtlsFingerprint

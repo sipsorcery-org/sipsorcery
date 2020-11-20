@@ -1353,7 +1353,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPSession.html",
-          "hash": "FZnkfBi/+k6PEfQXU5e+mw=="
+          "hash": "W/OpLRbAFQIdyWmosoQqcw=="
         }
       },
       "is_incremental": false,
@@ -1653,7 +1653,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDP.html",
-          "hash": "G8mwLn87f03w1Ihm2yjyuA=="
+          "hash": "OUmc18M1tVB201KemRvWBA=="
         }
       },
       "is_incremental": false,
@@ -1701,7 +1701,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDPMediaAnnouncement.html",
-          "hash": "4DNKFKsEl4SmxjzwBDWG9g=="
+          "hash": "sT9PS9JuMplyxBAD4YC3CQ=="
         }
       },
       "is_incremental": false,
