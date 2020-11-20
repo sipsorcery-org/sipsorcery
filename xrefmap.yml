@@ -19604,6 +19604,12 @@ references:
   commentId: M:SIPSorcery.Net.SDPApplicationMediaFormat.#ctor(System.String)
   fullName: SIPSorcery.Net.SDPApplicationMediaFormat.SDPApplicationMediaFormat(System.String)
   nameWithType: SDPApplicationMediaFormat.SDPApplicationMediaFormat(String)
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.#ctor(System.String,System.String,System.String)
+  name: SDPApplicationMediaFormat(String, String, String)
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat__ctor_System_String_System_String_System_String_
+  commentId: M:SIPSorcery.Net.SDPApplicationMediaFormat.#ctor(System.String,System.String,System.String)
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.SDPApplicationMediaFormat(System.String, System.String, System.String)
+  nameWithType: SDPApplicationMediaFormat.SDPApplicationMediaFormat(String, String, String)
 - uid: SIPSorcery.Net.SDPApplicationMediaFormat.#ctor*
   name: SDPApplicationMediaFormat
   href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat__ctor_
@@ -19611,12 +19617,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPApplicationMediaFormat.SDPApplicationMediaFormat
   nameWithType: SDPApplicationMediaFormat.SDPApplicationMediaFormat
-- uid: SIPSorcery.Net.SDPApplicationMediaFormat.Fmtmp
-  name: Fmtmp
-  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_Fmtmp
-  commentId: F:SIPSorcery.Net.SDPApplicationMediaFormat.Fmtmp
-  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.Fmtmp
-  nameWithType: SDPApplicationMediaFormat.Fmtmp
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.Fmtp
+  name: Fmtp
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_Fmtp
+  commentId: F:SIPSorcery.Net.SDPApplicationMediaFormat.Fmtp
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.Fmtp
+  nameWithType: SDPApplicationMediaFormat.Fmtp
 - uid: SIPSorcery.Net.SDPApplicationMediaFormat.ID
   name: ID
   href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_ID
@@ -19629,6 +19635,45 @@ references:
   commentId: F:SIPSorcery.Net.SDPApplicationMediaFormat.Rtpmap
   fullName: SIPSorcery.Net.SDPApplicationMediaFormat.Rtpmap
   nameWithType: SDPApplicationMediaFormat.Rtpmap
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedFmtp(System.String)
+  name: WithUpdatedFmtp(String)
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_WithUpdatedFmtp_System_String_
+  commentId: M:SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedFmtp(System.String)
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedFmtp(System.String)
+  nameWithType: SDPApplicationMediaFormat.WithUpdatedFmtp(String)
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedFmtp*
+  name: WithUpdatedFmtp
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_WithUpdatedFmtp_
+  commentId: Overload:SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedFmtp
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedFmtp
+  nameWithType: SDPApplicationMediaFormat.WithUpdatedFmtp
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedID(System.String)
+  name: WithUpdatedID(String)
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_WithUpdatedID_System_String_
+  commentId: M:SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedID(System.String)
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedID(System.String)
+  nameWithType: SDPApplicationMediaFormat.WithUpdatedID(String)
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedID*
+  name: WithUpdatedID
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_WithUpdatedID_
+  commentId: Overload:SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedID
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedID
+  nameWithType: SDPApplicationMediaFormat.WithUpdatedID
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedRtpmap(System.String)
+  name: WithUpdatedRtpmap(String)
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_WithUpdatedRtpmap_System_String_
+  commentId: M:SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedRtpmap(System.String)
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedRtpmap(System.String)
+  nameWithType: SDPApplicationMediaFormat.WithUpdatedRtpmap(String)
+- uid: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedRtpmap*
+  name: WithUpdatedRtpmap
+  href: api/SIPSorcery.Net.SDPApplicationMediaFormat.html#SIPSorcery_Net_SDPApplicationMediaFormat_WithUpdatedRtpmap_
+  commentId: Overload:SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedRtpmap
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPApplicationMediaFormat.WithUpdatedRtpmap
+  nameWithType: SDPApplicationMediaFormat.WithUpdatedRtpmap
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat
   name: SDPAudioVideoMediaFormat
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html
