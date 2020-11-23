@@ -297,7 +297,7 @@ namespace SIPSorcery.SIP.App
                         //SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
                         SIPURI uri = SIPURI.ParseSIPURIRelaxed(m_registrarHost);
                         var lookupResult = m_sipTransport.ResolveSIPUriAsync(uri).ConfigureAwait(false).GetAwaiter().GetResult();
-                        if (lookupResult == null)
+                        if (lookupResult == null || lookupResult == SIPEndPoint.Empty)
                         {
                             logger.LogWarning("Could not resolve " + m_registrarHost + ".");
                         }
