@@ -1,12 +1,15 @@
 ﻿using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
 {
+    /// <summary>
+    /// A unidirectional RTPSession for sending music
+    /// no mic or speaker support
+    /// </summary>
     public class MusicMediaSession : VoIPMediaSession
     {
         private readonly MediaStreamTrack _mediaStream;
