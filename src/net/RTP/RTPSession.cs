@@ -176,12 +176,12 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The local audio stream for this session. Will be null if we are not sending audio.
         /// </summary>
-        public MediaStreamTrack AudioLocalTrack { get; private set; }
+        public virtual MediaStreamTrack AudioLocalTrack { get; private set; }
 
         /// <summary>
         /// The remote audio track for this session. Will be null if the remote party is not sending audio.
         /// </summary>
-        public MediaStreamTrack AudioRemoteTrack { get; private set; }
+        public virtual MediaStreamTrack AudioRemoteTrack { get; private set; }
 
         /// <summary>
         /// The reporting session for the audio stream. Will be null if only video is being sent.
