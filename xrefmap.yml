@@ -2870,6 +2870,206 @@ references:
   commentId: F:SIPSorcery.Media.Band.sz
   fullName: SIPSorcery.Media.Band.sz
   nameWithType: Band.sz
+- uid: SIPSorcery.Media.EmptyAudioSource
+  name: EmptyAudioSource
+  href: api/SIPSorcery.Media.EmptyAudioSource.html
+  commentId: T:SIPSorcery.Media.EmptyAudioSource
+  fullName: SIPSorcery.Media.EmptyAudioSource
+  nameWithType: EmptyAudioSource
+- uid: SIPSorcery.Media.EmptyAudioSource.#ctor
+  name: EmptyAudioSource()
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource__ctor
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.#ctor
+  fullName: SIPSorcery.Media.EmptyAudioSource.EmptyAudioSource()
+  nameWithType: EmptyAudioSource.EmptyAudioSource()
+- uid: SIPSorcery.Media.EmptyAudioSource.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat[])
+  name: EmptyAudioSource(AudioFormat[])
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource__ctor_SIPSorceryMedia_Abstractions_V1_AudioFormat___
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat[])
+  name.vb: EmptyAudioSource(AudioFormat())
+  fullName: SIPSorcery.Media.EmptyAudioSource.EmptyAudioSource(SIPSorceryMedia.Abstractions.V1.AudioFormat[])
+  fullName.vb: SIPSorcery.Media.EmptyAudioSource.EmptyAudioSource(SIPSorceryMedia.Abstractions.V1.AudioFormat())
+  nameWithType: EmptyAudioSource.EmptyAudioSource(AudioFormat[])
+  nameWithType.vb: EmptyAudioSource.EmptyAudioSource(AudioFormat())
+- uid: SIPSorcery.Media.EmptyAudioSource.#ctor*
+  name: EmptyAudioSource
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource__ctor_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.EmptyAudioSource
+  nameWithType: EmptyAudioSource.EmptyAudioSource
+- uid: SIPSorcery.Media.EmptyAudioSource._isClosed
+  name: _isClosed
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource__isClosed
+  commentId: F:SIPSorcery.Media.EmptyAudioSource._isClosed
+  fullName: SIPSorcery.Media.EmptyAudioSource._isClosed
+  nameWithType: EmptyAudioSource._isClosed
+- uid: SIPSorcery.Media.EmptyAudioSource._isPaused
+  name: _isPaused
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource__isPaused
+  commentId: F:SIPSorcery.Media.EmptyAudioSource._isPaused
+  fullName: SIPSorcery.Media.EmptyAudioSource._isPaused
+  nameWithType: EmptyAudioSource._isPaused
+- uid: SIPSorcery.Media.EmptyAudioSource._isStarted
+  name: _isStarted
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource__isStarted
+  commentId: F:SIPSorcery.Media.EmptyAudioSource._isStarted
+  fullName: SIPSorcery.Media.EmptyAudioSource._isStarted
+  nameWithType: EmptyAudioSource._isStarted
+- uid: SIPSorcery.Media.EmptyAudioSource.CloseAudio
+  name: CloseAudio()
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_CloseAudio
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.CloseAudio
+  fullName: SIPSorcery.Media.EmptyAudioSource.CloseAudio()
+  nameWithType: EmptyAudioSource.CloseAudio()
+- uid: SIPSorcery.Media.EmptyAudioSource.CloseAudio*
+  name: CloseAudio
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_CloseAudio_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.CloseAudio
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.CloseAudio
+  nameWithType: EmptyAudioSource.CloseAudio
+- uid: SIPSorcery.Media.EmptyAudioSource.ExternalAudioSourceRawSample(SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum,System.UInt32,System.Int16[])
+  name: ExternalAudioSourceRawSample(AudioSamplingRatesEnum, UInt32, Int16[])
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_ExternalAudioSourceRawSample_SIPSorceryMedia_Abstractions_V1_AudioSamplingRatesEnum_System_UInt32_System_Int16___
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.ExternalAudioSourceRawSample(SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum,System.UInt32,System.Int16[])
+  name.vb: ExternalAudioSourceRawSample(AudioSamplingRatesEnum, UInt32, Int16())
+  fullName: SIPSorcery.Media.EmptyAudioSource.ExternalAudioSourceRawSample(SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum, System.UInt32, System.Int16[])
+  fullName.vb: SIPSorcery.Media.EmptyAudioSource.ExternalAudioSourceRawSample(SIPSorceryMedia.Abstractions.V1.AudioSamplingRatesEnum, System.UInt32, System.Int16())
+  nameWithType: EmptyAudioSource.ExternalAudioSourceRawSample(AudioSamplingRatesEnum, UInt32, Int16[])
+  nameWithType.vb: EmptyAudioSource.ExternalAudioSourceRawSample(AudioSamplingRatesEnum, UInt32, Int16())
+- uid: SIPSorcery.Media.EmptyAudioSource.ExternalAudioSourceRawSample*
+  name: ExternalAudioSourceRawSample
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_ExternalAudioSourceRawSample_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.ExternalAudioSourceRawSample
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.ExternalAudioSourceRawSample
+  nameWithType: EmptyAudioSource.ExternalAudioSourceRawSample
+- uid: SIPSorcery.Media.EmptyAudioSource.GetAudioSourceFormats
+  name: GetAudioSourceFormats()
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_GetAudioSourceFormats
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.GetAudioSourceFormats
+  fullName: SIPSorcery.Media.EmptyAudioSource.GetAudioSourceFormats()
+  nameWithType: EmptyAudioSource.GetAudioSourceFormats()
+- uid: SIPSorcery.Media.EmptyAudioSource.GetAudioSourceFormats*
+  name: GetAudioSourceFormats
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_GetAudioSourceFormats_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.GetAudioSourceFormats
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.GetAudioSourceFormats
+  nameWithType: EmptyAudioSource.GetAudioSourceFormats
+- uid: SIPSorcery.Media.EmptyAudioSource.HasEncodedAudioSubscribers
+  name: HasEncodedAudioSubscribers()
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_HasEncodedAudioSubscribers
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.HasEncodedAudioSubscribers
+  fullName: SIPSorcery.Media.EmptyAudioSource.HasEncodedAudioSubscribers()
+  nameWithType: EmptyAudioSource.HasEncodedAudioSubscribers()
+- uid: SIPSorcery.Media.EmptyAudioSource.HasEncodedAudioSubscribers*
+  name: HasEncodedAudioSubscribers
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_HasEncodedAudioSubscribers_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.HasEncodedAudioSubscribers
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.HasEncodedAudioSubscribers
+  nameWithType: EmptyAudioSource.HasEncodedAudioSubscribers
+- uid: SIPSorcery.Media.EmptyAudioSource.IsAudioSourcePaused
+  name: IsAudioSourcePaused()
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_IsAudioSourcePaused
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.IsAudioSourcePaused
+  fullName: SIPSorcery.Media.EmptyAudioSource.IsAudioSourcePaused()
+  nameWithType: EmptyAudioSource.IsAudioSourcePaused()
+- uid: SIPSorcery.Media.EmptyAudioSource.IsAudioSourcePaused*
+  name: IsAudioSourcePaused
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_IsAudioSourcePaused_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.IsAudioSourcePaused
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.IsAudioSourcePaused
+  nameWithType: EmptyAudioSource.IsAudioSourcePaused
+- uid: SIPSorcery.Media.EmptyAudioSource.OnAudioSourceEncodedSample
+  name: OnAudioSourceEncodedSample
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_OnAudioSourceEncodedSample
+  commentId: E:SIPSorcery.Media.EmptyAudioSource.OnAudioSourceEncodedSample
+  fullName: SIPSorcery.Media.EmptyAudioSource.OnAudioSourceEncodedSample
+  nameWithType: EmptyAudioSource.OnAudioSourceEncodedSample
+- uid: SIPSorcery.Media.EmptyAudioSource.OnAudioSourceError
+  name: OnAudioSourceError
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_OnAudioSourceError
+  commentId: E:SIPSorcery.Media.EmptyAudioSource.OnAudioSourceError
+  fullName: SIPSorcery.Media.EmptyAudioSource.OnAudioSourceError
+  nameWithType: EmptyAudioSource.OnAudioSourceError
+- uid: SIPSorcery.Media.EmptyAudioSource.OnAudioSourceRawSample
+  name: OnAudioSourceRawSample
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_OnAudioSourceRawSample
+  commentId: E:SIPSorcery.Media.EmptyAudioSource.OnAudioSourceRawSample
+  fullName: SIPSorcery.Media.EmptyAudioSource.OnAudioSourceRawSample
+  nameWithType: EmptyAudioSource.OnAudioSourceRawSample
+- uid: SIPSorcery.Media.EmptyAudioSource.PauseAudio
+  name: PauseAudio()
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_PauseAudio
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.PauseAudio
+  fullName: SIPSorcery.Media.EmptyAudioSource.PauseAudio()
+  nameWithType: EmptyAudioSource.PauseAudio()
+- uid: SIPSorcery.Media.EmptyAudioSource.PauseAudio*
+  name: PauseAudio
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_PauseAudio_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.PauseAudio
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.PauseAudio
+  nameWithType: EmptyAudioSource.PauseAudio
+- uid: SIPSorcery.Media.EmptyAudioSource.RestrictFormats(System.Func{SIPSorceryMedia.Abstractions.V1.AudioFormat,System.Boolean})
+  name: RestrictFormats(Func<AudioFormat, Boolean>)
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_RestrictFormats_System_Func_SIPSorceryMedia_Abstractions_V1_AudioFormat_System_Boolean__
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.RestrictFormats(System.Func{SIPSorceryMedia.Abstractions.V1.AudioFormat,System.Boolean})
+  name.vb: RestrictFormats(Func(Of AudioFormat, Boolean))
+  fullName: SIPSorcery.Media.EmptyAudioSource.RestrictFormats(System.Func<SIPSorceryMedia.Abstractions.V1.AudioFormat, System.Boolean>)
+  fullName.vb: SIPSorcery.Media.EmptyAudioSource.RestrictFormats(System.Func(Of SIPSorceryMedia.Abstractions.V1.AudioFormat, System.Boolean))
+  nameWithType: EmptyAudioSource.RestrictFormats(Func<AudioFormat, Boolean>)
+  nameWithType.vb: EmptyAudioSource.RestrictFormats(Func(Of AudioFormat, Boolean))
+- uid: SIPSorcery.Media.EmptyAudioSource.RestrictFormats*
+  name: RestrictFormats
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_RestrictFormats_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.RestrictFormats
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.RestrictFormats
+  nameWithType: EmptyAudioSource.RestrictFormats
+- uid: SIPSorcery.Media.EmptyAudioSource.ResumeAudio
+  name: ResumeAudio()
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_ResumeAudio
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.ResumeAudio
+  fullName: SIPSorcery.Media.EmptyAudioSource.ResumeAudio()
+  nameWithType: EmptyAudioSource.ResumeAudio()
+- uid: SIPSorcery.Media.EmptyAudioSource.ResumeAudio*
+  name: ResumeAudio
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_ResumeAudio_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.ResumeAudio
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.ResumeAudio
+  nameWithType: EmptyAudioSource.ResumeAudio
+- uid: SIPSorcery.Media.EmptyAudioSource.SetAudioSourceFormat(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  name: SetAudioSourceFormat(AudioFormat)
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_SetAudioSourceFormat_SIPSorceryMedia_Abstractions_V1_AudioFormat_
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.SetAudioSourceFormat(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  fullName: SIPSorcery.Media.EmptyAudioSource.SetAudioSourceFormat(SIPSorceryMedia.Abstractions.V1.AudioFormat)
+  nameWithType: EmptyAudioSource.SetAudioSourceFormat(AudioFormat)
+- uid: SIPSorcery.Media.EmptyAudioSource.SetAudioSourceFormat*
+  name: SetAudioSourceFormat
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_SetAudioSourceFormat_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.SetAudioSourceFormat
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.SetAudioSourceFormat
+  nameWithType: EmptyAudioSource.SetAudioSourceFormat
+- uid: SIPSorcery.Media.EmptyAudioSource.StartAudio
+  name: StartAudio()
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_StartAudio
+  commentId: M:SIPSorcery.Media.EmptyAudioSource.StartAudio
+  fullName: SIPSorcery.Media.EmptyAudioSource.StartAudio()
+  nameWithType: EmptyAudioSource.StartAudio()
+- uid: SIPSorcery.Media.EmptyAudioSource.StartAudio*
+  name: StartAudio
+  href: api/SIPSorcery.Media.EmptyAudioSource.html#SIPSorcery_Media_EmptyAudioSource_StartAudio_
+  commentId: Overload:SIPSorcery.Media.EmptyAudioSource.StartAudio
+  isSpec: "True"
+  fullName: SIPSorcery.Media.EmptyAudioSource.StartAudio
+  nameWithType: EmptyAudioSource.StartAudio
 - uid: SIPSorcery.Media.G722Codec
   name: G722Codec
   href: api/SIPSorcery.Media.G722Codec.html
@@ -3119,6 +3319,51 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.MuLawEncoder.LinearToMuLawSample
   nameWithType: MuLawEncoder.LinearToMuLawSample
+- uid: SIPSorcery.Media.MusicMediaSession
+  name: MusicMediaSession
+  href: api/SIPSorcery.Media.MusicMediaSession.html
+  commentId: T:SIPSorcery.Media.MusicMediaSession
+  fullName: SIPSorcery.Media.MusicMediaSession
+  nameWithType: MusicMediaSession
+- uid: SIPSorcery.Media.MusicMediaSession.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat,System.Net.IPEndPoint)
+  name: MusicMediaSession(AudioFormat, IPEndPoint)
+  href: api/SIPSorcery.Media.MusicMediaSession.html#SIPSorcery_Media_MusicMediaSession__ctor_SIPSorceryMedia_Abstractions_V1_AudioFormat_System_Net_IPEndPoint_
+  commentId: M:SIPSorcery.Media.MusicMediaSession.#ctor(SIPSorceryMedia.Abstractions.V1.AudioFormat,System.Net.IPEndPoint)
+  fullName: SIPSorcery.Media.MusicMediaSession.MusicMediaSession(SIPSorceryMedia.Abstractions.V1.AudioFormat, System.Net.IPEndPoint)
+  nameWithType: MusicMediaSession.MusicMediaSession(AudioFormat, IPEndPoint)
+- uid: SIPSorcery.Media.MusicMediaSession.#ctor*
+  name: MusicMediaSession
+  href: api/SIPSorcery.Media.MusicMediaSession.html#SIPSorcery_Media_MusicMediaSession__ctor_
+  commentId: Overload:SIPSorcery.Media.MusicMediaSession.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Media.MusicMediaSession.MusicMediaSession
+  nameWithType: MusicMediaSession.MusicMediaSession
+- uid: SIPSorcery.Media.MusicMediaSession.AudioRemoteTrack
+  name: AudioRemoteTrack
+  href: api/SIPSorcery.Media.MusicMediaSession.html#SIPSorcery_Media_MusicMediaSession_AudioRemoteTrack
+  commentId: P:SIPSorcery.Media.MusicMediaSession.AudioRemoteTrack
+  fullName: SIPSorcery.Media.MusicMediaSession.AudioRemoteTrack
+  nameWithType: MusicMediaSession.AudioRemoteTrack
+- uid: SIPSorcery.Media.MusicMediaSession.AudioRemoteTrack*
+  name: AudioRemoteTrack
+  href: api/SIPSorcery.Media.MusicMediaSession.html#SIPSorcery_Media_MusicMediaSession_AudioRemoteTrack_
+  commentId: Overload:SIPSorcery.Media.MusicMediaSession.AudioRemoteTrack
+  isSpec: "True"
+  fullName: SIPSorcery.Media.MusicMediaSession.AudioRemoteTrack
+  nameWithType: MusicMediaSession.AudioRemoteTrack
+- uid: SIPSorcery.Media.MusicMediaSession.SendAudioFile(System.String)
+  name: SendAudioFile(String)
+  href: api/SIPSorcery.Media.MusicMediaSession.html#SIPSorcery_Media_MusicMediaSession_SendAudioFile_System_String_
+  commentId: M:SIPSorcery.Media.MusicMediaSession.SendAudioFile(System.String)
+  fullName: SIPSorcery.Media.MusicMediaSession.SendAudioFile(System.String)
+  nameWithType: MusicMediaSession.SendAudioFile(String)
+- uid: SIPSorcery.Media.MusicMediaSession.SendAudioFile*
+  name: SendAudioFile
+  href: api/SIPSorcery.Media.MusicMediaSession.html#SIPSorcery_Media_MusicMediaSession_SendAudioFile_
+  commentId: Overload:SIPSorcery.Media.MusicMediaSession.SendAudioFile
+  isSpec: "True"
+  fullName: SIPSorcery.Media.MusicMediaSession.SendAudioFile
+  nameWithType: MusicMediaSession.SendAudioFile
 - uid: SIPSorcery.Media.SignalGenerator
   name: SignalGenerator
   href: api/SIPSorcery.Media.SignalGenerator.html
