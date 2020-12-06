@@ -9,6 +9,7 @@
 // History:
 // ??	        Aaron Clauson	Created, Hobart, Australia
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
+// 06 Dec 2020  Aaron Clauson   Added DisableRetransmitSending property.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -54,6 +55,12 @@ namespace SIPSorcery.SIP
         {
             get { return m_pendingTransactions.Count; }
         }
+
+        /// <summary>
+        /// Disables sending of retransmitted requests and responses.
+        /// <seealso cref="SIPTransport.DisableRetransmitSending"/>
+        /// </summary>
+        public bool DisableRetransmitSending { get; set; }
 
         public event SIPTransactionRequestRetransmitDelegate SIPRequestRetransmitTraceEvent;
         public event SIPTransactionResponseRetransmitDelegate SIPResponseRetransmitTraceEvent;
@@ -125,7 +132,6 @@ namespace SIPSorcery.SIP
 
             SIPMethodsEnum transactionMethod = (sipRequest.Method != SIPMethodsEnum.ACK) ? sipRequest.Method : SIPMethodsEnum.INVITE;
             string transactionId = SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, transactionMethod);
-            //string contactAddress = (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0) ? sipRequest.Header.Contact[0].ToString() : "no contact";
 
             lock (m_pendingTransactions)
             {
@@ -502,13 +508,20 @@ namespace SIPSorcery.SIP
             }
 
             // Provisional response reliable for INVITE-UAS.
-            if (transaction.Retransmits > 1)
+            if (transaction.Retransmits > 1 && !DisableRetransmitSending)
             {
                 transaction.OnRetransmitProvisionalResponse();
                 SIPResponseRetransmitTraceEvent?.Invoke(transaction, transaction.ReliableProvisionalResponse, transaction.Retransmits);
             }
 
-            return m_sipTransport.SendResponseAsync(transaction.ReliableProvisionalResponse);
+            if (transaction.Retransmits > 1 && DisableRetransmitSending)
+            {
+                return Task.FromResult(SocketError.Success);
+            }
+            else
+            {
+                return m_sipTransport.SendResponseAsync(transaction.ReliableProvisionalResponse);
+            }
         }
 
         /// <summary>
@@ -526,12 +539,20 @@ namespace SIPSorcery.SIP
                 transaction.InitialTransmit = transaction.LastTransmit;
             }
 
-            if (transaction.Retransmits > 1)
+            if (transaction.Retransmits > 1 && !DisableRetransmitSending)
             {
                 transaction.OnRetransmitFinalResponse();
                 SIPResponseRetransmitTraceEvent?.Invoke(transaction, transaction.TransactionFinalResponse, transaction.Retransmits);
             }
-            return m_sipTransport.SendResponseAsync(transaction.TransactionFinalResponse);
+
+            if (transaction.Retransmits > 1 && DisableRetransmitSending)
+            {
+                return Task.FromResult(SocketError.Success);
+            }
+            else
+            {
+                return m_sipTransport.SendResponseAsync(transaction.TransactionFinalResponse);
+            }
         }
 
         /// <summary>
@@ -552,25 +573,32 @@ namespace SIPSorcery.SIP
             }
 
             // INVITE-UAC and no-INVITE transaction types, send request reliably.
-            if (transaction.Retransmits > 1)
+            if (transaction.Retransmits > 1 && !DisableRetransmitSending)
             {
                 SIPRequestRetransmitTraceEvent?.Invoke(transaction, transaction.TransactionRequest, transaction.Retransmits);
                 transaction.RequestRetransmit();
             }
 
-            // If there is no tx request then it must be a PRack request we're being asked to send reliably.
-            SIPRequest req = transaction.TransactionRequest ?? transaction.PRackRequest;
-
-            if (transaction.OutboundProxy != null)
+            if (transaction.Retransmits > 1 && DisableRetransmitSending)
             {
-                result = m_sipTransport.SendRequestAsync(transaction.OutboundProxy, req);
+                return Task.FromResult(SocketError.Success);
             }
             else
             {
-                result = m_sipTransport.SendRequestAsync(req);
-            }
+                // If there is no tx request then it must be a PRack request we're being asked to send reliably.
+                SIPRequest req = transaction.TransactionRequest ?? transaction.PRackRequest;
 
-            return result;
+                if (transaction.OutboundProxy != null)
+                {
+                    result = m_sipTransport.SendRequestAsync(transaction.OutboundProxy, req);
+                }
+                else
+                {
+                    result = m_sipTransport.SendRequestAsync(req);
+                }
+
+                return result;
+            }
         }
 
         private void RemoveExpiredTransactions()
