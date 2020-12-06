@@ -88,6 +88,16 @@ namespace SIPSorcery.SIP.App
         public Func<SIPRequest, SIPRequest> AdjustRegister;
 
         /// <summary>
+        /// If set all requests will be sent via the outbound SIP proxy instead of being sent to the
+        /// SIP registrar server.
+        /// </summary>
+        public SIPEndPoint OutboundProxy
+        {
+            get { return m_outboundProxy; }
+            set { m_outboundProxy = value; }
+        }
+
+        /// <summary>
         /// Creates a new SIP registration agent that will attempt to register with a SIP Registrar server.
         /// If the registration fails the agent will retry up to a hard coded maximum number of 3 attempts.
         /// If successful the agent will periodically refresh the registration based on the Expiry time 
