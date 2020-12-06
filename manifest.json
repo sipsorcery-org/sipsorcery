@@ -3369,7 +3369,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html",
-          "hash": "bOSVXm+hXtvJHieifJVFwg=="
+          "hash": "HyLRtjE6wfts/rz6SHiVSQ=="
         }
       },
       "is_incremental": false,
@@ -4485,7 +4485,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransport.html",
-          "hash": "ftsDUZQ3h94WuEvpTPS+vw=="
+          "hash": "Wihae0tT/l21cyTiGuMlxg=="
         }
       },
       "is_incremental": false,

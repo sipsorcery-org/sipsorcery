@@ -26586,6 +26586,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.LastRegisterAttemptAt
   nameWithType: SIPRegistrationUserAgent.LastRegisterAttemptAt
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.OutboundProxy
+  name: OutboundProxy
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_OutboundProxy
+  commentId: P:SIPSorcery.SIP.App.SIPRegistrationUserAgent.OutboundProxy
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.OutboundProxy
+  nameWithType: SIPRegistrationUserAgent.OutboundProxy
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.OutboundProxy*
+  name: OutboundProxy
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_OutboundProxy_
+  commentId: Overload:SIPSorcery.SIP.App.SIPRegistrationUserAgent.OutboundProxy
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.OutboundProxy
+  nameWithType: SIPRegistrationUserAgent.OutboundProxy
 - uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.RegistrationFailed
   name: RegistrationFailed
   href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_RegistrationFailed
@@ -36216,6 +36229,19 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransport.ContactHost
   fullName: SIPSorcery.SIP.SIPTransport.ContactHost
   nameWithType: SIPTransport.ContactHost
+- uid: SIPSorcery.SIP.SIPTransport.DisableRetransmitSending
+  name: DisableRetransmitSending
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_DisableRetransmitSending
+  commentId: P:SIPSorcery.SIP.SIPTransport.DisableRetransmitSending
+  fullName: SIPSorcery.SIP.SIPTransport.DisableRetransmitSending
+  nameWithType: SIPTransport.DisableRetransmitSending
+- uid: SIPSorcery.SIP.SIPTransport.DisableRetransmitSending*
+  name: DisableRetransmitSending
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_DisableRetransmitSending_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.DisableRetransmitSending
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransport.DisableRetransmitSending
+  nameWithType: SIPTransport.DisableRetransmitSending
 - uid: SIPSorcery.SIP.SIPTransport.Dispose
   name: Dispose()
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_Dispose
