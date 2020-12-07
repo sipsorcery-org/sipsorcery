@@ -105,6 +105,8 @@ namespace demo
                 await windowsAudio.PauseAudio();
                 try
                 {
+                    await voipMediaSession.AudioExtrasSource.StartAudio();
+
                     //Console.WriteLine("Sending welcome message from 8KHz sample.");
                     await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
 
@@ -137,6 +139,8 @@ namespace demo
                     await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
 
                     voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.None);
+
+                    await voipMediaSession.AudioExtrasSource.PauseAudio();
 
                     await Task.Delay(200, exitCts.Token);
                 }
