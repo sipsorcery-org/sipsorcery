@@ -102,7 +102,7 @@ namespace SIPSorcery.SIP
 
                 sipResponse.Header = SIPHeader.ParseSIPHeaders(sipMessageBuffer.SIPHeaders);
                 sipResponse.Body = sipMessageBuffer.Body;
-
+                sipResponse.RawBuffer = sipMessageBuffer.RawBuffer;
                 return sipResponse;
             }
             catch (SIPValidationException)

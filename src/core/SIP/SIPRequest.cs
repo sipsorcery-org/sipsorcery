@@ -97,6 +97,7 @@ namespace SIPSorcery.SIP
                     sipRequest.SIPVersion = statusLine.Substring(secondSpacePosn, statusLine.Length - secondSpacePosn).Trim();
                     sipRequest.Header = SIPHeader.ParseSIPHeaders(sipMessage.SIPHeaders);
                     sipRequest.Body = sipMessage.Body;
+                    sipRequest.RawBuffer = sipMessage.RawBuffer;
 
                     return sipRequest;
                 }

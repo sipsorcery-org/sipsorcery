@@ -65,5 +65,11 @@ namespace SIPSorcery.SIP
         /// when sending this request/response.
         /// </summary>
         public string SendFromHintConnectionID;
+
+        /// <summary>
+        /// Used for binary data payloads where body string might be corrupt due to it's utf-8 encoding.
+        /// </summary>
+        public byte[] RawBuffer;
+
     }
 }

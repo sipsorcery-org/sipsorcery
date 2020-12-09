@@ -872,7 +872,7 @@ namespace SIPSorcery.SIP
                                 return Task.FromResult(SocketError.InvalidArgument);
                             }
 
-                            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(rawSIPMessage, localEndPoint, remoteEndPoint);
+                            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(buffer, localEndPoint, remoteEndPoint);
 
                             if (sipMessageBuffer != null)
                             {
