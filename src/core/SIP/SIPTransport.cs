@@ -558,17 +558,17 @@ namespace SIPSorcery.SIP
                 return Task.FromResult(SocketError.Success);
             }
 
-            sipRequest.Header.ContentLength = (sipRequest.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipRequest.Body) : 0;
+            sipRequest.Header.ContentLength = (sipRequest.RawBuffer != null) ? sipRequest.RawBuffer.Length : 0;
 
             SIPRequestOutTraceEvent?.Invoke(sendFromSIPEndPoint, dstEndPoint, sipRequest);
 
             if (sipChannel.IsSecure)
             {
-                return sipChannel.SendSecureAsync(dstEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.HostAddress, sipRequest.SendFromHintConnectionID);
+                return sipChannel.SendSecureAsync(dstEndPoint, sipRequest.GetBytes(), sipRequest.URI.HostAddress, sipRequest.SendFromHintConnectionID);
             }
             else
             {
-                return sipChannel.SendAsync(dstEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.SendFromHintConnectionID);
+                return sipChannel.SendAsync(dstEndPoint, sipRequest.GetBytes(), sipRequest.SendFromHintConnectionID);
             }
         }
 
@@ -725,12 +725,12 @@ namespace SIPSorcery.SIP
                 // Once the channel has been determined check some specific header fields and replace the placeholder end point.
                 AdjustHeadersForEndPoint(sendFromSIPEndPoint, ref sipResponse.Header);
 
-                sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
+                sipResponse.Header.ContentLength = (sipResponse.RawBuffer != null) ? sipResponse.RawBuffer.Length : 0;
 
                 SIPResponseOutTraceEvent?.Invoke(sendFromSIPEndPoint, dstEndPoint, sipResponse);
 
                 // Now have a destination and sending channel, go ahead and forward.
-                return sendFromChannel.SendAsync(dstEndPoint, Encoding.UTF8.GetBytes(sipResponse.ToString()), sipResponse.SendFromHintConnectionID);
+                return sendFromChannel.SendAsync(dstEndPoint, sipResponse.GetBytes(), sipResponse.SendFromHintConnectionID);
             }
         }
 
