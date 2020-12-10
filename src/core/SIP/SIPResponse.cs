@@ -101,7 +101,7 @@ namespace SIPSorcery.SIP
                 sipResponse.ReasonPhrase = statusLine.Substring(3).Trim();
 
                 sipResponse.Header = SIPHeader.ParseSIPHeaders(sipMessageBuffer.SIPHeaders);
-                sipResponse.RawBuffer = sipMessageBuffer.Body;
+                sipResponse.BodyBuffer = sipMessageBuffer.Body;
 
                 return sipResponse;
             }

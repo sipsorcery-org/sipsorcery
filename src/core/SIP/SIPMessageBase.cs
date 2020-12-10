@@ -69,7 +69,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Used for binary data payloads where body string might be corrupt due to it's utf-8 encoding.
         /// </summary>
-        public byte[] RawBuffer
+        public byte[] BodyBuffer
         {
             get => _body;
             set => _body = value;
