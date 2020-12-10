@@ -558,7 +558,7 @@ namespace SIPSorcery.SIP
                 return Task.FromResult(SocketError.Success);
             }
 
-            sipRequest.Header.ContentLength = (sipRequest.RawBuffer != null) ? sipRequest.RawBuffer.Length : 0;
+            sipRequest.Header.ContentLength = (sipRequest.BodyBuffer != null) ? sipRequest.BodyBuffer.Length : 0;
 
             SIPRequestOutTraceEvent?.Invoke(sendFromSIPEndPoint, dstEndPoint, sipRequest);
 
@@ -725,7 +725,7 @@ namespace SIPSorcery.SIP
                 // Once the channel has been determined check some specific header fields and replace the placeholder end point.
                 AdjustHeadersForEndPoint(sendFromSIPEndPoint, ref sipResponse.Header);
 
-                sipResponse.Header.ContentLength = (sipResponse.RawBuffer != null) ? sipResponse.RawBuffer.Length : 0;
+                sipResponse.Header.ContentLength = (sipResponse.BodyBuffer != null) ? sipResponse.BodyBuffer.Length : 0;
 
                 SIPResponseOutTraceEvent?.Invoke(sendFromSIPEndPoint, dstEndPoint, sipResponse);
 
