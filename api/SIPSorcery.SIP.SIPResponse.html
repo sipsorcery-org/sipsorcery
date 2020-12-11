@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class SIPResponse
    ">
-    <meta name="generator" content="docfx 2.56.5.0">
+    <meta name="generator" content="docfx 2.56.6.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -97,10 +97,16 @@
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_m_allowedSIPMethods">SIPMessageBase.m_allowedSIPMethods</a>
     </div>
     <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase__body">SIPMessageBase._body</a>
+    </div>
+    <div>
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Header">SIPMessageBase.Header</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Body">SIPMessageBase.Body</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_BodyBuffer">SIPMessageBase.BodyBuffer</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Created">SIPMessageBase.Created</a>
@@ -116,6 +122,9 @@
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintConnectionID">SIPMessageBase.SendFromHintConnectionID</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_GetBytes_System_String_">SIPMessageBase.GetBytes(String)</a>
     </div>
     <div>
       <span class="xref">System.Object.Equals(System.Object)</span>
@@ -375,10 +384,40 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_GetBytes.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.GetBytes%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L297">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse_GetBytes_" data-uid="SIPSorcery.SIP.SIPResponse.GetBytes*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse_GetBytes" data-uid="SIPSorcery.SIP.SIPResponse.GetBytes">GetBytes()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] GetBytes()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_GetResponse_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.GetResponse(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L265">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L271">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPResponse_GetResponse_" data-uid="SIPSorcery.SIP.SIPResponse.GetResponse*"></a>
   <h4 id="SIPSorcery_SIP_SIPResponse_GetResponse_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_" data-uid="SIPSorcery.SIP.SIPResponse.GetResponse(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)">GetResponse(SIPEndPoint, SIPEndPoint, SIPResponseStatusCodesEnum, String)</h4>
@@ -449,7 +488,7 @@ one SIP hop away.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_GetResponse_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.GetResponse(SIPSorcery.SIP.SIPRequest%2CSIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L212">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L218">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPResponse_GetResponse_" data-uid="SIPSorcery.SIP.SIPResponse.GetResponse*"></a>
   <h4 id="SIPSorcery_SIP_SIPResponse_GetResponse_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_" data-uid="SIPSorcery.SIP.SIPResponse.GetResponse(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)">GetResponse(SIPRequest, SIPResponseStatusCodesEnum, String)</h4>
@@ -614,7 +653,7 @@ information and this method will not be suitable.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_SetSendFromHints_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.SetSendFromHints(SIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L196">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L202">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPResponse_SetSendFromHints_" data-uid="SIPSorcery.SIP.SIPResponse.SetSendFromHints*"></a>
   <h4 id="SIPSorcery_SIP_SIPResponse_SetSendFromHints_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPResponse.SetSendFromHints(SIPSorcery.SIP.SIPEndPoint)">SetSendFromHints(SIPEndPoint)</h4>

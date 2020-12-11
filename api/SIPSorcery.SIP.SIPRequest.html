@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class SIPRequest
    ">
-    <meta name="generator" content="docfx 2.56.5.0">
+    <meta name="generator" content="docfx 2.56.6.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -97,10 +97,16 @@
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_m_allowedSIPMethods">SIPMessageBase.m_allowedSIPMethods</a>
     </div>
     <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase__body">SIPMessageBase._body</a>
+    </div>
+    <div>
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Header">SIPMessageBase.Header</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Body">SIPMessageBase.Body</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_BodyBuffer">SIPMessageBase.BodyBuffer</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Created">SIPMessageBase.Created</a>
@@ -116,6 +122,9 @@
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintConnectionID">SIPMessageBase.SendFromHintConnectionID</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_GetBytes_System_String_">SIPMessageBase.GetBytes(String)</a>
     </div>
     <div>
       <span class="xref">System.Object.Equals(System.Object)</span>
@@ -149,7 +158,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest__ctor_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.%23ctor(SIPSorcery.SIP.SIPMethodsEnum%2CSIPSorcery.SIP.SIPURI)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L62">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L63">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest__ctor_" data-uid="SIPSorcery.SIP.SIPRequest.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest__ctor_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_" data-uid="SIPSorcery.SIP.SIPRequest.#ctor(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI)">SIPRequest(SIPMethodsEnum, SIPURI)</h4>
@@ -186,7 +195,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest__ctor_SIPSorcery_SIP_SIPMethodsEnum_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.%23ctor(SIPSorcery.SIP.SIPMethodsEnum%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L55">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L56">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest__ctor_" data-uid="SIPSorcery.SIP.SIPRequest.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest__ctor_SIPSorcery_SIP_SIPMethodsEnum_System_String_" data-uid="SIPSorcery.SIP.SIPRequest.#ctor(SIPSorcery.SIP.SIPMethodsEnum,System.String)">SIPRequest(SIPMethodsEnum, String)</h4>
@@ -225,7 +234,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_Method.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.Method%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L30">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L31">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPRequest_Method" data-uid="SIPSorcery.SIP.SIPRequest.Method">Method</h4>
   <div class="markdown level1 summary"></div>
@@ -254,7 +263,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_ReceivedRoute.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.ReceivedRoute%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L38">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L39">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPRequest_ReceivedRoute" data-uid="SIPSorcery.SIP.SIPRequest.ReceivedRoute">ReceivedRoute</h4>
   <div class="markdown level1 summary"></div>
@@ -283,7 +292,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_SIPVersion.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.SIPVersion%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L29">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L30">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPRequest_SIPVersion" data-uid="SIPSorcery.SIP.SIPRequest.SIPVersion">SIPVersion</h4>
   <div class="markdown level1 summary"></div>
@@ -312,7 +321,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_UnknownMethod.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.UnknownMethod%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L31">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L32">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPRequest_UnknownMethod" data-uid="SIPSorcery.SIP.SIPRequest.UnknownMethod">UnknownMethod</h4>
   <div class="markdown level1 summary"></div>
@@ -341,7 +350,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_URI.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.URI%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L36">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L37">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPRequest_URI" data-uid="SIPSorcery.SIP.SIPRequest.URI">URI</h4>
   <div class="markdown level1 summary"><p>The SIP request's URI.</p>
@@ -373,7 +382,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_StatusLine.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.StatusLine%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L43">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L44">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_StatusLine_" data-uid="SIPSorcery.SIP.SIPRequest.StatusLine*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_StatusLine" data-uid="SIPSorcery.SIP.SIPRequest.StatusLine">StatusLine</h4>
@@ -406,7 +415,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_Copy.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.Copy%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L167">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L168">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_Copy_" data-uid="SIPSorcery.SIP.SIPRequest.Copy*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_Copy" data-uid="SIPSorcery.SIP.SIPRequest.Copy">Copy()</h4>
@@ -438,7 +447,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_CreateBranchId.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.CreateBranchId%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L193">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L199">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_CreateBranchId_" data-uid="SIPSorcery.SIP.SIPRequest.CreateBranchId*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_CreateBranchId" data-uid="SIPSorcery.SIP.SIPRequest.CreateBranchId">CreateBranchId()</h4>
@@ -465,10 +474,40 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_GetBytes.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.GetBytes%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L315">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPRequest_GetBytes_" data-uid="SIPSorcery.SIP.SIPRequest.GetBytes*"></a>
+  <h4 id="SIPSorcery_SIP_SIPRequest_GetBytes" data-uid="SIPSorcery.SIP.SIPRequest.GetBytes">GetBytes()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] GetBytes()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_GetRequest_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.GetRequest(SIPSorcery.SIP.SIPMethodsEnum%2CSIPSorcery.SIP.SIPURI)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L273">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L279">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_GetRequest_" data-uid="SIPSorcery.SIP.SIPRequest.GetRequest*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_GetRequest_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_" data-uid="SIPSorcery.SIP.SIPRequest.GetRequest(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI)">GetRequest(SIPMethodsEnum, SIPURI)</h4>
@@ -532,7 +571,7 @@ at send time:</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_GetRequest_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPToHeader_SIPSorcery_SIP_SIPFromHeader_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.GetRequest(SIPSorcery.SIP.SIPMethodsEnum%2CSIPSorcery.SIP.SIPURI%2CSIPSorcery.SIP.SIPToHeader%2CSIPSorcery.SIP.SIPFromHeader)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L296">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L302">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_GetRequest_" data-uid="SIPSorcery.SIP.SIPRequest.GetRequest*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_GetRequest_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPToHeader_SIPSorcery_SIP_SIPFromHeader_" data-uid="SIPSorcery.SIP.SIPRequest.GetRequest(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPToHeader,SIPSorcery.SIP.SIPFromHeader)">GetRequest(SIPMethodsEnum, SIPURI, SIPToHeader, SIPFromHeader)</h4>
@@ -608,7 +647,7 @@ at send time:</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_IsLoop_System_String_System_Int32_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.IsLoop(System.String%2CSystem.Int32%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L218">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L224">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_IsLoop_" data-uid="SIPSorcery.SIP.SIPRequest.IsLoop*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_IsLoop_System_String_System_Int32_System_String_" data-uid="SIPSorcery.SIP.SIPRequest.IsLoop(System.String,System.Int32,System.String)">IsLoop(String, Int32, String)</h4>
@@ -668,7 +707,7 @@ header computes to the same branchid as a Via header already in the SIP header t
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_IsValid_SIPSorcery_SIP_SIPValidationFieldsEnum__System_String__.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.IsValid(SIPSorcery.SIP.SIPValidationFieldsEnum%40%2CSystem.String%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L234">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L240">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_IsValid_" data-uid="SIPSorcery.SIP.SIPRequest.IsValid*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_IsValid_SIPSorcery_SIP_SIPValidationFieldsEnum__System_String__" data-uid="SIPSorcery.SIP.SIPRequest.IsValid(SIPSorcery.SIP.SIPValidationFieldsEnum@,System.String@)">IsValid(out SIPValidationFieldsEnum, out String)</h4>
@@ -720,7 +759,7 @@ header computes to the same branchid as a Via header already in the SIP header t
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_ParseSIPRequest_SIPSorcery_SIP_SIPMessageBuffer_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L69">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L70">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_ParseSIPRequest_" data-uid="SIPSorcery.SIP.SIPRequest.ParseSIPRequest*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_ParseSIPRequest_SIPSorcery_SIP_SIPMessageBuffer_" data-uid="SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer)">ParseSIPRequest(SIPMessageBuffer)</h4>
@@ -767,7 +806,7 @@ header computes to the same branchid as a Via header already in the SIP header t
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_ParseSIPRequest_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.ParseSIPRequest(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L120">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L121">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_ParseSIPRequest_" data-uid="SIPSorcery.SIP.SIPRequest.ParseSIPRequest*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_ParseSIPRequest_System_String_" data-uid="SIPSorcery.SIP.SIPRequest.ParseSIPRequest(System.String)">ParseSIPRequest(String)</h4>
@@ -814,7 +853,7 @@ header computes to the same branchid as a Via header already in the SIP header t
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_SetSendFromHints_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.SetSendFromHints(SIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L255">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L261">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_SetSendFromHints_" data-uid="SIPSorcery.SIP.SIPRequest.SetSendFromHints*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_SetSendFromHints_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPRequest.SetSendFromHints(SIPSorcery.SIP.SIPEndPoint)">SetSendFromHints(SIPEndPoint)</h4>
@@ -850,7 +889,7 @@ received on.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest_ToString.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest.ToString%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L139">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L140">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPRequest_ToString_" data-uid="SIPSorcery.SIP.SIPRequest.ToString*"></a>
   <h4 id="SIPSorcery_SIP_SIPRequest_ToString" data-uid="SIPSorcery.SIP.SIPRequest.ToString">ToString()</h4>
@@ -892,7 +931,7 @@ received on.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPRequest.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPRequest%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L25" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPRequest.cs/#L26" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
