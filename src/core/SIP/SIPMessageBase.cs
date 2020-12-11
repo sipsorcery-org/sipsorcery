@@ -38,7 +38,8 @@ namespace SIPSorcery.SIP
         public SIPHeader Header;
 
         /// <summary>
-        /// The optional body or payload for the SIP request/response.
+        /// The optional body or payload for the SIP request/response. This Body property
+        /// should be used for Session Description Protocol (SDP) and other string payloads.
         /// </summary>
         public string Body
         {
@@ -67,7 +68,9 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Used for binary data payloads where body string might be corrupt due to it's utf-8 encoding.
+        /// The optional binary body or payload for the SIP request/response. This Body property
+        /// generally only needs to be used in rare cases where a SIP request/response needs to
+        /// carry a binary payload. In other cases use the <seealso cref="Body"/> property.
         /// </summary>
         public byte[] BodyBuffer
         {
