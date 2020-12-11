@@ -36,11 +36,25 @@ namespace SIPSorcery.SIP
 
         private static ILogger logger = Log.Logger;
 
-        public string RawMessage;
+        public string RawMessage
+        {
+            get
+            {
+                if (RawBuffer != null)
+                {
+                    return Encoding.UTF8.GetString(RawBuffer);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
         public SIPMessageTypesEnum SIPMessageType = SIPMessageTypesEnum.Unknown;
         public string FirstLine;
         public string[] SIPHeaders;
-        public string Body;
+        public byte[] Body;
         public byte[] RawBuffer;
 
         public DateTime Created = DateTime.Now;
@@ -56,61 +70,26 @@ namespace SIPSorcery.SIP
         /// <returns>If successful a SIP message or null if not.</returns>
         public static SIPMessageBuffer ParseSIPMessage(byte[] buffer, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
         {
-            string message = null;
 
-            try
+            if (buffer == null || buffer.Length < m_minFirstLineLength)
             {
-                if (buffer == null || buffer.Length < m_minFirstLineLength)
-                {
-                    // Ignore.
-                    return null;
-                }
-                else if (buffer.Length > SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH)
-                {
-                    throw new ApplicationException("SIP message received that exceeded the maximum allowed message length, ignoring.");
-                }
-                else if (!BufferUtils.HasString(buffer, 0, buffer.Length, SIP_MESSAGE_IDENTIFIER, m_CRLF))
-                {
-                    // Message does not contain "SIP" anywhere on the first line, ignore.
-                    return null;
-                }
-                else
-                {
-                    message = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-                    SIPMessageBuffer sipMessageBuffer = ParseSIPMessage(message, localSIPEndPoint, remoteSIPEndPoint);
-
-                    if (sipMessageBuffer != null)
-                    {
-                        sipMessageBuffer.RawBuffer = buffer;
-                        return sipMessageBuffer;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                message = message.Replace("\n", "LF");
-                message = message.Replace("\r", "CR");
-                logger.LogError("Exception ParseSIPMessage. " + excp.Message + "\nSIP Message=" + message + ".");
+                // Ignore.
                 return null;
             }
-        }
-
-        /// <summary>
-        /// Attempts to parse a SIP message from a string containing a single SIP request or response.
-        /// </summary>
-        /// <param name="message">The string to parse.</param>
-        /// <param name="localSIPEndPoint">The end point the message was received on.</param>
-        /// <param name="remoteSIPEndPoint">The end point the message was received from.</param>
-        /// <returns>If successful a SIP message or null if not.</returns>
-        public static SIPMessageBuffer ParseSIPMessage(string message, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
-        {
-            try
+            else if (buffer.Length > SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH)
             {
-                SIPMessageBuffer sipMessage = new SIPMessageBuffer();
+                throw new ApplicationException("SIP message received that exceeded the maximum allowed message length, ignoring.");
+            }
+            else if (!BufferUtils.HasString(buffer, 0, buffer.Length, SIP_MESSAGE_IDENTIFIER, m_CRLF))
+            {
+                // Message does not contain "SIP" anywhere on the first line, ignore.
+                return null;
+            }
+            else
+            {
+                var sipMessage = new SIPMessageBuffer();
+
+                sipMessage.RawBuffer = buffer;
                 sipMessage.LocalSIPEndPoint = localSIPEndPoint;
                 sipMessage.RemoteSIPEndPoint = remoteSIPEndPoint;
 
@@ -120,7 +99,7 @@ namespace SIPSorcery.SIP
                     sipMessage.LocalSIPEndPoint.ConnectionID = remoteSIPEndPoint.ConnectionID;
                 }
 
-                sipMessage.RawMessage = message;
+                string message = Encoding.UTF8.GetString(buffer);
                 int endFistLinePosn = message.IndexOf(m_CRLF);
 
                 if (endFistLinePosn != -1)
@@ -150,7 +129,8 @@ namespace SIPSorcery.SIP
 
                         if (message.Length > endHeaderPosn + 4)
                         {
-                            sipMessage.Body = message.Substring(endHeaderPosn + 4);
+                            sipMessage.Body = new byte[buffer.Length - (endHeaderPosn + 4)];
+                            Buffer.BlockCopy(buffer, endHeaderPosn + 4, sipMessage.Body, 0, buffer.Length - (endHeaderPosn + 4));
                         }
                     }
 
@@ -162,11 +142,18 @@ namespace SIPSorcery.SIP
                     return null;
                 }
             }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception ParseSIPMessage. " + excp.Message + "\nSIP Message=" + message + ".");
-                return null;
-            }
+        }
+
+        /// <summary>
+        /// Attempts to parse a SIP message from a string containing a single SIP request or response.
+        /// </summary>
+        /// <param name="message">The string to parse.</param>
+        /// <param name="localSIPEndPoint">The end point the message was received on.</param>
+        /// <param name="remoteSIPEndPoint">The end point the message was received from.</param>
+        /// <returns>If successful a SIP message or null if not.</returns>
+        public static SIPMessageBuffer ParseSIPMessage(string message, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
+        {
+            return ParseSIPMessage(Encoding.UTF8.GetBytes(message), localSIPEndPoint, remoteSIPEndPoint);
         }
 
         //rj2: check if message could be "well"known Ping message
