@@ -19,6 +19,6 @@ jobs:
     - name: Install dependencies
       run: dotnet restore src/SIPSorcery.sln 
     - name: Build
-      run: dotnet build src/SIPSorcery.sln --configuration Release --no-restore    
+      run: dotnet build src/SIPSorcery.sln --configuration Release --no-restore --framework netcoreapp3.1   
     - name: Unit tests
       run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework netcoreapp3.1 -c Release --filter "FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv4TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv6TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.Sys.UnitTests.NetServicesUnitTest.GetLocalForInternetIPv6AdressUnitTest&FullyQualifiedName!=SIPSorcery.Net.UnitTests.DtlsUtilsUnitTest.LoadSecretFromArchiveUnitTest&FullyQualifiedName!=SIPSorcery.SIP.App.UnitTests.SIPDnsUnitTest.LookupLocalHostnameTest&FullyQualifiedName!=SIPSorcery.Net.UnitTests.DNSUnitTest.LookupCurrentHostNameMethod&FullyQualifiedName!=SIPSorcery.Net.UnitTests.STUNDnsUnitTest.LookupPrivateNetworkHostTestMethod&FullyQualifiedName!=SIPSorcery.Net.UnitTests.STUNDnsUnitTest.LookupPrivateNetworkHostIPv6TestMethod&FullyQualifiedName!=SIPSorcery.Net.UnitTests.RtpIceChannelUnitTest.CheckSuccessfulConnectionForHostCandidatesUnitTest&FullyQualifiedName!=SIPSorcery.Net.UnitTests.RtpIceChannelUnitTest.CheckPeerReflexiveReplacedByHostCandidatesUnitTest"
