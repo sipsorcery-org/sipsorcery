@@ -8,6 +8,8 @@
 //
 // History:
 // 17 Dec 2019	Aaron Clauson   Created, Dublin, Ireland.
+// 14 Dec 2020  Aaron Clauson   Moved from unit to integration tests (while not 
+//              really integration tests the duration is long'ish for a unit test).
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -23,13 +25,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorcery.SIP.App;
 using SIPSorcery.UnitTests;
 using SIPSorceryMedia.Abstractions.V1;
 using Xunit;
 
-namespace SIPSorcery.SIP.App.UnitTests
+namespace SIPSorcery.SIP.IntegrationTests
 {
-    [Trait("Category", "unit")]
+    [Trait("Category", "integration")]
     public class SIPUserAgentUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;

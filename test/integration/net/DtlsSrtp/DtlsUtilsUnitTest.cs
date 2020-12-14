@@ -5,6 +5,7 @@
 //
 // History:
 // 06 Jul 2020	Aaron Clauson	Created.
+// 14 Dec 2020  Aaron Clauson   Moved from unit to integration tests..
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -15,9 +16,9 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-namespace SIPSorcery.Net.UnitTests
+namespace SIPSorcery.Net.IntegrationTests
 {
-    [Trait("Category", "unit")]
+    [Trait("Category", "integration")]
     public class DtlsUtilsUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;

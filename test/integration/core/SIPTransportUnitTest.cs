@@ -8,6 +8,8 @@
 // 
 // History:
 // 15 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
+// 14 Dec 2020  Aaron Clauson   Moved from unit to integration tests (while not 
+//              really integration tests the duration is long'ish for a unit test).
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -27,7 +29,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using Xunit;
 
-namespace SIPSorcery.SIP.UnitTests
+namespace SIPSorcery.SIP.IntegrationTests
 {
     [Trait("Category", "transport")]
     public class SIPTransportUnitTest
