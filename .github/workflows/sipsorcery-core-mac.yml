@@ -17,6 +17,6 @@ jobs:
     - name: Install dependencies
       run: dotnet restore src/SIPSorcery.sln 
     - name: Build
-      run: dotnet build src/SIPSorcery.sln -c Release --no-restore --framework ${{ matrix.framework }}   
+      run: dotnet build src/SIPSorcery.sln -c Release --framework ${{ matrix.framework }}   
     - name: Unit tests
       run: dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-build --framework ${{ matrix.framework }}
