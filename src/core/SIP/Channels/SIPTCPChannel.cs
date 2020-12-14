@@ -57,7 +57,7 @@ namespace SIPSorcery.SIP
 {
     public class SIPTCPChannel : SIPChannel
     {
-        private const int MAX_TCP_CONNECTIONS = 1000;           // Maximum number of connections for the TCP listener.
+        private const int MAX_TCP_CONNECTIONS = 1000;          // Maximum number of connections for the TCP listener.
         private const int PRUNE_CONNECTIONS_INTERVAL = 60000;  // The period at which to prune the connections.
         private const int PRUNE_NOTRANSMISSION_MINUTES = 70;   // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
 
@@ -177,7 +177,7 @@ namespace SIPSorcery.SIP
             {
                 try
                 {
-                    Socket clientSocket = m_tcpServerListener.AcceptSocketAsync().Result;
+                    Socket clientSocket = m_tcpServerListener.AcceptSocket();
 
                     if (!Closed)
                     {
@@ -191,7 +191,7 @@ namespace SIPSorcery.SIP
 
                         m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
 
-                        OnAccept(sipStmConn).Wait();
+                        OnAccept(sipStmConn);
                     }
                 }
                 catch (ObjectDisposedException)
@@ -220,7 +220,7 @@ namespace SIPSorcery.SIP
         /// For TCP channel no special action is required when accepting a new client connection. Can start receiving immediately.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly accepted client socket.</param>
-        protected virtual Task OnAccept(SIPStreamConnection streamConnection)
+        protected virtual void OnAccept(SIPStreamConnection streamConnection)
         {
             SocketAsyncEventArgs args = streamConnection.RecvSocketArgs;
             args.AcceptSocket = streamConnection.StreamSocket;
@@ -232,8 +232,6 @@ namespace SIPSorcery.SIP
             {
                 ProcessReceive(args);
             }
-
-            return Task.FromResult(0);
         }
 
         /// <summary>
