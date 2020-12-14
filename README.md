@@ -1,7 +1,7 @@
 | CI | win-x64 | linux-x64 | osx-x64 | Examples <br/> (win-x64) | Softphone <br/> (win-x64) |
 |-|-|-|-|-|-|
 | <sup>AppVeyor</sup>       | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | | | [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master) |
-| <sup>GitHub Actions</sup> | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core-win/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core-mac/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core-ubuntu/badge.svg) | | |
+| <sup>GitHub Actions</sup> | ![](https://github.com/sipsorcery/sipsorcery/workflows/win-x64/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/linux-x64/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/osx-x64/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/egs-win-x64/badge.svg) | |
 | <sup>Azure DevOps</sup>   | | | | | |
 
 ## What Is It?
