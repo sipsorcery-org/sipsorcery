@@ -16,13 +16,13 @@ jobs:
     name: Dotnet ${{ matrix.dotnet }} sipsorcery Windows
     steps:
     - uses: actions/checkout@v2
-    - name: Setup dotnet
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: ${{ matrix.dotnet }}
+    #- name: Setup dotnet
+    #  uses: actions/setup-dotnet@v1
+    #  with:
+    #    dotnet-version: ${{ matrix.dotnet }}
     - name: Install dependencies
       run: dotnet restore src/SIPSorcery.sln 
     - name: Build
-      run: dotnet build src/SIPSorcery.sln --configuration Release --no-restore --framework ${{ matrix.dotnet }}
+      run: dotnet build src/SIPSorcery.sln --configuration Release --no-restore
     - name: Test
-      run: dotnet test src/SIPSorcery.sln --no-restore --verbosity normal --framework ${{ matrix.dotnet }}
+      run: dotnet test src/SIPSorcery.sln --no-restore --verbosity normal
