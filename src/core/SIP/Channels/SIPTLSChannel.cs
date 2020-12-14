@@ -73,12 +73,13 @@ namespace SIPSorcery.SIP
         /// For the TLS channel the SSL stream must be created and any authentication actions undertaken.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly accepted client socket.</param>
-        protected override async Task OnAccept(SIPStreamConnection streamConnection)
+        protected override void OnAccept(SIPStreamConnection streamConnection)
         {
             NetworkStream networkStream = new NetworkStream(streamConnection.StreamSocket, true);
             SslStream sslStream = new SslStream(networkStream, false);
 
-            await sslStream.AuthenticateAsServerAsync(m_serverCertificate).ConfigureAwait(false);
+            //await sslStream.AuthenticateAsServerAsync(m_serverCertificate).ConfigureAwait(false);
+            sslStream.AuthenticateAsServer(m_serverCertificate);
 
             logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
