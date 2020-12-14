@@ -20,8 +20,9 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ matrix.dotnet }}
-    - name: Unit tests
-      #run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "Category!=IPv6&Category!=transport&Category!=txintegration"
-      #run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release
-      #run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework netcoreapp3.1
-      run: dotnet test test/unit/SIPSorcery.UnitTests.csproj
+    - name: Install dependencies
+      run: dotnet restore src/SIPSorcery.sln
+    - name: Build
+      run: dotnet build src/SIPSorcery.sln --configuration Release --no-restore
+    - name: Test
+      run: dotnet test src/SIPSorcery.sln --no-restore --verbosity normal
