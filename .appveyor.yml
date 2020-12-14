@@ -20,12 +20,14 @@ build:
   verbosity: quiet
 after_build:
 - cmd: ECHO "after_build"
-test:
-  assemblies:
-    only:
-      - SIPSorcery.UnitTests.dll
-    except:
-      - SIPSorcery.IntegrationTests.dll
+#test:
+#  assemblies:
+#    only:
+#      - SIPSorcery.UnitTests.dll
+#    except:
+#      - SIPSorcery.IntegrationTests.dll
+test_script:
+  - dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release 
 on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
