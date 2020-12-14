@@ -1,4 +1,4 @@
-name: sipsorcery-core-ubuntu
+name: linux-x64
 
 on:
   push:

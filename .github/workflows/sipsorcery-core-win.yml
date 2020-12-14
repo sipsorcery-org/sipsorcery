@@ -1,4 +1,4 @@
-name: sipsorcery-core-win
+name: win-x64
 
 on:
   push:

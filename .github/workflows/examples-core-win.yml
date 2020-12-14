@@ -1,4 +1,4 @@
-name: examples-core31 
+name: egs-win-x64 
 
 on:
   push:
