@@ -1,0 +1,22 @@
+name: sipsorcery-core-ubuntu
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    #- name: Setup .NET Core
+    #  uses: actions/setup-dotnet@v1
+    #  with:
+    #    dotnet-version: 3.1.100
+    - name: Unit tests
+      #run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release
+      run: dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release
+
