@@ -22,7 +22,7 @@ build:
 test:
   assemblies:
     only:
-      - '**\\SIPSorcery.UnitTests.dll'
+      - '**\SIPSorcery.UnitTests.dll'
 on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)

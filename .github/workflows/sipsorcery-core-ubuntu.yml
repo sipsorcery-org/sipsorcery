@@ -9,7 +9,7 @@ jobs:
   build:
     strategy:
       matrix:
-        framework: [ 'net5', 'netcoreapp3.1' ]
+        framework: [ 'netcoreapp3.1' ]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
