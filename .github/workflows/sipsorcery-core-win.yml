@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        dotnet: [ '3.1.x', '5.x' ]
+        dotnet: [ '3.1.x', '5.0.x' ]
     name: Dotnet ${{ matrix.dotnet }} sipsorcery Windows
     steps:
     - uses: actions/checkout@v2
