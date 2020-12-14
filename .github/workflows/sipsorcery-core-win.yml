@@ -21,8 +21,8 @@ jobs:
       with:
         dotnet-version: ${{ matrix.dotnet }}
     - name: Install dependencies
-      run: dotnet restore src/SIPSorcery.sln
+      run: dotnet restore src/SIPSorcery.sln 
     - name: Build
-      run: dotnet build src/SIPSorcery.sln --configuration Release --no-restore
+      run: dotnet build src/SIPSorcery.sln --configuration Release --no-restore --framework ${{ matrix.dotnet }}
     - name: Test
-      run: dotnet test src/SIPSorcery.sln --no-restore --verbosity normal
+      run: dotnet test src/SIPSorcery.sln --no-restore --verbosity normal --framework ${{ matrix.dotnet }}
