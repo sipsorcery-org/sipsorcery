@@ -1,4 +1,4 @@
-name: sipsorcery-core-mac
+name: osx-x64
 
 on:
   push:
