@@ -5,6 +5,8 @@
 //
 // History:
 // 16 Mar 2020	Aaron Clauson	Created.
+// 14 Dec 2020  Aaron Clauson   Moved from unit to integration tests (while not 
+//              really integration tests the duration is long'ish for a unit test).
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -16,9 +18,9 @@ using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions.V1;
 using Xunit;
 
-namespace SIPSorcery.Net.UnitTests
+namespace SIPSorcery.Net.IntegrationTests
 {
-    [Trait("Category", "unit")]
+    [Trait("Category", "integration")]
     public class RTCPeerConnectionUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;

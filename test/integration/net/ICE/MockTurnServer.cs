@@ -8,6 +8,7 @@
 // 
 // History:
 // 24 Jun 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 14 Dec 2020  Aaron Clauson   Moved from unit to integration tests.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,7 +21,7 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net.UnitTests
+namespace SIPSorcery.Net.IntegrationTests
 {
     public class MockTurnServer : IDisposable
     {
