@@ -4293,7 +4293,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTCPChannel.html",
-          "hash": "MI9dkjGYfJx8ZB5Vr/iaew=="
+          "hash": "dbB5pAXfza/5BEyH23gMeQ=="
         }
       },
       "is_incremental": false,
@@ -4305,7 +4305,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTLSChannel.html",
-          "hash": "0U5PDEZOVTezLhFpne5VMA=="
+          "hash": "o4/Kv70RUW5ZRC37akLFyQ=="
         }
       },
       "is_incremental": false,
