@@ -45,7 +45,7 @@ steps:
   inputs:
     command: test
     projects: test/unit/SIPSorcery.UnitTests.csproj
-    arguments: --framework net5
+    arguments: --framework netcoreapp3.1
 
 #Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/test/vstest?view=azure-devops
 #- task: VSTest@2
