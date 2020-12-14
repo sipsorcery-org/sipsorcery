@@ -14,9 +14,5 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Install dependencies
-      run: dotnet restore src/SIPSorcery.sln 
-    - name: Build
-      run: dotnet build src/SIPSorcery.sln -c Release --framework ${{ matrix.framework }}   
     - name: Unit tests
-      run: dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-build --framework ${{ matrix.framework }}
+      run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework  ${{ matrix.framework }} -c Release
