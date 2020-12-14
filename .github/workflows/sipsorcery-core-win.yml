@@ -8,22 +8,13 @@ on:
       
 jobs:
   build:
-
     runs-on: windows-latest
-    #strategy:
-    #  matrix:
-    #    dotnet: [ '3.1.x', '5.0.x' ]
-    #name: Dotnet ${{ matrix.dotnet }} sipsorcery Windows
     name: dotnet windows sipsorcery core
     steps:
     - uses: actions/checkout@v2
-    #- name: Setup dotnet
-    #  uses: actions/setup-dotnet@v1
-    #  with:
-    #    dotnet-version: ${{ matrix.dotnet }}
     - name: Install dependencies
       run: dotnet restore src/SIPSorcery.sln 
     - name: Build
-      run: dotnet build src/SIPSorcery.sln --configuration Release --no-restore
+      run: dotnet build src/SIPSorcery.sln -c Release --no-restore
     - name: Test
-      run: dotnet test src/SIPSorcery.sln --no-restore --verbosity normal
+      run:  dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-restore --verbosity normal

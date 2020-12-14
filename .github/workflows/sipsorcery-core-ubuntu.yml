@@ -7,16 +7,11 @@ on:
 
 jobs:
   build:
-
+    strategy:
+      matrix:
+        framework: [ 'net5', 'netcoreapp3.1' ]
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
-    #- name: Setup .NET Core
-    #  uses: actions/setup-dotnet@v1
-    #  with:
-    #    dotnet-version: 3.1.100
     - name: Unit tests
-      run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework netcoreapp3.1 -c Release
-    #  run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework net5 -c Release
-
+      run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework  ${{ matrix.framework }} -c Release
