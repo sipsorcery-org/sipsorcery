@@ -6,7 +6,6 @@ branches:
     - ubuntu-ci
     - wsl-ci
 environment:
-  APPVEYOR_SAVE_CACHE_ON_ERROR: true
   access_token:
     # Token for github pages publishing.
     secure: 21m76jAVvcu7oACAHFnfCBltcwon+r5ZI3avfRmrNFAqJMn6RfLXwpBhPcJ617tD
@@ -19,10 +18,16 @@ build:
   publish_nuget: true
   publish_nuget_symbols: true
   verbosity: quiet
-test:
-  assemblies:
-    only:
-      - '**\\SIPSorcery.UnitTests.dll'
+after_build:
+- cmd: ECHO "after_build"
+#test:
+#  assemblies:
+#    only:
+#      - SIPSorcery.UnitTests.dll
+#    except:
+#      - SIPSorcery.IntegrationTests.dll
+test_script:
+  - dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release 
 on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
