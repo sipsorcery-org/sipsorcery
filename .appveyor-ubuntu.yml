@@ -16,8 +16,8 @@ build_script:
 - dotnet --version
 test_script:
   - sh:
-     dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --framework netcoreapp3.1
-     dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --framework net5
+      dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --framework netcoreapp3.1
+      dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --framework net5
 #on_finish:
 #  - sh: export APPVEYOR_SSH_BLOCK=true
 #  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
