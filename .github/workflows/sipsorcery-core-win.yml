@@ -10,10 +10,11 @@ jobs:
   build:
 
     runs-on: windows-latest
-    strategy:
-      matrix:
-        dotnet: [ '3.1.x', '5.0.x' ]
-    name: Dotnet ${{ matrix.dotnet }} sipsorcery Windows
+    #strategy:
+    #  matrix:
+    #    dotnet: [ '3.1.x', '5.0.x' ]
+    #name: Dotnet ${{ matrix.dotnet }} sipsorcery Windows
+    name: dotnet windows sipsorcery core
     steps:
     - uses: actions/checkout@v2
     #- name: Setup dotnet
