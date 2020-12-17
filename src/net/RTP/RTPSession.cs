@@ -2046,6 +2046,10 @@ namespace SIPSorcery.Net
                                             OnVideoFrameReceived?.Invoke(remoteEndPoint, rtpPacket.Header.Timestamp, frame);
                                         }
                                     }
+                                    else
+                                    {
+                                        logger.LogWarning($"The depacketisation logic for video codec {videoFormat.Name()} has not been implemented, PR's welcome!");
+                                    }
                                 }
 
                                 OnRtpPacketReceived?.Invoke(remoteEndPoint, mediaType, rtpPacket);

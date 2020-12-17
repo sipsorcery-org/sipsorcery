@@ -40,12 +40,14 @@ namespace SIPSorcery.Media
         private const int STAMP_BOX_PADDING = 10;
         private const int TIMER_DISPOSE_WAIT_MILLISECONDS = 1000;
         private const int VP8_SUGGESTED_FORMAT_ID = 96;
+        private const int H264_SUGGESTED_FORMAT_ID = 100;
 
         public static ILogger logger = Sys.Log.Logger;
 
         public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {
-            new VideoFormat(VideoCodecsEnum.VP8, VP8_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE)
+            new VideoFormat(VideoCodecsEnum.VP8, VP8_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE),
+            new VideoFormat(VideoCodecsEnum.H264, H264_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE)
         };
 
         private int _frameSpacing;
@@ -277,7 +279,7 @@ namespace SIPSorcery.Media
 
                     if (_videoEncoder != null && OnVideoSourceEncodedSample != null)
                     {
-                        var encodedBuffer = _videoEncoder.EncodeVideo(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8);
+                        var encodedBuffer = _videoEncoder.EncodeVideo(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420, _formatManager.SelectedFormat.Codec);
 
                         if (encodedBuffer != null)
                         {

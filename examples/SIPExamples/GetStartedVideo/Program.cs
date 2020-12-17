@@ -29,6 +29,7 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Encoders;
+using SIPSorceryMedia.FFmpeg;
 using SIPSorceryMedia.Windows;
 
 namespace demo
@@ -99,8 +100,15 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitMRE.Set();
             var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
             windowsAudioEndPoint.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+<<<<<<< HEAD
 >>>>>>> master
             var windowsVideoEndPoint = new WindowsVideoEndPoint();
+=======
+            //var windowsVideoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
+            var windowsVideoEndPoint = new WindowsVideoEndPoint(new VpxVideoEncoder());
+            windowsVideoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
+
+>>>>>>> master
             //windowsVideoEndPoint.OnVideoSourceError += (err) =>
             //{
             //    Log.LogError($"Video source error. {err}");
@@ -111,7 +119,7 @@ namespace demo
             //};
 
             // Fallback to a test pattern source if accessing the Windows webcam fails.
-            var testPattern = new VideoTestPatternSource(new VideoEncoder());
+            var testPattern = new VideoTestPatternSource(new VpxVideoEncoder());
 
             var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(@"C:\Dev\sipsorcery\sipsorcery-core\examples\WebRTCExamples\WebRTCMp4Source\media\max_intro.mp4", true, new AudioEncoder());
             mediaFileSource.Initialise();
