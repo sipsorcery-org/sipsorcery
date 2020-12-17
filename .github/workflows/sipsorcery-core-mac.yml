@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        framework: [ 'netcoreapp3.1' ]
+        framework: [ 'netcoreapp3.1', 'net5' ]
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v1
