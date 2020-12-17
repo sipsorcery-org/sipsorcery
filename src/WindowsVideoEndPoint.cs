@@ -26,7 +26,6 @@ using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Devices;
 using SIPSorceryMedia.Abstractions.V1;
-using SIPSorceryMedia.Encoders.Codecs;
 using SIPSorceryMedia.Abstractions;
 using Windows.Devices.Enumeration;
 using Windows.Media.MediaProperties;
@@ -52,22 +51,20 @@ namespace SIPSorceryMedia.Windows
         private const int VIDEO_SAMPLING_RATE = 90000;
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
         private const int VP8_FORMATID = 96;
+        private const int H264_FORMATID = 100;
         private readonly string MF_NV12_PIXEL_FORMAT = MediaEncodingSubtypes.Nv12;
         private const string MF_I420_PIXEL_FORMAT = "{30323449-0000-0010-8000-00AA00389B71}";
 
         // NV12 seems to be what the Software Bitmaps provided from MF tend to prefer.
-        private readonly vpxmd.VpxImgFmt EncoderInputFormat = vpxmd.VpxImgFmt.VPX_IMG_FMT_NV12;
+        //private readonly vpxmd.VpxImgFmt EncoderInputFormat = vpxmd.VpxImgFmt.VPX_IMG_FMT_NV12;
+        private readonly VideoPixelFormatsEnum EncoderInputFormat = VideoPixelFormatsEnum.NV12;
 
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsVideoEndPoint>();
 
-        public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
-        {
-            new VideoFormat(VideoCodecsEnum.VP8, VP8_FORMATID, VIDEO_SAMPLING_RATE)
-        };
+        public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>();
 
         private MediaFormatManager<VideoFormat> _videoFormatManager;
-        private Vp8Codec _vp8Encoder;
-        private Vp8Codec _vp8Decoder;
+        private IVideoEncoder _videoEncoder;
         private bool _forceKeyFrame = false;
         private bool _isInitialised;
         private bool _isStarted;
@@ -110,8 +107,7 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Attempts to create a new video source from a local video capture device.
         /// </summary>
-        /// <param name="encodingOnly">Optional. If set to true this instance will NOT attempt to initialise any 
-        /// capture devices. It will provide encode and decode services for external video sources.</param>
+        /// <param name="videoEncoder">A video encoder that can be used to encode and decode video frames.</param>
         /// <param name="width">Optional. If specified the video capture device will be requested to initialise with this frame
         /// width. If the attempt fails an exception is thrown. If not specified the device's default frame width will
         /// be used.</param>
@@ -121,19 +117,36 @@ namespace SIPSorceryMedia.Windows
         /// <param name="fps">Optional. If specified the video capture device will be requested to initialise with this frame
         /// rate. If the attempt fails an exception is thrown. If not specified the device's default frame rate will
         /// be used.</param>
-        public WindowsVideoEndPoint(string videoDeviceID = null, uint width = 0, uint height = 0, uint fps = 0)
+        public WindowsVideoEndPoint(IVideoEncoder videoEncoder,
+            string videoDeviceID = null,
+            uint width = 0,
+            uint height = 0,
+            uint fps = 0)
         {
-            _videoFormatManager = new MediaFormatManager<VideoFormat>(SupportedFormats);
+            _videoEncoder = videoEncoder;
             _videoDeviceID = videoDeviceID;
             _width = width;
             _height = height;
             _fpsNumerator = fps;
 
-            _vp8Decoder = new Vp8Codec();
-            _vp8Decoder.InitialiseDecoder();
-
             _mediaCapture = new MediaCapture();
             _mediaCapture.Failed += VideoCaptureDevice_Failed;
+
+            SetSupportedVideoFormats();
+            _videoFormatManager = new MediaFormatManager<VideoFormat>(SupportedFormats);
+        }
+
+        private void SetSupportedVideoFormats()
+        {
+            if (_videoEncoder.IsSupported(VideoCodecsEnum.VP8))
+            {
+                SupportedFormats.Add(new VideoFormat(VideoCodecsEnum.VP8, VP8_FORMATID, VIDEO_SAMPLING_RATE));
+            }
+
+            if (_videoEncoder.IsSupported(VideoCodecsEnum.H264))
+            {
+                SupportedFormats.Add(new VideoFormat(VideoCodecsEnum.H264, H264_FORMATID, VIDEO_SAMPLING_RATE));
+            }
         }
 
         public void RestrictFormats(Func<VideoFormat, bool> filter) => _videoFormatManager.RestrictFormats(filter);
@@ -288,9 +301,6 @@ namespace SIPSorceryMedia.Windows
 
             PrintFrameSourceInfo(colorFrameSource);
 
-            _vp8Encoder = new Vp8Codec();
-            _vp8Encoder.InitialiseEncoder(_width, _height, EncoderInputFormat);
-
             _mediaFrameReader.FrameArrived += FrameArrivedHandler;
 
             return true;
@@ -302,7 +312,8 @@ namespace SIPSorceryMedia.Windows
             {
                 //DateTime startTime = DateTime.Now;
 
-                List<byte[]> decodedFrames = _vp8Decoder.Decode(frame, frame.Length, out var width, out var height);
+                //List<byte[]> decodedFrames = _vp8Decoder.Decode(frame, frame.Length, out var width, out var height);
+                var decodedFrames = _videoEncoder.DecodeVideo(frame, EncoderInputFormat, _videoFormatManager.SelectedFormat.Codec);
 
                 if (decodedFrames == null)
                 {
@@ -313,9 +324,9 @@ namespace SIPSorceryMedia.Windows
                     foreach (var decodedFrame in decodedFrames)
                     {
                         // Windows bitmaps expect BGR when supplying System.Drawing.Imaging.PixelFormat.Format24bppRgb. 
-                        byte[] bgr = PixelConverter.I420toBGR(decodedFrame, (int)width, (int)height);
+                        //byte[] bgr = PixelConverter.I420toBGR(decodedFrame.Sample, (int)decodedFrame.Width, (int)decodedFrame.Height);
                         //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
-                        OnVideoSinkDecodedSample(bgr, width, height, (int)(width * 3), VideoPixelFormatsEnum.Bgr);
+                        OnVideoSinkDecodedSample(decodedFrame.Sample, decodedFrame.Width, decodedFrame.Height, (int)(decodedFrame.Width * 3), VideoPixelFormatsEnum.Bgr);
                     }
                 }
             }
@@ -372,9 +383,9 @@ namespace SIPSorceryMedia.Windows
 
                 await CloseVideoCaptureDevice().ConfigureAwait(false);
 
-                if (_vp8Encoder != null)
+                if (_videoEncoder != null)
                 {
-                    lock (_vp8Encoder)
+                    lock (_videoEncoder)
                     {
                         Dispose();
                     }
@@ -467,7 +478,7 @@ namespace SIPSorceryMedia.Windows
         {
             if (!_isClosed)
             {
-                if (!_isClosed && (OnVideoSourceEncodedSample != null || OnVideoSourceRawSample != null))
+                if (!_videoFormatManager.SelectedFormat.IsEmpty() && (OnVideoSourceEncodedSample != null || OnVideoSourceRawSample != null))
                 {
                     using (var mediaFrameReference = sender.TryAcquireLatestFrame())
                     {
@@ -507,9 +518,9 @@ namespace SIPSorceryMedia.Windows
 
                                         if (OnVideoSourceEncodedSample != null)
                                         {
-                                            lock (_vp8Encoder)
+                                            lock (_videoEncoder)
                                             {
-                                                var encodedBuffer = _vp8Encoder.Encode(nv12Buffer, _forceKeyFrame);
+                                                var encodedBuffer = _videoEncoder.EncodeVideo(width, height, nv12Buffer, EncoderInputFormat, _videoFormatManager.SelectedFormat.Codec);
 
                                                 if (encodedBuffer != null)
                                                 {
@@ -633,24 +644,14 @@ namespace SIPSorceryMedia.Windows
 
         public void Dispose()
         {
-            _vp8Encoder?.Dispose();
-            _vp8Decoder?.Dispose();
+            if (_videoEncoder != null)
+            {
+                lock (_videoEncoder)
+                {
+                    _videoEncoder.Dispose();
+                }
+            }
         }
-
-        //List<VideoFormat> IVideoSink.GetVideoSinkFormats()
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public void SetVideoSinkFormat(VideoFormat videoFormat)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public void RestrictFormats(Func<VideoFormat, bool> filter)
-        //{
-        //    throw new NotImplementedException();
-        //}
 
         public Task PauseVideoSink()
         {

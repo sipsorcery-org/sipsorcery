@@ -1,11 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
     <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.22-pre" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.6-pre" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.1" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.0" />
   </ItemGroup>
 
@@ -26,12 +25,13 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Windows</RepositoryUrl>
-    <Version>0.0.27-pre</Version>
-    <AssemblyVersion>0.0.27.0</AssemblyVersion>
-    <FileVersion>0.0.27.0</FileVersion>
+    <Version>0.0.28-pre</Version>
+    <AssemblyVersion>0.0.28.0</AssemblyVersion>
+    <FileVersion>0.0.28.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-    <PackageReleaseNotes>-v0.0.27-pre: Updated to use latest encoders package.
+    <PackageReleaseNotes>-v0.0.28-pre: Removed dependency on SIPSorceryMedia.Encoders. Now using IVideoEncoder interface for more flexibility.
+-v0.0.27-pre: Updated to use latest encoders package.
 -v0.0.26-pre: Wired up video source raw sample event for convenient hook into locally generated video samples.
 -v0.0.25-pre: Updated to use latest abstractions and encoder packages.
 -v0.0.24-pre: Fixed endian issue converting microphone samples to signed PCM.

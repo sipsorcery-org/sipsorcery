@@ -103,7 +103,7 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
-        /// <param name="audioEncoder">A 3rd party audio encoder that can be used to encode and decode
+        /// <param name="audioEncoder">An audio encoder that can be used to encode and decode
         /// specific audio codecs.</param>
         /// <param name="externalSource">Optional. An external source to use in combination with the source
         /// provided by this end point. The application will need to signal which source is active.</param>
