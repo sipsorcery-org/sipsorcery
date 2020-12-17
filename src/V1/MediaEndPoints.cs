@@ -22,7 +22,8 @@ namespace SIPSorceryMedia.Abstractions.V1
         Rgb = 0,        // 24 bits per pixel.
         Bgr = 1,        // 24 bits per pixel.
         Bgra = 2,       // 32 bits per pixel.
-        I420 = 3
+        I420 = 3,
+        NV12 = 4,
     }
 
     /// <summary>
@@ -310,7 +311,7 @@ namespace SIPSorceryMedia.Abstractions.V1
         public static readonly VideoFormat Empty = new VideoFormat()
             { _isNonEmpty = false, ClockRate = DEFAULT_CLOCK_RATE };
 
-    public VideoCodecsEnum Codec { get; set; }
+        public VideoCodecsEnum Codec { get; set; }
 
         /// <summary>
         /// The format ID for the codec. If this is a well known codec it should be set to the

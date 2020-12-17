@@ -21,12 +21,13 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Abstractions</RepositoryUrl>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
-    <PackageReleaseNotes>-1.0.0: Initial stable release</PackageReleaseNotes>
+    <PackageReleaseNotes>-1.0.1: Added NV12 as a pixel format option.
+-1.0.0: Initial stable release</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
