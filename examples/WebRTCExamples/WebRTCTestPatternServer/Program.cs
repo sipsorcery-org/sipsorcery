@@ -18,18 +18,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
-using WebSocketSharp.Server;
 using SIPSorcery.Media;
 using SIPSorceryMedia.Abstractions.V1;
-using Serilog.Extensions.Logging;
-using System.Security.Cryptography.X509Certificates;
+using SIPSorceryMedia.FFmpeg;
+using WebSocketSharp.Server;
 
 namespace demo
 {
@@ -123,11 +124,13 @@ namespace demo
             //var pc = new RTCPeerConnection(config);
             var pc = new RTCPeerConnection(null);
 
-            var testPatternSource = new VideoTestPatternSource(new SIPSorceryMedia.Encoders.VideoEncoder());
+            //var testPatternSource = new VideoTestPatternSource(new SIPSorceryMedia.Encoders.VideoEncoder());
+            var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
             testPatternSource.SetFrameRate(60);
             //testPatternSource.SetMaxFrameRate(true);
             //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             //videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
+            testPatternSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
             //var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
 

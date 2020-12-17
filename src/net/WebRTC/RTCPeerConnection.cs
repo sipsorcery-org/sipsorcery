@@ -1105,7 +1105,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning($"DTLS packet received {buffer.Length} bytes from {AudioDestinationEndPoint} but no DTLS transport available.");
+                            logger.LogWarning($"DTLS packet received {buffer.Length} bytes from {remoteEP} but no DTLS transport available.");
                         }
                     }
                 }
