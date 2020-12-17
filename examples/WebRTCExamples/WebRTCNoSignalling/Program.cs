@@ -27,6 +27,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.Windows;
 
 namespace WebRTCServer
@@ -106,7 +107,7 @@ namespace WebRTCServer
             var peerConnection = new RTCPeerConnection(null);
 
             var testPatternSource = new VideoTestPatternSource();
-            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint();
+            WindowsVideoEndPoint windowsVideoEndPoint = new WindowsVideoEndPoint(new VpxVideoEncoder());
 
             MediaStreamTrack track = new MediaStreamTrack(windowsVideoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             peerConnection.addTrack(track);
