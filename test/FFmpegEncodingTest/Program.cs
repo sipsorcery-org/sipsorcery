@@ -29,7 +29,7 @@ namespace FFmpegEncodingTest
 
         private static Bitmap _testPattern;
         private static Timer _sendTestPatternTimer;
-        private static VideoEncoder _ffmpegEncoder;
+        private static FFmpegVideoEncoder _ffmpegEncoder;
         private static VideoFrameConverter _videoFrameConverter;
         private static long _presentationTimestamp = 0;
 
@@ -204,7 +204,7 @@ namespace FFmpegEncodingTest
 
             FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_DEBUG);
 
-            _ffmpegEncoder = new VideoEncoder();
+            _ffmpegEncoder = new FFmpegVideoEncoder();
             Console.WriteLine($"Codec name {_ffmpegEncoder.GetCodecName()}.");
 
             _videoFrameConverter = new VideoFrameConverter(

@@ -24,7 +24,7 @@ namespace SIPSorceryMedia.FFmpeg
             new VideoFormat(VideoCodecsEnum.H264, H264_INITIAL_FORMATID, VIDEO_SAMPLING_RATE)
         };
 
-        private VideoEncoder _ffmpegEncoder;
+        private FFmpegVideoEncoder _ffmpegEncoder;
 
         private MediaFormatManager<VideoFormat> _videoFormatManager;
         private bool _isStarted;
@@ -43,7 +43,7 @@ namespace SIPSorceryMedia.FFmpeg
         public FFmpegVideoEndPoint()
         {
             _videoFormatManager = new MediaFormatManager<VideoFormat>(SupportedFormats);
-            _ffmpegEncoder = new VideoEncoder();
+            _ffmpegEncoder = new FFmpegVideoEncoder();
         }
 
         public MediaEndPoints ToMediaEndPoints()
@@ -128,6 +128,10 @@ namespace SIPSorceryMedia.FFmpeg
                 if (OnVideoSourceEncodedSample != null)
                 {
                     uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
+                    if(fps == 0)
+                    {
+                        fps = 1;
+                    }
 
                     var i420Buffer = PixelConverter.ToI420(width, height, sample, pixelFormat);
                     byte[]? encodedBuffer = _ffmpegEncoder. Encode(FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec), i420Buffer, width, height, (int)fps, _forceKeyFrame);

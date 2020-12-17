@@ -37,7 +37,7 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isPaused;
         private bool _isClosed;
         private FileSourceDecoder _fileSourceDecoder;
-        private VideoEncoder _videoEncoder;
+        private FFmpegVideoEncoder _videoEncoder;
         private IAudioEncoder _audioEncoder;
         private bool _forceKeyFrame;
 
@@ -68,7 +68,7 @@ namespace SIPSorceryMedia.FFmpeg
 
             _audioEncoder = audioEncoder;
             _fileSourceDecoder = new FileSourceDecoder(path, repeat);
-            _videoEncoder = new VideoEncoder();
+            _videoEncoder = new FFmpegVideoEncoder();
             _fileSourceDecoder.OnVideoFrame += FileSourceDecoder_OnVideoFrame;
             _fileSourceDecoder.OnAudioFrame += FileSourceDecoder_OnAudioFrame;
             _fileSourceDecoder.OnEndOfFile += () =>
