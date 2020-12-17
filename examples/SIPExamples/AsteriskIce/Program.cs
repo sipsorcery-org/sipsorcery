@@ -95,7 +95,7 @@ namespace demo
 
             var audioExtras = new AudioExtrasSource();
             audioExtras.SetSource(AudioSourcesEnum.PinkNoise);
-            var testPattern = new VideoTestPatternSource(new VideoEncoder());
+            var testPattern = new VideoTestPatternSource(new VpxVideoEncoder());
 
             var pc = new RTCPeerConnection(null);
             pc.OnAudioFormatsNegotiated += (formats) => audioExtras.SetAudioSourceFormat(formats.First());
