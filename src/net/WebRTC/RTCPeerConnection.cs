@@ -442,14 +442,19 @@ namespace SIPSorcery.Net
 
                             try
                             {
-                                bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle));
+                                bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
 
                                 connectionState = (handshakeResult) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                                 onconnectionstatechange?.Invoke(connectionState);
 
-                               if (connectionState == RTCPeerConnectionState.connected && RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
+                               if (connectionState == RTCPeerConnectionState.connected)
                                {
-                                    InitialiseSctpAssociation();
+                                    await base.Start().ConfigureAwait(false);
+
+                                    if (RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
+                                    {
+                                        InitialiseSctpAssociation();
+                                    }
                                }
                             }
                             catch (Exception excp)

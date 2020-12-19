@@ -50,6 +50,8 @@ namespace demo
     {
         private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const int WEBSOCKET_PORT = 8081;
+        private const int VIDEO_INITIAL_WIDTH = 640;
+        private const int VIDEO_INITIAL_HEIGHT = 480;
 
         private static Form _form;
         private static PictureBox _picBox;
@@ -86,7 +88,7 @@ namespace demo
             _form.BackgroundImageLayout = ImageLayout.Center;
             _picBox = new PictureBox
             {
-                Size = new Size(640, 480),
+                Size = new Size(VIDEO_INITIAL_WIDTH, VIDEO_INITIAL_HEIGHT),
                 Location = new Point(0, 0),
                 Visible = true
             };
@@ -99,7 +101,6 @@ namespace demo
         private static Task<RTCPeerConnection> CreatePeerConnection()
         {
             var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new VpxVideoEncoder());
-            //var videoEP = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
@@ -108,6 +109,13 @@ namespace demo
                 {
                     unsafe
                     {
+                        if(_picBox.Width != (int)width || _picBox.Height != (int)height)
+                        {
+                           logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {width}x{height}.");
+                            _picBox.Width = (int)width;
+                            _picBox.Height = (int)height;
+                        }
+
                         fixed (byte* s = bmp)
                         {
                             Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
@@ -119,7 +127,8 @@ namespace demo
 
             RTCConfiguration config = new RTCConfiguration
             {
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
+                //iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
+                 X_UseRtpFeedbackProfile = true
             };
             var pc = new RTCPeerConnection(config);
 

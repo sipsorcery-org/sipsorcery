@@ -7,6 +7,7 @@
         const STUN_URL = "stun:stun.sipsorcery.com";
         const WEBSOCKET_URL = "ws://127.0.0.1:8081/";
         const FRAME_RATE = 30.0;
+        const MAX_BITRATE = 10000000;
 
         var pc, ws, statsInterval, videoSender;
         var lastBytesSent = 0, lastTimestamp = 0;
@@ -26,7 +27,7 @@
             };
 
             let captureOptions = {
-                audio: document.querySelector('input[name="captureAudio"]').checked,
+                audio: false, // document.querySelector('input[name="captureAudio"]').checked,
                 video:
                     document.querySelector('input[name="captureVideo"]').checked ?
                         videoResFn(document.querySelector('input[name="videoResolution"]:checked').value) : false
@@ -43,16 +44,44 @@
 
             statsInterval = window.setInterval(getConnectionStats, 1000);
 
+            //pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
             pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
 
             // Diagnostics.
             pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
             pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
             pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
-            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
+            pc.onconnectionstatechange = () => {
+                console.log("onconnectionstatechange: " + pc.connectionState);
+                if (pc.connectionState === "connected") {
+                    pc.getSenders().forEach(async sender => {
+                        if (sender.track.kind === "video") {
+                            
+                            //var vidStmParams = sender.getParameters();
+                            //vidStmParams.encodings[0].maxBitrate = MAX_BITRATE;
+                            //await sender.setParameters(vidStmParams);
+
+                            console.log("Video stream parameters:");
+                            console.log(sender.getParameters());
+                            vidStmParams = sender.getParameters();
+                            console.log(`is active: ${vidStmParams.encodings[0].active}.`);
+                            console.log(`maxBitrate: ${vidStmParams.encodings[0].maxBitrate}.`);
+                        }
+                    });
+                }
+            }
 
             // Add local capture streams to peer connection.
             captureStm.getTracks().forEach(track => pc.addTrack(track, captureStm));
+            //var videotrack = captureStm.getVideoTracks()[0];
+            //videoSender = pc.addTrack(videotrack, captureStm);
+
+            //audiotrack = captureStm.getAudioTracks()[0];
+            //pc.addTrack(audiotrack, captureStm);
+
+            //var params = videoSender.getParameters();
+            //params.encodings[0].maxBitrate = 10000000;
+            //videoSender.setParameters(params);
 
             // Web socket signaling.
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
@@ -64,6 +93,21 @@
                     console.log(`Remote Offer: ${JSON.parse(evt.data).sdp}`);
                     await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
                     pc.createAnswer()
+                        //.then(answer => {
+                        //    var arr = answer.sdp.split('\r\n');
+                        //    arr.forEach((str, i) => {
+                        //        if (/^c=/.test(str)) {
+                        //            arr[i] = str + '\r\n' + "b=TIAS:2147483";
+                        //        }
+                        //        else if (str === "a=rtpmap:96 VP8/90000") {
+                        //            arr[i] = str + '\r\n' + "a=fmtp:96 x-google-max-bitrate=10000000;x-google-min-bitrate=0;x-google-start-bitrate=10000000";
+                        //        }
+                        //    });
+                        //    return new RTCSessionDescription({
+                        //        type: 'answer',
+                        //        sdp: arr.join('\r\n'),
+                        //    })
+                        //})
                         .then(answer => pc.setLocalDescription(answer))
                         .then(() => {
                             console.log(`Local Answer: ${pc.localDescription.sdp}`);
@@ -89,6 +133,14 @@
         function getConnectionStats() {
 
             pc.getSenders().forEach(sender => {
+                //console.log(sender);
+
+                //let parameters = sender.getParameters();
+                //console.log(`parameters.transactionId ${parameters.transactionId}.`);
+                //parameters.encodings.forEach(enc => {
+                //    console.log(enc);
+                //    console.log(`maxBitrate=${enc.maxBitrate}.`);
+                //});
 
                 sender.getStats().then(stats => {
                     stats.forEach(report => {
