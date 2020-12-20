@@ -43,6 +43,11 @@ namespace SIPSorcery.Net
         public ushort SeqNum { get; internal set; }
 
         /// <summary>
+        /// The last seqnum received from the remote peer for this stream.
+        /// </summary>
+        public ushort LastRemoteSeqNum { get; internal set; }
+
+        /// <summary>
         /// The value used in the RTP Timestamp header field for media packets
         /// sent using this media stream.
         /// </summary>
