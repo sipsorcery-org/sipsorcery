@@ -96,7 +96,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
 
             fixed (byte* s = bgr)
             {
-                Bitmap bmp = new Bitmap(width, height, width * stride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                Bitmap bmp = new Bitmap(width, height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
                 bmp.Save("ConvertKnownNV12ToBGRTest.bmp");
                 bmp.Dispose();
             }
