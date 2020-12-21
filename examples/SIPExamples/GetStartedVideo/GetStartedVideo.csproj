@@ -24,6 +24,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     <PackageReference Include="SIPSorcery" Version="4.0.79-pre" />
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.19-pre" />
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.4-pre" />
@@ -95,6 +96,10 @@
 =======
     <PackageReference Include="SIPSorcery" Version="5.0.3" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.7-pre" />
+=======
+    <PackageReference Include="SIPSorcery" Version="5.0.5-pre" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.8-pre" />
+>>>>>>> master
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.7-pre" />
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.28-pre" />
 >>>>>>> master

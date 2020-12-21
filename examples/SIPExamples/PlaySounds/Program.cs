@@ -62,7 +62,7 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
-            //windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.G722);
+            windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.G722);
             var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
             //voipMediaSession.AudioExtrasSource.AudioSamplePeriodMilliseconds = 20;

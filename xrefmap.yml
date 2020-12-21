@@ -4371,6 +4371,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.ChecklistEntry.IsLocalController
   nameWithType: ChecklistEntry.IsLocalController
+- uid: SIPSorcery.Net.ChecklistEntry.LastBindingRequestReceivedAt
+  name: LastBindingRequestReceivedAt
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LastBindingRequestReceivedAt
+  commentId: P:SIPSorcery.Net.ChecklistEntry.LastBindingRequestReceivedAt
+  fullName: SIPSorcery.Net.ChecklistEntry.LastBindingRequestReceivedAt
+  nameWithType: ChecklistEntry.LastBindingRequestReceivedAt
+- uid: SIPSorcery.Net.ChecklistEntry.LastBindingRequestReceivedAt*
+  name: LastBindingRequestReceivedAt
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LastBindingRequestReceivedAt_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.LastBindingRequestReceivedAt
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.LastBindingRequestReceivedAt
+  nameWithType: ChecklistEntry.LastBindingRequestReceivedAt
 - uid: SIPSorcery.Net.ChecklistEntry.LastCheckSentAt
   name: LastCheckSentAt
   href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LastCheckSentAt
@@ -7167,6 +7180,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.MediaStreamTrack.Kind
   nameWithType: MediaStreamTrack.Kind
+- uid: SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum
+  name: LastRemoteSeqNum
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_LastRemoteSeqNum
+  commentId: P:SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum
+  fullName: SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum
+  nameWithType: MediaStreamTrack.LastRemoteSeqNum
+- uid: SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum*
+  name: LastRemoteSeqNum
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_LastRemoteSeqNum_
+  commentId: Overload:SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum
+  isSpec: "True"
+  fullName: SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum
+  nameWithType: MediaStreamTrack.LastRemoteSeqNum
 - uid: SIPSorcery.Net.MediaStreamTrack.NoDtmfSupport
   name: NoDtmfSupport
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_NoDtmfSupport
@@ -12030,6 +12056,12 @@ references:
   commentId: E:SIPSorcery.Net.RtpIceChannel.OnStunMessageReceived
   fullName: SIPSorcery.Net.RtpIceChannel.OnStunMessageReceived
   nameWithType: RtpIceChannel.OnStunMessageReceived
+- uid: SIPSorcery.Net.RtpIceChannel.OnStunMessageSent
+  name: OnStunMessageSent
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_OnStunMessageSent
+  commentId: E:SIPSorcery.Net.RtpIceChannel.OnStunMessageSent
+  fullName: SIPSorcery.Net.RtpIceChannel.OnStunMessageSent
+  nameWithType: RtpIceChannel.OnStunMessageSent
 - uid: SIPSorcery.Net.RtpIceChannel.ProcessStunMessage(SIPSorcery.Net.STUNMessage,System.Net.IPEndPoint,System.Boolean)
   name: ProcessStunMessage(STUNMessage, IPEndPoint, Boolean)
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_ProcessStunMessage_SIPSorcery_Net_STUNMessage_System_Net_IPEndPoint_System_Boolean_
