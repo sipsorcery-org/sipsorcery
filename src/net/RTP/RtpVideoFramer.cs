@@ -25,10 +25,12 @@ namespace SIPSorcery.Net
 {
     public class RtpVideoFramer
     {
+        private const int MAX_FRAME_SIZE = 65536;
+
         private static ILogger logger = Log.Logger;
 
         private VideoCodecsEnum _codec;
-        private byte[] _currVideoFrame = new byte[65536];
+        private byte[] _currVideoFrame = new byte[MAX_FRAME_SIZE];
         private int _currVideoFramePosn = 0;
 
         public RtpVideoFramer(VideoCodecsEnum codec)
@@ -45,8 +47,10 @@ namespace SIPSorcery.Net
         {
             var payload = rtpPacket.Payload;
 
-            //logger.LogDebug($"rtp video, seqnum {seqnum}, ts {timestamp}, marker {marker}, payload {payload.Length}.");
-            if (_currVideoFramePosn + payload.Length >= _currVideoFrame.Length)
+            //var hdr = rtpPacket.Header;
+            //logger.LogDebug($"rtp video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+
+            if (_currVideoFramePosn + payload.Length >= MAX_FRAME_SIZE)
             {
                 // Something has gone very wrong. Clear the buffer.
                 _currVideoFramePosn = 0;
@@ -73,9 +77,8 @@ namespace SIPSorcery.Net
             }
             else
             {
-                var hdr = rtpPacket.Header;
                 logger.LogWarning("Discarding RTP packet, VP8 header Start bit not set.");
-                logger.LogWarning($"rtp video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+                //logger.LogWarning($"rtp video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
             }
 
             return null;

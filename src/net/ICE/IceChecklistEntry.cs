@@ -183,12 +183,17 @@ namespace SIPSorcery.Net
         public DateTime TurnPermissionsResponseAt { get; set; } = DateTime.MinValue;
 
         /// <summary>
-        /// If a candidate has been nominated then this field records the time the last
+        /// If a candidate has been nominated this field records the time the last
         /// STUN binding response was received from the remote peer.
         /// </summary>
         public DateTime LastConnectedResponseAt { get; set; }
 
         public bool IsLocalController { get; private set; }
+
+        /// <summary>
+        /// Timestamp for the most recent binding request received from the remote peer.
+        /// </summary>
+        public DateTime LastBindingRequestReceivedAt { get; set;}
 
         /// <summary>
         /// Creates a new entry for the ICE session checklist.
@@ -231,6 +236,7 @@ namespace SIPSorcery.Net
                     // If the candidate has been nominated then this is a response to a periodic
                     // check to whether the connection is still available.
                     LastConnectedResponseAt = DateTime.Now;
+                    RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
                 }
                 else
                 {
