@@ -2031,7 +2031,8 @@ namespace SIPSorcery.Net
                                 // whether it wants to subscribe to frames of RTP packets.
                                 if (mediaType == SDPMediaTypesEnum.video)
                                 {
-                                    if(rtpPacket.Header.SequenceNumber != (VideoRemoteTrack.LastRemoteSeqNum + 1) &&
+                                    if(VideoRemoteTrack.LastRemoteSeqNum != 0 &&
+                                        rtpPacket.Header.SequenceNumber != (VideoRemoteTrack.LastRemoteSeqNum + 1) &&
                                        !(rtpPacket.Header.SequenceNumber == 0 && VideoRemoteTrack.LastRemoteSeqNum == UInt16.MaxValue))
                                     {
                                         logger.LogWarning($"Video stream sequence number jumped from {VideoRemoteTrack.LastRemoteSeqNum} to {rtpPacket.Header.SequenceNumber}.");
@@ -2058,12 +2059,13 @@ namespace SIPSorcery.Net
                                         logger.LogWarning($"The depacketisation logic for video codec {videoFormat.Name()} has not been implemented, PR's welcome!");
                                     }
                                 }
-                                else if(mediaType == SDPMediaTypesEnum.audio)
+                                else if(mediaType == SDPMediaTypesEnum.audio && AudioRemoteTrack != null)
                                 {
-                                    if (rtpPacket.Header.SequenceNumber != (AudioRemoteTrack.LastRemoteSeqNum + 1) &&
+                                    if (AudioRemoteTrack.LastRemoteSeqNum != 0 &&
+                                        rtpPacket.Header.SequenceNumber != (AudioRemoteTrack.LastRemoteSeqNum + 1) &&
                                        !(rtpPacket.Header.SequenceNumber == 0 && AudioRemoteTrack.LastRemoteSeqNum == UInt16.MaxValue))
                                     {
-                                        logger.LogWarning($"Video stream sequence number jumped from {VideoRemoteTrack.LastRemoteSeqNum} to {rtpPacket.Header.SequenceNumber}.");
+                                        logger.LogWarning($"Audio stream sequence number jumped from {AudioRemoteTrack.LastRemoteSeqNum} to {rtpPacket.Header.SequenceNumber}.");
                                     }
 
                                     AudioRemoteTrack.LastRemoteSeqNum = rtpPacket.Header.SequenceNumber;
