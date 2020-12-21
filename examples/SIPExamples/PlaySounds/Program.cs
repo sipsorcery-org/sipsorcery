@@ -35,9 +35,9 @@ namespace demo
 {
     class Program
     {
-        //private static string DESTINATION = "1@127.0.0.1";
+        //private static string DESTINATION = "aaron@192.168.0.149";
         //private static string DESTINATION = "sip:pcdodo@192.168.0.50";
-        //private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.148:5060");
+        //private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.149:5060");
         private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
         //private static string DESTINATION = "sip:7002@192.168.0.48";
         private static SIPEndPoint OUTBOUND_PROXY = null;
@@ -62,7 +62,7 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
-            //windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+            //windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.G722);
             var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
             //voipMediaSession.AudioExtrasSource.AudioSamplePeriodMilliseconds = 20;
