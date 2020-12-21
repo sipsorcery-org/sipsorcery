@@ -352,13 +352,13 @@ namespace SIPSorcery.Net
             // Determining the number of packets expected and lost in RFC3550 Appendix A.3.
             ulong extended_max = m_cycles + m_max_seq;
             ulong expected = extended_max - m_base_seq + 1;
-            int lost = (m_received == 0) ? 0 : (int)(expected - m_received);
+            //int lost = (m_received == 0) ? 0 : (int)(expected - m_received);
 
             ulong expected_interval = expected - m_expected_prior;
             m_expected_prior = expected;
             uint received_interval = m_received - m_received_prior;
             m_received_prior = m_received;
-            ulong lost_interval = expected_interval - received_interval;
+            ulong lost_interval = (m_received == 0) ? 0 : expected_interval - received_interval;
             byte fraction = (byte)((expected_interval == 0 || lost_interval <= 0) ? 0 : (lost_interval << 8) / expected_interval);
 
             // In this case, the estimate is sampled for the reception report as:
