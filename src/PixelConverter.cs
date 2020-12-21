@@ -23,6 +23,18 @@ namespace SIPSorceryMedia.Abstractions
             }
         }
 
+        /// <summary>
+        /// Attempts to convert an image buffer into an I420 format.
+        /// </summary>
+        /// <param name="width">The width of the image in pixels.</param>
+        /// <param name="height">The height of the image in pixels.</param>
+        /// <param name="stride">The stride of the image. Currently this method can only convert RGB and BGR
+        /// formats. For those formats the stride is typically: width x bytes per pixel. For example for
+        /// a 640x480 RGB sample stride=640x3. For a 640x480 BGRA sample stride=640x4. Note in some cases 
+        /// the stride could be greater than the width x bytes per pixel.</param>
+        /// <param name="sample">The buffer containing the image data.</param>
+        /// <param name="pixelFormat">The pixel format of the image.</param>
+        /// <returns>If successful a buffer containing an I420 formatted image sample.</returns>
         public static byte[] ToI420(int width, int height, int stride, byte[] sample, VideoPixelFormatsEnum pixelFormat)
         {
             switch (pixelFormat)
@@ -47,8 +59,18 @@ namespace SIPSorceryMedia.Abstractions
             return RGBAtoI420(rgba, width, height, width * 4);
         }
 
-        // https://docs.microsoft.com/en-us/previous-versions/visualstudio/hh394035(v=vs.105)
-        // http://qiita.com/gomachan7/items/54d43693f943a0986e95
+        /// <summary>
+        /// Converts an RGBA sample to an I420 formatted sample.
+        /// </summary>
+        /// <param name="rgba">The RGBA image sample.</param>
+        /// <param name="width">The width in pixels of the RGBA sample.</param>
+        /// <param name="height">The height in pixels of the RGBA sample.</param>
+        /// <param name="stride">The stride of the RGBA sample.</param>
+        /// <returns>An I420 buffer representing the source image.</returns>
+        /// <remarks>
+        /// https://docs.microsoft.com/en-us/previous-versions/visualstudio/hh394035(v=vs.105)
+        /// http://qiita.com/gomachan7/items/54d43693f943a0986e95
+        /// </remarks>
         public static byte[] RGBAtoI420(byte[] rgba, int width, int height, int stride)
         {
             if (rgba == null || rgba.Length < (width * height))
@@ -96,6 +118,14 @@ namespace SIPSorceryMedia.Abstractions
             return RGBtoI420(rgb, width, height, width * 3);
         }
 
+        /// <summary>
+        /// Converts an RGB sample to an I420 formatted sample.
+        /// </summary>
+        /// <param name="rgb">The RGB image sample.</param>
+        /// <param name="width">The width in pixels of the RGB sample.</param>
+        /// <param name="height">The height in pixels of the RGB sample.</param>
+        /// <param name="stride">The stride of the RGB sample.</param>
+        /// <returns>An I420 buffer representing the source image.</returns>
         public static byte[] RGBtoI420(byte[] rgb, int width, int height, int stride)
         {
             if (rgb == null || rgb.Length < (stride * height))
@@ -142,6 +172,14 @@ namespace SIPSorceryMedia.Abstractions
             return BGRtoI420(bgr, width, height, width * 3);
         }
 
+        /// <summary>
+        /// Converts a BGR sample to an I420 formatted sample.
+        /// </summary>
+        /// <param name="bgr">The BGR image sample.</param>
+        /// <param name="width">The width in pixels of the BGR sample.</param>
+        /// <param name="height">The height in pixels of the BGR sample.</param>
+        /// <param name="stride">The stride of the BGR sample.</param>
+        /// <returns>An I420 buffer representing the source image.</returns>
         public static byte[] BGRtoI420(byte[] bgr, int width, int height, int stride)
         {
             if (bgr == null || bgr.Length < (stride * height))
@@ -188,6 +226,14 @@ namespace SIPSorceryMedia.Abstractions
             return I420toRGB(data, width, height, out _);
         }
 
+        /// <summary>
+        /// Converts an I420 sample to an RGB formatted sample.
+        /// </summary>
+        /// <param name="data">The I420 image sample.</param>
+        /// <param name="width">The width in pixels of the I420 sample.</param>
+        /// <param name="height">The height in pixels of the I420 sample.</param>
+        /// <param name="stride">The stride to use for the desintation RGB sample.</param>
+        /// <returns>An RGB buffer representing the source image.</returns>
         public static byte[] I420toRGB(byte[] data, int width, int height, out int stride)
         {
             int ySize = width * height;
@@ -234,6 +280,14 @@ namespace SIPSorceryMedia.Abstractions
             return I420toBGR(data, width, height, out _);
         }
 
+        /// <summary>
+        /// Converts an I420 sample to an BGR formatted sample.
+        /// </summary>
+        /// <param name="data">The I420 image sample.</param>
+        /// <param name="width">The width in pixels of the I420 sample.</param>
+        /// <param name="height">The height in pixels of the I420 sample.</param>
+        /// <param name="stride">The stride to use for the desintation BGR sample.</param>
+        /// <returns>A BGR buffer representing the source image.</returns>
         public static byte[] I420toBGR(byte[] data, int width, int height, out int stride)
         {
             int ySize = width * height;
@@ -280,6 +334,14 @@ namespace SIPSorceryMedia.Abstractions
             return NV12toBGR(data, width, height, width * 3);
         }
 
+        /// <summary>
+        /// Converts an NV12 sample to an BGR formatted sample.
+        /// </summary>
+        /// <param name="data">The NV12 image sample.</param>
+        /// <param name="width">The width in pixels of the NV12 sample.</param>
+        /// <param name="height">The height in pixels of the NV12 sample.</param>
+        /// <param name="stride">The stride to use for the desintation BGR sample.</param>
+        /// <returns>A BGR buffer representing the source image.</returns>
         public static byte[] NV12toBGR(byte[] data, int width, int height, int stride)
         {
             int ySize = width * height;

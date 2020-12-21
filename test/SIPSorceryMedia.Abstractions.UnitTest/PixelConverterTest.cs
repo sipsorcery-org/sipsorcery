@@ -89,13 +89,14 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
 
             int width = 640;
             int height = 480;
+            int stride = width * 3;
 
             byte[] nv12 = File.ReadAllBytes("img/ref-nv12.yuv");
-            byte[] bgr = PixelConverter.NV12toBGR(nv12, width, height);
+            byte[] bgr = PixelConverter.NV12toBGR(nv12, width, height, stride);
 
             fixed (byte* s = bgr)
             {
-                Bitmap bmp = new Bitmap(width, height, width * 3, PixelFormat.Format24bppRgb, (IntPtr)s);
+                Bitmap bmp = new Bitmap(width, height, width * stride, PixelFormat.Format24bppRgb, (IntPtr)s);
                 bmp.Save("ConvertKnownNV12ToBGRTest.bmp");
                 bmp.Dispose();
             }
