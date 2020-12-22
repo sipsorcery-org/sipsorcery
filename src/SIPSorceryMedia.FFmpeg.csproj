@@ -20,7 +20,7 @@
   
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.1" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.2-pre" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageReference Include="FFmpeg.AutoGen" Version="4.3.0.1" />
   </ItemGroup>

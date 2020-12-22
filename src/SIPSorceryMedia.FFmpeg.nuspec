@@ -16,19 +16,20 @@
 	<dependencies>
       <group targetFramework="netcoreapp3.1">
 	    <dependency id="Microsoft.Extensions.Logging.Abstractions" version="5.0.0" />
-		<dependency id="SIPSorceryMedia.Abstractions" version="1.0.1" />
+		<dependency id="SIPSorceryMedia.Abstractions" version="1.0.2-pre" />
 		<dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" />
 		<dependency id="FFmpeg.AutoGen" version="4.3.0.1" />
 	  </group>
     </dependencies>
-	<releaseNotes>-v0.0.7-pre: Updated the video encoder class to support the IVideoEncoder interface.
+	<releaseNotes>-v0.0.8-pre: Fixed the video decoder to return BGR instead of RGB.
+-v0.0.7-pre: Updated the video encoder class to support the IVideoEncoder interface.
 -v0.0.6-pre: Updated to use latest abstractions nuget package. 
 -v0.0.5-pre: Use pixel conversion class from abstractions package.
 -v0.0.4-pre: Added codec manager support to FFmpegVideoEndPoint.
 -v0.0.3-pre: Fixed bugs passing frames between file source decoder and video encoder.
 -v0.0.2-pre: Added file based source.
 -v0.0.1-pre: Initial release.</releaseNotes>
-	<version>0.0.7-pre</version>
+	<version>0.0.8-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />

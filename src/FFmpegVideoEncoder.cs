@@ -415,7 +415,7 @@ namespace SIPSorceryMedia.FFmpeg
                                 width, height,
                                 AVPixelFormat.AV_PIX_FMT_YUV420P,
                                 width, height,
-                                AVPixelFormat.AV_PIX_FMT_RGB24);
+                                AVPixelFormat.AV_PIX_FMT_BGR24);
                         }
 
                         rgbFrames.Add(_i420ToRgb.ConvertFrame(decodedFrame));
