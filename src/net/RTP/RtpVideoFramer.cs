@@ -32,15 +32,21 @@ namespace SIPSorcery.Net
         private VideoCodecsEnum _codec;
         private byte[] _currVideoFrame = new byte[MAX_FRAME_SIZE];
         private int _currVideoFramePosn = 0;
+        private H264PayloadProcessor _h264Depacketiser;
 
         public RtpVideoFramer(VideoCodecsEnum codec)
         {
-            if(codec != VideoCodecsEnum.VP8)
+            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264))
             {
-                throw new NotSupportedException("The RTP video framer currently only understands VP8 encoded frames.");
+                throw new NotSupportedException("The RTP video framer currently only understands H264 and VP8 encoded frames.");
             }
 
             _codec = codec;
+
+            if (_codec == VideoCodecsEnum.H264)
+            {
+                _h264Depacketiser = new H264PayloadProcessor();
+            }
         }
 
         public byte[] GotRtpPacket(RTPPacket rtpPacket)
@@ -50,35 +56,48 @@ namespace SIPSorcery.Net
             //var hdr = rtpPacket.Header;
             //logger.LogDebug($"rtp video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
 
-            if (_currVideoFramePosn + payload.Length >= MAX_FRAME_SIZE)
+            if (_codec == VideoCodecsEnum.VP8)
             {
-                // Something has gone very wrong. Clear the buffer.
-                _currVideoFramePosn = 0;
-            }
-
-            // New frames must have the VP8 Payload Descriptor Start bit set.
-            // The tracking of the current video frame position is to deal with a VP8 frame being split across multiple RTP packets
-            // as per https://tools.ietf.org/html/rfc7741#section-4.4.
-            if (_currVideoFramePosn > 0 || (payload[0] & 0x10) > 0)
-            {
-                RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(payload);
-
-                Buffer.BlockCopy(payload, vp8Header.Length, _currVideoFrame, _currVideoFramePosn, payload.Length - vp8Header.Length);
-                _currVideoFramePosn += payload.Length - vp8Header.Length;
-
-                if (rtpPacket.Header.MarkerBit > 0)
+                if (_currVideoFramePosn + payload.Length >= MAX_FRAME_SIZE)
                 {
-                    var frame = _currVideoFrame.Take(_currVideoFramePosn).ToArray();
-
+                    // Something has gone very wrong. Clear the buffer.
                     _currVideoFramePosn = 0;
+                }
 
-                    return frame;
+                // New frames must have the VP8 Payload Descriptor Start bit set.
+                // The tracking of the current video frame position is to deal with a VP8 frame being split across multiple RTP packets
+                // as per https://tools.ietf.org/html/rfc7741#section-4.4.
+                if (_currVideoFramePosn > 0 || (payload[0] & 0x10) > 0)
+                {
+                    RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(payload);
+
+                    Buffer.BlockCopy(payload, vp8Header.Length, _currVideoFrame, _currVideoFramePosn, payload.Length - vp8Header.Length);
+                    _currVideoFramePosn += payload.Length - vp8Header.Length;
+
+                    if (rtpPacket.Header.MarkerBit > 0)
+                    {
+                        var frame = _currVideoFrame.Take(_currVideoFramePosn).ToArray();
+
+                        _currVideoFramePosn = 0;
+
+                        return frame;
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("Discarding RTP packet, VP8 header Start bit not set.");
+                    //logger.LogWarning($"rtp video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
                 }
             }
-            else
+            else if (_codec == VideoCodecsEnum.H264)
             {
-                logger.LogWarning("Discarding RTP packet, VP8 header Start bit not set.");
-                //logger.LogWarning($"rtp video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+                var hdr = rtpPacket.Header;
+                var frameStream = _h264Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+
+                if(frameStream != null)
+                {
+                    return frameStream.ToArray();
+                }
             }
 
             return null;
