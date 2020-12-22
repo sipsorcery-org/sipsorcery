@@ -2029,7 +2029,7 @@ namespace SIPSorcery.Net
 
                                 // For video RTP packets an attempt will be made to collate into frames. It's up to the application
                                 // whether it wants to subscribe to frames of RTP packets.
-                                if (mediaType == SDPMediaTypesEnum.video)
+                                if (mediaType == SDPMediaTypesEnum.video && OnVideoFrameReceived != null && VideoRemoteTrack != null)
                                 {
                                     if(VideoRemoteTrack.LastRemoteSeqNum != 0 &&
                                         rtpPacket.Header.SequenceNumber != (VideoRemoteTrack.LastRemoteSeqNum + 1) &&
@@ -2040,14 +2040,8 @@ namespace SIPSorcery.Net
 
                                     VideoRemoteTrack.LastRemoteSeqNum = rtpPacket.Header.SequenceNumber;
 
-                                    var videoFormat = GetSendingFormat(SDPMediaTypesEnum.video);
-                                    if (videoFormat.Name() == VideoCodecsEnum.VP8.ToString())
+                                    if (_rtpVideoFramer != null)
                                     {
-                                        if (_rtpVideoFramer == null)
-                                        {
-                                            _rtpVideoFramer = new RtpVideoFramer(VideoCodecsEnum.VP8);
-                                        }
-
                                         var frame = _rtpVideoFramer.GotRtpPacket(rtpPacket);
                                         if (frame != null)
                                         {
@@ -2056,7 +2050,25 @@ namespace SIPSorcery.Net
                                     }
                                     else
                                     {
-                                        logger.LogWarning($"The depacketisation logic for video codec {videoFormat.Name()} has not been implemented, PR's welcome!");
+                                        var videoFormat = GetSendingFormat(SDPMediaTypesEnum.video);
+
+                                        if (videoFormat.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
+                                            videoFormat.ToVideoFormat().Codec == VideoCodecsEnum.H264)
+                                        {
+                                            logger.LogDebug($"Video depacketisation codec set to {videoFormat.ToVideoFormat().Codec} for SSRC {rtpPacket.Header.SyncSource}.");
+
+                                            _rtpVideoFramer = new RtpVideoFramer(videoFormat.ToVideoFormat().Codec);
+
+                                            var frame = _rtpVideoFramer.GotRtpPacket(rtpPacket);
+                                            if (frame != null)
+                                            {
+                                                OnVideoFrameReceived?.Invoke(remoteEndPoint, rtpPacket.Header.Timestamp, frame);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            logger.LogWarning($"Video depacketisation logic for codec {videoFormat.Name()} has not been implemented, PR's welcome!");
+                                        }
                                     }
                                 }
                                 else if(mediaType == SDPMediaTypesEnum.audio && AudioRemoteTrack != null)
