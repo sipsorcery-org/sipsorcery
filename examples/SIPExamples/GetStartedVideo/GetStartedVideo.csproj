@@ -99,8 +99,12 @@
 =======
     <PackageReference Include="SIPSorcery" Version="5.0.5-pre" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.8-pre" />
+<<<<<<< HEAD
 >>>>>>> master
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.7-pre" />
+=======
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.8-pre" />
+>>>>>>> master
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.28-pre" />
 >>>>>>> master
   </ItemGroup>
