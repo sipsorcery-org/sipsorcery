@@ -5440,6 +5440,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpTransport.DtlsSrtpTransport
   nameWithType: DtlsSrtpTransport.DtlsSrtpTransport
+- uid: SIPSorcery.Net.DtlsSrtpTransport.BackOff(System.Int32)
+  name: BackOff(Int32)
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_BackOff_System_Int32_
+  commentId: M:SIPSorcery.Net.DtlsSrtpTransport.BackOff(System.Int32)
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.BackOff(System.Int32)
+  nameWithType: DtlsSrtpTransport.BackOff(Int32)
+- uid: SIPSorcery.Net.DtlsSrtpTransport.BackOff*
+  name: BackOff
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_BackOff_
+  commentId: Overload:SIPSorcery.Net.DtlsSrtpTransport.BackOff
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.BackOff
+  nameWithType: DtlsSrtpTransport.BackOff
 - uid: SIPSorcery.Net.DtlsSrtpTransport.Close
   name: Close()
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_Close
@@ -5459,6 +5472,12 @@ references:
   commentId: F:SIPSorcery.Net.DtlsSrtpTransport.DEFAULT_MTU
   fullName: SIPSorcery.Net.DtlsSrtpTransport.DEFAULT_MTU
   nameWithType: DtlsSrtpTransport.DEFAULT_MTU
+- uid: SIPSorcery.Net.DtlsSrtpTransport.DEFAULT_RETRANSMISSION_WAIT_MILLIS
+  name: DEFAULT_RETRANSMISSION_WAIT_MILLIS
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DEFAULT_RETRANSMISSION_WAIT_MILLIS
+  commentId: F:SIPSorcery.Net.DtlsSrtpTransport.DEFAULT_RETRANSMISSION_WAIT_MILLIS
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.DEFAULT_RETRANSMISSION_WAIT_MILLIS
+  nameWithType: DtlsSrtpTransport.DEFAULT_RETRANSMISSION_WAIT_MILLIS
 - uid: SIPSorcery.Net.DtlsSrtpTransport.DEFAULT_TIMEOUT_MILLISECONDS
   name: DEFAULT_TIMEOUT_MILLISECONDS
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DEFAULT_TIMEOUT_MILLISECONDS
@@ -5875,6 +5894,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpTransport.Receive
   nameWithType: DtlsSrtpTransport.Receive
+- uid: SIPSorcery.Net.DtlsSrtpTransport.RetransmissionMilliseconds
+  name: RetransmissionMilliseconds
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_RetransmissionMilliseconds
+  commentId: F:SIPSorcery.Net.DtlsSrtpTransport.RetransmissionMilliseconds
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.RetransmissionMilliseconds
+  nameWithType: DtlsSrtpTransport.RetransmissionMilliseconds
 - uid: SIPSorcery.Net.DtlsSrtpTransport.Send(System.Byte[],System.Int32,System.Int32)
   name: Send(Byte[], Int32, Int32)
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_Send_System_Byte___System_Int32_System_Int32_
