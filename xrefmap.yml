@@ -6426,6 +6426,92 @@ references:
   commentId: F:SIPSorcery.Net.FeedbackProtocol.RTCP
   fullName: SIPSorcery.Net.FeedbackProtocol.RTCP
   nameWithType: FeedbackProtocol.RTCP
+- uid: SIPSorcery.Net.H264PayloadProcessor
+  name: H264PayloadProcessor
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html
+  commentId: T:SIPSorcery.Net.H264PayloadProcessor
+  fullName: SIPSorcery.Net.H264PayloadProcessor
+  nameWithType: H264PayloadProcessor
+- uid: SIPSorcery.Net.H264PayloadProcessor.CheckKeyFrame(System.Int32,System.Nullable{System.Boolean}@)
+  name: CheckKeyFrame(Int32, ref Nullable<Boolean>)
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_CheckKeyFrame_System_Int32_System_Nullable_System_Boolean___
+  commentId: M:SIPSorcery.Net.H264PayloadProcessor.CheckKeyFrame(System.Int32,System.Nullable{System.Boolean}@)
+  name.vb: CheckKeyFrame(Int32, ByRef Nullable(Of Boolean))
+  fullName: SIPSorcery.Net.H264PayloadProcessor.CheckKeyFrame(System.Int32, ref System.Nullable<System.Boolean>)
+  fullName.vb: SIPSorcery.Net.H264PayloadProcessor.CheckKeyFrame(System.Int32, ByRef System.Nullable(Of System.Boolean))
+  nameWithType: H264PayloadProcessor.CheckKeyFrame(Int32, ref Nullable<Boolean>)
+  nameWithType.vb: H264PayloadProcessor.CheckKeyFrame(Int32, ByRef Nullable(Of Boolean))
+- uid: SIPSorcery.Net.H264PayloadProcessor.CheckKeyFrame*
+  name: CheckKeyFrame
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_CheckKeyFrame_
+  commentId: Overload:SIPSorcery.Net.H264PayloadProcessor.CheckKeyFrame
+  isSpec: "True"
+  fullName: SIPSorcery.Net.H264PayloadProcessor.CheckKeyFrame
+  nameWithType: H264PayloadProcessor.CheckKeyFrame
+- uid: SIPSorcery.Net.H264PayloadProcessor.ProcessH264Payload(System.Byte[],System.UInt16,System.UInt32,System.Int32,System.Boolean@)
+  name: ProcessH264Payload(Byte[], UInt16, UInt32, Int32, out Boolean)
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_ProcessH264Payload_System_Byte___System_UInt16_System_UInt32_System_Int32_System_Boolean__
+  commentId: M:SIPSorcery.Net.H264PayloadProcessor.ProcessH264Payload(System.Byte[],System.UInt16,System.UInt32,System.Int32,System.Boolean@)
+  name.vb: ProcessH264Payload(Byte(), UInt16, UInt32, Int32, ByRef Boolean)
+  fullName: SIPSorcery.Net.H264PayloadProcessor.ProcessH264Payload(System.Byte[], System.UInt16, System.UInt32, System.Int32, out System.Boolean)
+  fullName.vb: SIPSorcery.Net.H264PayloadProcessor.ProcessH264Payload(System.Byte(), System.UInt16, System.UInt32, System.Int32, ByRef System.Boolean)
+  nameWithType: H264PayloadProcessor.ProcessH264Payload(Byte[], UInt16, UInt32, Int32, out Boolean)
+  nameWithType.vb: H264PayloadProcessor.ProcessH264Payload(Byte(), UInt16, UInt32, Int32, ByRef Boolean)
+- uid: SIPSorcery.Net.H264PayloadProcessor.ProcessH264Payload*
+  name: ProcessH264Payload
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_ProcessH264Payload_
+  commentId: Overload:SIPSorcery.Net.H264PayloadProcessor.ProcessH264Payload
+  isSpec: "True"
+  fullName: SIPSorcery.Net.H264PayloadProcessor.ProcessH264Payload
+  nameWithType: H264PayloadProcessor.ProcessH264Payload
+- uid: SIPSorcery.Net.H264PayloadProcessor.ProcessH264PayloadFrame(System.Collections.Generic.List{System.Collections.Generic.KeyValuePair{System.Int32,System.Byte[]}},System.Boolean@)
+  name: ProcessH264PayloadFrame(List<KeyValuePair<Int32, Byte[]>>, out Boolean)
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_ProcessH264PayloadFrame_System_Collections_Generic_List_System_Collections_Generic_KeyValuePair_System_Int32_System_Byte_____System_Boolean__
+  commentId: M:SIPSorcery.Net.H264PayloadProcessor.ProcessH264PayloadFrame(System.Collections.Generic.List{System.Collections.Generic.KeyValuePair{System.Int32,System.Byte[]}},System.Boolean@)
+  name.vb: ProcessH264PayloadFrame(List(Of KeyValuePair(Of Int32, Byte())), ByRef Boolean)
+  fullName: SIPSorcery.Net.H264PayloadProcessor.ProcessH264PayloadFrame(System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<System.Int32, System.Byte[]>>, out System.Boolean)
+  fullName.vb: SIPSorcery.Net.H264PayloadProcessor.ProcessH264PayloadFrame(System.Collections.Generic.List(Of System.Collections.Generic.KeyValuePair(Of System.Int32, System.Byte())), ByRef System.Boolean)
+  nameWithType: H264PayloadProcessor.ProcessH264PayloadFrame(List<KeyValuePair<Int32, Byte[]>>, out Boolean)
+  nameWithType.vb: H264PayloadProcessor.ProcessH264PayloadFrame(List(Of KeyValuePair(Of Int32, Byte())), ByRef Boolean)
+- uid: SIPSorcery.Net.H264PayloadProcessor.ProcessH264PayloadFrame*
+  name: ProcessH264PayloadFrame
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_ProcessH264PayloadFrame_
+  commentId: Overload:SIPSorcery.Net.H264PayloadProcessor.ProcessH264PayloadFrame
+  isSpec: "True"
+  fullName: SIPSorcery.Net.H264PayloadProcessor.ProcessH264PayloadFrame
+  nameWithType: H264PayloadProcessor.ProcessH264PayloadFrame
+- uid: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayload(System.Byte[],System.UInt16,System.UInt32,System.Int32,System.Boolean@)
+  name: ProcessRTPPayload(Byte[], UInt16, UInt32, Int32, out Boolean)
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_ProcessRTPPayload_System_Byte___System_UInt16_System_UInt32_System_Int32_System_Boolean__
+  commentId: M:SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayload(System.Byte[],System.UInt16,System.UInt32,System.Int32,System.Boolean@)
+  name.vb: ProcessRTPPayload(Byte(), UInt16, UInt32, Int32, ByRef Boolean)
+  fullName: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayload(System.Byte[], System.UInt16, System.UInt32, System.Int32, out System.Boolean)
+  fullName.vb: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayload(System.Byte(), System.UInt16, System.UInt32, System.Int32, ByRef System.Boolean)
+  nameWithType: H264PayloadProcessor.ProcessRTPPayload(Byte[], UInt16, UInt32, Int32, out Boolean)
+  nameWithType.vb: H264PayloadProcessor.ProcessRTPPayload(Byte(), UInt16, UInt32, Int32, ByRef Boolean)
+- uid: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayload*
+  name: ProcessRTPPayload
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_ProcessRTPPayload_
+  commentId: Overload:SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayload
+  isSpec: "True"
+  fullName: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayload
+  nameWithType: H264PayloadProcessor.ProcessRTPPayload
+- uid: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayloadAsNals(System.Byte[],System.UInt16,System.UInt32,System.Int32,System.Boolean@)
+  name: ProcessRTPPayloadAsNals(Byte[], UInt16, UInt32, Int32, out Boolean)
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_ProcessRTPPayloadAsNals_System_Byte___System_UInt16_System_UInt32_System_Int32_System_Boolean__
+  commentId: M:SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayloadAsNals(System.Byte[],System.UInt16,System.UInt32,System.Int32,System.Boolean@)
+  name.vb: ProcessRTPPayloadAsNals(Byte(), UInt16, UInt32, Int32, ByRef Boolean)
+  fullName: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayloadAsNals(System.Byte[], System.UInt16, System.UInt32, System.Int32, out System.Boolean)
+  fullName.vb: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayloadAsNals(System.Byte(), System.UInt16, System.UInt32, System.Int32, ByRef System.Boolean)
+  nameWithType: H264PayloadProcessor.ProcessRTPPayloadAsNals(Byte[], UInt16, UInt32, Int32, out Boolean)
+  nameWithType.vb: H264PayloadProcessor.ProcessRTPPayloadAsNals(Byte(), UInt16, UInt32, Int32, ByRef Boolean)
+- uid: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayloadAsNals*
+  name: ProcessRTPPayloadAsNals
+  href: api/SIPSorcery.Net.H264PayloadProcessor.html#SIPSorcery_Net_H264PayloadProcessor_ProcessRTPPayloadAsNals_
+  commentId: Overload:SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayloadAsNals
+  isSpec: "True"
+  fullName: SIPSorcery.Net.H264PayloadProcessor.ProcessRTPPayloadAsNals
+  nameWithType: H264PayloadProcessor.ProcessRTPPayloadAsNals
 - uid: SIPSorcery.Net.HepChunk
   name: HepChunk
   href: api/SIPSorcery.Net.HepChunk.html
