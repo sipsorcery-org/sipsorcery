@@ -1061,6 +1061,7 @@ a=ssrc:2404235415 cname:{7c06c5db-d3db-4891-b729-df4919014c3f}";
                 @"v=0
 o=root 5936658357711814578 0 IN IP4 0.0.0.0
 s=-
+i=mySession
 t=0 0
 m=audio 55316 RTP/AVP 0 101
 a=rtpmap:0 PCMU/8000
@@ -1081,6 +1082,8 @@ a=fmtp:MCPTT mc_queueing;mc_priority=4";
 
             Assert.Equal("MCPTT", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Key);
             Assert.Equal("mc_queueing;mc_priority=4", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Value.Fmtp);
+            Assert.Equal("mySession", rndTripSdp.SessionDescription);
+            Assert.Equal("speech", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaDescription);
         }
     }
 }

@@ -237,6 +237,18 @@ namespace SIPSorcery.Net
                                 sdp.SessionName = sdpLineTrimmed.Substring(2);
                                 break;
 
+                            case var l when l.StartsWith("i="):
+                                if (activeAnnouncement != null)
+                                {
+                                    activeAnnouncement.MediaDescription = sdpLineTrimmed.Substring(2);
+                                }
+                                else
+                                {
+                                    sdp.SessionDescription = sdpLineTrimmed.Substring(2);
+                                }
+
+                                break;
+
                             case var l when l.StartsWith("c="):
 
                                 if (activeAnnouncement != null)
