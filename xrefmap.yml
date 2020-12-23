@@ -20712,6 +20712,12 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX
   nameWithType: SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.MediaDescription
+  name: MediaDescription
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MediaDescription
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MediaDescription
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MediaDescription
+  nameWithType: SDPMediaAnnouncement.MediaDescription
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.MediaFormats
   name: MediaFormats
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MediaFormats
