@@ -120,6 +120,11 @@ namespace SIPSorcery.Net
         public List<string> BandwidthAttributes = new List<string>();
 
         /// <summary>
+        /// In media definitions, "i=" fields are primarily intended for labelling media streams https://tools.ietf.org/html/rfc4566#page-12
+        /// </summary>
+        public string MediaDescription;
+
+        /// <summary>
         ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
         /// </summary>
         public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
@@ -219,6 +224,9 @@ namespace SIPSorcery.Net
         public override string ToString()
         {
             string announcement = "m=" + Media + " " + Port + " " + Transport + " " + GetFormatListToString() + m_CRLF;
+
+            announcement += !string.IsNullOrWhiteSpace(MediaDescription) ? "i=" + MediaDescription + m_CRLF : null;
+
             announcement += (Connection == null) ? null : Connection.ToString();
 
             foreach (string bandwidthAttribute in BandwidthAttributes)
