@@ -645,12 +645,12 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                if (VideoLocalTrack == null
+                if (VideoLocalTrack == null && AudioLocalTrack != null
                     && AudioLocalTrack.Capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
                 {
                     return SetDescriptionResultEnum.AudioIncompatible;
                 }
-                else if (AudioLocalTrack == null && VideoLocalTrack.Capabilities?.Count == 0)
+                else if (AudioLocalTrack == null && VideoLocalTrack != null && VideoLocalTrack.Capabilities?.Count == 0)
                 {
                     return SetDescriptionResultEnum.VideoIncompatible;
                 }
