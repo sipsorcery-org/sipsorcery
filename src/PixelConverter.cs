@@ -1,5 +1,4 @@
 ﻿using System;
-using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorceryMedia.Abstractions
 {

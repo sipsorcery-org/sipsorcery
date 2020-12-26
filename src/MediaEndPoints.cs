@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace SIPSorceryMedia.Abstractions.V1
+namespace SIPSorceryMedia.Abstractions
 {
     public delegate void EncodedSampleDelegate(uint durationRtpUnits, byte[] sample);
     public delegate void RawAudioSampleDelegate(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
@@ -550,7 +550,7 @@ namespace SIPSorceryMedia.Abstractions.V1
 
         void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
 
-        void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload);
+        void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload, VideoFormat format);
 
         List<VideoFormat> GetVideoSinkFormats();
 
