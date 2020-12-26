@@ -25,12 +25,13 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Windows</RepositoryUrl>
-    <Version>0.0.28-pre</Version>
-    <AssemblyVersion>0.0.28.0</AssemblyVersion>
-    <FileVersion>0.0.28.0</FileVersion>
+    <Version>0.0.29-pre</Version>
+    <AssemblyVersion>0.0.29.0</AssemblyVersion>
+    <FileVersion>0.0.29.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-    <PackageReleaseNotes>-v0.0.28-pre: Removed dependency on SIPSorceryMedia.Encoders. Now using IVideoEncoder interface for more flexibility.
+    <PackageReleaseNotes>-v0.0.29-pre: Added new method to list video formats for a Windows video capture device.
+-v0.0.28-pre: Removed dependency on SIPSorceryMedia.Encoders. Now using IVideoEncoder interface for more flexibility.
 -v0.0.27-pre: Updated to use latest encoders package.
 -v0.0.26-pre: Wired up video source raw sample event for convenient hook into locally generated video samples.
 -v0.0.25-pre: Updated to use latest abstractions and encoder packages.
