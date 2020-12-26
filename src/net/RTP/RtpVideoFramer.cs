@@ -19,7 +19,7 @@ using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
 {
@@ -53,11 +53,12 @@ namespace SIPSorcery.Net
         {
             var payload = rtpPacket.Payload;
 
-            //var hdr = rtpPacket.Header;
-            //logger.LogDebug($"rtp video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+            var hdr = rtpPacket.Header;
 
             if (_codec == VideoCodecsEnum.VP8)
             {
+                //logger.LogDebug($"rtp VP8 video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+
                 if (_currVideoFramePosn + payload.Length >= MAX_FRAME_SIZE)
                 {
                     // Something has gone very wrong. Clear the buffer.
@@ -91,7 +92,9 @@ namespace SIPSorcery.Net
             }
             else if (_codec == VideoCodecsEnum.H264)
             {
-                var hdr = rtpPacket.Header;
+                //logger.LogDebug($"rtp H264 video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+
+                //var hdr = rtpPacket.Header;
                 var frameStream = _h264Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
                 if(frameStream != null)
@@ -99,8 +102,65 @@ namespace SIPSorcery.Net
                     return frameStream.ToArray();
                 }
             }
+            else
+            {
+                logger.LogWarning($"rtp unknown video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+            }
 
             return null;
+        }
+
+        /// <summary>
+        /// Utility function to create RtpJpegHeader either for initial packet or template for further packets
+        /// 
+        /// <code>
+        /// 0                   1                   2                   3
+        /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// | Type-specific |              Fragment Offset                  |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// |      Type     |       Q       |     Width     |     Height    |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// </code>
+        /// </summary>
+        /// <param name="fragmentOffset"></param>
+        /// <param name="quality"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <returns></returns>
+        public static byte[] CreateLowQualityRtpJpegHeader(uint fragmentOffset, int quality, int width, int height)
+        {
+            byte[] rtpJpegHeader = new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 };
+
+            // Byte 0: Type specific
+            //http://tools.ietf.org/search/rfc2435#section-3.1.1
+
+            // Bytes 1 to 3: Three byte fragment offset
+            //http://tools.ietf.org/search/rfc2435#section-3.1.2
+
+            if (BitConverter.IsLittleEndian)
+            {
+                fragmentOffset = NetConvert.DoReverseEndian(fragmentOffset);
+            }
+
+            byte[] offsetBytes = BitConverter.GetBytes(fragmentOffset);
+            rtpJpegHeader[1] = offsetBytes[2];
+            rtpJpegHeader[2] = offsetBytes[1];
+            rtpJpegHeader[3] = offsetBytes[0];
+
+            // Byte 4: JPEG Type.
+            //http://tools.ietf.org/search/rfc2435#section-3.1.3
+
+            //Byte 5: http://tools.ietf.org/search/rfc2435#section-3.1.4 (Q)
+            rtpJpegHeader[5] = (byte)quality;
+
+            // Byte 6: http://tools.ietf.org/search/rfc2435#section-3.1.5 (Width)
+            rtpJpegHeader[6] = (byte)(width / 8);
+
+            // Byte 7: http://tools.ietf.org/search/rfc2435#section-3.1.6 (Height)
+            rtpJpegHeader[7] = (byte)(height / 8);
+
+            return rtpJpegHeader;
         }
     }
 }

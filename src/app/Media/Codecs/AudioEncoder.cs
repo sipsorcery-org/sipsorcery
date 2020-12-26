@@ -15,7 +15,7 @@
 
 using System;
 using System.Linq;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Media
 {

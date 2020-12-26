@@ -29,7 +29,6 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Encoders;
-using SIPSorceryMedia.FFmpeg;
 using SIPSorceryMedia.Windows;
 
 namespace demo
@@ -92,22 +91,11 @@ namespace demo
 
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
-            var userAgent = new SIPUserAgent(_sipTransport, null);
+            var userAgent = new SIPUserAgent(_sipTransport, null, true);
             userAgent.OnCallHungup += (dialog) => exitMRE.Set();
             var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
             windowsAudioEndPoint.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
-            //var windowsVideoEndPoint = new WindowsVideoEndPoint(new FFmpegVideoEncoder());
             var windowsVideoEndPoint = new WindowsVideoEndPoint(new VpxVideoEncoder());
-            windowsVideoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
-
-            //windowsVideoEndPoint.OnVideoSourceError += (err) =>
-            //{
-            //    Log.LogError($"Video source error. {err}");
-            //    if (userAgent.IsCallActive)
-            //    {
-            //        userAgent.Hangup();
-            //    }
-            //};
 
             // Fallback to a test pattern source if accessing the Windows webcam fails.
             var testPattern = new VideoTestPatternSource(new VpxVideoEncoder());
@@ -131,7 +119,7 @@ namespace demo
                     {
                         fixed (byte* s = sample)
                         {
-                            System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, (int)width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                            System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
                             _localVideoPicBox.Image = bmpImage;
                         }
                     }

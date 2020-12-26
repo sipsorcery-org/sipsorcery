@@ -5,9 +5,6 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -17,14 +14,12 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <!--<PackageReference Include="SIPSorcery" Version="5.0.5-pre" />-->
-    <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.8-pre" />
-    <!--<PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.8-pre" />-->
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.28-pre" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.9-pre" />
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.9-pre" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.29-pre" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\SIPSorceryMedia.FFmpeg\src\SIPSorceryMedia.FFmpeg.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 

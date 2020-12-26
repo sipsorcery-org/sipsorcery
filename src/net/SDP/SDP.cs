@@ -150,7 +150,7 @@ namespace SIPSorcery.Net
             get { return Username + " " + SessionId + " " + AnnouncementVersion + " " + NetworkType + " " + AddressType + " " + AddressOrHost; }
         }
 
-        public string SessionName = "-";            // Common name of the session.
+        public string SessionName = "sipsorcery";            // Common name of the session.
         public string Timing = DEFAULT_TIMING;
         public List<string> BandwidthAttributes = new List<string>();
 
@@ -269,7 +269,17 @@ namespace SIPSorcery.Net
                             case var l when l.StartsWith("b="):
                                 if (activeAnnouncement != null)
                                 {
-                                    activeAnnouncement.BandwidthAttributes.Add(sdpLineTrimmed.Substring(2));
+                                    if (l.StartsWith(SDPMediaAnnouncement.TIAS_BANDWIDTH_ATTRIBUE_PREFIX))
+                                    {
+                                        if (uint.TryParse(l.Substring(l.IndexOf(':') + 1), out uint tias))
+                                        {
+                                            activeAnnouncement.TIASBandwidth = tias;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        activeAnnouncement.BandwidthAttributes.Add(sdpLineTrimmed.Substring(2));
+                                    }
                                 }
                                 else
                                 {

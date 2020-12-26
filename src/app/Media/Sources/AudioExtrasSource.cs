@@ -28,7 +28,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Media
 {

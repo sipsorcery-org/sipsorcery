@@ -33,6 +33,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCWebcamServer", "WebRT
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPToWebRtcBridgeVideo", "SIPToWebRtcBridgeVideo\SIPToWebRtcBridgeVideo.csproj", "{D7E2B366-B779-4F53-B0C3-78C3C9DD1A8D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.FFmpeg", "..\..\..\SIPSorceryMedia.FFmpeg\src\SIPSorceryMedia.FFmpeg.csproj", "{1621CCB2-411C-424C-AAC4-1A3170A4D30E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -223,6 +227,30 @@ Global
 		{D7E2B366-B779-4F53-B0C3-78C3C9DD1A8D}.Release|x64.Build.0 = Release|Any CPU
 		{D7E2B366-B779-4F53-B0C3-78C3C9DD1A8D}.Release|x86.ActiveCfg = Release|Any CPU
 		{D7E2B366-B779-4F53-B0C3-78C3C9DD1A8D}.Release|x86.Build.0 = Release|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Debug|x64.Build.0 = Debug|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Debug|x86.Build.0 = Debug|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Release|x64.ActiveCfg = Release|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Release|x64.Build.0 = Release|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Release|x86.ActiveCfg = Release|Any CPU
+		{7623A3CB-94A2-45B3-8DC6-693B7AED76F9}.Release|x86.Build.0 = Release|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Debug|x64.Build.0 = Debug|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Debug|x86.Build.0 = Debug|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Release|x64.ActiveCfg = Release|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Release|x64.Build.0 = Release|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Release|x86.ActiveCfg = Release|Any CPU
+		{1621CCB2-411C-424C-AAC4-1A3170A4D30E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

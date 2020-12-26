@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Media
 {

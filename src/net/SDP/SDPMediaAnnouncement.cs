@@ -20,7 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
 {
@@ -63,6 +63,7 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
         public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
         public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
+        public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
         public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
         public const string m_CRLF = "\r\n";
@@ -116,6 +117,11 @@ namespace SIPSorcery.Net
         /// supplied.
         /// </summary>
         public List<SDPSsrcAttribute> SsrcAttributes = new List<SDPSsrcAttribute>();
+
+        /// <summary>
+        /// Optional Transport Independent Application Specific Maximum (TIAS) bandwidth.
+        /// </summary>
+        public uint TIASBandwidth = 0;
 
         public List<string> BandwidthAttributes = new List<string>();
 
@@ -228,6 +234,11 @@ namespace SIPSorcery.Net
             announcement += !string.IsNullOrWhiteSpace(MediaDescription) ? "i=" + MediaDescription + m_CRLF : null;
 
             announcement += (Connection == null) ? null : Connection.ToString();
+
+            if(TIASBandwidth > 0)
+            {
+                announcement += TIAS_BANDWIDTH_ATTRIBUE_PREFIX + TIASBandwidth + m_CRLF;
+            }
 
             foreach (string bandwidthAttribute in BandwidthAttributes)
             {

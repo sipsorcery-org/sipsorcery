@@ -27,7 +27,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
 using SIPSorcery.UnitTests;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 using Xunit;
 
 namespace SIPSorcery.SIP.IntegrationTests

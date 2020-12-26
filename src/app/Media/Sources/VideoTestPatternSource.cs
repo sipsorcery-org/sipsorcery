@@ -22,7 +22,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorcery.Media
 {
@@ -47,7 +46,7 @@ namespace SIPSorcery.Media
         public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {
             new VideoFormat(VideoCodecsEnum.VP8, VP8_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE),
-            new VideoFormat(VideoCodecsEnum.H264, H264_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE)
+            new VideoFormat(VideoCodecsEnum.H264, H264_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE, "packetization-mode=0")
         };
 
         private int _frameSpacing;
@@ -277,7 +276,7 @@ namespace SIPSorcery.Media
 
                     OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420);
 
-                    if (_videoEncoder != null && OnVideoSourceEncodedSample != null)
+                    if (_videoEncoder != null && OnVideoSourceEncodedSample != null && !_formatManager.SelectedFormat.IsEmpty())
                     {
                         var encodedBuffer = _videoEncoder.EncodeVideo(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420, _formatManager.SelectedFormat.Codec);
 
