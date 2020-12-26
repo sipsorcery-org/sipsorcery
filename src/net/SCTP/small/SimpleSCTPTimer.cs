@@ -30,9 +30,15 @@ namespace SIPSorcery.Net.Sctp
 {
     static class SimpleSCTPTimer
     {
+        private static Timer timer = null;
         public static void setRunnable(Action r, long at)
         {
-            new Timer((o) => { r(); }, null, at, Timeout.Infinite);
+            if (timer != null)
+            {
+                timer?.Dispose();
+            }
+
+            timer = new Timer((o) => { r(); }, null, at, Timeout.Infinite);
         }
     }
 }
