@@ -4,7 +4,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
     <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.1" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.3-pre" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.0" />
   </ItemGroup>
 

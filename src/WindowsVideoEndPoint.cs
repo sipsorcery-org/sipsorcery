@@ -25,7 +25,6 @@ using Windows.Graphics.Imaging;
 using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Devices;
-using SIPSorceryMedia.Abstractions.V1;
 using SIPSorceryMedia.Abstractions;
 using Windows.Devices.Enumeration;
 using Windows.Media.MediaProperties;
@@ -53,7 +52,7 @@ namespace SIPSorceryMedia.Windows
         private const int VP8_FORMATID = 96;
         private const int H264_FORMATID = 100;
         private readonly string MF_NV12_PIXEL_FORMAT = MediaEncodingSubtypes.Nv12;
-        private const string MF_I420_PIXEL_FORMAT = "{30323449-0000-0010-8000-00AA00389B71}";
+        public const string MF_I420_PIXEL_FORMAT = "{30323449-0000-0010-8000-00AA00389B71}";
 
         // NV12 seems to be what the Software Bitmaps provided from MF tend to prefer.
         //private readonly vpxmd.VpxImgFmt EncoderInputFormat = vpxmd.VpxImgFmt.VPX_IMG_FMT_NV12;
@@ -306,7 +305,7 @@ namespace SIPSorceryMedia.Windows
             return true;
         }
 
-        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame)
+        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame, VideoFormat format)
         {
             if (!_isClosed)
             {
@@ -457,6 +456,48 @@ namespace SIPSorceryMedia.Windows
             }
         }
 
+        /// <summary>
+        /// Gets a list of supported video frame formats for a webcam.
+        /// </summary>
+        /// <param name="deviceName">The name of the webcam to get the video formats for.</param>
+        /// <returns>A list of supported video frame formats for the specified webcam.</returns>
+        public static async Task<List<VideoMediaFrameFormat>> GetDeviceFrameFormats(string deviceName)
+        {
+            if(string.IsNullOrEmpty(deviceName))
+            {
+                throw new ArgumentNullException(nameof(deviceName), "A webcam name must be specified to get the video formats for.");
+            }
+
+            List<VideoMediaFrameFormat> formats = new List<VideoMediaFrameFormat>();
+
+            var vidCapDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
+            foreach (var vidCapDevice in vidCapDevices)
+            {
+                if(vidCapDevice.Name.ToLower() == deviceName.ToLower())
+                {
+                    var mediaCaptureSettings = new MediaCaptureInitializationSettings()
+                    {
+                        StreamingCaptureMode = StreamingCaptureMode.Video,
+                        SharingMode = MediaCaptureSharingMode.SharedReadOnly,
+                        VideoDeviceId = vidCapDevice.Id
+                    };
+
+                    MediaCapture mediaCapture = new MediaCapture();
+                    await mediaCapture.InitializeAsync(mediaCaptureSettings);
+
+                    foreach (var srcFmtList in mediaCapture.FrameSources.Values.Select(x => x.SupportedFormats).Select(y => y.ToList()))
+                    {
+                        foreach (var srcFmt in srcFmtList)
+                        {
+                            formats.Add(srcFmt.VideoFormat);
+                        }
+                    }
+                }
+            }
+
+            return formats;
+        }
+
         private async Task CloseVideoCaptureDevice()
         {
             if (_mediaFrameReader != null)
@@ -544,7 +585,7 @@ namespace SIPSorceryMedia.Windows
                                                 frameSpacing = Convert.ToUInt32(DateTime.Now.Subtract(_lastFrameAt).TotalMilliseconds);
                                             }
 
-                                            var bgrBuffer = PixelConverter.NV12toBGR(nv12Buffer, width, height);
+                                            var bgrBuffer = PixelConverter.NV12toBGR(nv12Buffer, width, height, width);
 
                                             OnVideoSourceRawSample(frameSpacing, width, height, bgrBuffer, VideoPixelFormatsEnum.Bgr);
                                         }

@@ -25,7 +25,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NAudio.Wave;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorceryMedia.Windows
 {
