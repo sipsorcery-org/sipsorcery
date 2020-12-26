@@ -29,7 +29,7 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace demo
 {

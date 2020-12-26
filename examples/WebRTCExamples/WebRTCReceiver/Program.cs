@@ -29,9 +29,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.Sys;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
+using SIPSorceryMedia.FFmpeg;
 using WebSocketSharp.Server;
 
 namespace demo
@@ -106,8 +106,10 @@ namespace demo
 
         private static Task<RTCPeerConnection> CreatePeerConnection()
         {
-            var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new VpxVideoEncoder());
-            videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
+            //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new VpxVideoEncoder());
+            //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
+            var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new FFmpegVideoEncoder());
+            videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {

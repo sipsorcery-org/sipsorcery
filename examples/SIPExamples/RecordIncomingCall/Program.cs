@@ -26,7 +26,6 @@ using SIPSorcery.SIP.App;
 using NAudio.Wave;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Windows;
-using SIPSorceryMedia.Abstractions.V1;
 
 namespace demo
 {

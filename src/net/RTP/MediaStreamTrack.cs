@@ -19,12 +19,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SIPSorcery.Sys;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
     public class MediaStreamTrack
     {
+        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+
         /// <summary>
         /// The type of media stream represented by this track. Must be audio or video.
         /// </summary>
@@ -90,6 +93,32 @@ namespace SIPSorcery.Net
         /// RTCP report.
         /// </summary>
         public Dictionary<uint, SDPSsrcAttribute> SdpSsrc { get; set; } = new Dictionary<uint, SDPSsrcAttribute>();
+
+        private uint _maxBandwith = 0;
+
+        /// <summary>
+        /// If set to a non-zero value for local tracks then a Transport Independent Bandwidth (TIAS) attribute
+        /// will be included in any SDP for the track's media announcement. For remote tracks thi a non-zero
+        /// value indicates the a TIAS attribute was set in the remote SDP media announcement.
+        /// The bandwith is specified in bits per seconds (bps).
+        /// </summary>
+        /// <remarks>
+        /// See https://tools.ietf.org/html/rfc3890.
+        /// </remarks>
+        public uint MaximumBandwidth 
+        {   get => _maxBandwith;
+            set
+            {
+                if(!IsRemote)
+                {
+                    _maxBandwith = value;
+                }
+                else
+                {
+                    logger.LogWarning("The maximum bandwith cannot be set for remote tracks.");
+                }
+            }
+        }
 
         /// <summary>
         /// Creates a lightweight class to track a media stream track within an RTP session 
@@ -217,6 +246,16 @@ namespace SIPSorcery.Net
         public bool IsSsrcMatch(uint ssrc)
         {
             return ssrc == Ssrc || SdpSsrc.ContainsKey(ssrc);
+        }
+
+        /// <summary>
+        /// Gets the matching audio or video format for a payload ID.
+        /// </summary>
+        /// <param name="payloadID">The payload ID to get the format for.</param>
+        /// <returns>An audio or video format or null if no payload ID matched.</returns>
+        public SDPAudioVideoMediaFormat? GetFormatForPayloadID(int payloadID)
+        {
+            return Capabilities?.FirstOrDefault(x => x.ID == payloadID);
         }
     }
 }

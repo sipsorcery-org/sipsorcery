@@ -2,7 +2,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Media
 {

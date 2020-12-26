@@ -114,13 +114,13 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpVideoFramer__ctor_SIPSorceryMedia_Abstractions_V1_VideoCodecsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpVideoFramer.%23ctor(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpVideoFramer__ctor_SIPSorceryMedia_Abstractions_VideoCodecsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpVideoFramer.%23ctor(SIPSorceryMedia.Abstractions.VideoCodecsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RtpVideoFramer.cs/#L37">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RtpVideoFramer__ctor_" data-uid="SIPSorcery.Net.RtpVideoFramer.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_RtpVideoFramer__ctor_SIPSorceryMedia_Abstractions_V1_VideoCodecsEnum_" data-uid="SIPSorcery.Net.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum)">RtpVideoFramer(VideoCodecsEnum)</h4>
+  <h4 id="SIPSorcery_Net_RtpVideoFramer__ctor_SIPSorceryMedia_Abstractions_VideoCodecsEnum_" data-uid="SIPSorcery.Net.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.VideoCodecsEnum)">RtpVideoFramer(VideoCodecsEnum)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -138,7 +138,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum</span></td>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.VideoCodecsEnum</span></td>
         <td><span class="parametername">codec</span></td>
         <td></td>
       </tr>
@@ -146,6 +146,76 @@
   </table>
   <h3 id="methods">Methods
   </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpVideoFramer_CreateLowQualityRtpJpegHeader_System_UInt32_System_Int32_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpVideoFramer.CreateLowQualityRtpJpegHeader(System.UInt32%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RtpVideoFramer.cs/#L131">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpVideoFramer_CreateLowQualityRtpJpegHeader_" data-uid="SIPSorcery.Net.RtpVideoFramer.CreateLowQualityRtpJpegHeader*"></a>
+  <h4 id="SIPSorcery_Net_RtpVideoFramer_CreateLowQualityRtpJpegHeader_System_UInt32_System_Int32_System_Int32_System_Int32_" data-uid="SIPSorcery.Net.RtpVideoFramer.CreateLowQualityRtpJpegHeader(System.UInt32,System.Int32,System.Int32,System.Int32)">CreateLowQualityRtpJpegHeader(UInt32, Int32, Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>Utility function to create RtpJpegHeader either for initial packet or template for further packets</p>
+<pre><code>0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| Type-specific |              Fragment Offset                  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Type     |       Q       |     Width     |     Height    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</code></pre>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static byte[] CreateLowQualityRtpJpegHeader(uint fragmentOffset, int quality, int width, int height)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">fragmentOffset</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">quality</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">width</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">height</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpVideoFramer_GotRtpPacket_SIPSorcery_Net_RTPPacket_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpVideoFramer.GotRtpPacket(SIPSorcery.Net.RTPPacket)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>

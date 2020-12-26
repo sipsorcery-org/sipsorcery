@@ -13,7 +13,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -1120,6 +1120,44 @@ a=sendrecv
             Assert.Equal("A session description", rndTripSdp.SessionDescription);
             Assert.Equal("speech", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaDescription);
             Assert.Equal("video title", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaDescription);
+        }
+
+        /// <summary>
+        /// Tests that a TIAS bandwith attribute (RFC3890) can be successfully round tripped.
+        /// </summary>
+        [Fact]
+        public void TIASBandwidthAttributeRoundTripTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=root 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+m=audio 55316 RTP/AVP 0 101
+a=rtpmap:0 PCMU/8000
+a=label:1
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+a=sendrecv
+m=video 61682 UDP/TLS/RTP/SAVPF 96
+c=IN IP4 192.168.11.50
+b=TIAS:256000
+a=rtpmap:96 VP8/90000
+a=label:2
+a=sendrecv
+";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal(256000U, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().TIASBandwidth);
         }
     }
 }
