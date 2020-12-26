@@ -21,6 +21,11 @@ namespace SIPSorceryMedia.FFmpeg
         private readonly AVPixelFormat _srcPixelFormat;
         private readonly AVPixelFormat _dstPixelFormat;
 
+        public int SourceWidth => _srcWidth;
+        public int SourceHeight => _srcHeight;
+        public int DestinationWidth => _dstWidth;
+        public int DestinationHeight => _dstHeight;
+
         public VideoFrameConverter(int srcWidth, int srcHeight, AVPixelFormat sourcePixelFormat,
            int dstWidth, int dstHeight, AVPixelFormat destinationPixelFormat)
         {

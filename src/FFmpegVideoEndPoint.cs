@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorceryMedia.FFmpeg
 {
@@ -66,7 +65,7 @@ namespace SIPSorceryMedia.FFmpeg
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
             throw new ApplicationException("The FFmpeg Video End Point requires full video frames rather than individual RTP packets.");
 
-        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload)
+        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload, VideoFormat format)
         {
             if (!_isClosed)
             {
@@ -133,7 +132,8 @@ namespace SIPSorceryMedia.FFmpeg
                         fps = 1;
                     }
 
-                    var i420Buffer = PixelConverter.ToI420(width, height, sample, pixelFormat);
+                    int stride = (pixelFormat == VideoPixelFormatsEnum.Bgra) ? 4 * width : 3 * width;
+                    var i420Buffer = PixelConverter.ToI420(width, height, stride, sample, pixelFormat);
                     byte[]? encodedBuffer = _ffmpegEncoder. Encode(FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec), i420Buffer, width, height, (int)fps, _forceKeyFrame);
 
                     if (encodedBuffer != null)

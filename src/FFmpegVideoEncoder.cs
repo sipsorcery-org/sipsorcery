@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Abstractions.V1;
 
 namespace SIPSorceryMedia.FFmpeg
 {
@@ -245,7 +243,9 @@ namespace SIPSorceryMedia.FFmpeg
                     }
                     else
                     {
-                        if (_encoderPixelConverter == null)
+                        if (_encoderPixelConverter == null ||
+                           _encoderPixelConverter.SourceWidth != width ||
+                           _encoderPixelConverter.SourceHeight != height)
                         {
                             _encoderPixelConverter = new VideoFrameConverter(
                                width, height,
@@ -409,7 +409,9 @@ namespace SIPSorceryMedia.FFmpeg
                         width = decodedFrame->width;
                         height = decodedFrame->height;
 
-                        if (_i420ToRgb == null)
+                        if (_i420ToRgb == null || 
+                            _i420ToRgb.SourceWidth != width ||
+                            _i420ToRgb.SourceHeight != height)
                         {
                             _i420ToRgb = new VideoFrameConverter(
                                 width, height,
