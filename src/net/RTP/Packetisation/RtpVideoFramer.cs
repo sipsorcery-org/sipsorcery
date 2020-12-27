@@ -32,7 +32,7 @@ namespace SIPSorcery.Net
         private VideoCodecsEnum _codec;
         private byte[] _currVideoFrame = new byte[MAX_FRAME_SIZE];
         private int _currVideoFramePosn = 0;
-        private H264PayloadProcessor _h264Depacketiser;
+        private H264Depacketiser _h264Depacketiser;
 
         public RtpVideoFramer(VideoCodecsEnum codec)
         {
@@ -45,7 +45,7 @@ namespace SIPSorcery.Net
 
             if (_codec == VideoCodecsEnum.H264)
             {
-                _h264Depacketiser = new H264PayloadProcessor();
+                _h264Depacketiser = new H264Depacketiser();
             }
         }
 
