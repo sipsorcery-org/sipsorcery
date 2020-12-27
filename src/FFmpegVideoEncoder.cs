@@ -10,12 +10,24 @@ namespace SIPSorceryMedia.FFmpeg
     public sealed unsafe class FFmpegVideoEncoder : IVideoEncoder, IDisposable
     {
         public const int DEFAULT_FRAMES_PER_SECOND = 30;
+        public const int VP8_FORMATID = 96;
+        public const int H264_FORMATID = 100;
+
+        private static readonly List<VideoFormat> _supportedFormats = new List<VideoFormat>
+        {
+            new VideoFormat(VideoCodecsEnum.VP8, VP8_FORMATID),
+            new VideoFormat(VideoCodecsEnum.H264, H264_FORMATID)
+        };
+
+        public List<VideoFormat> SupportedFormats
+        {
+            get => _supportedFormats;
+        }
 
         private AVCodecContext* _encoderContext;
         private AVCodecContext* _decoderContext;
         private AVCodecID _codecID;
 
-        //private VideoFrameConverter? _rgbToi420;
         private VideoFrameConverter? _encoderPixelConverter;
         private VideoFrameConverter? _i420ToRgb;
         private bool _isEncoderInitialised = false;
@@ -33,18 +45,6 @@ namespace SIPSorceryMedia.FFmpeg
         {
             //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_VERBOSE);
             //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_TRACE);
-        }
-
-        public bool IsSupported(VideoCodecsEnum codec)
-        {
-            if (codec == VideoCodecsEnum.H264 || codec == VideoCodecsEnum.VP8)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
         }
 
         public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
