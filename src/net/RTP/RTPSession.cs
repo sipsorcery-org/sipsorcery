@@ -1462,8 +1462,6 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogDebug($"SendH264Frame {accessUnit.Length}.");
-
                 foreach (var nal in H264Packetiser.ParseNals(accessUnit))
                 {
                     SendH264Nal(duration, payloadTypeID, nal.NAL, nal.IsLast, dstEndPoint, videoTrack);
@@ -1483,8 +1481,10 @@ namespace SIPSorcery.Net
         /// <param name="videoTrack">The video track to send on.</param>
         private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal, IPEndPoint dstEndPoint, MediaStreamTrack videoTrack)
         {
-            logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
+            //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
             //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
+
+            byte nal0 = nal[0];
 
             if (nal.Length <= RTP_MAX_PAYLOAD)
             {
@@ -1515,7 +1515,7 @@ namespace SIPSorcery.Net
                     bool isFinalPacket = (index + 1) * RTP_MAX_PAYLOAD >= nal.Length;
                     int markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
 
-                    byte[] h264RtpHdr = H264Packetiser.GetH264RtpHeader(nal[0], isFirstPacket, isFinalPacket);
+                    byte[] h264RtpHdr = H264Packetiser.GetH264RtpHeader(nal0, isFirstPacket, isFinalPacket);
 
                     byte[] payload = new byte[payloadLength + h264RtpHdr.Length];
                     Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, h264RtpHdr.Length);

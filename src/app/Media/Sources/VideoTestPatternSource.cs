@@ -46,7 +46,7 @@ namespace SIPSorcery.Media
         public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {
             new VideoFormat(VideoCodecsEnum.VP8, VP8_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE),
-            new VideoFormat(VideoCodecsEnum.H264, H264_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE, "packetization-mode=0")
+            new VideoFormat(VideoCodecsEnum.H264, H264_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE, "packetization-mode=1")
         };
 
         private int _frameSpacing;
