@@ -1,8 +1,7 @@
 {
   "profiles": {
     "VideoPhoneCmdLine": {
-      "commandName": "Project",
-      "commandLineArgs": "--tp --dst=127.0.0.1:6060"
+      "commandName": "Project"
     }
   }
 }

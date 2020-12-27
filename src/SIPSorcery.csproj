@@ -20,7 +20,7 @@
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.8" />
     <PackageReference Include="DnsClient" Version="1.4.0-beta-20200801.7" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.3-pre" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.4-pre" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
@@ -51,16 +51,17 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v5.0.6-pre: Added video format to IVideoSink GotVideo frame method. Added max bandwidth SDP attribute. Small refactor of RTP packetisation logic.
+    <PackageReleaseNotes>- v5.0.7-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
+- v5.0.6-pre: Added video format to IVideoSink GotVideo frame method. Added max bandwidth SDP attribute. Small refactor of RTP packetisation logic.
 - v5.0.5-pre: Use pixel conversion fixes that can cope with uneven image dimensions. 
 - v5.0.3: Added a warning when an attempt is made to depacketise H264.
 - v5.0.2: Added support for binary SIP payloads. Updated dependcies to latest stable versions (where available).
 - v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>5.0.6-pre</Version>
-    <AssemblyVersion>5.0.6.0</AssemblyVersion>
-    <FileVersion>5.0.6.0</FileVersion>
+    <Version>5.0.7-pre</Version>
+    <AssemblyVersion>5.0.7.0</AssemblyVersion>
+    <FileVersion>5.0.7.0</FileVersion>
   </PropertyGroup>
 
 </Project>

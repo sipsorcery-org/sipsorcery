@@ -82,9 +82,6 @@ namespace demo
 
     public class DecoderVideoSink : IVideoSink
     {
-        private const int VP8_FORMAT_ID = 96;
-        private const int H264_FORMAT_ID = 100;
-
         public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>();
         private IVideoEncoder _videoDecoder;
         private MediaFormatManager<VideoFormat> _formatManager;
@@ -94,18 +91,7 @@ namespace demo
         public DecoderVideoSink(IVideoEncoder videoDecoder)
         {
             _videoDecoder = videoDecoder;
-
-            if (_videoDecoder.IsSupported(VideoCodecsEnum.VP8))
-            {
-                SupportedFormats.Add(new VideoFormat(VideoCodecsEnum.VP8, VP8_FORMAT_ID));
-            }
-
-            if (_videoDecoder.IsSupported(VideoCodecsEnum.H264))
-            {
-                SupportedFormats.Add(new VideoFormat(VideoCodecsEnum.H264, H264_FORMAT_ID));
-            }
-
-            _formatManager = new MediaFormatManager<VideoFormat>(SupportedFormats);
+            _formatManager = new MediaFormatManager<VideoFormat>(videoDecoder.SupportedFormats);
         }
 
         public Task CloseVideoSink() => Task.CompletedTask;

@@ -2354,19 +2354,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioEncoder.EncodeAudio
   nameWithType: AudioEncoder.EncodeAudio
-- uid: SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.AudioFormat)
-  name: IsSupported(AudioFormat)
-  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_IsSupported_SIPSorceryMedia_Abstractions_AudioFormat_
-  commentId: M:SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.AudioFormat)
-  fullName: SIPSorcery.Media.AudioEncoder.IsSupported(SIPSorceryMedia.Abstractions.AudioFormat)
-  nameWithType: AudioEncoder.IsSupported(AudioFormat)
-- uid: SIPSorcery.Media.AudioEncoder.IsSupported*
-  name: IsSupported
-  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_IsSupported_
-  commentId: Overload:SIPSorcery.Media.AudioEncoder.IsSupported
-  isSpec: "True"
-  fullName: SIPSorcery.Media.AudioEncoder.IsSupported
-  nameWithType: AudioEncoder.IsSupported
 - uid: SIPSorcery.Media.AudioEncoder.Resample(System.Int16[],System.Int32,System.Int32)
   name: Resample(Int16[], Int32, Int32)
   href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_Resample_System_Int16___System_Int32_System_Int32_
@@ -2383,6 +2370,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioEncoder.Resample
   nameWithType: AudioEncoder.Resample
+- uid: SIPSorcery.Media.AudioEncoder.SupportedFormats
+  name: SupportedFormats
+  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_SupportedFormats
+  commentId: P:SIPSorcery.Media.AudioEncoder.SupportedFormats
+  fullName: SIPSorcery.Media.AudioEncoder.SupportedFormats
+  nameWithType: AudioEncoder.SupportedFormats
+- uid: SIPSorcery.Media.AudioEncoder.SupportedFormats*
+  name: SupportedFormats
+  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_SupportedFormats_
+  commentId: Overload:SIPSorcery.Media.AudioEncoder.SupportedFormats
+  isSpec: "True"
+  fullName: SIPSorcery.Media.AudioEncoder.SupportedFormats
+  nameWithType: AudioEncoder.SupportedFormats
 - uid: SIPSorcery.Media.AudioExtrasSource
   name: AudioExtrasSource
   href: api/SIPSorcery.Media.AudioExtrasSource.html
@@ -2656,12 +2656,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioExtrasSource.StartAudio
   nameWithType: AudioExtrasSource.StartAudio
-- uid: SIPSorcery.Media.AudioExtrasSource.SupportedFormats
-  name: SupportedFormats
-  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_SupportedFormats
-  commentId: F:SIPSorcery.Media.AudioExtrasSource.SupportedFormats
-  fullName: SIPSorcery.Media.AudioExtrasSource.SupportedFormats
-  nameWithType: AudioExtrasSource.SupportedFormats
 - uid: SIPSorcery.Media.AudioSendOnlyMediaSession
   name: AudioSendOnlyMediaSession
   href: api/SIPSorcery.Media.AudioSendOnlyMediaSession.html
