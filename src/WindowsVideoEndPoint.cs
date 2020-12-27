@@ -49,18 +49,14 @@ namespace SIPSorceryMedia.Windows
     {
         private const int VIDEO_SAMPLING_RATE = 90000;
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
-        private const int VP8_FORMATID = 96;
-        private const int H264_FORMATID = 100;
         private readonly string MF_NV12_PIXEL_FORMAT = MediaEncodingSubtypes.Nv12;
         public const string MF_I420_PIXEL_FORMAT = "{30323449-0000-0010-8000-00AA00389B71}";
 
-        // NV12 seems to be what the Software Bitmaps provided from MF tend to prefer.
+        // NV12 seems to be what the Software Bitmaps provided from Windows Media Foundation tend to prefer.
         //private readonly vpxmd.VpxImgFmt EncoderInputFormat = vpxmd.VpxImgFmt.VPX_IMG_FMT_NV12;
         private readonly VideoPixelFormatsEnum EncoderInputFormat = VideoPixelFormatsEnum.NV12;
 
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsVideoEndPoint>();
-
-        public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>();
 
         private MediaFormatManager<VideoFormat> _videoFormatManager;
         private IVideoEncoder _videoEncoder;
@@ -130,22 +126,7 @@ namespace SIPSorceryMedia.Windows
 
             _mediaCapture = new MediaCapture();
             _mediaCapture.Failed += VideoCaptureDevice_Failed;
-
-            SetSupportedVideoFormats();
-            _videoFormatManager = new MediaFormatManager<VideoFormat>(SupportedFormats);
-        }
-
-        private void SetSupportedVideoFormats()
-        {
-            if (_videoEncoder.IsSupported(VideoCodecsEnum.VP8))
-            {
-                SupportedFormats.Add(new VideoFormat(VideoCodecsEnum.VP8, VP8_FORMATID, VIDEO_SAMPLING_RATE));
-            }
-
-            if (_videoEncoder.IsSupported(VideoCodecsEnum.H264))
-            {
-                SupportedFormats.Add(new VideoFormat(VideoCodecsEnum.H264, H264_FORMATID, VIDEO_SAMPLING_RATE));
-            }
+            _videoFormatManager = new MediaFormatManager<VideoFormat>(videoEncoder.SupportedFormats);
         }
 
         public void RestrictFormats(Func<VideoFormat, bool> filter) => _videoFormatManager.RestrictFormats(filter);
@@ -585,7 +566,7 @@ namespace SIPSorceryMedia.Windows
                                                 frameSpacing = Convert.ToUInt32(DateTime.Now.Subtract(_lastFrameAt).TotalMilliseconds);
                                             }
 
-                                            var bgrBuffer = PixelConverter.NV12toBGR(nv12Buffer, width, height, width);
+                                            var bgrBuffer = PixelConverter.NV12toBGR(nv12Buffer, width, height, width * 3);
 
                                             OnVideoSourceRawSample(frameSpacing, width, height, bgrBuffer, VideoPixelFormatsEnum.Bgr);
                                         }

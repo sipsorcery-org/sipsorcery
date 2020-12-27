@@ -51,13 +51,6 @@ namespace SIPSorceryMedia.Windows
             DEVICE_BITS_PER_SAMPLE,
             DEVICE_CHANNELS);
 
-        public static readonly List<AudioFormat> SupportedFormats = new List<AudioFormat>
-        {
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.G722)
-        };
-
         /// <summary>
         /// Audio render device.
         /// </summary>
@@ -118,7 +111,7 @@ namespace SIPSorceryMedia.Windows
         {
             logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
-            _audioFormatManager = new MediaFormatManager<AudioFormat>(SupportedFormats);
+            _audioFormatManager = new MediaFormatManager<AudioFormat>(audioEncoder.SupportedFormats);
             _audioEncoder = audioEncoder;
 
             _disableSource = disableSource;
