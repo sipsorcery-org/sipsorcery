@@ -95,7 +95,8 @@ namespace SIPSorcery.Net
         /// Constructs the RTP header for an H264 NAL. This method does NOT support
         /// aggregation packets where multiple NALs are sent as a single RTP payload.
         /// The supported H264 header type is Single-Time Aggregation Packet type A 
-        /// (STAP-A).
+        /// (STAP-A) and Fragmentation Unit A (FU-A). The headers produced correspond
+        /// to H264 packetization-mode=1.
         /// </summary>
         /// <remarks>
         /// RTP Payload Format for H.264 Video:
