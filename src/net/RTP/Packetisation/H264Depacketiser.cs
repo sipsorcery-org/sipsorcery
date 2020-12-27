@@ -11,7 +11,7 @@ using System.IO;
 
 namespace SIPSorcery.Net
 {
-    public class H264PayloadProcessor
+    public class H264Depacketiser
     {
         const int SPS = 7;
         const int PPS = 8;
