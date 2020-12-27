@@ -419,11 +419,9 @@ namespace SIPSorceryMedia.Abstractions
     public interface IAudioEncoder
     {
         /// <summary>
-        /// Checks whether the encoder supports a particular audio format.
+        /// Needs to be set with the list of audio formats that the encoder supports.
         /// </summary>
-        /// <param name="format">The audio format to check support for.</param>
-        /// <returns>True if the encode and decode operations are supported for the audio format.</returns>
-        bool IsSupported(AudioFormat format);
+        List<AudioFormat> SupportedFormats { get; }
 
         /// <summary>
         /// Encodes 16bit signed PCM samples.
@@ -451,7 +449,10 @@ namespace SIPSorceryMedia.Abstractions
 
     public interface IVideoEncoder : IDisposable
     {
-        bool IsSupported(VideoCodecsEnum codec);
+        /// <summary>
+        /// Needs to be set with the list of video formats that the encoder supports.
+        /// </summary>
+        List<VideoFormat> SupportedFormats { get; }
 
         byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
 
