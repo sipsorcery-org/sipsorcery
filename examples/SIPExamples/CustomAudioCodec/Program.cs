@@ -1,24 +1,21 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example program to play pre-recorded sound files on a SIP
-// call.
-//
-// Note: See the TextToPcm example in the AzureExamples for a demonstration
-// of how to generate suitable audio files.
+// Description: An example of how to use a custom audio codec.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 03 Jun 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 27 Dec 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -27,26 +24,52 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Windows;
+using SIPSorceryMedia.Abstractions;
+using GroovyCodecs.G729;
 
 namespace demo
 {
+    class G729Codec : IAudioEncoder
+    {
+        private G729Decoder _g729Decoder;
+        private G729Encoder _g729Encoder;
+
+        private List<AudioFormat> _supportedFormats = new List<AudioFormat>
+        {
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.G729)
+        };
+
+        public List<AudioFormat> SupportedFormats
+        {
+            get => _supportedFormats;
+        }
+
+        public G729Codec()
+        {
+            _g729Encoder = new G729Encoder();
+            _g729Decoder = new G729Decoder();
+        }
+
+        public short[] DecodeAudio(byte[] encodedSample, AudioFormat format)
+        {
+            var pcm = _g729Decoder.Process(encodedSample);
+            return pcm.Where((x, i) => i % 2 == 0).Select((y, i) => (short)(pcm[i * 2 + 1] << 8 | pcm[i * 2])).ToArray();
+        }
+
+        public byte[] EncodeAudio(short[] pcm, AudioFormat format)
+        {
+            return _g729Encoder.Process(pcm.SelectMany(x => new byte[] { (byte)(x), (byte)(x >> 8) }).ToArray());
+        }
+    }
+
     class Program
     {
-        //private static string DESTINATION = "aaron@192.168.0.149";
-        //private static string DESTINATION = "sip:pcdodo@192.168.0.50";
-        //private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.149:5060");
-        private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
-        //private static string DESTINATION = "sip:7002@192.168.0.48";
-        private static SIPEndPoint OUTBOUND_PROXY = null;
-
-        private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
-        private const string GOODBYE_16K = "Sounds/goodbye16k.raw";
+        private static string DESTINATION = "time@sipsorcery.com";
 
         static async Task Main()
         {
-            Console.WriteLine("SIPSorcery Play Sounds Demo");
+            Console.WriteLine("SIPSorcery Custom Audio Codec Demo");
 
             AddConsoleLogger();
             CancellationTokenSource exitCts = new CancellationTokenSource();
@@ -55,19 +78,17 @@ namespace demo
 
             EnableTraceLogs(sipTransport);
 
-            var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
+            var userAgent = new SIPUserAgent(sipTransport, null);
             userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
-            userAgent.ClientCallFailed += (uac, error, sipResponse) => exitCts.Cancel();
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
-            var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
-            //windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.G722);
+            var windowsAudio = new WindowsAudioEndPoint(new G729Codec());
+            windowsAudio.RestrictFormats(x => x.Codec == AudioCodecsEnum.G729);
             var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
-            //voipMediaSession.AudioExtrasSource.AudioSamplePeriodMilliseconds = 20;
-            //voipMediaSession.AudioLocalTrack.Capabilities.Clear();
-            //voipMediaSession.AudioLocalTrack.Capabilities.Add(
-            //    new SDPAudioVideoMediaFormat(new AudioFormat(AudioCodecsEnum.L16, 118, 8000)));
+
+            // Place the call and wait for the result.
+            var callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
 
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
@@ -90,9 +111,6 @@ namespace demo
                 exitCts.Cancel();
             };
 
-            // Place the call and wait for the result.
-            var callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
-
             Console.WriteLine("press ctrl-c to exit...");
 
             bool callResult = await callTask;
@@ -100,55 +118,6 @@ namespace demo
             if (callResult)
             {
                 Console.WriteLine($"Call to {DESTINATION} succeeded.");
-
-                await windowsAudio.PauseAudio();
-                try
-                {
-                    await voipMediaSession.AudioExtrasSource.StartAudio();
-
-                    //Console.WriteLine("Sending welcome message from 8KHz sample.");
-                    await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
-
-                    await Task.Delay(200, exitCts.Token);
-
-                    Console.WriteLine("Sending sine wave.");
-                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.SineWave);
-
-                    await Task.Delay(5000, exitCts.Token);
-
-                    Console.WriteLine("Sending white noise signal.");
-                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.WhiteNoise);
-                    await Task.Delay(2000, exitCts.Token);
-
-                    Console.WriteLine("Sending pink noise signal.");
-                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.PinkNoise);
-                    await Task.Delay(2000, exitCts.Token);
-
-                    Console.WriteLine("Sending silence.");
-                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Silence);
-
-                    await Task.Delay(2000, exitCts.Token);
-
-                    Console.WriteLine("Playing music.");
-                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
-
-                    await Task.Delay(5000, exitCts.Token);
-
-                    Console.WriteLine("Sending goodbye message from 16KHz sample.");
-                    await voipMediaSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
-
-                    voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.None);
-
-                    await voipMediaSession.AudioExtrasSource.PauseAudio();
-
-                    await Task.Delay(200, exitCts.Token);
-                }
-                catch (System.Threading.Tasks.TaskCanceledException)
-                { }
-
-                // Switch to the external microphone input source.
-                await windowsAudio.ResumeAudio();
-
                 exitCts.Token.WaitHandle.WaitOne();
             }
             else

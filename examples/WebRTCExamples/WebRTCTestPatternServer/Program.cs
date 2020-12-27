@@ -130,7 +130,7 @@ namespace demo
             //testPatternSource.SetMaxFrameRate(true);
             //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             //videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
-            testPatternSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
+            //testPatternSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
             //var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
 
