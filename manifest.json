@@ -3293,6 +3293,18 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPB2BUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPB2BUserAgent.html",
+          "hash": "cohSRWd2zj6jxGc85CBRSg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.SIP.App.SIPCallDescriptor.yml",
       "output": {
         ".html": {
@@ -3489,7 +3501,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.html",
-          "hash": "VdDwdET2wXpP03AK5d21Lw=="
+          "hash": "2N3RJVffxCOB6L3CxlwVzQ=="
         }
       },
       "is_incremental": false,
@@ -5037,7 +5049,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "Jsoo2JXf/fKLI8eZX/b+Cg=="
+          "hash": "MT1sBMrkICXS4X8sO879CA=="
         }
       },
       "is_incremental": false,
@@ -5305,7 +5317,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 418,
+          "total_file_count": 419,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
