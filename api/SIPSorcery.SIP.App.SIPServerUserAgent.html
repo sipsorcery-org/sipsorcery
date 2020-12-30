@@ -119,18 +119,18 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_SIPCallDirection_SIPSorcery_SIP_App_GetSIPAccountDelegate_SIPSorcery_SIP_App_SIPAuthenticateRequestDelegate_SIPSorcery_SIP_UASInviteTransaction_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.%23ctor(SIPSorcery.SIP.SIPTransport%2CSIPSorcery.SIP.SIPEndPoint%2CSystem.String%2CSystem.String%2CSIPSorcery.SIP.SIPCallDirection%2CSIPSorcery.SIP.App.GetSIPAccountDelegate%2CSIPSorcery.SIP.App.SIPAuthenticateRequestDelegate%2CSIPSorcery.SIP.UASInviteTransaction)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_SIPCallDirection_SIPSorcery_SIP_UASInviteTransaction_SIPSorcery_SIP_App_ISIPAccount_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.%23ctor(SIPSorcery.SIP.SIPTransport%2CSIPSorcery.SIP.SIPEndPoint%2CSystem.String%2CSystem.String%2CSIPSorcery.SIP.SIPCallDirection%2CSIPSorcery.SIP.UASInviteTransaction%2CSIPSorcery.SIP.App.ISIPAccount)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L157">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L151">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent__ctor_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_SIPCallDirection_SIPSorcery_SIP_App_GetSIPAccountDelegate_SIPSorcery_SIP_App_SIPAuthenticateRequestDelegate_SIPSorcery_SIP_UASInviteTransaction_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.App.GetSIPAccountDelegate,SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate,SIPSorcery.SIP.UASInviteTransaction)">SIPServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, GetSIPAccountDelegate, SIPAuthenticateRequestDelegate, UASInviteTransaction)</h4>
+  <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_SIPCallDirection_SIPSorcery_SIP_UASInviteTransaction_SIPSorcery_SIP_App_ISIPAccount_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.UASInviteTransaction,SIPSorcery.SIP.App.ISIPAccount)">SIPServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, UASInviteTransaction, ISIPAccount)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPServerUserAgent(SIPTransport sipTransport, SIPEndPoint outboundProxy, string sipUsername, string sipDomain, SIPCallDirection callDirection, GetSIPAccountDelegate getSIPAccount, SIPAuthenticateRequestDelegate sipAuthenticateRequest, UASInviteTransaction uasTransaction)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPServerUserAgent(SIPTransport sipTransport, SIPEndPoint outboundProxy, string sipUsername, string sipDomain, SIPCallDirection callDirection, UASInviteTransaction uasTransaction, ISIPAccount sipAccount)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -168,18 +168,13 @@
         <td></td>
       </tr>
       <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.App.GetSIPAccountDelegate.html">GetSIPAccountDelegate</a></td>
-        <td><span class="parametername">getSIPAccount</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate.html">SIPAuthenticateRequestDelegate</a></td>
-        <td><span class="parametername">sipAuthenticateRequest</span></td>
-        <td></td>
-      </tr>
-      <tr>
         <td><a class="xref" href="SIPSorcery.SIP.UASInviteTransaction.html">UASInviteTransaction</a></td>
         <td><span class="parametername">uasTransaction</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.ISIPAccount.html">ISIPAccount</a></td>
+        <td><span class="parametername">sipAccount</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -191,7 +186,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_CallDestination.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.CallDestination%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L89">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L83">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_CallDestination_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.CallDestination*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_CallDestination" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.CallDestination">CallDestination</h4>
@@ -221,7 +216,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_CallDirection.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.CallDirection%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L59">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L53">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_CallDirection_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.CallDirection*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_CallDirection" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.CallDirection">CallDirection</h4>
@@ -252,7 +247,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_CallRequest.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.CallRequest%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L84">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L78">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_CallRequest_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.CallRequest*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_CallRequest" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.CallRequest">CallRequest</h4>
@@ -282,7 +277,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_ClientTransaction.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.ClientTransaction%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L104">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L98">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_ClientTransaction_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.ClientTransaction*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_ClientTransaction" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.ClientTransaction">ClientTransaction</h4>
@@ -312,7 +307,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_IsAuthenticated.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.IsAuthenticated%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L73">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L67">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_IsAuthenticated_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsAuthenticated*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_IsAuthenticated" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsAuthenticated">IsAuthenticated</h4>
@@ -342,7 +337,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_IsB2B.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.IsB2B%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L49">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L44">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_IsB2B_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsB2B*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_IsB2B" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsB2B">IsB2B</h4>
@@ -372,7 +367,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_IsCancelled.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.IsCancelled%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L79">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L73">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_IsCancelled_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsCancelled*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_IsCancelled" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsCancelled">IsCancelled</h4>
@@ -402,7 +397,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_IsHungup.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.IsHungup%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L99">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L93">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_IsHungup_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsHungup*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_IsHungup" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsHungup">IsHungup</h4>
@@ -432,7 +427,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_IsInvite.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.IsInvite%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L50">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L45">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_IsInvite_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsInvite*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_IsInvite" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsInvite">IsInvite</h4>
@@ -462,7 +457,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_IsUASAnswered.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.IsUASAnswered%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L94">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L88">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_IsUASAnswered_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsUASAnswered*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_IsUASAnswered" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.IsUASAnswered">IsUASAnswered</h4>
@@ -492,7 +487,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_OfferSDP.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.OfferSDP%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L112">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L106">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_OfferSDP_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.OfferSDP*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_OfferSDP" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.OfferSDP">OfferSDP</h4>
@@ -520,40 +515,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Owner.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Owner%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L54">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Owner_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Owner*"></a>
-  <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Owner" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Owner">Owner</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string Owner { get; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_SIPAccount.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.SIPAccount%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L67">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L61">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_SIPAccount_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SIPAccount*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_SIPAccount" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SIPAccount">SIPAccount</h4>
@@ -561,7 +526,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPAccount SIPAccount { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public ISIPAccount SIPAccount { get; set; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -573,7 +538,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.App.SIPAccount.html">SIPAccount</a></td>
+        <td><a class="xref" href="SIPSorcery.SIP.App.ISIPAccount.html">ISIPAccount</a></td>
         <td></td>
       </tr>
     </tbody>
@@ -583,7 +548,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_SIPDialogue.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.SIPDialogue%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L64">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L58">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_SIPDialogue_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SIPDialogue*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_SIPDialogue" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SIPDialogue">SIPDialogue</h4>
@@ -616,7 +581,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String%2CSystem.String%2CSIPSorcery.SIP.SIPDialogueTransferModesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L368">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L289">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Answer_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Answer*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum)">Answer(String, String, SIPDialogueTransferModesEnum)</h4>
@@ -673,7 +638,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String%2CSystem.String%2CSIPSorcery.SIP.SIPDialogueTransferModesEnum%2CSystem.String%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L373">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L294">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Answer_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Answer*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])">Answer(String, String, SIPDialogueTransferModesEnum, String[])</h4>
@@ -735,7 +700,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String%2CSystem.String%2CSystem.String%2CSIPSorcery.SIP.SIPDialogueTransferModesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L378">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L299">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Answer_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Answer*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum)">Answer(String, String, String, SIPDialogueTransferModesEnum)</h4>
@@ -797,7 +762,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String%2CSystem.String%2CSystem.String%2CSIPSorcery.SIP.SIPDialogueTransferModesEnum%2CSystem.String%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L383">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L304">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Answer_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Answer*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])">Answer(String, String, String, SIPDialogueTransferModesEnum, String[])</h4>
@@ -864,7 +829,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_AnswerNonInvite_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String%2CSystem.String%5B%5D%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L461">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L382">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_AnswerNonInvite_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.AnswerNonInvite*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_AnswerNonInvite_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)">AnswerNonInvite(SIPResponseStatusCodesEnum, String, String[], String, String)</h4>
@@ -916,7 +881,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_AuthenticateCall.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.AuthenticateCall%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L241">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L178">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_AuthenticateCall_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.AuthenticateCall*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_AuthenticateCall" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.AuthenticateCall">AuthenticateCall()</h4>
@@ -946,7 +911,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Hangup_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Hangup(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L552">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L473">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Hangup_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Hangup*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Hangup_System_Boolean_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Hangup(System.Boolean)">Hangup(Boolean)</h4>
@@ -978,40 +943,10 @@ needs to originate from this agent.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_LoadSIPAccountForIncomingCall.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.LoadSIPAccountForIncomingCall%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L186">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_App_SIPServerUserAgent_LoadSIPAccountForIncomingCall_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.LoadSIPAccountForIncomingCall*"></a>
-  <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_LoadSIPAccountForIncomingCall" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.LoadSIPAccountForIncomingCall">LoadSIPAccountForIncomingCall()</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool LoadSIPAccountForIncomingCall()</code></pre>
-  </div>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Boolean</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_NoCDR.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.NoCDR%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L542">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L463">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_NoCDR_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.NoCDR*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_NoCDR" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.NoCDR">NoCDR()</h4>
@@ -1026,7 +961,7 @@ needs to originate from this agent.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Progress_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String%2CSystem.String%5B%5D%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L307">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L228">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Progress_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Progress*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Progress_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)">Progress(SIPResponseStatusCodesEnum, String, String[], String, String)</h4>
@@ -1078,7 +1013,7 @@ needs to originate from this agent.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSIPSorcery.SIP.SIPURI)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L512">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L433">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Redirect_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Redirect*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)">Redirect(SIPResponseStatusCodesEnum, SIPURI)</h4>
@@ -1115,7 +1050,7 @@ needs to originate from this agent.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_System_String___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSIPSorcery.SIP.SIPURI%2CSystem.String%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L516">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L437">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Redirect_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Redirect*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_System_String___" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI,System.String[])">Redirect(SIPResponseStatusCodesEnum, SIPURI, String[])</h4>
@@ -1157,7 +1092,7 @@ needs to originate from this agent.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L466">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L387">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Reject_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Reject*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)">Reject(SIPResponseStatusCodesEnum, String)</h4>
@@ -1194,7 +1129,7 @@ needs to originate from this agent.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String%2CSystem.String%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L471">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L392">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Reject_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Reject*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])">Reject(SIPResponseStatusCodesEnum, String, String[])</h4>
@@ -1231,75 +1166,6 @@ needs to originate from this agent.</p>
       </tr>
     </tbody>
   </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_SetDialPlanContextID_System_Guid_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(System.Guid)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L667">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_App_SIPServerUserAgent_SetDialPlanContextID_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID*"></a>
-  <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_SetDialPlanContextID_System_Guid_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(System.Guid)">SetDialPlanContextID(Guid)</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetDialPlanContextID(Guid dialPlanContextID)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Guid</span></td>
-        <td><span class="parametername">dialPlanContextID</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_SetOwner_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.SetOwner(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L653">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_App_SIPServerUserAgent_SetOwner_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SetOwner*"></a>
-  <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_SetOwner_System_String_System_String_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SetOwner(System.String,System.String)">SetOwner(String, String)</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SetOwner(string owner, string adminMemberId)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">owner</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">adminMemberId</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
   <h3 id="events">Events
   </h3>
   <span class="small pull-right mobile-hide">
@@ -1307,7 +1173,7 @@ needs to originate from this agent.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_CallCancelled.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.CallCancelled%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L130">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L124">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_CallCancelled" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.CallCancelled">CallCancelled</h4>
   <div class="markdown level1 summary"><p>The caller cancelled the call request.</p>
@@ -1337,7 +1203,7 @@ needs to originate from this agent.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_NoRingTimeout.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.NoRingTimeout%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L137">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L131">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_NoRingTimeout" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.NoRingTimeout">NoRingTimeout</h4>
   <div class="markdown level1 summary"><p>This end of the call timed out providing a ringing response. This situation can occur for SIP servers.
@@ -1369,7 +1235,7 @@ continue past the trying stage.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_OnDialogueCreated.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.OnDialogueCreated%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L155">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L149">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_OnDialogueCreated" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.OnDialogueCreated">OnDialogueCreated</h4>
   <div class="markdown level1 summary"><p>Gets fired when the call successfully negotiates an SDP offer/answer and creates a new dialog.
@@ -1402,7 +1268,7 @@ ACK is received.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_TransactionComplete.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.TransactionComplete%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L142">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L136">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_TransactionComplete" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.TransactionComplete">TransactionComplete</h4>
   <div class="markdown level1 summary"><p>The underlying invite transaction has reached the completed state.</p>
@@ -1423,36 +1289,6 @@ ACK is received.</p>
     <tbody>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.App.SIPUASDelegate.html">SIPUASDelegate</a></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_UASStateChanged.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.UASStateChanged%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L147">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_UASStateChanged" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.UASStateChanged">UASStateChanged</h4>
-  <div class="markdown level1 summary"><p>The underlying invite transaction has changed state.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public event SIPUASStateChangedDelegate UASStateChanged</code></pre>
-  </div>
-  <h5 class="eventType">Event Type</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.App.SIPUASStateChangedDelegate.html">SIPUASStateChangedDelegate</a></td>
         <td></td>
       </tr>
     </tbody>
