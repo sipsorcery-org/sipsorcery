@@ -3537,7 +3537,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.CallProperties.html",
-          "hash": "Yk3MVXd2zdMgfjfGnTnKnw=="
+          "hash": "KlU6LitNCoV9LGYLXx+Spg=="
         }
       },
       "is_incremental": false,
@@ -3549,7 +3549,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.HTTPDigest.html",
-          "hash": "yP2SwiAE6fo0CmHkh+7Rkw=="
+          "hash": "QloHulsAQAh1ufe9rBkXtw=="
         }
       },
       "is_incremental": false,
@@ -3597,7 +3597,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPAuthorisationDigest.html",
-          "hash": "8YU0HWeOcNfvn4RwST1Uiw=="
+          "hash": "YQrqc/lbTPiG9jyZOF4Gww=="
         }
       },
       "is_incremental": false,
@@ -3609,7 +3609,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPAuthorisationHeadersEnum.html",
-          "hash": "WxmEWNF2lmKefCGFgjyjqw=="
+          "hash": "BFEtDzbRum/XOCJZ5kzNUg=="
         }
       },
       "is_incremental": false,
@@ -4193,18 +4193,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.SIP.SIPRequestAuthorisationResult.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.SIP.SIPRequestAuthorisationResult.html",
-          "hash": "ppJD3xq3+pZ9Xgldbop0KA=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.SIP.SIPResponse.yml",
       "output": {
         ".html": {
@@ -4545,7 +4533,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransportConfig.html",
-          "hash": "PaASRr1esYZJf75pSVRGHQ=="
+          "hash": "FiUKuDjgbqau1o9Q5ZL24g=="
         }
       },
       "is_incremental": false,
@@ -4785,7 +4773,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.html",
-          "hash": "J7SmVjbLc9kSaCgXpLJWwQ=="
+          "hash": "5T0z+0ZmiYdycxJSjsw7hg=="
         }
       },
       "is_incremental": false,
@@ -5049,7 +5037,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "MT1sBMrkICXS4X8sO879CA=="
+          "hash": "DSp15cMX360jd862Vzgy1Q=="
         }
       },
       "is_incremental": false,
@@ -5317,7 +5305,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 419,
+          "total_file_count": 418,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
