@@ -2,19 +2,21 @@
 // Filename: SIPRequestAuthenticationResult.cs
 //
 // Description: Holds the results of a SIP request authorisation attempt.
-// 
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 08 Mar 2009	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 08 Mar 2009	Aaron Clauson   Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-namespace SIPSorcery.SIP
+namespace SIPSorcery.SIP.App
 {
     public class SIPRequestAuthenticationResult
     {
-
         public bool Authenticated;
         public bool WasAuthenticatedByIP;
         public SIPResponseStatusCodesEnum ErrorResponse;

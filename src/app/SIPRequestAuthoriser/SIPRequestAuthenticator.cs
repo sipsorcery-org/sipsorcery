@@ -2,9 +2,12 @@
 // Filename: SIPRequestAuthenticator.cs
 //
 // Description: Central location to handle SIP Request authorisation.
-// 
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 08 Mar 2009	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 08 Mar 2009	Aaron Clauson   Created Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -30,7 +33,11 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Authenticates a SIP request.
         /// </summary>
-        public static SIPRequestAuthenticationResult AuthenticateSIPRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPAccount sipAccount)
+        public static SIPRequestAuthenticationResult AuthenticateSIPRequest(
+            SIPEndPoint localSIPEndPoint, 
+            SIPEndPoint remoteEndPoint, 
+            SIPRequest sipRequest, 
+            ISIPAccount sipAccount)
         {
             try
             {

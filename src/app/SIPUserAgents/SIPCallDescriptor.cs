@@ -142,7 +142,7 @@ namespace SIPSorcery.SIP.App
         public string CallbackPattern;
         public int CallbackPhoneType;
 
-        public SIPAccount ToSIPAccount;         // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
+        public ISIPAccount ToSIPAccount;         // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
         public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
 
@@ -155,7 +155,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="fromHeader"></param>
         /// <param name="contentType"></param>
         /// <param name="content"></param>
-        public SIPCallDescriptor(SIPAccount toSIPAccount, string uri, string fromHeader, string contentType, string content)
+        public SIPCallDescriptor(ISIPAccount toSIPAccount, string uri, string fromHeader, string contentType, string content)
         {
             ToSIPAccount = toSIPAccount;
             Uri = uri ?? toSIPAccount.SIPUsername + "@" + toSIPAccount.SIPDomain;
