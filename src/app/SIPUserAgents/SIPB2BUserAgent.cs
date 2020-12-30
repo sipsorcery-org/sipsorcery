@@ -45,12 +45,8 @@ namespace SIPSorcery.SIP.App
         //public decimal Rate { get; set; }
 
         // UAC fields.
-        private string m_uacOwner;
-        private string m_uacAdminMemberId;
         private UACInviteTransaction m_uacTransaction;
         private SIPCallDescriptor m_uacCallDescriptor;
-        public string Owner { get { return m_uacOwner; } }
-        public string AdminMemberId { get { return m_uacAdminMemberId; } }
         public UACInviteTransaction ServerTransaction { get { return m_uacTransaction; } }
         public SIPCallDescriptor CallDescriptor { get { return m_uacCallDescriptor; } }
 
@@ -77,7 +73,7 @@ namespace SIPSorcery.SIP.App
             get { return m_uasTransaction; }
         }
 
-        public SIPAccount SIPAccount
+        public ISIPAccount SIPAccount
         {
             get { return m_uacCallDescriptor.ToSIPAccount; }
             set { }
@@ -109,7 +105,7 @@ namespace SIPSorcery.SIP.App
 #pragma warning restore
 
         public event SIPUASDelegate CallCancelled;
-        public event SIPUASStateChangedDelegate UASStateChanged;
+        //public event SIPUASStateChangedDelegate UASStateChanged;
 
         // UAS and UAC field.
         private SIPDialogue m_sipDialogue;
@@ -121,17 +117,12 @@ namespace SIPSorcery.SIP.App
 
         public SIPB2BUserAgent(
             //SIPMonitorLogDelegate logDelegate,
-            QueueNewCallDelegate queueCall,
-            SIPTransport sipTranpsort,
-            string uacOwner,
-            string uacAdminMemberId
-            )
+            //QueueNewCallDelegate queueCall,
+            SIPTransport sipTranpsort)
         {
             //Log_External = logDelegate;
             //QueueNewCall_External = queueCall;
             m_sipTransport = sipTranpsort;
-            m_uacOwner = uacOwner;
-            m_uacAdminMemberId = uacAdminMemberId;
         }
 
         #region UAC methods.
@@ -159,12 +150,6 @@ namespace SIPSorcery.SIP.App
                 // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                 //m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, m_blackhole, m_blackhole, null);
                 m_uacTransaction = new UACInviteTransaction(m_sipTransport, uacInviteRequest, null);
-                if (m_uacTransaction.CDR != null)
-                {
-                    m_uacTransaction.CDR.Owner = m_uacOwner;
-                    m_uacTransaction.CDR.AdminMemberId = m_uacAdminMemberId;
-                    m_uacTransaction.CDR.DialPlanContextID = (m_uacCallDescriptor != null) ? m_uacCallDescriptor.DialPlanContextID : Guid.Empty;
-                }
 
                 //uacTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                 //uacTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
@@ -180,7 +165,7 @@ namespace SIPSorcery.SIP.App
                 //m_uasTransaction = m_sipTransport.CreateUASTransaction(uasInviteRequest, m_blackhole, m_blackhole, null);
                 m_uasTransaction = new UASInviteTransaction(m_sipTransport, uasInviteRequest, null);
 
-                SetOwner(sipCallDescriptor.ToSIPAccount.Owner, sipCallDescriptor.ToSIPAccount.AdminMemberId);
+                //SetOwner(sipCallDescriptor.ToSIPAccount.Owner, sipCallDescriptor.ToSIPAccount.AdminMemberId);
                 //m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
                 //m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;
                 //m_uasTransaction.UASInviteTransactionCancelled += (t) => { };
@@ -251,10 +236,10 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        if (UASStateChanged != null)
-                        {
-                            UASStateChanged(this, progressStatus, reasonPhrase);
-                        }
+                        //if (UASStateChanged != null)
+                        //{
+                        //    UASStateChanged(this, progressStatus, reasonPhrase);
+                        //}
 
                         if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                         {
@@ -307,10 +292,10 @@ namespace SIPSorcery.SIP.App
                 logger.LogDebug("SIPB2BUserAgent Answer.");
                 m_sipDialogue = answeredDialogue;
 
-                if (UASStateChanged != null)
-                {
-                    UASStateChanged(this, SIPResponseStatusCodesEnum.Ok, null);
-                }
+                //if (UASStateChanged != null)
+                //{
+                //    UASStateChanged(this, SIPResponseStatusCodesEnum.Ok, null);
+                //}
 
                 SIPResponse uasOkResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.Ok, null);
                 m_uasTransaction.SendFinalResponse(uasOkResponse);
@@ -344,10 +329,10 @@ namespace SIPSorcery.SIP.App
         {
             logger.LogDebug("SIPB2BUserAgent Reject.");
 
-            if (UASStateChanged != null)
-            {
-                UASStateChanged(this, rejectCode, rejectReason);
-            }
+            //if (UASStateChanged != null)
+            //{
+            //    UASStateChanged(this, rejectCode, rejectReason);
+            //}
 
             SIPResponse uasfailureResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, rejectCode, rejectReason);
             m_uasTransaction.SendFinalResponse(uasfailureResponse);

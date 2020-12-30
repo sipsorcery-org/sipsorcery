@@ -16,6 +16,9 @@
 
 namespace SIPSorcery.SIP.App
 {
+    public delegate void SIPCallResponseDelegate(ISIPClientUserAgent uac, SIPResponse sipResponse);
+    public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage, SIPResponse sipResponse);
+
     /// <summary>
     /// Interface for classes implementing SIP client user agent functionality. The
     /// main function of a SIP client user agent is the ability to initiate calls.
