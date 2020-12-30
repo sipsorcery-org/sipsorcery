@@ -1,13 +1,13 @@
 //-----------------------------------------------------------------------------
-// Filename: Utilities.cs
+// Filename: CallProperties.cs
 //
-// Description: Useful functions for VoIP protocol implementation.
+// Description: Helper functions for setting SIP headers.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 23 May 2005	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 23 May 2005	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
