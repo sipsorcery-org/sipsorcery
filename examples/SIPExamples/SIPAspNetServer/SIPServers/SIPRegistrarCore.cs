@@ -283,7 +283,7 @@ namespace SIPAspNetServer
                     }
                     else
                     {
-                        SIPRequestAuthenticationResult authenticationResult = new SIPRequestAuthenticationResult(true, false); // SIPRequestAuthenticator.AuthenticateSIPRequest(registerTransaction.TransactionRequest.LocalSIPEndPoint, registerTransaction.TransactionRequest.RemoteSIPEndPoint, sipRequest, sipAccount);
+                        SIPRequestAuthenticationResult authenticationResult = SIPRequestAuthenticator.AuthenticateSIPRequest(registerTransaction.TransactionRequest.LocalSIPEndPoint, registerTransaction.TransactionRequest.RemoteSIPEndPoint, sipRequest, sipAccount);
 
                         if (!authenticationResult.Authenticated)
                         {

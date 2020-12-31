@@ -27,13 +27,12 @@ namespace SIPSorcery.SIP.App
     /// can only be created where the suffix "username" portion matches the Owner field. This allows users to create SIP accounts with '.'
     /// in them but will prevent a different user from being able to hijack an "x.username" account and cause unexpected behaviour.
     /// </remarks>
-    public class ISIPAccount
+    public interface ISIPAccount
     {
-        public Guid ID { get; set; }
-        public string SIPUsername { get; set; }
-        public string SIPPassword { get; set; }
-        public string SIPDomain { get; set; }
-        public bool IsDisabled { get; set; }
-        public string IPAddressACL { get; set; }
+        Guid ID { get; }
+        string SIPUsername { get; }
+        string SIPPassword { get; }
+        string SIPDomain { get; }
+        bool IsDisabled { get; }
     }
 }
