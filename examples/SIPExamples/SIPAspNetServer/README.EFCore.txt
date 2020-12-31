@@ -1,0 +1,1 @@
+dotnet ef dbcontext scaffold "Data Source=localhost;Initial Catalog=SIPAssets;Persist Security Info=True;User ID=appuser;Password=password" Microsoft.EntityFrameworkCore.SqlServer --use-database-names -o DataAccess/AutoGen --context SIPAssetsDbContext --namespace SIPAspNetServer.DataAccess -f
