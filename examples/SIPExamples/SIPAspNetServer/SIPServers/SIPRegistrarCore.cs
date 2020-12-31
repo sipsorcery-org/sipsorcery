@@ -2,7 +2,7 @@
 // FileName: RegistrarCore.cs
 //
 // Description:
-//  RFC3822 compliant SIP Registrar.
+// RFC3822 compliant SIP Registrar.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -84,7 +84,6 @@ namespace SIPAspNetServer
 
         private SIPTransport m_sipTransport;
         private SIPRegistrarBindingsManager m_registrarBindingsManager;
-        //private SIPAssetsContext m_sipAssetsCtx;
         private SIPAccountDataLayer m_sipAccountsDataLayer;
         private SIPRegistrarBindingDataLayer m_SIPRegistrarBindingDataLayer;
         private SIPDomainDataLayer m_sipDomainDataLayer;
@@ -121,7 +120,7 @@ namespace SIPAspNetServer
 
         public void Start(int threadCount)
         {
-            Logger.LogDebug("SIPRegistrarCore thread started with " + threadCount + " threads.");
+            Logger.LogInformation($"SIPRegistrarCore starting with {threadCount} threads.");
 
             for (int index = 1; index <= threadCount; index++)
             {
@@ -141,8 +140,6 @@ namespace SIPAspNetServer
                 }
                 else
                 {
-                    //SIPSorceryPerformanceMonitor.IncrementCounter(SIPSorceryPerformanceMonitor.REGISTRAR_REGISTRATION_REQUESTS_PER_SECOND);
-
                     int requestedExpiry = GetRequestedExpiry(registerRequest);
 
                     if (registerRequest.Header.To == null)
@@ -175,10 +172,7 @@ namespace SIPAspNetServer
                         if (m_registerQueue.Count < MAX_REGISTER_QUEUE_SIZE)
                         {
                             SIPNonInviteTransaction registrarTransaction = new SIPNonInviteTransaction(m_sipTransport, registerRequest, null);
-                            lock (m_registerQueue)
-                            {
-                                m_registerQueue.Enqueue(registrarTransaction);
-                            }
+                            m_registerQueue.Enqueue(registrarTransaction);
                         }
                         else
                         {
@@ -221,11 +215,6 @@ namespace SIPAspNetServer
                                 }
                             }
                         }
-                        catch (InvalidOperationException invalidOpExcp)
-                        {
-                            // This occurs when the queue is empty.
-                            Logger.LogWarning("InvalidOperationException ProcessRegisterRequest Register Job. " + invalidOpExcp.Message);
-                        }
                         catch (Exception regExcp)
                         {
                             Logger.LogError("Exception ProcessRegisterRequest Register Job. " + regExcp.Message);
@@ -241,7 +230,7 @@ namespace SIPAspNetServer
             }
             catch (Exception excp)
             {
-                Logger.LogError("Exception ProcessRegisterRequest (" + Thread.CurrentThread.Name + "). " + excp.Message);
+                Logger.LogError("Exception ProcessRegisterRequest (" + Thread.CurrentThread.Name + "). " + excp);
             }
         }
 
