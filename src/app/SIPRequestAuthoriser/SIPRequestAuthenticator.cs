@@ -57,15 +57,15 @@ namespace SIPSorcery.SIP.App
                     if (reqAuthHeader == null)
                     {
                         // Check for IP address authentication.
-                        if (!sipAccount.IPAddressACL.IsNullOrBlank())
-                        {
-                            SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
-                            if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
-                            {
-                                // Successfully authenticated
-                                return new SIPRequestAuthenticationResult(true, true);
-                            }
-                        }
+                        //if (!sipAccount.IPAddressACL.IsNullOrBlank())
+                        //{
+                        //    SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
+                        //    if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
+                        //    {
+                        //        // Successfully authenticated
+                        //        return new SIPRequestAuthenticationResult(true, true);
+                        //    }
+                        //}
 
                         SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, GetNonce());
                         return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
@@ -73,15 +73,15 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         // Check for IP address authentication.
-                        if (!sipAccount.IPAddressACL.IsNullOrBlank())
-                        {
-                            SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
-                            if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
-                            {
-                                // Successfully authenticated
-                                return new SIPRequestAuthenticationResult(true, true);
-                            }
-                        }
+                        //if (!sipAccount.IPAddressACL.IsNullOrBlank())
+                        //{
+                        //    SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
+                        //    if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
+                        //    {
+                        //        // Successfully authenticated
+                        //        return new SIPRequestAuthenticationResult(true, true);
+                        //    }
+                        //}
 
                         string requestNonce = reqAuthHeader.SIPDigest.Nonce;
                         string uri = reqAuthHeader.SIPDigest.URI;
