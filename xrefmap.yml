@@ -26620,6 +26620,350 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.Update
   nameWithType: SIPClientUserAgent.Update
+- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent
+  name: SIPNonInviteClientUserAgent
+  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html
+  commentId: T:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent
+  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent
+  nameWithType: SIPNonInviteClientUserAgent
+- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.App.SIPCallDescriptor)
+  name: SIPNonInviteClientUserAgent(SIPTransport, SIPEndPoint, SIPCallDescriptor)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_App_SIPCallDescriptor_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.App.SIPCallDescriptor)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SIPNonInviteClientUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.App.SIPCallDescriptor)
+  nameWithType: SIPNonInviteClientUserAgent.SIPNonInviteClientUserAgent(SIPTransport, SIPEndPoint, SIPCallDescriptor)
+- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.#ctor*
+  name: SIPNonInviteClientUserAgent
+  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent__ctor_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SIPNonInviteClientUserAgent
+  nameWithType: SIPNonInviteClientUserAgent.SIPNonInviteClientUserAgent
+- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.ResponseReceived
+  name: ResponseReceived
+  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent_ResponseReceived
+  commentId: E:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.ResponseReceived
+  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.ResponseReceived
+  nameWithType: SIPNonInviteClientUserAgent.ResponseReceived
+- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest(SIPSorcery.SIP.SIPMethodsEnum)
+  name: SendRequest(SIPMethodsEnum)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent_SendRequest_SIPSorcery_SIP_SIPMethodsEnum_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest(SIPSorcery.SIP.SIPMethodsEnum)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest(SIPSorcery.SIP.SIPMethodsEnum)
+  nameWithType: SIPNonInviteClientUserAgent.SendRequest(SIPMethodsEnum)
+- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest*
+  name: SendRequest
+  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent_SendRequest_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest
+  nameWithType: SIPNonInviteClientUserAgent.SendRequest
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent
+  name: SIPNonInviteServerUserAgent
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html
+  commentId: T:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent
+  nameWithType: SIPNonInviteServerUserAgent
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.App.ISIPAccount,SIPSorcery.SIP.SIPNonInviteTransaction)
+  name: SIPNonInviteServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, ISIPAccount, SIPNonInviteTransaction)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_SIPCallDirection_SIPSorcery_SIP_App_ISIPAccount_SIPSorcery_SIP_SIPNonInviteTransaction_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.App.ISIPAccount,SIPSorcery.SIP.SIPNonInviteTransaction)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPNonInviteServerUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, System.String, System.String, SIPSorcery.SIP.SIPCallDirection, SIPSorcery.SIP.App.ISIPAccount, SIPSorcery.SIP.SIPNonInviteTransaction)
+  nameWithType: SIPNonInviteServerUserAgent.SIPNonInviteServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, ISIPAccount, SIPNonInviteTransaction)
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.#ctor*
+  name: SIPNonInviteServerUserAgent
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent__ctor_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPNonInviteServerUserAgent
+  nameWithType: SIPNonInviteServerUserAgent.SIPNonInviteServerUserAgent
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
+  name: Answer(String, String, SIPDialogueTransferModesEnum)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
+  nameWithType: SIPNonInviteServerUserAgent.Answer(String, String, SIPDialogueTransferModesEnum)
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name: Answer(String, String, SIPDialogueTransferModesEnum, String[])
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name.vb: Answer(String, String, SIPDialogueTransferModesEnum, String())
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String())
+  nameWithType: SIPNonInviteServerUserAgent.Answer(String, String, SIPDialogueTransferModesEnum, String[])
+  nameWithType.vb: SIPNonInviteServerUserAgent.Answer(String, String, SIPDialogueTransferModesEnum, String())
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
+  name: Answer(String, String, String, SIPDialogueTransferModesEnum)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
+  nameWithType: SIPNonInviteServerUserAgent.Answer(String, String, String, SIPDialogueTransferModesEnum)
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name: Answer(String, String, String, SIPDialogueTransferModesEnum, String[])
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name.vb: Answer(String, String, String, SIPDialogueTransferModesEnum, String())
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String())
+  nameWithType: SIPNonInviteServerUserAgent.Answer(String, String, String, SIPDialogueTransferModesEnum, String[])
+  nameWithType.vb: SIPNonInviteServerUserAgent.Answer(String, String, String, SIPDialogueTransferModesEnum, String())
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer*
+  name: Answer
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Answer_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer
+  nameWithType: SIPNonInviteServerUserAgent.Answer
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
+  name: AnswerNonInvite(SIPResponseStatusCodesEnum, String, String[], String, String)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_AnswerNonInvite_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
+  name.vb: AnswerNonInvite(SIPResponseStatusCodesEnum, String, String(), String, String)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[], System.String, System.String)
+  fullName.vb: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String(), System.String, System.String)
+  nameWithType: SIPNonInviteServerUserAgent.AnswerNonInvite(SIPResponseStatusCodesEnum, String, String[], String, String)
+  nameWithType.vb: SIPNonInviteServerUserAgent.AnswerNonInvite(SIPResponseStatusCodesEnum, String, String(), String, String)
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite*
+  name: AnswerNonInvite
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_AnswerNonInvite_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite
+  nameWithType: SIPNonInviteServerUserAgent.AnswerNonInvite
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall
+  name: AuthenticateCall()
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_AuthenticateCall
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall()
+  nameWithType: SIPNonInviteServerUserAgent.AuthenticateCall()
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall*
+  name: AuthenticateCall
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_AuthenticateCall_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall
+  nameWithType: SIPNonInviteServerUserAgent.AuthenticateCall
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallCancelled
+  name: CallCancelled
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallCancelled
+  commentId: E:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallCancelled
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallCancelled
+  nameWithType: SIPNonInviteServerUserAgent.CallCancelled
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
+  name: CallDestination
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallDestination
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
+  nameWithType: SIPNonInviteServerUserAgent.CallDestination
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination*
+  name: CallDestination
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallDestination_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
+  nameWithType: SIPNonInviteServerUserAgent.CallDestination
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
+  name: CallDirection
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallDirection
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
+  nameWithType: SIPNonInviteServerUserAgent.CallDirection
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection*
+  name: CallDirection
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallDirection_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
+  nameWithType: SIPNonInviteServerUserAgent.CallDirection
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
+  name: CallRequest
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallRequest
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
+  nameWithType: SIPNonInviteServerUserAgent.CallRequest
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest*
+  name: CallRequest
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallRequest_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
+  nameWithType: SIPNonInviteServerUserAgent.CallRequest
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.ClientTransaction
+  name: ClientTransaction
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_ClientTransaction
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.ClientTransaction
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.ClientTransaction
+  nameWithType: SIPNonInviteServerUserAgent.ClientTransaction
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.ClientTransaction*
+  name: ClientTransaction
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_ClientTransaction_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.ClientTransaction
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.ClientTransaction
+  nameWithType: SIPNonInviteServerUserAgent.ClientTransaction
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
+  name: IsAuthenticated
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsAuthenticated
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
+  nameWithType: SIPNonInviteServerUserAgent.IsAuthenticated
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated*
+  name: IsAuthenticated
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsAuthenticated_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
+  nameWithType: SIPNonInviteServerUserAgent.IsAuthenticated
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
+  name: IsB2B
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsB2B
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
+  nameWithType: SIPNonInviteServerUserAgent.IsB2B
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B*
+  name: IsB2B
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsB2B_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
+  nameWithType: SIPNonInviteServerUserAgent.IsB2B
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
+  name: IsInvite
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsInvite
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
+  nameWithType: SIPNonInviteServerUserAgent.IsInvite
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite*
+  name: IsInvite
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsInvite_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
+  nameWithType: SIPNonInviteServerUserAgent.IsInvite
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
+  name: IsUASAnswered
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsUASAnswered
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
+  nameWithType: SIPNonInviteServerUserAgent.IsUASAnswered
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered*
+  name: IsUASAnswered
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsUASAnswered_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
+  nameWithType: SIPNonInviteServerUserAgent.IsUASAnswered
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR
+  name: NoCDR()
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_NoCDR
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR()
+  nameWithType: SIPNonInviteServerUserAgent.NoCDR()
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR*
+  name: NoCDR
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_NoCDR_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR
+  nameWithType: SIPNonInviteServerUserAgent.NoCDR
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoRingTimeout
+  name: NoRingTimeout
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_NoRingTimeout
+  commentId: E:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoRingTimeout
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoRingTimeout
+  nameWithType: SIPNonInviteServerUserAgent.NoRingTimeout
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
+  name: Progress(SIPResponseStatusCodesEnum, String, String[], String, String)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Progress_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
+  name.vb: Progress(SIPResponseStatusCodesEnum, String, String(), String, String)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[], System.String, System.String)
+  fullName.vb: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String(), System.String, System.String)
+  nameWithType: SIPNonInviteServerUserAgent.Progress(SIPResponseStatusCodesEnum, String, String[], String, String)
+  nameWithType.vb: SIPNonInviteServerUserAgent.Progress(SIPResponseStatusCodesEnum, String, String(), String, String)
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress*
+  name: Progress
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Progress_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress
+  nameWithType: SIPNonInviteServerUserAgent.Progress
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
+  name: Redirect(SIPResponseStatusCodesEnum, SIPURI)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI)
+  nameWithType: SIPNonInviteServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI)
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI,System.String[])
+  name: Redirect(SIPResponseStatusCodesEnum, SIPURI, String[])
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_System_String___
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI,System.String[])
+  name.vb: Redirect(SIPResponseStatusCodesEnum, SIPURI, String())
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI, System.String())
+  nameWithType: SIPNonInviteServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI, String[])
+  nameWithType.vb: SIPNonInviteServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI, String())
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect*
+  name: Redirect
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Redirect_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect
+  nameWithType: SIPNonInviteServerUserAgent.Redirect
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
+  name: Reject(SIPResponseStatusCodesEnum, String)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String)
+  nameWithType: SIPNonInviteServerUserAgent.Reject(SIPResponseStatusCodesEnum, String)
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
+  name: Reject(SIPResponseStatusCodesEnum, String, String[])
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
+  name.vb: Reject(SIPResponseStatusCodesEnum, String, String())
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String())
+  nameWithType: SIPNonInviteServerUserAgent.Reject(SIPResponseStatusCodesEnum, String, String[])
+  nameWithType.vb: SIPNonInviteServerUserAgent.Reject(SIPResponseStatusCodesEnum, String, String())
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject*
+  name: Reject
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Reject_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject
+  nameWithType: SIPNonInviteServerUserAgent.Reject
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
+  name: SIPAccount
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SIPAccount
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
+  nameWithType: SIPNonInviteServerUserAgent.SIPAccount
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount*
+  name: SIPAccount
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SIPAccount_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
+  nameWithType: SIPNonInviteServerUserAgent.SIPAccount
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
+  name: SIPDialogue
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SIPDialogue
+  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
+  nameWithType: SIPNonInviteServerUserAgent.SIPDialogue
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue*
+  name: SIPDialogue
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SIPDialogue_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
+  nameWithType: SIPNonInviteServerUserAgent.SIPDialogue
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.TransactionComplete
+  name: TransactionComplete
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_TransactionComplete
+  commentId: E:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.TransactionComplete
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.TransactionComplete
+  nameWithType: SIPNonInviteServerUserAgent.TransactionComplete
 - uid: SIPSorcery.SIP.App.SIPNotifierClient`1
   name: SIPNotifierClient<T>
   href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html
