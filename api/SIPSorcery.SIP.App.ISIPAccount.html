@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Class ISIPAccount
+    <title>Interface ISIPAccount
    </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Class ISIPAccount
+    <meta name="title" content="Interface ISIPAccount
    ">
     <meta name="generator" content="docfx 2.56.6.0">
     
@@ -71,44 +71,15 @@
             <article class="content wrap" id="_content" data-uid="SIPSorcery.SIP.App.ISIPAccount">
   
   
-  <h1 id="SIPSorcery_SIP_App_ISIPAccount" data-uid="SIPSorcery.SIP.App.ISIPAccount" class="text-break">Class ISIPAccount
+  <h1 id="SIPSorcery_SIP_App_ISIPAccount" data-uid="SIPSorcery.SIP.App.ISIPAccount" class="text-break">Interface ISIPAccount
   </h1>
   <div class="markdown level0 summary"></div>
   <div class="markdown level0 conceptual"></div>
-  <div class="inheritance">
-    <h5>Inheritance</h5>
-    <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">ISIPAccount</span></div>
-  </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
-  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.App.html">SIPSorcery.SIP.App</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_App_ISIPAccount_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class ISIPAccount</code></pre>
+    <pre><code class="lang-csharp hljs">public interface ISIPAccount</code></pre>
   </div>
   <h5 id="SIPSorcery_SIP_App_ISIPAccount_remarks"><strong>Remarks</strong></h5>
   <div class="markdown level0 remarks"><p>SIP account usernames can be treated by some SIP Sorcery server agents as domain name like structures where a username of
@@ -131,7 +102,7 @@ in them but will prevent a different user from being able to hijack an &quot;x.u
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Guid ID { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">Guid ID { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -150,36 +121,6 @@ in them but will prevent a different user from being able to hijack an &quot;x.u
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_ISIPAccount_IPAddressACL.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.ISIPAccount.IPAddressACL%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/ISIPAccount.cs/#L37">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_App_ISIPAccount_IPAddressACL_" data-uid="SIPSorcery.SIP.App.ISIPAccount.IPAddressACL*"></a>
-  <h4 id="SIPSorcery_SIP_App_ISIPAccount_IPAddressACL" data-uid="SIPSorcery.SIP.App.ISIPAccount.IPAddressACL">IPAddressACL</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string IPAddressACL { get; set; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_ISIPAccount_IsDisabled.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.ISIPAccount.IsDisabled%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
@@ -191,7 +132,7 @@ in them but will prevent a different user from being able to hijack an &quot;x.u
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public bool IsDisabled { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">bool IsDisabled { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -221,7 +162,7 @@ in them but will prevent a different user from being able to hijack an &quot;x.u
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string SIPDomain { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">string SIPDomain { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -251,7 +192,7 @@ in them but will prevent a different user from being able to hijack an &quot;x.u
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string SIPPassword { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">string SIPPassword { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -281,7 +222,7 @@ in them but will prevent a different user from being able to hijack an &quot;x.u
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string SIPUsername { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">string SIPUsername { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">

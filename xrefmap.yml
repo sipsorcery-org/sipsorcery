@@ -24987,19 +24987,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.ISIPAccount.ID
   nameWithType: ISIPAccount.ID
-- uid: SIPSorcery.SIP.App.ISIPAccount.IPAddressACL
-  name: IPAddressACL
-  href: api/SIPSorcery.SIP.App.ISIPAccount.html#SIPSorcery_SIP_App_ISIPAccount_IPAddressACL
-  commentId: P:SIPSorcery.SIP.App.ISIPAccount.IPAddressACL
-  fullName: SIPSorcery.SIP.App.ISIPAccount.IPAddressACL
-  nameWithType: ISIPAccount.IPAddressACL
-- uid: SIPSorcery.SIP.App.ISIPAccount.IPAddressACL*
-  name: IPAddressACL
-  href: api/SIPSorcery.SIP.App.ISIPAccount.html#SIPSorcery_SIP_App_ISIPAccount_IPAddressACL_
-  commentId: Overload:SIPSorcery.SIP.App.ISIPAccount.IPAddressACL
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.ISIPAccount.IPAddressACL
-  nameWithType: ISIPAccount.IPAddressACL
 - uid: SIPSorcery.SIP.App.ISIPAccount.IsDisabled
   name: IsDisabled
   href: api/SIPSorcery.SIP.App.ISIPAccount.html#SIPSorcery_SIP_App_ISIPAccount_IsDisabled
