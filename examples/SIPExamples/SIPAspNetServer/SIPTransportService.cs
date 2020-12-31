@@ -35,14 +35,16 @@ namespace SIPAspNetServer
     {
         public const int DEFAULT_SIP_LISTEN_PORT = 5060;
         public const int MAX_REGISTRAR_BINDINGS = 10;
+        public const int REGISTRAR_CORE_WORKER_THREADS = 1;
+        public const int B2BUA_CORE_WORKER_THREADS = 1;
 
         private readonly ILogger<SIPTransportService> Logger;
         private readonly IConfiguration Configuration;
-        //private readonly SIPAssetsContext SIPAssetsCtx;
 
         private SIPTransport _sipTransport;
         private RegistrarCore _registrarCore;
         private SIPRegistrarBindingsManager _bindingsManager;
+        private SIPB2BUserAgentCore _b2bUserAgentCore;
 
         public SIPTransportService(ILogger<SIPTransportService> logger, IConfiguration config)
         {
@@ -52,6 +54,7 @@ namespace SIPAspNetServer
             _sipTransport = new SIPTransport();
             _bindingsManager = new SIPRegistrarBindingsManager(MAX_REGISTRAR_BINDINGS);
             _registrarCore = new RegistrarCore(_sipTransport, false, false);
+            _b2bUserAgentCore = new SIPB2BUserAgentCore(_sipTransport);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -67,7 +70,8 @@ namespace SIPAspNetServer
             EnableTraceLogs(_sipTransport, true);
 
             _bindingsManager.Start();
-            _registrarCore.Start(1);
+            _registrarCore.Start(REGISTRAR_CORE_WORKER_THREADS);
+            _b2bUserAgentCore.Start(B2BUA_CORE_WORKER_THREADS);
 
             _sipTransport.SIPTransportRequestReceived += OnRequest;
 
@@ -78,6 +82,7 @@ namespace SIPAspNetServer
         {
             Logger.LogDebug("SIP hosted service stopping...");
 
+            _b2bUserAgentCore.Stop();
             _registrarCore.Stop = true;
             _bindingsManager.Stop();
 
@@ -100,60 +105,34 @@ namespace SIPAspNetServer
                 {
                     // This is an in-dialog request that will be handled directly by a user agent instance.
                 }
-                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
-                {
-                    Logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
-
-                    //SIPUserAgent ua = new SIPUserAgent(_sipTransport, null);
-                    //ua.OnCallHungup += OnHangup;
-                    //ua.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
-                    //ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
-                    //ua.OnRtpEvent += (evt, hdr) => Log.LogDebug($"rtp event {evt.EventID}, duration {evt.Duration}, end of event {evt.EndOfEvent}, timestamp {hdr.Timestamp}, marker {hdr.MarkerBit}.");
-                    //ua.OnTransactionTraceMessage += (tx, msg) => Log.LogDebug($"uas tx {tx.TransactionId}: {msg}");
-                    //ua.ServerCallRingTimeout += (uas) =>
-                    //{
-                    //    Log.LogWarning($"Incoming call timed out in {uas.ClientTransaction.TransactionState} state waiting for client ACK, terminating.");
-                    //    ua.Hangup();
-                    //};
-
-                    //var uas = ua.AcceptCall(sipRequest);
-                    //var rtpSession = CreateRtpSession(ua, sipRequest.URI.User);
-
-                    //// Insert a brief delay to allow testing of the "Ringing" progress response.
-                    //// Without the delay the call gets answered before it can be sent.
-                    //await Task.Delay(500);
-
-                    //await ua.Answer(uas, rtpSession);
-
-                    //if (ua.IsCallActive)
-                    //{
-                    //    await rtpSession.Start();
-                    //    _calls.TryAdd(ua.Dialogue.CallId, ua);
-                    //}
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.BYE)
-                {
-                    SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                    await _sipTransport.SendResponseAsync(byeResponse);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
-                {
-                    SIPResponse notAllowededResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    await _sipTransport.SendResponseAsync(notAllowededResponse);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.REGISTER)
-                {
-                    _registrarCore.AddRegisterRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
-                {
-                    SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await _sipTransport.SendResponseAsync(optionsResponse);
-                }
                 else
                 {
-                    var notAllowedResp = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    await _sipTransport.SendResponseAsync(notAllowedResp);
+                    switch(sipRequest.Method)
+                    {
+                        case SIPMethodsEnum.BYE:
+                            SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
+                            await _sipTransport.SendResponseAsync(byeResponse);
+                            break;
+
+                        case SIPMethodsEnum.INVITE:
+                            Logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
+                            _b2bUserAgentCore.AddInviteRequest(sipRequest);
+                            break;
+
+                        case SIPMethodsEnum.OPTIONS:
+                            SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                            await _sipTransport.SendResponseAsync(optionsResponse);
+                            break;
+
+                        case SIPMethodsEnum.REGISTER:
+                            _registrarCore.AddRegisterRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                            break;
+
+                        default:
+                            var notAllowedResp = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                            await _sipTransport.SendResponseAsync(notAllowedResp);
+                            break;
+                    }
                 }
             }
             catch (Exception reqExcp)
