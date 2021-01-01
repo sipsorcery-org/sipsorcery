@@ -20,11 +20,31 @@ namespace SIPAspNetServer.DataAccess
 {
     public class CDRDataLayer
     {
-        public CDR GetCDR(Guid id)
+        public CDR Get(Guid id)
         {
             using (var db = new SIPAssetsDbContext())
             {
                 return db.CDRs.Where(x => x.ID == id).FirstOrDefault();
+            }
+        }
+
+        public CDR Hangup(Guid id, string reason)
+        {
+            using (var db = new SIPAssetsDbContext())
+            {
+                var existing = db.CDRs.Where(x => x.ID == id).SingleOrDefault();
+
+                if (existing == null)
+                {
+                    throw new ApplicationException("The CDR to update could not be found.");
+                }
+
+                existing.HungupAt = DateTimeOffset.UtcNow;
+                existing.HungupReason = reason;
+
+                db.SaveChanges();
+
+                return existing;
             }
         }
     }

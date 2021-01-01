@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="SIPServers\SIPDialogueManager.cs" />
     <Compile Remove="SIPServers\SIPDomainManager.cs" />
   </ItemGroup>
 
