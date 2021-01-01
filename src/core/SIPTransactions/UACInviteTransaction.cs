@@ -333,16 +333,8 @@ namespace SIPSorcery.SIP
         /// <param name="cancelReason">The reason for cancelling the transaction.</param>
         public void CancelCall(string cancelReason = null)
         {
-            try
-            {
-                UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
-                CDR?.Cancelled(cancelReason);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception UACInviteTransaction CancelCall. " + excp.Message);
-                throw;
-            }
+            UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
+            CDR?.Cancelled(cancelReason);
         }
 
         /// <summary>
@@ -353,8 +345,8 @@ namespace SIPSorcery.SIP
         {
             m_sentPrack = true;
 
-           // PRACK requests create a new transaction and get routed based on SIP request fields.
-           var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI);
+            // PRACK requests create a new transaction and get routed based on SIP request fields.
+            var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI);
 
             prackRequest.Header.RAckRSeq = progressResponse.Header.RSeq;
             prackRequest.Header.RAckCSeq = progressResponse.Header.CSeq;

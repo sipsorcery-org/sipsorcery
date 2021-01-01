@@ -40,4 +40,56 @@ create table SIPRegistrarBindings
  Foreign Key(SIPAccountID) references SIPAccounts(ID) on delete cascade on update cascade,
 );
 
+create table CDR
+(
+ ID uniqueidentifier not null,
+ Inserted datetimeoffset not null,
+ Direction varchar(3) not null,					-- In or Out with respect to the proxy.
+ created datetimeoffset not null,				-- Time the cdr was created by the proxy.
+ DstUser varchar(128),							-- The user portion of the destination URI.
+ DstHost varchar(128) not null,					-- The host portion of the destination URI.
+ DstUri varchar(1024) not null,					-- The full destination URI.
+ FromUser varchar(128),							-- The user portion of the From header URI.
+ FromName varchar(128),							-- The name portion of the From header.
+ FromHeader varchar(1024),						-- The full From header.
+ CallID varchar(256) not null,					-- The Call-ID of the call.
+ LocalSocket varchar(64) not null,				-- The socket on the proxy used for the call.
+ RemoteSocket varchar(64) not null,				-- The remote socket used for the call.
+ BridgeID uniqueidentifier null,   			    -- If the call was involved in a bridge the id of it.
+ InProgressAt datetimeoffset null default null, -- The time of the last info response for the call.
+ InProgressStatus int,							-- The SIP response status code of the last info response for the call.
+ InProgressReason varchar(512),					-- The SIP response reason phrase of the last info response for the call.
+ RingDuration int,								-- Number of seconds the call was ringing for.
+ AnsweredAt datetimeoffset null default null,	-- The time the call was answered with a final response.
+ AnsweredStatus int,							-- The SIP response status code of the final response for the call.
+ AnsweredReason varchar(512),					-- The SIP response reason phrase of the final response for the call.
+ Duration int,									-- Number of seconds the call was established for.
+ HungupAt datetimeoffset null default null,	    -- The time the call was hungup.
+ HungupReason varchar(512),						-- The SIP response Reason header on the BYE request if present.
+ Primary Key(ID)
+);
+
+create table SIPDialogues
+(
+ ID uniqueidentifier not null,
+ CDRID uniqueidentifier null,
+ LocalTag varchar(64) not null,
+ RemoteTag varchar(64) not null,
+ CallID varchar(128) not null,
+ CSeq int not null,
+ BridgeID uniqueidentifier not null,
+ RemoteTarget varchar(256) not null,
+ LocalUserField varchar(512) not null,
+ RemoteUserField varchar(512) not null,
+ ProxySIPSocket varchar(64),
+ RouteSet varchar(512),
+ CallDurationLimit int,
+ Direction varchar(3) not null,					-- In or Out with respect to the proxy.
+ SDP varchar(4192),
+ RemoteSDP varchar(4192),
+ Inserted datetimeoffset not null,
+ Primary Key(ID),
+ Foreign Key(CDRID) references CDR(ID) on delete cascade on update cascade
+);
+
 commit;

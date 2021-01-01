@@ -11,7 +11,7 @@
 // 21 Jan 2006	Aaron Clauson	Created.
 // 22 Nov 2007  Aaron Clauson   Fixed bug where binding refresh was generating a 
 //                              duplicate exception if the uac endpoint changed but the contact did not.
-// 29 Dec 2020  Aaron Clauson   Added to server project.
+// 29 Dec 2020  Aaron Clauson   Modified for .NET Core and tailored For ASP.NET server project.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

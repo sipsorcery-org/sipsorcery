@@ -20,9 +20,21 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
 
 namespace SIPAspNetServer
 {
+    /// <summary>
+    /// This function type is to allow B2B user agents to lookup the forwarding destination
+    /// for an accepted User Agent Server (UAS) call leg. The intent is that functions
+    /// can implement a form of a dialplan and pass to the B2BUA core.
+    /// </summary>
+    /// <param name="uas">A User Agent Server (UAS) transaction that has been accepted
+    /// for forwarding.</param>
+    /// <returns>A call descriptor for the User Agent Client (UAC) call leg that will
+    /// be bridged to the UAS leg.</returns>
+    public delegate SIPCallDescriptor GetB2BDestinationDelegate(UASInviteTransaction uas);
+
     /// <summary>
     /// This class acts as a server agent that processes incoming calls (INVITE requests)
     /// by acting as a Back-to-Back User Agent (B2BUA). 
@@ -48,10 +60,21 @@ namespace SIPAspNetServer
         private bool _exit = false;
 
         private SIPTransport _sipTransport;
+        private GetB2BDestinationDelegate _getDestination;
 
-        public SIPB2BUserAgentCore(SIPTransport sipTransport)
+        public SIPB2BUserAgentCore(SIPTransport sipTransport, GetB2BDestinationDelegate getDestination)
         {
+            if(sipTransport == null)
+            {
+                throw new ArgumentNullException(nameof(sipTransport));
+            }
+            else if(getDestination == null)
+            {
+                throw new ArgumentNullException(nameof(getDestination));
+            }
+
             _sipTransport = sipTransport;
+            _getDestination = getDestination;
         }
 
         public void Start(int threadCount)
@@ -138,10 +161,24 @@ namespace SIPAspNetServer
             }
         }
 
-        private void Forward(UASInviteTransaction uasTransaction)
+        private void Forward(UASInviteTransaction uasTx)
         {
-            var notFoundResp = SIPResponse.GetResponse(uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.NotFound, null);
-            uasTransaction.SendFinalResponse(notFoundResp);
+            SIPB2BUserAgent b2bua = new SIPB2BUserAgent(_sipTransport, null, uasTx, null);
+
+            var dst = _getDestination(uasTx);
+
+            if (dst == null)
+            {
+                Logger.LogInformation($"B2BUA lookup did not return a destination. Rejecting UAS call.");
+
+                var notFoundResp = SIPResponse.GetResponse(uasTx.TransactionRequest, SIPResponseStatusCodesEnum.NotFound, null);
+                uasTx.SendFinalResponse(notFoundResp);
+            }
+            else
+            {
+                Logger.LogInformation($"B2BUA forwarding call to {dst.Uri}.");
+                b2bua.Call(dst);
+            }
         }
     }
 }
