@@ -37,12 +37,11 @@ namespace SIPSorcery.SIP.App
         private SIPTransport m_sipTransport;
 
         private SIPCallDescriptor m_sipCallDescriptor;              // Describes the server leg of the call from the sipswitch.
-        //private SIPEndPoint m_serverEndPoint;
         private UACInviteTransaction m_serverTransaction;
         private bool m_callCancelled;                               // It's possible for the call to be cancelled before the INVITE has been sent. This could occur if a DNS lookup on the server takes a while.
         private bool m_hungupOnCancel;                              // Set to true if a call has been cancelled AND and then an OK response was received AND a BYE has been sent to hang it up. This variable is used to stop another BYE transaction being generated.
         private int m_serverAuthAttempts;                           // Used to determine if credentials for a server leg call fail.
-        internal SIPNonInviteTransaction m_cancelTransaction;        // If the server call is cancelled this transaction contains the CANCEL in case it needs to be resent.
+        internal SIPNonInviteTransaction m_cancelTransaction;       // If the server call is cancelled this transaction contains the CANCEL in case it needs to be resent.
         private SIPEndPoint m_outboundProxy;                        // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
 
@@ -304,22 +303,6 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError("Exception CancelServerCall. " + excp.Message);
-            }
-        }
-
-        public void Update(CRMHeaders crmHeaders)
-        {
-            try
-            {
-                logger.LogDebug("Sending UPDATE to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".");
-
-                SIPRequest updateRequest = GetUpdateRequest(m_serverTransaction.TransactionRequest, crmHeaders);
-                SIPNonInviteTransaction updateTransaction = new SIPNonInviteTransaction(m_sipTransport, updateRequest, m_outboundProxy);
-                updateTransaction.SendRequest();
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPClientUserAgent Update. " + excp.Message);
             }
         }
 
@@ -673,12 +656,6 @@ namespace SIPSorcery.SIP.App
             }
 
             return updateRequest;
-        }
-
-        private SIPEndPoint GetRemoteTargetEndpoint()
-        {
-            SIPURI dstURI = (m_sipDialogue.RouteSet == null) ? m_sipDialogue.RemoteTarget : m_sipDialogue.RouteSet.TopRoute.URI;
-            return dstURI.ToSIPEndPoint();
         }
     }
 }

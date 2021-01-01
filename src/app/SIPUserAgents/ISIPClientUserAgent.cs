@@ -38,6 +38,5 @@ namespace SIPSorcery.SIP.App
         SIPRequest Call(SIPCallDescriptor sipCallDescriptor);
         SIPRequest Call(SIPCallDescriptor sipCallDescriptor, SIPEndPoint serverEndPoint);
         void Cancel();
-        void Update(CRMHeaders crmHeaders);
     }
 }

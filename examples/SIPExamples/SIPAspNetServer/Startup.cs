@@ -38,8 +38,8 @@ namespace SIPAspNetServer
         {
             services.AddLogging();
             services.AddDbContext<SIPAssetsDbContext>();
-            services.AddSingleton(typeof(SIPTransportService));
-            services.AddHostedService<SIPTransportService>();
+            services.AddSingleton(typeof(SIPHostedService));
+            services.AddHostedService<SIPHostedService>();
             services.AddControllers()
                 .AddNewtonsoftJson(options =>
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore

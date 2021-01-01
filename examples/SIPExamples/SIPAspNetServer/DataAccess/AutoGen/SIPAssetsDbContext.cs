@@ -17,7 +17,9 @@ namespace SIPAspNetServer.DataAccess
         {
         }
 
+        public virtual DbSet<CDR> CDRs { get; set; }
         public virtual DbSet<SIPAccount> SIPAccounts { get; set; }
+        public virtual DbSet<SIPDialogue> SIPDialogues { get; set; }
         public virtual DbSet<SIPDomain> SIPDomains { get; set; }
         public virtual DbSet<SIPRegistrarBinding> SIPRegistrarBindings { get; set; }
 
@@ -33,6 +35,71 @@ namespace SIPAspNetServer.DataAccess
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "Latin1_General_CI_AS");
+
+            modelBuilder.Entity<CDR>(entity =>
+            {
+                entity.ToTable("CDR");
+
+                entity.Property(e => e.ID).ValueGeneratedNever();
+
+                entity.Property(e => e.AnsweredReason)
+                    .HasMaxLength(512)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CallID)
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Direction)
+                    .IsRequired()
+                    .HasMaxLength(3)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.DstHost)
+                    .IsRequired()
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.DstUri)
+                    .IsRequired()
+                    .HasMaxLength(1024)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.DstUser)
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.FromHeader)
+                    .HasMaxLength(1024)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.FromName)
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.FromUser)
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.HungupReason)
+                    .HasMaxLength(512)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.InProgressReason)
+                    .HasMaxLength(512)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LocalSocket)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RemoteSocket)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+            });
 
             modelBuilder.Entity<SIPAccount>(entity =>
             {
@@ -55,6 +122,68 @@ namespace SIPAspNetServer.DataAccess
                     .WithMany(p => p.SIPAccounts)
                     .HasForeignKey(d => d.DomainID)
                     .HasConstraintName("FK__SIPAccoun__Domai__1AD3FDA4");
+            });
+
+            modelBuilder.Entity<SIPDialogue>(entity =>
+            {
+                entity.Property(e => e.ID).ValueGeneratedNever();
+
+                entity.Property(e => e.CallID)
+                    .IsRequired()
+                    .HasMaxLength(128)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Direction)
+                    .IsRequired()
+                    .HasMaxLength(3)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LocalTag)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LocalUserField)
+                    .IsRequired()
+                    .HasMaxLength(512)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ProxySIPSocket)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RemoteSDP)
+                    .HasMaxLength(4192)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RemoteTag)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RemoteTarget)
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RemoteUserField)
+                    .IsRequired()
+                    .HasMaxLength(512)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RouteSet)
+                    .HasMaxLength(512)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.SDP)
+                    .HasMaxLength(4192)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.CDR)
+                    .WithMany(p => p.SIPDialogues)
+                    .HasForeignKey(d => d.CDRID)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK__SIPDialog__CDRID__25518C17");
             });
 
             modelBuilder.Entity<SIPDomain>(entity =>

@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SIPTransportService.cs
+// Filename: SIPHostedService.cs
 //
 // Description: This class is designed to act as a singleton in an ASP.Net
-// server application to manage the SIP transport. 
+// server application to manage the SIP transport and server cores. 
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -23,7 +23,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
-using SIPAspNetServer.DataAccess;
+using SIPSorcery.SIP.App;
 
 namespace SIPAspNetServer
 {
@@ -31,14 +31,14 @@ namespace SIPAspNetServer
     /// A hosted service to manage a SIP transport layer. This class is designed to be a long running
     /// singleton. Once created the SIP transport channels listen for incoming messages.
     /// </summary>
-    public class SIPTransportService : IHostedService
+    public class SIPHostedService : IHostedService
     {
         public const int DEFAULT_SIP_LISTEN_PORT = 5060;
         public const int MAX_REGISTRAR_BINDINGS = 10;
         public const int REGISTRAR_CORE_WORKER_THREADS = 1;
         public const int B2BUA_CORE_WORKER_THREADS = 1;
 
-        private readonly ILogger<SIPTransportService> Logger;
+        private readonly ILogger<SIPHostedService> Logger;
         private readonly IConfiguration Configuration;
 
         private SIPTransport _sipTransport;
@@ -46,7 +46,25 @@ namespace SIPAspNetServer
         private SIPRegistrarBindingsManager _bindingsManager;
         private SIPB2BUserAgentCore _b2bUserAgentCore;
 
-        public SIPTransportService(ILogger<SIPTransportService> logger, IConfiguration config)
+        /// <summary>
+        /// Dialplan for the B2B core.
+        /// </summary>
+        private static GetB2BDestinationDelegate _getB2BDestination = (uasTx) =>
+        {
+            var inUri = uasTx.TransactionRequestURI;
+
+            switch (inUri.User)
+            {
+                case "123":
+                    return new SIPCallDescriptor("time@sipsorcery.com", uasTx.TransactionRequest.Body);
+                case "456":
+                    return new SIPCallDescriptor("idontexist@sipsorcery.com", uasTx.TransactionRequest.Body);
+                default:
+                    return null;
+            }   
+        };
+
+        public SIPHostedService(ILogger<SIPHostedService> logger, IConfiguration config)
         {
             Logger = logger;
             Configuration = config;
@@ -54,7 +72,7 @@ namespace SIPAspNetServer
             _sipTransport = new SIPTransport();
             _bindingsManager = new SIPRegistrarBindingsManager(MAX_REGISTRAR_BINDINGS);
             _registrarCore = new RegistrarCore(_sipTransport, false, false);
-            _b2bUserAgentCore = new SIPB2BUserAgentCore(_sipTransport);
+            _b2bUserAgentCore = new SIPB2BUserAgentCore(_sipTransport, _getB2BDestination);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -110,6 +128,7 @@ namespace SIPAspNetServer
                     switch(sipRequest.Method)
                     {
                         case SIPMethodsEnum.BYE:
+                        case SIPMethodsEnum.CANCEL:
                             SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
                             await _sipTransport.SendResponseAsync(byeResponse);
                             break;
