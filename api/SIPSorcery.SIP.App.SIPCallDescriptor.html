@@ -117,11 +117,12 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor__ctor_SIPSorcery_SIP_App_ISIPAccount_System_String_System_String_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.%23ctor(SIPSorcery.SIP.App.ISIPAccount%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L158">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L160">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPCallDescriptor__ctor_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor__ctor_SIPSorcery_SIP_App_ISIPAccount_System_String_System_String_System_String_System_String_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(SIPSorcery.SIP.App.ISIPAccount,System.String,System.String,System.String,System.String)">SIPCallDescriptor(ISIPAccount, String, String, String, String)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>This constructor is for calls to a SIP account that the application recognises as belonging to it.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -140,7 +141,8 @@
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.App.ISIPAccount.html">ISIPAccount</a></td>
         <td><span class="parametername">toSIPAccount</span></td>
-        <td></td>
+        <td><p>The destination SP account for teh call.</p>
+</td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
@@ -168,10 +170,52 @@ example 1234.user@sipsorcery.com.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.%23ctor(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L176">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPCallDescriptor__ctor_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.#ctor*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String)">SIPCallDescriptor(String, String)</h4>
+  <div class="markdown level1 summary"><p>This constructor is for non-authenticated calls that do not require any custom
+headers etc.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPCallDescriptor(string dstUri, string sdp)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">dstUri</span></td>
+        <td><p>The destination URI to place the call to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">sdp</span></td>
+        <td><p>The Session Description Protocol (SDP) body to use in the call request.
+Can be empty if the remote party supports SDP answers via ACK requests.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_System_String_System_String_System_String_System_Int32_System_String_System_String_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.%23ctor(System.String%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.Int32%2CSystem.String%2CSystem.String%2CSystem.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L195">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L220">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPCallDescriptor__ctor_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_System_String_System_String_System_String_System_Int32_System_String_System_String_System_Net_IPAddress_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.Int32,System.String,System.String,System.Net.IPAddress)">SIPCallDescriptor(String, String, String, String, String, Int32, String, String, IPAddress)</h4>
@@ -243,7 +287,7 @@ example 1234.user@sipsorcery.com.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_System_String_System_String_System_String_System_String_System_Collections_Generic_List_System_String__System_String_SIPSorcery_SIP_SIPCallDirection_System_String_System_String_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.%23ctor(System.String%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.Collections.Generic.List%7BSystem.String%7D%2CSystem.String%2CSIPSorcery.SIP.SIPCallDirection%2CSystem.String%2CSystem.String%2CSystem.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L167">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L192">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPCallDescriptor__ctor_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_System_String_System_String_System_String_System_String_System_Collections_Generic_List_System_String__System_String_SIPSorcery_SIP_SIPCallDirection_System_String_System_String_System_Net_IPAddress_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.Collections.Generic.List{System.String},System.String,SIPSorcery.SIP.SIPCallDirection,System.String,System.String,System.Net.IPAddress)">SIPCallDescriptor(String, String, String, String, String, String, List&lt;String&gt;, String, SIPCallDirection, String, String, IPAddress)</h4>
@@ -332,7 +376,7 @@ example 1234.user@sipsorcery.com.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_ACCOUNT_CODE_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.ACCOUNT_CODE_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L71">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L72">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_ACCOUNT_CODE_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.ACCOUNT_CODE_KEY">ACCOUNT_CODE_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -361,7 +405,7 @@ example 1234.user@sipsorcery.com.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_AccountCode.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.AccountCode%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L134">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L136">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_AccountCode" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.AccountCode">AccountCode</h4>
   <div class="markdown level1 summary"></div>
@@ -390,7 +434,7 @@ example 1234.user@sipsorcery.com.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_AuthUsername.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.AuthUsername%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L87">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L89">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_AuthUsername" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.AuthUsername">AuthUsername</h4>
   <div class="markdown level1 summary"></div>
@@ -419,7 +463,7 @@ example 1234.user@sipsorcery.com.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_BranchId.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.BranchId%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L131">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L133">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_BranchId" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.BranchId">BranchId</h4>
   <div class="markdown level1 summary"><p>A string representing the Branch part of the SIP-VIA header to identify Call-Requests and Call-Responses
@@ -457,7 +501,7 @@ or for testing purposes</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CALL_DURATION_OPTION_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CALL_DURATION_OPTION_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L64">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L65">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CALL_DURATION_OPTION_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CALL_DURATION_OPTION_KEY">CALL_DURATION_OPTION_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -486,7 +530,7 @@ or for testing purposes</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CallbackNumber.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CallbackNumber%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L141">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L143">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CallbackNumber" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CallbackNumber">CallbackNumber</h4>
   <div class="markdown level1 summary"></div>
@@ -515,7 +559,7 @@ or for testing purposes</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CallbackPattern.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CallbackPattern%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L142">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L144">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CallbackPattern" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CallbackPattern">CallbackPattern</h4>
   <div class="markdown level1 summary"></div>
@@ -544,7 +588,7 @@ or for testing purposes</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CallbackPhoneType.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CallbackPhoneType%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L143">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L145">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CallbackPhoneType" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CallbackPhoneType">CallbackPhoneType</h4>
   <div class="markdown level1 summary"></div>
@@ -573,7 +617,7 @@ or for testing purposes</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CallDirection.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CallDirection%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L95">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L97">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CallDirection" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CallDirection">CallDirection</h4>
   <div class="markdown level1 summary"></div>
@@ -602,7 +646,7 @@ or for testing purposes</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CallDurationLimit.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CallDurationLimit%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L100">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L102">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CallDurationLimit" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CallDurationLimit">CallDurationLimit</h4>
   <div class="markdown level1 summary"></div>
@@ -631,7 +675,7 @@ or for testing purposes</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CallId.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CallId%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L118">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L120">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CallId" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CallId">CallId</h4>
   <div class="markdown level1 summary"><p>A string representing the Call Identifier
@@ -663,7 +707,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_Content.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.Content%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L97">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L99">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_Content" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.Content">Content</h4>
   <div class="markdown level1 summary"></div>
@@ -692,7 +736,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_ContentType.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.ContentType%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L96">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L98">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_ContentType" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.ContentType">ContentType</h4>
   <div class="markdown level1 summary"></div>
@@ -721,7 +765,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CRMHeaders.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CRMHeaders%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L137">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L139">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CRMHeaders" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CRMHeaders">CRMHeaders</h4>
   <div class="markdown level1 summary"></div>
@@ -750,7 +794,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CustomHeaders.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CustomHeaders%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L94">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L96">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CustomHeaders" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CustomHeaders">CustomHeaders</h4>
   <div class="markdown level1 summary"></div>
@@ -779,7 +823,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_DELAY_CALL_OPTION_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.DELAY_CALL_OPTION_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L62">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L63">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_DELAY_CALL_OPTION_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.DELAY_CALL_OPTION_KEY">DELAY_CALL_OPTION_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -808,7 +852,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_DELAYED_REINVITE_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.DELAYED_REINVITE_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L73">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L74">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_DELAYED_REINVITE_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.DELAYED_REINVITE_KEY">DELAYED_REINVITE_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -837,7 +881,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_DelayMRE.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.DelayMRE%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L147">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L149">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_DelayMRE" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.DelayMRE">DelayMRE</h4>
   <div class="markdown level1 summary"></div>
@@ -866,7 +910,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_DelaySeconds.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.DelaySeconds%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L98">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L100">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_DelaySeconds" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.DelaySeconds">DelaySeconds</h4>
   <div class="markdown level1 summary"></div>
@@ -895,7 +939,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_DialPlanContextID.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.DialPlanContextID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L108">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L110">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_DialPlanContextID" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.DialPlanContextID">DialPlanContextID</h4>
   <div class="markdown level1 summary"></div>
@@ -924,7 +968,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_From.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.From%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L90">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L92">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_From" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.From">From</h4>
   <div class="markdown level1 summary"></div>
@@ -953,7 +997,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_FROM_DISPLAY_NAME_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.FROM_DISPLAY_NAME_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L66">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L67">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_FROM_DISPLAY_NAME_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.FROM_DISPLAY_NAME_KEY">FROM_DISPLAY_NAME_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -982,7 +1026,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_FROM_HOST_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.FROM_HOST_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L68">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L69">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_FROM_HOST_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.FROM_HOST_KEY">FROM_HOST_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -1011,7 +1055,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_FROM_USERNAME_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.FROM_USERNAME_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L67">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L68">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_FROM_USERNAME_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.FROM_USERNAME_KEY">FROM_USERNAME_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -1040,7 +1084,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_FromDisplayName.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.FromDisplayName%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L103">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L105">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_FromDisplayName" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.FromDisplayName">FromDisplayName</h4>
   <div class="markdown level1 summary"></div>
@@ -1069,7 +1113,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_FromURIHost.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.FromURIHost%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L105">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L107">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_FromURIHost" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.FromURIHost">FromURIHost</h4>
   <div class="markdown level1 summary"></div>
@@ -1098,7 +1142,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_FromURIUsername.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.FromURIUsername%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L104">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L106">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_FromURIUsername" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.FromURIUsername">FromURIUsername</h4>
   <div class="markdown level1 summary"></div>
@@ -1127,7 +1171,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_IsGoogleVoiceCall.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.IsGoogleVoiceCall%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L140">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L142">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_IsGoogleVoiceCall" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.IsGoogleVoiceCall">IsGoogleVoiceCall</h4>
   <div class="markdown level1 summary"></div>
@@ -1156,7 +1200,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_MANGLE_MODE_OPTION_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.MANGLE_MODE_OPTION_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L65">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L66">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_MANGLE_MODE_OPTION_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.MANGLE_MODE_OPTION_KEY">MANGLE_MODE_OPTION_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -1185,7 +1229,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_MangleIPAddress.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.MangleIPAddress%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L102">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L104">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_MangleIPAddress" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.MangleIPAddress">MangleIPAddress</h4>
   <div class="markdown level1 summary"></div>
@@ -1214,7 +1258,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_MangleResponseSDP.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.MangleResponseSDP%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L101">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L103">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_MangleResponseSDP" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.MangleResponseSDP">MangleResponseSDP</h4>
   <div class="markdown level1 summary"></div>
@@ -1243,7 +1287,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_Password.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.Password%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L88">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L90">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_Password" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.Password">Password</h4>
   <div class="markdown level1 summary"></div>
@@ -1272,7 +1316,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_ProxySendFrom.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.ProxySendFrom%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L93">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L95">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_ProxySendFrom" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.ProxySendFrom">ProxySendFrom</h4>
   <div class="markdown level1 summary"></div>
@@ -1301,7 +1345,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_RATE_CODE_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.RATE_CODE_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L72">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L73">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_RATE_CODE_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.RATE_CODE_KEY">RATE_CODE_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -1330,7 +1374,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_RateCode.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.RateCode%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L135">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L137">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_RateCode" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.RateCode">RateCode</h4>
   <div class="markdown level1 summary"></div>
@@ -1359,7 +1403,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_REDIRECT_MODE_OPTION_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.REDIRECT_MODE_OPTION_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L63">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L64">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_REDIRECT_MODE_OPTION_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.REDIRECT_MODE_OPTION_KEY">REDIRECT_MODE_OPTION_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -1388,7 +1432,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_RedirectMode.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.RedirectMode%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L99">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L101">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_RedirectMode" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.RedirectMode">RedirectMode</h4>
   <div class="markdown level1 summary"></div>
@@ -1417,7 +1461,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_ReinviteDelay.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.ReinviteDelay%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L109">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L111">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_ReinviteDelay" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.ReinviteDelay">ReinviteDelay</h4>
   <div class="markdown level1 summary"></div>
@@ -1446,7 +1490,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_REQUEST_CALLER_DETAILS.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.REQUEST_CALLER_DETAILS%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L70">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L71">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_REQUEST_CALLER_DETAILS" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.REQUEST_CALLER_DETAILS">REQUEST_CALLER_DETAILS</h4>
   <div class="markdown level1 summary"></div>
@@ -1475,7 +1519,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_RequestCallerDetails.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.RequestCallerDetails%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L107">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L109">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_RequestCallerDetails" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.RequestCallerDetails">RequestCallerDetails</h4>
   <div class="markdown level1 summary"></div>
@@ -1504,7 +1548,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_RouteSet.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.RouteSet%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L92">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L94">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_RouteSet" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.RouteSet">RouteSet</h4>
   <div class="markdown level1 summary"></div>
@@ -1533,7 +1577,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_SWITCHBOARD_CALLID_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.SWITCHBOARD_CALLID_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L78">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L79">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_SWITCHBOARD_CALLID_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.SWITCHBOARD_CALLID_KEY">SWITCHBOARD_CALLID_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -1562,7 +1606,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_SWITCHBOARD_LINE_NAME_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.SWITCHBOARD_LINE_NAME_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L76">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L77">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_SWITCHBOARD_LINE_NAME_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.SWITCHBOARD_LINE_NAME_KEY">SWITCHBOARD_LINE_NAME_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -1591,7 +1635,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_SWITCHBOARD_OWNER_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.SWITCHBOARD_OWNER_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L79">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L80">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_SWITCHBOARD_OWNER_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.SWITCHBOARD_OWNER_KEY">SWITCHBOARD_OWNER_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -1620,7 +1664,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_To.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.To%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L91">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L93">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_To" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.To">To</h4>
   <div class="markdown level1 summary"></div>
@@ -1649,7 +1693,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_ToSIPAccount.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.ToSIPAccount%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L145">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L147">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_ToSIPAccount" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.ToSIPAccount">ToSIPAccount</h4>
   <div class="markdown level1 summary"></div>
@@ -1678,7 +1722,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_TRANSFER_MODE_OPTION_KEY.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.TRANSFER_MODE_OPTION_KEY%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L69">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L70">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_TRANSFER_MODE_OPTION_KEY" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.TRANSFER_MODE_OPTION_KEY">TRANSFER_MODE_OPTION_KEY</h4>
   <div class="markdown level1 summary"></div>
@@ -1707,7 +1751,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_TransferMode.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.TransferMode%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L106">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L108">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_TransferMode" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.TransferMode">TransferMode</h4>
   <div class="markdown level1 summary"></div>
@@ -1736,7 +1780,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_Uri.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.Uri%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L89">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L91">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_Uri" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.Uri">Uri</h4>
   <div class="markdown level1 summary"></div>
@@ -1765,7 +1809,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_Username.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.Username%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L86">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L88">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_Username" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.Username">Username</h4>
   <div class="markdown level1 summary"></div>
@@ -1796,7 +1840,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_CopyOf.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.CopyOf%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L467">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L482">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPCallDescriptor_CopyOf_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CopyOf*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_CopyOf" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.CopyOf">CopyOf()</h4>
@@ -1826,7 +1870,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_GetFromHeader.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.GetFromHeader%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L218">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L243">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPCallDescriptor_GetFromHeader_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.GetFromHeader*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_GetFromHeader" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.GetFromHeader">GetFromHeader()</h4>
@@ -1856,7 +1900,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_ParseCallOptions_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.ParseCallOptions(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L272">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L287">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPCallDescriptor_ParseCallOptions_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.ParseCallOptions*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_ParseCallOptions_System_String_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.ParseCallOptions(System.String)">ParseCallOptions(String)</h4>
@@ -1888,7 +1932,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_ParseCustomHeaders_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.ParseCustomHeaders(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L416">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L431">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPCallDescriptor_ParseCustomHeaders_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.ParseCustomHeaders*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_ParseCustomHeaders_System_String_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.ParseCustomHeaders(System.String)">ParseCustomHeaders(String)</h4>
@@ -1935,7 +1979,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor_SetGeneralFromHeaderFields_System_String_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor.SetGeneralFromHeaderFields(System.String%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L254">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L269">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPCallDescriptor_SetGeneralFromHeaderFields_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.SetGeneralFromHeaderFields*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPCallDescriptor_SetGeneralFromHeaderFields_System_String_System_String_System_String_" data-uid="SIPSorcery.SIP.App.SIPCallDescriptor.SetGeneralFromHeaderFields(System.String,System.String,System.String)">SetGeneralFromHeaderFields(String, String, String)</h4>
@@ -1988,7 +2032,7 @@ defaults to <a class="xref" href="SIPSorcery.SIP.CallProperties.html#SIPSorcery_
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPCallDescriptor.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPCallDescriptor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L57" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPCallDescriptor.cs/#L58" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
