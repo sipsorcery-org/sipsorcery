@@ -19,7 +19,7 @@ namespace SIPAspNetServer.DataAccess
 
         public virtual DbSet<CDR> CDRs { get; set; }
         public virtual DbSet<SIPAccount> SIPAccounts { get; set; }
-        public virtual DbSet<SIPDialogue> SIPDialogues { get; set; }
+        public virtual DbSet<SIPDialog> SIPDialogs { get; set; }
         public virtual DbSet<SIPDomain> SIPDomains { get; set; }
         public virtual DbSet<SIPRegistrarBinding> SIPRegistrarBindings { get; set; }
 
@@ -124,7 +124,7 @@ namespace SIPAspNetServer.DataAccess
                     .HasConstraintName("FK__SIPAccoun__Domai__1AD3FDA4");
             });
 
-            modelBuilder.Entity<SIPDialogue>(entity =>
+            modelBuilder.Entity<SIPDialog>(entity =>
             {
                 entity.Property(e => e.ID).ValueGeneratedNever();
 
@@ -180,10 +180,10 @@ namespace SIPAspNetServer.DataAccess
                     .IsUnicode(false);
 
                 entity.HasOne(d => d.CDR)
-                    .WithMany(p => p.SIPDialogues)
+                    .WithMany(p => p.SIPDialogs)
                     .HasForeignKey(d => d.CDRID)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__SIPDialog__CDRID__25518C17");
+                    .HasConstraintName("FK__SIPDialog__CDRID__282DF8C2");
             });
 
             modelBuilder.Entity<SIPDomain>(entity =>

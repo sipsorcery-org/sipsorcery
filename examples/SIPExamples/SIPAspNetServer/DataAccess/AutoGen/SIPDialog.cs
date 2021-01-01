@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace SIPAspNetServer.DataAccess
 {
-    public partial class SIPDialogue
+    public partial class SIPDialog
     {
         public Guid ID { get; set; }
         public Guid? CDRID { get; set; }

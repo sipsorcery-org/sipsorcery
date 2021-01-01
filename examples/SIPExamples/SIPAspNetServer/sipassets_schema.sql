@@ -69,7 +69,7 @@ create table CDR
  Primary Key(ID)
 );
 
-create table SIPDialogues
+create table SIPDialogs
 (
  ID uniqueidentifier not null,
  CDRID uniqueidentifier null,
