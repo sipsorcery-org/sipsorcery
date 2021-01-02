@@ -38,6 +38,17 @@ namespace SIPSorcery.SIP
             TransactionRemoved += SIPNonInviteTransaction_TransactionRemoved;
             TransactionRequestRetransmit += SIPNonInviteTransaction_TransactionRequestRetransmit;
 
+            if(sipRequest.RemoteSIPEndPoint != null)
+            {
+                // This transaction type can be used to represent two different things:
+                // - a tx that the application wants to use to send a request reliably,
+                // - a tx for a request that has been received from a remote end point and that duplicates need
+                //   to be detected for.
+                // This block is for the second case. The tx request has been received and the tx engine
+                // needs to be signalled that it is now at the request processing stage.
+                base.UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
+            }
+
             sipTransport.AddTransaction(this);
         }
 

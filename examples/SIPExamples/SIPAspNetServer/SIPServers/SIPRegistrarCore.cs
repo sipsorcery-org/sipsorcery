@@ -171,8 +171,10 @@ namespace demo
                     {
                         if (m_registerQueue.Count < MAX_REGISTER_QUEUE_SIZE)
                         {
-                            SIPNonInviteTransaction registrarTransaction = new SIPNonInviteTransaction(m_sipTransport, registerRequest, null);
-                            m_registerQueue.Enqueue(registrarTransaction);
+                            SIPNonInviteTransaction regTx = new SIPNonInviteTransaction(m_sipTransport, registerRequest, null);
+                            //regTx.TransactionTraceMessage += (tx, msg) => Logger.LogDebug($"register tx {tx.TransactionId}: {msg}");
+                            //regTx.TransactionStateChanged += (tx) => Logger.LogDebug($"register tx state changed to {tx.TransactionState}.");
+                            m_registerQueue.Enqueue(regTx);
                         }
                         else
                         {
@@ -209,10 +211,7 @@ namespace demo
                                 RegisterResultEnum result = Register(registrarTransaction);
                                 TimeSpan duration = DateTime.Now.Subtract(startTime);
 
-                                if (RegisterComplete != null)
-                                {
-                                    RegisterComplete(duration.TotalMilliseconds, registrarTransaction.TransactionRequest.Header.AuthenticationHeader != null);
-                                }
+                                RegisterComplete?.Invoke(duration.TotalMilliseconds, registrarTransaction.TransactionRequest.Header.AuthenticationHeader != null);
                             }
                         }
                         catch (Exception regExcp)
@@ -260,7 +259,6 @@ namespace demo
                 }
                 else
                 {
-                    //SIPAccount sipAccount = m_sipAssetsCtx.SIPAccounts.Where(s => s.SIPUsername == toUser && s.Sipdomain == canonicalDomain).SingleOrDefault();
                     SIPAccount sipAccount = m_sipAccountsDataLayer.GetSIPAccount(toUser, canonicalDomain);
 
                     if (sipAccount == null)

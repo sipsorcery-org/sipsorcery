@@ -423,13 +423,19 @@ namespace SIPSorcery
         /// <returns>True if the expected response was received, false otherwise.</returns>
         private static Task<bool> InitiateRegisterTaskAsync(SIPTransport sipTransport, SIPURI dst)
         {
+            var ua = new SIPRegistrationUserAgent(sipTransport, "user", "password", dst.Host, 180);
+
             try
             {
                 bool result = false;
                 ManualResetEvent mre = new ManualResetEvent(false);
 
-                var ua = new SIPRegistrationUserAgent(sipTransport, "user", "password", dst.Host, 180);
                 ua.RegistrationFailed += (uri, err) =>
+                {
+                    result = false;
+                    mre.Set();
+                };
+                ua.RegistrationTemporaryFailure += (uri, err) =>
                 {
                     result = false;
                     mre.Set();
@@ -444,11 +450,14 @@ namespace SIPSorcery
 
                 mre.WaitOne(TimeSpan.FromSeconds(2000));
 
+                ua.Stop();
+
                 return Task.FromResult(result);
             }
             catch (Exception excp)
             {
                 logger.LogError($"Exception InitiateRegisterTaskAsync. {excp.Message}");
+                ua.Stop();
                 return Task.FromResult(false);
             }
         }
