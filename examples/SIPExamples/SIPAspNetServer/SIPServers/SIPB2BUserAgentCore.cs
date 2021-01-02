@@ -21,6 +21,7 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPAspNetServer.DataAccess;
 
 namespace SIPAspNetServer
 {
@@ -61,6 +62,7 @@ namespace SIPAspNetServer
 
         private SIPTransport _sipTransport;
         private GetB2BDestinationDelegate _getDestination;
+        private SIPDialogManager _sipDialogManager;
 
         public SIPB2BUserAgentCore(SIPTransport sipTransport, GetB2BDestinationDelegate getDestination)
         {
@@ -75,6 +77,7 @@ namespace SIPAspNetServer
 
             _sipTransport = sipTransport;
             _getDestination = getDestination;
+            _sipDialogManager = new SIPDialogManager(_sipTransport, null);
         }
 
         public void Start(int threadCount)
@@ -164,6 +167,7 @@ namespace SIPAspNetServer
         private void Forward(UASInviteTransaction uasTx)
         {
             SIPB2BUserAgent b2bua = new SIPB2BUserAgent(_sipTransport, null, uasTx, null);
+            b2bua.CallAnswered += (uac, resp) => ForwardCallAnswered(uac, b2bua);
 
             var dst = _getDestination(uasTx);
 
@@ -178,6 +182,14 @@ namespace SIPAspNetServer
             {
                 Logger.LogInformation($"B2BUA forwarding call to {dst.Uri}.");
                 b2bua.Call(dst);
+            }
+        }
+
+        private void ForwardCallAnswered(ISIPClientUserAgent uac, SIPB2BUserAgent b2bua)
+        {
+            if (uac.SIPDialogue != null)
+            {
+                _sipDialogManager.BridgeDialogues(uac.SIPDialogue, b2bua.SIPDialogue);
             }
         }
     }

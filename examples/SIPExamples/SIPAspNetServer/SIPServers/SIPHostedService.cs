@@ -45,6 +45,7 @@ namespace SIPAspNetServer
         private RegistrarCore _registrarCore;
         private SIPRegistrarBindingsManager _bindingsManager;
         private SIPB2BUserAgentCore _b2bUserAgentCore;
+        private SIPDialogManager _sipDialogManager;
 
         /// <summary>
         /// Dialplan for the B2B core.
@@ -56,7 +57,8 @@ namespace SIPAspNetServer
             switch (inUri.User)
             {
                 case "123":
-                    return new SIPCallDescriptor("time@sipsorcery.com", uasTx.TransactionRequest.Body);
+                    //return new SIPCallDescriptor("time@sipsorcery.com", uasTx.TransactionRequest.Body);
+                    return new SIPCallDescriptor("aaron@192.168.0.50:6060", uasTx.TransactionRequest.Body);
                 case "456":
                     return new SIPCallDescriptor("idontexist@sipsorcery.com", uasTx.TransactionRequest.Body);
                 default:
@@ -73,6 +75,7 @@ namespace SIPAspNetServer
             _bindingsManager = new SIPRegistrarBindingsManager(MAX_REGISTRAR_BINDINGS);
             _registrarCore = new RegistrarCore(_sipTransport, false, false);
             _b2bUserAgentCore = new SIPB2BUserAgentCore(_sipTransport, _getB2BDestination);
+            _sipDialogManager = new SIPDialogManager(_sipTransport, null);
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -121,7 +124,7 @@ namespace SIPAspNetServer
                 sipRequest.Header.To != null &&
                 sipRequest.Header.To.ToTag != null)
                 {
-                    // This is an in-dialog request that will be handled directly by a user agent instance.
+                    _sipDialogManager.ProcessInDialogueRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
                 }
                 else
                 {
@@ -129,8 +132,9 @@ namespace SIPAspNetServer
                     {
                         case SIPMethodsEnum.BYE:
                         case SIPMethodsEnum.CANCEL:
-                            SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                            await _sipTransport.SendResponseAsync(byeResponse);
+                            // BYE's and CANCEL's should always have dialog fields set.
+                            SIPResponse badResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, null);
+                            await _sipTransport.SendResponseAsync(badResponse);
                             break;
 
                         case SIPMethodsEnum.INVITE:

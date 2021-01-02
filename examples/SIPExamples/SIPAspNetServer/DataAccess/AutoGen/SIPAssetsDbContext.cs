@@ -19,7 +19,7 @@ namespace SIPAspNetServer.DataAccess
 
         public virtual DbSet<CDR> CDRs { get; set; }
         public virtual DbSet<SIPAccount> SIPAccounts { get; set; }
-        public virtual DbSet<SIPDialog> SIPDialogs { get; set; }
+        public virtual DbSet<SIPCall> SIPCalls { get; set; }
         public virtual DbSet<SIPDomain> SIPDomains { get; set; }
         public virtual DbSet<SIPRegistrarBinding> SIPRegistrarBindings { get; set; }
 
@@ -124,7 +124,7 @@ namespace SIPAspNetServer.DataAccess
                     .HasConstraintName("FK__SIPAccoun__Domai__1AD3FDA4");
             });
 
-            modelBuilder.Entity<SIPDialog>(entity =>
+            modelBuilder.Entity<SIPCall>(entity =>
             {
                 entity.Property(e => e.ID).ValueGeneratedNever();
 
@@ -152,10 +152,6 @@ namespace SIPAspNetServer.DataAccess
                     .HasMaxLength(64)
                     .IsUnicode(false);
 
-                entity.Property(e => e.RemoteSDP)
-                    .HasMaxLength(4192)
-                    .IsUnicode(false);
-
                 entity.Property(e => e.RemoteTag)
                     .IsRequired()
                     .HasMaxLength(64)
@@ -175,15 +171,11 @@ namespace SIPAspNetServer.DataAccess
                     .HasMaxLength(512)
                     .IsUnicode(false);
 
-                entity.Property(e => e.SDP)
-                    .HasMaxLength(4192)
-                    .IsUnicode(false);
-
                 entity.HasOne(d => d.CDR)
-                    .WithMany(p => p.SIPDialogs)
+                    .WithMany(p => p.SIPCalls)
                     .HasForeignKey(d => d.CDRID)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__SIPDialog__CDRID__282DF8C2");
+                    .HasConstraintName("FK__SIPCalls__CDRID__3F115E1A");
             });
 
             modelBuilder.Entity<SIPDomain>(entity =>

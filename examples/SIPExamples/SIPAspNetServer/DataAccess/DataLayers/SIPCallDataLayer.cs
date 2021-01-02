@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SIPDialogDataLayer.cs
+// Filename: SIPCallDataLayer.cs
 //
-// Description: Data access methods for the SIPDialogs entity. 
+// Description: Data access methods for the SIPCalls entity. 
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -19,46 +19,46 @@ using System.Linq.Expressions;
 
 namespace SIPAspNetServer.DataAccess
 {
-    public class SIPDialogDataLayer
+    public class SIPCallDataLayer
     {
-        public SIPDialog Get(Guid id)
+        public SIPCall Get(Guid id)
         {
             using (var db = new SIPAssetsDbContext())
             {
-                return db.SIPDialogs.Where(x => x.ID == id).FirstOrDefault();
+                return db.SIPCalls.Where(x => x.ID == id).FirstOrDefault();
             }
         }
 
-        public SIPDialog Get(Expression<Func<SIPDialog, bool>> where)
+        public SIPCall Get(Expression<Func<SIPCall, bool>> where)
         {
             using (var db = new SIPAssetsDbContext())
             {
-                return db.SIPDialogs.Where(where).FirstOrDefault();
+                return db.SIPCalls.Where(where).FirstOrDefault();
             }
         }
 
-        public SIPDialog Add(SIPDialog dialog)
+        public SIPCall Add(SIPCall call)
         {
             using (var db = new SIPAssetsDbContext())
             {
-                dialog.ID = Guid.NewGuid();
-                dialog.Inserted = DateTimeOffset.UtcNow;
+                call.ID = Guid.NewGuid();
+                call.Inserted = DateTimeOffset.UtcNow;
 
-                db.SIPDialogs.Add(dialog);
+                db.SIPCalls.Add(call);
                 db.SaveChanges();
             }
 
-            return dialog;
+            return call;
         }
 
         public void Delete(Guid id)
         {
             using (var db = new SIPAssetsDbContext())
             {
-                var dialog = db.SIPDialogs.Where(x => x.ID == id).SingleOrDefault();
-                if (dialog != null)
+                var call = db.SIPCalls.Where(x => x.ID == id).SingleOrDefault();
+                if (call != null)
                 {
-                    db.SIPDialogs.Remove(dialog);
+                    db.SIPCalls.Remove(call);
                     db.SaveChanges();
                 }
             }
