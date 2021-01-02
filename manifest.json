@@ -3153,7 +3153,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPClientUserAgent.html",
-          "hash": "VZ8p9YMRy1eeqq1FZ/ImvA=="
+          "hash": "oMIybm95bcBh0xuwrwKWFw=="
         }
       },
       "is_incremental": false,
@@ -3417,7 +3417,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPCDR.html",
-          "hash": "qiWHslEWMrOMCbHGvG800w=="
+          "hash": "lwWSs+nI6NGwOHp8dA6tEw=="
         }
       },
       "is_incremental": false,

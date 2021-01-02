@@ -28430,19 +28430,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPCDR.SIPCDR
   nameWithType: SIPCDR.SIPCDR
-- uid: SIPSorcery.SIP.SIPCDR.AdminMemberId
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.SIPCDR.html#SIPSorcery_SIP_SIPCDR_AdminMemberId
-  commentId: P:SIPSorcery.SIP.SIPCDR.AdminMemberId
-  fullName: SIPSorcery.SIP.SIPCDR.AdminMemberId
-  nameWithType: SIPCDR.AdminMemberId
-- uid: SIPSorcery.SIP.SIPCDR.AdminMemberId*
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.SIPCDR.html#SIPSorcery_SIP_SIPCDR_AdminMemberId_
-  commentId: Overload:SIPSorcery.SIP.SIPCDR.AdminMemberId
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPCDR.AdminMemberId
-  nameWithType: SIPCDR.AdminMemberId
 - uid: SIPSorcery.SIP.SIPCDR.Answered(System.Int32,SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
   name: Answered(Int32, SIPResponseStatusCodesEnum, String, SIPEndPoint, SIPEndPoint)
   href: api/SIPSorcery.SIP.SIPCDR.html#SIPSorcery_SIP_SIPCDR_Answered_System_Int32_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
@@ -28623,19 +28610,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPCDR.Destination
   nameWithType: SIPCDR.Destination
-- uid: SIPSorcery.SIP.SIPCDR.DialPlanContextID
-  name: DialPlanContextID
-  href: api/SIPSorcery.SIP.SIPCDR.html#SIPSorcery_SIP_SIPCDR_DialPlanContextID
-  commentId: P:SIPSorcery.SIP.SIPCDR.DialPlanContextID
-  fullName: SIPSorcery.SIP.SIPCDR.DialPlanContextID
-  nameWithType: SIPCDR.DialPlanContextID
-- uid: SIPSorcery.SIP.SIPCDR.DialPlanContextID*
-  name: DialPlanContextID
-  href: api/SIPSorcery.SIP.SIPCDR.html#SIPSorcery_SIP_SIPCDR_DialPlanContextID_
-  commentId: Overload:SIPSorcery.SIP.SIPCDR.DialPlanContextID
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPCDR.DialPlanContextID
-  nameWithType: SIPCDR.DialPlanContextID
 - uid: SIPSorcery.SIP.SIPCDR.From
   name: From
   href: api/SIPSorcery.SIP.SIPCDR.html#SIPSorcery_SIP_SIPCDR_From
@@ -28766,19 +28740,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPCDR.LocalSIPEndPoint
   nameWithType: SIPCDR.LocalSIPEndPoint
-- uid: SIPSorcery.SIP.SIPCDR.Owner
-  name: Owner
-  href: api/SIPSorcery.SIP.SIPCDR.html#SIPSorcery_SIP_SIPCDR_Owner
-  commentId: P:SIPSorcery.SIP.SIPCDR.Owner
-  fullName: SIPSorcery.SIP.SIPCDR.Owner
-  nameWithType: SIPCDR.Owner
-- uid: SIPSorcery.SIP.SIPCDR.Owner*
-  name: Owner
-  href: api/SIPSorcery.SIP.SIPCDR.html#SIPSorcery_SIP_SIPCDR_Owner_
-  commentId: Overload:SIPSorcery.SIP.SIPCDR.Owner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPCDR.Owner
-  nameWithType: SIPCDR.Owner
 - uid: SIPSorcery.SIP.SIPCDR.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
   name: Progress(SIPResponseStatusCodesEnum, String, SIPEndPoint, SIPEndPoint)
   href: api/SIPSorcery.SIP.SIPCDR.html#SIPSorcery_SIP_SIPCDR_Progress_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
