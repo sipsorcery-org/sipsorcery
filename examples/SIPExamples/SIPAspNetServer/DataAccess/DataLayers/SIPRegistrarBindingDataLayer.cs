@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SIPSorcery.SIP;
 
-namespace SIPAspNetServer.DataAccess
+namespace demo.DataAccess
 {
     public class SIPRegistrarBindingDataLayer
     {

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SIPAspNetServer.DataAccess;
+using demo.DataAccess;
 
-namespace SIPAspNetServer.Controllers
+namespace demo.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

@@ -18,7 +18,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 
-namespace SIPAspNetServer.DataAccess
+namespace demo.DataAccess
 {
     public class CDRDataLayer
     {

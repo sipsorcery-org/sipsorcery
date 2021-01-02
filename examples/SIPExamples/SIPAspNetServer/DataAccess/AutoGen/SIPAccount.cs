@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 #nullable disable
 
-namespace SIPAspNetServer.DataAccess
+namespace demo.DataAccess
 {
     public partial class SIPAccount
     {
