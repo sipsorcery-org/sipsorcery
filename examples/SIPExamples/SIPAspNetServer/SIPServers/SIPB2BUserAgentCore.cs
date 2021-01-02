@@ -62,7 +62,7 @@ namespace SIPAspNetServer
 
         private SIPTransport _sipTransport;
         private GetB2BDestinationDelegate _getDestination;
-        private SIPDialogManager _sipDialogManager;
+        private SIPCallManager _sipCallManager;
 
         public SIPB2BUserAgentCore(SIPTransport sipTransport, GetB2BDestinationDelegate getDestination)
         {
@@ -77,7 +77,7 @@ namespace SIPAspNetServer
 
             _sipTransport = sipTransport;
             _getDestination = getDestination;
-            _sipDialogManager = new SIPDialogManager(_sipTransport, null);
+            _sipCallManager = new SIPCallManager(_sipTransport, null);
         }
 
         public void Start(int threadCount)
@@ -189,7 +189,7 @@ namespace SIPAspNetServer
         {
             if (uac.SIPDialogue != null)
             {
-                _sipDialogManager.BridgeDialogues(uac.SIPDialogue, b2bua.SIPDialogue);
+                _sipCallManager.BridgeDialogues(uac.SIPDialogue, b2bua.SIPDialogue);
             }
         }
     }

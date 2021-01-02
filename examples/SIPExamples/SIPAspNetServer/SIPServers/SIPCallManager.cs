@@ -1,5 +1,5 @@
 ﻿// ============================================================================
-// FileName: SIPDialogManager.cs
+// FileName: SIPCallManager.cs
 //
 // Description:
 // Manages established dialogues.
@@ -10,6 +10,7 @@
 // History:
 // 10 Feb 2008  Aaron Clauson   Created, Hobart, Australia.
 // 01 Jan 2021  Aaron Clauson   Modified for .NET Core and tailored For ASP.NET server project. 
+// 02 Jan 2021  Aaron Clauson   Renamed from SIPDialogManager to SIPCallManager.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,25 +21,16 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
-using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 using SIPAspNetServer.DataAccess;
 
 namespace SIPAspNetServer
 {
-    public class SIPDialogManager
+    public class SIPCallManager
     {
-        private readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<SIPDialogManager>();
+        private readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<SIPCallManager>();
 
-        private static string m_userAgentString = SIPConstants.SIP_USERAGENT_STRING;
         private static string m_remoteHangupCause = SIPConstants.SIP_REMOTEHANGUP_CAUSE;
-        private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
-
-        //private SIPAssetGetDelegate<SIPAccount> GetSIPAccount_External;
-        //private GetCanonicalDomainDelegate GetCanonicalDomain_External;
-        //private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
-        //private SIPAssetPersistor<SIPCDRAsset> m_sipCDRPersistor;
 
         private SIPCallDataLayer m_sipCallDataLayer;
         private CDRDataLayer m_cdrDataLayer;
@@ -54,7 +46,7 @@ namespace SIPAspNetServer
 
         public event Action<SIPDialogue> OnCallHungup;
 
-        public SIPDialogManager(
+        public SIPCallManager(
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy)
         {
@@ -132,11 +124,20 @@ namespace SIPAspNetServer
             clientDiaglogue.BridgeId = bridgeId;
             forwardedDialogue.BridgeId = bridgeId;
 
-            //m_sipDialoguePersistor.Add(new SIPDialog(clientDiaglogue));
-            //m_sipDialoguePersistor.Add(new SIPDialog(forwardedDialogue));
-
+            // TODO: These 4 separate operations should all be batched in a single SQL transaction.
             m_sipCallDataLayer.Add(new SIPCall(clientDiaglogue));
             m_sipCallDataLayer.Add(new SIPCall(forwardedDialogue));
+
+            // As application can disable CDR's so check there is one to update.
+            if (clientDiaglogue.CDRId != Guid.Empty)
+            {
+                m_cdrDataLayer.UpdateBridgeID(clientDiaglogue.CDRId, bridgeId);
+            }
+
+            if (forwardedDialogue.CDRId != Guid.Empty)
+            {
+                m_cdrDataLayer.UpdateBridgeID(forwardedDialogue.CDRId, bridgeId);
+            }
         }
 
         /// <summary>
@@ -184,12 +185,12 @@ namespace SIPAspNetServer
                 }
                 else
                 {
-                    logger.LogWarning("CDR could not be found for remote dialogue in SIPDialogManager CallHungup.");
+                    logger.LogWarning("CDR could not be found for remote dialogue in SIPCallManager CallHungup.");
                 }
             }
             else
             {
-                logger.LogWarning("There was no CDR attached to orphaned dialogue in SIPDialogManager CallHungup.");
+                logger.LogWarning("There was no CDR attached to orphaned dialogue in SIPCallManager CallHungup.");
             }
 
             if (sendBye)

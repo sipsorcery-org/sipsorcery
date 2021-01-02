@@ -24,6 +24,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPAspNetServer.DataAccess;
 
 namespace SIPAspNetServer
 {
@@ -45,7 +46,8 @@ namespace SIPAspNetServer
         private RegistrarCore _registrarCore;
         private SIPRegistrarBindingsManager _bindingsManager;
         private SIPB2BUserAgentCore _b2bUserAgentCore;
-        private SIPDialogManager _sipDialogManager;
+        private SIPCallManager _sipCallManager;
+        private CDRDataLayer _cdrDataLayer;
 
         /// <summary>
         /// Dialplan for the B2B core.
@@ -75,7 +77,13 @@ namespace SIPAspNetServer
             _bindingsManager = new SIPRegistrarBindingsManager(MAX_REGISTRAR_BINDINGS);
             _registrarCore = new RegistrarCore(_sipTransport, false, false);
             _b2bUserAgentCore = new SIPB2BUserAgentCore(_sipTransport, _getB2BDestination);
-            _sipDialogManager = new SIPDialogManager(_sipTransport, null);
+            _sipCallManager = new SIPCallManager(_sipTransport, null);
+            _cdrDataLayer = new CDRDataLayer();
+
+            SIPCDR.CDRCreated += _cdrDataLayer.Add;
+            SIPCDR.CDRAnswered += _cdrDataLayer.Update;
+            SIPCDR.CDRUpdated += _cdrDataLayer.Update;
+            SIPCDR.CDRHungup += _cdrDataLayer.Update;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -124,7 +132,7 @@ namespace SIPAspNetServer
                 sipRequest.Header.To != null &&
                 sipRequest.Header.To.ToTag != null)
                 {
-                    _sipDialogManager.ProcessInDialogueRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+                    _sipCallManager.ProcessInDialogueRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
                 }
                 else
                 {

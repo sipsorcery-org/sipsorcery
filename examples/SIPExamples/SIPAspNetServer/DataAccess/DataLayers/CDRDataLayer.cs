@@ -15,11 +15,15 @@
 
 using System;
 using System.Linq;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.SIP;
 
 namespace SIPAspNetServer.DataAccess
 {
     public class CDRDataLayer
     {
+        private readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<CDRDataLayer>();
+
         public CDR Get(Guid id)
         {
             using (var db = new SIPAssetsDbContext())
@@ -28,7 +32,66 @@ namespace SIPAspNetServer.DataAccess
             }
         }
 
-        public CDR Hangup(Guid id, string reason)
+        public void Add(SIPCDR sipCDR)
+        {
+            CDR cdr = new CDR(sipCDR);
+
+            using (var db = new SIPAssetsDbContext())
+            {
+               cdr.Inserted = DateTimeOffset.UtcNow;
+
+                db.CDRs.Add(cdr);
+                db.SaveChanges();
+            }
+        }
+
+
+        /// <summary>
+        /// Updates an existing CDR.
+        /// </summary>
+        /// <param name="cdr">The CDR to update.</param>
+        public void Update(SIPCDR sipCDR)
+        {
+            using (var db = new SIPAssetsDbContext())
+            {
+                var existing = (from cdr in db.CDRs where cdr.ID == sipCDR.CDRId select cdr).SingleOrDefault();
+
+                if (existing == null)
+                {
+                    logger.LogWarning($"CDRDataLayer the CDR with ID {sipCDR.CDRId} could not be found for an Update operation.");
+                }
+                else
+                {
+                    // Fields that are not permitted to be updated.
+                    // ID
+                    // Inserted
+                    // Direction
+                    // Created
+                    // Destination
+                    // From
+                    // Call-ID
+
+                    existing.BridgeID = (sipCDR.BridgeId != Guid.Empty) ? sipCDR.BridgeId : null;
+                    existing.InProgressAt = sipCDR.ProgressTime;
+                    existing.InProgressStatus = sipCDR.ProgressStatus;
+                    existing.InProgressReason = sipCDR.ProgressReasonPhrase;
+                    existing.RingDuration = sipCDR.GetProgressDuration();
+                    existing.AnsweredAt = sipCDR.AnswerTime;
+                    existing.AnsweredStatus = sipCDR.AnswerStatus;
+                    existing.AnsweredReason = sipCDR.AnswerReasonPhrase;
+                    existing.Duration = sipCDR.GetAnsweredDuration();
+                    existing.HungupAt = sipCDR.HangupTime;
+                    existing.HungupReason = sipCDR.HangupReason;
+                    existing.AnsweredAt = sipCDR.AnsweredAt;
+                    existing.RemoteSocket = sipCDR.RemoteEndPoint?.ToString();
+                    existing.LocalSocket = sipCDR.LocalSIPEndPoint?.ToString();
+
+                    db.SaveChanges();
+                }
+            }
+        }
+
+        public void Hangup(Guid id, string reason)
         {
             using (var db = new SIPAssetsDbContext())
             {
@@ -36,15 +99,34 @@ namespace SIPAspNetServer.DataAccess
 
                 if (existing == null)
                 {
-                    throw new ApplicationException("The CDR to update could not be found.");
+                    logger.LogWarning($"CDRDataLayer the CDR with ID {id} could not be found for a Hangup operation.");
                 }
+                else
+                {
+                    existing.HungupAt = DateTimeOffset.UtcNow;
+                    existing.HungupReason = reason;
+                    existing.Duration = Convert.ToInt32(existing.HungupAt.Value.Subtract(existing.AnsweredAt.Value).TotalSeconds);
 
-                existing.HungupAt = DateTimeOffset.UtcNow;
-                existing.HungupReason = reason;
+                    db.SaveChanges();
+                }
+            }
+        }
 
-                db.SaveChanges();
+        public void UpdateBridgeID(Guid id, Guid bridgeID)
+        {
+            using (var db = new SIPAssetsDbContext())
+            {
+                var existing = db.CDRs.Where(x => x.ID == id).SingleOrDefault();
 
-                return existing;
+                if (existing == null)
+                {
+                    logger.LogWarning($"CDRDataLayer the CDR with ID {id} could not be found for a Update BridgeID operation.");
+                }
+                else
+                {
+                    existing.BridgeID = bridgeID;
+                    db.SaveChanges();
+                }
             }
         }
     }
