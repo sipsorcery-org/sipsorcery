@@ -40,7 +40,7 @@ namespace SIPAspNetServer
         //private SIPAssetPersistor<SIPDialogueAsset> m_sipDialoguePersistor;
         //private SIPAssetPersistor<SIPCDRAsset> m_sipCDRPersistor;
 
-        private SIPDialogDataLayer m_sipDialogDataLayer;
+        private SIPCallDataLayer m_sipCallDataLayer;
         private CDRDataLayer m_cdrDataLayer;
 
         private SIPTransport m_sipTransport;
@@ -61,13 +61,21 @@ namespace SIPAspNetServer
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
 
-            m_sipDialogDataLayer = new SIPDialogDataLayer();
+            m_sipCallDataLayer = new SIPCallDataLayer();
             m_cdrDataLayer = new CDRDataLayer();
         }
 
-        public void ProcessInDialogueRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPDialogue dialogue)
+        public void ProcessInDialogueRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            if (sipRequest.Method == SIPMethodsEnum.BYE)
+            SIPDialogue dialogue = GetDialogue(sipRequest);
+
+            if(dialogue == null)
+            {
+                SIPNonInviteTransaction nonInvTx = new SIPNonInviteTransaction(m_sipTransport, sipRequest, m_outboundProxy);
+                var noLegResp = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
+                nonInvTx.SendResponse(noLegResp);
+            }
+            else if (sipRequest.Method == SIPMethodsEnum.BYE)
             {
                 SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, sipRequest, m_outboundProxy);
                 //logger.Debug("Matching dialogue found for BYE request to " + sipRequest.URI.ToString() + ".");
@@ -116,9 +124,9 @@ namespace SIPAspNetServer
             }
         }
 
-        public void CreateDialogueBridge(SIPDialogue clientDiaglogue, SIPDialogue forwardedDialogue, string owner)
+        public void BridgeDialogues(SIPDialogue clientDiaglogue, SIPDialogue forwardedDialogue)
         {
-            logger.LogDebug("Creating dialogue bridge between " + clientDiaglogue.DialogueName + " and " + forwardedDialogue.DialogueName + ".");
+            logger.LogDebug($"Bridging dialogues {clientDiaglogue.DialogueName} and {forwardedDialogue.DialogueName}.");
 
             Guid bridgeId = Guid.NewGuid();
             clientDiaglogue.BridgeId = bridgeId;
@@ -127,8 +135,8 @@ namespace SIPAspNetServer
             //m_sipDialoguePersistor.Add(new SIPDialog(clientDiaglogue));
             //m_sipDialoguePersistor.Add(new SIPDialog(forwardedDialogue));
 
-            m_sipDialogDataLayer.Add(new SIPDialog(clientDiaglogue));
-            m_sipDialogDataLayer.Add(new SIPDialog(forwardedDialogue));
+            m_sipCallDataLayer.Add(new SIPCall(clientDiaglogue));
+            m_sipCallDataLayer.Add(new SIPCall(forwardedDialogue));
         }
 
         /// <summary>
@@ -190,7 +198,7 @@ namespace SIPAspNetServer
                 OnCallHungup?.Invoke(dialogue);
             }
 
-            m_sipDialogDataLayer.Delete(dialogue.Id);
+            m_sipCallDataLayer.Delete(dialogue.Id);
         }
 
         /// <summary>
@@ -209,39 +217,39 @@ namespace SIPAspNetServer
 
         public SIPDialogue GetDialogue(string callId, string localTag, string remoteTag)
         {
-            SIPDialog dialogueAsset = m_sipDialogDataLayer.Get(d => d.CallID == callId && d.LocalTag == localTag && d.RemoteTag == remoteTag);
+            SIPCall sipCall = m_sipCallDataLayer.Get(d => d.CallID == callId && d.LocalTag == localTag && d.RemoteTag == remoteTag);
 
-            if (dialogueAsset != null)
+            if (sipCall != null)
             {
                 //logger.Debug("SIPDialogueManager dialogue match correctly found on dialogue hash.");
-                return dialogueAsset.ToSIPDialogue();
+                return sipCall.ToSIPDialogue();
             }
             else
             {
                 // Try on To tag.
-                dialogueAsset = m_sipDialogDataLayer.Get(d => d.LocalTag == localTag);
-                if (dialogueAsset != null)
+                sipCall = m_sipCallDataLayer.Get(d => d.LocalTag == localTag);
+                if (sipCall != null)
                 {
                     logger.LogWarning("SIPDialogueManager dialogue match found on fallback mechanism of To tag.");
-                    return dialogueAsset.ToSIPDialogue();
+                    return sipCall.ToSIPDialogue();
                 }
 
                 // Try on From tag.
-                dialogueAsset = m_sipDialogDataLayer.Get(d => d.RemoteTag == remoteTag);
-                if (dialogueAsset != null)
+                sipCall = m_sipCallDataLayer.Get(d => d.RemoteTag == remoteTag);
+                if (sipCall != null)
                 {
                     logger.LogWarning("SIPDialogueManager dialogue match found on fallback mechanism of From tag.");
-                    return dialogueAsset.ToSIPDialogue();
+                    return sipCall.ToSIPDialogue();
                 }
 
                 // As an experiment will try on the Call-ID as well. However as a safeguard it will only succeed if there is only one instance of the
                 // Call-ID in use. Since the Call-ID is not mandated by the SIP standard as being unique there it may be that matching on it causes more
                 // problems then it solves.
-                dialogueAsset = m_sipDialogDataLayer.Get(d => d.CallID == callId);
-                if (dialogueAsset != null)
+                sipCall = m_sipCallDataLayer.Get(d => d.CallID == callId);
+                if (sipCall != null)
                 {
                     logger.LogWarning("SIPDialogueManager dialogue match found on fallback mechanism of Call-ID.");
-                    return dialogueAsset.ToSIPDialogue();
+                    return sipCall.ToSIPDialogue();
                 }
             }
 
@@ -257,8 +265,8 @@ namespace SIPAspNetServer
         {
             if (dialogue.BridgeId != Guid.Empty)
             {
-                SIPDialog dialogueAsset = m_sipDialogDataLayer.Get(d => d.BridgeID == dialogue.BridgeId && d.ID != dialogue.Id);
-                return (dialogueAsset != null) ? dialogueAsset.ToSIPDialogue() : null;
+                SIPCall sipCall = m_sipCallDataLayer.Get(d => d.BridgeID == dialogue.BridgeId && d.ID != dialogue.Id);
+                return (sipCall != null) ? sipCall.ToSIPDialogue() : null;
             }
             else
             {

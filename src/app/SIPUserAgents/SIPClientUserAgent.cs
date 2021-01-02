@@ -403,7 +403,6 @@ namespace SIPSorcery.SIP.App
                             m_serverTransaction = new UACInviteTransaction(m_sipTransport, authInviteRequest, m_outboundProxy);
                             if (m_serverTransaction.CDR != null)
                             {
-                                m_serverTransaction.CDR.DialPlanContextID = m_sipCallDescriptor.DialPlanContextID;
                                 m_serverTransaction.CDR.Updated();
                             }
                             m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
@@ -424,17 +423,8 @@ namespace SIPSorcery.SIP.App
                 {
                     if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
                     {
-                        if (sipResponse.Body.IsNullOrBlank())
-                        {
-                            logger.LogDebug("Body on UAC response was empty.");
-                        }
-
                         m_sipDialogue = new SIPDialogue(m_serverTransaction);
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
-
-                        m_sipDialogue.CRMPersonName = sipResponse.Header.CRMPersonName;
-                        m_sipDialogue.CRMCompanyName = sipResponse.Header.CRMCompanyName;
-                        m_sipDialogue.CRMPictureURL = sipResponse.Header.CRMPictureURL;
                     }
 
                     CallAnswered?.Invoke(this, sipResponse);
@@ -444,7 +434,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogDebug("Exception ServerFinalResponseReceived. " + excp.Message);
+                logger.LogDebug("Exception ServerFinalResponseReceived. " + excp);
                 return Task.FromResult(SocketError.Fault);
             }
         }

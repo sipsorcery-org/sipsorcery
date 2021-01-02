@@ -9,7 +9,7 @@ namespace SIPAspNetServer.DataAccess
     {
         public CDR()
         {
-            SIPDialogs = new HashSet<SIPDialog>();
+            SIPCalls = new HashSet<SIPCall>();
         }
 
         public Guid ID { get; set; }
@@ -37,6 +37,6 @@ namespace SIPAspNetServer.DataAccess
         public DateTimeOffset? HungupAt { get; set; }
         public string HungupReason { get; set; }
 
-        public virtual ICollection<SIPDialog> SIPDialogs { get; set; }
+        public virtual ICollection<SIPCall> SIPCalls { get; set; }
     }
 }

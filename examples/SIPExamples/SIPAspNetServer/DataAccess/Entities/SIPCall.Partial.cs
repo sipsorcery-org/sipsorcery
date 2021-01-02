@@ -1,9 +1,12 @@
 ﻿// ============================================================================
-// FileName: SIPDialog.Partial.cs
+// FileName: SIPCall.Partial.cs
 //
 // Description:
-// Represents the SIPDialog entity. This partial class is used to apply 
-// additional properties or metadata to the audo generated SIPDialog class.
+// Represents the SIPCall entity. This partial class is used to apply 
+// additional properties or metadata to the audo generated SIPCall class.
+//
+// A SIPCall corresponds to the establishment of a SIP Dialogue between 
+// two SIP user agents.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -22,9 +25,9 @@ using SIPSorcery.SIP;
 
 namespace SIPAspNetServer.DataAccess
 {
-    public partial class SIPDialog
+    public partial class SIPCall
     {
-        public SIPDialog()
+        public SIPCall()
         { }
 
         /// <summary>
@@ -32,10 +35,10 @@ namespace SIPAspNetServer.DataAccess
         /// layer entity.
         /// </summary>
         /// <param name="dialogue">The SIP layer dialogue to translate.</param>
-        public SIPDialog(SIPDialogue dialogue)
+        public SIPCall(SIPDialogue dialogue)
         {
             ID = dialogue.Id;
-            CDRID = dialogue.CDRId;
+            CDRID = null; // dialogue.CDRId != Guid.Empty ? dialogue.CDRId : null;
             LocalTag = dialogue.LocalTag;
             RemoteTag = dialogue.RemoteTag;
             CallID = dialogue.CallId;
@@ -45,11 +48,9 @@ namespace SIPAspNetServer.DataAccess
             LocalUserField = dialogue.LocalUserField.ToString();
             RemoteUserField = dialogue.RemoteUserField.ToString();
             ProxySIPSocket = dialogue.ProxySendFrom;
-            RouteSet = dialogue.RouteSet.ToString();
+            RouteSet = dialogue.RouteSet?.ToString();
             CallDurationLimit = dialogue.CallDurationLimit;
             Direction = dialogue.Direction.ToString();
-            SDP = dialogue.SDP;
-            RemoteSDP = dialogue.RemoteSDP;
             Inserted = dialogue.Inserted;
         }
 
@@ -74,8 +75,6 @@ namespace SIPAspNetServer.DataAccess
             dialogue.RouteSet = string.IsNullOrWhiteSpace(RouteSet) ? null : SIPRouteSet.ParseSIPRouteSet(RouteSet);
             dialogue.CallDurationLimit = CallDurationLimit.GetValueOrDefault();
             dialogue.Direction = Enum.Parse<SIPCallDirection>(Direction, true);
-            dialogue.SDP = SDP;
-            dialogue.RemoteSDP = RemoteSDP;
             dialogue.Inserted = Inserted;
 
             return dialogue;

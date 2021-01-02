@@ -61,35 +61,12 @@ namespace SIPSorcery.SIP.App
             set { m_isAuthenticated = value; }
         }
 
-        public bool IsCancelled
-        {
-            get { return m_isCancelled; }
-        }
-
-        public SIPRequest CallRequest
-        {
-            get { return m_uasTransaction.TransactionRequest; }
-        }
-
-        public string CallDestination
-        {
-            get { return m_uasTransaction.TransactionRequest.URI.User; }
-        }
-
-        public bool IsUASAnswered
-        {
-            get { return m_uasTransaction != null && m_uasTransaction.TransactionFinalResponse != null; }
-        }
-
-        public bool IsHungup
-        {
-            get { return m_isHungup; }
-        }
-
-        public UASInviteTransaction ClientTransaction
-        {
-            get { return m_uasTransaction; }
-        }
+        public bool IsCancelled => m_isCancelled;
+        public SIPRequest CallRequest => m_uasTransaction.TransactionRequest;
+        public string CallDestination => m_uasTransaction.TransactionRequest.URI.User;
+        public bool IsUASAnswered => m_uasTransaction != null && m_uasTransaction.TransactionFinalResponse != null;
+        public bool IsHungup => m_isHungup;
+        public UASInviteTransaction ClientTransaction => m_uasTransaction;
 
         /// <summary>
         /// The Session Description Protocol offer from the remote call party.

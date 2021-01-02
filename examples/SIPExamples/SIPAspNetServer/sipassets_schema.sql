@@ -69,7 +69,7 @@ create table CDR
  Primary Key(ID)
 );
 
-create table SIPDialogs
+create table SIPCalls
 (
  ID uniqueidentifier not null,
  CDRID uniqueidentifier null,
@@ -85,8 +85,6 @@ create table SIPDialogs
  RouteSet varchar(512),
  CallDurationLimit int,
  Direction varchar(3) not null,					-- In or Out with respect to the proxy.
- SDP varchar(4192),
- RemoteSDP varchar(4192),
  Inserted datetimeoffset not null,
  Primary Key(ID),
  Foreign Key(CDRID) references CDR(ID) on delete cascade on update cascade

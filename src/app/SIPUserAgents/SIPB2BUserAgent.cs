@@ -14,8 +14,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -32,6 +30,8 @@ namespace SIPSorcery.SIP.App
         private SIPClientUserAgent m_uac;
         private SIPCallDescriptor m_uacCallDescriptor;
 
+
+        // User Agent Client Events.
         public event SIPCallResponseDelegate CallTrying;
         public event SIPCallFailedDelegate CallFailed;
         public event SIPCallResponseDelegate CallRinging;
@@ -105,10 +105,7 @@ namespace SIPSorcery.SIP.App
 
             if (resp.Status == SIPResponseStatusCodesEnum.Ok)
             {
-                var okResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.Ok, null);
-                okResponse.Header.ContentType = resp.Header.ContentType;
-                okResponse.Body = resp.Body;
-                m_uasTransaction.SendFinalResponse(okResponse);
+                base.Answer(resp.Header.ContentType, resp.Body, SIPDialogueTransferModesEnum.NotAllowed);
 
                 CallAnswered?.Invoke(uac, resp);
             }
