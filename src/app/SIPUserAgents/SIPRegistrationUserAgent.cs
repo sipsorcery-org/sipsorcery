@@ -178,7 +178,7 @@ namespace SIPSorcery.SIP.App
             m_expiry = m_originalExpiry;
             m_exit = false;
             int callbackPeriod = (m_expiry - REGISTRATION_HEAD_TIME) * 1000;
-            logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR}, callback period {callbackPeriod}ms.");
+            logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR}, callback period {callbackPeriod/1000}s.");
 
             if (callbackPeriod < REGISTER_MINIMUM_EXPIRY * 1000)
             {
@@ -196,7 +196,7 @@ namespace SIPSorcery.SIP.App
             {
                 try
                 {
-                    logger.LogDebug("DoRegistration for " + m_sipAccountAOR.ToString() + ".");
+                    logger.LogDebug($"Starting registration for {m_sipAccountAOR}.");
 
                     LastRegisterAttemptAt = DateTime.Now;
                     m_waitForRegistrationMRE.Reset();
@@ -292,7 +292,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (m_attempts >= m_maxRegisterAttempts)
                 {
-                    logger.LogWarning("Registration to " + m_sipAccountAOR.ToString() + " reached the maximum number of allowed attempts without a failure condition.");
+                    logger.LogWarning($"Registration to {m_sipAccountAOR} reached the maximum number of allowed attempts without a failure condition.");
                     m_isRegistered = false;
                     RegistrationTemporaryFailure?.Invoke(m_sipAccountAOR, "Registration reached the maximum number of allowed attempts.");
                     m_waitForRegistrationMRE.Set();
@@ -304,7 +304,6 @@ namespace SIPSorcery.SIP.App
                     SIPEndPoint registrarSIPEndPoint = m_outboundProxy;
                     if (registrarSIPEndPoint == null)
                     {
-                        //SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
                         SIPURI uri = SIPURI.ParseSIPURIRelaxed(m_registrarHost);
                         var lookupResult = m_sipTransport.ResolveSIPUriAsync(uri).ConfigureAwait(false).GetAwaiter().GetResult();
                         if (lookupResult == null || lookupResult == SIPEndPoint.Empty)

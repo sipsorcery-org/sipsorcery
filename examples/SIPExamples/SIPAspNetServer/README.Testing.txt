@@ -1,8 +1,8 @@
 ==> Sends an OPTIONS request.
-dotnet run -- -d sip:172.29.207.116
+dotnet run -- -d sip:192.168.0.50
 
 ==> Initiates a call and hangups if/when answered. Good for checking CDRs are generated correctly.
-dotnet run -- -d sip:123@172.29.207.116 -s uac
+dotnet run -- -d sip:123@192.168.0.50 -s uac
 
 ==> Sends a registration request. Uses user/password for credentials.
 dotnet run -- -d sip:192.168.0.50 -s reg
