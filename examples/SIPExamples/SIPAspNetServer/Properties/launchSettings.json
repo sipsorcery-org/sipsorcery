@@ -17,7 +17,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "SIPAspNetServer": {
+    "demo": {
       "commandName": "Project",
       "launchUrl": "swagger",
       "environmentVariables": {

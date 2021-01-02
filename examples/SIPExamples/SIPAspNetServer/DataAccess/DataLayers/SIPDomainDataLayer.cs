@@ -16,7 +16,7 @@
 using System;
 using System.Linq;
 
-namespace SIPAspNetServer.DataAccess
+namespace demo.DataAccess
 {
     public class SIPDomainDataLayer
     {

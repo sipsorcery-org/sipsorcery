@@ -24,7 +24,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
 
-namespace SIPAspNetServer
+namespace demo
 {
     public class Program
     {

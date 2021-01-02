@@ -21,7 +21,7 @@ using SIPSorcery.SIP;
 
 #nullable disable
 
-namespace SIPAspNetServer.DataAccess
+namespace demo.DataAccess
 {
     public partial class SIPRegistrarBinding
     {

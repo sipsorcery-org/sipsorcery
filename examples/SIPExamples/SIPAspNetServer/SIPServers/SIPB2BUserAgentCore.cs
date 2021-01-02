@@ -21,9 +21,9 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPAspNetServer.DataAccess;
+using demo.DataAccess;
 
-namespace SIPAspNetServer
+namespace demo
 {
     /// <summary>
     /// This function type is to allow B2B user agents to lookup the forwarding destination

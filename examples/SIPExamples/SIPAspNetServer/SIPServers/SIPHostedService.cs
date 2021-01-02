@@ -24,9 +24,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPAspNetServer.DataAccess;
+using demo.DataAccess;
 
-namespace SIPAspNetServer
+namespace demo
 {
     /// <summary>
     /// A hosted service to manage a SIP transport layer. This class is designed to be a long running

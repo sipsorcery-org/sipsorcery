@@ -21,9 +21,9 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
-using SIPAspNetServer.DataAccess;
+using demo.DataAccess;
 
-namespace SIPAspNetServer
+namespace demo
 {
     public class SIPCallManager
     {

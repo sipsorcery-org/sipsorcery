@@ -17,7 +17,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace SIPAspNetServer.DataAccess
+namespace demo.DataAccess
 {
     public class SIPCallDataLayer
     {

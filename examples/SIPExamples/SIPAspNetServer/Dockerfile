@@ -8,16 +8,16 @@ EXPOSE 5060
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim AS build
 WORKDIR /src
-COPY ["SIPAspNetServer.csproj", ""]
-RUN dotnet restore "./SIPAspNetServer.csproj"
+COPY ["demo.csproj", ""]
+RUN dotnet restore "./demo.csproj"
 COPY . .
 WORKDIR "/src/."
-RUN dotnet build "SIPAspNetServer.csproj" -c Release -o /app/build
+RUN dotnet build "demo.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "SIPAspNetServer.csproj" -c Release -o /app/publish
+RUN dotnet publish "demo.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "SIPAspNetServer.dll"]
+ENTRYPOINT ["dotnet", "demo.dll"]

@@ -17,7 +17,7 @@ using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
-namespace SIPAspNetServer.DataAccess
+namespace demo.DataAccess
 {
     public class SIPAccountDataLayer
     {

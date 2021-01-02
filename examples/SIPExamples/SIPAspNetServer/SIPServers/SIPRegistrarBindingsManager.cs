@@ -22,9 +22,9 @@ using System.Threading;
 using System.Transactions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
-using SIPAspNetServer.DataAccess;
+using demo.DataAccess;
 
-namespace SIPAspNetServer
+namespace demo
 {
     public class SIPRegistrarBindingsManager
     {
