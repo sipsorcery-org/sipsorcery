@@ -222,7 +222,6 @@ namespace SIPSorcery.SIP.App
 
                 // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                 m_serverTransaction = new UACInviteTransaction(m_sipTransport, inviteRequest, m_outboundProxy);
-                m_serverTransaction.CDR.DialPlanContextID = m_sipCallDescriptor.DialPlanContextID;
 
                 m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                 m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
@@ -240,7 +239,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception UserAgentClient Call. " + excp.Message);
+                logger.LogError("Exception UserAgentClient Call. " + excp);
                 m_serverTransaction?.CancelCall("Unknown exception");
                 CallFailed?.Invoke(this, excp.Message, null);
                 return null;

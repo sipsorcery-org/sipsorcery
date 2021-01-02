@@ -37,7 +37,6 @@ namespace SIPSorcery.SIP
     public class SIPCDR
     {
         private static ILogger logger = Log.Logger;
-        private static string m_newLine = Environment.NewLine;
 
         public static event CDRReadyDelegate CDRCreated = c => { };
         public static event CDRReadyDelegate CDRUpdated = c => { };
@@ -46,12 +45,6 @@ namespace SIPSorcery.SIP
 
         [DataMember]
         public Guid CDRId { get; set; }
-
-        [DataMember]
-        public string Owner { get; set; }
-
-        [DataMember]
-        public string AdminMemberId { get; set; }
 
         [DataMember]
         public DateTimeOffset Created { get; set; }
@@ -139,9 +132,6 @@ namespace SIPSorcery.SIP
 
         [DataMember]
         public DateTime? AnsweredAt { get; set; }
-
-        [DataMember]
-        public Guid DialPlanContextID { get; set; }                     // If the call is received into or initiated from a dialplan then this will hold the dialplan context ID.
 
         public string CallId { get; set; }
         public SIPEndPoint LocalSIPEndPoint { get; set; }

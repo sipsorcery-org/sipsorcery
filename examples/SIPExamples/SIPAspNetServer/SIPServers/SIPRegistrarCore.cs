@@ -88,7 +88,7 @@ namespace SIPAspNetServer
         private SIPRegistrarBindingDataLayer m_SIPRegistrarBindingDataLayer;
         private SIPDomainDataLayer m_sipDomainDataLayer;
 
-        private string m_serverAgent = SIPConstants.SIP_VERSION_STRING;
+        private string m_serverAgent = SIPConstants.SIP_USERAGENT_STRING;
         private bool m_mangleUACContact = false;            // Whether or not to adjust contact URIs that contain private hosts to the value of the bottom via received socket.
         private bool m_strictRealmHandling = false;         // If true the registrar will only accept registration requests for domains it is configured for, otherwise any realm is accepted.
         private ConcurrentQueue<SIPNonInviteTransaction> m_registerQueue = new ConcurrentQueue<SIPNonInviteTransaction>();

@@ -91,12 +91,10 @@ namespace SIPAspNetServer.DataAccess
                     .IsUnicode(false);
 
                 entity.Property(e => e.LocalSocket)
-                    .IsRequired()
                     .HasMaxLength(64)
                     .IsUnicode(false);
 
                 entity.Property(e => e.RemoteSocket)
-                    .IsRequired()
                     .HasMaxLength(64)
                     .IsUnicode(false);
             });
@@ -175,7 +173,7 @@ namespace SIPAspNetServer.DataAccess
                     .WithMany(p => p.SIPCalls)
                     .HasForeignKey(d => d.CDRID)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__SIPCalls__CDRID__3F115E1A");
+                    .HasConstraintName("FK__SIPCalls__CDRID__46B27FE2");
             });
 
             modelBuilder.Entity<SIPDomain>(entity =>

@@ -53,8 +53,8 @@ create table CDR
  FromName varchar(128),							-- The name portion of the From header.
  FromHeader varchar(1024),						-- The full From header.
  CallID varchar(256) not null,					-- The Call-ID of the call.
- LocalSocket varchar(64) not null,				-- The socket on the proxy used for the call.
- RemoteSocket varchar(64) not null,				-- The remote socket used for the call.
+ LocalSocket varchar(64) null,				    -- The socket on the proxy used for the call.
+ RemoteSocket varchar(64) null,				    -- The remote socket used for the call.
  BridgeID uniqueidentifier null,   			    -- If the call was involved in a bridge the id of it.
  InProgressAt datetimeoffset null default null, -- The time of the last info response for the call.
  InProgressStatus int,							-- The SIP response status code of the last info response for the call.

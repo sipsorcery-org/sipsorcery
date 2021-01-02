@@ -38,7 +38,7 @@ namespace SIPAspNetServer.DataAccess
         public SIPCall(SIPDialogue dialogue)
         {
             ID = dialogue.Id;
-            CDRID = null; // dialogue.CDRId != Guid.Empty ? dialogue.CDRId : null;
+            CDRID = dialogue.CDRId != Guid.Empty ? dialogue.CDRId : null;
             LocalTag = dialogue.LocalTag;
             RemoteTag = dialogue.RemoteTag;
             CallID = dialogue.CallId;
