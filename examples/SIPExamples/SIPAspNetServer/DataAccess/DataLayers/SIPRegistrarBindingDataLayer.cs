@@ -31,7 +31,7 @@ namespace demo.DataAccess
             }
         }
 
-        public SIPRegistrarBinding GetNextExpired(DateTimeOffset expiryTime)
+        public SIPRegistrarBinding GetNextExpired(DateTime expiryTime)
         {
             using (var db = new SIPAssetsDbContext())
             {
@@ -48,7 +48,7 @@ namespace demo.DataAccess
             using (var db = new SIPAssetsDbContext())
             {
                 binding.ID = Guid.NewGuid();
-                binding.LastUpdate = DateTimeOffset.UtcNow;
+                binding.LastUpdate = DateTime.UtcNow;
 
                 db.SIPRegistrarBindings.Add(binding);
                 db.SaveChanges();
@@ -74,9 +74,9 @@ namespace demo.DataAccess
                     throw new ApplicationException("The SIP Registrar Binding to update could not be found.");
                 }
 
-                existing.LastUpdate = DateTimeOffset.UtcNow;
+                existing.LastUpdate = DateTime.UtcNow;
                 existing.Expiry = expiry;
-                existing.ExpiryTime = DateTimeOffset.UtcNow.AddSeconds(expiry);
+                existing.ExpiryTime = DateTime.UtcNow.AddSeconds(expiry);
                 existing.RemoteSIPSocket = remoteSIPEndPoint?.ToString();
                 existing.ProxySIPSocket = proxySIPEndPoint?.ToString();
                 existing.RegistrarSIPSocket = registrarSIPEndPoint?.ToString();
@@ -98,7 +98,7 @@ namespace demo.DataAccess
                     throw new ApplicationException("The SIP Registrar Binding to update could not be found.");
                 }
 
-                existing.LastUpdate = DateTimeOffset.UtcNow;
+                existing.LastUpdate = DateTime.UtcNow;
                 existing.Expiry = expiry;
 
                 db.SaveChanges();

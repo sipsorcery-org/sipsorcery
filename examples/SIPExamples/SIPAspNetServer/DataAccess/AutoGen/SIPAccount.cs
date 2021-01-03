@@ -17,7 +17,7 @@ namespace demo.DataAccess
         public string SIPUsername { get; set; }
         public string SIPPassword { get; set; }
         public bool IsDisabled { get; set; }
-        public DateTimeOffset Inserted { get; set; }
+        public DateTime Inserted { get; set; }
 
         public virtual SIPDomain Domain { get; set; }
         public virtual ICollection<SIPRegistrarBinding> SIPRegistrarBindings { get; set; }

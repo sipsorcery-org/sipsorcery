@@ -72,7 +72,7 @@ namespace demo
             {
                 try
                 {
-                    DateTimeOffset expiryTime = DateTimeOffset.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
+                    DateTime expiryTime = DateTime.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
                     SIPRegistrarBinding expiredBinding = GetNextExpiredBinding(expiryTime);
 
                     while (expiredBinding != null)
@@ -80,7 +80,7 @@ namespace demo
                         Logger.LogDebug("Expired binding deleted for " + expiredBinding.SIPAccount.AOR + " and " + expiredBinding.ContactURI + ", last register " +
                             expiredBinding.LastUpdate.ToString("o") + ", expiry " + expiredBinding.Expiry + "s, expiry time " + expiredBinding.ExpiryTime.ToString("o") + ", now " + expiryTime.ToString("o") + ".");
 
-                        expiryTime = DateTimeOffset.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
+                        expiryTime = DateTime.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
                         expiredBinding = GetNextExpiredBinding(expiryTime);
                     }
                 }
@@ -95,15 +95,15 @@ namespace demo
             Logger.LogDebug($"Thread {EXPIRE_BINDINGS_THREAD_NAME} stopped!");
         }
 
-        private SIPRegistrarBinding GetNextExpiredBinding(DateTimeOffset expiryTime)
+        private SIPRegistrarBinding GetNextExpiredBinding(DateTime expiryTime)
         {
-            using (var trans = new TransactionScope())
-            {
+            //using (var trans = new TransactionScope())
+            //{
                 SIPRegistrarBinding binding = m_registrarBindingDataLayer.GetNextExpired(expiryTime);
 
                 if (binding != null)
                 {
-                    if (binding.ExpiryTime < DateTimeOffset.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1))
+                    if (binding.ExpiryTime < DateTime.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1))
                     {
                         m_registrarBindingDataLayer.Delete(binding.ID);
                     }
@@ -111,16 +111,16 @@ namespace demo
                     {
                         Logger.LogWarning("A binding returned from the database as expired wasn't. " + binding.ID + " and " + binding.MangledContactURI + ", last register " +
                                 binding.LastUpdate.ToString("HH:mm:ss") + ", expiry " + binding.Expiry + ", expiry time " + binding.ExpiryTime.ToString("HH:mm:ss") +
-                                ", checkedtime " + expiryTime.ToString("HH:mm:ss") + ", now " + DateTimeOffset.UtcNow.ToString("HH:mm:ss") + ".");
+                                ", checkedtime " + expiryTime.ToString("HH:mm:ss") + ", now " + DateTime.UtcNow.ToString("HH:mm:ss") + ".");
 
                         binding = null;
                     }
                 }
 
-                trans.Complete();
+                //trans.Complete();
 
                 return binding;
-            }
+            //}
         }
 
         /// <summary>

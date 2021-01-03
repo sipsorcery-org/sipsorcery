@@ -1,12 +1,12 @@
 ==> Sends an OPTIONS request.
-dotnet run -- -d sip:192.168.0.50
+examples\sipcmdline> dotnet run -- -d sip:192.168.0.50
 
 ==> Initiates a call and hangups if/when answered. Good for checking CDRs are generated correctly.
-dotnet run -- -d sip:123@192.168.0.50 -s uac
+examples\sipcmdline> dotnet run -- -d sip:123@192.168.0.50 -s uac
+examples\sipcmdline> dotnet run -- -d sip:456@192.168.0.50 -s uac
 
 ==> Sends a registration request. Uses user/password for credentials.
-dotnet run -- -d sip:192.168.0.50 -s reg
-insert into sipaccounts values (newid(), '899e48ef-1267-4b53-8a1c-476a176a4e80', 'user', 'password', '0', default);
+examples\sipcmdline> dotnet run -- -d sip:192.168.0.50 -s reg
 
 ==> Web API URLs
 https://localhost:5001/swagger/index.html
