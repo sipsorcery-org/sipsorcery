@@ -423,7 +423,7 @@ namespace SIPSorcery
         /// <returns>True if the expected response was received, false otherwise.</returns>
         private static Task<bool> InitiateRegisterTaskAsync(SIPTransport sipTransport, SIPURI dst)
         {
-            var ua = new SIPRegistrationUserAgent(sipTransport, "user", "password", dst.Host, 180);
+            var ua = new SIPRegistrationUserAgent(sipTransport, "user", "password", dst.Host, 120);
 
             try
             {
