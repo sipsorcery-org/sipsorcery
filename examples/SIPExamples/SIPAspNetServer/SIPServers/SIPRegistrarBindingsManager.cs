@@ -33,7 +33,7 @@ namespace demo
         public const int NATKEEPALIVE_DEFAULTSEND_INTERVAL = 10;
         private const int MAX_USERAGENT_LENGTH = 128;
         public const int MINIMUM_EXPIRY_SECONDS = 120;
-        private const int DEFAULT_BINDINGS_PER_USER = 1;              // The default maixmim number of bindings that will be allowed for each unique SIP account.
+        private const int DEFAULT_BINDINGS_PER_USER = 3;              // The default maixmim number of bindings that will be allowed for each unique SIP account.
         private const int REMOVE_EXPIRED_BINDINGS_INTERVAL = 3000;    // The interval in seconds at which to check for and remove expired bindings.
         private const int SEND_NATKEEPALIVES_INTERVAL = 5000;
         private const int BINDING_EXPIRY_GRACE_PERIOD = 10;
@@ -66,42 +66,33 @@ namespace demo
 
         private void ExpireBindings()
         {
-            try
-            {
-                Thread.CurrentThread.Name = EXPIRE_BINDINGS_THREAD_NAME;
+            Thread.CurrentThread.Name = EXPIRE_BINDINGS_THREAD_NAME;
 
-                while (!m_stop)
+            while (!m_stop)
+            {
+                try
                 {
-                    try
+                    DateTimeOffset expiryTime = DateTimeOffset.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
+                    SIPRegistrarBinding expiredBinding = GetNextExpiredBinding(expiryTime);
+
+                    while (expiredBinding != null)
                     {
-                        DateTimeOffset expiryTime = DateTimeOffset.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
-                        SIPRegistrarBinding expiredBinding = GetNextExpiredBinding(expiryTime);
+                        Logger.LogDebug("Expired binding deleted for " + expiredBinding.SIPAccount.AOR + " and " + expiredBinding.ContactURI + ", last register " +
+                            expiredBinding.LastUpdate.ToString("o") + ", expiry " + expiredBinding.Expiry + "s, expiry time " + expiredBinding.ExpiryTime.ToString("o") + ", now " + expiryTime.ToString("o") + ".");
 
-                        while (expiredBinding != null)
-                        {
-                            Logger.LogDebug("Expired binding deleted for " + expiredBinding.ID + " and " + expiredBinding.MangledContactURI + ", last register " +
-                                expiredBinding.LastUpdate + ", expiry " + expiredBinding.Expiry + ", expiry time " + expiredBinding.ExpiryTime + ", now " + expiryTime.ToString("HH:mm:ss") + ".");
-
-                            expiryTime = DateTimeOffset.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
-                            expiredBinding = GetNextExpiredBinding(expiryTime);
-                        }
+                        expiryTime = DateTimeOffset.UtcNow.AddSeconds(BINDING_EXPIRY_GRACE_PERIOD * -1);
+                        expiredBinding = GetNextExpiredBinding(expiryTime);
                     }
-                    catch (Exception expireExcp)
-                    {
-                        Logger.LogError("Exception ExpireBindings Delete. " + expireExcp.Message);
-                    }
-
-                    Thread.Sleep(REMOVE_EXPIRED_BINDINGS_INTERVAL);
                 }
+                catch (Exception expireExcp)
+                {
+                    Logger.LogError("Exception ExpireBindings Delete. " + expireExcp.Message);
+                }
+
+                Thread.Sleep(REMOVE_EXPIRED_BINDINGS_INTERVAL);
             }
-            catch (Exception excp)
-            {
-                Logger.LogError("Exception ExpireBindings. " + excp.Message);
-            }
-            finally
-            {
-                Logger.LogWarning("Thread " + EXPIRE_BINDINGS_THREAD_NAME + " stopped!");
-            }
+
+            Logger.LogDebug($"Thread {EXPIRE_BINDINGS_THREAD_NAME} stopped!");
         }
 
         private SIPRegistrarBinding GetNextExpiredBinding(DateTimeOffset expiryTime)
@@ -119,7 +110,7 @@ namespace demo
                     else
                     {
                         Logger.LogWarning("A binding returned from the database as expired wasn't. " + binding.ID + " and " + binding.MangledContactURI + ", last register " +
-                                binding.LastUpdate.ToString("HH:mm:ss") + ", expiry " + binding.Expiry + ", expiry time " + binding.ExpiryTime.ToString("HH:mm:ss") + 
+                                binding.LastUpdate.ToString("HH:mm:ss") + ", expiry " + binding.Expiry + ", expiry time " + binding.ExpiryTime.ToString("HH:mm:ss") +
                                 ", checkedtime " + expiryTime.ToString("HH:mm:ss") + ", now " + DateTimeOffset.UtcNow.ToString("HH:mm:ss") + ".");
 
                         binding = null;
@@ -148,7 +139,6 @@ namespace demo
             List<SIPContactHeader> contactHeaders,
             string callId,
             int cseq,
-            //int contactHeaderExpiresValue,
             int expiresHeaderValue,
             string userAgent,
             out SIPResponseStatusCodesEnum responseStatus,
@@ -158,7 +148,7 @@ namespace demo
 
             int maxAllowedExpiry = DEFAULT_MAX_EXPIRY_SECONDS;
             responseMessage = null;
-            string sipAccountAOR = sipAccount.SIPUsername + "@" + sipAccount.Domain.Domain;
+            string sipAccountAOR = sipAccount.AOR;
             responseStatus = SIPResponseStatusCodesEnum.Ok;
 
             try
@@ -222,23 +212,21 @@ namespace demo
 
                         bindingURI.Parameters.Remove(m_sipExpiresParameterKey);
 
-                        SIPRegistrarBinding binding = GetBindingForContactURI(bindings, bindingURI.ToString());
+                        //SIPRegistrarBinding binding = GetBindingForContactURI(bindings, bindingURI.ToString());
+                        SIPRegistrarBinding binding = bindings.Where(x => x.ContactURI == bindingURI.ToString()).FirstOrDefault();
 
                         if (binding != null)
                         {
                             if (requestedExpiry <= 0)
                             {
-                                Logger.LogDebug("Binding expired by client for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ".");
+                                Logger.LogDebug($"Binding expired by client for {sipAccountAOR} from {remoteSIPEndPoint}.");
                                 bindings.Remove(binding);
-                                //m_bindingsPersistor.Delete(binding);
                                 m_registrarBindingDataLayer.Delete(binding.ID);
                                 bindingExpiry = 0;
-
-                                //FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingRemoval, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
                             }
                             else
                             {
-                                Logger.LogDebug("Binding update request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.");
+                                Logger.LogDebug($"Binding update request for {sipAccountAOR} from {remoteSIPEndPoint}, expiry requested {requestedExpiry}s granted {bindingExpiry}s.");
                                 //binding.RefreshBinding(bindingExpiry, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, sipAccount.DontMangleEnabled);
                                 //binding.RefreshBinding(bindingExpiry, remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, false);
 
@@ -255,32 +243,23 @@ namespace demo
                         {
                             if (requestedExpiry > 0)
                             {
-                                Logger.LogDebug("New binding request for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + ", expiry requested " + requestedExpiry + "s granted " + bindingExpiry + "s.");
+                                Logger.LogDebug($"New binding request for {sipAccountAOR} from {remoteSIPEndPoint}, expiry requested {requestedExpiry}s granted {bindingExpiry}s.");
 
                                 if (bindings.Count >= m_maxBindingsPerAccount)
                                 {
                                     // Need to remove the oldest binding to stay within limit.
-                                    //SIPRegistrarBinding oldestBinding = m_bindingsPersistor.Get(b => b.SIPAccountId == sipAccount.Id, null, 0, Int32.MaxValue).OrderBy(x => x.LastUpdateUTC).Last();
                                     SIPRegistrarBinding oldestBinding = bindings.OrderBy(x => x.LastUpdate).Last();
-                                    Logger.LogDebug("Binding limit exceeded for " + sipAccountAOR + " from " + remoteSIPEndPoint.ToString() + " removing oldest binding to stay within limit of " + m_maxBindingsPerAccount + ".");
-                                    //m_bindingsPersistor.Delete(oldestBinding);
+                                    Logger.LogDebug($"Binding limit exceeded for {sipAccountAOR} from {remoteSIPEndPoint} removing oldest binding to stay within limit of {m_maxBindingsPerAccount}.");
                                     m_registrarBindingDataLayer.Delete(oldestBinding.ID);
                                 }
 
-                                SIPRegistrarBinding newBinding = new SIPRegistrarBinding(sipAccount, bindingURI, callId, cseq, userAgent, 
+                                SIPRegistrarBinding newBinding = new SIPRegistrarBinding(sipAccount, bindingURI, callId, cseq, userAgent,
                                     remoteSIPEndPoint, proxySIPEndPoint, registrarSIPEndPoint, bindingExpiry);
-                                DateTime startTime = DateTime.Now;
-                                bindings.Add(newBinding);
-                                //m_bindingsPersistor.Add(newBinding);
                                 m_registrarBindingDataLayer.Add(newBinding);
-                                //TimeSpan duration = DateTime.Now.Subtract(startTime);
-                                //FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.RegistrarTiming, "Binding database add time for " + sipAccountAOR + " took " + duration.TotalMilliseconds + "ms.", null));
-
-                                //FireSIPMonitorLogEvent(new SIPMonitorMachineEvent(SIPMonitorMachineEventTypesEnum.SIPRegistrarBindingUpdate, sipAccount.Owner, sipAccount.Id.ToString(), SIPURI.ParseSIPURIRelaxed(sipAccountAOR)));
                             }
                             else
                             {
-                                Logger.LogDebug("New binding received for " + sipAccountAOR + " with expired contact," + bindingURI.ToString() + " no update.");
+                                Logger.LogDebug($"New binding received for {sipAccountAOR} with expired contact, {bindingURI} no update.");
                                 bindingExpiry = 0;
                             }
                         }
@@ -289,33 +268,12 @@ namespace demo
                     }
                 }
 
-                return bindings;
+                return m_registrarBindingDataLayer.GetForSIPAccount(sipAccount.ID);
             }
             catch (Exception excp)
             {
                 Logger.LogError("Exception UpdateBinding. " + excp);
-                //FireSIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorEventTypesEnum.Error, "Registrar error updating binding: " + excp.Message + " Binding not updated.", sipAccount.SIPUsername));
                 responseStatus = SIPResponseStatusCodesEnum.InternalServerError;
-                return null;
-            }
-        }
-        private SIPRegistrarBinding GetBindingForContactURI(List<SIPRegistrarBinding> bindings, string bindingURI)
-        {
-            if (bindings == null || bindings.Count == 0)
-            {
-                return null;
-            }
-            else
-            {
-                foreach (SIPRegistrarBinding binding in bindings)
-                {
-                    if (binding.ContactURI == bindingURI)
-                    {
-                        //logger.Debug(binding.ContactURI + " matched " + bindingURI + ".");
-                        return binding;
-                    }
-                }
-                //logger.Debug("No existing binding matched for " + bindingURI + ".");
                 return null;
             }
         }

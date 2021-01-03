@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using SIPSorcery.SIP;
 
 namespace demo.DataAccess
@@ -34,7 +35,9 @@ namespace demo.DataAccess
         {
             using (var db = new SIPAssetsDbContext())
             {
-                return db.SIPRegistrarBindings.Where(x => x.ExpiryTime <= expiryTime)
+                return db.SIPRegistrarBindings
+                    .Include(x => x.SIPAccount)
+                    .Where(x => x.ExpiryTime <= expiryTime)
                     .OrderBy(x => x.ExpiryTime)
                     .FirstOrDefault();
             }
@@ -73,6 +76,7 @@ namespace demo.DataAccess
 
                 existing.LastUpdate = DateTimeOffset.UtcNow;
                 existing.Expiry = expiry;
+                existing.ExpiryTime = DateTimeOffset.UtcNow.AddSeconds(expiry);
                 existing.RemoteSIPSocket = remoteSIPEndPoint?.ToString();
                 existing.ProxySIPSocket = proxySIPEndPoint?.ToString();
                 existing.RegistrarSIPSocket = registrarSIPEndPoint?.ToString();

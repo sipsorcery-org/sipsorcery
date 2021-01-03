@@ -23,9 +23,11 @@ namespace demo.DataAccess
 {
     public partial class SIPAccount : ISIPAccount
     {
-        public string SIPDomain
-        {
-            get => Domain?.Domain;
-        }
+        public string SIPDomain => Domain?.Domain;
+        
+        /// <summary>
+        /// Address of Record. Convenience property.
+        /// </summary>
+        public string AOR => SIPUsername + "@" + Domain?.Domain;
     }
 }
