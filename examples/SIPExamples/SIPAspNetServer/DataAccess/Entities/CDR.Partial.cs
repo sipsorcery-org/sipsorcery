@@ -33,7 +33,7 @@ namespace demo.DataAccess
         {
             ID = sipCDR.CDRId;
             Direction = sipCDR.CallDirection.ToString();
-            created = sipCDR.Created;
+            Created = sipCDR.Created;
             DstUser = sipCDR.Destination.User;
             DstHost = sipCDR.Destination.Host;
             DstUri = sipCDR.Destination.ToString();

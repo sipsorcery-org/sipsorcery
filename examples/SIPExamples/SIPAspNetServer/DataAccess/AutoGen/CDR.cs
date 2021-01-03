@@ -13,9 +13,9 @@ namespace demo.DataAccess
         }
 
         public Guid ID { get; set; }
-        public DateTimeOffset Inserted { get; set; }
+        public DateTime Inserted { get; set; }
         public string Direction { get; set; }
-        public DateTimeOffset created { get; set; }
+        public DateTime Created { get; set; }
         public string DstUser { get; set; }
         public string DstHost { get; set; }
         public string DstUri { get; set; }
@@ -26,15 +26,15 @@ namespace demo.DataAccess
         public string LocalSocket { get; set; }
         public string RemoteSocket { get; set; }
         public Guid? BridgeID { get; set; }
-        public DateTimeOffset? InProgressAt { get; set; }
+        public DateTime? InProgressAt { get; set; }
         public int? InProgressStatus { get; set; }
         public string InProgressReason { get; set; }
         public int? RingDuration { get; set; }
-        public DateTimeOffset? AnsweredAt { get; set; }
+        public DateTime? AnsweredAt { get; set; }
         public int? AnsweredStatus { get; set; }
         public string AnsweredReason { get; set; }
         public int? Duration { get; set; }
-        public DateTimeOffset? HungupAt { get; set; }
+        public DateTime? HungupAt { get; set; }
         public string HungupReason { get; set; }
 
         public virtual ICollection<SIPCall> SIPCalls { get; set; }

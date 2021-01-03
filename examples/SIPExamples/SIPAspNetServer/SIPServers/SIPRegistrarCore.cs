@@ -261,7 +261,7 @@ namespace demo
 
                     if (sipAccount == null)
                     {
-                        Logger.LogWarning($"RegistrarCore SIP account {sipAccount.AOR} does not exist.");
+                        Logger.LogWarning($"RegistrarCore SIP account {toUser}@{canonicalDomain} does not exist.");
                         SIPResponse forbiddenResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Forbidden, null);
                         registerTransaction.SendResponse(forbiddenResponse);
                         return RegisterResultEnum.Forbidden;
@@ -407,7 +407,7 @@ namespace demo
                 foreach (SIPRegistrarBinding binding in bindings)
                 {
                     SIPContactHeader bindingContact = new SIPContactHeader(null, SIPURI.ParseSIPURIRelaxed(binding.ContactURI));
-                    bindingContact.Expires = Convert.ToInt32(binding.ExpiryTime.Subtract(DateTimeOffset.UtcNow).TotalSeconds % Int32.MaxValue);
+                    bindingContact.Expires = Convert.ToInt32(binding.ExpiryTime.Subtract(DateTime.UtcNow).TotalSeconds % Int32.MaxValue);
                     contactHeaderList.Add(bindingContact);
                 }
 

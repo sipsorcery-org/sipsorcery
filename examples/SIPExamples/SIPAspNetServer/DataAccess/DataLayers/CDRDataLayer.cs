@@ -38,7 +38,7 @@ namespace demo.DataAccess
 
             using (var db = new SIPAssetsDbContext())
             {
-               cdr.Inserted = DateTimeOffset.UtcNow;
+               cdr.Inserted = DateTime.UtcNow;
 
                 db.CDRs.Add(cdr);
                 db.SaveChanges();
@@ -103,7 +103,7 @@ namespace demo.DataAccess
                 }
                 else
                 {
-                    existing.HungupAt = DateTimeOffset.UtcNow;
+                    existing.HungupAt = DateTime.UtcNow;
                     existing.HungupReason = reason;
                     existing.Duration = Convert.ToInt32(existing.HungupAt.Value.Subtract(existing.AnsweredAt.Value).TotalSeconds);
 

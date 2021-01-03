@@ -21,7 +21,7 @@ namespace demo.DataAccess
         public string RouteSet { get; set; }
         public int? CallDurationLimit { get; set; }
         public string Direction { get; set; }
-        public DateTimeOffset Inserted { get; set; }
+        public DateTime Inserted { get; set; }
 
         public virtual CDR CDR { get; set; }
     }

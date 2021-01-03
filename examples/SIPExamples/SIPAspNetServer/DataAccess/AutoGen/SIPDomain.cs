@@ -15,7 +15,7 @@ namespace demo.DataAccess
         public Guid ID { get; set; }
         public string Domain { get; set; }
         public string AliasList { get; set; }
-        public DateTimeOffset Inserted { get; set; }
+        public DateTime Inserted { get; set; }
 
         public virtual ICollection<SIPAccount> SIPAccounts { get; set; }
     }

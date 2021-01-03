@@ -60,7 +60,7 @@ namespace demo.DataAccess
             int expirySeconds)
         {
             ID = Guid.NewGuid();
-            LastUpdate = DateTimeOffset.UtcNow;
+            LastUpdate = DateTime.UtcNow;
             SIPAccountID = sipAccount.ID;
             //sipaccountname = sipAccount.sipusername + "@" + sipAccount.domain.domain;
             ContactURI = bindingURI.ToString();
@@ -75,7 +75,7 @@ namespace demo.DataAccess
             ProxySIPSocket = proxySIPEndPoint?.ToString();
             RemoteSIPSocket = remoteSIPEndPoint.ToString();
             RegistrarSIPSocket = registrarSIPEndPoint?.ToString();
-            LastUpdate = DateTimeOffset.UtcNow;
+            LastUpdate = DateTime.UtcNow;
 
             //if (SIPTransport.IsPrivateAddress(sipRequest.Header.Contact[0].ContactURI.Host) && m_mangleUACContact)
             //if (!sipAccount.DontMangleEnabled && Regex.Match(m_mangledContactURI.Host, @"(\d+\.){3}\d+").Success)
@@ -93,11 +93,11 @@ namespace demo.DataAccess
 
             if (expirySeconds > 0)
             {
-                ExpiryTime = DateTimeOffset.Now.AddSeconds(expirySeconds);
+                ExpiryTime = DateTime.Now.AddSeconds(expirySeconds);
             }
             else
             {
-                ExpiryTime = DateTimeOffset.UtcNow;
+                ExpiryTime = DateTime.UtcNow;
             }
         }
 

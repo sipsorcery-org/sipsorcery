@@ -16,8 +16,8 @@ namespace demo.DataAccess
         public string RemoteSIPSocket { get; set; }
         public string ProxySIPSocket { get; set; }
         public string RegistrarSIPSocket { get; set; }
-        public DateTimeOffset LastUpdate { get; set; }
-        public DateTimeOffset ExpiryTime { get; set; }
+        public DateTime LastUpdate { get; set; }
+        public DateTime ExpiryTime { get; set; }
 
         public virtual SIPAccount SIPAccount { get; set; }
     }

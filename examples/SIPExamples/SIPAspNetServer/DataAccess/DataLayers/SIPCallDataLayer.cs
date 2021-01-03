@@ -42,7 +42,7 @@ namespace demo.DataAccess
             using (var db = new SIPAssetsDbContext())
             {
                 call.ID = Guid.NewGuid();
-                call.Inserted = DateTimeOffset.UtcNow;
+                call.Inserted = DateTime.UtcNow;
 
                 db.SIPCalls.Add(call);
                 db.SaveChanges();

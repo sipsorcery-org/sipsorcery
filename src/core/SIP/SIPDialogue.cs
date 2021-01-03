@@ -111,8 +111,8 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private DateTimeOffset m_inserted;
-        public DateTimeOffset Inserted
+        private DateTime m_inserted;
+        public DateTime Inserted
         {
             get { return m_inserted; }
             set { m_inserted = value.ToUniversalTime(); }
@@ -150,7 +150,7 @@ namespace SIPSorcery.SIP
             CDRId = cdrId;
             SDP = sdp;
             RemoteSDP = remoteSDP;
-            Inserted = DateTimeOffset.UtcNow;
+            Inserted = DateTime.UtcNow;
             Direction = SIPCallDirection.None;
         }
 
@@ -176,7 +176,7 @@ namespace SIPSorcery.SIP
             ContentType = uasInviteTransaction.TransactionFinalResponse.Header.ContentType;
             SDP = uasInviteTransaction.TransactionFinalResponse.Body;
             RemoteSDP = uasInviteTransaction.TransactionRequest.Body ?? uasInviteTransaction.AckRequest.Body;
-            Inserted = DateTimeOffset.UtcNow;
+            Inserted = DateTime.UtcNow;
             Direction = SIPCallDirection.In;
 
             if(uasInviteTransaction.m_gotPrack)
@@ -222,7 +222,7 @@ namespace SIPSorcery.SIP
             ContentType = uacInviteTransaction.TransactionRequest.Header.ContentType;
             SDP = uacInviteTransaction.TransactionRequest.Body;
             RemoteSDP = uacInviteTransaction.TransactionFinalResponse.Body;
-            Inserted = DateTimeOffset.UtcNow;
+            Inserted = DateTime.UtcNow;
             Direction = SIPCallDirection.Out;
 
             if(uacInviteTransaction.m_sentPrack)
@@ -274,7 +274,7 @@ namespace SIPSorcery.SIP
             LocalUserField.Parameters.Set("tag", toTag);
             LocalTag = toTag;
             CSeq = nonInviteRequest.Header.CSeq;
-            Inserted = DateTimeOffset.UtcNow;
+            Inserted = DateTime.UtcNow;
             Direction = SIPCallDirection.Out;
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.

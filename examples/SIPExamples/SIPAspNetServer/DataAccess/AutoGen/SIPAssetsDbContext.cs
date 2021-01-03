@@ -28,7 +28,8 @@ namespace demo.DataAccess
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Data Source=localhost;Initial Catalog=SIPAssets;Persist Security Info=True;User ID=appuser;Password=password");
+                //optionsBuilder.UseSqlServer("Data Source=localhost;Initial Catalog=SIPAssets;Persist Security Info=True;User ID=appuser;Password=password");
+                optionsBuilder.UseSqlite("Data Source=AppData/sipassets.db");
             }
         }
 
@@ -42,6 +43,8 @@ namespace demo.DataAccess
 
                 entity.Property(e => e.ID).ValueGeneratedNever();
 
+                entity.Property(e => e.AnsweredAt).HasColumnType("datetime");
+
                 entity.Property(e => e.AnsweredReason)
                     .HasMaxLength(512)
                     .IsUnicode(false);
@@ -50,6 +53,8 @@ namespace demo.DataAccess
                     .IsRequired()
                     .HasMaxLength(256)
                     .IsUnicode(false);
+
+                entity.Property(e => e.Created).HasColumnType("datetime");
 
                 entity.Property(e => e.Direction)
                     .IsRequired()
@@ -82,13 +87,19 @@ namespace demo.DataAccess
                     .HasMaxLength(128)
                     .IsUnicode(false);
 
+                entity.Property(e => e.HungupAt).HasColumnType("datetime");
+
                 entity.Property(e => e.HungupReason)
                     .HasMaxLength(512)
                     .IsUnicode(false);
 
+                entity.Property(e => e.InProgressAt).HasColumnType("datetime");
+
                 entity.Property(e => e.InProgressReason)
                     .HasMaxLength(512)
                     .IsUnicode(false);
+
+                entity.Property(e => e.Inserted).HasColumnType("datetime");
 
                 entity.Property(e => e.LocalSocket)
                     .HasMaxLength(64)
@@ -101,12 +112,14 @@ namespace demo.DataAccess
 
             modelBuilder.Entity<SIPAccount>(entity =>
             {
-                entity.HasIndex(e => new { e.SIPUsername, e.DomainID }, "UQ__SIPAccou__6E36B5B5E2EC7FF1")
+                entity.HasIndex(e => new { e.SIPUsername, e.DomainID }, "UQ__SIPAccou__6E36B5B546FC6DB4")
                     .IsUnique();
 
                 entity.Property(e => e.ID).ValueGeneratedNever();
 
-                entity.Property(e => e.Inserted).HasDefaultValueSql("(sysdatetimeoffset())");
+                entity.Property(e => e.Inserted)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(sysdatetime())");
 
                 entity.Property(e => e.SIPPassword)
                     .IsRequired()
@@ -119,7 +132,7 @@ namespace demo.DataAccess
                 entity.HasOne(d => d.Domain)
                     .WithMany(p => p.SIPAccounts)
                     .HasForeignKey(d => d.DomainID)
-                    .HasConstraintName("FK__SIPAccoun__Domai__1AD3FDA4");
+                    .HasConstraintName("FK__SIPAccoun__Domai__55F4C372");
             });
 
             modelBuilder.Entity<SIPCall>(entity =>
@@ -135,6 +148,8 @@ namespace demo.DataAccess
                     .IsRequired()
                     .HasMaxLength(3)
                     .IsUnicode(false);
+
+                entity.Property(e => e.Inserted).HasColumnType("datetime");
 
                 entity.Property(e => e.LocalTag)
                     .IsRequired()
@@ -173,12 +188,12 @@ namespace demo.DataAccess
                     .WithMany(p => p.SIPCalls)
                     .HasForeignKey(d => d.CDRID)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__SIPCalls__CDRID__46B27FE2");
+                    .HasConstraintName("FK__SIPCalls__CDRID__681373AD");
             });
 
             modelBuilder.Entity<SIPDomain>(entity =>
             {
-                entity.HasIndex(e => e.Domain, "UQ__SIPDomai__FD349E53D9BC0D1B")
+                entity.HasIndex(e => e.Domain, "UQ__SIPDomai__FD349E538EF10FC5")
                     .IsUnique();
 
                 entity.Property(e => e.ID).ValueGeneratedNever();
@@ -189,7 +204,9 @@ namespace demo.DataAccess
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.Inserted).HasDefaultValueSql("(sysdatetimeoffset())");
+                entity.Property(e => e.Inserted)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(sysdatetime())");
             });
 
             modelBuilder.Entity<SIPRegistrarBinding>(entity =>
@@ -199,6 +216,10 @@ namespace demo.DataAccess
                 entity.Property(e => e.ContactURI)
                     .IsRequired()
                     .HasMaxLength(767);
+
+                entity.Property(e => e.ExpiryTime).HasColumnType("datetime");
+
+                entity.Property(e => e.LastUpdate).HasColumnType("datetime");
 
                 entity.Property(e => e.MangledContactURI)
                     .HasMaxLength(767)
@@ -217,7 +238,7 @@ namespace demo.DataAccess
                 entity.HasOne(d => d.SIPAccount)
                     .WithMany(p => p.SIPRegistrarBindings)
                     .HasForeignKey(d => d.SIPAccountID)
-                    .HasConstraintName("FK__SIPRegist__SIPAc__1DB06A4F");
+                    .HasConstraintName("FK__SIPRegist__SIPAc__58D1301D");
             });
 
             OnModelCreatingPartial(modelBuilder);
