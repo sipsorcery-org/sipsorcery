@@ -21,6 +21,13 @@ namespace demo.DataAccess
 {
     public class SIPAccountDataLayer
     {
+        private readonly IDbContextFactory<SIPAssetsDbContext> _dbContextFactory;
+
+        public SIPAccountDataLayer(IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
+        {
+            _dbContextFactory = dbContextFactory;
+        }
+
         public SIPAccount GetSIPAccount(string username, string domain)
         {
             if (string.IsNullOrEmpty(username))
@@ -32,7 +39,7 @@ namespace demo.DataAccess
                 throw new ArgumentNullException(nameof(domain), "The domain parameter must be specified for GetSIPAccount.");
             }
 
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 SIPAccount sipAccount = db.SIPAccounts.Include(x => x.Domain).Where(x => x.SIPUsername.ToLower() == username.ToLower() &&
                                                                x.Domain.Domain.ToLower() == domain.ToLower()).SingleOrDefault();

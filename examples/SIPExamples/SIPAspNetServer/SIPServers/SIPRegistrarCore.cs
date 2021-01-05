@@ -22,6 +22,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -85,7 +86,7 @@ namespace demo
         private SIPTransport m_sipTransport;
         private SIPRegistrarBindingsManager m_registrarBindingsManager;
         private SIPAccountDataLayer m_sipAccountsDataLayer;
-        private SIPRegistrarBindingDataLayer m_SIPRegistrarBindingDataLayer;
+        private SIPRegistrarBindingDataLayer m_sipRegistrarBindingDataLayer;
         private SIPDomainDataLayer m_sipDomainDataLayer;
 
         private string m_serverAgent = SIPConstants.SIP_USERAGENT_STRING;
@@ -106,16 +107,19 @@ namespace demo
         public RegistrarCore(
             SIPTransport sipTransport,
             bool mangleUACContact,
-            bool strictRealmHandling)
+            bool strictRealmHandling,
+            SIPRegistrarBindingsManager registrarBindingsManager,
+            IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
         {
             m_sipTransport = sipTransport;
             m_mangleUACContact = mangleUACContact;
             m_strictRealmHandling = strictRealmHandling;
 
-            m_registrarBindingsManager = new SIPRegistrarBindingsManager();
-            m_sipAccountsDataLayer = new SIPAccountDataLayer();
-            m_SIPRegistrarBindingDataLayer = new SIPRegistrarBindingDataLayer();
-            m_sipDomainDataLayer = new SIPDomainDataLayer();
+            m_sipAccountsDataLayer = new SIPAccountDataLayer(dbContextFactory);
+            m_sipRegistrarBindingDataLayer = new SIPRegistrarBindingDataLayer(dbContextFactory);
+            m_sipDomainDataLayer = new SIPDomainDataLayer(dbContextFactory);
+
+            m_registrarBindingsManager = registrarBindingsManager;
         }
 
         public void Start(int threadCount)
@@ -293,7 +297,7 @@ namespace demo
                             {
                                 // No contacts header to update bindings with, return a list of the current bindings.
                                 //List<SIPRegistrarBinding> bindings = m_registrarBindingsManager.GetBindings(sipAccount.ID);
-                                List<SIPRegistrarBinding> bindings = m_SIPRegistrarBindingDataLayer.GetForSIPAccount(sipAccount.ID).ToList();
+                                List<SIPRegistrarBinding> bindings = m_sipRegistrarBindingDataLayer.GetForSIPAccount(sipAccount.ID).ToList();
                                 //List<SIPContactHeader> contactsList = m_registrarBindingsManager.GetContactHeader(); // registration.GetContactHeader(true, null);
                                 if (bindings != null)
                                 {

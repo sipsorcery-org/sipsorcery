@@ -15,6 +15,7 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -37,7 +38,15 @@ namespace demo
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddLogging();
-            services.AddDbContext<SIPAssetsDbContext>();
+
+            // DB Context factory is used by the SIP servers.
+            services.AddDbContextFactory<SIPAssetsDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("SIPAssets")));
+
+            // DB Context is used directly by web API controllers.
+            services.AddDbContext<SIPAssetsDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("SIPAssets")));
+
             services.AddSingleton(typeof(SIPHostedService));
             services.AddHostedService<SIPHostedService>();
             services.AddControllers()
@@ -53,18 +62,21 @@ namespace demo
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
+            //if (env.IsDevelopment())
+            //{
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "demo v1"));
-            }
+           // }
 
-            app.UseHttpsRedirection();
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "demo v1"));
+            // Using the welcome page breaks the API routes.
+            //app.UseWelcomePage();
+
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
 
-            app.UseAuthorization();
+            //app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

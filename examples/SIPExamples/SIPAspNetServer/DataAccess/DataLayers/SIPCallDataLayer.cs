@@ -16,14 +16,22 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 
 namespace demo.DataAccess
 {
     public class SIPCallDataLayer
     {
+        private readonly IDbContextFactory<SIPAssetsDbContext> _dbContextFactory;
+
+        public SIPCallDataLayer(IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
+        {
+            _dbContextFactory = dbContextFactory;
+        }
+
         public SIPCall Get(Guid id)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 return db.SIPCalls.Where(x => x.ID == id).FirstOrDefault();
             }
@@ -31,7 +39,7 @@ namespace demo.DataAccess
 
         public SIPCall Get(Expression<Func<SIPCall, bool>> where)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 return db.SIPCalls.Where(where).FirstOrDefault();
             }
@@ -39,7 +47,7 @@ namespace demo.DataAccess
 
         public SIPCall Add(SIPCall call)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 call.ID = Guid.NewGuid();
                 call.Inserted = DateTime.UtcNow;
@@ -53,7 +61,7 @@ namespace demo.DataAccess
 
         public void Delete(Guid id)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 var call = db.SIPCalls.Where(x => x.ID == id).SingleOrDefault();
                 if (call != null)
