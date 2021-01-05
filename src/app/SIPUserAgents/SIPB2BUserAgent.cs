@@ -30,7 +30,6 @@ namespace SIPSorcery.SIP.App
         private SIPClientUserAgent m_uac;
         private SIPCallDescriptor m_uacCallDescriptor;
 
-
         // User Agent Client Events.
         public event SIPCallResponseDelegate CallTrying;
         public event SIPCallFailedDelegate CallFailed;
