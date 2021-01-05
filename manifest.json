@@ -3213,7 +3213,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html",
-          "hash": "46Y9MFcl4SHByUVQp17bXg=="
+          "hash": "sHLL70sNN/DosdXtoLJB0w=="
         }
       },
       "is_incremental": false,
@@ -3537,7 +3537,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPDns.html",
-          "hash": "Dmuawn5u/EZqureopL895Q=="
+          "hash": "COGzRQKZMe2cJCwBvwEieA=="
         }
       },
       "is_incremental": false,
@@ -4305,7 +4305,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransport.html",
-          "hash": "G4FlxpC7VCV6gONOKpMx6A=="
+          "hash": "wK993lQlY2lk4nLTzip2vw=="
         }
       },
       "is_incremental": false,
