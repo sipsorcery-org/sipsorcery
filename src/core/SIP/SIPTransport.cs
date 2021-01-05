@@ -488,7 +488,14 @@ namespace SIPSorcery.SIP
                 SIPURI lookupURI = (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0) ?
                     sipRequest.Header.Routes.TopRoute.URI : sipRequest.URI;
 
-                var lookupResult = await ResolveSIPUriInternalAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
+                SIPEndPoint lookupResult = ResolveSIPUriFromCacheInternal(lookupURI, PreferIPv6NameResolution);
+
+                if (lookupResult == null)
+                {
+                    //logger.LogWarning($"SendRequestAsync DNS cache miss for {lookupURI}, doing DNS lookup.");
+
+                    lookupResult = await ResolveSIPUriInternalAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
+                }
 
                 if (lookupResult != null && lookupResult != SIPEndPoint.Empty)
                 {
@@ -872,7 +879,7 @@ namespace SIPSorcery.SIP
                                 return Task.FromResult(SocketError.InvalidArgument);
                             }
 
-                            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(rawSIPMessage, localEndPoint, remoteEndPoint);
+                            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(buffer, localEndPoint, remoteEndPoint);
 
                             if (sipMessageBuffer != null)
                             {
