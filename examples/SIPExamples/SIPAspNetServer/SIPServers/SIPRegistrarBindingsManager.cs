@@ -48,10 +48,12 @@ namespace demo
         private int m_maxBindingsPerAccount;
         private bool m_stop;
 
-        public SIPRegistrarBindingsManager(int maxBindingsPerAccount = DEFAULT_BINDINGS_PER_USER)
+        public SIPRegistrarBindingsManager(
+            SIPRegistrarBindingDataLayer registrarBindingDataLayer,
+            int maxBindingsPerAccount = DEFAULT_BINDINGS_PER_USER)
         {
             m_maxBindingsPerAccount = maxBindingsPerAccount;
-            m_registrarBindingDataLayer = new SIPRegistrarBindingDataLayer();
+            m_registrarBindingDataLayer = registrarBindingDataLayer;
         }
 
         public void Start()

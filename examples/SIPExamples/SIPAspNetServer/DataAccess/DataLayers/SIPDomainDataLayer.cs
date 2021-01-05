@@ -15,11 +15,19 @@
 
 using System;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace demo.DataAccess
 {
     public class SIPDomainDataLayer
     {
+        private readonly IDbContextFactory<SIPAssetsDbContext> _dbContextFactory;
+
+        public SIPDomainDataLayer(IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
+        {
+            _dbContextFactory = dbContextFactory;
+        }
+
         public string GetCanonicalDomain(string host, bool wildcardOk)
         {
             if (string.IsNullOrEmpty(host))
@@ -27,7 +35,7 @@ namespace demo.DataAccess
                 throw new ArgumentNullException(nameof(host), "The host parameter must be specified for GetCanonicalDomain.");
             }
 
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 SIPDomain sipDomain = db.SIPDomains.Where(x => x.Domain.ToLower() == host.ToLower()).SingleOrDefault();
                 if (sipDomain == null)

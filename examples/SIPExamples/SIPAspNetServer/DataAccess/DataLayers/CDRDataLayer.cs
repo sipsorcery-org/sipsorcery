@@ -15,6 +15,7 @@
 
 using System;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 
@@ -23,10 +24,16 @@ namespace demo.DataAccess
     public class CDRDataLayer
     {
         private readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<CDRDataLayer>();
+        private readonly IDbContextFactory<SIPAssetsDbContext> _dbContextFactory;
+
+        public CDRDataLayer(IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
+        {
+            _dbContextFactory = dbContextFactory;
+        }
 
         public CDR Get(Guid id)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 return db.CDRs.Where(x => x.ID == id).FirstOrDefault();
             }
@@ -36,7 +43,7 @@ namespace demo.DataAccess
         {
             CDR cdr = new CDR(sipCDR);
 
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                cdr.Inserted = DateTime.UtcNow;
 
@@ -45,14 +52,13 @@ namespace demo.DataAccess
             }
         }
 
-
         /// <summary>
         /// Updates an existing CDR.
         /// </summary>
         /// <param name="cdr">The CDR to update.</param>
         public void Update(SIPCDR sipCDR)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 var existing = (from cdr in db.CDRs where cdr.ID == sipCDR.CDRId select cdr).SingleOrDefault();
 
@@ -93,7 +99,7 @@ namespace demo.DataAccess
 
         public void Hangup(Guid id, string reason)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 var existing = db.CDRs.Where(x => x.ID == id).SingleOrDefault();
 
@@ -114,7 +120,7 @@ namespace demo.DataAccess
 
         public void UpdateBridgeID(Guid id, Guid bridgeID)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 var existing = db.CDRs.Where(x => x.ID == id).SingleOrDefault();
 

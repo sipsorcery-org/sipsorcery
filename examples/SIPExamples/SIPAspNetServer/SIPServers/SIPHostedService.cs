@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -39,8 +40,8 @@ namespace demo
         public const int REGISTRAR_CORE_WORKER_THREADS = 1;
         public const int B2BUA_CORE_WORKER_THREADS = 1;
 
-        private readonly ILogger<SIPHostedService> Logger;
-        private readonly IConfiguration Configuration;
+        private readonly ILogger<SIPHostedService> _logger;
+        private readonly IConfiguration _config;
 
         private SIPTransport _sipTransport;
         private RegistrarCore _registrarCore;
@@ -65,20 +66,23 @@ namespace demo
                     return new SIPCallDescriptor("idontexist@sipsorcery.com", uasTx.TransactionRequest.Body);
                 default:
                     return null;
-            }   
+            }
         };
 
-        public SIPHostedService(ILogger<SIPHostedService> logger, IConfiguration config)
+        public SIPHostedService(
+            ILogger<SIPHostedService> logger,
+            IConfiguration config,
+            IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
         {
-            Logger = logger;
-            Configuration = config;
+            _logger = logger;
+            _config = config;
 
             _sipTransport = new SIPTransport();
-            _bindingsManager = new SIPRegistrarBindingsManager(MAX_REGISTRAR_BINDINGS);
-            _registrarCore = new RegistrarCore(_sipTransport, false, false);
-            _b2bUserAgentCore = new SIPB2BUserAgentCore(_sipTransport, _getB2BDestination);
-            _sipCallManager = new SIPCallManager(_sipTransport, null);
-            _cdrDataLayer = new CDRDataLayer();
+            _bindingsManager = new SIPRegistrarBindingsManager(new SIPRegistrarBindingDataLayer(dbContextFactory), MAX_REGISTRAR_BINDINGS);
+            _registrarCore = new RegistrarCore(_sipTransport, false, false, _bindingsManager, dbContextFactory);
+            _b2bUserAgentCore = new SIPB2BUserAgentCore(_sipTransport, _getB2BDestination, dbContextFactory);
+            _sipCallManager = new SIPCallManager(_sipTransport, null, dbContextFactory);
+            _cdrDataLayer = new CDRDataLayer(dbContextFactory);
 
             SIPCDR.CDRCreated += _cdrDataLayer.Add;
             SIPCDR.CDRAnswered += _cdrDataLayer.Update;
@@ -88,13 +92,13 @@ namespace demo
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            Logger.LogDebug("SIP hosted service starting...");
+            _logger.LogDebug("SIP hosted service starting...");
 
-            int listenPort = Configuration.GetValue<int>("SIPListenPort", DEFAULT_SIP_LISTEN_PORT);
+            int listenPort = _config.GetValue<int>("SIPListenPort", DEFAULT_SIP_LISTEN_PORT);
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, listenPort)));
 
             var listeningEP = _sipTransport.GetSIPChannels().First().ListeningSIPEndPoint;
-            Logger.LogInformation($"SIP transport listening on {listeningEP}.");
+            _logger.LogInformation($"SIP transport listening on {listeningEP}.");
 
             EnableTraceLogs(_sipTransport, true);
 
@@ -109,7 +113,7 @@ namespace demo
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            Logger.LogDebug("SIP hosted service stopping...");
+            _logger.LogDebug("SIP hosted service stopping...");
 
             _b2bUserAgentCore.Stop();
             _registrarCore.Stop = true;
@@ -136,7 +140,7 @@ namespace demo
                 }
                 else
                 {
-                    switch(sipRequest.Method)
+                    switch (sipRequest.Method)
                     {
                         case SIPMethodsEnum.BYE:
                         case SIPMethodsEnum.CANCEL:
@@ -146,7 +150,7 @@ namespace demo
                             break;
 
                         case SIPMethodsEnum.INVITE:
-                            Logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
+                            _logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
                             _b2bUserAgentCore.AddInviteRequest(sipRequest);
                             break;
 
@@ -168,7 +172,7 @@ namespace demo
             }
             catch (Exception reqExcp)
             {
-                Logger.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
+                _logger.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
             }
         }
 
@@ -179,68 +183,68 @@ namespace demo
         {
             sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
             {
-                Logger.LogDebug($"Request received: {localEP}<-{remoteEP}");
+                _logger.LogDebug($"Request received: {localEP}<-{remoteEP}");
 
                 if (!fullSIP)
                 {
-                    Logger.LogDebug(req.StatusLine);
+                    _logger.LogDebug(req.StatusLine);
                 }
                 else
                 {
-                    Logger.LogDebug(req.ToString());
+                    _logger.LogDebug(req.ToString());
                 }
             };
 
             sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
             {
-                Logger.LogDebug($"Request sent: {localEP}->{remoteEP}");
+                _logger.LogDebug($"Request sent: {localEP}->{remoteEP}");
 
                 if (!fullSIP)
                 {
-                    Logger.LogDebug(req.StatusLine);
+                    _logger.LogDebug(req.StatusLine);
                 }
                 else
                 {
-                    Logger.LogDebug(req.ToString());
+                    _logger.LogDebug(req.ToString());
                 }
             };
 
             sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
             {
-                Logger.LogDebug($"Response received: {localEP}<-{remoteEP}");
+                _logger.LogDebug($"Response received: {localEP}<-{remoteEP}");
 
                 if (!fullSIP)
                 {
-                    Logger.LogDebug(resp.ShortDescription);
+                    _logger.LogDebug(resp.ShortDescription);
                 }
                 else
                 {
-                    Logger.LogDebug(resp.ToString());
+                    _logger.LogDebug(resp.ToString());
                 }
             };
 
             sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
             {
-                Logger.LogDebug($"Response sent: {localEP}->{remoteEP}");
+                _logger.LogDebug($"Response sent: {localEP}->{remoteEP}");
 
                 if (!fullSIP)
                 {
-                    Logger.LogDebug(resp.ShortDescription);
+                    _logger.LogDebug(resp.ShortDescription);
                 }
                 else
                 {
-                    Logger.LogDebug(resp.ToString());
+                    _logger.LogDebug(resp.ToString());
                 }
             };
 
             sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
             {
-                Logger.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+                _logger.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
             };
 
             sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
             {
-                Logger.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+                _logger.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
             };
         }
     }

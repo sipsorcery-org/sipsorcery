@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -48,13 +49,14 @@ namespace demo
 
         public SIPCallManager(
             SIPTransport sipTransport,
-            SIPEndPoint outboundProxy)
+            SIPEndPoint outboundProxy,
+            IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
         {
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
 
-            m_sipCallDataLayer = new SIPCallDataLayer();
-            m_cdrDataLayer = new CDRDataLayer();
+            m_sipCallDataLayer = new SIPCallDataLayer(dbContextFactory);
+            m_cdrDataLayer = new CDRDataLayer(dbContextFactory);
         }
 
         public void ProcessInDialogueRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)

@@ -74,7 +74,7 @@ using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery
 {
@@ -450,7 +450,7 @@ namespace SIPSorcery
 
                 mre.WaitOne(TimeSpan.FromSeconds(2000));
 
-                ua.Stop();
+                ua.Stop(false);
 
                 return Task.FromResult(result);
             }

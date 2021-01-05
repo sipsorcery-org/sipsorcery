@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -64,7 +65,10 @@ namespace demo
         private GetB2BDestinationDelegate _getDestination;
         private SIPCallManager _sipCallManager;
 
-        public SIPB2BUserAgentCore(SIPTransport sipTransport, GetB2BDestinationDelegate getDestination)
+        public SIPB2BUserAgentCore(
+            SIPTransport sipTransport, 
+            GetB2BDestinationDelegate getDestination,
+            IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
         {
             if(sipTransport == null)
             {
@@ -77,7 +81,7 @@ namespace demo
 
             _sipTransport = sipTransport;
             _getDestination = getDestination;
-            _sipCallManager = new SIPCallManager(_sipTransport, null);
+            _sipCallManager = new SIPCallManager(_sipTransport, null, dbContextFactory);
         }
 
         public void Start(int threadCount)

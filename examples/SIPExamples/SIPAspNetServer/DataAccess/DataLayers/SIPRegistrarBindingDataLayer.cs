@@ -23,9 +23,16 @@ namespace demo.DataAccess
 {
     public class SIPRegistrarBindingDataLayer
     {
+        private readonly IDbContextFactory<SIPAssetsDbContext> _dbContextFactory;
+
+        public SIPRegistrarBindingDataLayer(IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
+        {
+            _dbContextFactory = dbContextFactory;
+        }
+
         public List<SIPRegistrarBinding> GetForSIPAccount(Guid sipAccountID)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 return db.SIPRegistrarBindings.Where(x => x.SIPAccountID == sipAccountID).ToList();
             }
@@ -33,7 +40,7 @@ namespace demo.DataAccess
 
         public SIPRegistrarBinding GetNextExpired(DateTime expiryTime)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 return db.SIPRegistrarBindings
                     .Include(x => x.SIPAccount)
@@ -45,7 +52,7 @@ namespace demo.DataAccess
 
         public SIPRegistrarBinding Add(SIPRegistrarBinding binding)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 binding.ID = Guid.NewGuid();
                 binding.LastUpdate = DateTime.UtcNow;
@@ -65,7 +72,7 @@ namespace demo.DataAccess
             SIPEndPoint registrarSIPEndPoint, 
             bool dontMangle)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 var existing = db.SIPRegistrarBindings.Where(x => x.ID == id).SingleOrDefault();
 
@@ -89,7 +96,7 @@ namespace demo.DataAccess
 
         public SIPRegistrarBinding SetExpiry(Guid id,int expiry)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 var existing = db.SIPRegistrarBindings.Where(x => x.ID == id).SingleOrDefault();
 
@@ -109,7 +116,7 @@ namespace demo.DataAccess
 
         public void Delete(Guid id)
         {
-            using (var db = new SIPAssetsDbContext())
+            using (var db = _dbContextFactory.CreateDbContext())
             {
                 var binding = db.SIPRegistrarBindings.Where(x => x.ID == id).SingleOrDefault();
                 if (binding != null)

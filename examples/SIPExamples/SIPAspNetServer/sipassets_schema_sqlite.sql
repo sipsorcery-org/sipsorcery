@@ -2,7 +2,7 @@ CREATE TABLE "CDR" (
     "ID" uniqueidentifier NOT NULL CONSTRAINT "PK_CDR" PRIMARY KEY,
     "Inserted" datetime NOT NULL,
     "Direction" varchar(3) NOT NULL,
-    "created" datetime NOT NULL,
+    "Created" datetime NOT NULL,
     "DstUser" varchar(128) NULL,
     "DstHost" varchar(128) NOT NULL,
     "DstUri" varchar(1024) NOT NULL,
