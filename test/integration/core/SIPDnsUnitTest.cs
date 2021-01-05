@@ -117,7 +117,38 @@ namespace SIPSorcery.SIP.IntegrationTests
         /// to be supplied from the in-memory cache.
         /// </summary>
         [Fact]
-        public void ResolveSIPServiceFromCacheTest()
+        public void ResolveNoSRVFromCacheTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+
+            SIPURI lookupURI = SIPURI.ParseSIPURIRelaxed("sip:tel.t-online.de:5060");
+            //var result = SIPDNSManager.ResolveSIPService(lookupURI, false);
+            var result = SIPDns.ResolveAsync(lookupURI, false, cts.Token).Result;
+            Assert.NotNull(result);
+
+            //SIPEndPoint resultEP = result.GetSIPEndPoint();
+            Assert.NotNull(result);
+            Assert.NotEqual(SIPEndPoint.Empty, result);
+            logger.LogDebug($"resolved to SIP end point {result}.");
+            //Assert.NotEmpty(result.SIPSRVResults);
+            //Assert.NotEmpty(result.EndPointResults);
+
+            // Do the same look up again immediately to check the result when it comes from the in-memory cache.
+            var resultCache = SIPDns.ResolveFromCache(lookupURI, false);
+            Assert.NotNull(resultCache);
+            Assert.NotEqual(SIPEndPoint.Empty, resultCache);
+            logger.LogDebug($"cache resolved to SIP end point {resultCache}.");
+        }
+
+        /// <summary>
+        /// Does the same resolve twice in a row within a short space of time. This should cause the second lookup
+        /// to be supplied from the in-memory cache.
+        /// </summary>
+        [Fact]
+        public void ResolveWithSRVFromCacheTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
