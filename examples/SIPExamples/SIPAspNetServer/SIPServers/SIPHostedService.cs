@@ -94,7 +94,16 @@ namespace demo
         {
             _logger.LogDebug("SIP hosted service starting...");
 
+            // Get application config settings.
             int listenPort = _config.GetValue<int>("SIPListenPort", DEFAULT_SIP_LISTEN_PORT);
+            string publicIPAddress = _config.GetValue<string>("SIPPublicIPAddress", null);
+
+            if(IPAddress.TryParse(publicIPAddress, out var ipAddr))
+            {
+                _sipTransport.ContactHost = ipAddr.ToString();
+                _logger.LogInformation($"SIP transport contact address set to {_sipTransport.ContactHost}.");
+            }
+
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, listenPort)));
 
             var listeningEP = _sipTransport.GetSIPChannels().First().ListeningSIPEndPoint;
