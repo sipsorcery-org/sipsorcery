@@ -24,7 +24,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
-using SIPSorcery.SIP.App;
 using demo.DataAccess;
 
 namespace demo
@@ -44,30 +43,12 @@ namespace demo
         private readonly IConfiguration _config;
 
         private SIPTransport _sipTransport;
+        private SIPDialPlan _sipDialPlan;
         private RegistrarCore _registrarCore;
         private SIPRegistrarBindingsManager _bindingsManager;
         private SIPB2BUserAgentCore _b2bUserAgentCore;
         private SIPCallManager _sipCallManager;
         private CDRDataLayer _cdrDataLayer;
-
-        /// <summary>
-        /// Dialplan for the B2B core.
-        /// </summary>
-        private static GetB2BDestinationDelegate _getB2BDestination = (uasTx) =>
-        {
-            var inUri = uasTx.TransactionRequestURI;
-
-            switch (inUri.User)
-            {
-                case "123":
-                    //return new SIPCallDescriptor("time@sipsorcery.com", uasTx.TransactionRequest.Body);
-                    return new SIPCallDescriptor("aaron@192.168.0.50:6060", uasTx.TransactionRequest.Body);
-                case "456":
-                    return new SIPCallDescriptor("idontexist@sipsorcery.com", uasTx.TransactionRequest.Body);
-                default:
-                    return null;
-            }
-        };
 
         public SIPHostedService(
             ILogger<SIPHostedService> logger,
@@ -78,9 +59,14 @@ namespace demo
             _config = config;
 
             _sipTransport = new SIPTransport();
+
+            // Load dialplan script and make sure it can be compiled.
+            _sipDialPlan = new SIPDialPlan();
+            _sipDialPlan.Load();
+
             _bindingsManager = new SIPRegistrarBindingsManager(new SIPRegistrarBindingDataLayer(dbContextFactory), MAX_REGISTRAR_BINDINGS);
             _registrarCore = new RegistrarCore(_sipTransport, false, false, _bindingsManager, dbContextFactory);
-            _b2bUserAgentCore = new SIPB2BUserAgentCore(_sipTransport, _getB2BDestination, dbContextFactory);
+            _b2bUserAgentCore = new SIPB2BUserAgentCore(_sipTransport, dbContextFactory, _sipDialPlan);
             _sipCallManager = new SIPCallManager(_sipTransport, null, dbContextFactory);
             _cdrDataLayer = new CDRDataLayer(dbContextFactory);
 

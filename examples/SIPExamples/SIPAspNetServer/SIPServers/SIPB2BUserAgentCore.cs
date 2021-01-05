@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
@@ -26,17 +27,6 @@ using demo.DataAccess;
 
 namespace demo
 {
-    /// <summary>
-    /// This function type is to allow B2B user agents to lookup the forwarding destination
-    /// for an accepted User Agent Server (UAS) call leg. The intent is that functions
-    /// can implement a form of a dialplan and pass to the B2BUA core.
-    /// </summary>
-    /// <param name="uas">A User Agent Server (UAS) transaction that has been accepted
-    /// for forwarding.</param>
-    /// <returns>A call descriptor for the User Agent Client (UAC) call leg that will
-    /// be bridged to the UAS leg.</returns>
-    public delegate SIPCallDescriptor GetB2BDestinationDelegate(UASInviteTransaction uas);
-
     /// <summary>
     /// This class acts as a server agent that processes incoming calls (INVITE requests)
     /// by acting as a Back-to-Back User Agent (B2BUA). 
@@ -62,26 +52,22 @@ namespace demo
         private bool _exit = false;
 
         private SIPTransport _sipTransport;
-        private GetB2BDestinationDelegate _getDestination;
         private SIPCallManager _sipCallManager;
+        private SIPDialPlan _sipdialPlan;
 
         public SIPB2BUserAgentCore(
             SIPTransport sipTransport, 
-            GetB2BDestinationDelegate getDestination,
-            IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
+            IDbContextFactory<SIPAssetsDbContext> dbContextFactory,
+            SIPDialPlan sipDialPlan)
         {
             if(sipTransport == null)
             {
                 throw new ArgumentNullException(nameof(sipTransport));
             }
-            else if(getDestination == null)
-            {
-                throw new ArgumentNullException(nameof(getDestination));
-            }
 
             _sipTransport = sipTransport;
-            _getDestination = getDestination;
             _sipCallManager = new SIPCallManager(_sipTransport, null, dbContextFactory);
+            _sipdialPlan = sipDialPlan;
         }
 
         public void Start(int threadCount)
@@ -146,7 +132,7 @@ namespace demo
                         {
                             if (_inviteQueue.TryDequeue(out var uasTransaction))
                             {
-                                Forward(uasTransaction);
+                                Forward(uasTransaction).Wait();
                             }
                         }
                         catch (Exception invExcp)
@@ -168,12 +154,12 @@ namespace demo
             }
         }
 
-        private void Forward(UASInviteTransaction uasTx)
+        private async Task Forward(UASInviteTransaction uasTx)
         {
             SIPB2BUserAgent b2bua = new SIPB2BUserAgent(_sipTransport, null, uasTx, null);
             b2bua.CallAnswered += (uac, resp) => ForwardCallAnswered(uac, b2bua);
 
-            var dst = _getDestination(uasTx);
+            var dst = await _sipdialPlan.Lookup(uasTx, null);
 
             if (dst == null)
             {
