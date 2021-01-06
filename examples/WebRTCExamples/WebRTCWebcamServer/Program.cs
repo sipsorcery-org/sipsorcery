@@ -26,6 +26,8 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Encoders;
+using SIPSorceryMedia.FFmpeg;
 using SIPSorceryMedia.Windows;
 using WebSocketSharp.Server;
 
@@ -92,16 +94,15 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME);
+            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VpxVideoEncoder(), WEBCAM_NAME);
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new FFmpegVideoEncoder(), WEBCAM_NAME);
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME, 1920, 1080, 30);
+            //winVideoEP.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264);
             bool initResult = await winVideoEP.InitialiseVideoSourceDevice();
             if (!initResult)
             {
                 throw new ApplicationException("Could not initialise video capture device.");
             }
-
-            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 640, 480, 30);
-            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(false, 1920, 1080, 30);          
-            //await winVideoEP.InitialiseVideoSourceDevice();
             var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);

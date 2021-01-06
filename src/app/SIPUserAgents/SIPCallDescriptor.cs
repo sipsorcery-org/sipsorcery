@@ -21,6 +21,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
@@ -79,6 +80,7 @@ namespace SIPSorcery.SIP.App
         public const string SWITCHBOARD_OWNER_KEY = "swo";                  // Dial string option to set the Switchboard-Owner header on the call leg.
 
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
+        private readonly static string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static char m_customHeadersSeparator = '|';                 // Must match SIPProvider.CUSTOM_HEADERS_SEPARATOR.
 
         private static ILogger logger = Log.Logger;
@@ -142,26 +144,49 @@ namespace SIPSorcery.SIP.App
         public string CallbackPattern;
         public int CallbackPhoneType;
 
-        public SIPAccount ToSIPAccount;         // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
+        public ISIPAccount ToSIPAccount;         // If non-null indicates the call is for a SIP Account on the same server. An example of using this it to call from one user into another user's dialplan.
 
         public ManualResetEvent DelayMRE;       // If the call needs to be delayed DelaySeconds this MRE will be used.
 
         /// <summary>
-        /// 
+        /// This constructor is for calls to a SIP account that the application recognises as belonging to it.
         /// </summary>
-        /// <param name="toSIPAccount"></param>
+        /// <param name="toSIPAccount">The destination SP account for teh call.</param>
         /// <param name="uri">The uri can be different to the to SIP account if a dotted notation is used. For
         /// example 1234.user@sipsorcery.com.</param>
         /// <param name="fromHeader"></param>
         /// <param name="contentType"></param>
         /// <param name="content"></param>
-        public SIPCallDescriptor(SIPAccount toSIPAccount, string uri, string fromHeader, string contentType, string content)
+        public SIPCallDescriptor(ISIPAccount toSIPAccount, string uri, string fromHeader, string contentType, string content)
         {
             ToSIPAccount = toSIPAccount;
             Uri = uri ?? toSIPAccount.SIPUsername + "@" + toSIPAccount.SIPDomain;
             From = fromHeader;
             ContentType = contentType;
             Content = content;
+        }
+
+        /// <summary>
+        /// This constructor is for non-authenticated calls that do not require any custom
+        /// headers etc.
+        /// </summary>
+        /// <param name="dstUri">The destination URI to place the call to.</param>
+        /// <param name="sdp">The Session Description Protocol (SDP) body to use in the call request.
+        /// Can be empty if the remote party supports SDP answers via ACK requests.</param>
+        public SIPCallDescriptor(
+            string dstUri,
+            string sdp)
+        {
+            if(string.IsNullOrWhiteSpace(dstUri))
+            {
+                throw new ArgumentNullException(nameof(dstUri), "A destination must be supplied when creating a SIPCallDescriptor.");
+            }
+
+            Uri = SIPURI.ParseSIPURIRelaxed(dstUri).ToString();
+            From = m_defaultFromURI;
+            To = Uri;
+            ContentType = (sdp != null) ? m_sdpContentType : null;
+            Content = sdp;
         }
 
         public SIPCallDescriptor(
@@ -217,17 +242,7 @@ namespace SIPSorcery.SIP.App
 
         public SIPFromHeader GetFromHeader()
         {
-            SIPFromHeader fromHeader = null;
-
-            // If the call is for a sipsorcery extension and a SwitchboardFrom header has been set use it.
-            //if (CallDirection == SIPCallDirection.In && SwitchboardHeaders != null && !SwitchboardHeaders.SwitchboardOriginalFrom.IsNullOrBlank())
-            //{
-            //    fromHeader = SIPFromHeader.ParseFromHeader(SwitchboardHeaders.SwitchboardOriginalFrom);
-            //}
-            //else
-            //{
-            fromHeader = SIPFromHeader.ParseFromHeader(From);
-            //}
+            SIPFromHeader fromHeader = SIPFromHeader.ParseFromHeader(From);
 
             if (!FromDisplayName.IsNullOrBlank())
             {
@@ -279,7 +294,7 @@ namespace SIPSorcery.SIP.App
                 Match delayCallMatch = Regex.Match(options, DELAY_CALL_OPTION_KEY + @"=(?<delaytime>\d+)");
                 if (delayCallMatch.Success)
                 {
-                    Int32.TryParse(delayCallMatch.Result("${delaytime}"), out DelaySeconds);
+                    int.TryParse(delayCallMatch.Result("${delaytime}"), out DelaySeconds);
                 }
 
                 // Parse redirect mode option.
@@ -309,14 +324,14 @@ namespace SIPSorcery.SIP.App
                 Match callDurationMatch = Regex.Match(options, CALL_DURATION_OPTION_KEY + @"=(?<callduration>\d+)");
                 if (callDurationMatch.Success)
                 {
-                    Int32.TryParse(callDurationMatch.Result("${callduration}"), out CallDurationLimit);
+                    int.TryParse(callDurationMatch.Result("${callduration}"), out CallDurationLimit);
                 }
 
                 // Parse the mangle option.
                 Match mangleMatch = Regex.Match(options, MANGLE_MODE_OPTION_KEY + @"=(?<mangle>\w+)");
                 if (mangleMatch.Success)
                 {
-                    Boolean.TryParse(mangleMatch.Result("${mangle}"), out MangleResponseSDP);
+                    bool.TryParse(mangleMatch.Result("${mangle}"), out MangleResponseSDP);
                 }
 
                 // Parse the From header display name option.
@@ -375,7 +390,7 @@ namespace SIPSorcery.SIP.App
                 Match callerDetailsMatch = Regex.Match(options, REQUEST_CALLER_DETAILS + @"=(?<callerdetails>\w+)");
                 if (callerDetailsMatch.Success)
                 {
-                    Boolean.TryParse(callerDetailsMatch.Result("${callerdetails}"), out RequestCallerDetails);
+                    bool.TryParse(callerDetailsMatch.Result("${callerdetails}"), out RequestCallerDetails);
                 }
 
                 // Parse the accountcode.
@@ -396,7 +411,7 @@ namespace SIPSorcery.SIP.App
                 Match delayedReinviteMatch = Regex.Match(options, DELAYED_REINVITE_KEY + @"=(?<delayedReinvite>\d+)");
                 if (delayedReinviteMatch.Success)
                 {
-                    Int32.TryParse(delayedReinviteMatch.Result("${delayedReinvite}"), out ReinviteDelay);
+                    int.TryParse(delayedReinviteMatch.Result("${delayedReinvite}"), out ReinviteDelay);
 
                     if (ReinviteDelay > MAX_REINVITE_DELAY)
                     {

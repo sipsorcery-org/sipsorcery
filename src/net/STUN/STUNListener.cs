@@ -51,7 +51,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError("Exception STUNListener (ctor). " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -87,7 +87,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError("Exception STUNListener InitialiseSockets. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -138,7 +138,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError("Exception STUNListener Listen. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -160,7 +160,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError("Exception (" + excp.GetType().ToString() + ") STUNListener Send (sendto=>" + IPSocket.GetSocketString(destinationEndPoint) + "). " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 

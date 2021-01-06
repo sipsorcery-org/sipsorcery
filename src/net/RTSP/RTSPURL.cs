@@ -106,9 +106,9 @@ namespace SIPSorcery.Net
                     return rtspURL;
                 }
             }
-            catch (ApplicationException appExcp)
+            catch (ApplicationException)
             {
-                throw appExcp;
+                throw;
             }
             catch (Exception excp)
             {
@@ -128,7 +128,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError("Exception RTSPURL ToString. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
     }

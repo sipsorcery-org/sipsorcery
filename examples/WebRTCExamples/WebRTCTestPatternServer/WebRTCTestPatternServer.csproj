@@ -7,13 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.7.82" />
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SIPSorcery" Version="4.0.85-pre" />
+    <PackageReference Include="SIPSorcery" Version="5.0.7-pre" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.4-pre" />
-    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.6-pre" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.10-pre" />
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.10-pre" />
   </ItemGroup>
 
   <ItemGroup>

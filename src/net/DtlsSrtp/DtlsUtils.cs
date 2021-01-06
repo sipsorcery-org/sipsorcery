@@ -321,13 +321,13 @@ namespace SIPSorcery.Net
 
         #region Self Signed Utils
 
-        [Obsolete("Use CreateSelfSignedTlsCert instead.")]
+        //[Obsolete("Use CreateSelfSignedTlsCert instead.")]
         public static X509Certificate2 CreateSelfSignedCert(AsymmetricKeyParameter privateKey = null)
         {
             return CreateSelfSignedCert("CN=localhost", "CN=root", privateKey);
         }
 
-        [Obsolete("Use CreateSelfSignedTlsCert instead.")]
+        //[Obsolete("Use CreateSelfSignedTlsCert instead.")]
         public static X509Certificate2 CreateSelfSignedCert(string subjectName, string issuerName, AsymmetricKeyParameter privateKey)
         {
             const int keyStrength = DEFAULT_KEY_SIZE;

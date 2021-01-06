@@ -173,10 +173,14 @@ namespace SIPSorcery.Net
     /// </summary>
     public class ReceptionReport
     {
-        private const int MAX_DROPOUT = 3000;
-        private const int MAX_MISORDER = 100;
-        private const int MIN_SEQUENTIAL = 2;
+        //private const int MAX_DROPOUT = 3000;
+        //private const int MAX_MISORDER = 100;
+        //private const int MIN_SEQUENTIAL = 2;
         private const int RTP_SEQ_MOD = 1 << 16;
+        //private const int MAX_POSITIVE_LOSS = 0x7fffff;
+        //private const int MAX_NEGATIVE_LOSS = 0x800000;
+        private const int SEQ_NUM_WRAP_LOW = 256;
+        private const int SEQ_NUM_WRAP_HIGH = 65280;
 
         /// <summary>
         /// Data source being reported.
@@ -189,12 +193,12 @@ namespace SIPSorcery.Net
         private ushort m_max_seq;
 
         /// <summary>
-        /// shifted count of seq. number cycles.
+        /// Increments by UInt16.MaxValue each time the sequence number wraps around.
         /// </summary>
-        private uint m_cycles;
+        private ulong m_cycles;
 
         /// <summary>
-        /// base seq number
+        /// The first sequence number received.
         /// </summary>
         private uint m_base_seq;
 
@@ -206,7 +210,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// sequ. packets till source is valid.
         /// </summary>
-        private uint m_probation;
+        //private uint m_probation;
 
         /// <summary>
         /// packets received.
@@ -216,7 +220,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// packet expected at last interval.
         /// </summary>
-        private uint m_expected_prior;
+        private ulong m_expected_prior;
 
         /// <summary>
         /// packet received at last interval.
@@ -273,16 +277,58 @@ namespace SIPSorcery.Net
         /// <param name="rtpTimestamp">The timestamp in the RTP header.</param>
         /// <param name="arrivalTimestamp">The current timestamp in the SAME units as the RTP timestamp.
         /// For example for 8Khz audio the arrival timestamp needs 8000 ticks per second.</param>
-        internal bool RtpPacketReceived(ushort seq, uint rtpTimestamp, uint arrivalTimestamp)
+        internal void RtpPacketReceived(ushort seq, uint rtpTimestamp, uint arrivalTimestamp)
         {
             // Sequence number calculations and cycles as per RFC3550 Appendix A.1.
-            if (m_received == 0)
+            //if (m_received == 0)
+            //{
+            //    init_seq(seq);
+            //    m_max_seq = (ushort)(seq - 1);
+            //    m_probation = MIN_SEQUENTIAL;
+            //}
+            //bool ready = update_seq(seq);
+
+            if(m_received == 0)
             {
-                init_seq(seq);
-                m_max_seq = (ushort)(seq - 1);
-                m_probation = MIN_SEQUENTIAL;
+                m_base_seq = seq;
             }
-            bool ready = update_seq(seq);
+
+            m_received++;
+
+            if (seq == m_max_seq + 1)
+            {
+                // Packet is in sequence.
+                m_max_seq = seq; 
+            }
+            else if(seq == 0 && m_max_seq == ushort.MaxValue)
+            {
+                // Packet is in sequence and a wrap around has occurred.
+                m_max_seq = seq;
+                m_cycles += RTP_SEQ_MOD;
+            }
+            else
+            {
+                // Out of order, duplicate or skipped sequence number.
+                if(seq > m_max_seq)
+                {
+                    // Seqnum is greater than expected. RTP packet is dropped or out of order.
+                    m_max_seq = seq;
+                }
+                else if(seq < SEQ_NUM_WRAP_LOW && m_max_seq > SEQ_NUM_WRAP_HIGH)
+                {
+                    // Seqnum is out of order and has wrapped.
+                    m_max_seq = seq;
+                    m_cycles += RTP_SEQ_MOD;
+                }
+                else
+                {
+                    // Remaining conditions are:
+                    // - seqnum == m_max_seq indicating a duplicate RTP packet, or
+                    // - is seqnum is more than 1 less than m_max_seqnum. Which most 
+                    //   likely indicates an RTP packet was delivered out of order.
+                    m_bad_seq++;
+                }
+             }
 
             // Estimating the Interarrival Jitter as defined in RFC3550 Appendix A.8.
             uint transit = arrivalTimestamp - rtpTimestamp;
@@ -294,7 +340,7 @@ namespace SIPSorcery.Net
             }
             m_jitter += (uint)(d - ((m_jitter + 8) >> 4));
 
-            return ready;
+            //return ready;
         }
 
         /// <summary>
@@ -304,15 +350,15 @@ namespace SIPSorcery.Net
         public ReceptionReportSample GetSample(uint ntpTimestampNow)
         {
             // Determining the number of packets expected and lost in RFC3550 Appendix A.3.
-            uint extended_max = m_cycles + m_max_seq;
-            uint expected = extended_max - m_base_seq + 1;
-            int lost = (int)(expected - m_received);
+            ulong extended_max = m_cycles + m_max_seq;
+            ulong expected = extended_max - m_base_seq + 1;
+            //int lost = (m_received == 0) ? 0 : (int)(expected - m_received);
 
-            uint expected_interval = expected - m_expected_prior;
+            ulong expected_interval = expected - m_expected_prior;
             m_expected_prior = expected;
             uint received_interval = m_received - m_received_prior;
             m_received_prior = m_received;
-            uint lost_interval = expected_interval - received_interval;
+            ulong lost_interval = (m_received == 0) ? 0 : expected_interval - received_interval;
             byte fraction = (byte)((expected_interval == 0 || lost_interval <= 0) ? 0 : (lost_interval << 8) / expected_interval);
 
             // In this case, the estimate is sampled for the reception report as:
@@ -324,97 +370,105 @@ namespace SIPSorcery.Net
                 delay = ntpTimestampNow - m_lastSenderReportTimestamp;
             }
 
-            return new ReceptionReportSample(SSRC, fraction, lost, m_max_seq, jitter, m_lastSenderReportTimestamp, delay);
+            return new ReceptionReportSample(SSRC, fraction, (int)lost_interval, m_max_seq, jitter, m_lastSenderReportTimestamp, delay);
         }
 
         /// <summary>
+        /// NOTE 20 Dec 2020: This algorigthm. from RFC3550 Appendix A.1 is intended as part of determining when a new
+        /// RTP source should be accepted as valid. The intention is not necessarily to be used to determine when 
+        /// a reception report can be generated, which was wat it was being used for here.
+        /// 
         /// Initialises the sequence number state for the reception RTP stream.
         /// This method is from RFC3550 Appendix A.1 "RTP Data Header Validity Checks".
         /// </summary>
         /// <param name="seq">The sequence number from the received RTP packet that triggered this update.</param>
-        void init_seq(ushort seq)
-        {
-            m_base_seq = seq;
-            m_max_seq = seq;
-            m_bad_seq = RTP_SEQ_MOD + 1;   /* so seq == bad_seq is false */
-            m_cycles = 0;
-            m_received = 0;
-            m_received_prior = 0;
-            m_expected_prior = 0;
-        }
+        //void init_seq(ushort seq)
+        //{
+        //    m_base_seq = seq;
+        //    m_max_seq = seq;
+        //    m_bad_seq = RTP_SEQ_MOD + 1;   /* so seq == bad_seq is false */
+        //    m_cycles = 0;
+        //    m_received = 0;
+        //    m_received_prior = 0;
+        //    m_expected_prior = 0;
+        //}
 
         /// <summary>
+        /// NOTE 20 Dec 2020: This algorigthm. from RFC3550 Appendix A.1 is intended to decide when a new RTP
+        /// source should be accepted as valid. The intention is not necessarily to be used to determine when 
+        /// a reception report can be generated, which was wat it was being used for here.
+        /// 
         /// Update the sequence number state for the reception RTP stream.
         /// This method is from RFC3550 Appendix A.1 "RTP Data Header Validity Checks".
         /// </summary>
         /// <param name="seq">The sequence number from the received RTP packet that triggered this update.</param>
         /// <returns>True when the required number of packets have been received and a report can be generated. False
         /// indicates not yet enough data.</returns>
-        bool update_seq(ushort seq)
-        {
-            ushort udelta = (ushort)(seq - m_max_seq);
+        //bool update_seq(ushort seq)
+        //{
+        //    ushort udelta = (ushort)(seq - m_max_seq);
 
-            /*
-             * Source is not valid until MIN_SEQUENTIAL packets with
-             * sequential sequence numbers have been received.
-             */
-            if (m_probation > 0)
-            {
-                /* packet is in sequence */
-                if (seq == m_max_seq + 1)
-                {
-                    m_probation--;
-                    m_max_seq = seq;
-                    if (m_probation == 0)
-                    {
-                        init_seq(seq);
-                        m_received++;
-                        return false;
-                    }
-                }
-                else
-                {
-                    m_probation = MIN_SEQUENTIAL - 1;
-                    m_max_seq = seq;
-                }
-                return true;
-            }
-            else if (udelta < MAX_DROPOUT)
-            {
-                /* in order, with permissible gap */
-                if (seq < m_max_seq)
-                {
-                    /*
-                     * Sequence number wrapped - count another 64K cycle.
-                     */
-                    m_cycles += RTP_SEQ_MOD;
-                }
-                m_max_seq = seq;
-            }
-            else if (udelta <= RTP_SEQ_MOD - MAX_MISORDER)
-            {
-                /* the sequence number made a very large jump */
-                if (seq == m_bad_seq)
-                {
-                    /*
-                     * Two sequential packets -- assume that the other side
-                     * restarted without telling us so just re-sync
-                     * (i.e., pretend this was the first packet).
-                     */
-                    init_seq(seq);
-                }
-                else
-                {
-                    m_bad_seq = (uint)((seq + 1) & (RTP_SEQ_MOD - 1));
-                    return true;
-                }
-            }
-            else
-            {
-                /* duplicate or reordered packet */
-            }
-            m_received++;
-            return false;
-        }
+        //    /*
+        //     * Source is not valid until MIN_SEQUENTIAL packets with
+        //     * sequential sequence numbers have been received.
+        //     */
+        //    if (m_probation > 0)
+        //    {
+        //        /* packet is in sequence */
+        //        if (seq == m_max_seq + 1)
+        //        {
+        //            m_probation--;
+        //            m_max_seq = seq;
+        //            if (m_probation == 0)
+        //            {
+        //                init_seq(seq);
+        //                m_received++;
+        //                return false;
+        //            }
+        //        }
+        //        else
+        //        {
+        //            m_probation = MIN_SEQUENTIAL - 1;
+        //            m_max_seq = seq;
+        //        }
+        //        return true;
+        //    }
+        //    else if (udelta < MAX_DROPOUT)
+        //    {
+        //        /* in order, with permissible gap */
+        //        if (seq < m_max_seq)
+        //        {
+        //            /*
+        //             * Sequence number wrapped - count another 64K cycle.
+        //             */
+        //            m_cycles += RTP_SEQ_MOD;
+        //        }
+        //        m_max_seq = seq;
+        //    }
+        //    else if (udelta <= RTP_SEQ_MOD - MAX_MISORDER)
+        //    {
+        //        /* the sequence number made a very large jump */
+        //        if (seq == m_bad_seq)
+        //        {
+        //            /*
+        //             * Two sequential packets -- assume that the other side
+        //             * restarted without telling us so just re-sync
+        //             * (i.e., pretend this was the first packet).
+        //             */
+        //            init_seq(seq);
+        //        }
+        //        else
+        //        {
+        //            m_bad_seq = (uint)((seq + 1) & (RTP_SEQ_MOD - 1));
+        //            return true;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        /* duplicate or reordered packet */
+        //    }
+        //    m_received++;
+        //    return false;
+        //}
     }
 }

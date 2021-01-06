@@ -40,7 +40,7 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 using WebSocketSharp.Server;
 
 namespace SIPSorcery
@@ -226,7 +226,7 @@ namespace SIPSorcery
             }
         }
 
-        private static void ForwardVideoFrameToSIP(IPEndPoint remoteEP, uint timestamp, byte[] frame)
+        private static void ForwardVideoFrameToSIP(IPEndPoint remoteEP, uint timestamp, byte[] frame, VideoFormat format)
         {
             if (_rtpSession != null && !_rtpSession.IsClosed)
             {
@@ -234,7 +234,7 @@ namespace SIPSorcery
             }
         }
 
-        private static void ForwardVideoFrameToPeerConnection(IPEndPoint remoteEP, uint timestamp, byte[] frame)
+        private static void ForwardVideoFrameToPeerConnection(IPEndPoint remoteEP, uint timestamp, byte[] frame, VideoFormat format)
         {
             if (_peerConnection != null && _peerConnection.connectionState == RTCPeerConnectionState.connected)
             {

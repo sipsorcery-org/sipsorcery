@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -96,7 +97,7 @@ namespace SIPSorcery.SIP
                     sipRequest.URI = SIPURI.ParseSIPURI(uriStr);
                     sipRequest.SIPVersion = statusLine.Substring(secondSpacePosn, statusLine.Length - secondSpacePosn).Trim();
                     sipRequest.Header = SIPHeader.ParseSIPHeaders(sipMessage.SIPHeaders);
-                    sipRequest.Body = sipMessage.Body;
+                    sipRequest.BodyBuffer = sipMessage.Body;
 
                     return sipRequest;
                 }
@@ -156,7 +157,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPRequest ToString. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -174,7 +175,12 @@ namespace SIPSorcery.SIP
             copy.UnknownMethod = UnknownMethod;
             copy.URI = URI?.CopyOf();
             copy.Header = Header?.Copy();
-            copy.Body = Body;
+            
+            if(_body != null && _body.Length > 0)
+            {
+                copy._body = new byte[_body.Length];
+                Buffer.BlockCopy(copy._body, 0, copy._body, 0, copy._body.Length);
+            }
 
             if (ReceivedRoute != null)
             {
@@ -304,6 +310,11 @@ namespace SIPSorcery.SIP
             header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
             return request;
+        }
+
+        public byte[] GetBytes()
+        {
+            return base.GetBytes(StatusLine + m_CRLF);
         }
     }
 }

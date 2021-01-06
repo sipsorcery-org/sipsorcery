@@ -442,14 +442,19 @@ namespace SIPSorcery.Net
 
                             try
                             {
-                                bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle));
+                                bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
 
                                 connectionState = (handshakeResult) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                                 onconnectionstatechange?.Invoke(connectionState);
 
-                               if (connectionState == RTCPeerConnectionState.connected && RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
+                               if (connectionState == RTCPeerConnectionState.connected)
                                {
-                                    InitialiseSctpAssociation();
+                                    await base.Start().ConfigureAwait(false);
+
+                                    if (RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
+                                    {
+                                        InitialiseSctpAssociation();
+                                    }
                                }
                             }
                             catch (Exception excp)
@@ -668,7 +673,7 @@ namespace SIPSorcery.Net
                     // Check for data channel announcements.
                     if (ann.Media == SDPMediaTypesEnum.application &&
                         ann.MediaFormats.Count() == 1 &&
-                        ann.ApplicationMediaFormats.Single().ID == SDP_DATACHANNEL_FORMAT_ID)
+                        ann.ApplicationMediaFormats.Single().Key == SDP_DATACHANNEL_FORMAT_ID)
                     {
                         if (ann.Transport == RTP_MEDIA_DATACHANNEL_DTLS_PROFILE ||
                             ann.Transport == RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE)
@@ -815,6 +820,24 @@ namespace SIPSorcery.Net
             };
 
             return initDescription;
+        }
+
+        /// <summary>
+        /// Convenience overload to suit SIP/VoIP callers.
+        /// TODO: Consolidate with createAnswer.
+        /// </summary>
+        /// <param name="connectionAddress">Not used.</param>
+        /// <returns>An SDP payload to answer an offer from the remote party.</returns>
+        public override SDP CreateOffer(IPAddress connectionAddress)
+        {
+            var result = createOffer(null);
+
+            if (result?.sdp != null)
+            {
+                return SDP.ParseSDPDescription(result.sdp);
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -1087,7 +1110,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning($"DTLS packet received {buffer.Length} bytes from {AudioDestinationEndPoint} but no DTLS transport available.");
+                            logger.LogWarning($"DTLS packet received {buffer.Length} bytes from {remoteEP} but no DTLS transport available.");
                         }
                     }
                 }

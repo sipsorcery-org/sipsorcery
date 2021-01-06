@@ -14,8 +14,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Media
 {
@@ -28,20 +29,37 @@ namespace SIPSorcery.Media
         private G722Codec _g722Decoder;
         private G722CodecState _g722DecoderState;
 
-        public bool IsSupported(AudioFormat format)
+        private List<AudioFormat> _supportedFormats = new List<AudioFormat>
         {
-            switch (format.Codec)
-            {
-                case AudioCodecsEnum.G722:
-                case AudioCodecsEnum.PCMA:
-                case AudioCodecsEnum.PCMU:
-                case AudioCodecsEnum.L16:
-                case AudioCodecsEnum.PCM_S16LE:
-                    return true;
-                default:
-                    return false;
-            }
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
+            new AudioFormat(AudioCodecsEnum.L16, 117, 16000),
+            new AudioFormat(AudioCodecsEnum.L16, 118, 8000),
+
+            // Not recommended due to very, very crude up-sampling in AudioEncoder class. PR's welcome :).
+            //new AudioFormat(121, "L16", "L16/48000", null),
+        };
+
+        public List<AudioFormat> SupportedFormats
+        {
+            get => _supportedFormats;
         }
+
+        //public bool IsSupported(AudioFormat format)
+        //{
+        //    switch (format.Codec)
+        //    {
+        //        case AudioCodecsEnum.G722:
+        //        case AudioCodecsEnum.PCMA:
+        //        case AudioCodecsEnum.PCMU:
+        //        case AudioCodecsEnum.L16:
+        //        case AudioCodecsEnum.PCM_S16LE:
+        //            return true;
+        //        default:
+        //            return false;
+        //    }
+        //}
   
         public byte[] EncodeAudio(short[] pcm, AudioFormat format)
         {

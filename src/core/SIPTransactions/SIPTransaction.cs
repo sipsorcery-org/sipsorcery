@@ -257,7 +257,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPTransaction (ctor). " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -444,7 +444,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception GetInformationalResponse. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 

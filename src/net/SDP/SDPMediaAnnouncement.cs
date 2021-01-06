@@ -20,7 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
 {
@@ -63,6 +63,8 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
         public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
         public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
+        public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
+        public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
         public const string m_CRLF = "\r\n";
 
@@ -116,17 +118,37 @@ namespace SIPSorcery.Net
         /// </summary>
         public List<SDPSsrcAttribute> SsrcAttributes = new List<SDPSsrcAttribute>();
 
+        /// <summary>
+        /// Optional Transport Independent Application Specific Maximum (TIAS) bandwidth.
+        /// </summary>
+        public uint TIASBandwidth = 0;
+
         public List<string> BandwidthAttributes = new List<string>();
-        public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
+
+        /// <summary>
+        /// In media definitions, "i=" fields are primarily intended for labelling media streams https://tools.ietf.org/html/rfc4566#page-12
+        /// </summary>
+        public string MediaDescription;
+
+        /// <summary>
+        ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
+        /// </summary>
+        public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
+
+        /// <summary>
+        /// List of media formats for "application media announcements. Application media announcements have different
+        /// semantics to audio/video announcements. They can also use aribtrary strings as the format ID.
+        /// </summary>
+        public Dictionary<string, SDPApplicationMediaFormat> ApplicationMediaFormats = new Dictionary<string, SDPApplicationMediaFormat>();
+
         public List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
         public List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
         public List<string> IceCandidates;
-        public List<SDPApplicationMediaFormat> ApplicationMediaFormats = new List<SDPApplicationMediaFormat>(); // List of media formats for "application media announcements.
 
         /// <summary>
-        /// The stream status of this media announcement. If no value is explicitly set then the default is sendrecv.
+        /// The stream status of this media announcement.
         /// </summary>
-        public MediaStreamStatusEnum MediaStreamStatus { get; set; } = MediaStreamStatusEnum.SendRecv;
+        public MediaStreamStatusEnum? MediaStreamStatus { get; set; }
 
         public SDPMediaAnnouncement()
         { }
@@ -145,6 +167,7 @@ namespace SIPSorcery.Net
         {
             Media = mediaType;
             Port = port;
+            MediaStreamStatus = DEFAULT_STREAM_STATUS;
 
             foreach (var fmt in mediaFormats)
             {
@@ -159,7 +182,14 @@ namespace SIPSorcery.Net
         {
             Media = mediaType;
             Port = port;
-            ApplicationMediaFormats = appMediaFormats;
+
+            foreach (var fmt in appMediaFormats)
+            {
+                if (!ApplicationMediaFormats.ContainsKey(fmt.ID))
+                {
+                    ApplicationMediaFormats.Add(fmt.ID, fmt);
+                }
+            }
         }
 
         public void ParseMediaFormats(string formatList)
@@ -173,7 +203,7 @@ namespace SIPSorcery.Net
                     {
                         if (Media == SDPMediaTypesEnum.application)
                         {
-                            ApplicationMediaFormats.Add(new SDPApplicationMediaFormat(formatID));
+                            ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
                         }
                         else
                         {
@@ -200,7 +230,15 @@ namespace SIPSorcery.Net
         public override string ToString()
         {
             string announcement = "m=" + Media + " " + Port + " " + Transport + " " + GetFormatListToString() + m_CRLF;
+
+            announcement += !string.IsNullOrWhiteSpace(MediaDescription) ? "i=" + MediaDescription + m_CRLF : null;
+
             announcement += (Connection == null) ? null : Connection.ToString();
+
+            if(TIASBandwidth > 0)
+            {
+                announcement += TIAS_BANDWIDTH_ATTRIBUE_PREFIX + TIASBandwidth + m_CRLF;
+            }
 
             foreach (string bandwidthAttribute in BandwidthAttributes)
             {
@@ -243,7 +281,10 @@ namespace SIPSorcery.Net
                 announcement += desc.ToString() + m_CRLF;
             }
 
-            announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus) + m_CRLF;
+            if (MediaStreamStatus != null)
+            {
+                announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value) + m_CRLF;
+            }
 
             if (SsrcGroupID != null && SsrcAttributes.Count > 0)
             {
@@ -298,9 +339,9 @@ namespace SIPSorcery.Net
             if (Media == SDPMediaTypesEnum.application)
             {
                 StringBuilder sb = new StringBuilder();
-                foreach (SDPApplicationMediaFormat appFormat in ApplicationMediaFormats)
+                foreach (var appFormat in ApplicationMediaFormats)
                 {
-                    sb.Append(appFormat.ID);
+                    sb.Append(appFormat.Key);
                     sb.Append(" ");
                 }
 
@@ -325,12 +366,16 @@ namespace SIPSorcery.Net
                 if (ApplicationMediaFormats.Count > 0)
                 {
                     StringBuilder sb = new StringBuilder();
-                    foreach (SDPApplicationMediaFormat appFormat in ApplicationMediaFormats.Where(x => x.Rtpmap != null))
+                    foreach (var appFormat in ApplicationMediaFormats)
                     {
-                        sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.ID} {appFormat.Rtpmap}{m_CRLF}");
-                        if (appFormat.Fmtmp != null)
+                        if (appFormat.Value.Rtpmap != null)
                         {
-                            sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX}{appFormat.ID} {appFormat.Fmtmp}{m_CRLF}");
+                            sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Rtpmap}{m_CRLF}");
+                        }
+
+                        if (appFormat.Value.Fmtp != null)
+                        {
+                            sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Fmtp}{m_CRLF}");
                         }
                     }
 
@@ -347,7 +392,6 @@ namespace SIPSorcery.Net
 
                 if (MediaFormats != null)
                 {
-                    //foreach (var mediaFormat in MediaFormats.Where(x => x.Key >= SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN).Select(y => y.Value))
                     foreach (var mediaFormat in MediaFormats.Select(y => y.Value))
                     {
                         if (mediaFormat.Rtpmap == null)

@@ -74,7 +74,7 @@ using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery
 {
@@ -88,12 +88,13 @@ namespace SIPSorcery
         {
             opt,    // Send OPTIONS requests.
             uac,    // Initiate a SIP call.
+            reg,    // Initiate a registration.
         }
 
         public class Options
         {
             [Option('d', "destination", Required = true,
-                HelpText = "The destination SIP end point in the form [(udp|tcp|tls|sip|sips|ws|wss):]<host|ipaddress>[:port] e.g. udp:67.222.131.147:5060.")]
+                HelpText = "The destination SIP end point in the form [(udp|tcp|tls|sip|sips|ws|wss):]<host|ipaddress>[:port] e.g. -d udp:67.222.131.147:5060.")]
             public string Destination { get; set; }
 
             [Option('t', "timeout", Required = false, Default = DEFAULT_RESPONSE_TIMEOUT_SECONDS, HelpText = "The timeout in seconds for the SIP command to complete.")]
@@ -105,7 +106,7 @@ namespace SIPSorcery
             [Option('p', "period", Required = false, Default = 1, HelpText = "The period in seconds between sending multiple requests.")]
             public int Period { get; set; }
 
-            [Option('s', "scenario", Required = false, Default = Scenarios.opt, HelpText = "The command scenario to run.")]
+            [Option('s', "scenario", Required = false, Default = Scenarios.opt, HelpText = "The command scenario to run. Options are [opt|uac|reg], e.g. -s reg")]
             public Scenarios Scenario { get; set; }
 
             [Option('x', "concurrent", Required = false, Default = 1, HelpText = "The number of concurrent tasks to run.")]
@@ -221,7 +222,7 @@ namespace SIPSorcery
             {
                 DateTime startTime = DateTime.Now;
 
-               var dstUri = ParseDestination(options.Destination);
+                var dstUri = ParseDestination(options.Destination);
 
                 logger.LogDebug($"Destination SIP URI {dstUri}");
 
@@ -229,6 +230,9 @@ namespace SIPSorcery
 
                 switch (options.Scenario)
                 {
+                    case Scenarios.reg:
+                        task = InitiateRegisterTaskAsync(sipTransport, dstUri);
+                        break;
                     case Scenarios.uac:
                         task = InitiateCallTaskAsync(sipTransport, dstUri);
                         break;
@@ -408,6 +412,53 @@ namespace SIPSorcery
             {
                 logger.LogError($"Exception InitiateCallTaskAsync. {excp.Message}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// An asynchronous task that attempts to initiate a registration.
+        /// </summary>
+        /// <param name="sipTransport">The transport object to use for the send.</param>
+        /// <param name="dst">The destination end point to send the request to.</param>
+        /// <returns>True if the expected response was received, false otherwise.</returns>
+        private static Task<bool> InitiateRegisterTaskAsync(SIPTransport sipTransport, SIPURI dst)
+        {
+            var ua = new SIPRegistrationUserAgent(sipTransport, "user", "password", dst.Host, 120);
+
+            try
+            {
+                bool result = false;
+                ManualResetEvent mre = new ManualResetEvent(false);
+
+                ua.RegistrationFailed += (uri, err) =>
+                {
+                    result = false;
+                    mre.Set();
+                };
+                ua.RegistrationTemporaryFailure += (uri, err) =>
+                {
+                    result = false;
+                    mre.Set();
+                };
+                ua.RegistrationSuccessful += (uri) =>
+                {
+                    result = true;
+                    mre.Set();
+                };
+
+                ua.Start();
+
+                mre.WaitOne(TimeSpan.FromSeconds(2000));
+
+                ua.Stop(false);
+
+                return Task.FromResult(result);
+            }
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception InitiateRegisterTaskAsync. {excp.Message}");
+                ua.Stop();
+                return Task.FromResult(false);
             }
         }
     }

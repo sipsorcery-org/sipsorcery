@@ -202,6 +202,15 @@ namespace SIPSorcery.Net
         relay
     }
 
+    /// <remarks>
+    /// As defined in: https://www.w3.org/TR/webrtc/#rtcicecandidate-interface
+    /// 
+    /// Rhe 'priority` field was adjusted from ulong to uint due to an issue that 
+    /// occurred with the STUN PRIORITY attribute being rejected for not being 4 bytes.
+    /// The ICE and WebRTC specifications are contradictory so went with the same as
+    /// libwebrtc which is 4 bytes.
+    /// See https://github.com/sipsorcery/sipsorcery/issues/350.
+    /// </remarks>
     public interface IRTCIceCandidate
     {
         //constructor(optional RTCIceCandidateInit candidateInitDict = { });
@@ -210,7 +219,7 @@ namespace SIPSorcery.Net
         ushort sdpMLineIndex { get; }
         string foundation { get; }
         RTCIceComponent component { get; }
-        ulong priority { get; }
+        uint priority { get; }
         string address { get; }
         RTCIceProtocol protocol { get; }
         ushort port { get; }

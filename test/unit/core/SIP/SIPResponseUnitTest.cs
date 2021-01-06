@@ -9,8 +9,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -395,6 +397,47 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(okResp.Header.Vias.TopViaHeader.ContactAddress == "194.213.29.100:5060", "The top via contact address was not correctly parsed.");
 
             logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP response with a binary payload gets round-tripped correctly.
+        /// </summary>
+        [Fact]
+        public void BinarySerialisationRoundTripTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            SIPRequest req = SIPRequest.GetRequest(SIPMethodsEnum.MESSAGE, uri);
+
+            SIPResponse resp = SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.Ok, null);
+            resp.Header.ContentType = "application/octet-stream";
+            resp.BodyBuffer = new byte[100];
+            Crypto.GetRandomBytes(resp.BodyBuffer);
+
+            string bodyHash = null;
+            using (var sha256 = new SHA256Managed())
+            {
+                bodyHash = sha256.ComputeHash(resp.BodyBuffer).HexStr();
+            }
+
+            logger.LogDebug(resp.ToString());
+            logger.LogDebug($"Body sha256: {bodyHash}.");
+
+            SIPMessageBuffer msgBuffer = SIPMessageBuffer.ParseSIPMessage(resp.GetBytes(), SIPEndPoint.Empty, SIPEndPoint.Empty);
+            SIPResponse rndTripResp = SIPResponse.ParseSIPResponse(msgBuffer);
+
+            string rndTripBodyHash = null;
+            using (var sha256 = new SHA256Managed())
+            {
+                rndTripBodyHash = sha256.ComputeHash(rndTripResp.BodyBuffer).HexStr();
+            }
+
+            logger.LogDebug(rndTripResp.ToString());
+            logger.LogDebug($"Round Trip Body sha256: {rndTripBodyHash}.");
+
+            Assert.Equal(bodyHash, rndTripBodyHash);
         }
     }
 }

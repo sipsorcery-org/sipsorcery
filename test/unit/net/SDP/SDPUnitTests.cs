@@ -13,7 +13,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -1003,6 +1003,161 @@ a=sendrecv";
 
             Assert.Equal(111, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats.Single().Key);
             Assert.Equal("opus", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats.Single().Value.Name());
+        }
+
+        /// <summary>
+        /// Tests that parsing an SDP media format attribute which specifies a dynamic media format fmtp in advance of the 
+        /// rtpmap works correctly.
+        /// </summary>
+        [Fact]
+        public void ParseOfferWithFmtpPreceedingRtmapTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=mozilla...THIS_IS_SDPARTA-80.0.1 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+a=sendrecv
+a=fingerprint:sha-256 46:7C:4B:FD:47:E1:22:16:28:FC:52:94:C8:9D:7D:24:2F:C3:A8:66:02:17:0D:41:DF:34:99:1C:48:CB:9F:D5
+a=group:BUNDLE 0
+a=ice-options:trickle
+a=msid-semantic:WMS *
+m=video 9 UDP/TLS/RTP/SAVP 96
+c=IN IP4 0.0.0.0
+a=recvonly
+a=fmtp:96 max-fs=12288;max-fr=60
+a=ice-pwd:8136ef42e22d9d6b31d23b39a662bf8d
+a=ice-ufrag:2cbeec1e
+a=mid:0
+a=rtcp-mux
+a=rtpmap:96 VP8/90000
+a=setup:active
+a=ssrc:2404235415 cname:{7c06c5db-d3db-4891-b729-df4919014c3f}";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Assert.Equal(96, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Key);
+            Assert.Equal("VP8", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Name());
+            Assert.Equal("VP8/90000", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Rtpmap);
+            Assert.Equal("max-fs=12288;max-fr=60", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Fmtp);
+        }
+
+        /// <summary>
+        /// Tests that parsing an SDP media format attribute for a Mission Critical Push To Talk (MCPTT)
+        /// announcement works correctly.
+        /// </summary>
+        [Fact]
+        public void ParseMcpttTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=root 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+m=audio 55316 RTP/AVP 0 101
+a=rtpmap:0 PCMU/8000
+a=label:1
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+a=sendrecv
+m=application 55317 udp MCPTT
+a=fmtp:MCPTT mc_queueing;mc_priority=4";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("MCPTT", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Key);
+            Assert.Equal("mc_queueing;mc_priority=4", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Value.Fmtp);
+        }
+
+        /// <summary>
+        /// Tests that a description attribute can be successfully round tripped.
+        /// </summary>
+        [Fact]
+        public void DescriptionAttributeRoundTripTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=root 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+i=A session description
+t=0 0
+m=audio 55316 RTP/AVP 0 101
+a=rtpmap:0 PCMU/8000
+a=label:1
+i=speech
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+a=sendrecv
+m=video 61682 UDP/TLS/RTP/SAVPF 96
+c=IN IP4 192.168.11.50
+a=rtpmap:96 VP8/90000
+a=label:2
+i=video title
+a=sendrecv
+";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("A session description", rndTripSdp.SessionDescription);
+            Assert.Equal("speech", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaDescription);
+            Assert.Equal("video title", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaDescription);
+        }
+
+        /// <summary>
+        /// Tests that a TIAS bandwith attribute (RFC3890) can be successfully round tripped.
+        /// </summary>
+        [Fact]
+        public void TIASBandwidthAttributeRoundTripTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=root 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+m=audio 55316 RTP/AVP 0 101
+a=rtpmap:0 PCMU/8000
+a=label:1
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+a=sendrecv
+m=video 61682 UDP/TLS/RTP/SAVPF 96
+c=IN IP4 192.168.11.50
+b=TIAS:256000
+a=rtpmap:96 VP8/90000
+a=label:2
+a=sendrecv
+";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal(256000U, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().TIASBandwidth);
         }
     }
 }

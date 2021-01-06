@@ -18,18 +18,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
-using SIPSorcery.Net;
-using WebSocketSharp.Server;
-using SIPSorcery.Media;
-using SIPSorceryMedia.Abstractions.V1;
 using Serilog.Extensions.Logging;
-using System.Security.Cryptography.X509Certificates;
+using SIPSorcery.Net;
+using SIPSorcery.Media;
+using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.FFmpeg;
+using WebSocketSharp.Server;
 
 namespace demo
 {
@@ -123,22 +124,23 @@ namespace demo
             //var pc = new RTCPeerConnection(config);
             var pc = new RTCPeerConnection(null);
 
-            var testPatternSource = new VideoTestPatternSource();
+            //var testPatternSource = new VideoTestPatternSource(new SIPSorceryMedia.Encoders.VideoEncoder());
+            var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
             testPatternSource.SetFrameRate(60);
             //testPatternSource.SetMaxFrameRate(true);
-            var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
-            videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
-            //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(true);
+            //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            //videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
+            //testPatternSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
             //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
             //var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
 
-            MediaStreamTrack track = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            MediaStreamTrack track = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(track);
 
-            testPatternSource.OnVideoSourceRawSample += videoEndPoint.ExternalVideoSourceRawSample;
-            testPatternSource.OnVideoSourceRawSample += TestPatternSource_OnVideoSourceRawSample;
-            videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
-            pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSourceFormat(formats.First());
+            //testPatternSource.OnVideoSourceRawSample += videoEndPoint.ExternalVideoSourceRawSample;
+            testPatternSource.OnVideoSourceRawSample += MesasureTestPatternSourceFrameRate;
+            testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
+            pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
             
             pc.onconnectionstatechange += async (state) =>
             {
@@ -151,12 +153,12 @@ namespace demo
                 else if (state == RTCPeerConnectionState.closed)
                 {
                     await testPatternSource.CloseVideo();
-                    await videoEndPoint.CloseVideo();
-                    videoEndPoint.Dispose();
+                    await testPatternSource.CloseVideo();
+                    testPatternSource.Dispose();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    await videoEndPoint.StartVideo();
+                    await testPatternSource.StartVideo();
                     await testPatternSource.StartVideo();
                 }
             };
@@ -166,11 +168,18 @@ namespace demo
             //pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+            pc.onsignalingstatechange += () =>
+            {
+                if(pc.signalingState == RTCSignalingState.have_remote_offer)
+                {
+                    logger.LogDebug(pc.RemoteDescription.ToString());
+                }
+            };
 
             return Task.FromResult(pc);
         }
 
-        private static void TestPatternSource_OnVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, SIPSorceryMedia.Abstractions.V1.VideoPixelFormatsEnum pixelFormat)
+        private static void MesasureTestPatternSourceFrameRate(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
         {
             if(_startTime == DateTime.MinValue)
             {

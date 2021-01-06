@@ -1,0 +1,25 @@
+name: egs-win-x64 
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1 # https://github.com/actions/checkout
+    #- name: Setup .NET Core
+    #  uses: actions/setup-dotnet@v1 # https://github.com/actions/setup-dotnet
+    #  with:
+    #    dotnet-version: 3.1.100
+    - name: Build with dotnet
+      run: |
+        dotnet build examples/sipexamples/sipexamples.sln --configuration Release
+        dotnet build examples/webrtcexamples/webrtcexamples.sln --configuration Release
+        dotnet build examples/icecmdline/icecmdline.sln --configuration Release
+        dotnet build examples/sipcmdline/sipcmdline.sln --configuration Release
+        dotnet build examples/stunserver/stunserver.sln --configuration Release

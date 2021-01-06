@@ -39,12 +39,15 @@
 * 
 */
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace SIPSorcery.Net
 {
     public class SrtpTransformer : IPacketTransformer
     {
+        private int _isLocked = 0;
         private RawPacket rawPacket;
 
         private SrtpTransformEngine forwardEngine;
@@ -53,7 +56,7 @@ namespace SIPSorcery.Net
         /**
 	     * All the known SSRC's corresponding SRTPCryptoContexts
 	     */
-        private Dictionary<long, SrtpCryptoContext> contexts;
+        private ConcurrentDictionary<long, SrtpCryptoContext> contexts;
 
         public SrtpTransformer(SrtpTransformEngine engine) : this(engine, engine)
         {
@@ -63,7 +66,7 @@ namespace SIPSorcery.Net
         {
             this.forwardEngine = forwardEngine;
             this.reverseEngine = reverseEngine;
-            this.contexts = new Dictionary<long, SrtpCryptoContext>();
+            this.contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
             this.rawPacket = new RawPacket();
         }
 
@@ -74,24 +77,38 @@ namespace SIPSorcery.Net
 
         public byte[] Transform(byte[] pkt, int offset, int length)
         {
-            // Updates the contents of raw packet with new incoming packet 
-            this.rawPacket.Wrap(pkt, offset, length);
+            var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
 
-            // Associate packet to a crypto context
-            long ssrc = rawPacket.GetSSRC();
-            SrtpCryptoContext context = null;
-            contexts.TryGetValue(ssrc, out context);
-
-            if (context == null)
+            try
             {
-                context = forwardEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
-                context.DeriveSrtpKeys(0);
-                contexts[ssrc] = context;
-            }
+                // Updates the contents of raw packet with new incoming packet 
+                var rawPacket = !isLocked ? this.rawPacket : new RawPacket();
+                rawPacket.Wrap(pkt, offset, length);
 
-            // Transform RTP packet into SRTP
-            context.TransformPacket(this.rawPacket);
-            return this.rawPacket.GetData();
+                // Associate packet to a crypto context
+                long ssrc = rawPacket.GetSSRC();
+                SrtpCryptoContext context = null;
+                contexts.TryGetValue(ssrc, out context);
+
+                if (context == null)
+                {
+                    context = forwardEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
+                    context.DeriveSrtpKeys(0);
+                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
+                }
+
+                // Transform RTP packet into SRTP
+                context.TransformPacket(rawPacket);
+                byte[] result = rawPacket.GetData();
+
+                return result;
+            }
+            finally
+            {
+                //Unlock
+                if (!isLocked)
+                    Interlocked.CompareExchange(ref _isLocked, 0, 1);
+            }
         }
 
         /**
@@ -109,26 +126,39 @@ namespace SIPSorcery.Net
 
         public byte[] ReverseTransform(byte[] pkt, int offset, int length)
         {
-            // Wrap data into the raw packet for readable format
-            this.rawPacket.Wrap(pkt, offset, length);
-
-            // Associate packet to a crypto context
-            long ssrc = this.rawPacket.GetSSRC();
-            SrtpCryptoContext context = null;
-            this.contexts.TryGetValue(ssrc, out context);
-            if (context == null)
+            var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
+            try
             {
-                context = this.reverseEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
-                context.DeriveSrtpKeys(this.rawPacket.GetSequenceNumber());
-                contexts[ssrc] = context;
-            }
+                // Wrap data into the raw packet for readable format
+                var rawPacket = !isLocked ? this.rawPacket : new RawPacket();
+                rawPacket.Wrap(pkt, offset, length);
 
-            bool reversed = context.ReverseTransformPacket(this.rawPacket);
-            if (reversed)
-            {
-                return this.rawPacket.GetData();
+                // Associate packet to a crypto context
+                long ssrc = rawPacket.GetSSRC();
+                SrtpCryptoContext context = null;
+                this.contexts.TryGetValue(ssrc, out context);
+                if (context == null)
+                {
+                    context = this.reverseEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
+                    context.DeriveSrtpKeys(rawPacket.GetSequenceNumber());
+                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
+                }
+
+                byte[] result = null;
+                bool reversed = context.ReverseTransformPacket(rawPacket);
+                if (reversed)
+                {
+                    result = rawPacket.GetData();
+                }
+
+                return result;
             }
-            return null;
+            finally
+            {
+                //Unlock
+                if (!isLocked)
+                    Interlocked.CompareExchange(ref _isLocked, 0, 1);
+            }
         }
 
         /**
@@ -148,9 +178,8 @@ namespace SIPSorcery.Net
             var keys = new List<long>(contexts.Keys);
             foreach (var ssrc in keys)
             {
-                SrtpCryptoContext context = contexts[ssrc];
-
-                contexts.Remove(ssrc);
+                SrtpCryptoContext context;
+                contexts.TryRemove(ssrc, out context);
                 if (context != null)
                 {
                     context.Close();

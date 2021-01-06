@@ -4,10 +4,10 @@
 // Description: SIP Call Detail Records. 
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 17 Feb 2008	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 17 Feb 2008	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -37,7 +37,6 @@ namespace SIPSorcery.SIP
     public class SIPCDR
     {
         private static ILogger logger = Log.Logger;
-        private static string m_newLine = Environment.NewLine;
 
         public static event CDRReadyDelegate CDRCreated = c => { };
         public static event CDRReadyDelegate CDRUpdated = c => { };
@@ -48,13 +47,7 @@ namespace SIPSorcery.SIP
         public Guid CDRId { get; set; }
 
         [DataMember]
-        public string Owner { get; set; }
-
-        [DataMember]
-        public string AdminMemberId { get; set; }
-
-        [DataMember]
-        public DateTimeOffset Created { get; set; }
+        public DateTime Created { get; set; }
 
         [DataMember]
         public SIPCallDirection CallDirection { get; set; }
@@ -71,9 +64,9 @@ namespace SIPSorcery.SIP
         [DataMember]
         public string ProgressReasonPhrase { get; set; }
 
-        private DateTimeOffset? m_progressTime;
+        private DateTime? m_progressTime;
         [DataMember]
-        public DateTimeOffset? ProgressTime
+        public DateTime? ProgressTime
         {
             get { return m_progressTime; }
             set
@@ -95,9 +88,9 @@ namespace SIPSorcery.SIP
         [DataMember]
         public string AnswerReasonPhrase { get; set; }
 
-        private DateTimeOffset? m_answerTime;
+        private DateTime? m_answerTime;
         [DataMember]
-        public DateTimeOffset? AnswerTime
+        public DateTime? AnswerTime
         {
             get { return m_answerTime; }
             set
@@ -113,9 +106,9 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private DateTimeOffset? m_hangupTime;
+        private DateTime? m_hangupTime;
         [DataMember]
-        public DateTimeOffset? HangupTime
+        public DateTime? HangupTime
         {
             get { return m_hangupTime; }
             set
@@ -140,9 +133,6 @@ namespace SIPSorcery.SIP
         [DataMember]
         public DateTime? AnsweredAt { get; set; }
 
-        [DataMember]
-        public Guid DialPlanContextID { get; set; }                     // If the call is received into or initiated from a dialplan then this will hold the dialplan context ID.
-
         public string CallId { get; set; }
         public SIPEndPoint LocalSIPEndPoint { get; set; }
         public SIPEndPoint RemoteEndPoint { get; set; }
@@ -161,7 +151,7 @@ namespace SIPSorcery.SIP
             SIPEndPoint remoteEndPoint)
         {
             CDRId = Guid.NewGuid();
-            Created = DateTimeOffset.UtcNow;
+            Created = DateTime.UtcNow;
             CallDirection = callDirection;
             Destination = destination;
             From = from;
@@ -178,7 +168,7 @@ namespace SIPSorcery.SIP
         public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
         {
             InProgress = true;
-            ProgressTime = DateTimeOffset.UtcNow;
+            ProgressTime = DateTime.UtcNow;
             ProgressStatus = (int)progressStatus;
             ProgressReasonPhrase = progressReason;
 
@@ -198,7 +188,7 @@ namespace SIPSorcery.SIP
             try
             {
                 IsAnswered = true;
-                AnswerTime = DateTimeOffset.UtcNow;
+                AnswerTime = DateTime.UtcNow;
                 AnswerStatus = (int)answerStatus;
                 AnswerReasonPhrase = answerReason;
                 AnsweredAt = DateTime.Now;
@@ -252,7 +242,7 @@ namespace SIPSorcery.SIP
             try
             {
                 IsHungup = true;
-                HangupTime = DateTimeOffset.UtcNow;
+                HangupTime = DateTime.UtcNow;
                 HangupReason = hangupReason;
 
                 CDRHungup(this);

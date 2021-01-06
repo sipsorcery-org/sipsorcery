@@ -2,7 +2,7 @@
   "profiles": {
     "sipcmdline": {
       "commandName": "Project",
-      "commandLineArgs": "-d sipsorcery.com"
+      "commandLineArgs": "-d sip:demo.sipsorceryx.com -c 3"
     },
     "Docker": {
       "commandName": "Docker"

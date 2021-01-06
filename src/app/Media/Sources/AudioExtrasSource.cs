@@ -28,7 +28,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Media
 {
@@ -103,24 +103,11 @@ namespace SIPSorcery.Media
 
         private static ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        public static readonly List<AudioFormat> SupportedFormats = new List<AudioFormat>
-        {
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
-            new AudioFormat(AudioCodecsEnum.L16, 117, 16000),
-            new AudioFormat(AudioCodecsEnum.L16, 118, 8000),
-            
-            // Not recommended due to very, very crude up-sampling in AudioEncoder class. PR's welcome :).
-            //new AudioFormat(121, "L16", "L16/48000", null),
-        };
-
-        private List<AudioFormat> _supportedFormats = new List<AudioFormat>(SupportedFormats);
+        private MediaFormatManager<AudioFormat> _audioFormatManager;
         private BinaryReader _musicStreamReader;
         private SignalGenerator _signalGenerator;
         private Timer _sendSampleTimer;
         private AudioSourceOptions _audioOpts;
-        private AudioFormat _sendingFormat;             // The codec that was selected to send with during the SDP negotiation.
         private bool _isStarted;
         private bool _isPaused;
         private bool _isClosed;
@@ -157,6 +144,7 @@ namespace SIPSorcery.Media
         public AudioExtrasSource()
         {
             _audioEncoder = new AudioEncoder();
+            _audioFormatManager = new MediaFormatManager<AudioFormat>(_audioEncoder.SupportedFormats);
             _audioOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.None };
         }
 
@@ -189,6 +177,7 @@ namespace SIPSorcery.Media
             AudioSourceOptions audioOptions = null)
         {
             _audioEncoder = audioEncoder;
+            _audioFormatManager = new MediaFormatManager<AudioFormat>(_audioEncoder.SupportedFormats);
             _audioOpts = audioOptions ?? new AudioSourceOptions { AudioSource = AudioSourcesEnum.None };
         }
 
@@ -196,37 +185,9 @@ namespace SIPSorcery.Media
             throw new NotImplementedException();
         public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
         public bool IsAudioSourcePaused() => _isPaused;
-        public List<AudioFormat> GetAudioSourceFormats() => _supportedFormats;
-        public void SetAudioSourceFormat(AudioFormat audioFormat) => _sendingFormat = audioFormat;
-
-        /// <summary>
-        /// Requests that the audio sink and source only advertise support for the supplied list of codecs.
-        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
-        /// used.
-        /// </summary>
-        /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
-        public void RestrictFormats(Func<AudioFormat, bool> filter)
-        {
-            if (filter == null)
-            {
-                _supportedFormats = new List<AudioFormat>(SupportedFormats);
-            }
-            else
-            {
-                _supportedFormats = new List<AudioFormat>();
-                foreach (var format in SupportedFormats)
-                {
-                    if (filter(format))
-                    {
-                        _supportedFormats.Add(format);
-                    }
-                    else
-                    {
-                        Log.LogDebug($"Excluding audio format {format.FormatID}:{format.Codec} from audio extras source supported list.");
-                    }
-                }
-            }
-        }
+        public void RestrictFormats(Func<AudioFormat, bool> filter) => _audioFormatManager.RestrictFormats(filter);
+        public List<AudioFormat> GetAudioSourceFormats() => _audioFormatManager.GetSourceFormats();
+        public void SetAudioSourceFormat(AudioFormat audioFormat) => _audioFormatManager.SetSelectedFormat(audioFormat);
 
         public Task CloseAudio()
         {
@@ -246,7 +207,7 @@ namespace SIPSorcery.Media
         /// </summary>
         public Task StartAudio()
         {
-            if (_sendingFormat.IsEmpty())
+            if (_audioFormatManager.SelectedFormat.IsEmpty())
             {
                 throw new ApplicationException("The sending format for the Audio Extras Source has not been set. Cannot start source.");
             }
@@ -334,65 +295,73 @@ namespace SIPSorcery.Media
         /// <param name="sourceOptions">The new audio source.</param>
         public void SetSource(AudioSourceOptions sourceOptions)
         {
-            // If required start the audio source.
-            if (sourceOptions != null)
+            if (!_isStarted)
             {
-                _sendSampleTimer?.Dispose();
-                _musicStreamReader?.Close();
-                StopSendFromAudioStream();
-
+                // Audio source is being adjusted prior to starting.
                 _audioOpts = sourceOptions;
+            }
+            else
+            {
+                // If required start the audio source.
+                if (sourceOptions != null)
+                {
+                    _sendSampleTimer?.Dispose();
+                    _musicStreamReader?.Close();
+                    StopSendFromAudioStream();
 
-                if (_audioOpts.AudioSource == AudioSourcesEnum.None)
-                {
-                    // Do nothing, all other sources have already been stopped.
-                }
-                else if (_audioOpts.AudioSource == AudioSourcesEnum.Silence)
-                {
-                    _sendSampleTimer = new Timer(SendSilenceSample, null, 0, _audioSamplePeriodMilliseconds);
-                }
-                else if (_audioOpts.AudioSource == AudioSourcesEnum.PinkNoise ||
-                     _audioOpts.AudioSource == AudioSourcesEnum.WhiteNoise ||
-                    _audioOpts.AudioSource == AudioSourcesEnum.SineWave)
-                {
-                    _signalGenerator = new SignalGenerator(_sendingFormat.ClockRate, 1);
+                    _audioOpts = sourceOptions;
 
-                    switch (_audioOpts.AudioSource)
+                    if (_audioOpts.AudioSource == AudioSourcesEnum.None)
                     {
-                        case AudioSourcesEnum.PinkNoise:
-                            _signalGenerator.Type = SignalGeneratorType.Pink;
-                            break;
-                        case AudioSourcesEnum.SineWave:
-                            _signalGenerator.Type = SignalGeneratorType.Sin;
-                            break;
-                        case AudioSourcesEnum.WhiteNoise:
-                        default:
-                            _signalGenerator.Type = SignalGeneratorType.White;
-                            break;
+                        // Do nothing, all other sources have already been stopped.
                     }
-
-                    _sendSampleTimer = new Timer(SendSignalGeneratorSample, null, 0, _audioSamplePeriodMilliseconds);
-                }
-                else if (_audioOpts.AudioSource == AudioSourcesEnum.Music)
-                {
-                    if (string.IsNullOrWhiteSpace(_audioOpts.MusicFile) || !File.Exists(_audioOpts.MusicFile))
+                    else if (_audioOpts.AudioSource == AudioSourcesEnum.Silence)
                     {
-                        if (!string.IsNullOrWhiteSpace(_audioOpts.MusicFile))
+                        _sendSampleTimer = new Timer(SendSilenceSample, null, 0, _audioSamplePeriodMilliseconds);
+                    }
+                    else if (_audioOpts.AudioSource == AudioSourcesEnum.PinkNoise ||
+                         _audioOpts.AudioSource == AudioSourcesEnum.WhiteNoise ||
+                         _audioOpts.AudioSource == AudioSourcesEnum.SineWave)
+                    {
+                        _signalGenerator = new SignalGenerator(_audioFormatManager.SelectedFormat.ClockRate, 1);
+
+                        switch (_audioOpts.AudioSource)
                         {
-                            Log.LogWarning($"Music file not set or not found, using default music resource.");
+                            case AudioSourcesEnum.PinkNoise:
+                                _signalGenerator.Type = SignalGeneratorType.Pink;
+                                break;
+                            case AudioSourcesEnum.SineWave:
+                                _signalGenerator.Type = SignalGeneratorType.Sin;
+                                break;
+                            case AudioSourcesEnum.WhiteNoise:
+                            default:
+                                _signalGenerator.Type = SignalGeneratorType.White;
+                                break;
                         }
 
-                        var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
-                        var audioStream = assem.GetManifestResourceStream(MUSIC_RESOURCE_PATH);
-
-                        _musicStreamReader = new BinaryReader(audioStream);
+                        _sendSampleTimer = new Timer(SendSignalGeneratorSample, null, 0, _audioSamplePeriodMilliseconds);
                     }
-                    else
+                    else if (_audioOpts.AudioSource == AudioSourcesEnum.Music)
                     {
-                        _musicStreamReader = new BinaryReader(new FileStream(_audioOpts.MusicFile, FileMode.Open, FileAccess.Read));
-                    }
+                        if (string.IsNullOrWhiteSpace(_audioOpts.MusicFile) || !File.Exists(_audioOpts.MusicFile))
+                        {
+                            if (!string.IsNullOrWhiteSpace(_audioOpts.MusicFile))
+                            {
+                                Log.LogWarning($"Music file not set or not found, using default music resource.");
+                            }
 
-                    _sendSampleTimer = new Timer(SendMusicSample, null, 0, _audioSamplePeriodMilliseconds);
+                            var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
+                            var audioStream = assem.GetManifestResourceStream(MUSIC_RESOURCE_PATH);
+
+                            _musicStreamReader = new BinaryReader(audioStream);
+                        }
+                        else
+                        {
+                            _musicStreamReader = new BinaryReader(new FileStream(_audioOpts.MusicFile, FileMode.Open, FileAccess.Read));
+                        }
+
+                        _sendSampleTimer = new Timer(SendMusicSample, null, 0, _audioSamplePeriodMilliseconds);
+                    }
                 }
             }
         }
@@ -452,8 +421,8 @@ namespace SIPSorcery.Media
             {
                 lock (_sendSampleTimer)
                 {
-                    short[] silencePcm = new short[_sendingFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
-                    EncodeAndSend(silencePcm, _sendingFormat.ClockRate);
+                    short[] silencePcm = new short[_audioFormatManager.SelectedFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
+                    EncodeAndSend(silencePcm, _audioFormatManager.SelectedFormat.ClockRate);
                 }
             }
         }
@@ -468,11 +437,11 @@ namespace SIPSorcery.Media
                 lock (_sendSampleTimer)
                 {
                     // Get the signal generator to generate the samples and then convert from signed linear to PCM.
-                    float[] linear = new float[_sendingFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
+                    float[] linear = new float[_audioFormatManager.SelectedFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
                     _signalGenerator.Read(linear, 0, linear.Length);
                     short[] pcm = linear.Select(x => (short)(x * LINEAR_MAXIMUM)).ToArray();
 
-                    EncodeAndSend(pcm, _sendingFormat.ClockRate);
+                    EncodeAndSend(pcm, _audioFormatManager.SelectedFormat.ClockRate);
                 }
             }
         }
@@ -540,14 +509,14 @@ namespace SIPSorcery.Media
         {
             if (pcm.Length > 0)
             {
-                if (pcmSampleRate != _sendingFormat.ClockRate)
+                if (pcmSampleRate != _audioFormatManager.SelectedFormat.ClockRate)
                 {
-                    pcm = _audioEncoder.Resample(pcm, pcmSampleRate, _sendingFormat.ClockRate);
+                    pcm = _audioEncoder.Resample(pcm, pcmSampleRate, _audioFormatManager.SelectedFormat.ClockRate);
                 }
 
-                byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _sendingFormat);
+                byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
 
-                uint rtpUnits = (uint)(_sendingFormat.RtpClockRate / 1000 * _audioSamplePeriodMilliseconds);
+                uint rtpUnits = (uint)(_audioFormatManager.SelectedFormat.RtpClockRate / 1000 * _audioSamplePeriodMilliseconds);
 
                 OnAudioSourceEncodedSample?.Invoke(rtpUnits, encodedSample);
             }

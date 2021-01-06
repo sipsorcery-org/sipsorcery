@@ -504,7 +504,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:127.0.0.1");
-            logger.LogDebug($"SIP URI {sipURI.ToString()}");
+            logger.LogDebug($"SIP URI {sipURI}");
             logger.LogDebug($"Canonical address {sipURI.CanonicalAddress}");
 
             Assert.True(sipURI.ToString() == "sip:127.0.0.1", "The SIP URI was not ToString'ed correctly.");
@@ -528,7 +528,7 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(sipURI.Host == "[::1]", "The SIP URI host was not parsed correctly.");
             Assert.True(sipURI.ToSIPEndPoint() == new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.IPv6Loopback, 5060, null, null), "The SIP URI end point details were not parsed correctly.");
 
-            logger.LogDebug($"SIP URI {sipURI.ToString()}");
+            logger.LogDebug($"SIP URI {sipURI}");
 
             //rj2: should throw exception
             Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:user1@2a00:1450:4005:800::2004"));//ipv6 host without mandatory brackets

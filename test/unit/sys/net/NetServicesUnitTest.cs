@@ -144,40 +144,6 @@ namespace SIPSorcery.Sys.UnitTests
         }
 
         /// <summary>
-        /// Tests that the a local address is returned for an Internet IPv6 destination.
-        /// </summary>
-        //[Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
-        // TODO: This test sporadically fails on appveyor macos jobs. Try and determine if it's due
-        // to the vm having a different network configuration, IPv6 set up etc.
-        [Fact]
-        [Trait("Category", "IPv6")]
-        public void GetLocalForInternetIPv6AdressUnitTest()
-        {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            if (Socket.OSSupportsIPv6)
-            {
-                if (NetServices.LocalIPAddresses.Any(x => x.AddressFamily == AddressFamily.InterNetworkV6 &&
-                    !x.IsIPv6LinkLocal && !x.IsIPv6SiteLocal && !x.IsIPv6Teredo && !IPAddress.IsLoopback(x)))
-                {
-                    var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("2606:db00:0:62b::2"));
-                    Assert.NotNull(localAddress);
-
-                    logger.LogDebug($"Local address {localAddress}.");
-                }
-                else
-                {
-                    logger.LogDebug("Test skipped as no public IPv6 address available.");
-                }
-            }
-            else
-            {
-                logger.LogDebug("Test skipped as OS does not support IPv6.");
-            }
-        }
-
-        /// <summary>
         /// Tests that the list of local IP addresses is returned.
         /// </summary>
         [Fact]

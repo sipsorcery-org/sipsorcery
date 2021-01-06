@@ -1,0 +1,20 @@
+name: win-x64
+
+on:
+  push:
+    branches:
+      - master
+      - fixtests
+      
+jobs:
+  build:
+    runs-on: windows-latest
+    name: dotnet windows sipsorcery core
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: dotnet restore src/SIPSorcery.sln 
+    - name: Build
+      run: dotnet build src/SIPSorcery.sln -c Release --no-restore
+    - name: Test
+      run:  dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-restore --verbosity normal

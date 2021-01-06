@@ -2,9 +2,12 @@
 // Filename: SIPRequestAuthenticator.cs
 //
 // Description: Central location to handle SIP Request authorisation.
-// 
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 08 Mar 2009	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 08 Mar 2009	Aaron Clauson   Created Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -30,7 +33,11 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Authenticates a SIP request.
         /// </summary>
-        public static SIPRequestAuthenticationResult AuthenticateSIPRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest, SIPAccount sipAccount)
+        public static SIPRequestAuthenticationResult AuthenticateSIPRequest(
+            SIPEndPoint localSIPEndPoint, 
+            SIPEndPoint remoteEndPoint, 
+            SIPRequest sipRequest, 
+            ISIPAccount sipAccount)
         {
             try
             {
@@ -50,15 +57,15 @@ namespace SIPSorcery.SIP.App
                     if (reqAuthHeader == null)
                     {
                         // Check for IP address authentication.
-                        if (!sipAccount.IPAddressACL.IsNullOrBlank())
-                        {
-                            SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
-                            if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
-                            {
-                                // Successfully authenticated
-                                return new SIPRequestAuthenticationResult(true, true);
-                            }
-                        }
+                        //if (!sipAccount.IPAddressACL.IsNullOrBlank())
+                        //{
+                        //    SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
+                        //    if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
+                        //    {
+                        //        // Successfully authenticated
+                        //        return new SIPRequestAuthenticationResult(true, true);
+                        //    }
+                        //}
 
                         SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, GetNonce());
                         return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
@@ -66,15 +73,15 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         // Check for IP address authentication.
-                        if (!sipAccount.IPAddressACL.IsNullOrBlank())
-                        {
-                            SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
-                            if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
-                            {
-                                // Successfully authenticated
-                                return new SIPRequestAuthenticationResult(true, true);
-                            }
-                        }
+                        //if (!sipAccount.IPAddressACL.IsNullOrBlank())
+                        //{
+                        //    SIPEndPoint uaEndPoint = (!sipRequest.Header.ProxyReceivedFrom.IsNullOrBlank()) ? SIPEndPoint.ParseSIPEndPoint(sipRequest.Header.ProxyReceivedFrom) : remoteEndPoint;
+                        //    if (Regex.Match(uaEndPoint.GetIPEndPoint().ToString(), sipAccount.IPAddressACL).Success)
+                        //    {
+                        //        // Successfully authenticated
+                        //        return new SIPRequestAuthenticationResult(true, true);
+                        //    }
+                        //}
 
                         string requestNonce = reqAuthHeader.SIPDigest.Nonce;
                         string uri = reqAuthHeader.SIPDigest.URI;

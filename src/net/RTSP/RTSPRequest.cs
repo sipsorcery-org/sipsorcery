@@ -163,7 +163,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 logger.LogError("Exception RTSPRequest ToString. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
     }

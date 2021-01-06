@@ -78,7 +78,7 @@ namespace SIPSorcery.Sys.UnitTests
             catch (SocketException sockExcp)
             {
                 logger.LogDebug("Socket exception error code= " + sockExcp.ErrorCode + ". " + sockExcp.Message);
-                throw sockExcp;
+                throw;
             }
 
             rawSocket.Shutdown(SocketShutdown.Both);

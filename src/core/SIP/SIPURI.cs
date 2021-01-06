@@ -451,7 +451,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPURI ToString. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 
@@ -480,7 +480,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPURI ToParamaterlessString. " + excp.Message);
-                throw excp;
+                throw;
             }
         }
 

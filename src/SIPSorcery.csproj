@@ -20,7 +20,7 @@
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.8" />
     <PackageReference Include="DnsClient" Version="1.4.0-beta-20200801.7" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="0.0.19-pre" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.4-pre" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
@@ -30,7 +30,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net461;net5</TargetFrameworks>
     <Authors>Aaron Clauson &amp; Contributors</Authors>
     <Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -51,63 +51,17 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v4.0.87-re: Fixed bug not correctly processing missing SDP stream attribute.
-- v4.0.86-pre: Fixed bug negotiating SDP format IDs.
-- v4.0.85-pre: Refactored setting remote SDP offer in RTP session to fix a softphone bug.
-- v4.0.84-pre: Refactored SDP media format handling to improve audio and video format management.
-- v4.0.83-pre: Fix in SIP DNS and SIP UDP receive to work on Android.
-- v4.0.82-pre: Improvement to H264 packetisation. Added ability to set audio extras source sample period.
-- v4.0.81-pre: Fix for SIP DNS lookups failing on CNAME records.
-- v4.0.80-pre: Added webrtc helper class to work with node dss server.
-- v4.0.79-pre: Removed SCTP Time class due to conflict with Unity built in type.
-- v4.0.78-pre: Bug fix for cseq not being incremented for PRACK send or receive.
-- v4.0.77-pre: Updated to latest media abstractions package.
-- v4.0.76-pre: Updated to latest media abstractions package.
-- v4.0.75-pre: Added fix for creating self signed X509 certificates on non-Windows platforms. Required for WebRTC DTLS negotiation.
-- v4.0.74-pre: (Re)Added net461 target and removed netcoreapp3.1 target (the latter is compatible with netstandard2.0). Removed redundant monitoring classes.
-- v4.0.71-pre: Added helper class for webrtc signaling over web sockets.
-- v4.0.70-pre: Fixed reentrant bug to SRTP protect and unprotect methods.
-- v4.0.69-pre: Modified logging to use singleton factory from abstractions package.
-- v4.0.67-pre: Embedded test pattern images and default PCM music on hold files.
-- v4.0.61-pre: Added hooks for new media abstractions interface. Minimum .Net Framework target updated from net46 to net472.
-- v4.0.60-pre: Fix for RTP Session sequence number bug.
-- v4.0.59-pre: WebRTC data channel support.
-- v4.0.58-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
-- v4.0.55-pre: RtpIceChannel support for TURN relaying.
-- v4.0.53-pre: Add STUN server support for WebRTC connection checks.
-- v4.0.52-pre: Modify RTCPeerConnection so it can be used by SIPUserAgent.
-- v4.0.51-pre: Add play stream feature to RtpAudioSession.
-- v4.0.50-pre: Refactor of RtpAudioSession to add codecs and support external device sources.
-- v4.0.49-pre: Enhanced handling for blind and attended transfers.
-- v4.0.47-pre: Fixed bug negotiating RTP event format. Added experimental support for REFER processing to SIPUserAgent.
-- v4.0.46-pre: Added optional bindAddress parameter to RTPSession constructor for RTP sockets.
-- Version 4.0.45-pre: RTPSession public interface changed to conform to IMediaSession.
-- Version 4.0.44-pre: Minor change to RTP codec clock rate methods to support G722.
-- Version 4.0.43-pre: Bug fix not updating SDP version when changing RTP stream status.
-- Version 4.0.42-pre: Added mulaw and alaw decoders to dummy audio RTP session.
-- Version 4.0.41-pre: Added workaround for UDP packet info not being set on Linux.
-- Version 4.0.40-pre: Modifications to IMediaSession. WebRtcSession changed to RTCPeerConnection.
-- Version 4.0.35-pre: Added RTP header to the OnRtpEvent delegate.
-- Version 4.0.34-pre: Minor adjustments to RTP channel and session to facilitate ICE implementation.
-- Version 4.0.33-pre: Bug fix starting media session before remote SDP available. Websocket client parsing fix.
-- Version 4.0.32-pre: Bug fix not setting remote offer when call request with no SDP offer.
-- Version 4.0.31-pre: Bug fix setting inactive address when call request with no SDP offer.
-- Version 4.0.30-pre: Bug fix for SIP User Agent not handling INVITE request with no SDP offer.
-- Version 4.0.29-pre: Added AudioScope sound wave visualisation.
-- Version 4.0.16-4.0.28-pre: Big rework of RTP and Audio/Video integration.
-- Version 4.0.15-pre - .NET framework min version increased from net452 to net46 due to need for TaskCompletionSource overload.
-- Version 4.0.13-pre - RTPSession and WebRTCSession enhancements.
-- Version 4.0.8 - Adds WebRTCSession and preliminary WebRTC support.
-- Version 4.0.7 - RTP support complete.
-- Version 4.0.4 - Added attended transfer capability to SIPUserAgent.
-- Version 4.0.3 - Refactor of RTPChannel and RTPSession. SIPUserAgent class incorporates RTPSession (much easier to use).
-- Version 4.0.2 - New SIPUserAgent class, combination of client and server user agents. Support for HOMER logging.
-- Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
+    <PackageReleaseNotes>- v5.0.7-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
+- v5.0.6-pre: Added video format to IVideoSink GotVideo frame method. Added max bandwidth SDP attribute. Small refactor of RTP packetisation logic.
+- v5.0.5-pre: Use pixel conversion fixes that can cope with uneven image dimensions. 
+- v5.0.3: Added a warning when an attempt is made to depacketise H264.
+- v5.0.2: Added support for binary SIP payloads. Updated dependcies to latest stable versions (where available).
+- v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>4.0.87-pre</Version>
-    <AssemblyVersion>4.0.87.0</AssemblyVersion>
-    <FileVersion>4.0.87.0</FileVersion>
+    <Version>5.0.7-pre</Version>
+    <AssemblyVersion>5.0.7.0</AssemblyVersion>
+    <FileVersion>5.0.7.0</FileVersion>
   </PropertyGroup>
 
 </Project>

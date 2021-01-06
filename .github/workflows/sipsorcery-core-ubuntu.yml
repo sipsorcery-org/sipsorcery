@@ -1,0 +1,17 @@
+name: linux-x64
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        framework: [ 'netcoreapp3.1', 'net5' ]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Unit tests
+      run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework  ${{ matrix.framework }} -c Release

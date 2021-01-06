@@ -1,0 +1,57 @@
+# .NET Desktop
+# Build and run tests for .NET Desktop or Windows classic desktop solutions.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
+
+trigger:
+- master
+- fixtests
+
+# See for available images: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml
+#Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/get-started-multiplatform?view=azure-devops
+strategy:
+  matrix:
+    windows:
+      imageName: 'windows-latest'
+    linux:
+      imageName: 'ubuntu-latest'
+    mac:
+      imageName: 'macOS-latest'
+
+pool:
+  vmImage: $(imageName)
+
+variables:
+  solution: 'src/SIPSorcery.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+steps:
+#- task: NuGetToolInstaller@1
+
+#- task: NuGetCommand@2
+#  inputs:
+#    restoreSolution: '$(solution)'
+
+#Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/visual-studio-build?view=azure-devops
+#- task: VSBuild@1
+#  inputs:
+#    solution: '$(solution)'
+#    platform: '$(buildPlatform)'
+#    configuration: '$(buildConfiguration)'
+
+# Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/dotnet-core-cli?view=azure-devops    
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: test/unit/SIPSorcery.UnitTests.csproj
+    arguments: --framework netcoreapp3.1
+
+#Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/test/vstest?view=azure-devops
+#- task: VSTest@2
+#  inputs:
+#    testSelector: 'testAssemblies'
+#    testAssemblyVer2: '**\\SIPSorcery.UnitTests.dll'
+#    platform: '$(buildPlatform)'
+#    configuration: '$(buildConfiguration)'
+#    testFiltercriteria: 'Category!=IPv6&Category!=transport&Category!=txintegration'
