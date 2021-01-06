@@ -37633,12 +37633,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPViaHeader.ContactAddress
   nameWithType: SIPViaHeader.ContactAddress
-- uid: SIPSorcery.SIP.SIPViaHeader.GetDefaultSIPViaHeader
-  name: GetDefaultSIPViaHeader()
-  href: api/SIPSorcery.SIP.SIPViaHeader.html#SIPSorcery_SIP_SIPViaHeader_GetDefaultSIPViaHeader
-  commentId: M:SIPSorcery.SIP.SIPViaHeader.GetDefaultSIPViaHeader
-  fullName: SIPSorcery.SIP.SIPViaHeader.GetDefaultSIPViaHeader()
-  nameWithType: SIPViaHeader.GetDefaultSIPViaHeader()
+- uid: SIPSorcery.SIP.SIPViaHeader.GetDefaultSIPViaHeader(SIPSorcery.SIP.SIPProtocolsEnum)
+  name: GetDefaultSIPViaHeader(SIPProtocolsEnum)
+  href: api/SIPSorcery.SIP.SIPViaHeader.html#SIPSorcery_SIP_SIPViaHeader_GetDefaultSIPViaHeader_SIPSorcery_SIP_SIPProtocolsEnum_
+  commentId: M:SIPSorcery.SIP.SIPViaHeader.GetDefaultSIPViaHeader(SIPSorcery.SIP.SIPProtocolsEnum)
+  fullName: SIPSorcery.SIP.SIPViaHeader.GetDefaultSIPViaHeader(SIPSorcery.SIP.SIPProtocolsEnum)
+  nameWithType: SIPViaHeader.GetDefaultSIPViaHeader(SIPProtocolsEnum)
 - uid: SIPSorcery.SIP.SIPViaHeader.GetDefaultSIPViaHeader*
   name: GetDefaultSIPViaHeader
   href: api/SIPSorcery.SIP.SIPViaHeader.html#SIPSorcery_SIP_SIPViaHeader_GetDefaultSIPViaHeader_
