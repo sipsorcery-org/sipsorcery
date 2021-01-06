@@ -77,10 +77,10 @@ namespace demo
 
         private void CompileDialPlan(string dialplanPath)
         {
-            string dialPlanScript = File.ReadAllText(_dialPlanPath);
+            string dialPlanScript = File.ReadAllText(dialplanPath);
             string dialPlanClass = string.Format(DIAL_PLAN_CODE_TEMPLATE, dialPlanScript);
 
-            _logger.LogDebug($"Compiling dialplan from {_dialPlanPath}...");
+            _logger.LogDebug($"Compiling dialplan from {dialplanPath}...");
 
             DateTime startTime = DateTime.Now;
 
