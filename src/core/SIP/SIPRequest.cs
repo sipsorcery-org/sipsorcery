@@ -307,7 +307,7 @@ namespace SIPSorcery.SIP
             request.Header = header;
             header.CSeqMethod = method;
             header.Allow = m_allowedSIPMethods;
-            header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
+            header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader(uri.Protocol));
 
             return request;
         }
