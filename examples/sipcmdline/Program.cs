@@ -59,6 +59,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -423,7 +424,22 @@ namespace SIPSorcery
         /// <returns>True if the expected response was received, false otherwise.</returns>
         private static Task<bool> InitiateRegisterTaskAsync(SIPTransport sipTransport, SIPURI dst)
         {
-            var ua = new SIPRegistrationUserAgent(sipTransport, "user", "password", dst.Host, 120);
+            if (dst.User == null)
+            {
+                dst.User = "user";
+            }
+
+            var ua = new SIPRegistrationUserAgent(
+                sipTransport,
+                null,
+                dst,
+                dst.User, 
+                "password",
+                null,
+                dst.ToString(),
+                new SIPURI(dst.Scheme, IPAddress.Any, 0),
+                120,
+                null);
 
             try
             {

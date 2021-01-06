@@ -15,8 +15,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +37,7 @@ namespace demo
     public class SIPHostedService : IHostedService
     {
         public const int DEFAULT_SIP_LISTEN_PORT = 5060;
+        public const int DEFAULT_SIPS_LISTEN_PORT = 5061;
         public const int MAX_REGISTRAR_BINDINGS = 10;
         public const int REGISTRAR_CORE_WORKER_THREADS = 1;
         public const int B2BUA_CORE_WORKER_THREADS = 1;
@@ -88,6 +91,13 @@ namespace demo
             {
                 _sipTransport.ContactHost = ipAddr.ToString();
                 _logger.LogInformation($"SIP transport contact address set to {_sipTransport.ContactHost}.");
+            }
+
+            string sipsCertificatePath = _config.GetValue<string>("SIPSCertificate", null);
+            if(!string.IsNullOrWhiteSpace(sipsCertificatePath) && File.Exists(sipsCertificatePath))
+            {
+                var cert = new X509Certificate2(sipsCertificatePath);
+                _sipTransport.AddSIPChannel(new SIPTLSChannel(cert, new IPEndPoint(IPAddress.Any, DEFAULT_SIPS_LISTEN_PORT)));
             }
 
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, listenPort)));
