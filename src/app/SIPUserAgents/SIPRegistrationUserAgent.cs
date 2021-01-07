@@ -131,7 +131,17 @@ namespace SIPSorcery.SIP.App
             bool exitOnUnequivocalFailure = true)
         {
             m_sipTransport = sipTransport;
-            m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+
+            if (SIPURI.TryParse(server, out var serverUri))
+            {
+                m_sipAccountAOR = serverUri;
+                m_sipAccountAOR.User = username;
+            }
+            else
+            {
+                m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            }
+
             m_authUsername = username;
             m_password = password;
             m_registrarHost = server;
