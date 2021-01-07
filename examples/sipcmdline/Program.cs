@@ -431,15 +431,22 @@ namespace SIPSorcery
 
             var ua = new SIPRegistrationUserAgent(
                 sipTransport,
-                null,
-                dst,
                 dst.User, 
                 "password",
-                null,
                 dst.ToString(),
-                new SIPURI(dst.Scheme, IPAddress.Any, 0),
-                120,
-                null);
+                120);
+
+            //var ua = new SIPRegistrationUserAgent(
+            //    sipTransport,
+            //    null,
+            //    dst,
+            //    dst.User, 
+            //    "password",
+            //    null,
+            //    dst.ToString(),
+            //    new SIPURI(dst.Scheme, IPAddress.Any, 0),
+            //    120,
+            //    null);
 
             try
             {
