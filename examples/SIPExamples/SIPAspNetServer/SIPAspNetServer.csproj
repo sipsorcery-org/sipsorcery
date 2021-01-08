@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -10,6 +10,12 @@
 
   <ItemGroup>
     <Compile Remove="SIPServers\SIPDomainManager.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include=".ci\deployscripts\deploy.sh">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
