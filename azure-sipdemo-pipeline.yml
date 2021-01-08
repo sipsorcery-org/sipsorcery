@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
 trigger:
-- main
+- sipdemo
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -13,5 +13,5 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- script: dotnet build --configuration $(buildConfiguration)
+- script: dotnet build examples/SIPExamples/SIPAspNetServer --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
