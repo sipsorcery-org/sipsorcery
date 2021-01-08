@@ -101,6 +101,7 @@ namespace demo
             }
 
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, listenPort)));
+            _sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.Any, listenPort)));
 
             var listeningEP = _sipTransport.GetSIPChannels().First().ListeningSIPEndPoint;
             _logger.LogInformation($"SIP transport listening on {listeningEP}.");
