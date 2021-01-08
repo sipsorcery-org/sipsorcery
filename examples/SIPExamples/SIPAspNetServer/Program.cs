@@ -13,9 +13,14 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Identity;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
@@ -46,6 +51,17 @@ namespace demo
                 .ConfigureLogging(logging =>
                   logging.AddAzureWebAppDiagnostics()
                 )
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    if (context.HostingEnvironment.IsProduction())
+                    {
+                        var builtConfig = config.Build();
+                        Console.WriteLine($"KeyVaultName={builtConfig["KeyVaultName"]}.");
+                        var secretClient = new SecretClient(new Uri($"https://{builtConfig["KeyVaultName"]}.vault.azure.net/"),
+                                                                 new DefaultAzureCredential());
+                        config.AddAzureKeyVault(secretClient, new KeyVaultSecretManager());
+                    }
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
