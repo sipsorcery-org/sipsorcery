@@ -13,13 +13,5 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- script: dotnet build examples/SIPExamples/SIPAspNetServer --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
-
-- task: DotNetCoreCLI@2
-  inputs:
-    command: publish
-    publishWebProjects: True
-    projects: examples/SIPExamples/SIPAspNetServer/SIPAspNetServer.csproj
-    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) --framework net5.0 --runtime linux-x64 --no-self-contained'
-    zipAfterPublish: True
+- script: dotnet publish examples/SIPExamples/SIPAspNetServer --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) --framework net5.0 --runtime linux-x64 --no-self-contained
+  displayName: 'dotnet publish $(buildConfiguration)'
