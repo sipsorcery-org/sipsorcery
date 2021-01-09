@@ -1,8 +1,3 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
 trigger:
 - sipdemo
 
@@ -13,5 +8,7 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- script: dotnet build examples/SIPExamples/SIPAspNetServer --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
+- script: dotnet publish examples/SIPExamples/SIPAspNetServer --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory) --framework net5.0 --runtime linux-x64 --no-self-contained
+  displayName: 'dotnet publish $(buildConfiguration)'
+- upload: $(Build.ArtifactStagingDirectory)
+  artifact: drop

@@ -53,12 +53,12 @@ namespace demo
 
         private SIPTransport _sipTransport;
         private SIPCallManager _sipCallManager;
-        private SIPDialPlan _sipdialPlan;
+        private SIPDialPlanManager _sipdialPlan;
 
         public SIPB2BUserAgentCore(
             SIPTransport sipTransport, 
             IDbContextFactory<SIPAssetsDbContext> dbContextFactory,
-            SIPDialPlan sipDialPlan)
+            SIPDialPlanManager sipDialPlan)
         {
             if(sipTransport == null)
             {

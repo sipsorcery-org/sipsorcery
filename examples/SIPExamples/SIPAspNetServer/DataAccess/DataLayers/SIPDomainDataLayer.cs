@@ -21,6 +21,8 @@ namespace demo.DataAccess
 {
     public class SIPDomainDataLayer
     {
+        public const string WILDCARD_DOMAIN = "*";
+
         private readonly IDbContextFactory<SIPAssetsDbContext> _dbContextFactory;
 
         public SIPDomainDataLayer(IDbContextFactory<SIPAssetsDbContext> dbContextFactory)
@@ -40,7 +42,7 @@ namespace demo.DataAccess
                 SIPDomain sipDomain = db.SIPDomains.Where(x => x.Domain.ToLower() == host.ToLower()).SingleOrDefault();
                 if (sipDomain == null)
                 {
-                    sipDomain = db.SIPDomains.Where(x => x.AliasList.ToLower().Contains(host.ToLower())).FirstOrDefault();
+                    sipDomain = db.SIPDomains.Where(x => x.AliasList.ToLower().Contains(host.ToLower()) || x.AliasList.Contains(WILDCARD_DOMAIN)).FirstOrDefault();
                 }
 
                 return sipDomain?.Domain;
