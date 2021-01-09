@@ -46,7 +46,7 @@ namespace demo
         private readonly IConfiguration _config;
 
         private SIPTransport _sipTransport;
-        private SIPDialPlan _sipDialPlan;
+        private SIPDialPlanManager _sipDialPlan;
         private RegistrarCore _registrarCore;
         private SIPRegistrarBindingsManager _bindingsManager;
         private SIPB2BUserAgentCore _b2bUserAgentCore;
@@ -64,8 +64,8 @@ namespace demo
             _sipTransport = new SIPTransport();
 
             // Load dialplan script and make sure it can be compiled.
-            _sipDialPlan = new SIPDialPlan();
-            _sipDialPlan.Load();
+            _sipDialPlan = new SIPDialPlanManager(dbContextFactory);
+            _sipDialPlan.LoadDialPlan();
 
             _bindingsManager = new SIPRegistrarBindingsManager(new SIPRegistrarBindingDataLayer(dbContextFactory), MAX_REGISTRAR_BINDINGS);
             _registrarCore = new RegistrarCore(_sipTransport, false, false, _bindingsManager, dbContextFactory);

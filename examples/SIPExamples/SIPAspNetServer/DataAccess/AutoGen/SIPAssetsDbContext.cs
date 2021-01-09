@@ -20,6 +20,7 @@ namespace demo.DataAccess
         public virtual DbSet<CDR> CDRs { get; set; }
         public virtual DbSet<SIPAccount> SIPAccounts { get; set; }
         public virtual DbSet<SIPCall> SIPCalls { get; set; }
+        public virtual DbSet<SIPDialPlan> SIPDialPlans { get; set; }
         public virtual DbSet<SIPDomain> SIPDomains { get; set; }
         public virtual DbSet<SIPRegistrarBinding> SIPRegistrarBindings { get; set; }
 
@@ -27,7 +28,7 @@ namespace demo.DataAccess
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Name=ConnectionStrings:SIPAssets");
+                optionsBuilder.UseSqlServer("Name=ConnectionStrings.SIPAssets");
             }
         }
 
@@ -110,7 +111,7 @@ namespace demo.DataAccess
 
             modelBuilder.Entity<SIPAccount>(entity =>
             {
-                entity.HasIndex(e => new { e.SIPUsername, e.DomainID }, "UQ__SIPAccou__6E36B5B546FC6DB4")
+                entity.HasIndex(e => new { e.SIPUsername, e.DomainID }, "UQ__SIPAccou__6E36B5B5A326D306")
                     .IsUnique();
 
                 entity.Property(e => e.ID).ValueGeneratedNever();
@@ -130,7 +131,13 @@ namespace demo.DataAccess
                 entity.HasOne(d => d.Domain)
                     .WithMany(p => p.SIPAccounts)
                     .HasForeignKey(d => d.DomainID)
-                    .HasConstraintName("FK__SIPAccoun__Domai__55F4C372");
+                    .HasConstraintName("FK__SIPAccoun__Domai__719CDDE7");
+
+                entity.HasOne(d => d.SIPDialPlan)
+                    .WithMany(p => p.SIPAccounts)
+                    .HasForeignKey(d => d.SIPDialPlanID)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK__SIPAccoun__SIPDi__72910220");
             });
 
             modelBuilder.Entity<SIPCall>(entity =>
@@ -189,6 +196,25 @@ namespace demo.DataAccess
                     .HasConstraintName("FK__SIPCalls__CDRID__681373AD");
             });
 
+            modelBuilder.Entity<SIPDialPlan>(entity =>
+            {
+                entity.HasIndex(e => e.DialPlanName, "UQ__SIPDialP__C45E274AD3F90B04")
+                    .IsUnique();
+
+                entity.Property(e => e.ID).ValueGeneratedNever();
+
+                entity.Property(e => e.DialPlanName)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.DialPlanScript).IsUnicode(false);
+
+                entity.Property(e => e.Inserted).HasColumnType("datetime");
+
+                entity.Property(e => e.LastUpdate).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<SIPDomain>(entity =>
             {
                 entity.HasIndex(e => e.Domain, "UQ__SIPDomai__FD349E538EF10FC5")
@@ -236,7 +262,7 @@ namespace demo.DataAccess
                 entity.HasOne(d => d.SIPAccount)
                     .WithMany(p => p.SIPRegistrarBindings)
                     .HasForeignKey(d => d.SIPAccountID)
-                    .HasConstraintName("FK__SIPRegist__SIPAc__58D1301D");
+                    .HasConstraintName("FK__SIPRegist__SIPAc__756D6ECB");
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -10,16 +10,30 @@ create table SIPDomains
  Unique(domain)
 );
 
+create table SIPDialPlans
+(
+ ID uniqueidentifier not null,
+ DialPlanName varchar(64) not null,			-- Name the owner has assigned to the dialplan to allow them to choose between their different ones.
+ DialPlanScript varchar(max),
+ Inserted datetime not null,
+ LastUpdate datetime not null,
+ AcceptNonInvite bit not null default 0,	-- If true the dialplan will accept non-INVITE requests.
+ Primary Key(ID),
+ Unique(DialPlanName)
+);
+
 create table SIPAccounts
 (
  ID uniqueidentifier not null,
  DomainID uniqueidentifier not null,
+ SIPDialPlanID uniqueidentifier null,
  SIPUsername nvarchar(32) not null,
  SIPPassword nvarchar(32) not null,
  IsDisabled bit not null default 0,
  Inserted datetime not null default sysdatetime(),
  Primary Key(ID),
  Foreign Key(DomainID) references SIPDomains(ID) on delete cascade on update cascade,
+ Foreign Key(SIPDialPlanID) references SIPDialPlans(ID) on delete cascade on update cascade,
  Unique(SIPUsername, DomainID)
 );
 

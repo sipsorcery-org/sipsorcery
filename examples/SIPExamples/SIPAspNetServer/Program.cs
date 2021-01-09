@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -30,17 +31,27 @@ namespace demo
 {
     public class Program
     {
+        // This configuration instnaces is made advailable early solely for the logging configuration.
+        // It can be removed if the Serilog logger is configured programatically only.
+        public static IConfiguration Configuration { get; } = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
         public static void Main(string[] args)
         {
-            Console.WriteLine($"Version: {GetVersion()}.");
-
             Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Debug)
-            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning) // Set this to Information to see SQL queries.
+                .ReadFrom.Configuration(Configuration)
+            //.MinimumLevel.Debug()
+            //.MinimumLevel.Override("Microsoft", LogEventLevel.Debug)
+            //.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning) // Set this to Information to see SQL queries.
             .Enrich.FromLogContext()
             .WriteTo.Console()
             .CreateLogger();
+
+            Log.Logger.Information($"Starting server version {GetVersion()}...");
 
             var factory = new SerilogLoggerFactory(Log.Logger);
             SIPSorcery.LogFactory.Set(factory);
