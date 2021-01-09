@@ -6,8 +6,8 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
     <RootNamespace>demo</RootNamespace>
-    <AssemblyVersion>0.0.1.0</AssemblyVersion>
-    <Version>0.0.1</Version>
+    <AssemblyVersion>0.0.2.0</AssemblyVersion>
+    <Version>0.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -56,8 +56,8 @@
     <None Update="AppData\sipassets.db">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
-    <None Update="dialplan.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="isalive.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
