@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
@@ -31,6 +32,8 @@ namespace demo
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine($"Version: {GetVersion()}.");
+
             Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Debug)
@@ -65,5 +68,7 @@ namespace demo
                 {
                     webBuilder.UseStartup<Startup>();
                 });
+
+        public static string GetVersion() => $"sipdemo_v{Assembly.GetExecutingAssembly().GetName().Version}";
     }
 }
