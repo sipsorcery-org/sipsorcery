@@ -32,7 +32,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461;net5.0</TargetFrameworks>
     <Authors>Aaron Clauson &amp; Contributors</Authors>
-    <Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
+    <Copyright>Copyright © 2010-2021 Aaron Clauson</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorcery</Title>
     <Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v5.0.7-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
+    <PackageReleaseNotes>- v5.0.8-pre: Added interfaces to support B2B user agent.
+- v5.0.7-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
 - v5.0.6-pre: Added video format to IVideoSink GotVideo frame method. Added max bandwidth SDP attribute. Small refactor of RTP packetisation logic.
 - v5.0.5-pre: Use pixel conversion fixes that can cope with uneven image dimensions. 
 - v5.0.3: Added a warning when an attempt is made to depacketise H264.
@@ -59,9 +60,9 @@
 - v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>5.0.7-pre</Version>
-    <AssemblyVersion>5.0.7.0</AssemblyVersion>
-    <FileVersion>5.0.7.0</FileVersion>
+    <Version>5.0.8-pre</Version>
+    <AssemblyVersion>5.0.8.0</AssemblyVersion>
+    <FileVersion>5.0.8.0</FileVersion>
   </PropertyGroup>
 
 </Project>
