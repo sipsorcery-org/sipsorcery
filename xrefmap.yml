@@ -24974,6 +24974,19 @@ references:
   commentId: T:SIPSorcery.SIP.App.ISIPAccount
   fullName: SIPSorcery.SIP.App.ISIPAccount
   nameWithType: ISIPAccount
+- uid: SIPSorcery.SIP.App.ISIPAccount.HA1Digest
+  name: HA1Digest
+  href: api/SIPSorcery.SIP.App.ISIPAccount.html#SIPSorcery_SIP_App_ISIPAccount_HA1Digest
+  commentId: P:SIPSorcery.SIP.App.ISIPAccount.HA1Digest
+  fullName: SIPSorcery.SIP.App.ISIPAccount.HA1Digest
+  nameWithType: ISIPAccount.HA1Digest
+- uid: SIPSorcery.SIP.App.ISIPAccount.HA1Digest*
+  name: HA1Digest
+  href: api/SIPSorcery.SIP.App.ISIPAccount.html#SIPSorcery_SIP_App_ISIPAccount_HA1Digest_
+  commentId: Overload:SIPSorcery.SIP.App.ISIPAccount.HA1Digest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.ISIPAccount.HA1Digest
+  nameWithType: ISIPAccount.HA1Digest
 - uid: SIPSorcery.SIP.App.ISIPAccount.ID
   name: ID
   href: api/SIPSorcery.SIP.App.ISIPAccount.html#SIPSorcery_SIP_App_ISIPAccount_ID
@@ -28038,12 +28051,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcHA2
   nameWithType: HTTPDigest.DigestCalcHA2
-- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)
-  name: DigestCalcResponse(String, String, String, String, String, String, String, String, String, String, String, String)
-  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcResponse_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)
-  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String)
-  nameWithType: HTTPDigest.DigestCalcResponse(String, String, String, String, String, String, String, String, String, String, String, String)
+- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String)
+  name: DigestCalcResponse(String, String, String, String, String, String, String)
+  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcResponse_System_String_System_String_System_String_System_String_System_String_System_String_System_String_
+  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String)
+  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String, System.String, System.String, System.String, System.String, System.String, System.String)
+  nameWithType: HTTPDigest.DigestCalcResponse(String, String, String, String, String, String, String)
+- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)
+  name: DigestCalcResponse(String, String, String, String, String, String, String, String, String)
+  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcResponse_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_
+  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)
+  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String)
+  nameWithType: HTTPDigest.DigestCalcResponse(String, String, String, String, String, String, String, String, String)
 - uid: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse*
   name: DigestCalcResponse
   href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcResponse_
@@ -28170,12 +28189,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.Algorithhm
   fullName: SIPSorcery.SIP.SIPAuthorisationDigest.Algorithhm
   nameWithType: SIPAuthorisationDigest.Algorithhm
-- uid: SIPSorcery.SIP.SIPAuthorisationDigest.AUTH_ALGORITHM
-  name: AUTH_ALGORITHM
-  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_AUTH_ALGORITHM
-  commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.AUTH_ALGORITHM
-  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.AUTH_ALGORITHM
-  nameWithType: SIPAuthorisationDigest.AUTH_ALGORITHM
 - uid: SIPSorcery.SIP.SIPAuthorisationDigest.AuthorisationResponseType
   name: AuthorisationResponseType
   href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_AuthorisationResponseType
@@ -28227,6 +28240,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPAuthorisationDigest.Digest
   nameWithType: SIPAuthorisationDigest.Digest
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.HA1
+  name: HA1
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_HA1
+  commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.HA1
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.HA1
+  nameWithType: SIPAuthorisationDigest.HA1
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.HASH_ALGORITHM
+  name: HASH_ALGORITHM
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_HASH_ALGORITHM
+  commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.HASH_ALGORITHM
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.HASH_ALGORITHM
+  nameWithType: SIPAuthorisationDigest.HASH_ALGORITHM
 - uid: SIPSorcery.SIP.SIPAuthorisationDigest.IncrementNonceCount
   name: IncrementNonceCount()
   href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_IncrementNonceCount
@@ -28301,6 +28326,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.Response
   fullName: SIPSorcery.SIP.SIPAuthorisationDigest.Response
   nameWithType: SIPAuthorisationDigest.Response
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.SetCredentials(System.String,System.String,System.String)
+  name: SetCredentials(String, String, String)
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_SetCredentials_System_String_System_String_System_String_
+  commentId: M:SIPSorcery.SIP.SIPAuthorisationDigest.SetCredentials(System.String,System.String,System.String)
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.SetCredentials(System.String, System.String, System.String)
+  nameWithType: SIPAuthorisationDigest.SetCredentials(String, String, String)
 - uid: SIPSorcery.SIP.SIPAuthorisationDigest.SetCredentials(System.String,System.String,System.String,System.String)
   name: SetCredentials(String, String, String, String)
   href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_SetCredentials_System_String_System_String_System_String_System_String_
