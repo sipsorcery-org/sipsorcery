@@ -32,7 +32,7 @@ namespace SIPSorcery.SIP
 
     public class SIPAuthorisationDigest
     {
-        public const string AUTH_ALGORITHM = "MD5";
+        public const string HASH_ALGORITHM = "MD5";
         public const string QOP_AUTHENTICATION_VALUE = "auth";
         private const int NONCE_DEFAULT_COUNT = 1;
 
@@ -50,6 +50,7 @@ namespace SIPSorcery.SIP
         public string RequestType;
         public string Response;
         public string Algorithhm;
+        public string HA1;           // HTTP digest HA1. Contains the username, relam and password already hashed.
 
         public string Cnonce;        // Client nonce (used with WWW-Authenticate and qop=auth).
         public string Qop;           // Quality of Protection. Values permitted are auth (authentication) and auth-int (authentication with integrity protection).
@@ -60,7 +61,7 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                Algorithhm = AUTH_ALGORITHM;
+                Algorithhm = HASH_ALGORITHM;
 
                 // Just to make things difficult For some authorisation requests the header changes when the authenticated response is generated.
                 if (AuthorisationType == SIPAuthorisationHeadersEnum.ProxyAuthenticate)
@@ -90,19 +91,34 @@ namespace SIPSorcery.SIP
                     Nonce = Crypto.GetRandomString(12);
                 }
 
-                return HTTPDigest.DigestCalcResponse(
-                    AUTH_ALGORITHM,
-                    Username,
-                    Realm,
-                    Password,
-                    URI,
-                    Nonce,
-                    nonceCountStr,
-                    Cnonce,
-                    Qop,
-                    RequestType,
-                    null,
-                    null);
+                if (Password != null)
+                {
+                    return HTTPDigest.DigestCalcResponse(
+                        Username,
+                        Realm,
+                        Password,
+                        URI,
+                        Nonce,
+                        nonceCountStr,
+                        Cnonce,
+                        Qop,
+                        RequestType);
+                }
+                else if (HA1 != null)
+                {
+                    return HTTPDigest.DigestCalcResponse(
+                        HA1,
+                       URI,
+                       Nonce,
+                       nonceCountStr,
+                       Cnonce,
+                       Qop,
+                       RequestType);
+                }
+                else
+                {
+                    throw new ApplicationException("SIP authorisation digest cannot be calculated. No password or HA1 available.");
+                }
             }
         }
 
@@ -200,6 +216,13 @@ namespace SIPSorcery.SIP
             RequestType = method;
         }
 
+        public void SetCredentials(string ha1, string uri, string method)
+        {
+            HA1 = ha1;
+            URI = uri;
+            RequestType = method;
+        }
+
         public override string ToString()
         {
             string authHeader = AuthHeaders.AUTH_DIGEST_KEY + " ";
@@ -256,28 +279,37 @@ namespace SIPSorcery.SIP
         }
 
         public static string DigestCalcResponse(
-            string algorithm,
-            string username,
-            string realm,
-            string password,
+           string username,
+           string realm,
+           string password,
+           string uri,
+           string nonce,
+           string nonceCount,
+           string cnonce,
+           string qop,         // qop-value: "", "auth", "auth-int".
+           string method)
+        {
+            string HA1 = DigestCalcHA1(username, realm, password);
+            return DigestCalcResponse(HA1, uri, nonce, nonceCount, cnonce, qop, method);
+        }
+
+        public static string DigestCalcResponse(
+            string ha1,
             string uri,
             string nonce,
             string nonceCount,
             string cnonce,
             string qop,         // qop-value: "", "auth", "auth-int".
-            string method,
-            string digestURL,
-            string hEntity
+            string method
             )
         {
-            string HA1 = DigestCalcHA1(username, realm, password);
             string HA2 = DigestCalcHA2(method, uri);
 
             string unhashedDigest = null;
             if (nonceCount != null && cnonce != null && qop != null)
             {
                 unhashedDigest = String.Format("{0}:{1}:{2}:{3}:{4}:{5}",
-                HA1,
+                ha1,
                 nonce,
                 nonceCount,
                 cnonce,
@@ -287,7 +319,7 @@ namespace SIPSorcery.SIP
             else
             {
                 unhashedDigest = String.Format("{0}:{1}:{2}",
-                HA1,
+                ha1,
                 nonce,
                 HA2);
             }
