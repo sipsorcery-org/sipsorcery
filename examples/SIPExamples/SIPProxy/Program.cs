@@ -48,15 +48,35 @@ using SIPSorcery.SIP.App;
 
 namespace SIPSorcery.SIPProxy
 {
+    struct SIPAccount : ISIPAccount
+    {
+        public Guid ID { get; set; }
+        public string SIPUsername { get; set; }
+        public string SIPPassword { get; set; }
+        public string HA1Digest { get; set; }
+        public string SIPDomain { get; set; }
+        public bool IsDisabled { get; set; }
+
+        public SIPAccount(string username, string domain)
+        {
+            ID = Guid.NewGuid();
+            SIPUsername = username;
+            SIPPassword = null;
+            HA1Digest = null;
+            SIPDomain = domain;
+            IsDisabled = false;
+        }
+    }
+
     struct SIPAccountBinding
     {
-        public SIPAccount SIPAccount;
+        public ISIPAccount SIPAccount;
         public SIPURI RegisteredContact;
         public SIPEndPoint RemoteEndPoint;
         public SIPEndPoint LocalEndPoint;
         public int Expiry;
 
-        public SIPAccountBinding(SIPAccount sipAccount, SIPURI contact, SIPEndPoint remote, SIPEndPoint local, int expiry)
+        public SIPAccountBinding(ISIPAccount sipAccount, SIPURI contact, SIPEndPoint remote, SIPEndPoint local, int expiry)
         {
             SIPAccount = sipAccount;
             RegisteredContact = contact;
@@ -151,7 +171,7 @@ namespace SIPSorcery.SIPProxy
                     if (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0)
                     {
                         int expiry = sipRequest.Header.Contact[0].Expires > 0 ? sipRequest.Header.Contact[0].Expires : sipRequest.Header.Expires;
-                        var sipAccount = new SIPAccount(null, sipRequest.Header.From.FromURI.Host, sipRequest.Header.From.FromURI.User, null, null);
+                        var sipAccount = new SIPAccount(sipRequest.Header.From.FromURI.User, sipRequest.Header.From.FromURI.Host);
                         SIPAccountBinding binding = new SIPAccountBinding(sipAccount, sipRequest.Header.Contact[0].ContactURI, remoteEndPoint, localSIPEndPoint, expiry);
 
                         if (_sipRegistrations.ContainsKey(sipAccount.SIPUsername))
