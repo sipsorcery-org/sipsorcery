@@ -29702,12 +29702,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UASInviteTransaction)
   fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(SIPSorcery.SIP.UASInviteTransaction)
   nameWithType: SIPDialogue.SIPDialogue(UASInviteTransaction)
-- uid: SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String)
-  name: SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String)
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_System_Guid_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String)
-  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(System.String, SIPSorcery.SIP.SIPRouteSet, SIPSorcery.SIP.SIPUserField, SIPSorcery.SIP.SIPUserField, System.Int32, SIPSorcery.SIP.SIPURI, System.String, System.String, System.Guid, System.String, System.String)
-  nameWithType: SIPDialogue.SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String)
+- uid: SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String,SIPSorcery.SIP.SIPEndPoint)
+  name: SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String, SIPEndPoint)
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_System_Guid_System_String_System_String_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String,SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(System.String, SIPSorcery.SIP.SIPRouteSet, SIPSorcery.SIP.SIPUserField, SIPSorcery.SIP.SIPUserField, System.Int32, SIPSorcery.SIP.SIPURI, System.String, System.String, System.Guid, System.String, System.String, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPDialogue.SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String, SIPEndPoint)
 - uid: SIPSorcery.SIP.SIPDialogue.#ctor*
   name: SIPDialogue
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_
@@ -29780,45 +29780,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPDialogue.ContentType
   nameWithType: SIPDialogue.ContentType
-- uid: SIPSorcery.SIP.SIPDialogue.CRMCompanyName
-  name: CRMCompanyName
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_CRMCompanyName
-  commentId: P:SIPSorcery.SIP.SIPDialogue.CRMCompanyName
-  fullName: SIPSorcery.SIP.SIPDialogue.CRMCompanyName
-  nameWithType: SIPDialogue.CRMCompanyName
-- uid: SIPSorcery.SIP.SIPDialogue.CRMCompanyName*
-  name: CRMCompanyName
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_CRMCompanyName_
-  commentId: Overload:SIPSorcery.SIP.SIPDialogue.CRMCompanyName
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDialogue.CRMCompanyName
-  nameWithType: SIPDialogue.CRMCompanyName
-- uid: SIPSorcery.SIP.SIPDialogue.CRMPersonName
-  name: CRMPersonName
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_CRMPersonName
-  commentId: P:SIPSorcery.SIP.SIPDialogue.CRMPersonName
-  fullName: SIPSorcery.SIP.SIPDialogue.CRMPersonName
-  nameWithType: SIPDialogue.CRMPersonName
-- uid: SIPSorcery.SIP.SIPDialogue.CRMPersonName*
-  name: CRMPersonName
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_CRMPersonName_
-  commentId: Overload:SIPSorcery.SIP.SIPDialogue.CRMPersonName
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDialogue.CRMPersonName
-  nameWithType: SIPDialogue.CRMPersonName
-- uid: SIPSorcery.SIP.SIPDialogue.CRMPictureURL
-  name: CRMPictureURL
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_CRMPictureURL
-  commentId: P:SIPSorcery.SIP.SIPDialogue.CRMPictureURL
-  fullName: SIPSorcery.SIP.SIPDialogue.CRMPictureURL
-  nameWithType: SIPDialogue.CRMPictureURL
-- uid: SIPSorcery.SIP.SIPDialogue.CRMPictureURL*
-  name: CRMPictureURL
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_CRMPictureURL_
-  commentId: Overload:SIPSorcery.SIP.SIPDialogue.CRMPictureURL
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDialogue.CRMPictureURL
-  nameWithType: SIPDialogue.CRMPictureURL
 - uid: SIPSorcery.SIP.SIPDialogue.CSeq
   name: CSeq
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_CSeq
@@ -29864,12 +29825,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPDialogue.Direction
   nameWithType: SIPDialogue.Direction
-- uid: SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum)
-  name: GetInDialogRequest(SIPMethodsEnum)
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_GetInDialogRequest_SIPSorcery_SIP_SIPMethodsEnum_
-  commentId: M:SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum)
-  fullName: SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum)
-  nameWithType: SIPDialogue.GetInDialogRequest(SIPMethodsEnum)
+- uid: SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI)
+  name: GetInDialogRequest(SIPMethodsEnum, SIPURI)
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_GetInDialogRequest_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_
+  commentId: M:SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI)
+  fullName: SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum, SIPSorcery.SIP.SIPURI)
+  nameWithType: SIPDialogue.GetInDialogRequest(SIPMethodsEnum, SIPURI)
 - uid: SIPSorcery.SIP.SIPDialogue.GetInDialogRequest*
   name: GetInDialogRequest
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_GetInDialogRequest_
@@ -29877,12 +29838,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPDialogue.GetInDialogRequest
   nameWithType: SIPDialogue.GetInDialogRequest
-- uid: SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint)
-  name: Hangup(SIPTransport, SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_Hangup_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPDialogue.Hangup(SIPTransport, SIPEndPoint)
+- uid: SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPURI)
+  name: Hangup(SIPTransport, SIPEndPoint, SIPURI)
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_Hangup_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPURI_
+  commentId: M:SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPURI)
+  fullName: SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPURI)
+  nameWithType: SIPDialogue.Hangup(SIPTransport, SIPEndPoint, SIPURI)
 - uid: SIPSorcery.SIP.SIPDialogue.Hangup*
   name: Hangup
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_Hangup_
@@ -29948,18 +29909,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPDialogue.logger
   fullName: SIPSorcery.SIP.SIPDialogue.logger
   nameWithType: SIPDialogue.logger
-- uid: SIPSorcery.SIP.SIPDialogue.m_CRLF
-  name: m_CRLF
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_m_CRLF
-  commentId: F:SIPSorcery.SIP.SIPDialogue.m_CRLF
-  fullName: SIPSorcery.SIP.SIPDialogue.m_CRLF
-  nameWithType: SIPDialogue.m_CRLF
-- uid: SIPSorcery.SIP.SIPDialogue.m_sipVersion
-  name: m_sipVersion
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_m_sipVersion
-  commentId: F:SIPSorcery.SIP.SIPDialogue.m_sipVersion
-  fullName: SIPSorcery.SIP.SIPDialogue.m_sipVersion
-  nameWithType: SIPDialogue.m_sipVersion
 - uid: SIPSorcery.SIP.SIPDialogue.ProxySendFrom
   name: ProxySendFrom
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_ProxySendFrom
@@ -30005,6 +29954,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPDialogue.RemoteSDP
   nameWithType: SIPDialogue.RemoteSDP
+- uid: SIPSorcery.SIP.SIPDialogue.RemoteSIPEndPoint
+  name: RemoteSIPEndPoint
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_RemoteSIPEndPoint
+  commentId: P:SIPSorcery.SIP.SIPDialogue.RemoteSIPEndPoint
+  fullName: SIPSorcery.SIP.SIPDialogue.RemoteSIPEndPoint
+  nameWithType: SIPDialogue.RemoteSIPEndPoint
+- uid: SIPSorcery.SIP.SIPDialogue.RemoteSIPEndPoint*
+  name: RemoteSIPEndPoint
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_RemoteSIPEndPoint_
+  commentId: Overload:SIPSorcery.SIP.SIPDialogue.RemoteSIPEndPoint
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPDialogue.RemoteSIPEndPoint
+  nameWithType: SIPDialogue.RemoteSIPEndPoint
 - uid: SIPSorcery.SIP.SIPDialogue.RemoteTag
   name: RemoteTag
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_RemoteTag
@@ -37015,12 +36977,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPURI.CopyOf
   nameWithType: SIPURI.CopyOf
-- uid: SIPSorcery.SIP.SIPURI.DNS_RESOLUTION_TIMEOUT
-  name: DNS_RESOLUTION_TIMEOUT
-  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_DNS_RESOLUTION_TIMEOUT
-  commentId: F:SIPSorcery.SIP.SIPURI.DNS_RESOLUTION_TIMEOUT
-  fullName: SIPSorcery.SIP.SIPURI.DNS_RESOLUTION_TIMEOUT
-  nameWithType: SIPURI.DNS_RESOLUTION_TIMEOUT
 - uid: SIPSorcery.SIP.SIPURI.Equals(System.Object)
   name: Equals(Object)
   href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_Equals_System_Object_
@@ -37130,6 +37086,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPURI.MAddrOrHostAddress
   nameWithType: SIPURI.MAddrOrHostAddress
+- uid: SIPSorcery.SIP.SIPURI.Mangle(SIPSorcery.SIP.SIPURI,System.Net.IPEndPoint)
+  name: Mangle(SIPURI, IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_Mangle_SIPSorcery_SIP_SIPURI_System_Net_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPURI.Mangle(SIPSorcery.SIP.SIPURI,System.Net.IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPURI.Mangle(SIPSorcery.SIP.SIPURI, System.Net.IPEndPoint)
+  nameWithType: SIPURI.Mangle(SIPURI, IPEndPoint)
+- uid: SIPSorcery.SIP.SIPURI.Mangle*
+  name: Mangle
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_Mangle_
+  commentId: Overload:SIPSorcery.SIP.SIPURI.Mangle
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPURI.Mangle
+  nameWithType: SIPURI.Mangle
 - uid: SIPSorcery.SIP.SIPURI.op_Equality(SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPURI)
   name: Equality(SIPURI, SIPURI)
   href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_op_Equality_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPURI_
