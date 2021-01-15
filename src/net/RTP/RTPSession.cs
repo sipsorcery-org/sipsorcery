@@ -1262,7 +1262,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The audio payload to send.</param>
         public void SendAudioFrame(uint duration, int payloadTypeID, byte[] buffer)
         {
-            if (IsClosed || m_rtpEventInProgress || AudioDestinationEndPoint == null)
+            if (IsClosed || m_rtpEventInProgress || AudioDestinationEndPoint == null || buffer == null || buffer.Length == 0)
             {
                 return;
             }
@@ -1281,10 +1281,22 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
+                    // Basic RTP audio formats (such as G711, G722) do not have a concept of frames. The payload of the RTP packet is
+                    // considered a single frame. This results in a problem is the audio frame being sent is larger than the MTU. In 
+                    // that case the audio frame must be split across mutliple RTP packets. Unlike video frames theres no way to 
+                    // indicate that a series of RTP packets are correlated to the same timestamp. For that reason if an audio buffer
+                    // is supplied that's larger than MTU it will be split and the timestamp will be adjusted to best fit each RTP 
+                    // paylaod.
+                    // See https://github.com/sipsorcery/sipsorcery/issues/394.
+
+                    uint payloadTimestamp = audioTrack.Timestamp;
+                    uint payloadDuration = 0;
+
                     for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
                     {
                         int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
                         int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
+                        payloadTimestamp += payloadDuration;
                         byte[] payload = new byte[payloadLength];
 
                         Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
@@ -1295,11 +1307,12 @@ namespace SIPSorcery.Net
                         int markerBit = 0;
 
                         var audioRtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
-                        SendRtpPacket(audioRtpChannel, AudioDestinationEndPoint, payload, audioTrack.Timestamp, markerBit, payloadTypeID, audioTrack.Ssrc, audioTrack.SeqNum, AudioRtcpSession);
+                        SendRtpPacket(audioRtpChannel, AudioDestinationEndPoint, payload, payloadTimestamp, markerBit, payloadTypeID, audioTrack.Ssrc, audioTrack.SeqNum, AudioRtcpSession);
 
                         //logger.LogDebug($"send audio { audioRtpChannel.RTPLocalEndPoint}->{AudioDestinationEndPoint}.");
 
                         audioTrack.SeqNum = (audioTrack.SeqNum == UInt16.MaxValue) ? (ushort)0 : (ushort)(audioTrack.SeqNum + 1);
+                        payloadDuration = (uint)(((decimal)payloadLength / buffer.Length) * duration); // Get the percentage duration of this payload.
                     }
 
                     audioTrack.Timestamp += duration;
