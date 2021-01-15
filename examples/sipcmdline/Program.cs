@@ -116,6 +116,9 @@ namespace SIPSorcery
             [Option('b', "breakonfail", Required = false, Default = false, HelpText = "Cancel the run if a single test fails.")]
             public bool BreakOnFail { get; set; }
 
+            [Option('v', "verbose", Required = false, Default = false, HelpText = "Enable verbose log messages.")]
+            public bool Verbose { get; set; }
+
             [Usage(ApplicationAlias = "sipcmdline")]
             public static IEnumerable<Example> Examples
             {
@@ -219,6 +222,11 @@ namespace SIPSorcery
         {
             SIPTransport sipTransport = new SIPTransport();
 
+            if(options.Verbose)
+            {
+                EnableTraceLogs(sipTransport);
+            }
+
             try
             {
                 DateTime startTime = DateTime.Now;
@@ -313,23 +321,23 @@ namespace SIPSorcery
 
             try
             {
-                sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-                {
-                    logger.LogDebug($"Request sent: {localEP}->{remoteEP}");
-                    logger.LogDebug(req.ToString());
+                //sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
+                //{
+                //    logger.LogDebug($"Request sent: {localEP}->{remoteEP}");
+                //    logger.LogDebug(req.ToString());
 
-                    //var hepBuffer = HepPacket.GetBytes(localEP, remoteEP, DateTimeOffset.Now, 333, "myHep", req.ToString());
-                    //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
-                };
+                //    //var hepBuffer = HepPacket.GetBytes(localEP, remoteEP, DateTimeOffset.Now, 333, "myHep", req.ToString());
+                //    //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
+                //};
 
-                sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-                {
-                    logger.LogDebug($"Response received: {localEP}<-{remoteEP}");
-                    logger.LogDebug(resp.ToString());
+                //sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+                //{
+                //    logger.LogDebug($"Response received: {localEP}<-{remoteEP}");
+                //    logger.LogDebug(resp.ToString());
 
-                    //var hepBuffer = HepPacket.GetBytes(remoteEP, localEP, DateTimeOffset.Now, 333, "myHep", resp.ToString());
-                    //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
-                };
+                //    //var hepBuffer = HepPacket.GetBytes(remoteEP, localEP, DateTimeOffset.Now, 333, "myHep", resp.ToString());
+                //    //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
+                //};
 
                 var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, dst);
 
@@ -483,6 +491,46 @@ namespace SIPSorcery
                 ua.Stop();
                 return Task.FromResult(false);
             }
+        }
+
+        /// <summary>
+        /// Enable detailed SIP log messages.
+        /// </summary>
+        private static void EnableTraceLogs(SIPTransport sipTransport)
+        {
+            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
+            {
+                logger.LogDebug($"Request received: {localEP}<-{remoteEP} {req.StatusLine}");
+                logger.LogDebug(req.ToString());
+            };
+
+            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
+            {
+                logger.LogDebug($"Request sent: {localEP}->{remoteEP} {req.StatusLine}");
+                logger.LogDebug(req.ToString());
+            };
+
+            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                logger.LogDebug($"Response received: {localEP}<-{remoteEP} {resp.ShortDescription}");
+                logger.LogDebug(resp.ToString());
+            };
+
+            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                logger.LogDebug($"Response sent: {localEP}->{remoteEP} {resp.ShortDescription}");
+                logger.LogDebug(resp.ToString());
+            };
+
+            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
+            {
+                logger.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+            };
+
+            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
+            {
+                logger.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+            };
         }
     }
 }

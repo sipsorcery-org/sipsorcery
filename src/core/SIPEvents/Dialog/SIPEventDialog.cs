@@ -61,19 +61,6 @@ namespace SIPSorcery.SIP
                 //RemoteParticipant = new SIPEventDialogParticipant(sipDialogue.RemoteUserField.Name, sipDialogue.RemoteUserField.URI, sipDialogue.RemoteTarget, sipDialogue.CSeq, sipDialogue.RemoteSDP);
                 RemoteParticipant = new SIPEventDialogParticipant(sipDialogue.RemoteUserField.Name, sipDialogue.RemoteUserField.URI, sipDialogue.RemoteTarget, sipDialogue.CSeq);
                 BridgeID = (sipDialogue.BridgeId != Guid.Empty) ? sipDialogue.BridgeId.ToString() : null;
-
-                if (sipDialogue.Direction == SIPCallDirection.In)
-                {
-                    RemoteParticipant.CRMPersonName = sipDialogue.CRMPersonName;
-                    RemoteParticipant.CRMCompanyName = sipDialogue.CRMCompanyName;
-                    RemoteParticipant.CRMPictureURL = sipDialogue.CRMPictureURL;
-                }
-                else if (sipDialogue.Direction == SIPCallDirection.Out)
-                {
-                    LocalParticipant.CRMPersonName = sipDialogue.CRMPersonName;
-                    LocalParticipant.CRMCompanyName = sipDialogue.CRMCompanyName;
-                    LocalParticipant.CRMPictureURL = sipDialogue.CRMPictureURL;
-                }
             }
         }
 

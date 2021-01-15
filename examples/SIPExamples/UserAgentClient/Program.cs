@@ -61,6 +61,7 @@ namespace demo
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
+            //sipTransport.PreferIPv6NameResolution = true;
             EnableTraceLogs(sipTransport);
 
             var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
