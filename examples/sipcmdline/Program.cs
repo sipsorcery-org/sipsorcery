@@ -90,6 +90,7 @@ namespace SIPSorcery
             opt,    // Send OPTIONS requests.
             uac,    // Initiate a SIP call.
             reg,    // Initiate a registration.
+            uacw,   // Initiate a SIP call and wait for the remote party to hangup.
         }
 
         public class Options
@@ -107,7 +108,7 @@ namespace SIPSorcery
             [Option('p', "period", Required = false, Default = 1, HelpText = "The period in seconds between sending multiple requests.")]
             public int Period { get; set; }
 
-            [Option('s', "scenario", Required = false, Default = Scenarios.opt, HelpText = "The command scenario to run. Options are [opt|uac|reg], e.g. -s reg")]
+            [Option('s', "scenario", Required = false, Default = Scenarios.opt, HelpText = "The command scenario to run. Options are [opt|uac|reg|uacw], e.g. -s reg")]
             public Scenarios Scenario { get; set; }
 
             [Option('x', "concurrent", Required = false, Default = 1, HelpText = "The number of concurrent tasks to run.")]
@@ -243,7 +244,8 @@ namespace SIPSorcery
                         task = InitiateRegisterTaskAsync(sipTransport, dstUri);
                         break;
                     case Scenarios.uac:
-                        task = InitiateCallTaskAsync(sipTransport, dstUri);
+                    case Scenarios.uacw:
+                        task = InitiateCallTaskAsync(sipTransport, dstUri, options.Scenario);
                         break;
                     case Scenarios.opt:
                     default:
@@ -374,7 +376,7 @@ namespace SIPSorcery
         /// <param name="sipTransport">The transport object to use for the send.</param>
         /// <param name="dst">The destination end point to send the request to.</param>
         /// <returns>True if the expected response was received, false otherwise.</returns>
-        private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst)
+        private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst, Scenarios scenario)
         {
             //UdpClient hepClient = new UdpClient(0, AddressFamily.InterNetwork);
 
@@ -411,9 +413,27 @@ namespace SIPSorcery
 
                 var result = await ua.Call(dst.ToString(), null, null, voipMediaSession);
 
-                ua.Hangup();
+                if (scenario == Scenarios.uacw)
+                {
+                    // Wait for the remote party to hangup the call.
+                    logger.LogDebug("Waiting for the remote party to hangup the call...");
 
-                await Task.Delay(200);
+                    ManualResetEvent hangupMre = new ManualResetEvent(false);
+                    ua.OnCallHungup += (dialog) => hangupMre.Set();
+
+                    hangupMre.WaitOne();
+
+                    logger.LogDebug("Call hungup by remote party.");
+                }
+                else
+                {
+                    // We hangup the call after 1s.
+                    await Task.Delay(1000);
+                    ua.Hangup();
+                }
+
+                // Need a bit of time for the BYE to complete.
+                await Task.Delay(500);
 
                 return result;
             }
