@@ -120,6 +120,9 @@ namespace SIPSorcery
             [Option('v', "verbose", Required = false, Default = false, HelpText = "Enable verbose log messages.")]
             public bool Verbose { get; set; }
 
+            [Option("ipv6", Required = false, Default = false, HelpText = "Prefer IPv6 when resolving DNS lookups.")]
+            public bool PreferIPv6 { get; set; }
+
             [Usage(ApplicationAlias = "sipcmdline")]
             public static IEnumerable<Example> Examples
             {
@@ -222,6 +225,7 @@ namespace SIPSorcery
         private static async Task<bool> RunTask(Options options, int taskNumber)
         {
             SIPTransport sipTransport = new SIPTransport();
+            sipTransport.PreferIPv6NameResolution = options.PreferIPv6;
 
             if(options.Verbose)
             {
