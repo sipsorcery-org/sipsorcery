@@ -27,6 +27,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Windows;
 
 namespace demo
@@ -65,6 +66,7 @@ namespace demo
             EnableTraceLogs(sipTransport);
 
             var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
+            audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA || x.Codec == AudioCodecsEnum.PCMU);
             var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
 
             var offerSDP = rtpSession.CreateOffer(null);
