@@ -159,11 +159,11 @@ namespace SIPSorcery.SIP.App
                     {
                         if (authenticationResult.WasAuthenticatedByIP)
                         {
-                            logger.LogDebug("New call from " + remoteEndPoint.ToString() + " successfully authenticated by IP address.");
+                            logger.LogDebug($"New call from {remoteEndPoint} successfully authenticated by IP address.");
                         }
                         else
                         {
-                            logger.LogDebug("New call from " + remoteEndPoint.ToString() + " successfully authenticated by digest.");
+                            logger.LogDebug($"New call from {remoteEndPoint} successfully authenticated by digest.");
                         }
 
                         m_isAuthenticated = true;
