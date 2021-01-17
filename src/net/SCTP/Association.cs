@@ -336,7 +336,7 @@ namespace SIPSorcery.Net.Sctp
                 {
                     logger.LogDebug("Association receive failed " + ex.GetType().Name + " " + ex.ToString());
                 }
-            });
+            }){IsBackground = true};
             _rcv.Priority = ThreadPriority.Highest;
             _rcv.Name = "AssocRcv" + __assocNo;
             _rcv.Start();
