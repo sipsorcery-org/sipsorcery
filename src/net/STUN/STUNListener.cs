@@ -79,7 +79,7 @@ namespace SIPSorcery.Net
 
                 m_stunConn = stunConn;
 
-                Thread listenThread = new Thread(new ThreadStart(Listen));
+                Thread listenThread = new Thread(new ThreadStart(Listen)){IsBackground = true};
                 listenThread.Start();
 
                 return localEndPoint;
