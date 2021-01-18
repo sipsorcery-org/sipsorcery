@@ -169,8 +169,6 @@ namespace SIPSorcery.SIP
         {
             SIPRequest copy = new SIPRequest();
             copy.SIPVersion = SIPVersion;
-            //copy.SIPMajorVersion = m_sipMajorVersion;
-            //copy.SIPMinorVersion = m_sipMinorVersion;
             copy.Method = Method;
             copy.UnknownMethod = UnknownMethod;
             copy.URI = URI?.CopyOf();
