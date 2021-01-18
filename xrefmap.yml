@@ -31900,24 +31900,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPHeader.Copy
   nameWithType: SIPHeader.Copy
-- uid: SIPSorcery.SIP.SIPHeader.CRMCompanyName
-  name: CRMCompanyName
-  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_CRMCompanyName
-  commentId: F:SIPSorcery.SIP.SIPHeader.CRMCompanyName
-  fullName: SIPSorcery.SIP.SIPHeader.CRMCompanyName
-  nameWithType: SIPHeader.CRMCompanyName
-- uid: SIPSorcery.SIP.SIPHeader.CRMPersonName
-  name: CRMPersonName
-  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_CRMPersonName
-  commentId: F:SIPSorcery.SIP.SIPHeader.CRMPersonName
-  fullName: SIPSorcery.SIP.SIPHeader.CRMPersonName
-  nameWithType: SIPHeader.CRMPersonName
-- uid: SIPSorcery.SIP.SIPHeader.CRMPictureURL
-  name: CRMPictureURL
-  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_CRMPictureURL
-  commentId: F:SIPSorcery.SIP.SIPHeader.CRMPictureURL
-  fullName: SIPSorcery.SIP.SIPHeader.CRMPictureURL
-  nameWithType: SIPHeader.CRMPictureURL
 - uid: SIPSorcery.SIP.SIPHeader.CSeq
   name: CSeq
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_CSeq
@@ -36448,6 +36430,31 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransport.ContactHost
   fullName: SIPSorcery.SIP.SIPTransport.ContactHost
   nameWithType: SIPTransport.ContactHost
+- uid: SIPSorcery.SIP.SIPTransport.CreateChannel(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.Sockets.AddressFamily,System.Int32)
+  name: CreateChannel(SIPProtocolsEnum, AddressFamily, Int32)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateChannel_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_Sockets_AddressFamily_System_Int32_
+  commentId: M:SIPSorcery.SIP.SIPTransport.CreateChannel(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.Sockets.AddressFamily,System.Int32)
+  fullName: SIPSorcery.SIP.SIPTransport.CreateChannel(SIPSorcery.SIP.SIPProtocolsEnum, System.Net.Sockets.AddressFamily, System.Int32)
+  nameWithType: SIPTransport.CreateChannel(SIPProtocolsEnum, AddressFamily, Int32)
+- uid: SIPSorcery.SIP.SIPTransport.CreateChannel*
+  name: CreateChannel
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateChannel_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.CreateChannel
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransport.CreateChannel
+  nameWithType: SIPTransport.CreateChannel
+- uid: SIPSorcery.SIP.SIPTransport.CustomiseRequestHeader
+  name: CustomiseRequestHeader
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CustomiseRequestHeader
+  commentId: F:SIPSorcery.SIP.SIPTransport.CustomiseRequestHeader
+  fullName: SIPSorcery.SIP.SIPTransport.CustomiseRequestHeader
+  nameWithType: SIPTransport.CustomiseRequestHeader
+- uid: SIPSorcery.SIP.SIPTransport.CustomiseResponseHeader
+  name: CustomiseResponseHeader
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CustomiseResponseHeader
+  commentId: F:SIPSorcery.SIP.SIPTransport.CustomiseResponseHeader
+  fullName: SIPSorcery.SIP.SIPTransport.CustomiseResponseHeader
+  nameWithType: SIPTransport.CustomiseResponseHeader
 - uid: SIPSorcery.SIP.SIPTransport.DisableRetransmitSending
   name: DisableRetransmitSending
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_DisableRetransmitSending

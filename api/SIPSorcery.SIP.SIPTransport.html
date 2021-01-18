@@ -121,7 +121,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L166">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L192">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport__ctor_" data-uid="SIPSorcery.SIP.SIPTransport.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport__ctor" data-uid="SIPSorcery.SIP.SIPTransport.#ctor">SIPTransport()</h4>
@@ -137,7 +137,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport__ctor_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.%23ctor(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L185">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L211">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport__ctor_" data-uid="SIPSorcery.SIP.SIPTransport.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport__ctor_System_Boolean_" data-uid="SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean)">SIPTransport(Boolean)</h4>
@@ -244,6 +244,86 @@ sipRequest.Header.Contact = new List&lt;SIPContactHeader>() { SIPContactHeader.G
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_CustomiseRequestHeader.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.CustomiseRequestHeader%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L138">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_SIPTransport_CustomiseRequestHeader" data-uid="SIPSorcery.SIP.SIPTransport.CustomiseRequestHeader">CustomiseRequestHeader</h4>
+  <div class="markdown level1 summary"><p>Optional callback function that can be set to customise the headers on an outbound SIP request.
+The callback is called BEFORE applying <a class="xref" href="SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_ContactHost">ContactHost</a> which means do not set
+both if the callback is intended to set the Contact URI.
+Parameters:</p>
+<ul>
+<li>SIPEndPoint: The local SIP end point the request will be sent from.</li>
+<li>SIPEndPoint: The remote SIP end point the request has been resolved to.</li>
+<li>SIPRequest: The SIP request being sent.
+Returns: If the result is non-null it will be used to replace the current SIP Header
+instance on the SIP Request. If null the original header will be left in place.</li>
+</ul>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Func&lt;SIPEndPoint, SIPEndPoint, SIPRequest, SIPHeader&gt; CustomiseRequestHeader</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a>, <a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a>, <a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a>, <a class="xref" href="SIPSorcery.SIP.SIPHeader.html">SIPHeader</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_CustomiseResponseHeader.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.CustomiseResponseHeader%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L151">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_SIPTransport_CustomiseResponseHeader" data-uid="SIPSorcery.SIP.SIPTransport.CustomiseResponseHeader">CustomiseResponseHeader</h4>
+  <div class="markdown level1 summary"><p>Optional function that can be set to customise the headers on an outbound SIP request.
+The callback is called BEFORE applying <a class="xref" href="SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_ContactHost">ContactHost</a> which means do not set
+both if the callback is intended to set the Contact URI.
+Parameters:</p>
+<ul>
+<li>SIPEndPoint: The local SIP end point the request will be sent from.</li>
+<li>SIPEndPoint: The remote SIP end point the request has been resolved to.</li>
+<li>SIPRequest: The SIP request being sent.
+Returns: If the result is non-null it will be used to replace the current SIP Header
+instance on the SIP Request. If null the original header will be left in place.</li>
+</ul>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Func&lt;SIPEndPoint, SIPEndPoint, SIPResponse, SIPHeader&gt; CustomiseResponseHeader</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a>, <a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a>, <a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a>, <a class="xref" href="SIPSorcery.SIP.SIPHeader.html">SIPHeader</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_m_allowedSIPMethods.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.m_allowedSIPMethods%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
@@ -342,7 +422,7 @@ created manually.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_DisableRetransmitSending.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.DisableRetransmitSending%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L141">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L167">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_DisableRetransmitSending_" data-uid="SIPSorcery.SIP.SIPTransport.DisableRetransmitSending*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_DisableRetransmitSending" data-uid="SIPSorcery.SIP.SIPTransport.DisableRetransmitSending">DisableRetransmitSending</h4>
@@ -386,7 +466,7 @@ and <a href="https://github.com/sipsorcery/sipsorcery/issues/370#issuecomment-73
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_AddSIPChannel_SIPSorcery_SIP_SIPChannel_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.AddSIPChannel(SIPSorcery.SIP.SIPChannel)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L217">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L243">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_AddSIPChannel_" data-uid="SIPSorcery.SIP.SIPTransport.AddSIPChannel*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_AddSIPChannel_SIPSorcery_SIP_SIPChannel_" data-uid="SIPSorcery.SIP.SIPTransport.AddSIPChannel(SIPSorcery.SIP.SIPChannel)">AddSIPChannel(SIPChannel)</h4>
@@ -419,7 +499,7 @@ and <a href="https://github.com/sipsorcery/sipsorcery/issues/370#issuecomment-73
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_AddSIPChannel_System_Collections_Generic_List_SIPSorcery_SIP_SIPChannel__.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.AddSIPChannel(System.Collections.Generic.List%7BSIPSorcery.SIP.SIPChannel%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L206">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L232">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_AddSIPChannel_" data-uid="SIPSorcery.SIP.SIPTransport.AddSIPChannel*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_AddSIPChannel_System_Collections_Generic_List_SIPSorcery_SIP_SIPChannel__" data-uid="SIPSorcery.SIP.SIPTransport.AddSIPChannel(System.Collections.Generic.List{SIPSorcery.SIP.SIPChannel})">AddSIPChannel(List&lt;SIPChannel&gt;)</h4>
@@ -452,7 +532,7 @@ and <a href="https://github.com/sipsorcery/sipsorcery/issues/370#issuecomment-73
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_AddTransaction_SIPSorcery_SIP_SIPTransaction_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L1182">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L1236">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_AddTransaction_" data-uid="SIPSorcery.SIP.SIPTransport.AddTransaction*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_AddTransaction_SIPSorcery_SIP_SIPTransaction_" data-uid="SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)">AddTransaction(SIPTransaction)</h4>
@@ -483,10 +563,73 @@ and <a href="https://github.com/sipsorcery/sipsorcery/issues/370#issuecomment-73
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_CreateChannel_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_Sockets_AddressFamily_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.CreateChannel(SIPSorcery.SIP.SIPProtocolsEnum%2CSystem.Net.Sockets.AddressFamily%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L1266">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPTransport_CreateChannel_" data-uid="SIPSorcery.SIP.SIPTransport.CreateChannel*"></a>
+  <h4 id="SIPSorcery_SIP_SIPTransport_CreateChannel_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_Sockets_AddressFamily_System_Int32_" data-uid="SIPSorcery.SIP.SIPTransport.CreateChannel(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.Sockets.AddressFamily,System.Int32)">CreateChannel(SIPProtocolsEnum, AddressFamily, Int32)</h4>
+  <div class="markdown level1 summary"><p>Creates an on demand SIP channel suitable for outbound connections.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPChannel CreateChannel(SIPProtocolsEnum protocol, AddressFamily addressFamily, int port = 0)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPProtocolsEnum.html">SIPProtocolsEnum</a></td>
+        <td><span class="parametername">protocol</span></td>
+        <td><p>The transport protocol of the SIP channel to create.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.Sockets.AddressFamily</span></td>
+        <td><span class="parametername">addressFamily</span></td>
+        <td><p>Whether the channel should be created for IPv4 or IPv6.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">port</span></td>
+        <td><p>Optional. If specified channels that open a listener will attempt to
+use this port.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a></td>
+        <td><p>A SIP channel if it was possible to create or null if not.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_Dispose.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.Dispose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L1251">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L1307">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_Dispose_" data-uid="SIPSorcery.SIP.SIPTransport.Dispose*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_Dispose" data-uid="SIPSorcery.SIP.SIPTransport.Dispose">Dispose()</h4>
@@ -501,7 +644,7 @@ and <a href="https://github.com/sipsorcery/sipsorcery/issues/370#issuecomment-73
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_GetSIPChannels.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.GetSIPChannels%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L1173">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L1227">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_GetSIPChannels_" data-uid="SIPSorcery.SIP.SIPTransport.GetSIPChannels*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_GetSIPChannels" data-uid="SIPSorcery.SIP.SIPTransport.GetSIPChannels">GetSIPChannels()</h4>
@@ -533,7 +676,7 @@ and <a href="https://github.com/sipsorcery/sipsorcery/issues/370#issuecomment-73
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_PreProcessRouteInfo_SIPSorcery_SIP_SIPRequest_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.PreProcessRouteInfo(SIPSorcery.SIP.SIPRequest)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L339">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L365">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_PreProcessRouteInfo_" data-uid="SIPSorcery.SIP.SIPTransport.PreProcessRouteInfo*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_PreProcessRouteInfo_SIPSorcery_SIP_SIPRequest_" data-uid="SIPSorcery.SIP.SIPTransport.PreProcessRouteInfo(SIPSorcery.SIP.SIPRequest)">PreProcessRouteInfo(SIPRequest)</h4>
@@ -580,7 +723,7 @@ and the original request URI must be added to the end of the route set, forward 
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_ReceiveMessage_SIPSorcery_SIP_SIPChannel_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.ReceiveMessage(SIPSorcery.SIP.SIPChannel%2CSIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L290">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L316">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_ReceiveMessage_" data-uid="SIPSorcery.SIP.SIPTransport.ReceiveMessage*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_ReceiveMessage_SIPSorcery_SIP_SIPChannel_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___" data-uid="SIPSorcery.SIP.SIPTransport.ReceiveMessage(SIPSorcery.SIP.SIPChannel,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])">ReceiveMessage(SIPChannel, SIPEndPoint, SIPEndPoint, Byte[])</h4>
@@ -654,7 +797,7 @@ up to 10s.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_RemoveSIPChannel_SIPSorcery_SIP_SIPChannel_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.RemoveSIPChannel(SIPSorcery.SIP.SIPChannel)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L244">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L270">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_RemoveSIPChannel_" data-uid="SIPSorcery.SIP.SIPTransport.RemoveSIPChannel*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_RemoveSIPChannel_SIPSorcery_SIP_SIPChannel_" data-uid="SIPSorcery.SIP.SIPTransport.RemoveSIPChannel(SIPSorcery.SIP.SIPChannel)">RemoveSIPChannel(SIPChannel)</h4>
@@ -688,7 +831,7 @@ up to 10s.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_ResolveSIPUriAsync_SIPSorcery_SIP_SIPURI_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync(SIPSorcery.SIP.SIPURI)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L1246">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L1302">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_ResolveSIPUriAsync_" data-uid="SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_ResolveSIPUriAsync_SIPSorcery_SIP_SIPURI_" data-uid="SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync(SIPSorcery.SIP.SIPURI)">ResolveSIPUriAsync(SIPURI)</h4>
@@ -738,7 +881,7 @@ up to 10s.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_SendRawAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L402">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L428">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_SendRawAsync_" data-uid="SIPSorcery.SIP.SIPTransport.SendRawAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendRawAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___" data-uid="SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])">SendRawAsync(SIPEndPoint, SIPEndPoint, Byte[])</h4>
@@ -802,7 +945,7 @@ the SIP transports channels.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPRequest)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L517">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L543">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_SendRequestAsync_" data-uid="SIPSorcery.SIP.SIPTransport.SendRequestAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_" data-uid="SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)">SendRequestAsync(SIPEndPoint, SIPRequest)</h4>
@@ -858,7 +1001,7 @@ local SIP channel in this SIP transport to send the request on.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPRequest_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L431">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L457">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_SendRequestAsync_" data-uid="SIPSorcery.SIP.SIPTransport.SendRequestAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPRequest_" data-uid="SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest)">SendRequestAsync(SIPRequest)</h4>
@@ -912,7 +1055,7 @@ failure response. Otherwise the result of the send attempt.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPRequest_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L473">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L499">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_SendRequestAsync_" data-uid="SIPSorcery.SIP.SIPTransport.SendRequestAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPRequest_System_Boolean_" data-uid="SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest,System.Boolean)">SendRequestAsync(SIPRequest, Boolean)</h4>
@@ -970,7 +1113,7 @@ queued and the send will need to be called again.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPResponse_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPResponse)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L710">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L742">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_SendResponseAsync_" data-uid="SIPSorcery.SIP.SIPTransport.SendResponseAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPResponse_" data-uid="SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPResponse)">SendResponseAsync(SIPEndPoint, SIPResponse)</h4>
@@ -1025,7 +1168,7 @@ queued and the send will need to be called again.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPResponse_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L614">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L646">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_SendResponseAsync_" data-uid="SIPSorcery.SIP.SIPTransport.SendResponseAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPResponse_" data-uid="SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse)">SendResponseAsync(SIPResponse)</h4>
@@ -1079,7 +1222,7 @@ failure response. Otherwise the result of the send attempt.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPResponse_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L667">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L699">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_SendResponseAsync_" data-uid="SIPSorcery.SIP.SIPTransport.SendResponseAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPResponse_System_Boolean_" data-uid="SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse,System.Boolean)">SendResponseAsync(SIPResponse, Boolean)</h4>
@@ -1151,7 +1294,7 @@ queued and the send will need to be called again.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_SendTransaction_SIPSorcery_SIP_SIPTransaction_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.SendTransaction(SIPSorcery.SIP.SIPTransaction)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L588">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L620">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_SendTransaction_" data-uid="SIPSorcery.SIP.SIPTransport.SendTransaction*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendTransaction_SIPSorcery_SIP_SIPTransaction_" data-uid="SIPSorcery.SIP.SIPTransport.SendTransaction(SIPSorcery.SIP.SIPTransaction)">SendTransaction(SIPTransaction)</h4>
@@ -1187,7 +1330,7 @@ If no response is received then periodic retransmits are made for up to T1 x 64 
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_Shutdown.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.Shutdown%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L256">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L282">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_Shutdown_" data-uid="SIPSorcery.SIP.SIPTransport.Shutdown*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_Shutdown" data-uid="SIPSorcery.SIP.SIPTransport.Shutdown">Shutdown()</h4>
