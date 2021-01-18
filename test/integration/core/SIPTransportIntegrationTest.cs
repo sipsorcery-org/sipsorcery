@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SIPTransportUnitTest.cs
+// Filename: SIPTransportIntegrationTest.cs
 //
-// Description: Unit tests for the SIPTransport class.
+// Description: Integration tests for the SIPTransport class.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -29,16 +29,16 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using Xunit;
 
-namespace SIPSorcery.SIP.IntegrationTests
+namespace SIPSorcery.SIP.IntegrationTest
 {
     [Trait("Category", "transport")]
-    public class SIPTransportUnitTest
+    public class SIPTransportIntegrationTest
     {
         private const int TRANSPORT_TEST_TIMEOUT = 15000;
 
         private Microsoft.Extensions.Logging.ILogger logger = null;
 
-        public SIPTransportUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        public SIPTransportIntegrationTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }

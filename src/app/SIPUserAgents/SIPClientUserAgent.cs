@@ -535,14 +535,6 @@ namespace SIPSorcery.SIP.App
             inviteRequest.Header.ContentLength = (inviteRequest.Body != null) ? inviteRequest.Body.Length : 0;
             inviteRequest.Header.ContentType = contentType;
 
-            // Add custom CRM headers.
-            if (CallDescriptor.CRMHeaders != null)
-            {
-                inviteHeader.CRMPersonName = CallDescriptor.CRMHeaders.PersonName;
-                inviteHeader.CRMCompanyName = CallDescriptor.CRMHeaders.CompanyName;
-                inviteHeader.CRMPictureURL = CallDescriptor.CRMHeaders.AvatarURL;
-            }
-
             try
             {
                 if (sipCallDescriptor.CustomHeaders != null && sipCallDescriptor.CustomHeaders.Count > 0)
@@ -635,14 +627,6 @@ namespace SIPSorcery.SIP.App
 
             SIPViaHeader viaHeader = new SIPViaHeader(inviteRequest.LocalSIPEndPoint, CallProperties.CreateBranchId());
             updateHeader.Vias.PushViaHeader(viaHeader);
-
-            // Add custom CRM headers.
-            if (crmHeaders != null)
-            {
-                updateHeader.CRMPersonName = crmHeaders.PersonName;
-                updateHeader.CRMCompanyName = crmHeaders.CompanyName;
-                updateHeader.CRMPictureURL = crmHeaders.AvatarURL;
-            }
 
             return updateRequest;
         }

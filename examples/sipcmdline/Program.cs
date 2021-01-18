@@ -123,6 +123,9 @@ namespace SIPSorcery
             [Option("ipv6", Required = false, Default = false, HelpText = "Prefer IPv6 when resolving DNS lookups.")]
             public bool PreferIPv6 { get; set; }
 
+            [Option("port", Required = false, Default = 0, HelpText = "The source SIP port to use.")]
+            public int SourcePort { get; set; }
+
             [Usage(ApplicationAlias = "sipcmdline")]
             public static IEnumerable<Example> Examples
             {
@@ -239,6 +242,14 @@ namespace SIPSorcery
                 var dstUri = ParseDestination(options.Destination);
 
                 logger.LogDebug($"Destination SIP URI {dstUri}");
+
+                if(options.SourcePort != 0)
+                {
+                    var sipChannel = sipTransport.CreateChannel(dstUri.Protocol,
+                        options.PreferIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork,
+                        options.SourcePort);
+                    sipTransport.AddSIPChannel(sipChannel);
+                }
 
                 Task<bool> task = null;
 
