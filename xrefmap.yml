@@ -39409,6 +39409,19 @@ references:
   fullName.vb: SIPSorcery.Sys.TypeExtensions.Deconstruct(Of T1, T2)(System.Collections.Generic.KeyValuePair(Of T1, T2), ByRef T1, ByRef T2)
   nameWithType: TypeExtensions.Deconstruct<T1, T2>(KeyValuePair<T1, T2>, out T1, out T2)
   nameWithType.vb: TypeExtensions.Deconstruct(Of T1, T2)(KeyValuePair(Of T1, T2), ByRef T1, ByRef T2)
+- uid: SIPSorcery.Sys.TypeExtensions.GetBroadcastAddress(System.Net.IPAddress,System.Net.IPAddress)
+  name: GetBroadcastAddress(IPAddress, IPAddress)
+  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_GetBroadcastAddress_System_Net_IPAddress_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Sys.TypeExtensions.GetBroadcastAddress(System.Net.IPAddress,System.Net.IPAddress)
+  fullName: SIPSorcery.Sys.TypeExtensions.GetBroadcastAddress(System.Net.IPAddress, System.Net.IPAddress)
+  nameWithType: TypeExtensions.GetBroadcastAddress(IPAddress, IPAddress)
+- uid: SIPSorcery.Sys.TypeExtensions.GetBroadcastAddress*
+  name: GetBroadcastAddress
+  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_GetBroadcastAddress_
+  commentId: Overload:SIPSorcery.Sys.TypeExtensions.GetBroadcastAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.TypeExtensions.GetBroadcastAddress
+  nameWithType: TypeExtensions.GetBroadcastAddress
 - uid: SIPSorcery.Sys.TypeExtensions.GetEpoch(System.DateTime)
   name: GetEpoch(DateTime)
   href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_GetEpoch_System_DateTime_
@@ -39422,6 +39435,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.TypeExtensions.GetEpoch
   nameWithType: TypeExtensions.GetEpoch
+- uid: SIPSorcery.Sys.TypeExtensions.GetNetworkAddress(System.Net.IPAddress,System.Net.IPAddress)
+  name: GetNetworkAddress(IPAddress, IPAddress)
+  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_GetNetworkAddress_System_Net_IPAddress_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Sys.TypeExtensions.GetNetworkAddress(System.Net.IPAddress,System.Net.IPAddress)
+  fullName: SIPSorcery.Sys.TypeExtensions.GetNetworkAddress(System.Net.IPAddress, System.Net.IPAddress)
+  nameWithType: TypeExtensions.GetNetworkAddress(IPAddress, IPAddress)
+- uid: SIPSorcery.Sys.TypeExtensions.GetNetworkAddress*
+  name: GetNetworkAddress
+  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_GetNetworkAddress_
+  commentId: Overload:SIPSorcery.Sys.TypeExtensions.GetNetworkAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.TypeExtensions.GetNetworkAddress
+  nameWithType: TypeExtensions.GetNetworkAddress
 - uid: SIPSorcery.Sys.TypeExtensions.HexStr(System.Byte[],System.Int32,System.Nullable{System.Char})
   name: HexStr(Byte[], Int32, Nullable<Char>)
   href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_HexStr_System_Byte___System_Int32_System_Nullable_System_Char__
@@ -39447,6 +39473,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.TypeExtensions.HexStr
   nameWithType: TypeExtensions.HexStr
+- uid: SIPSorcery.Sys.TypeExtensions.IsInSameSubnet(System.Net.IPAddress,System.Net.IPAddress,System.Net.IPAddress)
+  name: IsInSameSubnet(IPAddress, IPAddress, IPAddress)
+  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_IsInSameSubnet_System_Net_IPAddress_System_Net_IPAddress_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Sys.TypeExtensions.IsInSameSubnet(System.Net.IPAddress,System.Net.IPAddress,System.Net.IPAddress)
+  fullName: SIPSorcery.Sys.TypeExtensions.IsInSameSubnet(System.Net.IPAddress, System.Net.IPAddress, System.Net.IPAddress)
+  nameWithType: TypeExtensions.IsInSameSubnet(IPAddress, IPAddress, IPAddress)
+- uid: SIPSorcery.Sys.TypeExtensions.IsInSameSubnet*
+  name: IsInSameSubnet
+  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_IsInSameSubnet_
+  commentId: Overload:SIPSorcery.Sys.TypeExtensions.IsInSameSubnet
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.TypeExtensions.IsInSameSubnet
+  nameWithType: TypeExtensions.IsInSameSubnet
 - uid: SIPSorcery.Sys.TypeExtensions.IsNullOrBlank(System.String)
   name: IsNullOrBlank(String)
   href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_IsNullOrBlank_System_String_
