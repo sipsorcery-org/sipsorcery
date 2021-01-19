@@ -37054,6 +37054,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPURI.HostPort
   nameWithType: SIPURI.HostPort
+- uid: SIPSorcery.SIP.SIPURI.IsDefaultPort
+  name: IsDefaultPort()
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_IsDefaultPort
+  commentId: M:SIPSorcery.SIP.SIPURI.IsDefaultPort
+  fullName: SIPSorcery.SIP.SIPURI.IsDefaultPort()
+  nameWithType: SIPURI.IsDefaultPort()
+- uid: SIPSorcery.SIP.SIPURI.IsDefaultPort*
+  name: IsDefaultPort
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_IsDefaultPort_
+  commentId: Overload:SIPSorcery.SIP.SIPURI.IsDefaultPort
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPURI.IsDefaultPort
+  nameWithType: SIPURI.IsDefaultPort
 - uid: SIPSorcery.SIP.SIPURI.MAddr
   name: MAddr
   href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_MAddr
