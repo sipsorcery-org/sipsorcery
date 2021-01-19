@@ -70,7 +70,7 @@ namespace SIPSorcery.SIP
             {
                 if (_userAgentVersion == null)
                 {
-                    _userAgentVersion = $"sipsorcery_v{Assembly.GetExecutingAssembly().GetName().Version.ToString()}";
+                    _userAgentVersion = $"sipsorcery_v{Assembly.GetExecutingAssembly().GetName().Version}";
                 }
 
                 return _userAgentVersion;
@@ -166,7 +166,7 @@ namespace SIPSorcery.SIP
 
     /// <summary>
     /// A list of the transport layer protocols that are supported (the network layers
-    /// supported are IPv4 mad IPv6).
+    /// supported are IPv4 and IPv6).
     /// </summary>
     public enum SIPProtocolsEnum
     {
