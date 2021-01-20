@@ -169,18 +169,9 @@ namespace demo
             webSocketServer.Start();
 
             Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-            Console.WriteLine("Press ctrl-c to exit.");
 
-            // Ctrl-c will gracefully exit the call at any point.
-            ManualResetEvent exitMre = new ManualResetEvent(false);
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-            {
-                e.Cancel = true;
-                exitMre.Set();
-            };
-
-            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
-            exitMre.WaitOne();
+            Console.WriteLine("Press any key to hangup and exit.");
+            Console.ReadLine();
         }
 
         private static Task<RTCPeerConnection> CreatePeerConnection()
