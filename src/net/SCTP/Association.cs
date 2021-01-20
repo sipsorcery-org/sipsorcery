@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2017 pi.pe gmbh .
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,11 +36,55 @@ using SIPSorcery.Sys;
  */
 namespace SIPSorcery.Net.Sctp
 {
-    public abstract class Association
+    public enum AcknowlegeState
+    { 
+        Idle,//      int = iota // ack timer is off
+        Immediate,            // will send ack immediately
+        Delay                // ack timer is on (ack is being delayed)
+    }
+    // ack mode (for testing)
+    public enum AckMode
     {
-        private bool _even;
+        Normal,
+        NoDelay,
+        AlwaysDelay
+    }
+    public enum ReconfigResult : uint
+    {
+        SuccessNOP = 0,
+        SuccessPerformed = 1,
+        Denied = 2,
+        ErrorWrongSSN = 3,
+        ErrorRequestAlreadyInProgress = 4,
+        ErrorBadSequenceNumber = 5,
+        ResultInProgress = 6
+    }
 
+    public struct AssociationConsts 
+    {
+        public const uint receiveMTU = 8192; // MTU for inbound packet (from DTLS)
+        public const uint initialMTU = 1228; // initial MTU for outgoing packets (to DTLS)
+        public const uint initialRecvBufSize = 1024 * 1024;
+        public const uint commonHeaderSize = 12;
+        public const uint dataChunkHeaderSize = 16;
+        public const uint defaultMaxMessageSize = 65536;
+    }
+
+    public abstract class Association : IRunnable, IRtxTimerObserver, IAckTimerObserver
+    {
+        private UInt64 bytesReceived;
+        private UInt64 bytesSent;
+        protected uint myVerificationTag;
+
+        protected Mutex RWMutex = new Mutex();
+
+        private uint peerVerificationTag;
+
+        private bool _even;
+        private AckMode ackMode;
+        protected bool IsClient;
         public abstract void associate();
+        public AcknowlegeState ackState;
 
         /**
 		 * <code>
@@ -87,6 +132,15 @@ namespace SIPSorcery.Net.Sctp
             SHUTDOWNACKSENT, CLOSED
         };
 
+        // retransmission timer IDs
+        public enum TimerType : int
+        {
+            T1Init,
+            T1Cookie,
+            T3RTX,
+            Reconfig
+        }
+
         private byte[] _supportedExtensions = { (byte)ChunkType.RE_CONFIG };
         /*
 		 For what it is worth, here's the logic as to why we don't have any supported extensions.
@@ -98,11 +152,24 @@ namespace SIPSorcery.Net.Sctp
 		 RE-CONFIG, // not sure about this - but lets assume for now that the w3c interface doesn't support stream resets.
 		 AUTH // Assume DTLS will cover this for us if we never send ASCONF packets.
 		 */
-
+        ushort myMaxNumInboundStreams = ushort.MaxValue;
+        ushort myMaxNumOutboundStreams = ushort.MaxValue;
         private static ILogger logger = Log.Logger;
-
+        protected const int InitialRecvBufSize = 1024 * 1024;
         public static int COOKIESIZE = 32;
+        private const uint commonHeaderSize = 12;
         private static long VALIDCOOKIELIFE = 60000;
+        protected double _rto = 3.0;
+        internal SimpleSCTPTimer _timer;
+        private bool useForwardTSN;
+        protected uint mtu = AssociationConsts.initialMTU;
+        protected uint maxPayloadSize = AssociationConsts.initialMTU - (AssociationConsts.commonHeaderSize + AssociationConsts.dataChunkHeaderSize);
+        private bool delayedAckTriggered;
+        private CookieEchoChunk storedCookieEcho;
+        private Dictionary<uint, ReConfigChunk> reconfigs = new Dictionary<uint, ReConfigChunk>();
+        private bool immediateAckTriggered;
+        private InitChunk storedInit;
+        protected bool willRetransmitReconfig;
         /*
 		 RTO.Initial - 3 seconds
 		 RTO.Min - 1 second
@@ -119,26 +186,115 @@ namespace SIPSorcery.Net.Sctp
 		 */
         protected DatagramTransport _transp;
         private Thread _rcv;
-        private int _peerVerTag;
-        protected int _myVerTag;
+        private Thread _send;
         private SecureRandom _random;
-        private long _winCredit;
-        private uint _farTSN;
-        private int MAXSTREAMS = 1000;
-        private int _maxOutStreams;
-        private int _maxInStreams;
+        private bool willSendForwardTSN;
+        protected uint cumulativeTSNAckPoint;
+        private bool willRetransmitFast;
+        private Dictionary<uint, OutgoingSSNResetRequestParameter> reconfigRequests = new Dictionary<uint, OutgoingSSNResetRequestParameter>();
+        protected uint advancedPeerTSNAckPoint;
+
+        // Congestion control parameters
+        protected uint maxReceiveBufferSize = AssociationConsts.initialRecvBufSize;
+        protected uint maxMessageSize = AssociationConsts.defaultMaxMessageSize;
+        private uint cwnd;
+        /*
+         o  Congestion control window (cwnd, in bytes), which is adjusted by
+         the sender based on observed network conditions.
+
+         Note: This variable is maintained on a per-destination-address
+         basis.
+         */
+        protected uint _cwnd
+        {
+            get
+            {
+                return cwnd;
+            }
+            set
+            {
+                if (cwnd != value)
+                {
+                    cwnd = value;
+                }
+            }
+        }
+
+
+        /*   
+		 o  Receiver advertised window size (rwnd, in bytes), which is set by
+		 the receiver based on its available buffer space for incoming
+		 packets.
+
+		 Note: This variable is kept on the entire association.
+		 */
+        private uint rwnd;
+        protected uint _rwnd
+        {
+            get
+            {
+                return rwnd;
+            }
+            set
+            {
+                if (rwnd != value)
+                {
+                    rwnd = value;
+                }
+            }
+        }
+        // assume a single destination via ICE
+        /*
+			 o  Slow-start threshold (ssthresh, in bytes), which is used by the
+			 sender to distinguish slow-start and congestion avoidance phases.
+
+			 Note: This variable is maintained on a per-destination-address
+			 basis.
+			 */
+        protected uint _ssthresh;
+        private uint partialBytesAcked;
+        private bool inFastRecovery;
+        private uint fastRecoverExitPoint;
+
+        private uint peerLastTSN;
         public static uint MAXBUFF = 20 * 1024;
-        public uint _nearTSN;
+        private const int receiveMTU = 8192;
         private int _srcPort;
         private int _destPort;
-        private Dictionary<int, SCTPStream> _streams;
+        private ConcurrentDictionary<int, SCTPStream> _streams;
         private AssociationListener _al;
         private Dictionary<long, DataChunk> _outbound;
         protected State _state;
-        private Dictionary<uint, DataChunk> _holdingPen;
+        protected bool IsDone;
         private static int TICK = 1000; // loop time in rcv
         static int __assocNo = 1;
         private ReconfigState reconfigState;
+        private uint myNextRSN;
+        private uint minTSN2MeasureRTT; // for RTT measurement
+        protected PendingQueue pendingQueue = new PendingQueue();
+        protected PayloadQueue inflightQueue = new PayloadQueue();
+        protected ControlQueue controlQueue = new ControlQueue();
+        protected PayloadQueue payloadQueue = new PayloadQueue();
+        // RTX & Ack timer
+        private rtoManager rtoMgr;
+        private rtxTimer t1Init;
+        private rtxTimer t1Cookie;
+        private rtxTimer t3RTX;
+        private rtxTimer tReconfig;
+        private ackTimer _ackTimer;
+        private CookieHolder myCookie;
+        private string name;
+
+        //ackTimer* ackTimer
+        protected uint myNextTSN;
+        private bool Started;
+        public bool IsFinished
+        {
+            get
+            {
+                return _rcv == null && Started;
+            }
+        }
 
         /// <summary>
         /// The next ID to use when creating a new stream. 
@@ -155,6 +311,8 @@ namespace SIPSorcery.Net.Sctp
         };
         private List<CookieHolder> _cookies = new List<CookieHolder>();
 
+        AssociationStats stats = new AssociationStats();
+
         // default is server
         public Association(DatagramTransport transport, AssociationListener al, int srcPort, int dstPort) : this(transport, al, false, srcPort, dstPort) { }
 
@@ -163,23 +321,27 @@ namespace SIPSorcery.Net.Sctp
             //logger.LogDebug($"SCTP created an Association of type: {this.GetType().Name}.");
             _al = al;
             _random = new SecureRandom();
-            _myVerTag = _random.NextInt();
+            myVerificationTag = (uint)_random.NextInt();
             _transp = transport;
-            _streams = new Dictionary<int, SCTPStream>();
+            _streams = new ConcurrentDictionary<int, SCTPStream>();
             _outbound = new Dictionary<long, DataChunk>();
-            _holdingPen = new Dictionary<uint, DataChunk>();
             var IInt = new FastBit.Int(_random.NextInt());
-            _nearTSN = new FastBit.Uint(IInt.b0, IInt.b1, IInt.b2, IInt.b3).Auint;
+            var tsn = new FastBit.Uint(IInt.b0, IInt.b1, IInt.b2, IInt.b3).Auint;
+            myNextTSN = tsn;
+            myNextRSN = tsn;
+            minTSN2MeasureRTT = tsn;
             _state = State.CLOSED;
-            if (_transp != null)
-            {
-                startRcv();
-            }
-            else
-            {
-                logger.LogError("Created an Association with a null transport somehow...");
-            }
-            __assocNo++;
+
+            _cwnd = min32(4 * mtu, max32(2 * mtu, 4380));
+
+            rtoMgr = rtoManager.newRTOManager();
+            t1Init = rtxTimer.newRTXTimer((int)TimerType.T1Init, this, rtoManager.maxInitRetrans);
+            t1Cookie = rtxTimer.newRTXTimer((int)TimerType.T1Cookie, this, rtoManager.maxInitRetrans);
+            t3RTX = rtxTimer.newRTXTimer((int)TimerType.T3RTX, this, rtoManager.noMaxRetrans);        // retransmit forever
+            tReconfig = rtxTimer.newRTXTimer((int)TimerType.Reconfig, this, rtoManager.noMaxRetrans); // retransmit forever
+            _ackTimer = ackTimer.newAckTimer(this);
+
+            name = "AssocRcv" + Interlocked.Increment(ref __assocNo); 
             /*
 			the method used to determine which
 			side uses odd or even is based on the underlying DTLS connection
@@ -187,11 +349,54 @@ namespace SIPSorcery.Net.Sctp
 			Stream Identifiers, the side acting as the DTLS server MUST use
 			Streams with odd Stream Identifiers. */
             _even = client;
+            IsClient = client;
             _nextStreamID = (_even) ? _nextStreamID : _nextStreamID + 1;
 
             _srcPort = srcPort;
             _destPort = dstPort;
+
+            cumulativeTSNAckPoint = tsn - 1;
+            advancedPeerTSNAckPoint = tsn - 1;
+
+            Init(client);
         }
+
+        private void Init(bool isClient)
+        {
+            try
+            {
+                RWMutex.WaitOne();
+
+                if (_transp != null)
+                {
+                    readLoop();
+                    writeLoop();
+                }
+                else
+                {
+                    logger.LogError("Created an Association with a null transport somehow...");
+                }
+
+                if (isClient)
+                {
+                    _state = State.COOKIEWAIT;
+                    InitChunk c = new InitChunk();
+                    c.setInitialTSN(this.myNextTSN);
+                    c.setNumInStreams(myMaxNumInboundStreams);
+                    c.setNumOutStreams(myMaxNumOutboundStreams);
+                    c.setAdRecWinCredit(maxReceiveBufferSize);
+                    c.setInitiate(this.getMyVerTag());
+                    storedInit = c;
+                    sendInit();
+                    t1Init.start(rtoMgr.getRTO());
+                }
+            }
+            finally
+            {
+                RWMutex.ReleaseMutex();
+            }
+        }
+
 
         protected byte[] getSupportedExtensions()
         { // this lets others switch features off.
@@ -199,7 +404,7 @@ namespace SIPSorcery.Net.Sctp
         }
         public uint getNearTSN()
         {
-            return _nearTSN;
+            return myNextTSN;
         }
         byte[] getUnionSupportedExtensions(byte[] far)
         {
@@ -224,81 +429,180 @@ namespace SIPSorcery.Net.Sctp
             return res;
         }
 
-        public void deal(Packet rec)
+        uint getMyReceiverWindowCredit()
         {
-            List<Chunk> replies = new List<Chunk>();
-            rec.validate(this);
-            List<Chunk> cl = rec.getChunkList();
-            foreach (Chunk c in cl)
+            uint bytesQueued = 0;
+            foreach (var s in _streams)
+            {
+                bytesQueued += s.Value.getNumBytesInQueue();
+            }
+
+            if (bytesQueued >= maxReceiveBufferSize)
+            {
+                return 0;
+            }
+            return maxReceiveBufferSize - bytesQueued;
+        }
+
+        public void handleInbound(Packet rec)
+        {
+            try
+            {
+                checkPacket(rec);
+            }
+            catch (Exception e)
+            {
+                Log.Logger.LogWarning(e.Message);
+                return;
+            }
+
+            handleChunkStart();
+
+            //List<Chunk> replies = new List<Chunk>();
+            var cl = rec.getChunkList();
+            foreach (var c in cl)
             {
                 c.validate();
             }
-            if (cl[0].getType() == ChunkType.INIT)
+            foreach (var c in cl)
             {
-                _srcPort = rec.getDestPort();
-                _destPort = rec.getSrcPort();
+                handleChunk(rec, c);
             }
-            foreach (Chunk c in cl)
+
+            handleChunkEnd();
+
+            //// find the highest sack.
+            //Chunk hisack = null;
+            //foreach (var c in replies)
+            //{
+            //    if (c.getType() == ChunkType.SACK)
+            //    {
+            //        if (hisack == null || ((SackChunk)c).getCumuTSNAck() > ((SackChunk)hisack).getCumuTSNAck())
+            //        {
+            //            hisack = c;
+            //        }
+            //    }
+            //}
+            //// remove all sacks
+            //replies.RemoveAll((Chunk c) =>
+            //{
+            //    return c.getType() == ChunkType.SACK;
+            //});
+            //// insert the highest one first.
+            //if (hisack != null)
+            //{
+            //    replies.Insert(0, hisack);
+            //}
+
+            //foreach (var reply in replies)
+            //{
+            //    controlQueue.push(reply);
+            //}
+        }
+
+        private object myLock = new object();
+        void handleChunkStart()
+        {
+            lock (myLock)
             {
-                if (!deal(c, replies))
-                {
-                    break; // drop the rest of the packet.
-                }
-            }
-            // find the highest sack.
-            Chunk hisack = null;
-            foreach (var c in replies)
-            {
-                if (c.getType() == ChunkType.SACK)
-                {
-                    if (hisack == null || ((SackChunk)c).getCumuTSNAck() > ((SackChunk)hisack).getCumuTSNAck())
-                    {
-                        hisack = c;
-                    }
-                }
-            }
-            // remove all sacks
-            replies.RemoveAll((Chunk c) =>
-            {
-                return c.getType() == ChunkType.SACK;
-            });
-            // insert the highest one first.
-            if (hisack != null)
-            {
-                replies.Insert(0, hisack);
-            }
-            try
-            {
-                send(replies.ToArray());
-            }
-            catch (Exception end)
-            {
-                unexpectedClose(end);
-                logger.LogError(end.ToString());
+                delayedAckTriggered = false;
+                immediateAckTriggered = false;
             }
         }
 
-        void startRcv()
+        void handleChunkEnd()
+        {
+            lock (myLock)
+            {
+                if (immediateAckTriggered)
+                {
+                    // Send SACK now!
+                    ackState = AcknowlegeState.Immediate;
+                    _ackTimer.stop();
+                }
+                else if (delayedAckTriggered)
+                {
+                    // Will send delayed ack in the next ack timeout
+                    ackState = AcknowlegeState.Delay;
+                    _ackTimer.start();
+                }
+            }
+        }
+
+        void checkPacket(Packet p)
+        {
+            // All packets must adhere to these rules
+
+            // This is the SCTP sender's port number.  It can be used by the
+            // receiver in combination with the source IP address, the SCTP
+            // destination port, and possibly the destination IP address to
+            // identify the association to which this packet belongs.  The port
+            // number 0 MUST NOT be used.
+            if (p.getSrcPort() == 0)
+            {
+                throw new InvalidSCTPPacketException("errSCTPPacketSourcePortZero");
+            }
+
+            // This is the SCTP port number to which this packet is destined.
+            // The receiving host will use this port number to de-multiplex the
+            // SCTP packet to the correct receiving endpoint/application.  The
+            // port number 0 MUST NOT be used.
+            if (p.getDestPort() == 0)
+            {
+                throw new InvalidSCTPPacketException("errSCTPPacketDestinationPortZero");
+            }
+
+            foreach (var c in p.getChunkList())
+            {
+                switch (c.getType())
+                {
+                    case ChunkType.INIT:
+                        {
+                            if (p.getChunkList().Count != 1)
+                            {
+                                throw new InvalidSCTPPacketException("errInitChunkBundled");
+                            }
+                            if (p.getVerTag() != 0)
+                            {
+                                throw new InvalidSCTPPacketException("errInitChunkVerifyTagNotZero");
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
+        void readLoop()
         {
             Association me = this;
+
+            if (_rcv != null)
+            {
+                return;
+            }
+
             _rcv = new Thread(() =>
             {
+                this.Started = true;
                 try
                 {
-                    byte[] buf = new byte[_transp.GetReceiveLimit()];
+                    byte[] buf = null;
                     while (_rcv != null)
                     {
                         try
                         {
+                            buf = new byte[receiveMTU];
                             var length = _transp.Receive(buf, 0, buf.Length, TICK);
                             if (length > 0)
                             {
                                 //var b = Packet.getHex(buf, 0, length);
-                                //logger.LogInformation($"DTLS message recieved\n{b}");   
+                                //logger.LogInformation($"DTLS message recieved\n{b}");
+                                //var inbound = new byte[length];
+
                                 ByteBuffer pbb = new ByteBuffer(buf);
                                 pbb.Limit = length;
                                 Packet rec = new Packet(pbb);
-                                deal(rec);
+                                handleInbound(rec);
                             }
                             else if (length == DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE)
                             {
@@ -307,7 +611,8 @@ namespace SIPSorcery.Net.Sctp
                             }
                             else
                             {
-                                logger.LogInformation("Timeout -> short packet " + length);
+                                //logger.LogInformation("Timeout -> short packet " + length);
+                                Thread.Sleep(1);
                             }
                         }
                         catch (SocketException e)
@@ -336,11 +641,616 @@ namespace SIPSorcery.Net.Sctp
                 {
                     logger.LogDebug("Association receive failed " + ex.GetType().Name + " " + ex.ToString());
                 }
-            }){IsBackground = true};
-            _rcv.Priority = ThreadPriority.Highest;
-            _rcv.Name = "AssocRcv" + __assocNo;
+                finally
+                {
+                    IsDone = true;
+                }
+            });
+            _rcv.IsBackground = true;
+            _rcv.Name = name + "_rcv";
             _rcv.Start();
         }
+
+        void writeLoop()
+        {
+            Association me = this;
+
+            if (_send != null)
+            {
+                return;
+            }
+
+            _send = new Thread(() =>
+            {
+                this.Started = true;
+                try
+                {
+                    while (_rcv != null)
+                    {
+                        try
+                        {
+                            var rawPackets = gatherOutbound();
+                            foreach (var obb in rawPackets)
+                            {
+                                var buf = obb.getByteBuffer();
+                                _transp.Send(buf.Data, buf.offset, buf.Limit);
+                            }
+                        }
+                        catch (SocketException e)
+                        {
+                            // ignore. it should be a timeout.
+                            switch (e.SocketErrorCode)
+                            {
+                                case SocketError.TimedOut:
+                                    logger.LogDebug("tick time out");
+                                    break;
+                                default:
+                                    throw;
+                            }
+                        }
+                        Thread.Sleep(1);
+                    }
+                    logger.LogDebug("SCTP message receive was empty, closing association listener.");
+
+                    _transp.Close();
+                }
+                catch (EndOfStreamException eof)
+                {
+                    unexpectedClose(eof);
+                    logger.LogDebug(eof.ToString());
+                }
+                catch (Exception ex)
+                {
+                    logger.LogDebug("Association receive failed " + ex.GetType().Name + " " + ex.ToString());
+                }
+                finally
+                {
+                    IsDone = true;
+                }
+            });
+            _send.IsBackground = true;
+            _send.Name = name + "_send";
+            _send.Start();
+        }
+
+        private List<Packet> gatherOutbound()
+        {
+            var rawPackets = new List<Packet>();
+            lock (myLock)
+            {
+                if (controlQueue.size() > 0)
+                {
+                    var chunks = controlQueue.popAll();
+                    foreach (var c in chunks)
+                    {
+                        rawPackets.Add(c);
+                    }
+                }
+
+                var state = this._state;
+                if (state == State.ESTABLISHED)
+                {
+                    rawPackets.AddRange(gatherOutboundDataAndReconfigPackets());
+                    rawPackets.AddRange(gatherOutboundFastRetransmissionPackets());
+
+                    rawPackets.AddRange(gatherOutboundSackPackets());
+                    rawPackets.AddRange(gatherOutboundForwardTSNPackets());
+                }
+            }
+            return rawPackets;
+        }
+
+        // The caller should hold the lock
+        Packet[] gatherOutboundFastRetransmissionPackets()
+        { 
+	        if (willRetransmitFast)
+            {
+                willRetransmitFast = false;
+
+                var toFastRetrans = new List<Chunk>();
+                uint fastRetransSize = commonHeaderSize;
+
+		        for (uint i = 0; ; i++)
+                {
+			        if (!inflightQueue.get(cumulativeTSNAckPoint + i + 1, out var c))
+                    {
+                        break; // end of pending data
+			        }
+
+			        if (c.acked || c.abandoned())
+                    {
+                        continue;
+			        }
+
+			        if (c.nSent > 1 || c.missIndicator < 3)
+                    {
+                        continue;
+			        }
+
+                    // RFC 4960 Sec 7.2.4 Fast Retransmit on Gap Reports
+                    //  3)  Determine how many of the earliest (i.e., lowest TSN) DATA chunks
+                    //      marked for retransmission will fit into a single packet, subject
+                    //      to constraint of the path MTU of the destination transport
+                    //      address to which the packet is being sent.  Call this value K.
+                    //      Retransmit those K DATA chunks in a single packet.  When a Fast
+                    //      Retransmit is being performed, the sender SHOULD ignore the value
+                    //      of cwnd and SHOULD NOT delay retransmission for this single
+                    //		packet.
+
+                    var dataChunkSize = AssociationConsts.dataChunkHeaderSize + c.getDataSize();
+			        if (mtu < fastRetransSize+dataChunkSize)
+                    {
+                        break;
+			        }
+
+                    fastRetransSize += dataChunkSize;
+                    stats.incFastRetrans();
+                    c.nSent++;
+                    checkPartialReliabilityStatus(c);
+                    toFastRetrans.Add(c);
+                    logger.LogTrace($"{name} fast-retransmit: tsn={c.tsn} sent={c.nSent} htna={fastRecoverExitPoint}");
+		        }
+
+		        if (toFastRetrans.Count > 0)
+                {
+                    return new Packet[] { makePacket(toFastRetrans.ToArray()) };
+		        }
+	        }
+
+            return new Packet[0];
+        }
+
+        IEnumerable<Packet> gatherOutboundForwardTSNPackets()
+        {
+            if (willSendForwardTSN)
+            {
+                willSendForwardTSN = false;
+                if (Utils.sna32GT(advancedPeerTSNAckPoint, cumulativeTSNAckPoint))
+                {
+                    var fwdtsn = createForwardTSN();
+                    yield return makePacket(fwdtsn);
+                }
+            }
+        }
+
+        // createForwardTSN generates ForwardTSN chunk.
+        // This method will be be called if useForwardTSN is set to false.
+        // The caller should hold the lock.
+        Chunk[] createForwardTSN()
+        {
+            // RFC 3758 Sec 3.5 C4
+            var streamMap = new Dictionary<int, int>(); // to report only once per SI
+            for (uint i = cumulativeTSNAckPoint + 1; Utils.sna32LTE(i, advancedPeerTSNAckPoint); i++)
+            {
+                if (!inflightQueue.get(i, out var c))
+                {
+                    break;
+                }
+
+                if (!streamMap.TryGetValue(c.getStreamId(), out var ssn))
+                {
+                    streamMap.Add(c.getStreamId(), c.getSSeqNo());
+                }
+                else
+                {
+                    streamMap[c.getStreamId()] = c.getSSeqNo();
+                }
+            }
+            return new Chunk[0];
+        }
+
+        ////                var ssn = streamMap.Contains(c.getStreamId());
+        ////    ssn, ok := streamMap[c.streamIdentifier]
+        ////		if !ok {
+        ////			streamMap[c.streamIdentifier] = c.streamSequenceNumber
+        ////} else if sna16LT(ssn, c.streamSequenceNumber) {
+        ////    // to report only once with greatest SSN
+        ////    streamMap[c.streamIdentifier] = c.streamSequenceNumber
+
+        //        }
+        //	}
+
+        //	//fwdtsn:= &chunkForwardTSN{
+        ////newCumulativeTSN: a.advancedPeerTSNAckPoint,
+        ////		streams:[]chunkForwardTSNStream{ },
+        //	}
+
+        ////var streamStr string
+        ////	for si, ssn := range streamMap
+        ////{
+        ////    streamStr += fmt.Sprintf("(si=%d ssn=%d)", si, ssn)
+
+        ////        fwdtsn.streams = append(fwdtsn.streams, chunkForwardTSNStream{
+        ////identifier: si,
+        ////			sequence: ssn,
+        ////		})
+        ////	}
+        ////a.log.Tracef("[%s] building fwdtsn: newCumulativeTSN=%d cumTSN=%d - %s", a.name, fwdtsn.newCumulativeTSN, a.cumulativeTSNAckPoint, streamStr)
+
+
+        ////    return fwdtsn
+        //}
+
+
+
+
+
+
+        private Packet[] gatherOutboundDataAndReconfigPackets()
+        {
+            var packets = new List<Packet>();
+            packets.AddRange(getDataPacketsToRetransmit());
+
+            var chunks = popPendingDataChunksToSend(out var sisToReset);
+            if (chunks.Length > 0)
+            {
+                packets.AddRange(bundleDataChunksIntoPackets(chunks));
+            }
+
+            if (sisToReset.Count > 0 || willRetransmitReconfig)
+            {
+                if (willRetransmitReconfig)
+                {
+                    willRetransmitReconfig = false;
+                    packets.Add(makePacket(reconfigs.Values.ToArray()));
+                }
+
+                if (sisToReset.Count > 0)
+                {
+                    var rsn = generateNextRSN();
+                    var tsn = myNextTSN - 1;
+                    var c = new ReConfigChunk();
+                    OutgoingSSNResetRequestParameter rep = new OutgoingSSNResetRequestParameter(rsn, rsn, tsn);
+                    rep.setStreams(sisToReset.ToArray());
+                    c.addParam(rep);
+
+                    if (!reconfigs.ContainsKey(rsn))
+                    {
+                        reconfigs.Add(rsn, c);
+                    }
+                    else
+                    {
+                        reconfigs[rsn] = c;
+                    }
+                    packets.Add(makePacket(c));
+                }
+
+                if (reconfigs.Count > 0)
+                {
+                    tReconfig.start(rtoMgr.getRTO());
+                }
+            }
+
+            return packets.ToArray();
+        }
+
+        uint generateNextRSN()
+        {
+            var rsn = myNextRSN;
+            myNextRSN++;
+            return rsn;
+        }
+
+        private IEnumerable<Packet> gatherOutboundSackPackets()
+        {
+            if (ackState == AcknowlegeState.Immediate)
+            {
+                ackState = AcknowlegeState.Idle;
+                var sack = createSelectiveAckChunk();
+                logger.LogTrace($"{name} sending SACK: {sack}");
+                yield return makePacket(sack);
+            }
+        }
+
+        private SackChunk createSelectiveAckChunk()
+        {
+            var sack = new SackChunk();
+            sack.cumulativeTSNAck = peerLastTSN;
+            sack.advertisedReceiverWindowCredit = getMyReceiverWindowCredit();
+            sack.duplicateTSN = payloadQueue.popDuplicates();
+            sack.gapAckBlocks = payloadQueue.getGapAckBlocks(peerLastTSN);
+            return sack;
+        }
+
+        private Packet[] getDataPacketsToRetransmit()
+        {
+            var awnd = min32(_cwnd, _rwnd);
+            var chunks = new List<DataChunk>();
+            uint bytesToSend = 0;
+            var done = false;
+            for (uint i = 0; !done; i++)
+            {
+                if (!inflightQueue.get(cumulativeTSNAckPoint + i + 1, out var c))
+                    break;
+                if (!c.retransmit)
+                    continue;
+
+                if (i == 0 && _rwnd < c.getDataSize())
+                {
+                    // Send it as a zero window probe
+                    done = true;
+                }
+                else if (bytesToSend + c.getDataSize() > awnd)
+                {
+                    break;
+                }
+
+                // reset the retransmit flag not to retransmit again before the next
+                // t3-rtx timer fires
+                c.retransmit = false;
+
+                bytesToSend += c.getDataSize();
+                c._retryCount++;
+
+                checkPartialReliabilityStatus(c);
+
+                logger.LogTrace($"{name} retransmitting tsn={c.tsn} ssn={c.streamSequenceNumber} sent={c.nSent}");
+
+                chunks.Add(c);
+            }
+            return bundleDataChunksIntoPackets(chunks);
+        }
+
+        private DataChunk[] popPendingDataChunksToSend(out List<int> sisToReset)
+        {
+            var chunks = new List<DataChunk>();
+            sisToReset = new List<int>();
+
+            if (pendingQueue.size() > 0)
+            {
+                while (true)
+                {
+                    var c = pendingQueue.peek();
+                    if (c == null)
+                    {
+                        break;
+                    }
+
+                    var dataLen = c.getDataSize();
+                    if (dataLen == 0)
+                    {
+                        sisToReset.Add(c.getStreamId());
+                        pendingQueue.pop(c);
+                        continue;
+                    }
+
+                    if (this.inflightQueue.getNumBytes() + dataLen > _cwnd)
+                    {
+                        break; // would exceeds cwnd
+                    }
+
+                    if (dataLen > _rwnd)
+                    {
+                        break; // no more rwnd
+                    }
+
+                    _rwnd -= dataLen;
+                    movePendingDataChunkToInflightQueue(c);
+                    chunks.Add(c);
+                }
+            }
+            return chunks.ToArray();
+        }
+
+        private void movePendingDataChunkToInflightQueue(DataChunk c)
+        {
+            pendingQueue.pop(c);
+
+            if (c.endingFragment)
+            {
+                c.setAllInflight();
+            }
+
+            var now = TimeExtension.CurrentTimeMillis();
+            // Assign TSN
+            c.setTsn(generateNextTSN());
+            c.setGapAck(false);
+            c.setRetryTime(now + getT3() - 1);
+            c.setSentTime(now); // use to calculate RTT and also for maxPacketLifeTime
+            c._retryCount = 1;          // being sent for the first time
+            checkPartialReliabilityStatus(c);
+
+            //    long now = TimeExtension.CurrentTimeMillis();
+            //    d.setTsn(_nearTSN++);
+            //    d.setGapAck(false);
+            //    d.setRetryTime(now + getT3() - 1);
+            //    d.setSentTime(now);
+            //_timer.setRunnable(this, getT3());
+
+            // Push it into the inflightQueue
+            this.inflightQueue.pushNoCheck(c);
+        }
+
+        public long getT3()
+        {
+            return (_rto > 0) ? (long)(1000.0 * _rto) : 100;
+        }
+
+        // bundleDataChunksIntoPackets packs DATA chunks into packets. It tries to bundle
+        // DATA chunks into a packet so long as the resulting packet size does not exceed
+        // the path MTU.
+        // The caller should hold the lock.
+        private Packet[] bundleDataChunksIntoPackets(IEnumerable<DataChunk> chunkPayloadData)
+        {
+            var packets = new List<Packet>();
+            var chunksToSend = new List<DataChunk>();
+            uint bytesInPacket = (uint)commonHeaderSize;
+            foreach (var c in chunkPayloadData)
+            {
+                if (bytesInPacket + c.getDataSize() > mtu)
+                {
+                    packets.Add(makePacket(chunksToSend.ToArray()));
+                    chunksToSend = new List<DataChunk>();
+                    bytesInPacket = commonHeaderSize;
+                }
+
+
+                chunksToSend.Add(c);
+
+                bytesInPacket += commonHeaderSize + c.getDataSize();
+            }
+
+            if (chunksToSend.Count > 0)
+            {
+                packets.Add(makePacket(chunksToSend.ToArray()));
+            }
+
+            return packets.ToArray();
+        }
+        //        func(a* Association) bundleDataChunksIntoPackets(chunks[]*chunkPayloadData) []* packet
+        //        {
+        //            packets := []*packet { }
+        //            chunksToSend := []
+        //            chunk { }
+        //            bytesInPacket := int (commonHeaderSize)
+
+        //	for _, c := range chunks
+        //        {
+        //		// RFC 4960 sec 6.1.  Transmission of DATA Chunks
+        //		//   Multiple DATA chunks committed for transmission MAY be bundled in a
+        //		//   single packet.  Furthermore, DATA chunks being retransmitted MAY be
+        //		//   bundled with new DATA chunks, as long as the resulting packet size
+        //		//   does not exceed the path MTU.
+        //		if bytesInPacket+len(c.userData) > int (a.mtu) {
+        //			packets = append(packets, a.createPacket(chunksToSend))
+
+        //            chunksToSend = [] chunk{}
+        //    bytesInPacket = int (commonHeaderSize)
+        //}
+
+        //chunksToSend = append(chunksToSend, c)
+
+        //        bytesInPacket += int(dataChunkHeaderSize) + len(c.userData)
+        //	}
+
+        //	if len(chunksToSend) > 0 {
+        //    packets = append(packets, a.createPacket(chunksToSend))
+
+        //    }
+
+        //return packets
+        //}
+
+        private void checkPartialReliabilityStatus(DataChunk c)
+        {
+            if (!useForwardTSN)
+            {
+                return;
+            }
+
+            if (c.payloadType == DataChunk.WEBRTCCONTROL)
+            {
+                return;
+            }
+
+            if (_streams.TryGetValue(c.getStreamId(), out var s))
+            {
+                try
+                {
+                    s.RWLock.AcquireWriterLock(10000);
+
+                    if (s.reliabilityType == ReliabilityType.TypeRexmit)
+                    {
+                        if (c._retryCount >= s.reliabilityValue)
+                        {
+                            c.setAbandoned(true);
+                            logger.LogTrace($"{name} marked as abandoned: tsn={c.tsn} ppi={c.payloadType} (remix: {c.nSent})");
+                        }
+                    }
+                    else if (s.reliabilityType == ReliabilityType.TypeTimed)
+                    {
+                        long now = TimeExtension.CurrentTimeMillis();
+                        var elapsed = now - c.getSentTime();
+                        if (elapsed > s.reliabilityValue)
+                        {
+                            c.setAbandoned(true);
+                            logger.LogTrace($"{name} marked as abandoned: tsn={c.tsn} ppi={c.payloadType} (timed: {elapsed})");
+                        }
+                    }
+                }
+                finally
+                {
+                    s.RWLock.ReleaseWriterLock();
+                }
+            }
+            else
+            {
+                logger.LogError($"{name} stream {c.streamIdentifier} not found)"); 
+            }
+        }
+
+
+        //        func (a *Association) gatherOutboundDataAndReconfigPackets(rawPackets [][]byte) [][]byte {
+        //	for _, p := range a.getDataPacketsToRetransmit() {
+        //		raw, err := p.marshal()
+        //		if err != nil {
+        //			a.log.Warnf("[%s] failed to serialize a DATA packet to be retransmitted", a.name)
+        //			continue
+        //		}
+        //		rawPackets = append(rawPackets, raw)
+        //	}
+
+        //	// Pop unsent data chunks from the pending queue to send as much as
+        //	// cwnd and rwnd allow.
+        //	chunks, sisToReset := a.popPendingDataChunksToSend()
+        //	if len(chunks) > 0 {
+        //		// Start timer. (noop if already started)
+        //		a.log.Tracef("[%s] T3-rtx timer start (pt1)", a.name)
+        //		a.t3RTX.start(a.rtoMgr.getRTO())
+        //		for _, p := range a.bundleDataChunksIntoPackets(chunks) {
+        //			raw, err := p.marshal()
+        //			if err != nil {
+        //				a.log.Warnf("[%s] failed to serialize a DATA packet", a.name)
+        //				continue
+        //			}
+        //			rawPackets = append(rawPackets, raw)
+        //		}
+        //	}
+
+        //	if len(sisToReset) > 0 || a.willRetransmitReconfig {
+        //		if a.willRetransmitReconfig {
+        //			a.willRetransmitReconfig = false
+        //			a.log.Debugf("[%s] retransmit %d RECONFIG chunk(s)", a.name, len(a.reconfigs))
+        //			for _, c := range a.reconfigs {
+        //				p := a.createPacket([]chunk{c})
+        //				raw, err := p.marshal()
+        //				if err != nil {
+        //					a.log.Warnf("[%s] failed to serialize a RECONFIG packet to be retransmitted", a.name)
+        //				} else {
+        //					rawPackets = append(rawPackets, raw)
+        //				}
+        //			}
+        //		}
+
+        //		if len(sisToReset) > 0 {
+        //			rsn := a.generateNextRSN()
+        //			tsn := a.myNextTSN - 1
+        //			c := &chunkReconfig{
+        //				paramA: &paramOutgoingResetRequest{
+        //					reconfigRequestSequenceNumber: rsn,
+        //					senderLastTSN:                 tsn,
+        //					streamIdentifiers:             sisToReset,
+        //				},
+        //			}
+        //			a.reconfigs[rsn] = c // store in the map for retransmission
+        //			a.log.Debugf("[%s] sending RECONFIG: rsn=%d tsn=%d streams=%v",
+        //				a.name, rsn, a.myNextTSN-1, sisToReset)
+        //			p := a.createPacket([]chunk{c})
+        //			raw, err := p.marshal()
+        //			if err != nil {
+        //				a.log.Warnf("[%s] failed to serialize a RECONFIG packet to be transmitted", a.name)
+        //			} else {
+        //				rawPackets = append(rawPackets, raw)
+        //			}
+        //		}
+
+        //		if len(a.reconfigs) > 0 {
+        //			a.tReconfig.start(a.rtoMgr.getRTO())
+        //		}
+        //	}
+
+        //	return rawPackets
+        //}
 
         /**
 		 * override this and return false to disable the bi-directionalinit gamble
@@ -354,16 +1264,48 @@ namespace SIPSorcery.Net.Sctp
             return true;
         }
 
-        protected void send(Chunk[] c)
+        protected uint min32(uint a, uint b)
         {
-            if ((c != null) && (c.Length > 0))
+            if (a < b)
             {
-                ByteBuffer obb = mkPkt(c);
-                //logger.LogDebug($"SCTP packet send: {Packet.getHex(obb)}");
-                lock (this)
+                return a;
+            }
+            return b;
+        }
+        protected uint max32(uint a, uint b)
+        {
+            if (a > b)
+            {
+                return a;
+            }
+            return b;
+        }
+        //protected bool sna32LT(uint i1, uint i2)
+        //{
+        //    return (i1 < i2 && i2 - i1 < 1 << 31) || (i1 > i2 && i1 - i2 > 1 << 31);
+        //}
+
+        protected void sendPayloadData(DataChunk[] chunks)
+        {
+            lock (myLock)
+            {
+                var state = _state;
+                if (state != State.ESTABLISHED)
                 {
-                    _transp.Send(obb.Data, obb.offset, obb.Limit);
+                    throw new Exception($"errPayloadDataStateNotExist: state={state}");
                 }
+
+                if (chunks?.Length == 0)
+                {
+                    return;
+                }
+
+                //ByteBuffer obb = mkPkt(c);
+                foreach (var c in chunks)
+                {
+                    pendingQueue.push(c);
+                }
+                //logger.LogDebug($"SCTP packet send: {Packet.getHex(obb)}");
             }
             //else
             //{
@@ -399,134 +1341,296 @@ namespace SIPSorcery.Net.Sctp
 		 * @throws IOException
 		 * @throws SctpPacketFormatException
 		 */
-        private bool deal(Chunk c, List<Chunk> replies)
+        private void handleChunk(Packet p, Chunk c)
         {
-            ChunkType ty = c.getType();
-            bool ret = true;
-            State oldState = _state;
-            Chunk[] reply = null;
-            switch (ty)
+            try
             {
-                case ChunkType.INIT:
-                    if (acceptableStateForInboundInit())
-                    {
+                RWMutex.WaitOne();
+                ChunkType ty = c.getType();
+                //bool ret = true;
+                State oldState = _state;
+                Packet[] reply = null;
+                switch (ty)
+                {
+                    case ChunkType.INIT:
+                        //if (acceptableStateForInboundInit())
+                        //{
                         InitChunk init = (InitChunk)c;
-                        reply = inboundInit(init);
-                    }
-                    else
-                    {
+                        reply = handleInit(p, init);
+                        //}
+                        //else
+                        //{
                         // logger.LogDebug("Got an INIT when state was " + _state.ToString() + " - ignoring it for now ");
-                    }
-                    break;
-                case ChunkType.INITACK:
-                    //logger.LogDebug("got initack " + c.ToString());
-                    if (_state == State.COOKIEWAIT)
-                    {
-                        InitAckChunk iack = (InitAckChunk)c;
-                        reply = iackDeal(iack);
-                    }
-                    else
-                    {
-                        //logger.LogDebug("Got an INITACK when not waiting for it - ignoring it");
-                    }
-                    break;
-                case ChunkType.COOKIE_ECHO:
-                    // logger.LogDebug("got cookie echo " + c.ToString());
-                    reply = cookieEchoDeal((CookieEchoChunk)c);
-                    if (reply.Length > 0)
-                    {
-                        ret = !typeof(ErrorChunk).IsAssignableFrom(reply[0].GetType()); // ignore any following data chunk. 
-                    }
-                    break;
-                case ChunkType.COOKIE_ACK:
-                    //logger.LogDebug("got cookie ack " + c.ToString());
-                    if (_state == State.COOKIEECHOED)
-                    {
-                        _state = State.ESTABLISHED;
-                    }
-                    break;
-                case ChunkType.DATA:
-                    //logger.LogDebug("got data " + c.ToString());
-                    reply = dataDeal((DataChunk)c);
-                    break;
-                case ChunkType.ABORT:
-                    // no reply we should just bail I think.
-                    _rcv = null;
-                    _transp.Close();
-                    break;
-                case ChunkType.HEARTBEAT:
-                    reply = ((HeartBeatChunk)c).mkReply();
-                    break;
-                case ChunkType.SACK:
-                    //logger.LogDebug("got tsak for TSN " + ((SackChunk)c).getCumuTSNAck());
-                    reply = sackDeal((SackChunk)c);
-                    // fix the outbound list here
-                    break;
-                case ChunkType.RE_CONFIG:
-                    reply = reconfigState.deal((ReConfigChunk)c);
-                    break;
-                case ChunkType.ERROR:
-                    logger.LogWarning($"SCTP error chunk received.");
-                    foreach (var vparam in c._varList)
-                    {
-                        if (vparam is KnownError)
+                        //}
+                        break;
+                    case ChunkType.INITACK:
+                        logger.LogDebug("got initack " + c.ToString());
+                        if (_state == State.COOKIEWAIT)
                         {
-                            var knownErr = vparam as KnownError;
-                            logger.LogWarning($"{knownErr.getName()}, {knownErr}");
+                            InitAckChunk iack = (InitAckChunk)c;
+                            reply = handleInitAck(p, iack);
                         }
+                        else
+                        {
+                            logger.LogDebug("Got an INITACK when not waiting for it - ignoring it");
+                        }
+                        break;
+                    case ChunkType.ABORT:
+                        // no reply we should just bail I think.
+                        _rcv = null;
+                        _send = null;
+                        _transp.Close();
+                        break;
+                    case ChunkType.ERROR:
+                        logger.LogWarning($"SCTP error chunk received.");
+                        foreach (var vparam in c._varList)
+                        {
+                            if (vparam is KnownError)
+                            {
+                                var knownErr = vparam as KnownError;
+                                logger.LogWarning($"{knownErr.getName()}, {knownErr}");
+                            }
+                        }
+                        break;
+                    case ChunkType.HEARTBEAT:
+                        reply = new Packet[] { makePacket(((HeartBeatChunk)c).mkReply()) };
+                        break;
+                    case ChunkType.COOKIE_ECHO:
+                        logger.LogTrace("got cookie echo " + c.ToString());
+                        reply = new Packet[] { makePacket(cookieEchoDeal((CookieEchoChunk)c)) };
+                        //if (reply.Length > 0)
+                        //{
+                        //    ret = !typeof(ErrorChunk).IsAssignableFrom(reply[0].GetType()); // ignore any following data chunk. 
+                        //}
+                        break;
+                    case ChunkType.COOKIE_ACK:
+                        logger.LogTrace("got cookie ack " + c.ToString());
+                        if (_state == State.COOKIEECHOED)
+                        {
+                            t1Cookie.stop();
+                            _state = State.ESTABLISHED;
+                        }
+                        break;
+                    case ChunkType.DATA:
+                        //logger.LogDebug("got data " + c.ToString());
+                        var dc = (DataChunk)c;
+                        //logger.LogDebug("SCTP received " + dc.ToString());
+                        if (dc.getDCEP() != null)
+                        {
+                            var pkt = ingest(dc);
+                            if (pkt != null)
+                            {
+                                reply = new Packet[] { pkt };
+                            }
+                        }
+                        else
+                        {
+                            reply = handleData(dc);
+                        }
+                        break;
+                    case ChunkType.SACK:
+                        logger.LogTrace("got tsak for TSN " + ((SackChunk)c).cumulativeTSNAck);
+                        handleSack((SackChunk)c);
+                        // fix the outbound list here
+                        break;
+                    case ChunkType.RE_CONFIG:
+                        reply = new Packet[] { makePacket(reconfigState.deal((ReConfigChunk)c)) };
+                        break;
+                }
+                if (reply?.Length > 0)
+                {
+                    this.controlQueue.pushAll(reply);
+                }
+                if ((_state == State.ESTABLISHED) && (oldState != State.ESTABLISHED))
+                {
+                    if (null != _al)
+                    {
+                        _al.onAssociated(this);
                     }
-                    break;
-            }
-            if (reply != null)
-            {
-                foreach (Chunk r in reply)
-                {
-                    replies.Add(r);
+                    reconfigState = new ReconfigState(this, peerLastTSN);
                 }
-                // theoretically could be multiple DATA in a single packet - 
-                // we'd send multiple SACKs in reply - ToDo fix that
-
-            }
-            if ((_state == State.ESTABLISHED) && (oldState != State.ESTABLISHED))
-            {
-                if (null != _al)
+                if ((oldState == State.ESTABLISHED) && (_state != State.ESTABLISHED))
                 {
-                    _al.onAssociated(this);
+                    if (null != _al)
+                    {
+                        _al.onDisAssociated(this);
+                    }
                 }
-                reconfigState = new ReconfigState(this, _farTSN);
-
+                //return ret;
             }
-            if ((oldState == State.ESTABLISHED) && (_state != State.ESTABLISHED))
+            finally
             {
-                if (null != _al)
-                {
-                    _al.onDisAssociated(this);
-                }
+                RWMutex.ReleaseMutex();
             }
-            return ret;
         }
 
-        public ByteBuffer mkPkt(Chunk[] cs)
+        public void run()
         {
-            Packet ob = new Packet(_srcPort, _destPort, _peerVerTag);
+
+        }
+
+        /*
+ In instances where its peer endpoint is multi-homed, if an endpoint
+ receives a SACK that advances its Cumulative TSN Ack Point, then it
+ should update its cwnd (or cwnds) apportioned to the destination
+ addresses to which it transmitted the acknowledged data.  However, if
+
+
+
+ Stewart                     Standards Track                    [Page 96]
+
+ RFC 4960          Stream Control Transmission Protocol    September 2007
+
+
+ the received SACK does not advance the Cumulative TSN Ack Point, the
+ endpoint MUST NOT adjust the cwnd of any of the destination
+ addresses.
+
+ Because an endpoint's cwnd is not tied to its Cumulative TSN Ack
+ Point, as duplicate SACKs come in, even though they may not advance
+ the Cumulative TSN Ack Point an endpoint can still use them to clock
+ out new data.  That is, the data newly acknowledged by the SACK
+ diminishes the amount of data now in flight to less than cwnd, and so
+ the current, unchanged value of cwnd now allows new data to be sent.
+ On the other hand, the increase of cwnd must be tied to the
+ Cumulative TSN Ack Point advancement as specified above.  Otherwise,
+ the duplicate SACKs will not only clock out new data, but also will
+ adversely clock out more new data than what has just left the
+ network, during a time of possible congestion.
+
+ o  When the endpoint does not transmit data on a given transport
+ address, the cwnd of the transport address should be adjusted to
+ max(cwnd/2, 4*MTU) per RTO.
+
+ */
+
+        // timer goes off,
+        //public void run()
+        //{
+        //    if (canSend())
+        //    {
+        //        long now = TimeExtension.CurrentTimeMillis();
+        //        //logger.LogDebug("retry timer went off at " + now);
+        //        List<DataChunk> dcs = new List<DataChunk>();
+        //        int space = _transpMTU - 12; // room for packet header
+        //        bool resetTimer = false;
+        //        lock (_inFlight)
+        //        {
+        //            foreach (var kvp in _inFlight)
+        //            {
+        //                DataChunk d = kvp.Value;
+        //                long k = kvp.Key;
+        //                if (d.getGapAck())
+        //                {
+        //                    //logger.LogDebug("skipping gap-acked tsn " + d.getTsn());
+        //                    continue;
+        //                }
+        //                if (d.getRetryTime() <= now)
+        //                {
+        //                    space -= d.getLength();
+        //                    //logger.LogDebug("available space in pkt is " + space);
+        //                    if (space <= 0)
+        //                    {
+        //                        resetTimer = true;
+        //                        break;
+        //                    }
+        //                    else
+        //                    {
+        //                        dcs.Add(d);
+        //                        d.setRetryTime(now + getT3() - 1);
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    //logger.LogDebug("retry not yet due for  " + d.ToString());
+        //                    resetTimer = true;
+        //                }
+        //            }
+        //        }
+        //        if (dcs.Count != 0)
+        //        {
+        //            dcs.Sort();
+        //            DataChunk[] da = new DataChunk[dcs.Count];
+        //            int i = 0;
+        //            foreach (DataChunk d in dcs)
+        //            {
+        //                da[i++] = d;
+        //            }
+        //            resetTimer = true;
+        //            try
+        //            {
+        //                //logger.LogDebug("Sending retry for  " + da.Length + " data chunks");
+        //                this.send(da);
+        //            }
+        //            catch (EndOfStreamException end)
+        //            {
+        //                logger.LogWarning("Retry send failed " + end.ToString());
+        //                unexpectedClose(end);
+        //                resetTimer = false;
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                logger.LogError("Cant send retry - eek " + ex.ToString());
+        //            }
+        //        }
+        //        else
+        //        {
+        //            //logger.LogDebug("Nothing to do ");
+        //        }
+        //        if (resetTimer)
+        //        {
+        //            _timer.setRunnable(this, getT3());
+        //            //logger.LogDebug("Try again in a while  " + getT3());
+
+        //        }
+        //    }
+        //}
+
+        public ByteBuffer mkPkt(params Chunk[] cs)
+        {
+            Packet ob = new Packet(_srcPort, _destPort, peerVerificationTag);
             foreach (Chunk r in cs)
             {
                 //logger.LogDebug("adding chunk to outbound packet: " + r.ToString());
-                ob.getChunkList().Add(r);
+                ob.Add(r);
                 //todo - this needs to workout if all the chunks will fit...
             }
             ByteBuffer obb = ob.getByteBuffer();
             return obb;
         }
 
-        public int getPeerVerTag()
+        public Packet makePacket(params Chunk[] cs)
         {
-            return _peerVerTag;
+            Packet ob = new Packet(_srcPort, _destPort, peerVerificationTag);
+            foreach (Chunk r in cs)
+            {
+                //logger.LogDebug("adding chunk to outbound packet: " + r.ToString());
+                ob.Add(r);
+                //todo - this needs to workout if all the chunks will fit...
+            }
+            return ob;
         }
 
-        public int getMyVerTag()
+        //public Packet makePacket(IEnumerable<Chunk> cs)
+        //{
+        //    Packet ob = new Packet(_srcPort, _destPort, peerVerificationTag);
+        //    foreach (Chunk r in cs)
+        //    {
+        //        //logger.LogDebug("adding chunk to outbound packet: " + r.ToString());
+        //        ob.Add(r);
+        //        //todo - this needs to workout if all the chunks will fit...
+        //    }
+        //    return ob;
+        //}
+
+        public uint getPeerVerTag()
         {
-            return _myVerTag;
+            return peerVerificationTag;
+        }
+
+        public uint getMyVerTag()
+        {
+            return myVerificationTag;
         }
 
         /*
@@ -587,51 +1691,85 @@ namespace SIPSorcery.Net.Sctp
 
         public void sendInit()
         {
-            InitChunk c = new InitChunk();
-            c.setInitialTSN(this._nearTSN);
-            c.setNumInStreams(this.MAXSTREAMS);
-            c.setNumOutStreams(this.MAXSTREAMS);
-            c.setAdRecWinCredit(MAXBUFF);
-            c.setInitiate(this.getMyVerTag());
-            Chunk[] s = new Chunk[1];
-            s[0] = c;
-            this._state = State.COOKIEWAIT;
             try
             {
-                this.send(s);
+                if (storedInit == null)
+                {
+                    throw new Exception("errInitNotStoredToSend");
+                }
+
+                var outbound = new Packet(_srcPort, _destPort, peerVerificationTag);
+                outbound.Add(storedInit);
+                this.controlQueue.push(outbound);
             }
-            catch (EndOfStreamException end)
+            finally
             {
-                unexpectedClose(end);
-                logger.LogError(end.ToString());
-            } // todo need timer here.....
+                //RWMutex.ReleaseMutex();
+            }
         }
 
-        protected virtual Chunk[] iackDeal(InitAckChunk iack)
+        void sendCookieEcho()
         {
-            iack.getAdRecWinCredit();
-            iack.getInitialTSN();
-            iack.getNumInStreams();
-            iack.getNumOutStreams();
+            if (storedCookieEcho == null)
+            {
+                throw new Exception("errCookieEchoNotStoredToSend");
+            }
+
+            logger.LogDebug($"{name} sending COOKIE-ECHO");
+
+            //   var outbound = new Packet();
+            //outbound.verificationTag = peerVerificationTag
+            //outbound.sourcePort = sourcePort
+            //outbound.destinationPort = destinationPort''
+            //outbound.chunks = []chunk{a.storedCookieEcho}
+
+            controlQueue.push(makePacket(storedCookieEcho));
+            //a.awakeWriteLoop()
+        }
+
+        protected virtual Packet[] handleInitAck(Packet p, InitAckChunk i)
+        {
+            var state = _state;
+            if (state != State.COOKIEWAIT)
+            {
+                // RFC 4960
+                // 5.2.3.  Unexpected INIT ACK
+                //   If an INIT ACK is received by an endpoint in any state other than the
+                //   COOKIE-WAIT state, the endpoint should discard the INIT ACK chunk.
+                //   An unexpected INIT ACK usually indicates the processing of an old or
+                //   duplicated INIT chunk.
+                return null;
+            }
+            myMaxNumInboundStreams = min16((ushort)i.getNumInStreams(), myMaxNumInboundStreams);
+            myMaxNumOutboundStreams = min16((ushort)i.getNumOutStreams(), myMaxNumOutboundStreams);
+            peerVerificationTag = i.getInitiateTag();
+            peerLastTSN = i.getInitialTSN() - 1;
+            if ((_srcPort != p.getDestPort()) || (_destPort != p.getSrcPort()))
+            {
+                logger.LogWarning($"{name} handleInitAck: port mismatch");
+                return null;
+            }
+            _rwnd = i.getAdRecWinCredit();
+            _ssthresh = _rwnd;
+            t1Init.stop();
+            storedInit = null;
             /* 
 			 NOTE: TO DO - this is a protocol violation - this should be done with
 			 multiple TCBS and set in cookie echo 
 			 NOT HERE
 			 */
+            i.getSupportedExtensions(_supportedExtensions);
 
-            _peerVerTag = iack.getInitiateTag();
-            _winCredit = iack.getAdRecWinCredit();
-            _farTSN = iack.getInitialTSN() - 1;
-            _maxOutStreams = Math.Min(iack.getNumInStreams(), MAXSTREAMS);
-            _maxInStreams = Math.Min(iack.getNumOutStreams(), MAXSTREAMS);
-
-            iack.getSupportedExtensions(_supportedExtensions);
-            byte[] data = iack.getCookie();
+            byte[] data = i.getCookie();
             CookieEchoChunk ce = new CookieEchoChunk();
             ce.setCookieData(data);
-            Chunk[] reply = new Chunk[1] { ce };
+            storedCookieEcho = ce;
+
+            sendCookieEcho();
+
+            t1Cookie.start(rtoMgr.getRTO());
             this._state = State.COOKIEECHOED;
-            return reply;
+            return null;
         }
 
         /* <pre>
@@ -674,43 +1812,92 @@ namespace SIPSorcery.Net.Sctp
 		 Cookie (see Section 5.2.2 for a description of the Tie-Tags).
 		 </pre>
 		 */
-        public virtual Chunk[] inboundInit(InitChunk init)
+        public virtual Packet[] handleInit(Packet p, InitChunk i)
         {
-            Chunk[] reply = null;
-            _peerVerTag = init.getInitiateTag();
-            _winCredit = init.getAdRecWinCredit();
-            _farTSN = (uint)(init.getInitialTSN() - 1);
+            var state = _state;
+            // https://tools.ietf.org/html/rfc4960#section-5.2.1
+            // Upon receipt of an INIT in the COOKIE-WAIT state, an endpoint MUST
+            // respond with an INIT ACK using the same parameters it sent in its
+            // original INIT chunk (including its Initiate Tag, unchanged).  When
+            // responding, the endpoint MUST send the INIT ACK back to the same
+            // address that the original INIT (sent by this endpoint) was sent.
 
-            _maxOutStreams = Math.Min(init.getNumInStreams(), MAXSTREAMS);
-            _maxInStreams = Math.Min(init.getNumOutStreams(), MAXSTREAMS);
-            InitAckChunk iac = new InitAckChunk();
-            iac.setAdRecWinCredit(MAXBUFF);
-            iac.setNumInStreams(_maxInStreams);
-            iac.setNumOutStreams(_maxOutStreams);
-            iac.setInitialTSN(_nearTSN);
-            iac.setInitiateTag(_myVerTag);
-            CookieHolder cookie = new CookieHolder();
-            cookie.cookieData = new byte[Association.COOKIESIZE];
-            cookie.cookieTime = TimeExtension.CurrentTimeMillis();
-            _random.NextBytes(cookie.cookieData);
-            iac.setCookie(cookie.cookieData);
-            _cookies.Add(cookie);
+            if (state != State.CLOSED && state != State.COOKIEWAIT && state != State.COOKIEECHOED)
+            {
+                // 5.2.2.  Unexpected INIT in States Other than CLOSED, COOKIE-ECHOED,
+                //        COOKIE-WAIT, and SHUTDOWN-ACK-SENT
+                throw new Exception($"errHandleInitState {state}");
+            }
+            myMaxNumInboundStreams = min16((ushort)i.getNumInStreams(), myMaxNumInboundStreams);
+            myMaxNumOutboundStreams = min16((ushort)i.getNumOutStreams(), myMaxNumOutboundStreams);
+            peerVerificationTag = i.getInitiateTag();
+            _srcPort = p.getSrcPort();
+            _destPort = p.getDestPort();
+            _rwnd = i.getAdRecWinCredit();
+            peerLastTSN = (uint)(i.getInitialTSN() - 1);
 
-            byte[] fse = init.getFarSupportedExtensions();
+            this.useForwardTSN = i._farForwardTSNsupported;
+            if (!useForwardTSN)
+            {
+                logger.LogWarning("not using ForwardTSN (on init)");
+            }
+
+            var outbound = new Packet(_srcPort, _destPort, peerVerificationTag);
+
+
+            var iac = new InitAckChunk();
+            iac.setInitialTSN(myNextTSN);
+            iac.setAdRecWinCredit(maxReceiveBufferSize);
+            iac.setNumInStreams(myMaxNumInboundStreams);
+            iac.setNumOutStreams(myMaxNumOutboundStreams);
+            iac.setInitiateTag(myVerificationTag);
+
+            if (myCookie == null)
+            {
+                var cookie = new CookieHolder();
+                cookie.cookieData = new byte[Association.COOKIESIZE];
+                cookie.cookieTime = TimeExtension.CurrentTimeMillis();
+                _random.NextBytes(cookie.cookieData);
+                _cookies.Add(cookie);
+                myCookie = cookie;
+            }
+            iac.setCookie(myCookie.cookieData);
+
+            byte[] fse = i.getFarSupportedExtensions();
             if (fse != null)
             {
                 iac.setSupportedExtensions(this.getUnionSupportedExtensions(fse));
             }
-            reply = new Chunk[1];
-            reply[0] = iac;
+            outbound.Add(iac);
+            //var reply = new Packet(mkPkt(iac));
             //logger.LogDebug("SCTP received INIT:" + init.ToString());
             //logger.LogDebug("Replying with init-ack :" + iac.ToString());
-            return reply;
+            return new Packet[] { outbound };
         }
 
-        private void ingest(DataChunk dc, List<Chunk> rep)
+        ushort min16(ushort a, ushort b)
         {
-            //logger.LogDebug("SCTP received " + dc.ToString());
+            if (a < b)
+            {
+                return a;
+            }
+            return b;
+        }
+
+        public SCTPStream getOrCreateStream(int sno)
+        {
+            SCTPStream _in;
+            if (!_streams.TryGetValue(sno, out _in))
+            {
+                _in = mkStream(sno);
+                _streams.TryAdd(sno, _in);
+                _al.onRawStream(_in);
+            }
+            return _in;
+        }
+
+        private Packet ingest(DataChunk dc)
+        {            
             Chunk closer = null;
             int sno = dc.getStreamId();
             uint tsn = dc.getTsn();
@@ -718,14 +1905,18 @@ namespace SIPSorcery.Net.Sctp
             if (!_streams.TryGetValue(sno, out _in))
             {
                 _in = mkStream(sno);
-                _streams.Add(sno, _in);
+                _streams.TryAdd(sno, _in);
                 _al.onRawStream(_in);
             }
-            Chunk[] repa;
+            var repa = new List<Chunk>();
             // todo dcep logic belongs in behave - not here.
             if (dc.getDCEP() != null)
             {
-                repa = dcepDeal(_in, dc, dc.getDCEP());
+                var chunks = dcepDeal(_in, dc, dc.getDCEP());
+                if (chunks?.Length > 0)
+                {
+                    repa.AddRange(chunks);
+                }
                 // delay 'till after first packet so we can get the label etc set 
                 // _however_ this should be in behave -as mentioned above.
                 try
@@ -739,75 +1930,220 @@ namespace SIPSorcery.Net.Sctp
                     logger.LogError(x.ToString());
                 }
             }
-            else
-            {
-                repa = _in.append(dc);
-            }
+            //else
+            //{
+            //    repa = _in.append(dc);
+            //}
 
-            if (repa != null)
-            {
-                foreach (Chunk r in repa)
-                {
-                    rep.Add(r);
-                }
-            }
             if (closer != null)
             {
-                rep.Add(closer);
+                repa.Add(closer);
             }
-            _in.inbound(dc);
-            _farTSN = tsn;
+            //_in.handleData(dc);
+            peerLastTSN = tsn;
+            if (repa.Count == 0)
+            {
+                return null;
+            }
+            payloadQueue.push(dc, peerLastTSN);
+            return makePacket(repa.ToArray());
         }
 
-        private Chunk[] dataDeal(DataChunk dc)
+        private Packet[] handleData(DataChunk d)
         {
             List<Chunk> rep = new List<Chunk>();
-            List<uint> duplicates = new List<uint>();
 
-            uint tsn = dc.getTsn();
-            if (tsn > _farTSN)
+            var canPush = payloadQueue.canPush(d, peerLastTSN);
+            if (canPush)
             {
-                // put it in the pen.
-                //logger.LogDebug("TSN:::" + tsn);
-                DataChunk dup;
-                if (_holdingPen.TryGetValue(tsn, out dup))
+                var s = getOrCreateStream(d.streamIdentifier);
+
+                if (getMyReceiverWindowCredit() > 0)
                 {
-                    duplicates.Add(tsn);
+                    payloadQueue.push(d, peerLastTSN);
+                    s.handleData(d);
                 }
                 else
                 {
-                    _holdingPen.Add(tsn, dc);
+                    if (payloadQueue.getLastTSNReceived(out var lastTSN) && Utils.sna32LT(d.getTsn(), lastTSN))
+			        {
+                        logger.LogDebug($"{name} receive buffer full, but accepted as this is a missing chunk with tsn={d.getTsn()} ssn=%d");//, d.streamSequenceNumber)
+                        payloadQueue.push(d, peerLastTSN);
+                        s.handleData(d);
+			        } 
+                    else 
+                    {
+                        logger.LogDebug($"{name}  receive buffer full. dropping DATA with tsn={d.getTsn()} ssn=%d");// d.streamSequenceNumber)
+			        }
                 }
-                // now see if we can deliver anything new to the streams
-                bool gap = false;
-                for (uint t = _farTSN + 1; !gap; t++)
+            }
+            //var sack = mkSack();
+            //rep.Add(sack);
+            //return rep.ToArray();
+
+            return handlePeerLastTSNAndAcknowledgement(d.immediateSack);
+        }
+
+        // The caller should hold the lock.
+        //Packet[] handleData(DataChunk d)
+        //{
+        //    //a.log.Tracef("[%s] DATA: tsn=%d immediateSack=%v len=%d",
+        //    // a.name, d.tsn, d.immediateSack, len(d.userData))
+        //    //a.stats.incDATAs()
+
+        //    var canPush = payloadQueue.canPush(d, peerLastTSN);
+        // if (canPush)
+        //    {
+        //        var s = getOrCreateStream(d.getStreamId());
+        //  if (s == null)
+        //        {
+        //            // silentely discard the data. (sender will retry on T3-rtx timeout)
+        //            // see pion/sctp#30
+        //            //a.log.Debugf("discard %d", d.streamSequenceNumber)
+        //            return null;
+        //  }
+
+        //  if (getMyReceiverWindowCredit() > 0)
+        //        {
+        //            // Pass the new chunk to stream level as soon as it arrives
+        //            payloadQueue.push(d, peerLastTSN);
+        //            s.handleData(d);
+        //  }
+        //        else
+        //        {
+        //   // Receive buffer is full
+        //   var ok = payloadQueue.getLastTSNReceived(out var lastTSN);
+        //   if (ok && Utils.sna32LT(d.getTsn(), lastTSN))
+        //            {
+        //                //a.log.Debugf("[%s] receive buffer full, but accepted as this is a missing chunk with tsn=%d ssn=%d", a.name, d.tsn, d.streamSequenceNumber)
+        //                payloadQueue.push(d, peerLastTSN);
+        //                s.handleData(d);
+        //   }
+        //            else
+        //            {
+        //    //a.log.Debugf("[%s] receive buffer full. dropping DATA with tsn=%d ssn=%d", a.name, d.tsn, d.streamSequenceNumber)
+        //   }
+        //  }
+        // }
+        //    return handlePeerLastTSNAndAcknowledgement(d.immediateSack);
+        //}
+
+        //// getOrCreateStream gets or creates a stream. The caller should hold the lock.
+        //SCTPStream getOrCreateStream(int streamIdentifier)
+        //{
+        //    if (_streams.TryGetValue(streamIdentifier, out var s))
+        //        return s;
+
+        //    return createStream(streamIdentifier, true);
+        //}
+
+        //// createStream creates a stream. The caller should hold the lock and check no stream exists for this id.
+        //SCTPStream createStream(int streamIdentifier, bool accept)
+        //{
+        //    var s = mkStream(streamIdentifier);
+        //    _streams.Add(streamIdentifier, s);
+        //    return s;
+        //}
+
+        // A common routine for handleData and handleForwardTSN routines
+        // The caller should hold the lock.
+        Packet[] handlePeerLastTSNAndAcknowledgement(bool sackImmediately)
+        {
+            var reply = new List<Packet>();
+
+            // Try to advance peerLastTSN
+
+            // From RFC 3758 Sec 3.6:
+            //   .. and then MUST further advance its cumulative TSN point locally
+            //   if possible
+            // Meaning, if peerLastTSN+1 points to a chunk that is received,
+            // advance peerLastTSN until peerLastTSN+1 points to unreceived chunk.
+            while (true)
+            {
+                if (!payloadQueue.pop(peerLastTSN + 1, out var c))
                 {
-                    if (_holdingPen.TryGetValue(t, out dc))
+                    break;
+                }
+                peerLastTSN++;
+
+                foreach (var rstReq in reconfigRequests.Values)
+                {
+                    var resp = resetStreamsIfAny(rstReq);
+                    if (resp != null)
                     {
-                        _holdingPen.Remove(t);
-                        ingest(dc, rep);
+                        //a.log.Debugf("[%s] RESET RESPONSE: %+v", a.name, resp)
+                        reply.Add(resp);
                     }
-                    else
-                    {
-                        //logger.LogDebug("gap in inbound tsns at " + t);
-                        gap = true;
-                    }
+                }
+            }
+
+            var hasPacketLoss = (payloadQueue.size() > 0);
+            if (hasPacketLoss)
+            {
+                logger.LogTrace($"{name} packetloss: %s");//, a.payloadQueue.getGapAckBlocksString(a.peerLastTSN))
+            }
+
+            if ((ackState != AcknowlegeState.Immediate && !sackImmediately && !hasPacketLoss && ackMode == AckMode.Normal) || ackMode == AckMode.AlwaysDelay)
+            {
+                if (ackState == AcknowlegeState.Idle)
+                {
+                    delayedAckTriggered = true;
+                }
+                else
+                {
+                    immediateAckTriggered = true;
                 }
             }
             else
             {
-                // probably wrong now.. 
-                logger.LogWarning("Already seen . " + tsn + " expecting " + (_farTSN));
-                duplicates.Add(tsn);
+                immediateAckTriggered = true;
             }
-            List<uint> l = new List<uint>();
-            l.AddRange(_holdingPen.Keys);
-            l.Sort();
 
-            SackChunk sack = mkSack(l, duplicates);
-            rep.Add(sack);
-            return rep.ToArray();
+            return reply.ToArray();
         }
+
+        void unregisterStream(SCTPStream s) 
+        {
+            lock (myLock)
+            {
+                _streams.TryRemove(s.getNum(), out var st);
+                s.close();
+            }
+        }
+
+
+        // The caller should hold the lock.
+        Packet resetStreamsIfAny(OutgoingSSNResetRequestParameter p)
+        {
+            var result = ReconfigResult.SuccessPerformed;
+
+            if (Utils.sna32LTE(p.getLastAssignedTSN(), peerLastTSN))
+            {
+                logger.LogDebug($"{name} resetStream(): senderLastTSN={p.getLastAssignedTSN()} <= peerLastTSN={peerLastTSN}");
+                foreach (var id in p.getStreams())
+                {
+                    if (!_streams.TryGetValue(id, out var s))
+                    {
+                        continue;
+                    }
+
+                    unregisterStream(s);
+                }
+                reconfigRequests.Remove(p.getReqSeqNo());
+            }
+            else
+            {
+                logger.LogDebug($"{name} resetStream(): senderLastTSN={p.getLastAssignedTSN()} > peerLastTSN={peerLastTSN}");
+                result = ReconfigResult.ResultInProgress;
+            }
+            ReConfigChunk reply = new ReConfigChunk();
+            var rep = new ReconfigurationResponseParameter(p.getReqSeqNo());
+            rep.setResult((uint)result);
+            reply.addParam(rep);
+            return makePacket(reply);
+        }
+
+
         // todo should be in a behave block
         // then we wouldn't be messing with stream seq numbers.
 
@@ -832,7 +2168,7 @@ namespace SIPSorcery.Net.Sctp
                 rep = new Chunk[1];
                 DataChunk ack = dc.mkAck(dcep);
                 s.outbound(ack);
-                ack.setTsn(_nearTSN++);
+                ack.setTsn(myNextTSN++);
                 // check rollover - will break at maxint.
                 rep[0] = ack;
 
@@ -899,6 +2235,8 @@ namespace SIPSorcery.Net.Sctp
                 CookieHolder cookie;
                 if (null != (cookie = checkCookieEcho(echo.getCookieData())))
                 {
+                    t1Init.stop();
+                    t1Cookie.stop();
                     // Compare the creation timestamp in the State Cookie to the current local time.
                     uint howStale = howStaleIsMyCookie(cookie);
                     if (howStale == 0)
@@ -940,14 +2278,21 @@ namespace SIPSorcery.Net.Sctp
             return reply;
         }
 
-        private SackChunk mkSack(List<uint> pen, List<uint> dups)
+        uint generateNextTSN()
+        {
+            var tsn = myNextTSN;
+            myNextTSN++;
+            return tsn;
+        }
+
+        private SackChunk mkSack()
         {
             SackChunk ret = new SackChunk();
-            ret.setCumuTSNAck(_farTSN);
+            ret.setCumuTSNAck(peerLastTSN);
             int stashcap = calcStashCap();
-            ret.setArWin((uint)(MAXBUFF - stashcap));
-            ret.setGaps(pen);
-            ret.setDuplicates(dups);
+            ret.advertisedReceiverWindowCredit = (uint)(MAXBUFF - stashcap);
+            ret.gapAckBlocks = pendingQueue.getGapAckBlocks(peerLastTSN);
+            ret.duplicateTSN = pendingQueue.popDuplicates();
             //logger.LogDebug("made SACK " + ret.ToString());
             return ret;
         }
@@ -969,7 +2314,7 @@ namespace SIPSorcery.Net.Sctp
 
         public uint getCumAckPt()
         {
-            return _farTSN;
+            return peerLastTSN;
         }
         public ReConfigChunk addToCloseList(SCTPStream st)
         {
@@ -983,7 +2328,8 @@ namespace SIPSorcery.Net.Sctp
             {
                 //logger.LogDebug("due to reconfig stream " + st);
                 cs[0] = reconfigState.makeClose(st);
-                this.send(cs);
+
+                this.controlQueue.push(makePacket(cs[0]));
             }
         }
 
@@ -1030,7 +2376,7 @@ namespace SIPSorcery.Net.Sctp
                 return null;
             }
             var st = _streams[s];
-            _streams.Remove(s);
+            _streams.TryRemove(s, out st);
             return st;
         }
 
@@ -1048,16 +2394,16 @@ namespace SIPSorcery.Net.Sctp
                     }
                     sout = mkStream(sno);
                     sout.setLabel(label);
-                    _streams.Add(sno, sout);
+                    _streams.TryAdd(sno, sout);
                 }// todo - move this to behave
                 DataChunk DataChannelOpen = DataChunk.mkDataChannelOpen(label);
                 sout.outbound(DataChannelOpen);
-                DataChannelOpen.setTsn(_nearTSN++);
+                DataChannelOpen.setTsn(myNextTSN++);
                 logger.LogDebug($"SCTP data channel open chunk {DataChannelOpen}.");
-                Chunk[] hack = { DataChannelOpen };
                 try
                 {
-                    send(hack);
+                    var pkt = makePacket(DataChannelOpen);
+                    controlQueue.push(pkt);
                 }
                 catch (Exception end)
                 {
@@ -1072,10 +2418,10 @@ namespace SIPSorcery.Net.Sctp
             return sout;
         }
 
-        public int maxMessageSize()
-        {
-            return 1 << 20; // shrug - I don't know 
-        }
+        //public int maxMessageSize()
+        //{
+        //    return 1 << 20; // shrug - I don't know 
+        //}
 
         public bool canSend()
         {
@@ -1097,8 +2443,19 @@ namespace SIPSorcery.Net.Sctp
         protected void unexpectedClose(Exception end)
         {
             _rcv = null;
+            _send = null;
             _al.onDisAssociated(this);
             _state = State.CLOSED;
+            closeAllTimers();
+        }
+        void closeAllTimers()
+        {
+            // Close all retransmission & ack timers
+            t1Init.close();
+            t1Cookie.close();
+            t3RTX.close();
+            tReconfig.close();
+            _ackTimer.close();
         }
 
         abstract internal void sendAndBlock(SCTPMessage m);
@@ -1107,6 +2464,557 @@ namespace SIPSorcery.Net.Sctp
 
         abstract internal SCTPMessage makeMessage(string s, BlockingSCTPStream aThis);
 
-        abstract protected Chunk[] sackDeal(SackChunk sackChunk);
+        protected void handleSack(SackChunk d)
+        {
+            logger.LogTrace($"{name} SACK: cumTSN={d.cumulativeTSNAck} _rwnd={d.getArWin()}");
+            var state = this._state;
+            if (state != State.ESTABLISHED)
+            {
+                return;
+            }
+            stats.incSACKs();
+
+            if (Utils.sna32GT(cumulativeTSNAckPoint, d.cumulativeTSNAck))
+            {
+                // RFC 4960 sec 6.2.1.  Processing a Received SACK
+                // D)
+                //   i) If Cumulative TSN Ack is less than the Cumulative TSN Ack
+                //      Point, then drop the SACK.  Since Cumulative TSN Ack is
+                //      monotonically increasing, a SACK whose Cumulative TSN Ack is
+                //      less than the Cumulative TSN Ack Point indicates an out-of-
+                //      order SACK.
+
+                logger.LogDebug($"{name} SACK Cumulative ACK {d.cumulativeTSNAck} is older than ACK point {cumulativeTSNAckPoint}");
+                return;
+            }
+
+            var bytesAckedPerStream = processSelectiveAck(d, out var htna);
+
+            uint totalBytesAcked = 0;
+            foreach (var nBytesAcked in bytesAckedPerStream)
+            {
+                totalBytesAcked += nBytesAcked.Value;
+            }
+            var cumTSNAckPointAdvanced = false;
+
+            if (Utils.sna32LT(cumulativeTSNAckPoint, d.cumulativeTSNAck))
+            {
+                logger.LogTrace($"{name} SACK: cumTSN advanced: {cumulativeTSNAckPoint} -> {d.cumulativeTSNAck}");
+
+                cumulativeTSNAckPoint = d.cumulativeTSNAck;
+
+                cumTSNAckPointAdvanced = true;
+
+                onCumulativeTSNAckPointAdvanced(totalBytesAcked);
+            }
+
+            foreach (var item in bytesAckedPerStream)
+            {
+                var si = item.Key;
+                var nBytesAcked = item.Value;
+                if (_streams.TryGetValue(si, out var s))
+                {
+                    s.RWLock.ReleaseLock();
+
+                    s.onBufferReleased(nBytesAcked);
+
+                    s.RWLock.AcquireWriterLock(10000);
+                }
+            }
+
+            // New rwnd value
+            // RFC 4960 sec 6.2.1.  Processing a Received SACK
+            // D)
+            //   ii) Set rwnd equal to the newly received a_rwnd minus the number
+            //       of bytes still outstanding after processing the Cumulative
+            //       TSN Ack and the Gap Ack Blocks.
+
+            // bytes acked were already subtracted by markAsAcked() method
+            var bytesOutstanding = inflightQueue.getNumBytes();
+            if (bytesOutstanding >= d.getArWin())
+            {
+                _rwnd = 0;
+            }
+            else
+            {
+                _rwnd = (uint)d.getArWin() - bytesOutstanding;
+            }
+
+            processFastRetransmission(d.cumulativeTSNAck, htna, cumTSNAckPointAdvanced);
+
+            if (useForwardTSN)
+            {
+                // RFC 3758 Sec 3.5 C1
+                if (Utils.sna32LT(advancedPeerTSNAckPoint, cumulativeTSNAckPoint))
+                {
+                    advancedPeerTSNAckPoint = cumulativeTSNAckPoint;
+                }
+
+                // RFC 3758 Sec 3.5 C2
+                for (var i = advancedPeerTSNAckPoint + 1; ; i++)
+                {
+                    if (!inflightQueue.get(i, out var c))
+                    {
+                        break;
+                    }
+
+                    if (!c.abandoned())
+                    {
+                        break;
+                    }
+                    advancedPeerTSNAckPoint = i;
+                }
+
+                // RFC 3758 Sec 3.5 C3
+                if (Utils.sna32GT(advancedPeerTSNAckPoint, cumulativeTSNAckPoint))
+                {
+                    willSendForwardTSN = true;
+                }
+            }
+
+            if (inflightQueue.size() > 0)
+            {
+                // Start timer. (noop if already started)
+                logger.LogTrace($"{name} T3-rtx timer start (pt3)");
+
+                t3RTX.start(rtoMgr.getRTO());
+            }
+
+            if (cumTSNAckPointAdvanced)
+            {
+                //    a.awakeWriteLoop()
+            }
+        }
+
+        void processFastRetransmission(uint cumTSNAckPoint, uint htna, bool cumTSNAckPointAdvanced)
+        {
+            // HTNA algorithm - RFC 4960 Sec 7.2.4
+            // Increment missIndicator of each chunks that the SACK reported missing
+            // when either of the following is met:
+            // a)  Not in fast-recovery
+            //     miss indications are incremented only for missing TSNs prior to the
+            //     highest TSN newly acknowledged in the SACK.
+            // b)  In fast-recovery AND the Cumulative TSN Ack Point advanced
+            //     the miss indications are incremented for all TSNs reported missing
+            //     in the SACK.
+            if (!inFastRecovery || (inFastRecovery && cumTSNAckPointAdvanced))
+            {
+                uint maxTSN;
+                if (!inFastRecovery)
+                {
+                    // a) increment only for missing TSNs prior to the HTNA
+                    maxTSN = htna;
+                }
+                else
+                {
+                    // b) increment for all TSNs reported missing
+                    maxTSN = cumTSNAckPoint + (uint)inflightQueue.size() + 1;
+                }
+
+                for (uint tsn = cumTSNAckPoint + 1; Utils.sna32LT(tsn, maxTSN); tsn++)
+                {
+                    if (!inflightQueue.get(tsn, out var c))
+                    {
+                        throw new Exception("errTSNRequestNotExist " + tsn);
+                    }
+                    if (!c.acked && !c.abandoned() && c.missIndicator < 3)
+                    {
+                        c.missIndicator++;
+                        if (c.missIndicator == 3)
+                        {
+                            if (!inFastRecovery)
+                            {
+                                // 2)  If not in Fast Recovery, adjust the ssthresh and cwnd of the
+                                //     destination address(es) to which the missing DATA chunks were
+                                //     last sent, according to the formula described in Section 7.2.3.
+                                inFastRecovery = true;
+
+                                fastRecoverExitPoint = htna;
+
+                                _ssthresh = max32(_cwnd / 2, 4 * mtu);
+
+                                _cwnd = _ssthresh;
+                                partialBytesAcked = 0;
+                                willRetransmitFast = true;
+
+                                logger.LogTrace($"{name} updated cwnd={_cwnd} ssthresh={_ssthresh} inflight={inflightQueue.getNumBytes()}(FR)");
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (inFastRecovery && cumTSNAckPointAdvanced)
+            {
+                willRetransmitFast = true;
+            }
+        }
+
+        // The caller should hold the lock.
+        void onCumulativeTSNAckPointAdvanced(uint totalBytesAcked)
+        {
+            // RFC 4096, sec 6.3.2.  Retransmission Timer Rules
+            //   R2)  Whenever all outstanding data sent to an address have been
+            //        acknowledged, turn off the T3-rtx timer of that address.
+            if (inflightQueue.size() == 0)
+            {
+                logger.LogTrace($"{name} SACK: no more packet in-flight (pending={pendingQueue.size()})");
+                t3RTX.stop();
+            }
+            else
+            {
+                logger.LogTrace($"{name} T3-rtx timer start (pt2)");
+                t3RTX.start(rtoMgr.getRTO());
+            }
+
+            // Update congestion control parameters
+            if (_cwnd <= _ssthresh)
+            {
+                // RFC 4096, sec 7.2.1.  Slow-Start
+                //   o  When cwnd is less than or equal to ssthresh, an SCTP endpoint MUST
+                //		use the slow-start algorithm to increase cwnd only if the current
+                //      congestion window is being fully utilized, an incoming SACK
+                //      advances the Cumulative TSN Ack Point, and the data sender is not
+                //      in Fast Recovery.  Only when these three conditions are met can
+                //      the cwnd be increased; otherwise, the cwnd MUST not be increased.
+                //		If these conditions are met, then cwnd MUST be increased by, at
+                //      most, the lesser of 1) the total size of the previously
+                //      outstanding DATA chunk(s) acknowledged, and 2) the destination's
+                //      path MTU.
+                if (!inFastRecovery &&
+                    pendingQueue.size() > 0)
+                {
+                    _cwnd += min32(totalBytesAcked, _cwnd); // TCP way
+                                                            // a.cwnd += min32(uint32(totalBytesAcked), a.mtu) // SCTP way (slow)
+                    logger.LogTrace($"{name} updated cwnd={_cwnd} ssthresh={_ssthresh} acked={totalBytesAcked} (SS)");
+                }
+                else
+                {
+                    logger.LogInformation($"{name} cwnd did not grow: cwnd={_cwnd} ssthresh={_ssthresh} acked={totalBytesAcked} FR={inFastRecovery} pending={pendingQueue.size()}");
+                }
+            }
+            else
+            {
+                // RFC 4096, sec 7.2.2.  Congestion Avoidance
+                //   o  Whenever cwnd is greater than ssthresh, upon each SACK arrival
+                //      that advances the Cumulative TSN Ack Point, increase
+                //      partial_bytes_acked by the total number of bytes of all new chunks
+                //      acknowledged in that SACK including chunks acknowledged by the new
+                //      Cumulative TSN Ack and by Gap Ack Blocks.
+                partialBytesAcked += totalBytesAcked;
+
+                //   o  When partial_bytes_acked is equal to or greater than cwnd and
+                //      before the arrival of the SACK the sender had cwnd or more bytes
+                //      of data outstanding (i.e., before arrival of the SACK, flight size
+                //      was greater than or equal to cwnd), increase cwnd by MTU, and
+                //      reset partial_bytes_acked to (partial_bytes_acked - cwnd).
+                if (partialBytesAcked >= _cwnd && pendingQueue.size() > 0)
+                {
+                    partialBytesAcked -= _cwnd;
+                    _cwnd += mtu;
+                    logger.LogTrace($"{name} updated cwnd={_cwnd} ssthresh={_ssthresh} acked={totalBytesAcked} (CA)");
+                }
+            }
+        }
+
+        Dictionary<int, uint> processSelectiveAck(SackChunk d, out uint htna)
+        {
+            var bytesAckedPerStream = new Dictionary<int, uint>();
+            htna = 0;
+            // New ack point, so pop all ACKed packets from inflightQueue
+            // We add 1 because the "currentAckPoint" has already been popped from the inflight queue
+            // For the first SACK we take care of this by setting the ackpoint to cumAck - 1
+            if (inflightQueue.getOldestTSNReceived(out var oldTsn))
+            {
+                if (oldTsn - 1 > cumulativeTSNAckPoint)
+                {
+                    cumulativeTSNAckPoint = oldTsn - 1;
+                }
+            }
+            for (var i = cumulativeTSNAckPoint + 1; Utils.sna32LTE(i, d.cumulativeTSNAck); i++)
+            {
+                if (!inflightQueue.pop(i, out var c))
+                {
+                    return bytesAckedPerStream;
+                }
+
+                if (!c.acked)
+                {
+                    // RFC 4096 sec 6.3.2.  Retransmission Timer Rules
+                    //   R3)  Whenever a SACK is received that acknowledges the DATA chunk
+                    //        with the earliest outstanding TSN for that address, restart the
+                    //        T3-rtx timer for that address with its current RTO (if there is
+                    //        still outstanding data on that address).
+                    if (i == cumulativeTSNAckPoint + 1)
+                    {
+                        // T3 timer needs to be reset. Stop it for now.
+                        t3RTX.stop();
+                    }
+
+                    var nBytesAcked = inflightQueue.markAsAcked(c.tsn);
+
+                    if (bytesAckedPerStream.TryGetValue(c.getStreamId(), out var amount))
+                    {
+                        bytesAckedPerStream[c.getStreamId()] = amount + nBytesAcked;
+                    }
+                    else
+                    {
+                        bytesAckedPerStream.Add(c.getStreamId(), nBytesAcked);
+                    }
+
+                    // RFC 4960 sec 6.3.1.  RTO Calculation
+                    //   C4)  When data is in flight and when allowed by rule C5 below, a new
+                    //        RTT measurement MUST be made each round trip.  Furthermore, new
+                    //        RTT measurements SHOULD be made no more than once per round trip
+                    //        for a given destination transport address.
+                    //   C5)  Karn's algorithm: RTT measurements MUST NOT be made using
+                    //        packets that were retransmitted (and thus for which it is
+                    //        ambiguous whether the reply was for the first instance of the
+                    //        chunk or for a later instance)
+                    if (c.nSent == 1 && Utils.sna32GTE(c.tsn, minTSN2MeasureRTT))
+                    {
+                        minTSN2MeasureRTT = myNextTSN;
+
+                        var time = TimeExtension.CurrentTimeMillis();
+                        var rtt = time - c.getSentTime();
+
+                        var srtt = rtoMgr.setNewRTT(rtt);
+
+                        logger.LogTrace($"{name} SACK: measured-rtt={rtt} srtt={srtt} new-rto={rtoMgr.getRTO()}");
+
+                    }
+                }
+
+                if (inFastRecovery && c.tsn == fastRecoverExitPoint)
+                {
+                    logger.LogDebug($"{name} exit fast-recovery");
+
+                    inFastRecovery = false;
+                }
+            }
+
+            htna = d.cumulativeTSNAck;
+
+            // Mark selectively acknowledged chunks as "acked"
+            foreach (var g in d.gapAckBlocks)
+            {
+                for (var i = g.start; i <= g.end; i++)
+                {
+                    var tsn = d.cumulativeTSNAck + i;
+                    if (!inflightQueue.get(tsn, out var c))
+                    {
+                        logger.LogDebug($"{name}errTSNRequestNotExist: {tsn}");
+                        return bytesAckedPerStream;// nil, 0, fmt.Errorf("%w: %v", errTSNRequestNotExist, tsn)
+                    }
+
+                    if (!c.acked)
+                    {
+                        var nBytesAcked = inflightQueue.markAsAcked(tsn);
+
+                        if (bytesAckedPerStream.TryGetValue(c.getStreamId(), out var amount))
+                        {
+                            bytesAckedPerStream[c.getStreamId()] = amount + nBytesAcked;
+                        }
+                        else
+                        {
+                            bytesAckedPerStream.Add(c.getStreamId(), nBytesAcked);
+                        }
+
+                        logger.LogTrace($"{name} tsn={c.tsn} has been sacked");
+
+                        if (c.nSent == 1)
+                        {
+                            minTSN2MeasureRTT = myNextTSN;
+
+                            var time = TimeExtension.CurrentTimeMillis();
+                            var rtt = time - c.getSentTime();
+                            var srtt = rtoMgr.setNewRTT(rtt);
+
+                            logger.LogTrace($"{name} SACK: measured-rtt={rtt} srtt={srtt} new-rto={rtoMgr.getRTO()}");
+                        }
+
+                        if (Utils.sna32LT(htna, tsn))
+                        {
+                            htna = tsn;
+                        }
+                    }
+                }
+            }
+            return bytesAckedPerStream;
+        }
+
+        public void onRetransmissionTimeout(int id, uint nRtos)
+        {
+            try
+            {
+                this.RWMutex.WaitOne();
+
+                if (id == (int)TimerType.T1Init)
+                {
+                    sendInit();
+                    return;
+                }
+
+                if (id == (int)TimerType.T1Cookie)
+                {
+                    sendCookieEcho();
+                    return;
+                }
+
+                if (id == (int)TimerType.T3RTX)
+                {
+                    stats.incT3Timeouts();
+
+                    // RFC 4960 sec 6.3.3
+                    //  E1)  For the destination address for which the timer expires, adjust
+                    //       its ssthresh with rules defined in Section 7.2.3 and set the
+                    //       cwnd <- MTU.
+                    // RFC 4960 sec 7.2.3
+                    //   When the T3-rtx timer expires on an address, SCTP should perform slow
+                    //   start by:
+                    //      ssthresh = max(cwnd/2, 4*MTU)
+                    //      cwnd = 1*MTU
+
+                    _ssthresh = max32(_cwnd / 2, 4 * mtu);
+                    _cwnd = mtu;
+                    logger.LogTrace($"{name} updated cwnd={_cwnd} ssthresh={_ssthresh} inflight={inflightQueue.getNumBytes()}(RTO)");
+
+                    // RFC 3758 sec 3.5
+                    //  A5) Any time the T3-rtx timer expires, on any destination, the sender
+                    //  SHOULD try to advance the "Advanced.Peer.Ack.Point" by following
+                    //  the procedures outlined in C2 - C5.
+                    if (useForwardTSN)
+                    {
+                        // RFC 3758 Sec 3.5 C2
+                        for (var i = advancedPeerTSNAckPoint + 1; ; i++)
+                        {
+                            if (!inflightQueue.get(i, out var c))
+                            {
+                                break;
+                            }
+                            if (!c.abandoned())
+                            {
+                                break;
+                            }
+                            advancedPeerTSNAckPoint = i;
+                        }
+
+                        // RFC 3758 Sec 3.5 C3
+                        if (Utils.sna32GT(advancedPeerTSNAckPoint, cumulativeTSNAckPoint))
+                        {
+                            willSendForwardTSN = true;
+                        }
+                    }
+
+                    //a.log.Debugf("[%s] T3-rtx timed out: nRtos=%d cwnd=%d ssthresh=%d", a.name, nRtos, a.cwnd, a.ssthresh)
+
+                    /*
+                        a.log.Debugf("   - advancedPeerTSNAckPoint=%d", a.advancedPeerTSNAckPoint)
+                        a.log.Debugf("   - cumulativeTSNAckPoint=%d", a.cumulativeTSNAckPoint)
+                        a.inflightQueue.updateSortedKeys()
+                        for i, tsn := range a.inflightQueue.sorted {
+                            if c, ok := a.inflightQueue.get(tsn); ok {
+                                a.log.Debugf("   - [%d] tsn=%d acked=%v abandoned=%v (%v,%v) len=%d",
+                                    i, c.tsn, c.acked, c.abandoned(), c.beginningFragment, c.endingFragment, len(c.userData))
+                            }
+                        }
+                    */
+
+                    inflightQueue.markAllToRetrasmit();
+                    //a.awakeWriteLoop()
+
+                    return;
+                }
+
+                if (id == (int)TimerType.Reconfig)
+                {
+                    willRetransmitReconfig = true;
+                    //a.awakeWriteLoop()
+                }
+            }
+            finally
+            {
+                RWMutex.ReleaseMutex();
+            }
+        }
+
+        public void onRetransmissionFailure(int id)
+        {
+            try
+            {
+                RWMutex.WaitOne();
+
+                if (id == (int)TimerType.T1Init)
+                {
+                    logger.LogError($"{name} retransmission failure: T1-init");
+                    //a.handshakeCompletedCh <- errHandshakeInitAck;
+
+                    return;
+                }
+
+                if (id == (int)TimerType.T1Cookie)
+                {
+                    logger.LogError($"{name} retransmission failure: T1-cookie");
+                    //a.handshakeCompletedCh <- errHandshakeCookieEcho
+
+                    return;
+                }
+
+                if (id == (int)TimerType.T3RTX)
+                {
+                    // T3-rtx timer will not fail by design
+                    // Justifications:
+                    //  * ICE would fail if the connectivity is lost
+                    //  * WebRTC spec is not clear how this incident should be reported to ULP
+                    logger.LogError($"{name} retransmission failure: T3-rtx (DATA)");
+
+                    return;
+                }
+            }
+            finally
+            {
+                RWMutex.ReleaseMutex();
+            }
+        }
+
+        public void onAckTimeout()
+        {
+            lock (myLock)
+            {
+                logger.LogTrace($"{name} ack timed out (ackState: {ackState})");
+                stats.incAckTimeouts();
+                ackState = AcknowlegeState.Immediate;
+            }
+        }
+
+        // bufferedAmount returns total amount (in bytes) of currently buffered user data.
+        // This is used only by testing.
+        uint bufferedAmount()
+        {
+            lock (myLock)
+            {
+
+                return pendingQueue.getNumBytes() + inflightQueue.getNumBytes();
+            }
+        }
+
+        // MaxMessageSize returns the maximum message size you can send.
+        uint MaxMessageSize()
+        {
+            lock (myLock)
+            {
+                return maxMessageSize;
+            }
+        }
+
+
+        // SetMaxMessageSize sets the maximum message size you can send.
+        void SetMaxMessageSize(uint maxMsgSize)
+        {
+            lock (myLock)
+            {
+                maxMessageSize = maxMsgSize;
+            }
+        }
     }
 }

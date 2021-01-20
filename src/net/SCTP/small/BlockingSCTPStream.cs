@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2017 pi.pe gmbh .
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +18,13 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.executor;
 using SIPSorcery.Sys;
+using System.Linq;
 
 /**
  *
@@ -33,64 +36,50 @@ namespace SIPSorcery.Net.Sctp
     {
         private ConcurrentDictionary<int, SCTPMessage> undeliveredOutboundMessages = new ConcurrentDictionary<int, SCTPMessage>();
         private static ILogger logger = Log.Logger;
-        private SemaphoreSlim semaphore = new SemaphoreSlim(1);
+        private ExecutorService _ex_service;
 
-        public BlockingSCTPStream(Association a, int id) : base(a, id) { }
+        public BlockingSCTPStream(Association a, int id) : base(a, id)
+        {
+            _ex_service = Executors.NewSingleThreadExecutor();
+        }
 
+        ~BlockingSCTPStream()
+        {
+            _ex_service?.Dispose();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public override void send(string message)
         {
-            sendasync(message).GetAwaiter().GetResult();
+            Association a = base.getAssociation();
+            SCTPMessage m = a.makeMessage(message, this);
+            if (m == null)
+            {
+                logger.LogError("SCTPMessage cannot be null, but it is");
+                return;
+            }
+            undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
+            a.sendAndBlock(m);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public override void send(byte[] message)
         {
-            sendasync(message).GetAwaiter().GetResult();
-        }
-
-        public override async Task sendasync(byte[] message)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-            try
+            Association a = base.getAssociation();
+            SCTPMessage m = a.makeMessage(message, this);
+            if (m == null)
             {
-                Association a = base.getAssociation();
-                SCTPMessage m = a.makeMessage(message, this);
-                if (m == null)
-                {
-                    logger.LogError("SCTPMessage cannot be null, but it is");
-                    return;
-                }
-                undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
-                a.sendAndBlock(m);
+                logger.LogError("SCTPMessage cannot be null, but it is");
+                return;
             }
-            finally
-            {
-                semaphore.Release();
-            }
-        }
-
-        public override async Task sendasync(string message)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                Association a = base.getAssociation();
-                SCTPMessage m = a.makeMessage(message, this);
-                if (m == null)
-                {
-                    logger.LogError("SCTPMessage cannot be null, but it is");
-                    return;
-                }
-                a.sendAndBlock(m);
-            }
-            finally
-            {
-                semaphore.Release();
-            }
+            undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
+            a.sendAndBlock(m);
         }
 
         internal override void deliverMessage(SCTPMessage message)
         {
             message.run();
+            //_ex_service.execute(message);
         }
 
         public override void delivered(DataChunk d)
@@ -110,6 +99,11 @@ namespace SIPSorcery.Net.Sctp
         public override bool idle()
         {
             return undeliveredOutboundMessages.Count == 0;
+        }
+
+        public override uint getNumBytesInQueue()
+        {
+            return (uint)undeliveredOutboundMessages.Values.Sum(n => (uint)n.getData().Length);
         }
     }
 }

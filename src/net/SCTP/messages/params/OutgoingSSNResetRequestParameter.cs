@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2017 pi.pe gmbh .
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,6 +52,7 @@ namespace SIPSorcery.Net.Sctp
         int[] streams;
 
         public OutgoingSSNResetRequestParameter(int t, string n) : base(t, n) { }
+        public OutgoingSSNResetRequestParameter(uint t) : base((int)t, "OutgoingSSNResetRequestParameter") { }
         public OutgoingSSNResetRequestParameter() : base(13, "OutgoingSSNResetRequestParameter") { }
         public OutgoingSSNResetRequestParameter(uint reqNo, uint respNo, uint lastTsn) : this()
         {
@@ -120,7 +121,7 @@ namespace SIPSorcery.Net.Sctp
             return ret.ToString();
         }
 
-        public long getLastAssignedTSN()
+        public uint getLastAssignedTSN()
         {
             return lastTsn;
         }

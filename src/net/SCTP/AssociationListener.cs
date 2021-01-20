@@ -26,7 +26,7 @@ namespace SIPSorcery.Net.Sctp
     {
         void onAssociated(Association a);
         void onDisAssociated(Association a);
-        void onDCEPStream(SCTPStream s, string label, int type);
+        void onDCEPStream(SCTPStream s, string label, uint type);
         void onRawStream(SCTPStream s);
     }
 }

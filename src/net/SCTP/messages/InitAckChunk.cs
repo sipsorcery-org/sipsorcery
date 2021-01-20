@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2017 pi.pe gmbh .
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -54,7 +54,7 @@ namespace SIPSorcery.Net.Sctp
 
         private static ILogger logger = Log.Logger;
 
-        int _initiateTag;
+        uint _initiateTag;
         uint _adRecWinCredit;
         int _numOutStreams;
         int _numInStreams;
@@ -64,12 +64,12 @@ namespace SIPSorcery.Net.Sctp
 
         public InitAckChunk() : base(ChunkType.INITACK) { }
 
-        public int getInitiateTag()
+        public uint getInitiateTag()
         {
             return _initiateTag;
         }
 
-        public void setInitiateTag(int v)
+        public void setInitiateTag(uint v)
         {
             _initiateTag = v;
         }
@@ -129,7 +129,7 @@ namespace SIPSorcery.Net.Sctp
         {
             if (_body.remaining() >= 16)
             {
-                _initiateTag = _body.GetInt();
+                _initiateTag = _body.GetUInt();
                 _adRecWinCredit = _body.GetUInt(); ;
                 _numOutStreams = _body.GetUShort();
                 _numInStreams = _body.GetUShort();

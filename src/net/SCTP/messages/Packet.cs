@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2017 pi.pe gmbh .
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,7 +49,7 @@ namespace SIPSorcery.Net.Sctp
         static int MTU = 1500;
         ushort _srcPort;
         ushort _destPort;
-        int _verTag;
+        uint _verTag;
         uint _chksum;
         List<Chunk> _chunks;
         private static int SUMOFFSET = 8;
@@ -69,14 +69,14 @@ namespace SIPSorcery.Net.Sctp
 
             _srcPort = pkt.GetUShort();
             _destPort = pkt.GetUShort();
-            _verTag = pkt.GetInt();
+            _verTag = pkt.GetUInt();
             _chksum = pkt.GetUInt();
             _chunks = mkChunks(pkt);
 
             pkt.Position = 0;
         }
 
-        public Packet(int sp, int dp, int vertag)
+        public Packet(int sp, int dp, uint vertag)
         {
             _srcPort = (ushort)sp;
             _destPort = (ushort)dp;
@@ -118,7 +118,7 @@ namespace SIPSorcery.Net.Sctp
             return _destPort;
         }
 
-        public int getVerTag()
+        public uint getVerTag()
         {
             return _verTag;
         }
@@ -158,6 +158,11 @@ namespace SIPSorcery.Net.Sctp
         public List<Chunk> getChunkList()
         {
             return _chunks;
+        }
+
+        public void Add(Chunk c)
+        {
+            _chunks.Add(c);
         }
 
         /*
@@ -287,86 +292,86 @@ namespace SIPSorcery.Net.Sctp
 
 		 */
 
-        private void reflectedVerify(int cno, Association ass)
-        {
-            Chunk chunk = _chunks[cno];
-            bool t = ((Chunk.TBIT & chunk._flags) > 0);
-            int cverTag = t ? ass.getPeerVerTag() : ass.getMyVerTag();
-            if (cverTag != _verTag)
-            {
-                throw new InvalidSCTPPacketException($"VerTag on an {(ChunkType)chunk._type} doesn't match " + (t ? "their " : "our ") + " vertag " + _verTag + " != " + cverTag);
-            }
-        }
+        //private void reflectedVerify(int cno, Association ass)
+        //{
+        //    Chunk chunk = _chunks[cno];
+        //    bool t = ((Chunk.TBIT & chunk._flags) > 0);
+        //    int cverTag = t ? ass.getPeerVerTag() : ass.getMyVerTag();
+        //    if (cverTag != _verTag)
+        //    {
+        //        throw new InvalidSCTPPacketException($"VerTag on an {(ChunkType)chunk._type} doesn't match " + (t ? "their " : "our ") + " vertag " + _verTag + " != " + cverTag);
+        //    }
+        //}
 
-        public void validate(Association ass)
-        {
-            // step 1 - deduce the validation rules:
-            // validation depends on the types of chunk in the list.
-            if ((_chunks != null) && (_chunks.Count > 0))
-            {
-                int init = findChunk(ChunkType.INIT);
-                if (init >= 0)
-                {
-                    if (init != 0)
-                    {
-                        throw new InvalidSCTPPacketException("Init must be only chunk in a packet");
-                    }
-                    if (_verTag != 0)
-                    {
-                        throw new InvalidSCTPPacketException("VerTag on an init packet expected to be Zeros");
-                    }
-                }
-                else
-                {
-                    int abo = findChunk(ChunkType.ABORT);
-                    if (abo >= 0)
-                    {
-                        // we have an abort
-                        _chunks = _chunks.GetRange(0, abo + 1); // remove any subsequent chunks.
-                        reflectedVerify(abo, ass);
-                    }
-                    else
-                    {
-                        int sdc = findChunk(ChunkType.SHUTDOWN_COMPLETE);
-                        if (sdc >= 0)
-                        {
-                            if (sdc == 0)
-                            {
-                                reflectedVerify(sdc, ass);
-                            }
-                            else
-                            {
-                                throw new InvalidSCTPPacketException("SHUTDOWN_COMPLETE must be only chunk in a packet");
-                            }
-                        }
-                        else
-                        {
-                            // somewhat hidden here - but this is the normal case - not init abort or shutdown complete 
-                            if (_verTag != ass.getMyVerTag())
-                            {
-                                throw new InvalidSCTPPacketException("VerTag on plain packet expected to match ours " + _verTag + " != " + ass.getMyVerTag());
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        //public void validate(Association ass)
+        //{
+        //    // step 1 - deduce the validation rules:
+        //    // validation depends on the types of chunk in the list.
+        //    if ((_chunks != null) && (_chunks.Count > 0))
+        //    {
+        //        int init = findChunk(ChunkType.INIT);
+        //        if (init >= 0)
+        //        {
+        //            if (init != 0)
+        //            {
+        //                throw new InvalidSCTPPacketException("Init must be only chunk in a packet");
+        //            }
+        //            if (_verTag != 0)
+        //            {
+        //                throw new InvalidSCTPPacketException("VerTag on an init packet expected to be Zeros");
+        //            }
+        //        }
+        //        else
+        //        {
+        //            int abo = findChunk(ChunkType.ABORT);
+        //            if (abo >= 0)
+        //            {
+        //                // we have an abort
+        //                _chunks = _chunks.GetRange(0, abo + 1); // remove any subsequent chunks.
+        //                reflectedVerify(abo, ass);
+        //            }
+        //            else
+        //            {
+        //                int sdc = findChunk(ChunkType.SHUTDOWN_COMPLETE);
+        //                if (sdc >= 0)
+        //                {
+        //                    if (sdc == 0)
+        //                    {
+        //                        reflectedVerify(sdc, ass);
+        //                    }
+        //                    else
+        //                    {
+        //                        throw new InvalidSCTPPacketException("SHUTDOWN_COMPLETE must be only chunk in a packet");
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    // somewhat hidden here - but this is the normal case - not init abort or shutdown complete 
+        //                    if (_verTag != ass.getMyVerTag())
+        //                    {
+        //                        throw new InvalidSCTPPacketException("VerTag on plain packet expected to match ours " + _verTag + " != " + ass.getMyVerTag());
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
 
-        private int findChunk(ChunkType bty)
-        {
-            int ret = 0;
-            foreach (Chunk c in _chunks)
-            {
-                if (c._type == bty)
-                {
-                    break;
-                }
-                else
-                {
-                    ret++;
-                }
-            }
-            return (ret < _chunks.Count) ? ret : -1;
-        }
+        //private int findChunk(ChunkType bty)
+        //{
+        //    int ret = 0;
+        //    foreach (Chunk c in _chunks)
+        //    {
+        //        if (c._type == bty)
+        //        {
+        //            break;
+        //        }
+        //        else
+        //        {
+        //            ret++;
+        //        }
+        //    }
+        //    return (ret < _chunks.Count) ? ret : -1;
+        //}
     }
 }

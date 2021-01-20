@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2017 pi.pe gmbh .
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,13 +27,13 @@ using SIPSorcery.Sys;
  */
 namespace SIPSorcery.Net.Sctp
 {
-    internal class SCTPMessage
+    internal class SCTPMessage : Runnable
     {
         private SCTPStream _stream;
         private byte[] _data;
         private int _offset = 0;
-        private int _pPid = 0;
-        private int _mseq; // note do we need these ?
+        private uint _pPid = 0;
+        private ushort _mseq; // note do we need these ?
         private SCTPStreamListener _li;
         private bool _delivered;
 
@@ -63,7 +63,7 @@ namespace SIPSorcery.Net.Sctp
         public SCTPMessage(SCTPStream s, SortedArray<DataChunk> chunks)
         {
             _stream = s;
-            int tot = 0;
+            uint tot = 0;
             if ((chunks.First.getFlags() & DataChunk.BEGINFLAG) == 0)
             {
                 throw new Exception("[IllegalArgumentException] must start with 'start' chunk");
@@ -83,7 +83,7 @@ namespace SIPSorcery.Net.Sctp
                 }
             }
             _data = new byte[tot];
-            int offs = 0;
+            uint offs = 0;
             foreach (DataChunk dc in chunks)
             {
                 Array.Copy(dc.getData(), 0, _data, offs, dc.getDataSize());
@@ -177,7 +177,7 @@ namespace SIPSorcery.Net.Sctp
             return _data;
         }
 
-        public void setSeq(int mseq)
+        public void setSeq(ushort mseq)
         {
             _mseq = mseq;
         }
@@ -186,7 +186,7 @@ namespace SIPSorcery.Net.Sctp
             return _mseq;
         }
 
-        public void run()
+        public override void run()
         {
             //logger.LogDebug("delegated message delivery from stream of type " + _stream.GetType().Name);
             byte[] data = _data;

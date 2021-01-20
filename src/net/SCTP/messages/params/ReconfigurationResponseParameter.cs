@@ -79,6 +79,7 @@ namespace SIPSorcery.Net.Sctp
 				 +--------+-------------------------------------+
 		 */
         public ReconfigurationResponseParameter(int t, string n) : base(t, n) { }
+        public ReconfigurationResponseParameter(uint t) : base((int)t, "ReconfigurationResponseParameter") { }
 
         public ReconfigurationResponseParameter() : this(16, "ReconfigurationResponseParameter") { }
 

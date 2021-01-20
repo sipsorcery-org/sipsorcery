@@ -128,7 +128,8 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return _sctpStream.sendasync(data);
+                _sctpStream.send(data);
+                return Task.CompletedTask;
             }
         }
 
@@ -141,7 +142,8 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return _sctpStream.sendasync(data);
+                _sctpStream.send(data);
+                return Task.CompletedTask;
             }
         }
 

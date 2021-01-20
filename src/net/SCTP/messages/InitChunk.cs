@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2017 pi.pe gmbh .
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,7 +57,7 @@ namespace SIPSorcery.Net.Sctp
         uint _initialTSN;
         byte[] _farSupportedExtensions;
         byte[] _farRandom;
-        bool _farForwardTSNsupported;
+        public bool _farForwardTSNsupported;
         byte[] _farHmacs;
         byte[] _farChunks;
         public int _outStreams;
@@ -134,12 +134,12 @@ namespace SIPSorcery.Net.Sctp
             ret.Put(_initialTSN);
         }
 
-        public int getInitiateTag()
+        public uint getInitiateTag()
         {
-            return (int)_initiateTag;
+            return (uint)_initiateTag;
         }
 
-        public long getAdRecWinCredit()
+        public uint getAdRecWinCredit()
         {
             return _adRecWinCredit;
         }
@@ -184,7 +184,7 @@ namespace SIPSorcery.Net.Sctp
             return _farSupportedExtensions;
         }
 
-        public void setInitiate(long tag)
+        public void setInitiate(uint tag)
         {
             this._initiateTag = tag;
         }

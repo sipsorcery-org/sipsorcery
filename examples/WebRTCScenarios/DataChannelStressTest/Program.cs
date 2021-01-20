@@ -30,6 +30,7 @@ namespace SIPSorcery.Demo
     class Program
     {
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
+        private const int dataSize = 64000;
 
         static void Main(string[] args)
         {
@@ -126,7 +127,7 @@ namespace SIPSorcery.Demo
                             var packetNum = new Message();
                             packetNum.Num = i;
                             packetNum.QueueName = $"{peerA._peerName} {sendLabel} {name}";
-                            packetNum.Data = new byte[64000];
+                            packetNum.Data = new byte[dataSize];
                             await peerA.SendAsync(sendLabel, packetNum.ToData()).ConfigureAwait(false);
                         }
                         catch (Exception ex)
@@ -164,6 +165,7 @@ namespace SIPSorcery.Demo
             }));
 
             await Task.WhenAll(taskList.ToArray());
+            Console.ReadLine();
         }
 
         private static void OnData(WebRTCPeer peer, byte[] obj)
@@ -220,7 +222,7 @@ namespace SIPSorcery.Demo
             public int Num;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
             public string QueueName;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64000)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = dataSize)]
             public byte[] Data;
             public byte[] ToData()
             {

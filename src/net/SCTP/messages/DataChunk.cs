@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2017 pi.pe gmbh .
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,11 +84,11 @@ namespace SIPSorcery.Net.Sctp
     {
         private static ILogger logger = Log.Logger;
 
-        public const int WEBRTCCONTROL = 50;
-        public const int WEBRTCstring = 51;
-        public const int WEBRTCBINARY = 53;
-        public const int WEBRTCstringEMPTY = 56;
-        public const int WEBRTCBINARYEMPTY = 57;
+        public const uint WEBRTCCONTROL = 50;
+        public const uint WEBRTCstring = 51;
+        public const uint WEBRTCBINARY = 53;
+        public const uint WEBRTCstringEMPTY = 56;
+        public const uint WEBRTCBINARYEMPTY = 57;
 
         public const int CONTINUEFLAG = 0;
         public const int BEGINFLAG = 2;
@@ -98,18 +98,91 @@ namespace SIPSorcery.Net.Sctp
 
         private uint _tsn;
         private int _streamId;
-        private int _sSeqNo;
-        private int _ppid;
+        private ushort _sSeqNo;
+        private uint _ppid;
         private byte[] _data;
         private int _dataOffset;
-        private int _dataLength;
+        private uint _dataLength;
 
         private DataChannelOpen _open;
         private InvalidDataChunkException _invalid;
         private bool _gapAck;
         private long _retryTime;
-        private int _retryCount;
+        public int _retryCount;
         private long _sentTime;
+        public bool retransmit;
+        public bool _abandoned;
+        public bool allInFlight;
+        public bool acked;
+        public bool unordered;
+        public DataChunk Head;
+        public uint tsn
+        {
+            get
+            {
+                return _tsn;
+            }
+        }
+        public bool endingFragment
+        {
+            get
+            {
+                return _flags == ENDFLAG || _flags == SINGLEFLAG;
+            }
+        }
+        public bool beginningFragment
+        {
+            get
+            {
+                return _flags == BEGINFLAG || _flags == SINGLEFLAG;
+            }
+        }
+        public int missIndicator;
+        public int nSent;
+        public bool immediateSack;
+
+        public uint payloadType
+        {
+            get
+            {
+                return _ppid;
+            }
+        }
+
+        public int streamIdentifier
+        {
+            get
+            {
+                return getStreamId();
+            }
+        }
+
+        public ushort streamSequenceNumber
+        {
+            get
+            {
+                return _sSeqNo;
+            }
+        }
+
+        public void setAbandoned(bool val)
+        {
+            if (Head != null)
+            {
+                Head.setAbandoned(val);
+                return;
+            }
+            this._abandoned = val;
+        }
+
+        internal bool abandoned()
+        {
+            if (Head != null)
+            {
+                return Head.abandoned();
+            }
+            return _abandoned && allInFlight;
+        }
 
         public DataChunk(byte flags, int length, ByteBuffer pkt) : base(ChunkType.DATA, flags, length, pkt)
         {
@@ -121,7 +194,7 @@ namespace SIPSorcery.Net.Sctp
                 _tsn = _body.GetUInt();
                 _streamId = _body.GetUShort();
                 _sSeqNo = _body.GetUShort();
-                _ppid = _body.GetInt();
+                _ppid = _body.GetUInt();
 
                 //logger.LogDebug(" _tsn : " + _tsn
                 //        + " _streamId : " + _streamId
@@ -148,14 +221,14 @@ namespace SIPSorcery.Net.Sctp
                         _data = new byte[_body.remaining()];
                         _body.GetBytes(_data, _data.Length);
                         _dataOffset = 0;
-                        _dataLength = _data.Length;
+                        _dataLength = (uint)_data.Length;
                         //logger.LogDebug("string data is " + Encoding.ASCII.GetString(_data));
                         break;
                     case WEBRTCBINARY:
                         _data = new byte[_body.remaining()];
                         _body.GetBytes(_data, _data.Length);
                         _dataOffset = 0;
-                        _dataLength = _data.Length;
+                        _dataLength = (uint)_data.Length;
                         //logger.LogDebug("data is " + Packet.getHex(_data));
                         break;
 
@@ -176,7 +249,7 @@ namespace SIPSorcery.Net.Sctp
                     ret = "Got an DCEP " + _open;
                     break;
                 case WEBRTCstring:
-                    ret = Encoding.UTF8.GetString(_data, _dataOffset, _dataLength);
+                    ret = Encoding.UTF8.GetString(_data, _dataOffset, (int)_dataLength);
                     break;
                 case WEBRTCstringEMPTY:
                     ret = "Empty string message";
@@ -224,7 +297,7 @@ namespace SIPSorcery.Net.Sctp
             return this._sSeqNo;
         }
 
-        public int getPpid()
+        public uint getPpid()
         {
             return this._ppid;
         }
@@ -239,12 +312,12 @@ namespace SIPSorcery.Net.Sctp
             return this._open;
         }
 
-        public void setPpid(int pp)
+        public void setPpid(uint pp)
         {
             _ppid = pp;
         }
 
-        public int getDataSize()
+        public uint getDataSize()
         {
             return _dataLength;
         }
@@ -255,7 +328,7 @@ namespace SIPSorcery.Net.Sctp
             if (len == 0)
             {
                 // ie outbound chunk.
-                len = _dataLength + 12 + 4;
+                len = (int)_dataLength + 12 + 4;
             }
             return len;
         }
@@ -266,7 +339,10 @@ namespace SIPSorcery.Net.Sctp
             ret.Put((ushort)_streamId);// = _body.getushort();
             ret.Put((ushort)_sSeqNo);// = _body.getushort();
             ret.Put(_ppid);// = _body.getInt();
-            ret.Put(_data, _dataOffset, _dataLength);
+            if (_dataLength > 0)
+            {
+                ret.Put(_data, _dataOffset, (int)_dataLength);
+            }
         }
 
         private int pad(int len)
@@ -296,7 +372,7 @@ namespace SIPSorcery.Net.Sctp
         }
 
         /// <param name="sSeqNo">the _sSeqNo to set.</param>
-        public void setsSeqNo(int sSeqNo)
+        public void setsSeqNo(ushort sSeqNo)
         {
             _sSeqNo = sSeqNo;
         }
@@ -352,7 +428,7 @@ namespace SIPSorcery.Net.Sctp
         public void setData(byte[] data)
         {
             _data = data;
-            _dataLength = data.Length;
+            _dataLength = (uint)data.Length;
             _dataOffset = 0;
         }
 
@@ -364,7 +440,7 @@ namespace SIPSorcery.Net.Sctp
         public void setData(byte[] data, int offs, int len)
         {
             _data = data;
-            _dataLength = len;
+            _dataLength = (uint)len;
             _dataOffset = offs;
         }
 
@@ -407,6 +483,16 @@ namespace SIPSorcery.Net.Sctp
         public void setSentTime(long now)
         {
             _sentTime = now;
+        }
+
+        internal void setAllInflight()
+        {
+            if (Head != null)
+            {
+                Head.allInFlight = true;
+                return;
+            }
+            allInFlight = true;
         }
     }
 }

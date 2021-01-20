@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2017 pi.pe gmbh .
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,13 @@
 
 
 using System;
+using System.Linq;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 /**
  *
@@ -28,17 +34,125 @@ using System.Threading;
  */
 namespace SIPSorcery.Net.Sctp
 {
-    static class SimpleSCTPTimer
+    internal class SimpleSCTPTimer : SCTPTimer
     {
-        private static Timer timer = null;
-        public static void setRunnable(Action r, long at)
+        private static TimerScheduler _timer = new TimerScheduler();
+        public void setRunnable(IRunnable r, long at)
         {
-            if (timer != null)
-            {
-                timer?.Dispose();
-            }
+            _timer.Schedule(r, at);
+        }
+    }
 
-            timer = new Timer((o) => { r(); }, null, at, Timeout.Infinite);
+    /**
+    * interface that hides the threading implementation.
+    * @author Westhawk Ltd<thp@westhawk.co.uk>
+    */
+    public interface SCTPTimer
+    {
+        void setRunnable(IRunnable r, long at);
+    }
+
+    public class Runnable : IRunnable
+    {
+        public bool IsFinished { get; }
+        public Action RunAction { get; set; }
+        public virtual void run()
+        {
+            RunAction?.Invoke();
+        }
+    }
+
+    public interface IRunnable
+    {
+        bool IsFinished { get; }
+        void run();
+    }
+
+    public class TimerTask : Runnable
+    {
+
+    }
+
+    public class TimerScheduler : IDisposable
+    {
+        private bool IsDisposed { get; set; }
+        private ConcurrentDictionary<IRunnable,TimerSchedule> _timerSchedules;
+        private static ILogger logger = Log.Logger;
+        private object myLock = new object();
+
+        public TimerScheduler()
+        {
+            _timerSchedules = new ConcurrentDictionary<IRunnable, TimerSchedule>();
+            Task.Run(Schedule);
+        }
+
+        public void Schedule(IRunnable timerTask, long at)
+        {
+            var tt = new TimerSchedule()
+            {
+                Runnable = timerTask,
+                At = TimeExtension.CurrentTimeMillis() + at
+            };
+            _timerSchedules.AddOrUpdate(timerTask, tt, (a, b) => tt);
+        }
+
+        public void Schedule()
+        {
+            try
+            {
+                while (!this.IsDisposed)
+                {
+                    var schedules = new TimerSchedule[0];
+
+                    lock (myLock)
+                    {
+                        schedules = _timerSchedules.Values.ToArray();
+                    }
+
+                    foreach (var schedule in schedules)
+                    {
+                        if (schedule.At < TimeExtension.CurrentTimeMillis())
+                        {
+                            _timerSchedules.AddOrUpdate(schedule.Runnable, schedule, (a, b) =>
+                            {
+                                if (b.At > schedule.At)
+                                {
+                                    return b;
+                                }
+                                return schedule;
+                            });
+                            continue;
+                        }
+
+                        try
+                        {
+                            schedule.Runnable.run();
+                            Thread.Sleep(100);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, "Runnable error");
+                        }
+                    }
+
+                    Thread.Sleep(100);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogCritical(ex, "ScheduleError");
+            }
+        }
+
+        public void Dispose()
+        {
+            IsDisposed = true;
+        }
+
+        private struct TimerSchedule
+        {
+            public IRunnable Runnable;
+            public long At;
         }
     }
 }

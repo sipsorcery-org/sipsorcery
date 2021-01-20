@@ -80,7 +80,7 @@ namespace SIPSorcery.Demo
             var pc = new RTCPeerConnection(pcConfiguration);
 
             pc.GetRtpChannel().MdnsResolve = MdnsResolve;
-            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"{_peerName}: STUN message received from {ep}, message class {msg.Header.MessageClass}.");
+            //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"{_peerName}: STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
             var dataChannel = pc.createDataChannel(_dataChannelLabel, null);
             dataChannel.onDatamessage += DataChannel_onDatamessage;
