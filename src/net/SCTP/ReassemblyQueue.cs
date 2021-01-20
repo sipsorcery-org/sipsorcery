@@ -16,13 +16,25 @@ namespace SIPSorcery.Net.Sctp
         public SortedArray<ChunkSet> ordered = new SortedArray<ChunkSet>();
         public List<ChunkSet> unordered = new List<ChunkSet>();
 
+        public int Count
+        {
+            get
+            {
+                int count = 0;
+                for(int i=0; i < ordered.Count; i++)
+                {
+                    count += ordered[i].Count;
+                }
+                return count + unorderedChunks.Count;
+            }
+        }
+
         public bool push(DataChunk chunk, out SortedArray<DataChunk> chunksReady ) 
         {
             lock (myLock)
             {
                 chunksReady = new SortedArray<DataChunk>();
                 ChunkSet? cset = null;
-                //var cset *chunkSet
 
                 if (chunk.streamIdentifier != si)
                 {
@@ -34,9 +46,7 @@ namespace SIPSorcery.Net.Sctp
                     // First, insert into unorderedChunks array
                     unorderedChunks.Add(chunk);
 
-
                     nBytes += chunk.getDataSize();
-                    //sortChunksByTSN(r.unorderedChunks)
 
                     // Scan unorderedChunks that are contiguous (in TSN)
                     cset = findCompleteUnorderedChunkSet();
@@ -218,18 +228,15 @@ namespace SIPSorcery.Net.Sctp
 
         void subtractNumBytes(int nBytes) 
         {
-            lock (myLock)
-            {
-                var cur = this.nBytes;
+            var cur = this.nBytes;
 
-                if ((int)cur >= nBytes)
-                {
-                    nBytes -= nBytes;
-                } 
-                else 
-                {
-                    nBytes = 0;
-                }
+            if ((int)cur >= nBytes)
+            {
+                this.nBytes -= (ulong)nBytes;
+            }
+            else
+            {
+                this.nBytes = 0;
             }
         }
 
@@ -311,11 +318,13 @@ namespace SIPSorcery.Net.Sctp
 
     public struct ChunkSet : IComparable
     {
+        public int Count;
         public ushort ssn;
         public uint ppi;
         public SortedArray<DataChunk> chunks;
         public ChunkSet(ushort ssn, uint ppi)
         {
+            Count = 0;
             this.ssn = ssn;
             this.ppi = ppi;
             chunks = new SortedArray<DataChunk>();
@@ -333,6 +342,7 @@ namespace SIPSorcery.Net.Sctp
 
             // append and sort
             chunks.Add(chunk);
+            Count++;
 
             //sortChunksByTSN(chunks);
 

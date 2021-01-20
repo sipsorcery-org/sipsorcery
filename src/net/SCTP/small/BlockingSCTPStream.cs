@@ -58,7 +58,7 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogError("SCTPMessage cannot be null, but it is");
                 return;
             }
-            undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
+            //undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
             a.sendAndBlock(m);
         }
 
@@ -72,7 +72,7 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogError("SCTPMessage cannot be null, but it is");
                 return;
             }
-            undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
+            //undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
             a.sendAndBlock(m);
         }
 
@@ -98,12 +98,12 @@ namespace SIPSorcery.Net.Sctp
 
         public override bool idle()
         {
-            return undeliveredOutboundMessages.Count == 0;
+            return reassemblyQueue.Count == 0;
         }
 
         public override uint getNumBytesInQueue()
         {
-            return (uint)undeliveredOutboundMessages.Values.Sum(n => (uint)n.getData().Length);
+            return (uint)reassemblyQueue.nBytes;
         }
     }
 }

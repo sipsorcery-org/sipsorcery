@@ -126,13 +126,6 @@ namespace SIPSorcery.Net.Sctp
             return $"Stream id {_sno}, label {name}, state {state}";// behaviour { _behave.GetType().Name}.";
         }
 
-        //public Chunk[] append(DataChunk dc)
-        //{
-        //    //logger.LogDebug("adding data to stash on stream " + _label + "(" + dc + ")");
-        //    reassemblyQueue.Add(dc);
-        //    return _behave.respond(this);
-        //}
-
         /**
 		 * note that behaviours must be stateless - since they can be swapped out
 		 * when we finally get the 'open'
@@ -156,64 +149,11 @@ namespace SIPSorcery.Net.Sctp
             // roll seqno here.... hopefully....
         }
 
-        // Read reads a packet of len(p) bytes, dropping the Payload Protocol Identifier.
-        //// Returns EOF when the stream is reset or an error if the stream is closed
-        //// otherwise.
-        //public int Read(byte[] p)
-        //{
-        //    return ReadSCTP(p);
-        //}
-
-        //// ReadSCTP reads a packet of len(p) bytes and returns the associated Payload
-        //// Protocol Identifier.
-        //// Returns EOF when the stream is reset or an error if the stream is closed
-        //// otherwise.
-        //int ReadSCTP(byte[] p) 
-        //{
-        //    lock (myLock)
-        //    {
-        //        while (true)
-        //        {
-        //            var bytesRead = reassemblyQueue.read(p);
-        //            if (bytesRead > 0)
-        //            {
-        //                return bytesRead;
-        //            }
-        //            readNotifier.WaitOne();
-        //        }
-        //    }
-        //}
-
         public void handleData(DataChunk pd)
         {
             lock(myLock)
             {
                 if (reassemblyQueue.push(pd, out var blocks))
-                {
-                    SCTPMessage m = new SCTPMessage(this, blocks);
-                    m.deliver(_sl);
-                    //while (reassemblyQueue.isReadable())
-                    //{
-                    //    var blocks = reassemblyQueue.read();
-                    //    if (blocks.Count > 0)
-                    //    {
-                    //        SCTPMessage m = new SCTPMessage(this, blocks);
-                    //        m.deliver(_sl);
-                    //    }
-                    //    //logger.LogDebug($"{name} readNotifier.signal()");
-                    //    //readNotifier.Set();
-                    //    //logger.LogDebug($"{name} readNotifier.signal() done");
-                    //}
-                }
-            }
-        }
-
-        public void PushQueue()
-        {
-            while (reassemblyQueue.isReadable())
-            {
-                var blocks = reassemblyQueue.read();
-                if (blocks.Count > 0)
                 {
                     SCTPMessage m = new SCTPMessage(this, blocks);
                     m.deliver(_sl);
@@ -296,11 +236,6 @@ namespace SIPSorcery.Net.Sctp
         }
 
         abstract internal void deliverMessage(SCTPMessage message);
-
-        //public void setDeferred(bool b)
-        //{
-        //    bool deferred = true;
-        //}
 
         public void reset()
         {

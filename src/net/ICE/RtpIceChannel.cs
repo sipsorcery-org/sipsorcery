@@ -1274,6 +1274,10 @@ namespace SIPSorcery.Net
         private void SendSTUNBindingRequest(ChecklistEntry candidatePair, bool setUseCandidate)
         {
             STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
+            if (string.IsNullOrEmpty(candidatePair.RequestTransactionID))
+            {
+                return;
+            }
             stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionID);
             stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(candidatePair.LocalPriority)));

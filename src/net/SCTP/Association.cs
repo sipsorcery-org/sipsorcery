@@ -612,7 +612,7 @@ namespace SIPSorcery.Net.Sctp
                             else
                             {
                                 //logger.LogInformation("Timeout -> short packet " + length);
-                                Thread.Sleep(1);
+                                //Thread.Sleep(1);
                             }
                         }
                         catch (SocketException e)

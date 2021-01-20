@@ -3,28 +3,34 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using SIPSorcery.Net.Sctp;
+using System.Collections.Concurrent;
 
 namespace SIPSorcery.Net.Sctp
 {
     public class PayloadQueue
     {
-        Dictionary<uint, DataChunk> chunkMap = new Dictionary<uint, DataChunk>();
+        private object myLock = new object();
+        ConcurrentDictionary<uint, DataChunk> chunkMap = new ConcurrentDictionary<uint, DataChunk>();
         uint[] sorted;
         List<uint> dupTSN = new List<uint>();
         protected uint nBytes;
 
 
-        private void updateSortedKeys()
+        private uint[] updateSortedKeys()
         {
-            if (sorted != null)
+            lock (myLock)
             {
-                return;
-            }
+                if (sorted != null)
+                {
+                    return sorted;
+                }
 
-            var s = new List<uint>();
-            s.AddRange(chunkMap.Keys);
-            s.Sort();// (a, b) => Utils.sna32LT(a, b) ? 1 : 0);
-            sorted = s.ToArray();
+                var s = new List<uint>();
+                s.AddRange(chunkMap.Keys);
+                s.Sort();// (a, b) => Utils.sna32LT(a, b) ? 1 : 0);
+                sorted = s.ToArray();
+                return sorted;
+            }
         }
 
         public bool canPush(DataChunk p, uint cumulativeTSN)
@@ -39,9 +45,12 @@ namespace SIPSorcery.Net.Sctp
 
         public void pushNoCheck(DataChunk p)
         {
-            chunkMap.Add(p.getTsn(), p);
+            chunkMap.TryAdd(p.getTsn(), p);
             nBytes += p.getDataSize();
-            sorted = null;
+            lock (myLock)
+            {
+                sorted = null;
+            }
         }
 
         // push pushes a payload data. If the payload data is already in our queue or
@@ -67,14 +76,17 @@ namespace SIPSorcery.Net.Sctp
         // pop pops only if the oldest chunk's TSN matches the given TSN.
         public bool pop(uint tsn, out DataChunk c)
         {
-            updateSortedKeys();
+            var s = updateSortedKeys();
 
-            if (chunkMap.Count > 0 && tsn == sorted[0])
+            if (chunkMap.Count > 0 && tsn == s[0])
             {
                 c = chunkMap[tsn];
-                chunkMap.Remove(tsn);
+                chunkMap.TryRemove(tsn, out var dc);
                 nBytes -= c.getDataSize();
-                sorted = null;
+                lock (myLock)
+                {
+                    sorted = null;
+                }
                 return true;
             }
             c = null;
@@ -104,10 +116,10 @@ namespace SIPSorcery.Net.Sctp
 
             var gapAckBlocks = new List<SackChunk.GapBlock>();
             var b = new SackChunk.GapBlock();
-            updateSortedKeys();
-            for (int i = 0; i < sorted.Length; i++)
+            var s = updateSortedKeys();
+            for (int i = 0; i < s.Length; i++)
             {
-                var tsn = sorted[i];
+                var tsn = s[i];
                 if (i == 0)
                 {
                     b.start = (ushort)(tsn - cumulativeTSN);
@@ -150,25 +162,25 @@ namespace SIPSorcery.Net.Sctp
 
         public bool getLastTSNReceived(out uint tsn)
         {
-            updateSortedKeys();
-            if ((sorted?.Length ?? 0) == 0)
+            var s = updateSortedKeys();
+            if ((s?.Length ?? 0) == 0)
             {
                 tsn = 0;
                 return false;
             }
-            tsn = sorted[sorted.Length - 1];
+            tsn = s[sorted.Length - 1];
             return true;
         }
 
         public bool getOldestTSNReceived(out uint tsn)
         {
-            updateSortedKeys();
-            if ((sorted?.Length ?? 0) == 0)
+            var s = updateSortedKeys();
+            if ((s?.Length ?? 0) == 0)
             {
                 tsn = 0;
                 return false;
             }
-            tsn = sorted[0];
+            tsn = s[0];
             return true;
         }
 

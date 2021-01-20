@@ -25,7 +25,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
-using SIPSorcery.net.SCTP;
 using SIPSorcery.Sys;
 
 /**
