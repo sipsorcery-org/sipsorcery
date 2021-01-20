@@ -170,10 +170,14 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
+                        if (sipRequest.Header.AuthenticationHeader != null)
+                        {
+                            logger.LogWarning($"Call not authenticated for {m_sipAccount.SIPUsername}@{m_sipAccount.SIPDomain}, responding with {authenticationResult.ErrorResponse}.");
+                        }
+
                         // Send authorisation failure or required response
                         SIPResponse authReqdResponse = SIPResponse.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
                         authReqdResponse.Header.AuthenticationHeader = authenticationResult.AuthenticationRequiredHeader;
-                        logger.LogWarning($"Call not authenticated for {m_sipAccount.SIPUsername}@{m_sipAccount.SIPDomain}, responding with {authenticationResult.ErrorResponse}.");
                         m_uasTransaction.SendFinalResponse(authReqdResponse);
                     }
                 }
