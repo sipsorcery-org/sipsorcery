@@ -273,7 +273,7 @@ serverReadyEvent);
                     clientChannel.DisableLocalTCPSocketsCheck = true;
                     SIPURI serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-                    logger.LogDebug($"Server URI {serverUri.ToString()}.");
+                    logger.LogDebug($"Server URI {serverUri}.");
 
                     var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverUri, testComplete, cancelServer, serverReadyEvent); });
 

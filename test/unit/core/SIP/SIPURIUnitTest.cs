@@ -802,5 +802,125 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("-----------------------------------------");
         }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default UDP port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultUdpPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:5060?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.udp, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a the port not set is correctly recognised as using the
+        /// default port.
+        /// </summary>
+        [Fact]
+        public void DefaultUdpPortWhenNotSetUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.udp, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a non-default UDP port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void NonDefaultUdpPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:5080?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.udp, uri.Protocol);
+            Assert.False(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default TCP port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultTcpPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:5060;transport=tcp?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.tcp, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default TLS port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultTlsPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sips:user@[2001:730:3ec2::10]:5061?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.tls, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default Web Socket port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultWebSocketPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:80;transport=ws?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.ws, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default Secure Web Socket port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultSecureWebSocketPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:443;transport=wss?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.wss, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
     }
 }

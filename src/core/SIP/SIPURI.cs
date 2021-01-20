@@ -624,5 +624,41 @@ namespace SIPSorcery.SIP
 
             return null;
         }
+
+        /// <summary>
+        /// Indicates whether the SIP URI is using the default port for its protocol.
+        /// Default ports are 5060 for UDP and TCP, 5061 for TLS, 80 for WS and 443 for WSS.
+        /// </summary>
+        /// <returns>True if the default port is being used, false if not.</returns>
+        public bool IsDefaultPort()
+        {
+            if(HostPort == null)
+            {
+                // If the URI does not contain an explicit port it means the default is implcit.
+                return true;
+            }
+            else if (int.TryParse(HostPort, out var port))
+            {
+                switch(Protocol)
+                {
+                    case SIPProtocolsEnum.udp:
+                    case SIPProtocolsEnum.tcp:
+                        return port == SIPConstants.DEFAULT_SIP_PORT;
+                    case SIPProtocolsEnum.tls:
+                        return port == SIPConstants.DEFAULT_SIP_TLS_PORT;
+                    case SIPProtocolsEnum.ws:
+                        return port == SIPConstants.DEFAULT_SIP_WEBSOCKET_PORT;
+                    case SIPProtocolsEnum.wss:
+                        return port == SIPConstants.DEFAULT_SIPS_WEBSOCKET_PORT;
+                    default:
+                        return false;
+                }
+            }
+            else
+            {
+                // Couldn't understand the port. Assume it's not a default.
+                return false;
+            }
+        }
     }
 }
