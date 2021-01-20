@@ -245,54 +245,8 @@ namespace SIPSorcery.Net.Sctp
 
         public override void enqueue(DataChunk d)
         {
-            //pendingQueue.push(d);
-            // todo - this worries me - 2 nested synchronized 
-            //logger.LogDebug(" Aspiring to enqueue " + d.ToString());
-
-            lock (this)
-            {
-                //long now = TimeExtension.CurrentTimeMillis();
-                //d.setTsn(myNextTSN++);
-                //d.setGapAck(false);
-                //d.setRetryTime(now + getT3() - 1);
-                //d.setSentTime(now);
-                pendingQueue.push(d);
-                //_timer.setRunnable(this, getT3());
-                //reduceRwnd(d.getDataSize());
-                //_outbound.put(new Long(d.getTsn()), d);
-                //logger.LogDebug(" DataChunk enqueued " + d.ToString());
-                // all sorts of things wrong here - being in a synchronized not the least of them
-
-                //Chunk[] toSend = addSackIfNeeded(d);
-                //try
-                //{
-                //    send(toSend);
-                //    //incrRwnd(d.getDataSize());
-                //    //logger.LogDebug("sent, syncing on inFlight... " + d.getTsn());
-                //    lock (_inFlight)
-                //    {
-                //        _inFlight.Add(d.getTsn(), d);
-                //    }
-                //    //logger.LogDebug("added to inFlight... " + d.getTsn());
-
-                //}
-                //catch (SctpPacketFormatException ex)
-                //{
-                //    logger.LogError("badly formatted chunk " + d.ToString());
-                //    logger.LogError(ex.ToString());
-                //}
-                //catch (EndOfStreamException end)
-                //{
-                //    unexpectedClose(end);
-                //    logger.LogError(end.ToString());
-                //}
-                //catch (IOException ex)
-                //{
-                //    logger.LogError("Can not send chunk " + d.ToString());
-                //    logger.LogError(ex.ToString());
-                //}
-            }
-            //logger.LogDebug("leaving enqueue" + d.getTsn());
+            d.immediateSack = true;
+            pendingQueue.push(d);
         }
 
         internal override void sendAndBlock(SCTPMessage m)
@@ -314,36 +268,6 @@ namespace SIPSorcery.Net.Sctp
                     dc.Head = head;
                 }
                 m.fill(dc);
-                //logger.LogDebug("thinking about waiting for congestion " + dc.getTsn());
-
-                //var sw = Stopwatch.StartNew();
-                ////logger.LogDebug("In congestion sync block ");
-                //while (!this.maySend(dc.getDataSize()))
-                //{
-                //    if (IsDone)
-                //    {
-                //        throw new TlsNoCloseNotifyException();
-                //    }
-                //    //logger.LogDebug("about to wait for congestion for " + this.getT3());
-                //    var waitTime = (int)this.getT3();
-                //    lock (_congestion)
-                //    {
-                //        Monitor.Wait(_congestion, waitTime);// wholly wrong
-                //    }
-
-                //    if (sw.Elapsed.TotalSeconds > 10)
-                //    {
-                //        if (dc._type == ChunkType.SACK)
-                //        {
-                //            break;
-                //        }
-                //        else
-                //        {
-                //            throw new TimeoutException("Timeout sending data");
-                //        }
-                //    }
-                //}
-                // todo check rollover - will break at maxint.
                 enqueue(dc);
             }
         }

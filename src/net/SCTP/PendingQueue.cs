@@ -7,6 +7,7 @@ namespace SIPSorcery.Net.Sctp
 {
     public class PendingQueue : PayloadQueue
     {
+        private object myLock = new object();
         ConcurrentQueue<DataChunk> unorderedQueue = new ConcurrentQueue<DataChunk>();
         ConcurrentQueue<DataChunk> orderedQueue = new ConcurrentQueue<DataChunk>();
         bool selected;
@@ -22,7 +23,10 @@ namespace SIPSorcery.Net.Sctp
             {
                 orderedQueue.Enqueue(c);      
             }
-            nBytes += c.getDataSize();
+            lock (myLock)
+            {
+                nBytes += c.getDataSize();
+            }
         }
 
         public DataChunk peek()
@@ -123,7 +127,10 @@ namespace SIPSorcery.Net.Sctp
                     }
                 }
             }
-            nBytes -= c.getDataSize();            
+            lock (myLock)
+            {
+                nBytes -= c.getDataSize();
+            }
         }
 
         public override int size()
