@@ -29,7 +29,7 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        public bool push(DataChunk chunk, out SortedArray<DataChunk> chunksReady ) 
+        public bool push(DataChunk chunk, out SortedArray<DataChunk> chunksReady)
         {
             lock (myLock)
             {
@@ -101,129 +101,47 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        public bool isReadable() 
+        private SortedArray<DataChunk> read()
         {
-            lock (myLock)
+            var list = new SortedArray<DataChunk>();
+            ChunkSet? cset = null;
+            // Check unordered first
+            if (unordered.Count > 0)
             {
-                // Check unordered first
-                if (unordered.Count > 0)
-                {
-                    // The chunk sets in r.unordered should all be complete.
-                    return true;
-                }
-
-                // Check ordered sets
-                if (ordered.Count > 0)
-                {
-                    var cset = ordered[0];
-                    if (cset.isComplete())
-                    {
-                        if (Utils.sna16LTE(cset.ssn, nextSSN))
-                        {
-                            return true;
-                        }
-                    }
-                }
-                return false;
+                cset = unordered[0];
+                unordered.RemoveAt(0);
             }
-        }
-
-        //public int read(byte[] buf) 
-        //{
-        //    ChunkSet? cset = null;
-        //    // Check unordered first
-        //    if (unordered.Count > 0)
-        //    {
-        //        cset = unordered[0];
-        //        unordered.RemoveAt(0);
-        //    }
-        //    else if (ordered.Count > 0)
-        //    {
-        //        // Now, check ordered
-        //        cset = ordered[0];
-		      //  if (!cset?.isComplete() ?? false)
-        //        {
-        //            return 0;
-		      //  }
-		      //  if (Utils.sna16GT(cset.Value.ssn, nextSSN))
-        //        {
-        //            return 0;
-		      //  }
-        //        ordered.Remove(cset.Value);
-		      //  if (cset.Value.ssn == nextSSN)
-        //        {
-        //            nextSSN++;
-		      //  }
-	       // }
-        //    else
-        //    {
-        //        return 0;
-        //    }
-
-        //    // Concat all fragments into the buffer
-        //    var nWritten = 0;
-        //    var ppi = cset.Value.ppi;
-        //    int leftOver = buf.Length;
-        //    foreach(var c in cset.Value.chunks)
-        //    {
-        //        var toCopy = (int)c.getDataSize();
-        //        if (leftOver > toCopy)
-        //        {
-        //            throw new Exception("Buffer too small");
-        //        }
-        //        subtractNumBytes(toCopy);
-        //        Buffer.BlockCopy(c.getData(), 0, buf, nWritten, toCopy);
-        //        nWritten += toCopy;
-        //        leftOver -= toCopy;
-	       // }
-
-        //    return nWritten;
-        //}
-
-        public SortedArray<DataChunk> read()
-        {
-            lock (myLock)
+            else if (ordered.Count > 0)
             {
-                var list = new SortedArray<DataChunk>();
-                ChunkSet? cset = null;
-                // Check unordered first
-                if (unordered.Count > 0)
-                {
-                    cset = unordered[0];
-                    unordered.RemoveAt(0);
-                }
-                else if (ordered.Count > 0)
-                {
-                    // Now, check ordered
-                    cset = ordered[0];
-                    if (!cset?.isComplete() ?? false)
-                    {
-                        return list;
-                    }
-                    if (Utils.sna16GT(cset.Value.ssn, nextSSN))
-                    {
-                        return list;
-                    }
-                    ordered.Remove(cset.Value);
-                    if (cset.Value.ssn == nextSSN)
-                    {
-                        nextSSN++;
-                    }
-                }
-                else
+                // Now, check ordered
+                cset = ordered[0];
+                if (!cset?.isComplete() ?? false)
                 {
                     return list;
                 }
-
-                foreach (var c in cset.Value.chunks)
+                if (Utils.sna16GT(cset.Value.ssn, nextSSN))
                 {
-                    var toCopy = (int)c.getDataSize();
-                    subtractNumBytes(toCopy);
-                    list.Add(c);
+                    return list;
                 }
-
+                ordered.Remove(cset.Value);
+                if (cset.Value.ssn == nextSSN)
+                {
+                    nextSSN++;
+                }
+            }
+            else
+            {
                 return list;
             }
+
+            foreach (var c in cset.Value.chunks)
+            {
+                var toCopy = (int)c.getDataSize();
+                subtractNumBytes(toCopy);
+                list.Add(c);
+            }
+
+            return list;
         }
 
         void subtractNumBytes(int nBytes) 
@@ -343,10 +261,6 @@ namespace SIPSorcery.Net.Sctp
             // append and sort
             chunks.Add(chunk);
             Count++;
-
-            //sortChunksByTSN(chunks);
-
-            //chunks.isc
 
             // Check if we now have a complete set
             return isComplete();
