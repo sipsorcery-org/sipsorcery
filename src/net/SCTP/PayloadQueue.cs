@@ -46,9 +46,9 @@ namespace SIPSorcery.Net.Sctp
         public void pushNoCheck(DataChunk p)
         {
             chunkMap.TryAdd(p.getTsn(), p);
-            nBytes += p.getDataSize();
             lock (myLock)
             {
+                nBytes += p.getDataSize();
                 sorted = null;
             }
         }
@@ -82,9 +82,9 @@ namespace SIPSorcery.Net.Sctp
             {
                 c = chunkMap[tsn];
                 chunkMap.TryRemove(tsn, out var dc);
-                nBytes -= c.getDataSize();
                 lock (myLock)
                 {
+                    nBytes -= c.getDataSize();
                     sorted = null;
                 }
                 return true;
@@ -153,7 +153,10 @@ namespace SIPSorcery.Net.Sctp
                 c.acked = true;
                 c.retransmit = false;
                 nBytesAcked = c.getDataSize();
-                //nBytes -= nBytesAcked;
+                lock (myLock)
+                {
+                    nBytes -= nBytesAcked;
+                }
                 c.setData(new byte[0]);
             }
 
@@ -168,7 +171,10 @@ namespace SIPSorcery.Net.Sctp
                 c.acked = true;
                 c.retransmit = false;
                 nBytesAcked = c.getDataSize();
-                //nBytes -= nBytesAcked;
+                lock (myLock)
+                {
+                    nBytes -= nBytesAcked;
+                }
                 c.setData(new byte[0]);
             }
             else

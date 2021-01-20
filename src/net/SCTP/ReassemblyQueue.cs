@@ -20,12 +20,15 @@ namespace SIPSorcery.Net.Sctp
         {
             get
             {
-                int count = 0;
-                for(int i=0; i < ordered.Count; i++)
+                lock (myLock)
                 {
-                    count += ordered[i].Count;
+                    int count = 0;
+                    for (int i = 0; i < ordered.Count; i++)
+                    {
+                        count += ordered[i].Count;
+                    }
+                    return count + unorderedChunks.Count;
                 }
-                return count + unorderedChunks.Count;
             }
         }
 

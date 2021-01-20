@@ -37,14 +37,6 @@ namespace SIPSorcery.Net.Sctp
             cumulativeTSNAck = cumuTSNAck;
         }
 
-        /**
-		 * @return the _arWin
-		 */
-        public long getArWin()
-        {
-            return advertisedReceiverWindowCredit;
-        }
-
         /*
     
 		 0                   1                   2                   3

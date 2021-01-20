@@ -198,7 +198,7 @@ namespace SIPSorcery.Net.Sctp
 
         abstract public void send(byte[] message);
 
-        abstract public uint getNumBytesInQueue();
+        abstract public uint getNumBytesInReassemblyQueue();
 
         public Association getAssociation()
         {

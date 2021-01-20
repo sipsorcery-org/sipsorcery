@@ -103,7 +103,7 @@ namespace SIPSorcery.Net.Sctp
             return reassemblyQueue.Count == 0;
         }
 
-        public override uint getNumBytesInQueue()
+        public override uint getNumBytesInReassemblyQueue()
         {
             return (uint)reassemblyQueue.nBytes;
         }

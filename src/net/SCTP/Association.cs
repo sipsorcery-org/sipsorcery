@@ -434,7 +434,7 @@ namespace SIPSorcery.Net.Sctp
             uint bytesQueued = 0;
             foreach (var s in _streams)
             {
-                bytesQueued += s.Value.getNumBytesInQueue();
+                bytesQueued += s.Value.getNumBytesInReassemblyQueue();
             }
 
             if (bytesQueued >= maxReceiveBufferSize)
@@ -2279,27 +2279,6 @@ namespace SIPSorcery.Net.Sctp
             return tsn;
         }
 
-        private SackChunk mkSack()
-        {
-            SackChunk ret = new SackChunk();
-            ret.setCumuTSNAck(peerLastTSN);
-            int stashcap = calcStashCap();
-            ret.advertisedReceiverWindowCredit = (uint)(MAXBUFF - stashcap);
-            ret.gapAckBlocks = pendingQueue.getGapAckBlocks(peerLastTSN);
-            ret.duplicateTSN = pendingQueue.popDuplicates();
-            //logger.LogDebug("made SACK " + ret.ToString());
-            return ret;
-        }
-
-        private int calcStashCap()
-        {
-            int ret = 0;
-            foreach (SCTPStream s in this._streams.Values)
-            {
-                ret += s.stashCap();
-            }
-            return ret;
-        }
 
         public abstract void enqueue(DataChunk d);
 
@@ -2460,7 +2439,7 @@ namespace SIPSorcery.Net.Sctp
 
         protected void handleSack(SackChunk d)
         {
-            logger.LogTrace($"{name} SACK: cumTSN={d.cumulativeTSNAck} _rwnd={d.getArWin()}");
+            logger.LogTrace($"{name} SACK: cumTSN={d.cumulativeTSNAck} _rwnd={d.advertisedReceiverWindowCredit}");
             var state = this._state;
             if (state != State.ESTABLISHED)
             {
@@ -2521,13 +2500,13 @@ namespace SIPSorcery.Net.Sctp
 
             // bytes acked were already subtracted by markAsAcked() method
             var bytesOutstanding = inflightQueue.getNumBytes();
-            if (bytesOutstanding >= d.getArWin())
+            if (bytesOutstanding >= d.advertisedReceiverWindowCredit)
             {
                 _rwnd = 0;
             }
             else
             {
-                _rwnd = (uint)d.getArWin() - bytesOutstanding;
+                _rwnd = (uint)d.advertisedReceiverWindowCredit - bytesOutstanding;
             }
 
             processFastRetransmission(d.cumulativeTSNAck, htna, cumTSNAckPointAdvanced);
