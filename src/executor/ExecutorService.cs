@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -9,27 +10,31 @@ namespace SIPSorcery.executor
 {
     public class ExecutorService : IDisposable
     {
-        private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
-
+        public bool IsDisposed;
+        private BlockingCollection<SCTPMessage> messages = new BlockingCollection<SCTPMessage>();
+        public ExecutorService()
+        {
+            Task.Run(ProcessQueue);
+        }
         public void Dispose()
         {
-            _semaphore?.Dispose();
+            IsDisposed = true;
+        }
+
+        private void ProcessQueue()
+        {
+            while (!IsDisposed)
+            {
+                foreach (var msg in messages.GetConsumingEnumerable())
+                {
+                    msg.run();
+                }
+            }
         }
 
         internal void execute(SCTPMessage message)
         {
-            Task.Run(async () =>
-            {
-                await _semaphore.WaitAsync().ConfigureAwait(false);
-                try
-                {
-                    message.run();
-                }
-                finally
-                {
-                    _semaphore.Release();
-                }
-            });
+            messages.Add(message);
         }
     }
 }

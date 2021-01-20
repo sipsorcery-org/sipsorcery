@@ -58,6 +58,7 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogError("SCTPMessage cannot be null, but it is");
                 return;
             }
+            AddBytesToBuffer(m.Count);
             //undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
             a.sendAndBlock(m);
         }
@@ -73,13 +74,14 @@ namespace SIPSorcery.Net.Sctp
                 return;
             }
             //undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
+            AddBytesToBuffer(m.Count);
             a.sendAndBlock(m);
         }
 
         internal override void deliverMessage(SCTPMessage message)
         {
-            message.run();
-            //_ex_service.execute(message);
+            //message.run();
+            _ex_service.execute(message);
         }
 
         public override void delivered(DataChunk d)

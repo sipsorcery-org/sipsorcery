@@ -1145,10 +1145,8 @@ namespace SIPSorcery.Net.Sctp
 
             if (_streams.TryGetValue(c.getStreamId(), out var s))
             {
-                try
+                lock(s.rwLock)
                 {
-                    s.RWLock.AcquireWriterLock(10000);
-
                     if (s.reliabilityType == ReliabilityType.TypeRexmit)
                     {
                         if (c._retryCount >= s.reliabilityValue)
@@ -1167,10 +1165,6 @@ namespace SIPSorcery.Net.Sctp
                             logger.LogTrace($"{name} marked as abandoned: tsn={c.tsn} ppi={c.payloadType} (timed: {elapsed})");
                         }
                     }
-                }
-                finally
-                {
-                    s.RWLock.ReleaseWriterLock();
                 }
             }
             else
@@ -2514,11 +2508,7 @@ namespace SIPSorcery.Net.Sctp
                 var nBytesAcked = item.Value;
                 if (_streams.TryGetValue(si, out var s))
                 {
-                    s.RWLock.ReleaseLock();
-
                     s.onBufferReleased(nBytesAcked);
-
-                    s.RWLock.AcquireWriterLock(10000);
                 }
             }
 
@@ -2751,7 +2741,7 @@ namespace SIPSorcery.Net.Sctp
                         t3RTX.stop();
                     }
 
-                    var nBytesAcked = inflightQueue.markAsAcked(c.tsn);
+                    var nBytesAcked = inflightQueue.markAsAcked(c);
 
                     if (bytesAckedPerStream.TryGetValue(c.getStreamId(), out var amount))
                     {

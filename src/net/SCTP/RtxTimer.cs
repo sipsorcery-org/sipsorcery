@@ -244,7 +244,7 @@ namespace SIPSorcery.Net.Sctp
             {
                 mutex.WaitOne();
 
-                cancelToken.Cancel();
+                cancelToken?.Cancel();
                 closed = true;
                 stopFunc = null;
             }

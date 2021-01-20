@@ -47,7 +47,6 @@ namespace SIPSorcery.Net.Sctp
 		 - and I wonder if closures would do it better.
 		 */
 
-        private object myLock = new object();
         private static ILogger logger = Log.Logger;
 
         private SCTPStreamBehaviour _behave;
@@ -65,7 +64,7 @@ namespace SIPSorcery.Net.Sctp
         private State state = State.OPEN;
         private long bufferedAmount;
         private long bufferedAmountLow;
-        public ReaderWriterLock RWLock = new ReaderWriterLock();
+        public object rwLock = new object();
         public Action onBufferedAmountLow;
         private ManualResetEvent readNotifier = new ManualResetEvent(false);
 
@@ -151,13 +150,10 @@ namespace SIPSorcery.Net.Sctp
 
         public void handleData(DataChunk pd)
         {
-            lock(myLock)
+            if (reassemblyQueue.push(pd, out var blocks))
             {
-                if (reassemblyQueue.push(pd, out var blocks))
-                {
-                    SCTPMessage m = new SCTPMessage(this, blocks);
-                    m.deliver(_sl);
-                }
+                SCTPMessage m = new SCTPMessage(this, blocks);
+                m.deliver(_sl);
             }
         }
 
@@ -301,6 +297,20 @@ namespace SIPSorcery.Net.Sctp
             return true;
         }
 
+        public void AddBytesToBuffer(uint nBytesAdded)
+        {
+            if (nBytesAdded <= 0)
+            {
+                return;
+            }
+
+            lock (rwLock)
+            {
+                bufferedAmount += nBytesAdded;
+            }
+        }
+
+
         internal void onBufferReleased(uint nBytesReleased)
         {
             if (nBytesReleased <= 0)
@@ -308,34 +318,36 @@ namespace SIPSorcery.Net.Sctp
                 return;
             }
 
-            this.RWLock.AcquireWriterLock(10000);
-            var fromAmount = bufferedAmount;
-
-
-            if (bufferedAmount < nBytesReleased)
+            Action f = null;
+            lock (rwLock)
             {
-                bufferedAmount = 0;
+                var fromAmount = bufferedAmount;
 
-                logger.LogError($"{name} released buffer size {nBytesReleased} should be <= {bufferedAmount}");
+
+                if (bufferedAmount < nBytesReleased)
+                {
+                    bufferedAmount = 0;
+
+                    logger.LogError($"{name} released buffer size {nBytesReleased} should be <= {bufferedAmount}");
+                }
+                else
+                {
+                    bufferedAmount -= nBytesReleased;
+                }
+
+                logger.LogTrace($"{name} bufferedAmount = {bufferedAmount}");
+
+
+                if (onBufferedAmountLow != null && fromAmount > bufferedAmountLow && bufferedAmount <= bufferedAmountLow)
+                {
+                    f = onBufferedAmountLow;
+                }
             }
-            else
+
+            if (f != null)
             {
-                bufferedAmount -= nBytesReleased;      
-            }
-
-            logger.LogTrace($"{name} bufferedAmount = {bufferedAmount}");
-
-
-            if (onBufferedAmountLow != null && fromAmount > bufferedAmountLow && bufferedAmount <= bufferedAmountLow)
-            {
-                var f = onBufferedAmountLow;
-                this.RWLock.ReleaseWriterLock();
                 f();
-                return;
-
             }
-
-            this.RWLock.ReleaseWriterLock();
         }
     }
 }

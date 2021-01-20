@@ -83,6 +83,7 @@ namespace SIPSorcery.Demo
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"{_peerName}: STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
             var dataChannel = pc.createDataChannel(_dataChannelLabel, null);
+            dataChannel.onDatamessage -= DataChannel_onDatamessage;
             dataChannel.onDatamessage += DataChannel_onDatamessage;
             _dataChannels.Add(_dataChannelLabel, dataChannel);
 
@@ -115,6 +116,7 @@ namespace SIPSorcery.Demo
             pc.ondatachannel += (dc) =>
             {
                 dc.onopen += () => logger.LogDebug($"{_peerName}: Data channel now open label {dc.label}, stream ID {dc.id}.");
+                dc.onDatamessage -= DataChannel_onDatamessage;
                 dc.onDatamessage += DataChannel_onDatamessage;
                 logger.LogDebug($"{_peerName}: Data channel created by remote peer, label {dc.label}, stream ID {dc.id}.");
                 _dataChannels.Add(dc.label, dc);

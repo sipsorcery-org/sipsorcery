@@ -185,6 +185,13 @@ namespace SIPSorcery.Net.Sctp
         {
             return _mseq;
         }
+        public uint Count
+        {
+            get
+            {
+                return (uint)(_data?.Length ?? 0);
+            }
+        }
 
         public override void run()
         {
