@@ -114,6 +114,44 @@
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public class AudioEncoder : IAudioEncoder</code></pre>
   </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder__ctor_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.%23ctor(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L59">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_AudioEncoder__ctor_" data-uid="SIPSorcery.Media.AudioEncoder.#ctor*"></a>
+  <h4 id="SIPSorcery_Media_AudioEncoder__ctor_System_Boolean_" data-uid="SIPSorcery.Media.AudioEncoder.#ctor(System.Boolean)">AudioEncoder(Boolean)</h4>
+  <div class="markdown level1 summary"><p>Creates a new audio encoder instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public AudioEncoder(bool includeLinearFormats = false)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">includeLinearFormats</span></td>
+        <td><p>If set to true the linear audio formats will be added
+to the list of supported formats. The reason they are only included if explicitly requested
+is they are not very popular for other VoIP systems and thereofre needlessly pollute the SDP.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="properties">Properties
   </h3>
   <span class="small pull-right mobile-hide">
@@ -121,7 +159,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_SupportedFormats.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.SupportedFormats%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L44">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L48">View Source</a>
   </span>
   <a id="SIPSorcery_Media_AudioEncoder_SupportedFormats_" data-uid="SIPSorcery.Media.AudioEncoder.SupportedFormats*"></a>
   <h4 id="SIPSorcery_Media_AudioEncoder_SupportedFormats" data-uid="SIPSorcery.Media.AudioEncoder.SupportedFormats">SupportedFormats</h4>
@@ -153,7 +191,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_DecodeAudio_System_Byte___SIPSorceryMedia_Abstractions_AudioFormat_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte%5B%5D%2CSIPSorceryMedia.Abstractions.AudioFormat)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L113">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L116">View Source</a>
   </span>
   <a id="SIPSorcery_Media_AudioEncoder_DecodeAudio_" data-uid="SIPSorcery.Media.AudioEncoder.DecodeAudio*"></a>
   <h4 id="SIPSorcery_Media_AudioEncoder_DecodeAudio_System_Byte___SIPSorceryMedia_Abstractions_AudioFormat_" data-uid="SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.AudioFormat)">DecodeAudio(Byte[], AudioFormat)</h4>
@@ -207,7 +245,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Int16___SIPSorceryMedia_Abstractions_AudioFormat_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16%5B%5D%2CSIPSorceryMedia.Abstractions.AudioFormat)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L64">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L67">View Source</a>
   </span>
   <a id="SIPSorcery_Media_AudioEncoder_EncodeAudio_" data-uid="SIPSorcery.Media.AudioEncoder.EncodeAudio*"></a>
   <h4 id="SIPSorcery_Media_AudioEncoder_EncodeAudio_System_Int16___SIPSorceryMedia_Abstractions_AudioFormat_" data-uid="SIPSorcery.Media.AudioEncoder.EncodeAudio(System.Int16[],SIPSorceryMedia.Abstractions.AudioFormat)">EncodeAudio(Int16[], AudioFormat)</h4>
@@ -259,7 +297,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioEncoder_Resample_System_Int16___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioEncoder.Resample(System.Int16%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L153">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/AudioEncoder.cs/#L156">View Source</a>
   </span>
   <a id="SIPSorcery_Media_AudioEncoder_Resample_" data-uid="SIPSorcery.Media.AudioEncoder.Resample*"></a>
   <h4 id="SIPSorcery_Media_AudioEncoder_Resample_System_Int16___System_Int32_System_Int32_" data-uid="SIPSorcery.Media.AudioEncoder.Resample(System.Int16[],System.Int32,System.Int32)">Resample(Int16[], Int32, Int32)</h4>

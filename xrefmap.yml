@@ -2322,6 +2322,19 @@ references:
   commentId: T:SIPSorcery.Media.AudioEncoder
   fullName: SIPSorcery.Media.AudioEncoder
   nameWithType: AudioEncoder
+- uid: SIPSorcery.Media.AudioEncoder.#ctor(System.Boolean)
+  name: AudioEncoder(Boolean)
+  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder__ctor_System_Boolean_
+  commentId: M:SIPSorcery.Media.AudioEncoder.#ctor(System.Boolean)
+  fullName: SIPSorcery.Media.AudioEncoder.AudioEncoder(System.Boolean)
+  nameWithType: AudioEncoder.AudioEncoder(Boolean)
+- uid: SIPSorcery.Media.AudioEncoder.#ctor*
+  name: AudioEncoder
+  href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder__ctor_
+  commentId: Overload:SIPSorcery.Media.AudioEncoder.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Media.AudioEncoder.AudioEncoder
+  nameWithType: AudioEncoder.AudioEncoder
 - uid: SIPSorcery.Media.AudioEncoder.DecodeAudio(System.Byte[],SIPSorceryMedia.Abstractions.AudioFormat)
   name: DecodeAudio(Byte[], AudioFormat)
   href: api/SIPSorcery.Media.AudioEncoder.html#SIPSorcery_Media_AudioEncoder_DecodeAudio_System_Byte___SIPSorceryMedia_Abstractions_AudioFormat_
