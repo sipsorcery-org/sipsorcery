@@ -125,7 +125,7 @@ namespace SIPSorcery.Net
             if (Kind == SDPMediaTypesEnum.audio)
             {
                 var audioFormat = AudioVideoWellKnown.WellKnownAudioFormats[knownFormat];
-                Rtpmap = SetRtpmap(audioFormat.FormatName, audioFormat.ClockRate, audioFormat.ChannelCount);
+                Rtpmap = SetRtpmap(audioFormat.FormatName, audioFormat.RtpClockRate, audioFormat.ChannelCount);
             }
             else
             {
@@ -270,7 +270,7 @@ namespace SIPSorcery.Net
             {
                 int clockRate = rtpClockRate;
 
-                // G722 is a special case. It's the only audio foramt that uses the wrong RTP clock rate.
+                // G722 is a special case. It's the only audio format that uses the wrong RTP clock rate.
                 // It sets 8000 in the SDP but then expects samples to be sent as 16KHz.
                 // See https://tools.ietf.org/html/rfc3551#section-4.5.2.
                 if (name == "G722" && rtpClockRate == 8000)
