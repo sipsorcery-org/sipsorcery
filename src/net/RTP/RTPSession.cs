@@ -712,7 +712,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Gets the RTP end point for an SDP media announcement from the remote peer.
         /// </summary>
-        /// <param name="announcement">The media announcement to get teh connection address for.</param>
+        /// <param name="announcement">The media announcement to get the connection address for.</param>
         /// <param name="connectionAddress">The remote SDP session level connection address. Will be null if not available.</param>
         /// <returns>An IP end point for an SDP media announcement from the remote peer.</returns>
         private IPEndPoint GetAnnouncementRTPDestination(

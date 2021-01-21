@@ -145,7 +145,7 @@ namespace SIPSorcery.Media
         private void AudioFormatsNegotiated(List<AudioFormat> audoFormats)
         {
             var audioFormat = audoFormats.First();
-            logger.LogDebug($"Setting audio sink and source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
+            logger.LogDebug($"Setting audio sink and source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate} (RTP clock rate {audioFormat.RtpClockRate}).");
             Media.AudioSink?.SetAudioSinkFormat(audioFormat);
             Media.AudioSource?.SetAudioSourceFormat(audioFormat);
             _audioExtrasSource.SetAudioSourceFormat(audioFormat);

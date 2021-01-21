@@ -16,19 +16,19 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Usage - with two wbcams:
-// Listening application:
-// dotnet run
-//
-// Calling application:
-// dotnet run --no-build -- --dst=127.0.0.1:5080 --cam=1
-//
 // Usage - with testpatterns:
 // Listening application:
 // dotnet run -- --tp
 //
 // Calling application:
 // dotnet run --no-build -- --dst=127.0.0.1:5080 --tp
+//
+// Usage - with two webcams:
+// Listening application:
+// dotnet run
+//
+// Calling application:
+// dotnet run --no-build -- --dst=127.0.0.1:5080 --cam=1
 //-----------------------------------------------------------------------------
 
 using System;
@@ -56,7 +56,7 @@ namespace demo
     public class Options
     {
         [Option("dst", Required = false,
-            HelpText = "The SIP URI to call. Format \"--dst=127.0.0.1:5080\".")]
+            HelpText = "The SIP URI to call. Format \"--dst=sip:3333@sip2sip.info\".")]
         public string CallDestination { get; set; }
 
         [Option("cam", Required = false,
@@ -71,13 +71,13 @@ namespace demo
            HelpText = "If set will list the available video formats for a webcam and exit. Format \"--listformats=0\".")]
         public int? ListFormats { get; set; }
 
-        [Option("tp", Required = false,
+        [Option("tp", Required = false, Default = true,
            HelpText = "If set will use a test pattern source instead of a webcam feed. Format \"--tp\".")]
         public bool TestPattern { get; set; }
-
-        [Option("audio", Required = false,
-            HelpText = "If set will include an audio stream in the call. Format \"--audio\".")]
-        public bool UseAudio { get; set; }
+        
+        [Option("noaudio", Required = false, Default =false,
+            HelpText = "If set will exclude the audio stream from the call. Format \"--noaudio\".")]
+        public bool NoAudio { get; set; }
     }
 
     public class DecoderVideoSink : IVideoSink
@@ -109,9 +109,16 @@ namespace demo
         {
             if (OnVideoSinkDecodedSample != null)
             {
-                foreach (var decoded in _videoDecoder.DecodeVideo(frame, VideoPixelFormatsEnum.Bgr, format.Codec))
+                try
                 {
-                    OnVideoSinkDecodedSample(decoded.Sample, decoded.Width, decoded.Height, (int)(decoded.Width * 3), VideoPixelFormatsEnum.Bgr);
+                    foreach (var decoded in _videoDecoder.DecodeVideo(frame, VideoPixelFormatsEnum.Bgr, format.Codec))
+                    {
+                        OnVideoSinkDecodedSample(decoded.Sample, decoded.Width, decoded.Height, (int)(decoded.Width * 3), VideoPixelFormatsEnum.Bgr);
+                    }
+                }
+                catch(Exception excp)
+                {
+                    Console.WriteLine($"Exception decoding video. {excp.Message}");
                 }
             }
         }
@@ -124,11 +131,13 @@ namespace demo
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
         private const uint MAXIMUM_VIDEO_BANDWIDTH = 5000000; // 5Mbps.
+        private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.VP8; // Supported options are H264 or VP8.
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
         private static SIPTransport _sipTransport;
         private static Form _form;
+        private static bool _isFormActivated;
         private static PictureBox _remoteVideoPicBox;
         private static PictureBox _localVideoPicBox;
         private static Options _options;
@@ -145,306 +154,315 @@ namespace demo
             var parseResult = Parser.Default.ParseArguments<Options>(args);
             _options = (parseResult as Parsed<Options>)?.Value;
 
-            if (_options.ListCameras)
+            if (parseResult.Tag != ParserResultType.NotParsed)
             {
-                #region List webcams.
-
-                var webcams = await WindowsVideoEndPoint.GetVideoCatpureDevices();
-                if (webcams == null || webcams.Count == 0)
+                if (_options.ListCameras)
                 {
-                    Console.WriteLine("No webcams were found.");
-                }
-                else
-                {
-                    var index = 0;
-                    foreach (var webcam in webcams)
-                    {
-                        Console.WriteLine($"{index}: \"{webcam.Name}\", use --cam={index}.");
-                        index++;
-                    }
-                }
+                    #region List webcams.
 
-                #endregion
-            }
-            else if (_options.ListFormats != null)
-            {
-                #region List webcam formats.
-
-                var webcams = await WindowsVideoEndPoint.GetVideoCatpureDevices();
-                if (webcams == null || webcams.Count == 0)
-                {
-                    Console.WriteLine("No webcams were found.");
-                }
-                else if (_options.ListFormats >= webcams.Count)
-                {
-                    Console.WriteLine($"No webcam available for index {_options.ListFormats}.");
-                }
-                else
-                {
-                    string webcamName = webcams[_options.ListFormats.Value].Name;
-                    var formats = await WindowsVideoEndPoint.GetDeviceFrameFormats(webcamName);
-
-                    Console.WriteLine($"Video frame formats for {webcamName}.");
-                    foreach (var vidFmt in formats)
-                    {
-                        float vidFps = vidFmt.MediaFrameFormat.FrameRate.Numerator / vidFmt.MediaFrameFormat.FrameRate.Denominator;
-                        string pixFmt = vidFmt.MediaFrameFormat.Subtype == WindowsVideoEndPoint.MF_I420_PIXEL_FORMAT ? "I420" : vidFmt.MediaFrameFormat.Subtype;
-                        Console.WriteLine($"{vidFmt.Width}x{vidFmt.Height} {vidFps:0.##}fps {pixFmt}");
-                    }
-                }
-
-                #endregion
-            }
-            else
-            {
-                string webcamName = null;
-
-                if (_options.WebcamIndex != null)
-                {
                     var webcams = await WindowsVideoEndPoint.GetVideoCatpureDevices();
                     if (webcams == null || webcams.Count == 0)
                     {
                         Console.WriteLine("No webcams were found.");
-                        Application.Exit();
-                    }
-                    else if (webcams.Count < _options.WebcamIndex)
-                    {
-                        Console.WriteLine($"No webcam available for index {_options.WebcamIndex}.");
-                        Application.Exit();
                     }
                     else
                     {
-                        webcamName = webcams[_options.WebcamIndex.Value].Name;
-                        Console.WriteLine($"Using webcam {webcamName}.");
-                    }
-                }
-
-                _sipTransport = new SIPTransport();
-
-                if (string.IsNullOrEmpty(_options.CallDestination))
-                {
-                    // We haven't been asked to place a call so we're listening.
-                    IPAddress listenAddress = (System.Net.Sockets.Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
-                    var listenEndPoint = new IPEndPoint(listenAddress, SIP_PORT_DEFAULT);
-
-                    try
-                    {
-                        SIPUDPChannel udpChannel = new SIPUDPChannel(listenEndPoint, true);
-                        _sipTransport.AddSIPChannel(udpChannel);
-                    }
-                    catch (ApplicationException appExcp)
-                    {
-                        Console.WriteLine($"Failed to create UDP SIP channel on {listenEndPoint}, error {appExcp.Message}.");
-                        SIPUDPChannel udpChannel = new SIPUDPChannel(new IPEndPoint(listenAddress, 0), true);
-                        _sipTransport.AddSIPChannel(udpChannel);
+                        var index = 0;
+                        foreach (var webcam in webcams)
+                        {
+                            Console.WriteLine($"{index}: \"{webcam.Name}\", use --cam={index}.");
+                            index++;
+                        }
                     }
 
-                    var listeningEP = _sipTransport.GetSIPChannels().First().ListeningSIPEndPoint;
-                    Console.WriteLine($"Listening for incoming call on {listeningEP}.");
+                    #endregion
                 }
-
-                EnableTraceLogs(_sipTransport);
-
-                // Open a window to display the video feed from the remote SIP party.
-                _form = new Form();
-                _form.Text = string.IsNullOrEmpty(_options.CallDestination) ? "Listener" : "Caller";
-                _form.AutoSize = true;
-                _form.BackgroundImageLayout = ImageLayout.Center;
-                _localVideoPicBox = new PictureBox
+                else if (_options.ListFormats != null)
                 {
-                    Size = new Size(VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT),
-                    Location = new Point(0, 0),
-                    Visible = true
-                };
-                _remoteVideoPicBox = new PictureBox
-                {
-                    Size = new Size(VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT),
-                    Location = new Point(0, VIDEO_FRAME_HEIGHT),
-                    Visible = true
-                };
-                _form.Controls.Add(_localVideoPicBox);
-                _form.Controls.Add(_remoteVideoPicBox);
+                    #region List webcam formats.
 
-                var userAgent = new SIPUserAgent(_sipTransport, null, true);
-                userAgent.OnCallHungup += (dialog) => exitMRE.Set();
-
-                WindowsAudioEndPoint windowsAudioEndPoint = null;
-                if (_options.UseAudio)
-                {
-                    windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
-                    //windowsAudioEndPoint.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
-                }
-
-                MediaEndPoints mediaEndPoints = null;
-
-                if (_options.TestPattern)
-                {
-                    var testPattern = new VideoTestPatternSource(new FFmpegVideoEncoder());
-                    var decoderSink = new DecoderVideoSink(new FFmpegVideoEncoder());
-                    //var decoderSink = new DecoderVideoSink(new VpxVideoEncoder());
-
-                    testPattern.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
-                    decoderSink.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
-
-                    mediaEndPoints = new MediaEndPoints
+                    var webcams = await WindowsVideoEndPoint.GetVideoCatpureDevices();
+                    if (webcams == null || webcams.Count == 0)
                     {
-                        AudioSink = windowsAudioEndPoint,
-                        AudioSource = windowsAudioEndPoint,
-                        VideoSink = decoderSink,
-                        VideoSource = testPattern,
-                    };
+                        Console.WriteLine("No webcams were found.");
+                    }
+                    else if (_options.ListFormats >= webcams.Count)
+                    {
+                        Console.WriteLine($"No webcam available for index {_options.ListFormats}.");
+                    }
+                    else
+                    {
+                        string webcamName = webcams[_options.ListFormats.Value].Name;
+                        var formats = await WindowsVideoEndPoint.GetDeviceFrameFormats(webcamName);
+
+                        Console.WriteLine($"Video frame formats for {webcamName}.");
+                        foreach (var vidFmt in formats)
+                        {
+                            float vidFps = vidFmt.MediaFrameFormat.FrameRate.Numerator / vidFmt.MediaFrameFormat.FrameRate.Denominator;
+                            string pixFmt = vidFmt.MediaFrameFormat.Subtype == WindowsVideoEndPoint.MF_I420_PIXEL_FORMAT ? "I420" : vidFmt.MediaFrameFormat.Subtype;
+                            Console.WriteLine($"{vidFmt.Width}x{vidFmt.Height} {vidFps:0.##}fps {pixFmt}");
+                        }
+                    }
+
+                    #endregion
                 }
                 else
                 {
-                    WindowsVideoEndPoint windowsVideoEndPoint = webcamName switch
-                    {
-                        null => new WindowsVideoEndPoint(new FFmpegVideoEncoder()),
-                        _ => new WindowsVideoEndPoint(new FFmpegVideoEncoder(), webcamName),
-                    };
-                    windowsVideoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
+                    string webcamName = null;
 
-                    mediaEndPoints = new MediaEndPoints
+                    if (_options.WebcamIndex != null)
                     {
-                        AudioSink = windowsAudioEndPoint,
-                        AudioSource = windowsAudioEndPoint,
-                        VideoSink = windowsVideoEndPoint,
-                        VideoSource = windowsVideoEndPoint,
-                    };
-                }
-
-                mediaEndPoints.VideoSource.OnVideoSourceRawSample += (uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
-                {
-                    _form?.BeginInvoke(new Action(() =>
-                    {
-                        if (_form.Handle != IntPtr.Zero)
+                        var webcams = await WindowsVideoEndPoint.GetVideoCatpureDevices();
+                        if (webcams == null || webcams.Count == 0)
                         {
-                            int stride = width * 3;
-                            if (pixelFormat == VideoPixelFormatsEnum.I420)
-                            {
-                                sample = PixelConverter.I420toBGR(sample, width, height, out stride);
-                            }
-
-                            if (_localVideoPicBox.Width != width || _localVideoPicBox.Height != height)
-                            {
-                                Log.LogDebug($"Adjusting local video display from {_localVideoPicBox.Width}x{_localVideoPicBox.Height} to {width}x{height}.");
-                                _localVideoPicBox.Width = width;
-                                _localVideoPicBox.Height = height;
-                            }
-
-                            unsafe
-                            {
-                                fixed (byte* s = sample)
-                                {
-                                    System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                    _localVideoPicBox.Image = bmpImage;
-                                }
-                            }
+                            Console.WriteLine("No webcams were found.");
+                            Application.Exit();
                         }
-                    }));
-                };
+                        else if (webcams.Count < _options.WebcamIndex)
+                        {
+                            Console.WriteLine($"No webcam available for index {_options.WebcamIndex}.");
+                            Application.Exit();
+                        }
+                        else
+                        {
+                            webcamName = webcams[_options.WebcamIndex.Value].Name;
+                            Console.WriteLine($"Using webcam {webcamName}.");
+                        }
+                    }
 
-                Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-                {
-                    e.Cancel = true;
-                    Log.LogInformation("Exiting...");
-                    waitForCallMre.Set();
-                    exitMRE.Set();
-                };
+                    _sipTransport = new SIPTransport();
 
-                if (string.IsNullOrEmpty(_options.CallDestination))
-                {
-                    ActivateForm();
+                    if (string.IsNullOrEmpty(_options.CallDestination))
+                    {
+                        // We haven't been asked to place a call so we're listening.
+                        IPAddress listenAddress = (System.Net.Sockets.Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
+                        var listenEndPoint = new IPEndPoint(listenAddress, SIP_PORT_DEFAULT);
 
-                    userAgent.OnIncomingCall += async (ua, req) =>
+                        try
+                        {
+                            SIPUDPChannel udpChannel = new SIPUDPChannel(listenEndPoint, true);
+                            _sipTransport.AddSIPChannel(udpChannel);
+                        }
+                        catch (ApplicationException appExcp)
+                        {
+                            Console.WriteLine($"Failed to create UDP SIP channel on {listenEndPoint}, error {appExcp.Message}.");
+                            SIPUDPChannel udpChannel = new SIPUDPChannel(new IPEndPoint(listenAddress, 0), true);
+                            _sipTransport.AddSIPChannel(udpChannel);
+                        }
+
+                        var listeningEP = _sipTransport.GetSIPChannels().First().ListeningSIPEndPoint;
+                        Console.WriteLine($"Listening for incoming call on {listeningEP}.");
+                    }
+
+                    EnableTraceLogs(_sipTransport);
+
+                    // Open a window to display the video feed from the remote SIP party.
+                    _form = new Form();
+                    _form.Text = string.IsNullOrEmpty(_options.CallDestination) ? "Listener" : "Caller";
+                    _form.AutoSize = true;
+                    _form.BackgroundImageLayout = ImageLayout.Center;
+                    _localVideoPicBox = new PictureBox
+                    {
+                        Size = new Size(VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT),
+                        Location = new Point(0, 0),
+                        Visible = true
+                    };
+                    _remoteVideoPicBox = new PictureBox
+                    {
+                        Size = new Size(VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT),
+                        Location = new Point(0, VIDEO_FRAME_HEIGHT),
+                        Visible = true
+                    };
+                    _form.Controls.Add(_localVideoPicBox);
+                    _form.Controls.Add(_remoteVideoPicBox);
+
+                    var userAgent = new SIPUserAgent(_sipTransport, null, true);
+                    userAgent.OnCallHungup += (dialog) => exitMRE.Set();
+
+                    WindowsAudioEndPoint windowsAudioEndPoint = null;
+                    if (!_options.NoAudio)
+                    {
+                        windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
+                        windowsAudioEndPoint.RestrictFormats(x => x.Codec == AudioCodecsEnum.G722);
+                    }
+
+                    MediaEndPoints mediaEndPoints = null;
+
+                    if (_options.TestPattern && _options.WebcamIndex == null)
+                    {
+                        var testPattern = new VideoTestPatternSource(new FFmpegVideoEncoder());
+                        var decoderSink = new DecoderVideoSink(new FFmpegVideoEncoder());
+                        //var decoderSink = new DecoderVideoSink(new VpxVideoEncoder());
+
+                        testPattern.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+                        decoderSink.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+
+                        mediaEndPoints = new MediaEndPoints
+                        {
+                            AudioSink = windowsAudioEndPoint,
+                            AudioSource = windowsAudioEndPoint,
+                            VideoSink = decoderSink,
+                            VideoSource = testPattern,
+                        };
+                    }
+                    else
+                    {
+                        WindowsVideoEndPoint windowsVideoEndPoint = webcamName switch
+                        {
+                            null => new WindowsVideoEndPoint(new FFmpegVideoEncoder()),
+                            _ => new WindowsVideoEndPoint(new FFmpegVideoEncoder(), webcamName),
+                        };
+                        windowsVideoEndPoint.RestrictFormats(format => format.Codec == VIDEO_CODEC);
+
+                        mediaEndPoints = new MediaEndPoints
+                        {
+                            AudioSink = windowsAudioEndPoint,
+                            AudioSource = windowsAudioEndPoint,
+                            VideoSink = windowsVideoEndPoint,
+                            VideoSource = windowsVideoEndPoint,
+                        };
+                    }
+
+                    mediaEndPoints.VideoSource.OnVideoSourceRawSample += (uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
+                    {
+                        if (_isFormActivated)
+                        {
+                            _form?.BeginInvoke(new Action(() =>
+                            {
+                                if (_form.Handle != IntPtr.Zero)
+                                {
+                                    int stride = width * 3;
+                                    if (pixelFormat == VideoPixelFormatsEnum.I420)
+                                    {
+                                        sample = PixelConverter.I420toBGR(sample, width, height, out stride);
+                                    }
+
+                                    if (_localVideoPicBox.Width != width || _localVideoPicBox.Height != height)
+                                    {
+                                        Log.LogDebug($"Adjusting local video display from {_localVideoPicBox.Width}x{_localVideoPicBox.Height} to {width}x{height}.");
+                                        _localVideoPicBox.Width = width;
+                                        _localVideoPicBox.Height = height;
+                                    }
+
+                                    unsafe
+                                    {
+                                        fixed (byte* s = sample)
+                                        {
+                                            System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                            _localVideoPicBox.Image = bmpImage;
+                                        }
+                                    }
+                                }
+                            }));
+                        }
+                    };
+
+                    Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+                    {
+                        e.Cancel = true;
+                        Log.LogInformation("Exiting...");
+                        waitForCallMre.Set();
+                        exitMRE.Set();
+                    };
+
+                    if (string.IsNullOrEmpty(_options.CallDestination))
+                    {
+                        ActivateForm();
+
+                        userAgent.OnIncomingCall += async (ua, req) =>
+                        {
+                            var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
+                            voipMediaSession.AcceptRtpFromAny = true;
+                            if (voipMediaSession.VideoLocalTrack != null)
+                            {
+                                voipMediaSession.VideoLocalTrack.MaximumBandwidth = MAXIMUM_VIDEO_BANDWIDTH;
+                            }
+
+                            var uas = userAgent.AcceptCall(req);
+                            await userAgent.Answer(uas, voipMediaSession);
+
+                            Console.WriteLine("Starting local video source...");
+                            await mediaEndPoints.VideoSource.StartVideo().ConfigureAwait(false);
+
+                            waitForCallMre.Set();
+                        };
+
+                        Console.WriteLine("Waiting for incoming call...");
+                        waitForCallMre.WaitOne();
+                    }
+                    else
                     {
                         var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
                         voipMediaSession.AcceptRtpFromAny = true;
                         if (voipMediaSession.VideoLocalTrack != null)
                         {
                             voipMediaSession.VideoLocalTrack.MaximumBandwidth = MAXIMUM_VIDEO_BANDWIDTH;
-                        }  
+                        }
 
-                        var uas = userAgent.AcceptCall(req);
-                        await userAgent.Answer(uas, voipMediaSession);
+                        ActivateForm();
 
                         Console.WriteLine("Starting local video source...");
                         await mediaEndPoints.VideoSource.StartVideo().ConfigureAwait(false);
 
-                        waitForCallMre.Set();
-                    };
-
-                    Console.WriteLine("Waiting for incoming call...");
-                    waitForCallMre.WaitOne();
-                }
-                else
-                {
-                    var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
-                    voipMediaSession.AcceptRtpFromAny = true;
-                    if (voipMediaSession.VideoLocalTrack != null)
-                    {
-                        voipMediaSession.VideoLocalTrack.MaximumBandwidth = MAXIMUM_VIDEO_BANDWIDTH;
+                        // Place the call and wait for the result.
+                        Task<bool> callTask = userAgent.Call(_options.CallDestination, null, null, voipMediaSession);
+                        callTask.Wait(CALL_TIMEOUT_SECONDS * 1000);
                     }
 
-                    ActivateForm();
-
-                    Console.WriteLine("Starting local video source...");
-                    await mediaEndPoints.VideoSource.StartVideo().ConfigureAwait(false);
-
-                    // Place the call and wait for the result.
-                    Task<bool> callTask = userAgent.Call(_options.CallDestination, null, null, voipMediaSession);
-                    callTask.Wait(CALL_TIMEOUT_SECONDS * 1000);
-                }
-
-                if (userAgent.IsCallActive)
-                {
-                    Log.LogInformation("Call attempt successful.");
-                    mediaEndPoints.VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+                    if (userAgent.IsCallActive)
                     {
-                        _form?.BeginInvoke(new Action(() =>
+                        Log.LogInformation("Call attempt successful.");
+                        mediaEndPoints.VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
                         {
-                            if (_form.Handle != IntPtr.Zero)
+                            if (_isFormActivated)
                             {
-                                unsafe
+                                _form?.BeginInvoke(new Action(() =>
                                 {
-                                    if (_remoteVideoPicBox.Width != (int)width || _remoteVideoPicBox.Height != (int)height)
+                                    if (_form.Handle != IntPtr.Zero)
                                     {
-                                        Log.LogDebug($"Adjusting remote video display from {_remoteVideoPicBox.Width}x{_remoteVideoPicBox.Height} to {width}x{height}.");
-                                        _remoteVideoPicBox.Width = (int)width;
-                                        _remoteVideoPicBox.Height = (int)height;
-                                    }
+                                        unsafe
+                                        {
+                                            if (_remoteVideoPicBox.Width != (int)width || _remoteVideoPicBox.Height != (int)height)
+                                            {
+                                                Log.LogDebug($"Adjusting remote video display from {_remoteVideoPicBox.Width}x{_remoteVideoPicBox.Height} to {width}x{height}.");
+                                                _remoteVideoPicBox.Width = (int)width;
+                                                _remoteVideoPicBox.Height = (int)height;
+                                            }
 
-                                    fixed (byte* s = bmp)
-                                    {
-                                        System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                        _remoteVideoPicBox.Image = bmpImage;
+                                            fixed (byte* s = bmp)
+                                            {
+                                                System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                                _remoteVideoPicBox.Image = bmpImage;
+                                            }
+                                        }
                                     }
-                                }
+                                }));
                             }
-                        }));
-                    };
-                }
-                else
-                {
-                    Log.LogWarning("Call attempt failed.");
-                    Console.WriteLine("Press ctrl-c to exit.");
-                }
+                        };
+                    }
+                    else
+                    {
+                        Log.LogWarning("Call attempt failed.");
+                        Console.WriteLine("Press ctrl-c to exit.");
+                    }
 
-                exitMRE.WaitOne();
+                    exitMRE.WaitOne();
 
-                if (userAgent.IsCallActive)
-                {
-                    Log.LogInformation("Hanging up.");
-                    userAgent.Hangup();
+                    if (userAgent.IsCallActive)
+                    {
+                        Log.LogInformation("Hanging up.");
+                        userAgent.Hangup();
+                    }
+
+                    Task.Delay(1000).Wait();
+
+                    // Clean up.
+                    if (_form.Handle != IntPtr.Zero)
+                    {
+                        _form.BeginInvoke(new Action(() => _form.Close()));
+                    }
+                    _sipTransport.Shutdown();
                 }
-
-                Task.Delay(1000).Wait();
-
-                // Clean up.
-                if (_form.Handle != IntPtr.Zero)
-                {
-                    _form.BeginInvoke(new Action(() => _form.Close()));
-                }
-                _sipTransport.Shutdown();
             }
         }
 
@@ -452,12 +470,7 @@ namespace demo
         {
             Application.EnableVisualStyles();
             ThreadPool.QueueUserWorkItem(delegate { Application.Run(_form); });
-
-            ManualResetEvent formMre = new ManualResetEvent(false);
-            _form.Activated += (object sender, EventArgs e) => formMre.Set();
-
-            Console.WriteLine("Waiting for form activation.");
-            //formMre.WaitOne();
+            _form.Activated += (object sender, EventArgs e) => _isFormActivated = true;
         }
 
         /// <summary>
