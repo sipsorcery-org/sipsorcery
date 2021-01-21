@@ -12,6 +12,7 @@
 // 01 Jun 2020  Aaron Clauson   Refactored to use RtpAudioSession base class.
 // 15 Aug 2020  Aaron Clauson   Moved from examples into SIPSorceryMedia.Windows
 //                              assembly.
+// 21 Jan 2021  Aaron Clauson   Adjust playback rate dependent on selected audio format.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -40,14 +41,16 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Microphone input is sampled at 8KHz.
         /// </summary>
-        public readonly static AudioSamplingRatesEnum AudioSourceSamplingRate = AudioSamplingRatesEnum.Rate8KHz;
+        public readonly static AudioSamplingRatesEnum DefaultAudioSourceSamplingRate = AudioSamplingRatesEnum.Rate8KHz;
 
-        public readonly static AudioSamplingRatesEnum AudioPlaybackRate = AudioSamplingRatesEnum.Rate8KHz;
+        public readonly static AudioSamplingRatesEnum DefaultAudioPlaybackRate = AudioSamplingRatesEnum.Rate8KHz;
 
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
-        private static readonly WaveFormat _waveFormat = new WaveFormat(
-            (int)AudioSourceSamplingRate,
+        private WaveFormat _waveSinkFormat;
+
+        private WaveFormat _waveSourceFormat = new WaveFormat(
+            (int)DefaultAudioSourceSamplingRate,
             DEVICE_BITS_PER_SAMPLE,
             DEVICE_CHANNELS);
 
@@ -70,6 +73,7 @@ namespace SIPSorceryMedia.Windows
         private MediaFormatManager<AudioFormat> _audioFormatManager;
 
         private bool _disableSink;
+        private int _audioOutDeviceIndex;
         private bool _disableSource;
 
         protected bool _isStarted;
@@ -114,25 +118,13 @@ namespace SIPSorceryMedia.Windows
             _audioFormatManager = new MediaFormatManager<AudioFormat>(audioEncoder.SupportedFormats);
             _audioEncoder = audioEncoder;
 
+            _audioOutDeviceIndex = audioOutDeviceIndex;
             _disableSource = disableSource;
             _disableSink = disableSink;
 
             if (!_disableSink)
             {
-                try
-                {
-                    // Playback device.
-                    _waveOutEvent = new WaveOutEvent();
-                    _waveOutEvent.DeviceNumber = audioOutDeviceIndex;
-                    _waveProvider = new BufferedWaveProvider(_waveFormat);
-                    _waveProvider.DiscardOnBufferOverflow = true;
-                    _waveOutEvent.Init(_waveProvider);
-                }
-                catch (Exception excp)
-                {
-                    logger.LogWarning(0, excp, "WindowsAudioEndPoint failed to initialise playback device.");
-                    OnAudioSinkError?.Invoke($"WindowsAudioEndPoint failed to initialise playback device. {excp.Message}");
-                }
+                InitPlaybackDevice(_audioOutDeviceIndex, DefaultAudioPlaybackRate.GetHashCode());
             }
 
             if (!_disableSource)
@@ -145,7 +137,7 @@ namespace SIPSorceryMedia.Windows
                         _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
                         _waveInEvent.NumberOfBuffers = INPUT_BUFFERS;
                         _waveInEvent.DeviceNumber = audioInDeviceIndex;
-                        _waveInEvent.WaveFormat = _waveFormat;
+                        _waveInEvent.WaveFormat = _waveSourceFormat;
                         _waveInEvent.DataAvailable += LocalAudioSampleAvailable;
                     }
                     else
@@ -166,12 +158,27 @@ namespace SIPSorceryMedia.Windows
         public List<AudioFormat> GetAudioSourceFormats() => _audioFormatManager.GetSourceFormats();
         public void SetAudioSourceFormat(AudioFormat audioFormat) => _audioFormatManager.SetSelectedFormat(audioFormat);
         public List<AudioFormat> GetAudioSinkFormats() => _audioFormatManager.GetSourceFormats();
-        public void SetAudioSinkFormat(AudioFormat audioFormat) => _audioFormatManager.SetSelectedFormat(audioFormat);
 
         public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
         public bool IsAudioSourcePaused() => _isPaused;
         public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) =>
             throw new NotImplementedException();
+
+        public void SetAudioSinkFormat(AudioFormat audioFormat)
+        {
+            _audioFormatManager.SetSelectedFormat(audioFormat);
+
+            if (!_disableSink)
+            {
+                if (_waveSinkFormat.SampleRate != _audioFormatManager.SelectedFormat.ClockRate)
+                {
+                    // Reinitialise the audio output device.
+                    logger.LogDebug($"Windows audio end point adjusting playback rate from {_waveSinkFormat.SampleRate} to {_audioFormatManager.SelectedFormat.ClockRate}.");
+
+                    InitPlaybackDevice(_audioOutDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate);
+                }
+            }
+        }
 
         public MediaEndPoints ToMediaEndPoints()
         {
@@ -232,6 +239,31 @@ namespace SIPSorceryMedia.Windows
             return Task.CompletedTask;
         }
 
+        private void InitPlaybackDevice(int audioOutDeviceIndex, int audioSinkSampleRate)
+        {
+            try
+            {
+                _waveOutEvent?.Stop();
+
+                _waveSinkFormat = new WaveFormat(
+                    audioSinkSampleRate,
+                    DEVICE_BITS_PER_SAMPLE,
+                    DEVICE_CHANNELS);
+
+                // Playback device.
+                _waveOutEvent = new WaveOutEvent();
+                _waveOutEvent.DeviceNumber = audioOutDeviceIndex;
+                _waveProvider = new BufferedWaveProvider(_waveSinkFormat);
+                _waveProvider.DiscardOnBufferOverflow = true;
+                _waveOutEvent.Init(_waveProvider);
+            }
+            catch (Exception excp)
+            {
+                logger.LogWarning(0, excp, "WindowsAudioEndPoint failed to initialise playback device.");
+                OnAudioSinkError?.Invoke($"WindowsAudioEndPoint failed to initialise playback device. {excp.Message}");
+            }
+        }
+
         /// <summary>
         /// Event handler for audio sample being supplied by local capture device.
         /// </summary>
@@ -265,14 +297,7 @@ namespace SIPSorceryMedia.Windows
             if (_waveProvider != null && _audioEncoder != null)
             {
                 var pcmSample = _audioEncoder.DecodeAudio(payload, _audioFormatManager.SelectedFormat);
-                
-                if((int)AudioPlaybackRate != _audioFormatManager.SelectedFormat.ClockRate)
-                {
-                    // TODO: Use NAudio to resample.
-                }
-
                 byte[] pcmBytes = pcmSample.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
-
                 _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);
             }
         }

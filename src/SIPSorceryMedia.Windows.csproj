@@ -14,7 +14,7 @@
     <TargetFrameworks>netcoreapp3.1;net461</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Aaron Clauson</Authors>
-    <Copyright>Copyright © 2020 Aaron Clauson</Copyright>
+    <Copyright>Copyright © 2020-2021 Aaron Clauson</Copyright>
     <Company>SIP Sorcery PTY LTD</Company>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorceryMedia.Windows</Title>
@@ -24,13 +24,14 @@
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
-    <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Windows</RepositoryUrl>
-    <Version>0.0.30-pre</Version>
-    <AssemblyVersion>0.0.30.0</AssemblyVersion>
-    <FileVersion>0.0.30.0</FileVersion>
+    <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorceryMedia.Windows</RepositoryUrl>
+    <Version>0.0.31-pre</Version>
+    <AssemblyVersion>0.0.31.0</AssemblyVersion>
+    <FileVersion>0.0.31.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-    <PackageReleaseNotes>-v0.0.30-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
+    <PackageReleaseNotes>-v0.0.31-pre: Adjust audio playback rate dependent on selected audio format (fixes G722 playback).
+-v0.0.30-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
 -v0.0.29-pre: Added new method to list video formats for a Windows video capture device.
 -v0.0.28-pre: Removed dependency on SIPSorceryMedia.Encoders. Now using IVideoEncoder interface for more flexibility.
 -v0.0.27-pre: Updated to use latest encoders package.
@@ -48,10 +49,6 @@
 
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
