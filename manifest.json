@@ -3249,7 +3249,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPServerUserAgent.html",
-          "hash": "Q2xnfF/txGOWG5OysXyqzA=="
+          "hash": "2V05QnOIAkk9u4YWcE+Y7A=="
         }
       },
       "is_incremental": false,
@@ -4737,7 +4737,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.TypeExtensions.html",
-          "hash": "gDVWk5fAA+h2Xy7JimFU2Q=="
+          "hash": "vbhr1jvvLqWfufz5m1c9Zw=="
         }
       },
       "is_incremental": false,
