@@ -56,7 +56,6 @@ namespace SIPSorcery.Net.Sctp
     public class ThreadedAssociation : Association
     {
         static int MAXBLOCKS = 1000; // some number....
-        private LimitedConcurrentQueue<DataChunk> _freeBlocks;
 
         public ThreadedAssociation(DatagramTransport transport, AssociationListener al, bool isClient, int srcPort, int destPort)
             : base(transport, al, isClient, srcPort, destPort)

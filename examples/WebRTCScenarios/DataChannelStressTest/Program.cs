@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,6 +43,7 @@ namespace SIPSorcery.Demo
 
         private static async Task RunCommand()
         {
+            Stopwatch sw = Stopwatch.StartNew();
             CancellationTokenSource exitCts = new CancellationTokenSource();
 
             AddConsoleLogger();
@@ -87,23 +89,25 @@ namespace SIPSorcery.Demo
                     await Task.Delay(1000);
                 }
 
-                //for (int i = 0; i < 100; i++)
-                //{
-                //    try
-                //    {
-                //        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
+                for (int i = 0; i < 100; i++)
+                {
+                    try
+                    {
+                        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
 
-                //        var num = BitConverter.GetBytes(i);
-                //        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        Console.WriteLine("ClientA:" + ex.ToString());
-                //    }
-                //}
+                        var num = BitConverter.GetBytes(i);
+                        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("ClientA:" + ex.ToString());
+                    }
+                }
+
+                Console.WriteLine($"ClientA: {sendLabel} Finished");
             }));
 
-            string[] queueNames = new string[] { "ThreadA" };//, "ThreadB", "ThreadC" };
+            string[] queueNames = new string[] { "ThreadA", "ThreadB", "ThreadC" };
 
             foreach (var queueName in queueNames)
             {
@@ -132,39 +136,44 @@ namespace SIPSorcery.Demo
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("ClientA:" + ex.ToString());
+                            Console.WriteLine(name + " " + ex.ToString());
                         }
                     }
+
+                    Console.WriteLine(name + ": Finished");
                 }));
             }
 
-            //taskList.Add(Task.Run(async () =>
-            //{
-            //    string sendLabel = "dcx";
+            taskList.Add(Task.Run(async () =>
+            {
+                string sendLabel = "dcx";
 
-            //    while (!peerA.IsDataChannelReady(sendLabel))
-            //    {
-            //        Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
-            //        await Task.Delay(1000);
-            //    }
+                while (!peerA.IsDataChannelReady(sendLabel))
+                {
+                    Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
+                    await Task.Delay(1000);
+                }
 
-            //    for (int i = 100; i < 200; i++)
-            //    {
-            //        try
-            //        {
-            //            Console.WriteLine($"Data channel send {i} on {sendLabel}.");
+                for (int i = 100; i < 200; i++)
+                {
+                    try
+                    {
+                        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
 
-            //            var num = BitConverter.GetBytes(i);
-            //            await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
-            //        }
-            //        catch (Exception ex)
-            //        {
-            //            Console.WriteLine("ClientA:" + ex.ToString());
-            //        }
-            //    }
-            //}));
+                        var num = BitConverter.GetBytes(i);
+                        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("ClientA:" + ex.ToString());
+                    }
+                }
+
+                Console.WriteLine($"ClientA: {sendLabel} Finished");
+            }));
 
             await Task.WhenAll(taskList.ToArray());
+            Console.WriteLine($"Done in {sw.ElapsedMilliseconds}ms");
             Console.ReadLine();
         }
 

@@ -161,6 +161,8 @@ namespace SIPSorcery.Net.Sctp
         private string name;
         protected static ILogger logger = Log.Logger;
 
+        protected LimitedConcurrentQueue<DataChunk> _freeBlocks;
+
         public void associate()
         {
 
@@ -259,15 +261,6 @@ namespace SIPSorcery.Net.Sctp
         private static int TICK = 1000; // loop time in rcv
         static int __assocNo = 1;
         private ReconfigState reconfigState;
-
-        private bool Started;
-        public bool IsFinished
-        {
-            get
-            {
-                return _rcv == null && Started;
-            }
-        }
 
         /// <summary>
         /// The next ID to use when creating a new stream. 
@@ -427,7 +420,6 @@ namespace SIPSorcery.Net.Sctp
 
             handleChunkStart();
 
-            //List<Chunk> replies = new List<Chunk>();
             var cl = rec.getChunkList();
             foreach (var c in cl)
             {
@@ -439,34 +431,6 @@ namespace SIPSorcery.Net.Sctp
             }
 
             handleChunkEnd();
-
-            //// find the highest sack.
-            //Chunk hisack = null;
-            //foreach (var c in replies)
-            //{
-            //    if (c.getType() == ChunkType.SACK)
-            //    {
-            //        if (hisack == null || ((SackChunk)c).getCumuTSNAck() > ((SackChunk)hisack).getCumuTSNAck())
-            //        {
-            //            hisack = c;
-            //        }
-            //    }
-            //}
-            //// remove all sacks
-            //replies.RemoveAll((Chunk c) =>
-            //{
-            //    return c.getType() == ChunkType.SACK;
-            //});
-            //// insert the highest one first.
-            //if (hisack != null)
-            //{
-            //    replies.Insert(0, hisack);
-            //}
-
-            //foreach (var reply in replies)
-            //{
-            //    controlQueue.push(reply);
-            //}
         }
 
         private object myLock = new object();
@@ -552,15 +516,13 @@ namespace SIPSorcery.Net.Sctp
 
             _rcv = new Thread(() =>
             {
-                this.Started = true;
                 try
                 {
-                    byte[] buf = null;
+                    byte[] buf = new byte[AssociationConsts.receiveMTU];
                     while (_rcv != null)
                     {
                         try
                         {
-                            buf = new byte[AssociationConsts.receiveMTU];
                             var length = _transp.Receive(buf, 0, buf.Length, TICK);
                             if (length > 0)
                             {
@@ -631,7 +593,6 @@ namespace SIPSorcery.Net.Sctp
 
             _send = new Thread(() =>
             {
-                this.Started = true;
                 try
                 {
                     while (_rcv != null)
@@ -1643,6 +1604,8 @@ namespace SIPSorcery.Net.Sctp
                         reply.Add(resp);
                     }
                 }
+
+                _freeBlocks.Enqueue(c);
             }
 
             var hasPacketLoss = (payloadQueue.size() > 0);
@@ -2208,7 +2171,7 @@ namespace SIPSorcery.Net.Sctp
                     pendingQueue.size() > 0)
                 {
                     cwnd += min32(totalBytesAcked, cwnd); // TCP way
-                                                            // a.cwnd += min32(uint32(totalBytesAcked), a.mtu) // SCTP way (slow)
+                    // a.cwnd += min32(uint32(totalBytesAcked), a.mtu) // SCTP way (slow)
                     logger.LogTrace($"{name} updated cwnd={cwnd} ssthresh={ssthresh} acked={totalBytesAcked} (SS)");
                 }
                 else
@@ -2314,6 +2277,8 @@ namespace SIPSorcery.Net.Sctp
 
                     inFastRecovery = false;
                 }
+
+                _freeBlocks.Enqueue(c);
             }
 
             htna = d.cumulativeTSNAck;
