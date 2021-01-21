@@ -34,7 +34,6 @@ namespace SIPSorcery.Net.Sctp
 {
     public class BlockingSCTPStream : SCTPStream
     {
-        private ConcurrentDictionary<int, SCTPMessage> undeliveredOutboundMessages = new ConcurrentDictionary<int, SCTPMessage>();
         private static ILogger logger = Log.Logger;
         private ExecutorService _ex_service;
 
@@ -59,7 +58,6 @@ namespace SIPSorcery.Net.Sctp
                 return;
             }
             AddBytesToBuffer(m.Count);
-            //undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
             a.sendAndBlock(m);
         }
 
@@ -73,7 +71,6 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogError("SCTPMessage cannot be null, but it is");
                 return;
             }
-            //undeliveredOutboundMessages.AddOrUpdate(m.getSeq(), m, (id, b) => m);
             AddBytesToBuffer(m.Count);
             a.sendAndBlock(m);
         }
@@ -82,20 +79,6 @@ namespace SIPSorcery.Net.Sctp
         {
             //message.run();
             _ex_service.execute(message);
-        }
-
-        public override void delivered(DataChunk d)
-        {
-            int f = d.getFlags();
-            if ((f & DataChunk.ENDFLAG) > 0)
-            {
-                int ssn = d.getSSeqNo();
-                SCTPMessage st;
-                if (undeliveredOutboundMessages.TryRemove(ssn, out st))
-                {
-                    st.acked();
-                }
-            }
         }
 
         public override bool idle()

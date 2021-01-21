@@ -94,8 +94,6 @@ namespace SIPSorcery.Net.Sctp
             return ret;
         }
 
-        abstract public void delivered(DataChunk d);
-
         enum State
         {
             CLOSED, INBOUNDONLY, OUTBOUNDONLY, OPEN

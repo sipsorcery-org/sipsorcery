@@ -6,7 +6,7 @@ namespace SIPSorcery.Net.Sctp
 {
     public class ackTimer
     {
-        private static readonly TimeSpan ackInterval = TimeSpan.FromSeconds(200);
+        private static readonly TimeSpan ackInterval = TimeSpan.FromMilliseconds(200);
 
         private IAckTimerObserver _ackTimerObserver;
         private TimeSpan interval;

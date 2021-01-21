@@ -72,22 +72,99 @@ namespace SIPSorcery.Net.Sctp
 
     public abstract class Association : IRtxTimerObserver, IAckTimerObserver
     {
-        private UInt64 bytesReceived;
-        private UInt64 bytesSent;
-        protected uint myVerificationTag;
-
         protected Mutex RWMutex = new Mutex();
 
         private uint peerVerificationTag;
+        private uint myVerificationTag;
+        protected State _state;
+        protected uint myNextTSN; // nextTSN
+        private uint peerLastTSN; // lastRcvdTSN
+        private uint minTSN2MeasureRTT; // for RTT measurement
+        private bool willSendForwardTSN;
+        private bool willRetransmitFast;
+        protected bool willRetransmitReconfig;
 
-        private bool _even;
-        private AckMode ackMode;
-        protected bool IsClient;
+        // Reconfig
+        private uint myNextRSN;
+        private Dictionary<uint, ReConfigChunk> reconfigs = new Dictionary<uint, ReConfigChunk>();
+        private Dictionary<uint, OutgoingSSNResetRequestParameter> reconfigRequests = new Dictionary<uint, OutgoingSSNResetRequestParameter>();
+
+        // Non-RFC internal data
+        private int sourcePort;
+        private int destinationPort;
+        private ushort myMaxNumInboundStreams = ushort.MaxValue;
+        private ushort myMaxNumOutboundStreams = ushort.MaxValue;
+        private CookieHolder myCookie;
+        protected PayloadQueue payloadQueue = new PayloadQueue();
+        protected PayloadQueue inflightQueue = new PayloadQueue();
+        protected PendingQueue pendingQueue = new PendingQueue();
+        protected ControlQueue controlQueue = new ControlQueue();
+        protected uint mtu = AssociationConsts.initialMTU;
+        protected uint maxPayloadSize = AssociationConsts.initialMTU - (AssociationConsts.commonHeaderSize + AssociationConsts.dataChunkHeaderSize); // max DATA chunk payload size
+        protected uint cumulativeTSNAckPoint;
+        protected uint advancedPeerTSNAckPoint;
+        private bool useForwardTSN;
+
+        // Congestion control parameters
+        protected uint maxReceiveBufferSize = AssociationConsts.initialRecvBufSize;
+        protected uint maxMessageSize = AssociationConsts.defaultMaxMessageSize;
+        /// <summary>
+        /// Congestion control window (cwnd, in bytes), which is adjusted by
+        /// the sender based on observed network conditions.
+        /// Note: This variable is maintained on a per-destination-address basis.
+        /// </summary>
+        protected uint cwnd;
+        /// <summary>
+        /// Receiver advertised window size (rwnd, in bytes), which is set by
+        /// the receiver based on its available buffer space for incoming
+        /// packets.
+        /// 
+        /// Note: This variable is kept on the entire association.
+        /// </summary>
+        protected uint rwnd;
+        /// <summary>
+        /// assume a single destination via ICE
+        /// Slow-start threshold (ssthresh, in bytes), which is used by the
+        /// sender to distinguish slow-start and congestion avoidance phases.
+        /// Note: This variable is maintained on a per-destination-address basis. 
+        /// </summary>
+        protected uint ssthresh;
+        private uint partialBytesAcked;
+        private bool inFastRecovery;
+        private uint fastRecoverExitPoint;
+
+
+        // RTX & Ack timer
+        private rtoManager rtoMgr;
+        private rtxTimer t1Init;
+        private rtxTimer t1Cookie;
+        private rtxTimer t3RTX;
+        private rtxTimer tReconfig;
+        private ackTimer _ackTimer;
+
+        // Chunks stored for retransmission
+        private InitChunk storedInit;
+        private CookieEchoChunk storedCookieEcho;
+
+        private ConcurrentDictionary<int, SCTPStream> streams;
+
+        public AcknowlegeState ackState;
+        private AckMode ackMode; // for testing
+
+        // stats
+        AssociationStats stats = new AssociationStats();
+
+        // per inbound packet context
+        private bool delayedAckTriggered;
+        private bool immediateAckTriggered;
+
+        private string name;
+        protected static ILogger logger = Log.Logger;
+
         public void associate()
         {
 
         }
-        public AcknowlegeState ackState;
 
         /**
 		 * <code>
@@ -155,23 +232,9 @@ namespace SIPSorcery.Net.Sctp
 		 RE-CONFIG, // not sure about this - but lets assume for now that the w3c interface doesn't support stream resets.
 		 AUTH // Assume DTLS will cover this for us if we never send ASCONF packets.
 		 */
-        ushort myMaxNumInboundStreams = ushort.MaxValue;
-        ushort myMaxNumOutboundStreams = ushort.MaxValue;
-        private static ILogger logger = Log.Logger;
-        protected const int InitialRecvBufSize = 1024 * 1024;
         public static int COOKIESIZE = 32;
-        private const uint commonHeaderSize = 12;
         private static long VALIDCOOKIELIFE = 60000;
         protected double _rto = 3.0;
-        private bool useForwardTSN;
-        protected uint mtu = AssociationConsts.initialMTU;
-        protected uint maxPayloadSize = AssociationConsts.initialMTU - (AssociationConsts.commonHeaderSize + AssociationConsts.dataChunkHeaderSize);
-        private bool delayedAckTriggered;
-        private CookieEchoChunk storedCookieEcho;
-        private Dictionary<uint, ReConfigChunk> reconfigs = new Dictionary<uint, ReConfigChunk>();
-        private bool immediateAckTriggered;
-        private InitChunk storedInit;
-        protected bool willRetransmitReconfig;
         /*
 		 RTO.Initial - 3 seconds
 		 RTO.Min - 1 second
@@ -190,105 +253,13 @@ namespace SIPSorcery.Net.Sctp
         private Thread _rcv;
         private Thread _send;
         private SecureRandom _random;
-        private bool willSendForwardTSN;
-        protected uint cumulativeTSNAckPoint;
-        private bool willRetransmitFast;
-        private Dictionary<uint, OutgoingSSNResetRequestParameter> reconfigRequests = new Dictionary<uint, OutgoingSSNResetRequestParameter>();
-        protected uint advancedPeerTSNAckPoint;
-
-        // Congestion control parameters
-        protected uint maxReceiveBufferSize = AssociationConsts.initialRecvBufSize;
-        protected uint maxMessageSize = AssociationConsts.defaultMaxMessageSize;
-        private uint cwnd;
-        /*
-         o  Congestion control window (cwnd, in bytes), which is adjusted by
-         the sender based on observed network conditions.
-
-         Note: This variable is maintained on a per-destination-address
-         basis.
-         */
-        protected uint _cwnd
-        {
-            get
-            {
-                return cwnd;
-            }
-            set
-            {
-                if (cwnd != value)
-                {
-                    cwnd = value;
-                }
-            }
-        }
-
-
-        /*   
-		 o  Receiver advertised window size (rwnd, in bytes), which is set by
-		 the receiver based on its available buffer space for incoming
-		 packets.
-
-		 Note: This variable is kept on the entire association.
-		 */
-        private uint rwnd;
-        protected uint _rwnd
-        {
-            get
-            {
-                return rwnd;
-            }
-            set
-            {
-                if (rwnd != value)
-                {
-                    rwnd = value;
-                }
-            }
-        }
-        // assume a single destination via ICE
-        /*
-			 o  Slow-start threshold (ssthresh, in bytes), which is used by the
-			 sender to distinguish slow-start and congestion avoidance phases.
-
-			 Note: This variable is maintained on a per-destination-address
-			 basis.
-			 */
-        protected uint _ssthresh;
-        private uint partialBytesAcked;
-        private bool inFastRecovery;
-        private uint fastRecoverExitPoint;
-
-        private uint peerLastTSN;
-        public static uint MAXBUFF = 20 * 1024;
-        private const int receiveMTU = 8192;
-        private int _srcPort;
-        private int _destPort;
-        private ConcurrentDictionary<int, SCTPStream> _streams;
         private AssociationListener _al;
-        private Dictionary<long, DataChunk> _outbound;
-        protected State _state;
+
         protected bool IsDone;
         private static int TICK = 1000; // loop time in rcv
         static int __assocNo = 1;
         private ReconfigState reconfigState;
-        private uint myNextRSN;
-        private uint minTSN2MeasureRTT; // for RTT measurement
-        protected PendingQueue pendingQueue = new PendingQueue();
-        protected PayloadQueue inflightQueue = new PayloadQueue();
-        protected ControlQueue controlQueue = new ControlQueue();
-        protected PayloadQueue payloadQueue = new PayloadQueue();
-        // RTX & Ack timer
-        private rtoManager rtoMgr;
-        private rtxTimer t1Init;
-        private rtxTimer t1Cookie;
-        private rtxTimer t3RTX;
-        private rtxTimer tReconfig;
-        private ackTimer _ackTimer;
-        private CookieHolder myCookie;
-        private string name;
 
-        //ackTimer* ackTimer
-        protected uint myNextTSN;
         private bool Started;
         public bool IsFinished
         {
@@ -313,8 +284,6 @@ namespace SIPSorcery.Net.Sctp
         };
         private List<CookieHolder> _cookies = new List<CookieHolder>();
 
-        AssociationStats stats = new AssociationStats();
-
         // default is server
         public Association(DatagramTransport transport, AssociationListener al, int srcPort, int dstPort) : this(transport, al, false, srcPort, dstPort) { }
 
@@ -325,8 +294,7 @@ namespace SIPSorcery.Net.Sctp
             _random = new SecureRandom();
             myVerificationTag = (uint)_random.NextInt();
             _transp = transport;
-            _streams = new ConcurrentDictionary<int, SCTPStream>();
-            _outbound = new Dictionary<long, DataChunk>();
+            streams = new ConcurrentDictionary<int, SCTPStream>();
             var IInt = new FastBit.Int(_random.NextInt());
             var tsn = new FastBit.Uint(IInt.b0, IInt.b1, IInt.b2, IInt.b3).Auint;
             myNextTSN = tsn;
@@ -334,7 +302,7 @@ namespace SIPSorcery.Net.Sctp
             minTSN2MeasureRTT = tsn;
             _state = State.CLOSED;
 
-            _cwnd = min32(4 * mtu, max32(2 * mtu, 4380));
+            cwnd = min32(4 * mtu, max32(2 * mtu, 4380));
 
             rtoMgr = rtoManager.newRTOManager();
             t1Init = rtxTimer.newRTXTimer((int)TimerType.T1Init, this, rtoManager.maxInitRetrans);
@@ -350,12 +318,11 @@ namespace SIPSorcery.Net.Sctp
 			role: the side acting as the DTLS client MUST use Streams with even
 			Stream Identifiers, the side acting as the DTLS server MUST use
 			Streams with odd Stream Identifiers. */
-            _even = client;
-            IsClient = client;
-            _nextStreamID = (_even) ? _nextStreamID : _nextStreamID + 1;
 
-            _srcPort = srcPort;
-            _destPort = dstPort;
+            _nextStreamID = (client) ? _nextStreamID : _nextStreamID + 1;
+
+            sourcePort = srcPort;
+            destinationPort = dstPort;
 
             cumulativeTSNAckPoint = tsn - 1;
             advancedPeerTSNAckPoint = tsn - 1;
@@ -434,7 +401,7 @@ namespace SIPSorcery.Net.Sctp
         uint getMyReceiverWindowCredit()
         {
             uint bytesQueued = 0;
-            foreach (var s in _streams)
+            foreach (var s in streams)
             {
                 bytesQueued += s.Value.getNumBytesInReassemblyQueue();
             }
@@ -593,7 +560,7 @@ namespace SIPSorcery.Net.Sctp
                     {
                         try
                         {
-                            buf = new byte[receiveMTU];
+                            buf = new byte[AssociationConsts.receiveMTU];
                             var length = _transp.Receive(buf, 0, buf.Length, TICK);
                             if (length > 0)
                             {
@@ -750,7 +717,7 @@ namespace SIPSorcery.Net.Sctp
                 willRetransmitFast = false;
 
                 var toFastRetrans = new List<Chunk>();
-                uint fastRetransSize = commonHeaderSize;
+                uint fastRetransSize = AssociationConsts.commonHeaderSize;
 
 		        for (uint i = 0; ; i++)
                 {
@@ -919,18 +886,22 @@ namespace SIPSorcery.Net.Sctp
 
         private Packet[] getDataPacketsToRetransmit()
         {
-            var awnd = min32(_cwnd, _rwnd);
+            var awnd = min32(cwnd, rwnd);
             var chunks = new List<DataChunk>();
             uint bytesToSend = 0;
             var done = false;
             for (uint i = 0; !done; i++)
             {
                 if (!inflightQueue.get(cumulativeTSNAckPoint + i + 1, out var c))
+                {
                     break;
+                }
                 if (!c.retransmit)
+                {
                     continue;
+                }
 
-                if (i == 0 && _rwnd < c.getDataSize())
+                if (i == 0 && rwnd < c.getDataSize())
                 {
                     // Send it as a zero window probe
                     done = true;
@@ -979,17 +950,17 @@ namespace SIPSorcery.Net.Sctp
                         continue;
                     }
 
-                    if (this.inflightQueue.getNumBytes() + dataLen > _cwnd)
+                    if (this.inflightQueue.getNumBytes() + dataLen > cwnd)
                     {
                         break; // would exceeds cwnd
                     }
 
-                    if (dataLen > _rwnd)
+                    if (dataLen > rwnd)
                     {
                         break; // no more rwnd
                     }
 
-                    _rwnd -= dataLen;
+                    rwnd -= dataLen;
                     movePendingDataChunkToInflightQueue(c);
                     chunks.Add(c);
                 }
@@ -1032,19 +1003,19 @@ namespace SIPSorcery.Net.Sctp
         {
             var packets = new List<Packet>();
             var chunksToSend = new List<DataChunk>();
-            uint bytesInPacket = (uint)commonHeaderSize;
+            uint bytesInPacket = AssociationConsts.commonHeaderSize;
             foreach (var c in chunkPayloadData)
             {
                 if (bytesInPacket + c.getDataSize() > mtu)
                 {
                     packets.Add(makePacket(chunksToSend.ToArray()));
                     chunksToSend = new List<DataChunk>();
-                    bytesInPacket = commonHeaderSize;
+                    bytesInPacket = AssociationConsts.commonHeaderSize;
                 }
 
                 chunksToSend.Add(c);
 
-                bytesInPacket += commonHeaderSize + c.getDataSize();
+                bytesInPacket += AssociationConsts.dataChunkHeaderSize + c.getDataSize();
             }
 
             if (chunksToSend.Count > 0)
@@ -1067,7 +1038,7 @@ namespace SIPSorcery.Net.Sctp
                 return;
             }
 
-            if (_streams.TryGetValue(c.getStreamId(), out var s))
+            if (streams.TryGetValue(c.getStreamId(), out var s))
             {
                 lock(s.rwLock)
                 {
@@ -1292,7 +1263,7 @@ namespace SIPSorcery.Net.Sctp
 
         public Packet makePacket(params Chunk[] cs)
         {
-            Packet ob = new Packet(_srcPort, _destPort, peerVerificationTag);
+            Packet ob = new Packet(sourcePort, destinationPort, peerVerificationTag);
             foreach (Chunk r in cs)
             {
                 //logger.LogDebug("adding chunk to outbound packet: " + r.ToString());
@@ -1376,7 +1347,7 @@ namespace SIPSorcery.Net.Sctp
                 throw new Exception("errInitNotStoredToSend");
             }
 
-            var outbound = new Packet(_srcPort, _destPort, peerVerificationTag);
+            var outbound = new Packet(sourcePort, destinationPort, peerVerificationTag);
             outbound.Add(storedInit);
             this.controlQueue.push(outbound);
         }
@@ -1411,13 +1382,13 @@ namespace SIPSorcery.Net.Sctp
             myMaxNumOutboundStreams = min16((ushort)i.getNumOutStreams(), myMaxNumOutboundStreams);
             peerVerificationTag = i.getInitiateTag();
             peerLastTSN = i.getInitialTSN() - 1;
-            if ((_srcPort != p.getDestPort()) || (_destPort != p.getSrcPort()))
+            if ((sourcePort != p.getDestPort()) || (destinationPort != p.getSrcPort()))
             {
                 logger.LogWarning($"{name} handleInitAck: port mismatch");
                 return null;
             }
-            _rwnd = i.getAdRecWinCredit();
-            _ssthresh = _rwnd;
+            rwnd = i.getAdRecWinCredit();
+            ssthresh = rwnd;
             t1Init.stop();
             storedInit = null;
             /* 
@@ -1498,9 +1469,9 @@ namespace SIPSorcery.Net.Sctp
             myMaxNumInboundStreams = min16((ushort)i.getNumInStreams(), myMaxNumInboundStreams);
             myMaxNumOutboundStreams = min16((ushort)i.getNumOutStreams(), myMaxNumOutboundStreams);
             peerVerificationTag = i.getInitiateTag();
-            _srcPort = p.getSrcPort();
-            _destPort = p.getDestPort();
-            _rwnd = i.getAdRecWinCredit();
+            sourcePort = p.getSrcPort();
+            destinationPort = p.getDestPort();
+            rwnd = i.getAdRecWinCredit();
             peerLastTSN = (uint)(i.getInitialTSN() - 1);
 
             this.useForwardTSN = i._farForwardTSNsupported;
@@ -1509,7 +1480,7 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogWarning("not using ForwardTSN (on init)");
             }
 
-            var outbound = new Packet(_srcPort, _destPort, peerVerificationTag);
+            var outbound = new Packet(sourcePort, destinationPort, peerVerificationTag);
 
 
             var iac = new InitAckChunk();
@@ -1551,10 +1522,10 @@ namespace SIPSorcery.Net.Sctp
         public SCTPStream getOrCreateStream(int sno)
         {
             SCTPStream _in;
-            if (!_streams.TryGetValue(sno, out _in))
+            if (!streams.TryGetValue(sno, out _in))
             {
                 _in = mkStream(sno);
-                _streams.TryAdd(sno, _in);
+                streams.TryAdd(sno, _in);
                 _al.onRawStream(_in);
             }
             return _in;
@@ -1566,10 +1537,10 @@ namespace SIPSorcery.Net.Sctp
             int sno = dc.getStreamId();
             uint tsn = dc.getTsn();
             SCTPStream _in;
-            if (!_streams.TryGetValue(sno, out _in))
+            if (!streams.TryGetValue(sno, out _in))
             {
                 _in = mkStream(sno);
-                _streams.TryAdd(sno, _in);
+                streams.TryAdd(sno, _in);
                 _al.onRawStream(_in);
             }
             var repa = new List<Chunk>();
@@ -1586,7 +1557,10 @@ namespace SIPSorcery.Net.Sctp
                 try
                 {
                     _al.onDCEPStream(_in, _in.getLabel(), dc.getPpid());
-                    if (_in.OnOpen != null) _in.OnOpen.Invoke();
+                    if (_in.OnOpen != null)
+                    {
+                        _in.OnOpen.Invoke();
+                    }
                 }
                 catch (Exception x)
                 {
@@ -1700,7 +1674,7 @@ namespace SIPSorcery.Net.Sctp
         {
             lock (myLock)
             {
-                _streams.TryRemove(s.getNum(), out var st);
+                streams.TryRemove(s.getNum(), out var st);
                 s.close();
             }
         }
@@ -1716,7 +1690,7 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogDebug($"{name} resetStream(): senderLastTSN={p.getLastAssignedTSN()} <= peerLastTSN={peerLastTSN}");
                 foreach (var id in p.getStreams())
                 {
-                    if (!_streams.TryGetValue(id, out var s))
+                    if (!streams.TryGetValue(id, out var s))
                     {
                         continue;
                     }
@@ -1912,7 +1886,7 @@ namespace SIPSorcery.Net.Sctp
 
         public int[] allStreams()
         {
-            var ks = _streams.Keys;
+            var ks = streams.Keys;
             int[] ret = new int[ks.Count];
             int i = 0;
             foreach (int k in ks)
@@ -1924,17 +1898,17 @@ namespace SIPSorcery.Net.Sctp
         public SCTPStream getStream(int s)
         {
             SCTPStream stream;
-            return _streams.TryGetValue(s, out stream) ? stream : null;
+            return streams.TryGetValue(s, out stream) ? stream : null;
         }
 
         public SCTPStream delStream(int s)
         {
-            if (!_streams.ContainsKey(s))
+            if (!streams.ContainsKey(s))
             {
                 return null;
             }
-            var st = _streams[s];
-            _streams.TryRemove(s, out st);
+            var st = streams[s];
+            streams.TryRemove(s, out st);
             return st;
         }
 
@@ -1943,16 +1917,16 @@ namespace SIPSorcery.Net.Sctp
             SCTPStream sout;
             if (canSend())
             {
-                lock (_streams)
+                lock (streams)
                 {
-                    if (_streams.ContainsKey(sno))
+                    if (streams.ContainsKey(sno))
                     {
                         logger.LogError("StreamNumberInUseException");
                         return null;
                     }
                     sout = mkStream(sno);
                     sout.setLabel(label);
-                    _streams.TryAdd(sno, sout);
+                    streams.TryAdd(sno, sout);
                 }// todo - move this to behave
                 DataChunk DataChannelOpen = DataChunk.mkDataChannelOpen(label);
                 sout.outbound(DataChannelOpen);
@@ -2065,7 +2039,7 @@ namespace SIPSorcery.Net.Sctp
             {
                 var si = item.Key;
                 var nBytesAcked = item.Value;
-                if (_streams.TryGetValue(si, out var s))
+                if (streams.TryGetValue(si, out var s))
                 {
                     s.onBufferReleased(nBytesAcked);
                 }
@@ -2082,11 +2056,11 @@ namespace SIPSorcery.Net.Sctp
             var bytesOutstanding = inflightQueue.getNumBytes();
             if (bytesOutstanding >= d.advertisedReceiverWindowCredit)
             {
-                _rwnd = 0;
+                rwnd = 0;
             }
             else
             {
-                _rwnd = (uint)d.advertisedReceiverWindowCredit - bytesOutstanding;
+                rwnd = (uint)d.advertisedReceiverWindowCredit - bytesOutstanding;
             }
 
             processFastRetransmission(d.cumulativeTSNAck, htna, cumTSNAckPointAdvanced);
@@ -2180,13 +2154,13 @@ namespace SIPSorcery.Net.Sctp
 
                                 fastRecoverExitPoint = htna;
 
-                                _ssthresh = max32(_cwnd / 2, 4 * mtu);
+                                ssthresh = max32(cwnd / 2, 4 * mtu);
 
-                                _cwnd = _ssthresh;
+                                cwnd = ssthresh;
                                 partialBytesAcked = 0;
                                 willRetransmitFast = true;
 
-                                logger.LogTrace($"{name} updated cwnd={_cwnd} ssthresh={_ssthresh} inflight={inflightQueue.getNumBytes()}(FR)");
+                                logger.LogTrace($"{name} updated cwnd={cwnd} ssthresh={ssthresh} inflight={inflightQueue.getNumBytes()}(FR)");
                             }
                         }
                     }
@@ -2217,7 +2191,7 @@ namespace SIPSorcery.Net.Sctp
             }
 
             // Update congestion control parameters
-            if (_cwnd <= _ssthresh)
+            if (cwnd <= ssthresh)
             {
                 // RFC 4096, sec 7.2.1.  Slow-Start
                 //   o  When cwnd is less than or equal to ssthresh, an SCTP endpoint MUST
@@ -2233,13 +2207,13 @@ namespace SIPSorcery.Net.Sctp
                 if (!inFastRecovery &&
                     pendingQueue.size() > 0)
                 {
-                    _cwnd += min32(totalBytesAcked, _cwnd); // TCP way
+                    cwnd += min32(totalBytesAcked, cwnd); // TCP way
                                                             // a.cwnd += min32(uint32(totalBytesAcked), a.mtu) // SCTP way (slow)
-                    logger.LogTrace($"{name} updated cwnd={_cwnd} ssthresh={_ssthresh} acked={totalBytesAcked} (SS)");
+                    logger.LogTrace($"{name} updated cwnd={cwnd} ssthresh={ssthresh} acked={totalBytesAcked} (SS)");
                 }
                 else
                 {
-                    logger.LogInformation($"{name} cwnd did not grow: cwnd={_cwnd} ssthresh={_ssthresh} acked={totalBytesAcked} FR={inFastRecovery} pending={pendingQueue.size()}");
+                    logger.LogInformation($"{name} cwnd did not grow: cwnd={cwnd} ssthresh={ssthresh} acked={totalBytesAcked} FR={inFastRecovery} pending={pendingQueue.size()}");
                 }
             }
             else
@@ -2257,11 +2231,11 @@ namespace SIPSorcery.Net.Sctp
                 //      of data outstanding (i.e., before arrival of the SACK, flight size
                 //      was greater than or equal to cwnd), increase cwnd by MTU, and
                 //      reset partial_bytes_acked to (partial_bytes_acked - cwnd).
-                if (partialBytesAcked >= _cwnd && pendingQueue.size() > 0)
+                if (partialBytesAcked >= cwnd && pendingQueue.size() > 0)
                 {
-                    partialBytesAcked -= _cwnd;
-                    _cwnd += mtu;
-                    logger.LogTrace($"{name} updated cwnd={_cwnd} ssthresh={_ssthresh} acked={totalBytesAcked} (CA)");
+                    partialBytesAcked -= cwnd;
+                    cwnd += mtu;
+                    logger.LogTrace($"{name} updated cwnd={cwnd} ssthresh={ssthresh} acked={totalBytesAcked} (CA)");
                 }
             }
         }
@@ -2424,9 +2398,9 @@ namespace SIPSorcery.Net.Sctp
                     //      ssthresh = max(cwnd/2, 4*MTU)
                     //      cwnd = 1*MTU
 
-                    _ssthresh = max32(_cwnd / 2, 4 * mtu);
-                    _cwnd = mtu;
-                    logger.LogTrace($"{name} updated cwnd={_cwnd} ssthresh={_ssthresh} inflight={inflightQueue.getNumBytes()}(RTO)");
+                    ssthresh = max32(cwnd / 2, 4 * mtu);
+                    cwnd = mtu;
+                    logger.LogTrace($"{name} updated cwnd={cwnd} ssthresh={ssthresh} inflight={inflightQueue.getNumBytes()}(RTO)");
 
                     // RFC 3758 sec 3.5
                     //  A5) Any time the T3-rtx timer expires, on any destination, the sender
