@@ -70,7 +70,7 @@ namespace SIPSorcery.Net.Sctp
         public const uint defaultMaxMessageSize = 65536;
     }
 
-    public abstract class Association : IRunnable, IRtxTimerObserver, IAckTimerObserver
+    public abstract class Association : IRtxTimerObserver, IAckTimerObserver
     {
         private UInt64 bytesReceived;
         private UInt64 bytesSent;
@@ -83,7 +83,10 @@ namespace SIPSorcery.Net.Sctp
         private bool _even;
         private AckMode ackMode;
         protected bool IsClient;
-        public abstract void associate();
+        public void associate()
+        {
+
+        }
         public AcknowlegeState ackState;
 
         /**
@@ -160,7 +163,6 @@ namespace SIPSorcery.Net.Sctp
         private const uint commonHeaderSize = 12;
         private static long VALIDCOOKIELIFE = 60000;
         protected double _rto = 3.0;
-        internal SimpleSCTPTimer _timer;
         private bool useForwardTSN;
         protected uint mtu = AssociationConsts.initialMTU;
         protected uint maxPayloadSize = AssociationConsts.initialMTU - (AssociationConsts.commonHeaderSize + AssociationConsts.dataChunkHeaderSize);
@@ -839,43 +841,6 @@ namespace SIPSorcery.Net.Sctp
             return new Chunk[0];
         }
 
-        ////                var ssn = streamMap.Contains(c.getStreamId());
-        ////    ssn, ok := streamMap[c.streamIdentifier]
-        ////		if !ok {
-        ////			streamMap[c.streamIdentifier] = c.streamSequenceNumber
-        ////} else if sna16LT(ssn, c.streamSequenceNumber) {
-        ////    // to report only once with greatest SSN
-        ////    streamMap[c.streamIdentifier] = c.streamSequenceNumber
-
-        //        }
-        //	}
-
-        //	//fwdtsn:= &chunkForwardTSN{
-        ////newCumulativeTSN: a.advancedPeerTSNAckPoint,
-        ////		streams:[]chunkForwardTSNStream{ },
-        //	}
-
-        ////var streamStr string
-        ////	for si, ssn := range streamMap
-        ////{
-        ////    streamStr += fmt.Sprintf("(si=%d ssn=%d)", si, ssn)
-
-        ////        fwdtsn.streams = append(fwdtsn.streams, chunkForwardTSNStream{
-        ////identifier: si,
-        ////			sequence: ssn,
-        ////		})
-        ////	}
-        ////a.log.Tracef("[%s] building fwdtsn: newCumulativeTSN=%d cumTSN=%d - %s", a.name, fwdtsn.newCumulativeTSN, a.cumulativeTSNAckPoint, streamStr)
-
-
-        ////    return fwdtsn
-        //}
-
-
-
-
-
-
         private Packet[] gatherOutboundDataAndReconfigPackets()
         {
             var packets = new List<Packet>();
@@ -1050,13 +1015,6 @@ namespace SIPSorcery.Net.Sctp
             c._retryCount = 1;          // being sent for the first time
             checkPartialReliabilityStatus(c);
 
-            //    long now = TimeExtension.CurrentTimeMillis();
-            //    d.setTsn(_nearTSN++);
-            //    d.setGapAck(false);
-            //    d.setRetryTime(now + getT3() - 1);
-            //    d.setSentTime(now);
-            //_timer.setRunnable(this, getT3());
-
             // Push it into the inflightQueue
             this.inflightQueue.pushNoCheck(c);
         }
@@ -1084,7 +1042,6 @@ namespace SIPSorcery.Net.Sctp
                     bytesInPacket = commonHeaderSize;
                 }
 
-
                 chunksToSend.Add(c);
 
                 bytesInPacket += commonHeaderSize + c.getDataSize();
@@ -1097,39 +1054,6 @@ namespace SIPSorcery.Net.Sctp
 
             return packets.ToArray();
         }
-        //        func(a* Association) bundleDataChunksIntoPackets(chunks[]*chunkPayloadData) []* packet
-        //        {
-        //            packets := []*packet { }
-        //            chunksToSend := []
-        //            chunk { }
-        //            bytesInPacket := int (commonHeaderSize)
-
-        //	for _, c := range chunks
-        //        {
-        //		// RFC 4960 sec 6.1.  Transmission of DATA Chunks
-        //		//   Multiple DATA chunks committed for transmission MAY be bundled in a
-        //		//   single packet.  Furthermore, DATA chunks being retransmitted MAY be
-        //		//   bundled with new DATA chunks, as long as the resulting packet size
-        //		//   does not exceed the path MTU.
-        //		if bytesInPacket+len(c.userData) > int (a.mtu) {
-        //			packets = append(packets, a.createPacket(chunksToSend))
-
-        //            chunksToSend = [] chunk{}
-        //    bytesInPacket = int (commonHeaderSize)
-        //}
-
-        //chunksToSend = append(chunksToSend, c)
-
-        //        bytesInPacket += int(dataChunkHeaderSize) + len(c.userData)
-        //	}
-
-        //	if len(chunksToSend) > 0 {
-        //    packets = append(packets, a.createPacket(chunksToSend))
-
-        //    }
-
-        //return packets
-        //}
 
         private void checkPartialReliabilityStatus(DataChunk c)
         {
@@ -1172,79 +1096,7 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogError($"{name} stream {c.streamIdentifier} not found)"); 
             }
         }
-
-
-        //        func (a *Association) gatherOutboundDataAndReconfigPackets(rawPackets [][]byte) [][]byte {
-        //	for _, p := range a.getDataPacketsToRetransmit() {
-        //		raw, err := p.marshal()
-        //		if err != nil {
-        //			a.log.Warnf("[%s] failed to serialize a DATA packet to be retransmitted", a.name)
-        //			continue
-        //		}
-        //		rawPackets = append(rawPackets, raw)
-        //	}
-
-        //	// Pop unsent data chunks from the pending queue to send as much as
-        //	// cwnd and rwnd allow.
-        //	chunks, sisToReset := a.popPendingDataChunksToSend()
-        //	if len(chunks) > 0 {
-        //		// Start timer. (noop if already started)
-        //		a.log.Tracef("[%s] T3-rtx timer start (pt1)", a.name)
-        //		a.t3RTX.start(a.rtoMgr.getRTO())
-        //		for _, p := range a.bundleDataChunksIntoPackets(chunks) {
-        //			raw, err := p.marshal()
-        //			if err != nil {
-        //				a.log.Warnf("[%s] failed to serialize a DATA packet", a.name)
-        //				continue
-        //			}
-        //			rawPackets = append(rawPackets, raw)
-        //		}
-        //	}
-
-        //	if len(sisToReset) > 0 || a.willRetransmitReconfig {
-        //		if a.willRetransmitReconfig {
-        //			a.willRetransmitReconfig = false
-        //			a.log.Debugf("[%s] retransmit %d RECONFIG chunk(s)", a.name, len(a.reconfigs))
-        //			for _, c := range a.reconfigs {
-        //				p := a.createPacket([]chunk{c})
-        //				raw, err := p.marshal()
-        //				if err != nil {
-        //					a.log.Warnf("[%s] failed to serialize a RECONFIG packet to be retransmitted", a.name)
-        //				} else {
-        //					rawPackets = append(rawPackets, raw)
-        //				}
-        //			}
-        //		}
-
-        //		if len(sisToReset) > 0 {
-        //			rsn := a.generateNextRSN()
-        //			tsn := a.myNextTSN - 1
-        //			c := &chunkReconfig{
-        //				paramA: &paramOutgoingResetRequest{
-        //					reconfigRequestSequenceNumber: rsn,
-        //					senderLastTSN:                 tsn,
-        //					streamIdentifiers:             sisToReset,
-        //				},
-        //			}
-        //			a.reconfigs[rsn] = c // store in the map for retransmission
-        //			a.log.Debugf("[%s] sending RECONFIG: rsn=%d tsn=%d streams=%v",
-        //				a.name, rsn, a.myNextTSN-1, sisToReset)
-        //			p := a.createPacket([]chunk{c})
-        //			raw, err := p.marshal()
-        //			if err != nil {
-        //				a.log.Warnf("[%s] failed to serialize a RECONFIG packet to be transmitted", a.name)
-        //			} else {
-        //				rawPackets = append(rawPackets, raw)
-        //			}
-        //		}
-
-        //		if len(a.reconfigs) > 0 {
-        //			a.tReconfig.start(a.rtoMgr.getRTO())
-        //		}
-        //	}
-
-        //	return rawPackets
-        //}
+        
 
         /**
 		 * override this and return false to disable the bi-directionalinit gamble
@@ -1266,6 +1118,7 @@ namespace SIPSorcery.Net.Sctp
             }
             return b;
         }
+
         protected uint max32(uint a, uint b)
         {
             if (a > b)
@@ -1274,10 +1127,6 @@ namespace SIPSorcery.Net.Sctp
             }
             return b;
         }
-        //protected bool sna32LT(uint i1, uint i2)
-        //{
-        //    return (i1 < i2 && i2 - i1 < 1 << 31) || (i1 > i2 && i1 - i2 > 1 << 31);
-        //}
 
         protected void sendPayloadData(DataChunk[] chunks)
         {
@@ -1294,17 +1143,12 @@ namespace SIPSorcery.Net.Sctp
                     return;
                 }
 
-                //ByteBuffer obb = mkPkt(c);
                 foreach (var c in chunks)
                 {
                     pendingQueue.push(c);
                 }
                 //logger.LogDebug($"SCTP packet send: {Packet.getHex(obb)}");
             }
-            //else
-            //{
-            //    logger.LogDebug("Blocked empty packet send() - probably no response needed.");
-            //}
         }
 
         /**
@@ -1347,15 +1191,8 @@ namespace SIPSorcery.Net.Sctp
                 switch (ty)
                 {
                     case ChunkType.INIT:
-                        //if (acceptableStateForInboundInit())
-                        //{
                         InitChunk init = (InitChunk)c;
                         reply = handleInit(p, init);
-                        //}
-                        //else
-                        //{
-                        // logger.LogDebug("Got an INIT when state was " + _state.ToString() + " - ignoring it for now ");
-                        //}
                         break;
                     case ChunkType.INITACK:
                         logger.LogDebug("got initack " + c.ToString());
@@ -1392,10 +1229,6 @@ namespace SIPSorcery.Net.Sctp
                     case ChunkType.COOKIE_ECHO:
                         logger.LogTrace("got cookie echo " + c.ToString());
                         reply = new Packet[] { makePacket(cookieEchoDeal((CookieEchoChunk)c)) };
-                        //if (reply.Length > 0)
-                        //{
-                        //    ret = !typeof(ErrorChunk).IsAssignableFrom(reply[0].GetType()); // ignore any following data chunk. 
-                        //}
                         break;
                     case ChunkType.COOKIE_ACK:
                         logger.LogTrace("got cookie ack " + c.ToString());
@@ -1450,147 +1283,11 @@ namespace SIPSorcery.Net.Sctp
                         _al.onDisAssociated(this);
                     }
                 }
-                //return ret;
             }
             finally
             {
                 RWMutex.ReleaseMutex();
             }
-        }
-
-        public void run()
-        {
-
-        }
-
-        /*
- In instances where its peer endpoint is multi-homed, if an endpoint
- receives a SACK that advances its Cumulative TSN Ack Point, then it
- should update its cwnd (or cwnds) apportioned to the destination
- addresses to which it transmitted the acknowledged data.  However, if
-
-
-
- Stewart                     Standards Track                    [Page 96]
-
- RFC 4960          Stream Control Transmission Protocol    September 2007
-
-
- the received SACK does not advance the Cumulative TSN Ack Point, the
- endpoint MUST NOT adjust the cwnd of any of the destination
- addresses.
-
- Because an endpoint's cwnd is not tied to its Cumulative TSN Ack
- Point, as duplicate SACKs come in, even though they may not advance
- the Cumulative TSN Ack Point an endpoint can still use them to clock
- out new data.  That is, the data newly acknowledged by the SACK
- diminishes the amount of data now in flight to less than cwnd, and so
- the current, unchanged value of cwnd now allows new data to be sent.
- On the other hand, the increase of cwnd must be tied to the
- Cumulative TSN Ack Point advancement as specified above.  Otherwise,
- the duplicate SACKs will not only clock out new data, but also will
- adversely clock out more new data than what has just left the
- network, during a time of possible congestion.
-
- o  When the endpoint does not transmit data on a given transport
- address, the cwnd of the transport address should be adjusted to
- max(cwnd/2, 4*MTU) per RTO.
-
- */
-
-        // timer goes off,
-        //public void run()
-        //{
-        //    if (canSend())
-        //    {
-        //        long now = TimeExtension.CurrentTimeMillis();
-        //        //logger.LogDebug("retry timer went off at " + now);
-        //        List<DataChunk> dcs = new List<DataChunk>();
-        //        int space = _transpMTU - 12; // room for packet header
-        //        bool resetTimer = false;
-        //        lock (_inFlight)
-        //        {
-        //            foreach (var kvp in _inFlight)
-        //            {
-        //                DataChunk d = kvp.Value;
-        //                long k = kvp.Key;
-        //                if (d.getGapAck())
-        //                {
-        //                    //logger.LogDebug("skipping gap-acked tsn " + d.getTsn());
-        //                    continue;
-        //                }
-        //                if (d.getRetryTime() <= now)
-        //                {
-        //                    space -= d.getLength();
-        //                    //logger.LogDebug("available space in pkt is " + space);
-        //                    if (space <= 0)
-        //                    {
-        //                        resetTimer = true;
-        //                        break;
-        //                    }
-        //                    else
-        //                    {
-        //                        dcs.Add(d);
-        //                        d.setRetryTime(now + getT3() - 1);
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    //logger.LogDebug("retry not yet due for  " + d.ToString());
-        //                    resetTimer = true;
-        //                }
-        //            }
-        //        }
-        //        if (dcs.Count != 0)
-        //        {
-        //            dcs.Sort();
-        //            DataChunk[] da = new DataChunk[dcs.Count];
-        //            int i = 0;
-        //            foreach (DataChunk d in dcs)
-        //            {
-        //                da[i++] = d;
-        //            }
-        //            resetTimer = true;
-        //            try
-        //            {
-        //                //logger.LogDebug("Sending retry for  " + da.Length + " data chunks");
-        //                this.send(da);
-        //            }
-        //            catch (EndOfStreamException end)
-        //            {
-        //                logger.LogWarning("Retry send failed " + end.ToString());
-        //                unexpectedClose(end);
-        //                resetTimer = false;
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                logger.LogError("Cant send retry - eek " + ex.ToString());
-        //            }
-        //        }
-        //        else
-        //        {
-        //            //logger.LogDebug("Nothing to do ");
-        //        }
-        //        if (resetTimer)
-        //        {
-        //            _timer.setRunnable(this, getT3());
-        //            //logger.LogDebug("Try again in a while  " + getT3());
-
-        //        }
-        //    }
-        //}
-
-        public ByteBuffer mkPkt(params Chunk[] cs)
-        {
-            Packet ob = new Packet(_srcPort, _destPort, peerVerificationTag);
-            foreach (Chunk r in cs)
-            {
-                //logger.LogDebug("adding chunk to outbound packet: " + r.ToString());
-                ob.Add(r);
-                //todo - this needs to workout if all the chunks will fit...
-            }
-            ByteBuffer obb = ob.getByteBuffer();
-            return obb;
         }
 
         public Packet makePacket(params Chunk[] cs)
@@ -1605,17 +1302,6 @@ namespace SIPSorcery.Net.Sctp
             return ob;
         }
 
-        //public Packet makePacket(IEnumerable<Chunk> cs)
-        //{
-        //    Packet ob = new Packet(_srcPort, _destPort, peerVerificationTag);
-        //    foreach (Chunk r in cs)
-        //    {
-        //        //logger.LogDebug("adding chunk to outbound packet: " + r.ToString());
-        //        ob.Add(r);
-        //        //todo - this needs to workout if all the chunks will fit...
-        //    }
-        //    return ob;
-        //}
 
         public uint getPeerVerTag()
         {
@@ -1685,21 +1371,14 @@ namespace SIPSorcery.Net.Sctp
 
         public void sendInit()
         {
-            try
+            if (storedInit == null)
             {
-                if (storedInit == null)
-                {
-                    throw new Exception("errInitNotStoredToSend");
-                }
+                throw new Exception("errInitNotStoredToSend");
+            }
 
-                var outbound = new Packet(_srcPort, _destPort, peerVerificationTag);
-                outbound.Add(storedInit);
-                this.controlQueue.push(outbound);
-            }
-            finally
-            {
-                //RWMutex.ReleaseMutex();
-            }
+            var outbound = new Packet(_srcPort, _destPort, peerVerificationTag);
+            outbound.Add(storedInit);
+            this.controlQueue.push(outbound);
         }
 
         void sendCookieEcho()
@@ -1710,12 +1389,6 @@ namespace SIPSorcery.Net.Sctp
             }
 
             logger.LogDebug($"{name} sending COOKIE-ECHO");
-
-            //   var outbound = new Packet();
-            //outbound.verificationTag = peerVerificationTag
-            //outbound.sourcePort = sourcePort
-            //outbound.destinationPort = destinationPort''
-            //outbound.chunks = []chunk{a.storedCookieEcho}
 
             controlQueue.push(makePacket(storedCookieEcho));
             //a.awakeWriteLoop()
@@ -1863,9 +1536,6 @@ namespace SIPSorcery.Net.Sctp
                 iac.setSupportedExtensions(this.getUnionSupportedExtensions(fse));
             }
             outbound.Add(iac);
-            //var reply = new Packet(mkPkt(iac));
-            //logger.LogDebug("SCTP received INIT:" + init.ToString());
-            //logger.LogDebug("Replying with init-ack :" + iac.ToString());
             return new Packet[] { outbound };
         }
 
@@ -1924,16 +1594,12 @@ namespace SIPSorcery.Net.Sctp
                     logger.LogError(x.ToString());
                 }
             }
-            //else
-            //{
-            //    repa = _in.append(dc);
-            //}
 
             if (closer != null)
             {
                 repa.Add(closer);
             }
-            //_in.handleData(dc);
+
             peerLastTSN = tsn;
             if (repa.Count == 0)
             {
@@ -1945,8 +1611,6 @@ namespace SIPSorcery.Net.Sctp
 
         private Packet[] handleData(DataChunk d)
         {
-            List<Chunk> rep = new List<Chunk>();
-
             var canPush = payloadQueue.canPush(d, peerLastTSN);
             if (canPush)
             {
@@ -1971,73 +1635,9 @@ namespace SIPSorcery.Net.Sctp
 			        }
                 }
             }
-            //var sack = mkSack();
-            //rep.Add(sack);
-            //return rep.ToArray();
 
             return handlePeerLastTSNAndAcknowledgement(d.immediateSack);
         }
-
-        // The caller should hold the lock.
-        //Packet[] handleData(DataChunk d)
-        //{
-        //    //a.log.Tracef("[%s] DATA: tsn=%d immediateSack=%v len=%d",
-        //    // a.name, d.tsn, d.immediateSack, len(d.userData))
-        //    //a.stats.incDATAs()
-
-        //    var canPush = payloadQueue.canPush(d, peerLastTSN);
-        // if (canPush)
-        //    {
-        //        var s = getOrCreateStream(d.getStreamId());
-        //  if (s == null)
-        //        {
-        //            // silentely discard the data. (sender will retry on T3-rtx timeout)
-        //            // see pion/sctp#30
-        //            //a.log.Debugf("discard %d", d.streamSequenceNumber)
-        //            return null;
-        //  }
-
-        //  if (getMyReceiverWindowCredit() > 0)
-        //        {
-        //            // Pass the new chunk to stream level as soon as it arrives
-        //            payloadQueue.push(d, peerLastTSN);
-        //            s.handleData(d);
-        //  }
-        //        else
-        //        {
-        //   // Receive buffer is full
-        //   var ok = payloadQueue.getLastTSNReceived(out var lastTSN);
-        //   if (ok && Utils.sna32LT(d.getTsn(), lastTSN))
-        //            {
-        //                //a.log.Debugf("[%s] receive buffer full, but accepted as this is a missing chunk with tsn=%d ssn=%d", a.name, d.tsn, d.streamSequenceNumber)
-        //                payloadQueue.push(d, peerLastTSN);
-        //                s.handleData(d);
-        //   }
-        //            else
-        //            {
-        //    //a.log.Debugf("[%s] receive buffer full. dropping DATA with tsn=%d ssn=%d", a.name, d.tsn, d.streamSequenceNumber)
-        //   }
-        //  }
-        // }
-        //    return handlePeerLastTSNAndAcknowledgement(d.immediateSack);
-        //}
-
-        //// getOrCreateStream gets or creates a stream. The caller should hold the lock.
-        //SCTPStream getOrCreateStream(int streamIdentifier)
-        //{
-        //    if (_streams.TryGetValue(streamIdentifier, out var s))
-        //        return s;
-
-        //    return createStream(streamIdentifier, true);
-        //}
-
-        //// createStream creates a stream. The caller should hold the lock and check no stream exists for this id.
-        //SCTPStream createStream(int streamIdentifier, bool accept)
-        //{
-        //    var s = mkStream(streamIdentifier);
-        //    _streams.Add(streamIdentifier, s);
-        //    return s;
-        //}
 
         // A common routine for handleData and handleForwardTSN routines
         // The caller should hold the lock.
@@ -2140,7 +1740,6 @@ namespace SIPSorcery.Net.Sctp
 
         // todo should be in a behave block
         // then we wouldn't be messing with stream seq numbers.
-
         private Chunk[] dcepDeal(SCTPStream s, DataChunk dc, DataChannelOpen dcep)
         {
             Chunk[] rep = null;
@@ -2279,11 +1878,9 @@ namespace SIPSorcery.Net.Sctp
             return tsn;
         }
 
-
         public abstract void enqueue(DataChunk d);
 
         public abstract SCTPStream mkStream(int id);
-
 
         public uint getCumAckPt()
         {
@@ -2308,18 +1905,6 @@ namespace SIPSorcery.Net.Sctp
 
         public SCTPStream mkStream(string label)
         {
-            //int n = 1;
-            //int tries = this._maxOutStreams;
-            //do
-            //{
-            //    n = 2 * _random.Next(this._maxOutStreams);
-            //    if (!_even) n += 1;
-            //    if (--tries < 0)
-            //    {
-            //        logger.LogError("StreamNumberInUseException");
-            //        return null;
-            //    }
-            //} while (_streams.ContainsKey(n));
             int n = _nextStreamID;
             _nextStreamID += 2;
             return mkStream(n, label);
@@ -2390,11 +1975,6 @@ namespace SIPSorcery.Net.Sctp
             }
             return sout;
         }
-
-        //public int maxMessageSize()
-        //{
-        //    return 1 << 20; // shrug - I don't know 
-        //}
 
         public bool canSend()
         {
@@ -2686,7 +2266,7 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        Dictionary<int, uint> processSelectiveAck(SackChunk d, out uint htna)
+        private Dictionary<int, uint> processSelectiveAck(SackChunk d, out uint htna)
         {
             var bytesAckedPerStream = new Dictionary<int, uint>();
             htna = 0;
@@ -2953,36 +2533,6 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogTrace($"{name} ack timed out (ackState: {ackState})");
                 stats.incAckTimeouts();
                 ackState = AcknowlegeState.Immediate;
-            }
-        }
-
-        // bufferedAmount returns total amount (in bytes) of currently buffered user data.
-        // This is used only by testing.
-        uint bufferedAmount()
-        {
-            lock (myLock)
-            {
-
-                return pendingQueue.getNumBytes() + inflightQueue.getNumBytes();
-            }
-        }
-
-        // MaxMessageSize returns the maximum message size you can send.
-        uint MaxMessageSize()
-        {
-            lock (myLock)
-            {
-                return maxMessageSize;
-            }
-        }
-
-
-        // SetMaxMessageSize sets the maximum message size you can send.
-        void SetMaxMessageSize(uint maxMsgSize)
-        {
-            lock (myLock)
-            {
-                maxMessageSize = maxMsgSize;
             }
         }
     }

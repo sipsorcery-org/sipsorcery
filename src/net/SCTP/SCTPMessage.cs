@@ -27,7 +27,7 @@ using SIPSorcery.Sys;
  */
 namespace SIPSorcery.Net.Sctp
 {
-    internal class SCTPMessage : Runnable
+    internal class SCTPMessage 
     {
         private SCTPStream _stream;
         private byte[] _data;
@@ -172,19 +172,11 @@ namespace SIPSorcery.Net.Sctp
             return true;
         }
 
-        public byte[] getData()
-        {
-            return _data;
-        }
-
         public void setSeq(ushort mseq)
         {
             _mseq = mseq;
         }
-        public int getSeq()
-        {
-            return _mseq;
-        }
+
         public uint Count
         {
             get
@@ -193,7 +185,7 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        public override void run()
+        public void run()
         {
             //logger.LogDebug("delegated message delivery from stream of type " + _stream.GetType().Name);
             byte[] data = _data;
