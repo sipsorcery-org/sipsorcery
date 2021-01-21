@@ -231,10 +231,10 @@ namespace SIPSorcery.Net
             {
                 return name;
             }
-            else if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), (byte)ID))
+            else if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), ID))
             {
                 // If no rtpmap available then it must be a well known format.
-                return Enum.ToObject(typeof(SDPWellKnownMediaFormatsEnum), (byte)ID).ToString();
+                return Enum.ToObject(typeof(SDPWellKnownMediaFormatsEnum), ID).ToString();
             }
             else
             {
