@@ -59,8 +59,7 @@ namespace SIPSorcery.Net.Sctp
             SCTPMessage m = a.makeMessage(message, this);
             if (m == null)
             {
-                logger.LogError("SCTPMessage cannot be null, but it is");
-                return;
+                throw new UnableToSendException($"Unable to send", a.state);
             }
             AddBytesToBuffer(m.Count);
             a.sendAndBlock(m);
@@ -72,8 +71,7 @@ namespace SIPSorcery.Net.Sctp
             SCTPMessage m = a.makeMessage(message, this);
             if (m == null)
             {
-                logger.LogError("SCTPMessage cannot be null, but it is");
-                return;
+                throw new UnableToSendException($"Unable to send", a.state);
             }
             AddBytesToBuffer(m.Count);
             a.sendAndBlock(m);

@@ -76,7 +76,21 @@ namespace SIPSorcery.Net.Sctp
 
         private uint peerVerificationTag;
         private uint myVerificationTag;
-        protected State _state;
+        private State _state = State.CLOSED;
+        public State state
+        {
+            get
+            {
+                return _state;
+            }
+            set
+            {
+                if (_state != value)
+                {
+                    _state = value;
+                }
+            }
+        }
         protected uint myNextTSN; // nextTSN
         private uint peerLastTSN; // lastRcvdTSN
         private uint minTSN2MeasureRTT; // for RTT measurement
@@ -294,7 +308,7 @@ namespace SIPSorcery.Net.Sctp
             myNextTSN = tsn;
             myNextRSN = tsn;
             minTSN2MeasureRTT = tsn;
-            _state = State.CLOSED;
+            state = State.CLOSED;
 
             cwnd = min32(4 * mtu, max32(2 * mtu, 4380));
 
@@ -342,7 +356,7 @@ namespace SIPSorcery.Net.Sctp
 
                 if (isClient)
                 {
-                    _state = State.COOKIEWAIT;
+                    state = State.COOKIEWAIT;
                     InitChunk c = new InitChunk();
                     c.setInitialTSN(this.myNextTSN);
                     c.setNumInStreams(myMaxNumInboundStreams);
@@ -661,7 +675,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                 }
 
-                var state = this._state;
+                var state = this.state;
                 if (state == State.ESTABLISHED)
                 {
                     rawPackets.AddRange(gatherOutboundDataAndReconfigPackets());
@@ -1073,7 +1087,7 @@ namespace SIPSorcery.Net.Sctp
         {
             lock (myLock)
             {
-                var state = _state;
+                var state = this.state;
                 if (state != State.ESTABLISHED)
                 {
                     throw new Exception($"errPayloadDataStateNotExist: state={state}");
@@ -1104,11 +1118,11 @@ namespace SIPSorcery.Net.Sctp
             bool ret = false;
             if (doBidirectionalInit())
             {
-                ret = ((_state == State.CLOSED) || (_state == State.COOKIEWAIT) || (_state == State.COOKIEECHOED));
+                ret = ((state == State.CLOSED) || (state == State.COOKIEWAIT) || (state == State.COOKIEECHOED));
             }
             else
             {
-                ret = (_state == State.CLOSED);
+                ret = (state == State.CLOSED);
             }
             return ret;
         }
@@ -1128,7 +1142,7 @@ namespace SIPSorcery.Net.Sctp
                 RWMutex.WaitOne();
                 ChunkType ty = c.getType();
                 //bool ret = true;
-                State oldState = _state;
+                State oldState = state;
                 Packet[] reply = null;
                 switch (ty)
                 {
@@ -1138,7 +1152,7 @@ namespace SIPSorcery.Net.Sctp
                         break;
                     case ChunkType.INITACK:
                         logger.LogDebug("got initack " + c.ToString());
-                        if (_state == State.COOKIEWAIT)
+                        if (state == State.COOKIEWAIT)
                         {
                             InitAckChunk iack = (InitAckChunk)c;
                             reply = handleInitAck(p, iack);
@@ -1172,10 +1186,10 @@ namespace SIPSorcery.Net.Sctp
                         break;
                     case ChunkType.COOKIE_ACK:
                         logger.LogTrace("got cookie ack " + c.ToString());
-                        if (_state == State.COOKIEECHOED)
+                        if (state == State.COOKIEECHOED)
                         {
                             t1Cookie.stop();
-                            _state = State.ESTABLISHED;
+                            state = State.ESTABLISHED;
                         }
                         break;
                     case ChunkType.DATA:
@@ -1209,7 +1223,7 @@ namespace SIPSorcery.Net.Sctp
                     this.controlQueue.pushAll(reply);
                     awakeWriteLoop.Set();
                 }
-                if ((_state == State.ESTABLISHED) && (oldState != State.ESTABLISHED))
+                if ((state == State.ESTABLISHED) && (oldState != State.ESTABLISHED))
                 {
                     if (null != _al)
                     {
@@ -1217,7 +1231,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                     reconfigState = new ReconfigState(this, peerLastTSN);
                 }
-                if ((oldState == State.ESTABLISHED) && (_state != State.ESTABLISHED))
+                if ((oldState == State.ESTABLISHED) && (state != State.ESTABLISHED))
                 {
                     if (null != _al)
                     {
@@ -1338,7 +1352,7 @@ namespace SIPSorcery.Net.Sctp
 
         protected virtual Packet[] handleInitAck(Packet p, InitAckChunk i)
         {
-            var state = _state;
+            var state = this.state;
             if (state != State.COOKIEWAIT)
             {
                 // RFC 4960
@@ -1377,7 +1391,7 @@ namespace SIPSorcery.Net.Sctp
             sendCookieEcho();
 
             t1Cookie.start(rtoMgr.getRTO());
-            this._state = State.COOKIEECHOED;
+            this.state = State.COOKIEECHOED;
             return null;
         }
 
@@ -1423,7 +1437,7 @@ namespace SIPSorcery.Net.Sctp
 		 */
         public virtual Packet[] handleInit(Packet p, InitChunk i)
         {
-            var state = _state;
+            var state = this.state;
             // https://tools.ietf.org/html/rfc4960#section-5.2.1
             // Upon receipt of an INIT in the COOKIE-WAIT state, an endpoint MUST
             // respond with an INIT ACK using the same parameters it sent in its
@@ -1770,7 +1784,7 @@ namespace SIPSorcery.Net.Sctp
         private Chunk[] cookieEchoDeal(CookieEchoChunk echo)
         {
             Chunk[] reply = new Chunk[0];
-            if (_state == State.CLOSED || _state == State.COOKIEWAIT || _state == State.COOKIEECHOED)
+            if (state == State.CLOSED || state == State.COOKIEWAIT || state == State.COOKIEECHOED)
             {
                 // Authenticate the State Cookie
                 CookieHolder cookie;
@@ -1783,7 +1797,7 @@ namespace SIPSorcery.Net.Sctp
                     if (howStale == 0)
                     {
                         //enter the ESTABLISHED state
-                        _state = State.ESTABLISHED;
+                        state = State.ESTABLISHED;
                         /*
 						 Send a COOKIE ACK chunk to the peer acknowledging receipt of the
 						 COOKIE ECHO.  The COOKIE ACK MAY be bundled with an outbound DATA
@@ -1850,7 +1864,10 @@ namespace SIPSorcery.Net.Sctp
                 cs[0] = reconfigState.makeClose(st);
 
                 this.controlQueue.push(makePacket(cs[0]));
-                awakeWriteLoop.Set();
+                if (!_isDone)
+                { 
+                    awakeWriteLoop.Set();
+                }                
             }
         }
 
@@ -1931,7 +1948,7 @@ namespace SIPSorcery.Net.Sctp
         public bool canSend()
         {
             bool ok;
-            switch (_state)
+            switch (state)
             {
                 case State.ESTABLISHED:
                 case State.SHUTDOWNPENDING:
@@ -1954,7 +1971,7 @@ namespace SIPSorcery.Net.Sctp
         {
             lock (myLock)
             {
-                if (_state == State.CLOSED && _rcv == null)
+                if (state == State.CLOSED && _rcv == null)
                 {
                     return;
                 }
@@ -1965,7 +1982,7 @@ namespace SIPSorcery.Net.Sctp
                 awakeWriteLoop?.Dispose();
                 closeAllTimers();
                 _al.onDisAssociated(this);
-                _state = State.CLOSED;
+                state = State.CLOSED;
             }
         }
 
@@ -1988,7 +2005,7 @@ namespace SIPSorcery.Net.Sctp
         protected void handleSack(SackChunk d)
         {
             logger.LogTrace($"{name} SACK: cumTSN={d.cumulativeTSNAck} _rwnd={d.advertisedReceiverWindowCredit}");
-            var state = this._state;
+            var state = this.state;
             if (state != State.ESTABLISHED)
             {
                 return;

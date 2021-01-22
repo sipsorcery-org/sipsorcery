@@ -32,6 +32,9 @@ namespace SIPSorcery.Demo
     {
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
         private const int dataSize = 64000;
+        private static int lastNum;
+        private const int totalItems = 100;
+        private const int totalPairs = 3;
 
         static void Main(string[] args)
         {
@@ -48,131 +51,169 @@ namespace SIPSorcery.Demo
 
             AddConsoleLogger();
 
-            var peerA = new WebRTCPeer("PeerA", "dcx");
-            peerA.OnData = OnData;
-            var peerB = new WebRTCPeer("PeerB", "dcy");
-            peerB.OnData = OnData;
-
-            // Exchange the SDP offer/answers. ICE Host candidates are included in the SDP.
-            var offer = peerA.PeerConnection.createOffer(null);
-            await peerA.PeerConnection.setLocalDescription(offer);
-
-            if(peerB.PeerConnection.setRemoteDescription(offer) != SetDescriptionResultEnum.OK)
+            var peersA = new List<WebRTCPeer>();
+            for (int i = 0; i < totalPairs; i++)
             {
-                throw new ApplicationException("Couldn't set remote description.");
+                var peerA = new WebRTCPeer("PeerA" + i, "dcx");
+                peerA.OnData = OnData;
+                peersA.Add(peerA);
             }
-            var answer = peerB.PeerConnection.createAnswer(null);
-            await peerB.PeerConnection.setLocalDescription(answer);
-
-            if(peerA.PeerConnection.setRemoteDescription(answer) != SetDescriptionResultEnum.OK)
+            var peersB = new List<WebRTCPeer>();
+            for (int i = 0; i < totalPairs; i++)
             {
-                throw new ApplicationException("Couldn't set remote description.");
+                var peerB = new WebRTCPeer("PeerB" + i, "dcy");
+                peerB.OnData = OnData;
+                peersB.Add(peerB);
             }
 
-            // Wait for the peers to connect. Should take <1s if the peers are on the same host.
-            while(peerA.PeerConnection.connectionState != RTCPeerConnectionState.connected &&
-                peerB.PeerConnection.connectionState != RTCPeerConnectionState.connected)
+            for (int i = 0; i < totalPairs; i++)
             {
-                Console.WriteLine("Waiting for WebRTC peers to connect...");
-                await Task.Delay(1000);
+                var peerA = peersA[i];
+                var peerB = peersB[i];
+
+                // Exchange the SDP offer/answers. ICE Host candidates are included in the SDP.
+                var offer = peerA.PeerConnection.createOffer(null);
+                await peerA.PeerConnection.setLocalDescription(offer);
+
+                if (peerB.PeerConnection.setRemoteDescription(offer) != SetDescriptionResultEnum.OK)
+                {
+                    throw new ApplicationException("Couldn't set remote description.");
+                }
+                var answer = peerB.PeerConnection.createAnswer(null);
+                await peerB.PeerConnection.setLocalDescription(answer);
+
+                if (peerA.PeerConnection.setRemoteDescription(answer) != SetDescriptionResultEnum.OK)
+                {
+                    throw new ApplicationException("Couldn't set remote description.");
+                }
+
+                // Wait for the peers to connect. Should take <1s if the peers are on the same host.
+                while (peerA.PeerConnection.connectionState != RTCPeerConnectionState.connected &&
+                    peerB.PeerConnection.connectionState != RTCPeerConnectionState.connected)
+                {
+                    Console.WriteLine("Waiting for WebRTC peers to connect...");
+                    await Task.Delay(1000);
+                }
             }
 
             var taskList = new List<Task>();
 
-            taskList.Add(Task.Run(async () =>
-            {
-                string sendLabel = "dcx";
+            //taskList.Add(Task.Run(async () =>
+            //{
+            //    string sendLabel = "dcx";
 
-                while (!peerA.IsDataChannelReady(sendLabel))
-                {
-                    Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
-                    await Task.Delay(1000);
-                }
+            //    while (!peerA.IsDataChannelReady(sendLabel))
+            //    {
+            //        Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
+            //        await Task.Delay(1000);
+            //    }
 
-                for (int i = 0; i < 100; i++)
-                {
-                    try
-                    {
-                        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
+            //    //for (int i = 0; i < 100; i++)
+            //    //{
+            //    //    try
+            //    //    {
+            //    //        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
 
-                        var num = BitConverter.GetBytes(i);
-                        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("ClientA:" + ex.ToString());
-                    }
-                }
+            //    //        var num = BitConverter.GetBytes(i);
+            //    //        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
+            //    //    }
+            //    //    catch (Exception ex)
+            //    //    {
+            //    //        Console.WriteLine("ClientA:" + ex.ToString());
+            //    //    }
+            //    //}
 
-                Console.WriteLine($"ClientA: {sendLabel} Finished");
-            }));
+            //    Console.WriteLine($"ClientA: {sendLabel} Finished");
+            //}));
 
-            string[] queueNames = new string[] { "ThreadA", "ThreadB", "ThreadC" };
+            string[] queueNames = new string[] { "ThreadA" };//, "ThreadB", "ThreadC" };
 
             foreach (var queueName in queueNames)
             {
                 var name = queueName;
                 taskList.Add(Task.Run(async () =>
                 {
-                    string sendLabel = "dcx";
-
-                    while (!peerA.IsDataChannelReady(sendLabel))
+                    for (int x = 0; x < totalPairs; x++)
                     {
-                        Console.WriteLine($"Waiting 1s for data channel {sendLabel} {name} to open.");
-                        await Task.Delay(1000);
-                    }
+                        var peerA = peersA[x];
+                        var peerB = peersB[x];
+                        string sendLabel = "dcx";
 
-                    for (int i = 0; i < 100; i++)
-                    {
-                        try
+                        while (!peerA.IsDataChannelReady(sendLabel))
                         {
-                            Console.WriteLine($"Data channel send {i} on {sendLabel} {name}.");
-
-                            var packetNum = new Message();
-                            packetNum.Num = i;
-                            packetNum.QueueName = $"{peerA._peerName} {sendLabel} {name}";
-                            packetNum.Data = new byte[dataSize];
-                            await peerA.SendAsync(sendLabel, packetNum.ToData()).ConfigureAwait(false);
+                            Console.WriteLine($"{peerA._peerName} Waiting 1s for data channel {sendLabel} {name} to open.");
+                            await Task.Delay(250);
                         }
-                        catch (Exception ex)
+
+                        while (!peerB.IsDataChannelReady(sendLabel))
                         {
-                            Console.WriteLine(name + " " + ex.ToString());
+                            Console.WriteLine($"{peerB._peerName} Waiting 1s for data channel {sendLabel} {name} to open.");
+                            await Task.Delay(250);
                         }
-                    }
 
-                    Console.WriteLine(name + ": Finished");
+                        for (int i = 0; i < totalItems; i++)
+                        {
+                            try
+                            {
+                                Console.WriteLine($"{peerA._peerName} Data channel send {i} on {sendLabel} {name}.");
+
+                                var packetNum = new Message();
+                                packetNum.Num = i;
+                                packetNum.QueueName = $"{peerA._peerName} {sendLabel} {name}";
+                                packetNum.Data = new byte[dataSize];
+                                await peerA.SendAsync(sendLabel, packetNum.ToData()).ConfigureAwait(false);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"{peerA._peerName} {name} {ex}");
+                            }
+                        }
+
+                        Console.WriteLine($"{peerA._peerName} {name}: Finished");
+                    }
                 }));
             }
 
-            taskList.Add(Task.Run(async () =>
-            {
-                string sendLabel = "dcx";
+            //taskList.Add(Task.Run(async () =>
+            //{
+            //    string sendLabel = "dcx";
 
-                while (!peerA.IsDataChannelReady(sendLabel))
-                {
-                    Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
-                    await Task.Delay(1000);
-                }
+            //    while (!peerA.IsDataChannelReady(sendLabel))
+            //    {
+            //        Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
+            //        await Task.Delay(1000);
+            //    }
 
-                for (int i = 100; i < 200; i++)
-                {
-                    try
-                    {
-                        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
+            //    for (int i = 100; i < 200; i++)
+            //    {
+            //        try
+            //        {
+            //            Console.WriteLine($"Data channel send {i} on {sendLabel}.");
 
-                        var num = BitConverter.GetBytes(i);
-                        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("ClientA:" + ex.ToString());
-                    }
-                }
+            //            var num = BitConverter.GetBytes(i);
+            //            await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            Console.WriteLine("ClientA:" + ex.ToString());
+            //        }
+            //    }
 
-                Console.WriteLine($"ClientA: {sendLabel} Finished");
-            }));
+            //    Console.WriteLine($"ClientA: {sendLabel} Finished");
+            //}));
 
             await Task.WhenAll(taskList.ToArray());
+            while (lastNum < totalItems -1)
+            {
+                Thread.Sleep(1);
+            }
+            for (int x = 0; x < totalPairs; x++)
+            {
+                var peerA = peersA[x];
+                peerA.PeerConnection?.Dispose();
+                var peerB = peersB[x];
+                peerB.PeerConnection?.Dispose();
+            }
             Console.WriteLine($"Done in {sw.ElapsedMilliseconds}ms");
             Console.ReadLine();
         }
@@ -189,6 +230,7 @@ namespace SIPSorcery.Demo
             {
                 var packet = BytesToStructure<Message>(obj);
                 logger.LogDebug($"{peer._peerName}: Data channel receive: {packet.QueueName} Num: {packet.Num}.");
+                lastNum = packet.Num;
             }
         }
 
@@ -217,7 +259,7 @@ namespace SIPSorcery.Demo
         {
             var seriLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Verbose)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(seriLogger);
