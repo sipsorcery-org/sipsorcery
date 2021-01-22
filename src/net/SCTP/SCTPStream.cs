@@ -176,7 +176,7 @@ namespace SIPSorcery.Net.Sctp
             return _ass;
         }
 
-        public void close()
+        public virtual void close()
         {
             //logger.LogDebug($"SCTP closing stream id {_sno}, label {_label}.");
             _ass.closeStream(this);

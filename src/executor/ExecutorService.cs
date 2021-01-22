@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net.Sctp;
@@ -12,6 +10,7 @@ namespace SIPSorcery.executor
     {
         public bool IsDisposed;
         private BlockingCollection<SCTPMessage> messages = new BlockingCollection<SCTPMessage>();
+        private ManualResetEvent evt = new ManualResetEvent(false);
         public ExecutorService()
         {
             Task.Run(ProcessQueue);
@@ -19,10 +18,13 @@ namespace SIPSorcery.executor
         public void Dispose()
         {
             IsDisposed = true;
+            evt?.Dispose();
+            messages.CompleteAdding();
         }
 
         private void ProcessQueue()
         {
+            evt.WaitOne();
             while (!IsDisposed)
             {
                 foreach (var msg in messages.GetConsumingEnumerable())
@@ -35,6 +37,7 @@ namespace SIPSorcery.executor
         internal void execute(SCTPMessage message)
         {
             messages.Add(message);
+            evt.Set();
         }
     }
 }

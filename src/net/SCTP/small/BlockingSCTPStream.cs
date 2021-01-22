@@ -47,7 +47,12 @@ namespace SIPSorcery.Net.Sctp
             _ex_service?.Dispose();
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
+        public override void close()
+        {
+            _ex_service.Dispose();
+            base.close();
+        }
+
         public override void send(string message)
         {
             Association a = base.getAssociation();
@@ -61,7 +66,6 @@ namespace SIPSorcery.Net.Sctp
             a.sendAndBlock(m);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public override void send(byte[] message)
         {
             Association a = base.getAssociation();

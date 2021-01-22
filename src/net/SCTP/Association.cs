@@ -37,7 +37,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.Net.Sctp
 {
     public enum AcknowlegeState
-    { 
+    {
         Idle,//      int = iota // ack timer is off
         Immediate,            // will send ack immediately
         Delay                // ack timer is on (ack is being delayed)
@@ -60,7 +60,7 @@ namespace SIPSorcery.Net.Sctp
         ResultInProgress = 6
     }
 
-    public struct AssociationConsts 
+    public struct AssociationConsts
     {
         public const uint receiveMTU = 8192; // MTU for inbound packet (from DTLS)
         public const uint initialMTU = 1228; // initial MTU for outgoing packets (to DTLS)
@@ -258,7 +258,7 @@ namespace SIPSorcery.Net.Sctp
         private SecureRandom _random;
         private AssociationListener _al;
 
-        protected bool IsDone;
+        protected bool _isDone;
         private static int TICK = 1000; // loop time in rcv
         static int __assocNo = 1;
         private ReconfigState reconfigState;
@@ -305,7 +305,7 @@ namespace SIPSorcery.Net.Sctp
             tReconfig = rtxTimer.newRTXTimer((int)TimerType.Reconfig, this, rtoManager.noMaxRetrans); // retransmit forever
             _ackTimer = ackTimer.newAckTimer(this);
 
-            name = "AssocRcv" + Interlocked.Increment(ref __assocNo); 
+            name = "AssocRcv" + Interlocked.Increment(ref __assocNo);
             /*
 			the method used to determine which
 			side uses odd or even is based on the underlying DTLS connection
@@ -521,7 +521,7 @@ namespace SIPSorcery.Net.Sctp
                 try
                 {
                     byte[] buf = new byte[AssociationConsts.receiveMTU];
-                    while (_rcv != null)
+                    while (_rcv != null && !_isDone)
                     {
                         try
                         {
@@ -576,7 +576,7 @@ namespace SIPSorcery.Net.Sctp
                 }
                 finally
                 {
-                    IsDone = true;
+                    _isDone = true;
                 }
             });
             _rcv.IsBackground = true;
@@ -598,7 +598,7 @@ namespace SIPSorcery.Net.Sctp
             {
                 try
                 {
-                    while (_rcv != null)
+                    while (_send != null && !_isDone)
                     {
                         try
                         {
@@ -638,7 +638,7 @@ namespace SIPSorcery.Net.Sctp
                 }
                 finally
                 {
-                    IsDone = true;
+                    _isDone = true;
                 }
             });
             _send.IsBackground = true;
@@ -676,30 +676,30 @@ namespace SIPSorcery.Net.Sctp
 
         // The caller should hold the lock
         Packet[] gatherOutboundFastRetransmissionPackets()
-        { 
-	        if (willRetransmitFast)
+        {
+            if (willRetransmitFast)
             {
                 willRetransmitFast = false;
 
                 var toFastRetrans = new List<Chunk>();
                 uint fastRetransSize = AssociationConsts.commonHeaderSize;
 
-		        for (uint i = 0; ; i++)
+                for (uint i = 0; ; i++)
                 {
-			        if (!inflightQueue.get(cumulativeTSNAckPoint + i + 1, out var c))
+                    if (!inflightQueue.get(cumulativeTSNAckPoint + i + 1, out var c))
                     {
                         break; // end of pending data
-			        }
+                    }
 
-			        if (c.acked || c.abandoned())
+                    if (c.acked || c.abandoned())
                     {
                         continue;
-			        }
+                    }
 
-			        if (c.nSent > 1 || c.missIndicator < 3)
+                    if (c.nSent > 1 || c.missIndicator < 3)
                     {
                         continue;
-			        }
+                    }
 
                     // RFC 4960 Sec 7.2.4 Fast Retransmit on Gap Reports
                     //  3)  Determine how many of the earliest (i.e., lowest TSN) DATA chunks
@@ -712,10 +712,10 @@ namespace SIPSorcery.Net.Sctp
                     //		packet.
 
                     var dataChunkSize = AssociationConsts.dataChunkHeaderSize + c.getDataSize();
-			        if (mtu < fastRetransSize+dataChunkSize)
+                    if (mtu < fastRetransSize + dataChunkSize)
                     {
                         break;
-			        }
+                    }
 
                     fastRetransSize += dataChunkSize;
                     stats.incFastRetrans();
@@ -723,13 +723,13 @@ namespace SIPSorcery.Net.Sctp
                     checkPartialReliabilityStatus(c);
                     toFastRetrans.Add(c);
                     logger.LogTrace($"{name} fast-retransmit: tsn={c.tsn} sent={c.nSent} htna={fastRecoverExitPoint}");
-		        }
+                }
 
-		        if (toFastRetrans.Count > 0)
+                if (toFastRetrans.Count > 0)
                 {
                     return new Packet[] { makePacket(toFastRetrans.ToArray()) };
-		        }
-	        }
+                }
+            }
 
             return new Packet[0];
         }
@@ -1010,7 +1010,7 @@ namespace SIPSorcery.Net.Sctp
 
             if (streams.TryGetValue(c.getStreamId(), out var s))
             {
-                lock(s.rwLock)
+                lock (s.rwLock)
                 {
                     if (s.reliabilityType == ReliabilityType.TypeRexmit)
                     {
@@ -1034,10 +1034,10 @@ namespace SIPSorcery.Net.Sctp
             }
             else
             {
-                logger.LogError($"{name} stream {c.streamIdentifier} not found)"); 
+                logger.LogError($"{name} stream {c.streamIdentifier} not found)");
             }
         }
-        
+
 
         /**
 		 * override this and return false to disable the bi-directionalinit gamble
@@ -1150,9 +1150,7 @@ namespace SIPSorcery.Net.Sctp
                         break;
                     case ChunkType.ABORT:
                         // no reply we should just bail I think.
-                        _rcv = null;
-                        _send = null;
-                        _transp.Close();
+                        close();
                         break;
                     case ChunkType.ERROR:
                         logger.LogWarning($"SCTP error chunk received.");
@@ -1505,7 +1503,7 @@ namespace SIPSorcery.Net.Sctp
         }
 
         private Packet ingest(DataChunk dc)
-        {            
+        {
             Chunk closer = null;
             int sno = dc.getStreamId();
             uint tsn = dc.getTsn();
@@ -1572,15 +1570,15 @@ namespace SIPSorcery.Net.Sctp
                 else
                 {
                     if (payloadQueue.getLastTSNReceived(out var lastTSN) && Utils.sna32LT(d.getTsn(), lastTSN))
-			        {
+                    {
                         logger.LogDebug($"{name} receive buffer full, but accepted as this is a missing chunk with tsn={d.getTsn()} ssn=%d");//, d.streamSequenceNumber)
                         payloadQueue.push(d, peerLastTSN);
                         s.handleData(d);
-			        } 
-                    else 
+                    }
+                    else
                     {
                         logger.LogDebug($"{name}  receive buffer full. dropping DATA with tsn={d.getTsn()} ssn=%d");// d.streamSequenceNumber)
-			        }
+                    }
                 }
             }
 
@@ -1646,7 +1644,7 @@ namespace SIPSorcery.Net.Sctp
             return reply.ToArray();
         }
 
-        void unregisterStream(SCTPStream s) 
+        void unregisterStream(SCTPStream s)
         {
             lock (myLock)
             {
@@ -1949,13 +1947,21 @@ namespace SIPSorcery.Net.Sctp
 
         protected void unexpectedClose(Exception end)
         {
-            _rcv = null;
-            _send = null;
+            close();
             _al.onDisAssociated(this);
             _state = State.CLOSED;
+        }
+
+        void close()
+        {
+            _rcv = null;
+            _send = null;
+            _isDone = true;
+            _transp?.Close();
             awakeWriteLoop?.Dispose();
             closeAllTimers();
         }
+
         void closeAllTimers()
         {
             // Close all retransmission & ack timers
