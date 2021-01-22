@@ -774,6 +774,7 @@ namespace SIPSorcery.Net
 
                 _rtpIceChannel?.Close();
                 _dtlsHandle?.Close();
+                _dtlsHandle = null;
                 _peerSctpAssociation?.Close();
 
                 base.Close(reason);

@@ -17,7 +17,13 @@ namespace SIPSorcery.executor
         }
         public void Dispose()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             IsDisposed = true;
+            evt.Set();
             evt?.Dispose();
             messages.CompleteAdding();
         }

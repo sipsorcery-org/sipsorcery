@@ -94,6 +94,7 @@ namespace SIPSorcery.Net
                     _sctpAssociation.getStream(streamID)?.close();
                     _sctpAssociation.delStream(streamID);
                 }
+                _sctpAssociation?.close();
             }
         }
 

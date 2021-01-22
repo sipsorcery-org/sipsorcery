@@ -454,6 +454,9 @@ namespace SIPSorcery.Net
 
         public void WriteToRecvStream(byte[] buf)
         {
+            if (_isClosed)
+                return;
+
             _chunks.Add(buf);
         }
 

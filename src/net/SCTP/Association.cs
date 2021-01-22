@@ -621,7 +621,7 @@ namespace SIPSorcery.Net.Sctp
                                     throw;
                             }
                         }
-                        awakeWriteLoop.WaitOne();
+                        awakeWriteLoop.WaitOne(1000);
                     }
                     logger.LogDebug("SCTP message receive was empty, closing association listener.");
 
@@ -1948,18 +1948,25 @@ namespace SIPSorcery.Net.Sctp
         protected void unexpectedClose(Exception end)
         {
             close();
-            _al.onDisAssociated(this);
-            _state = State.CLOSED;
         }
 
-        void close()
+        public void close()
         {
-            _rcv = null;
-            _send = null;
-            _isDone = true;
-            _transp?.Close();
-            awakeWriteLoop?.Dispose();
-            closeAllTimers();
+            lock (myLock)
+            {
+                if (_state == State.CLOSED && _rcv == null)
+                {
+                    return;
+                }
+                _rcv = null;
+                _send = null;
+                _isDone = true;
+                _transp?.Close();
+                awakeWriteLoop?.Dispose();
+                closeAllTimers();
+                _al.onDisAssociated(this);
+                _state = State.CLOSED;
+            }
         }
 
         void closeAllTimers()
@@ -2495,6 +2502,10 @@ namespace SIPSorcery.Net.Sctp
         {
             lock (myLock)
             {
+                if (_isDone)
+                {
+                    return;
+                }
                 logger.LogTrace($"{name} ack timed out (ackState: {ackState})");
                 stats.incAckTimeouts();
                 ackState = AcknowlegeState.Immediate;
