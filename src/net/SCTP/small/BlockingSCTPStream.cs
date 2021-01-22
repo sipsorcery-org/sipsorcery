@@ -77,6 +77,7 @@ namespace SIPSorcery.Net.Sctp
 
         internal override void deliverMessage(SCTPMessage message)
         {
+            //Task.Run(message.run);
             //message.run();
             _ex_service.execute(message);
         }

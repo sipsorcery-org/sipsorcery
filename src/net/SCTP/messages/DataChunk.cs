@@ -415,11 +415,6 @@ namespace SIPSorcery.Net.Sctp
             return _flags;
         }
 
-        public virtual int getCapacity()
-        {
-            return 1024; // shrug - needs to be less than the theoretical MTU or slow start fails.
-        }
-
         public static int GetCapacity()
         {
             return 1024; // shrug - needs to be less than the theoretical MTU or slow start fails.

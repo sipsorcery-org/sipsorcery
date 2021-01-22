@@ -69,19 +69,9 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        public override SCTPStream mkStream(int id)
-        {
-            //logger.LogDebug("Make new Blocking stream " + id);
-            return new BlockingSCTPStream(this, id);
-        }
-
-        public override void enqueue(DataChunk d)
-        {
-            d.immediateSack = true;
-            pendingQueue.push(d);
-        }
         internal override void sendAndBlock(SCTPMessage m)
         {
+            var chunks = new List<DataChunk>();
             DataChunk head = null;
             while (m.hasMoreData())
             {
@@ -98,9 +88,10 @@ namespace SIPSorcery.Net.Sctp
                 {
                     dc.Head = head;
                 }
-                m.fill(dc);
-                enqueue(dc);
+                m.fill(dc, (int)maxPayloadSize);
+                chunks.Add(dc);
             }
+            sendPayloadData(chunks.ToArray());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

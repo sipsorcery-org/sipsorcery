@@ -100,7 +100,7 @@ namespace SIPSorcery.Net.Sctp
         protected PendingQueue pendingQueue = new PendingQueue();
         protected ControlQueue controlQueue = new ControlQueue();
         protected uint mtu = AssociationConsts.initialMTU;
-        protected uint maxPayloadSize = AssociationConsts.initialMTU - (AssociationConsts.commonHeaderSize + AssociationConsts.dataChunkHeaderSize); // max DATA chunk payload size
+        public uint maxPayloadSize = AssociationConsts.initialMTU - (AssociationConsts.commonHeaderSize + AssociationConsts.dataChunkHeaderSize); // max DATA chunk payload size
         protected uint cumulativeTSNAckPoint;
         protected uint advancedPeerTSNAckPoint;
         private bool useForwardTSN;
@@ -160,6 +160,7 @@ namespace SIPSorcery.Net.Sctp
 
         private string name;
         protected static ILogger logger = Log.Logger;
+        protected AutoResetEvent awakeWriteLoop = new AutoResetEvent(false);
 
         protected LimitedConcurrentQueue<DataChunk> _freeBlocks;
 
@@ -452,6 +453,7 @@ namespace SIPSorcery.Net.Sctp
                     // Send SACK now!
                     ackState = AcknowlegeState.Immediate;
                     _ackTimer.stop();
+                    awakeWriteLoop.Set();
                 }
                 else if (delayedAckTriggered)
                 {
@@ -578,6 +580,7 @@ namespace SIPSorcery.Net.Sctp
                 }
             });
             _rcv.IsBackground = true;
+            //_rcv.Priority = ThreadPriority.Highest;
             _rcv.Name = name + "_rcv";
             _rcv.Start();
         }
@@ -618,7 +621,7 @@ namespace SIPSorcery.Net.Sctp
                                     throw;
                             }
                         }
-                        Thread.Sleep(1);
+                        awakeWriteLoop.WaitOne();
                     }
                     logger.LogDebug("SCTP message receive was empty, closing association listener.");
 
@@ -639,6 +642,7 @@ namespace SIPSorcery.Net.Sctp
                 }
             });
             _send.IsBackground = true;
+            //_send.Priority = ThreadPriority.Highest;
             _send.Name = name + "_send";
             _send.Start();
         }
@@ -857,6 +861,10 @@ namespace SIPSorcery.Net.Sctp
                 {
                     break;
                 }
+                if (c == null)
+                {
+                    break;
+                }
                 if (!c.retransmit)
                 {
                     continue;
@@ -949,6 +957,7 @@ namespace SIPSorcery.Net.Sctp
 
             // Push it into the inflightQueue
             this.inflightQueue.pushNoCheck(c);
+            awakeWriteLoop.Set();
         }
 
         public long getT3()
@@ -1060,7 +1069,7 @@ namespace SIPSorcery.Net.Sctp
             return b;
         }
 
-        protected void sendPayloadData(DataChunk[] chunks)
+        protected void sendPayloadData(params DataChunk[] chunks)
         {
             lock (myLock)
             {
@@ -1079,6 +1088,7 @@ namespace SIPSorcery.Net.Sctp
                 {
                     pendingQueue.push(c);
                 }
+                awakeWriteLoop.Set();
                 //logger.LogDebug($"SCTP packet send: {Packet.getHex(obb)}");
             }
         }
@@ -1199,6 +1209,7 @@ namespace SIPSorcery.Net.Sctp
                 if (reply?.Length > 0)
                 {
                     this.controlQueue.pushAll(reply);
+                    awakeWriteLoop.Set();
                 }
                 if ((_state == State.ESTABLISHED) && (oldState != State.ESTABLISHED))
                 {
@@ -1311,6 +1322,7 @@ namespace SIPSorcery.Net.Sctp
             var outbound = new Packet(sourcePort, destinationPort, peerVerificationTag);
             outbound.Add(storedInit);
             this.controlQueue.push(outbound);
+            awakeWriteLoop.Set();
         }
 
         void sendCookieEcho()
@@ -1323,7 +1335,7 @@ namespace SIPSorcery.Net.Sctp
             logger.LogDebug($"{name} sending COOKIE-ECHO");
 
             controlQueue.push(makePacket(storedCookieEcho));
-            //a.awakeWriteLoop()
+            awakeWriteLoop.Set();
         }
 
         protected virtual Packet[] handleInitAck(Packet p, InitAckChunk i)
@@ -1541,6 +1553,7 @@ namespace SIPSorcery.Net.Sctp
                 return null;
             }
             payloadQueue.push(dc, peerLastTSN);
+            awakeWriteLoop.Set();
             return makePacket(repa.ToArray());
         }
 
@@ -1629,7 +1642,7 @@ namespace SIPSorcery.Net.Sctp
             {
                 immediateAckTriggered = true;
             }
-
+            awakeWriteLoop.Set();
             return reply.ToArray();
         }
 
@@ -1815,9 +1828,11 @@ namespace SIPSorcery.Net.Sctp
             return tsn;
         }
 
-        public abstract void enqueue(DataChunk d);
-
-        public abstract SCTPStream mkStream(int id);
+        public SCTPStream mkStream(int id)
+        {
+            //logger.LogDebug("Make new Blocking stream " + id);
+            return new BlockingSCTPStream(this, id);
+        }
 
         public uint getCumAckPt()
         {
@@ -1837,6 +1852,7 @@ namespace SIPSorcery.Net.Sctp
                 cs[0] = reconfigState.makeClose(st);
 
                 this.controlQueue.push(makePacket(cs[0]));
+                awakeWriteLoop.Set();
             }
         }
 
@@ -1899,6 +1915,7 @@ namespace SIPSorcery.Net.Sctp
                 {
                     var pkt = makePacket(DataChannelOpen);
                     controlQueue.push(pkt);
+                    awakeWriteLoop.Set();
                 }
                 catch (Exception end)
                 {
@@ -1936,6 +1953,7 @@ namespace SIPSorcery.Net.Sctp
             _send = null;
             _al.onDisAssociated(this);
             _state = State.CLOSED;
+            awakeWriteLoop?.Dispose();
             closeAllTimers();
         }
         void closeAllTimers()
@@ -2056,6 +2074,8 @@ namespace SIPSorcery.Net.Sctp
                 {
                     willSendForwardTSN = true;
                 }
+
+                awakeWriteLoop.Set();
             }
 
             if (inflightQueue.size() > 0)
@@ -2068,7 +2088,7 @@ namespace SIPSorcery.Net.Sctp
 
             if (cumTSNAckPointAdvanced)
             {
-                //    a.awakeWriteLoop()
+                awakeWriteLoop.Set();
             }
         }
 
@@ -2409,7 +2429,7 @@ namespace SIPSorcery.Net.Sctp
                     */
 
                     inflightQueue.markAllToRetrasmit();
-                    //a.awakeWriteLoop()
+                    awakeWriteLoop.Set();
 
                     return;
                 }
@@ -2417,7 +2437,7 @@ namespace SIPSorcery.Net.Sctp
                 if (id == (int)TimerType.Reconfig)
                 {
                     willRetransmitReconfig = true;
-                    //a.awakeWriteLoop()
+                    awakeWriteLoop.Set();
                 }
             }
             finally
@@ -2472,6 +2492,7 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogTrace($"{name} ack timed out (ackState: {ackState})");
                 stats.incAckTimeouts();
                 ackState = AcknowlegeState.Immediate;
+                awakeWriteLoop.Set();
             }
         }
     }

@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Text;
 using SIPSorcery.Net.Sctp;
 using System.Collections.Concurrent;
+using SCTP4CS.Utils;
 
 namespace SIPSorcery.Net.Sctp
 {
     public class PayloadQueue
     {
         private object myLock = new object();
-        ConcurrentDictionary<uint, DataChunk> chunkMap = new ConcurrentDictionary<uint, DataChunk>();
+        Dictionary<uint, DataChunk> chunkMap = new Dictionary<uint, DataChunk>();
         uint[] sorted;
         List<uint> dupTSN = new List<uint>();
         protected uint nBytes;
@@ -45,9 +46,9 @@ namespace SIPSorcery.Net.Sctp
 
         public void pushNoCheck(DataChunk p)
         {
-            chunkMap.TryAdd(p.getTsn(), p);
             lock (myLock)
             {
+                chunkMap.Add(p.getTsn(), p);
                 nBytes += p.getDataSize();
                 sorted = null;
             }
@@ -81,9 +82,9 @@ namespace SIPSorcery.Net.Sctp
             if (chunkMap.Count > 0 && tsn == s[0])
             {
                 c = chunkMap[tsn];
-                chunkMap.TryRemove(tsn, out var dc);
                 lock (myLock)
                 {
+                    chunkMap.Remove(tsn);
                     nBytes -= c.getDataSize();
                     sorted = null;
                 }

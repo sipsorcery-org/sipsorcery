@@ -160,37 +160,10 @@ namespace SIPSorcery.Net.Sctp
             return name;
         }
 
-        public int stashCap()
-        {
-            int ret = 0;
-            //foreach (DataChunk d in reassemblyQueue)
-            //{
-            //    ret += d.getData().Length;
-            //}
-            return ret;
-        }
-
         public void setSCTPStreamListener(SCTPStreamListener sl)
         {
             _sl = sl;
-            //logger.LogDebug("action a delayed delivery now we have a listener.");
-            //todo think about what reliablility looks like here.
-            //_behave.deliver(this, reassemblyQueue, _sl);
         }
-
-        // setReliabilityParams sets reliability parameters for this stream.
-        // The caller should hold the lock.
-        public void setReliabilityParams(bool unordered, ReliabilityType relType, uint relVal)
-        {
-            logger.LogDebug("[%s] reliability params: ordered=%v type=%d value=%d",
-                name, !unordered, relType, relVal);
-
-            this.unordered = unordered;
-
-            this.reliabilityType = relType;
-
-            this.reliabilityValue = relVal;
-       }
 
         abstract public void send(string message);
 
@@ -243,51 +216,6 @@ namespace SIPSorcery.Net.Sctp
         public virtual void setClosing(bool b)
         {
             closing = b;
-        }
-
-        bool isClosing()
-        {
-            return closing;
-        }
-
-        void setOutboundClosed()
-        {
-            switch (state)
-            {
-                case State.OPEN:
-                    state = State.INBOUNDONLY;
-                    break;
-                case State.OUTBOUNDONLY:
-                    state = State.CLOSED;
-                    break;
-                case State.CLOSED:
-                case State.INBOUNDONLY:
-                    break;
-            }
-            logger.LogDebug("Stream State for " + _sno + " is now " + state);
-        }
-
-        void setInboundClosed()
-        {
-            switch (state)
-            {
-                case State.OPEN:
-                    state = State.OUTBOUNDONLY;
-                    break;
-                case State.INBOUNDONLY:
-                    state = State.CLOSED;
-                    break;
-                case State.CLOSED:
-                case State.OUTBOUNDONLY:
-                    break;
-            }
-            logger.LogDebug("Stream State for " + _sno + " is now " + state);
-        }
-
-        State getState()
-        {
-            //logger.LogDebug("Stream State for " + _sno + " is currently " + state);
-            return state;
         }
 
         public virtual bool idle()

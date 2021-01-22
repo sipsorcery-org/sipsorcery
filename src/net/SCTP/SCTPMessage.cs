@@ -122,9 +122,8 @@ namespace SIPSorcery.Net.Sctp
 		 *
 		 * @param dc
 		 */
-        public void fill(DataChunk dc)
+        public void fill(DataChunk dc, int dsz)
         {
-            int dsz = dc.getCapacity();
             int remain = _data.Length - _offset;
             if (_offset == 0)
             {
