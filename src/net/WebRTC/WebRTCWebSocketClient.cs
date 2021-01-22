@@ -114,7 +114,7 @@ namespace SIPSorcery.Net
                 if (posn > 0)
                 {
                     var jsonMsg = Encoding.UTF8.GetString(buffer, 0, posn);
-                    string jsonResp = await OnMessage(jsonMsg, pc);
+                    string jsonResp = await OnMessage(jsonMsg, pc).ConfigureAwait(false);
 
                     if (jsonResp != null)
                     {

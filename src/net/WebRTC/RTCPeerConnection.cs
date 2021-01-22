@@ -442,7 +442,7 @@ namespace SIPSorcery.Net
 
                             try
                             {
-                                Task.Run(async () =>
+                                _ = Task.Run(async () =>
                                 {
                                     bool handshakeResult = DoDtlsHandshake(_dtlsHandle);
 
@@ -1205,33 +1205,19 @@ namespace SIPSorcery.Net
         {
             logger.LogDebug($"Attempting to create SCTP stream for data channel with label {dataChannel.label}.");
 
-            Task.Run(() =>
+            Task.Run(async () =>
             {
-                return _peerSctpAssociation.CreateStream(dataChannel.label);
-            })
-            .ContinueWith(
-                (t) =>
+                try
                 {
-                    if (t.IsFaulted)
-                    {
-                        if (t.Exception != null)
-                        {
-                            logger.LogWarning($"Exception creating data channel {t.Exception.Flatten().Message}");
-                            dataChannel.SetError(t.Exception.InnerExceptions.First().Message);
-                        }
-                        else
-                        {
-                            logger.LogWarning($"Unable to create a data channel.");
-                            dataChannel.SetError(UNKNOWN_DATACHANNEL_ERROR);
-                        }
-                    }
-                    else
-                    {
-                        logger.LogDebug($"SCTP stream successfully initialised for data channel with label {dataChannel.label}.");
-                        dataChannel.SetStream(t.Result);
-                    }
-                })
-            .ConfigureAwait(false);
+                    var s = await _peerSctpAssociation.CreateStream(dataChannel.label).ConfigureAwait(false);
+                    dataChannel.SetStream(s);
+                }
+                catch (Exception e)
+                {
+                    logger.LogWarning($"Exception creating data channel {e.Message}");
+                    dataChannel.SetError(e.Message);
+                }
+            });
         }
 
         /// <summary>

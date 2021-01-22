@@ -99,10 +99,10 @@ namespace SIPSorcery.Net
 
             logger.LogDebug($"Web socket client connection from {Context.UserEndPoint}.");
 
-            _pc = await CreatePeerConnection();
+            _pc = await CreatePeerConnection().ConfigureAwait(false);
 
             var offerSdp = _pc.createOffer(OfferOptions);
-            await _pc.setLocalDescription(offerSdp);
+            await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
             _pc.onicecandidate += (iceCandidate) =>
             {
                 if (_pc.signalingState == RTCSignalingState.have_remote_offer)

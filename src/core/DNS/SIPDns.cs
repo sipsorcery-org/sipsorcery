@@ -303,7 +303,7 @@ namespace SIPSorcery.SIP
                             var srvProtocol = SIPServices.GetSRVProtocolForSIPURI(uri);
                             //string serviceHost = DnsQueryExtensions.ConcatResolveServiceName(uri.MAddrOrHostAddress, uri.Scheme.ToString(), srvProtocol.ToString());
                             //var srvResult = await _lookupClient.QueryAsync(serviceHost, QueryType.SRV, QueryClass.IN, ct).ConfigureAwait(false);
-                            var srvResult = await _lookupClient.ResolveServiceAsync(uri.MAddrOrHostAddress, uri.Scheme.ToString(), srvProtocol.ToString());
+                            var srvResult = await _lookupClient.ResolveServiceAsync(uri.MAddrOrHostAddress, uri.Scheme.ToString(), srvProtocol.ToString()).ConfigureAwait(false);
                             (var srvHost, var srvPort) = GetHostAndPortFromSrvResult(srvResult);
                             if (srvHost != null)
                             {

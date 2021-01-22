@@ -245,7 +245,7 @@ namespace SIPSorcery.Media
         /// <param name="streamSampleRate">The sample rate of the supplied PCM samples. Supported rates are
         /// 8 or 16 KHz.</param>
         /// <returns>A task that completes once the stream has been fully sent.</returns>
-        public async Task SendAudioFromStream(Stream audioStream, AudioSamplingRatesEnum streamSampleRate)
+        public Task SendAudioFromStream(Stream audioStream, AudioSamplingRatesEnum streamSampleRate)
         {
             if (!_isClosed && audioStream != null && audioStream.Length > 0)
             {
@@ -266,7 +266,11 @@ namespace SIPSorcery.Media
 
                 _streamSourceTimer.Change(_audioSamplePeriodMilliseconds, _audioSamplePeriodMilliseconds);
 
-                await tcs.Task;
+                return tcs.Task;
+            }
+            else
+            {
+                return Task.CompletedTask;
             }
         }
 

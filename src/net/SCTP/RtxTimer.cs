@@ -182,7 +182,7 @@ namespace SIPSorcery.Net.Sctp
                     {
                         var timeout = calculateNextTimeout(rto, nRtos);
 
-                        await Task.Delay(timeout, cancelToken.Token);
+                        await Task.Delay(timeout, cancelToken.Token).ConfigureAwait(false);
 
                         if (!cancelToken.IsCancellationRequested)
                         {
