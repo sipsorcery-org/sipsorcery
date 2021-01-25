@@ -97,7 +97,7 @@ namespace SIPSorcery.Net
 
             var nodeDssClient = new HttpClient();
 
-            _pc = await _createPeerConnection();
+            _pc = await _createPeerConnection().ConfigureAwait(false);
             _pc.onconnectionstatechange += (state) =>
             {
                 if (_isReceiving && !(state == RTCPeerConnectionState.@new || state == RTCPeerConnectionState.connecting))
@@ -121,15 +121,15 @@ namespace SIPSorcery.Net
 
             var offerSdp = _pc.createOffer(null);
 
-            await _pc.setLocalDescription(offerSdp);
+            await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
 
-            await SendToNSS(httpClient, offerSdp.toJSON());
+            await SendToNSS(httpClient, offerSdp.toJSON()).ConfigureAwait(false);
         }
 
         private async Task SendToNSS(HttpClient httpClient, string jsonStr)
         {
             var content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
-            var res = await httpClient.PostAsync($"{_nodeDssServerUri}data/{_theirID}", content);
+            var res = await httpClient.PostAsync($"{_nodeDssServerUri}data/{_theirID}", content).ConfigureAwait(false);
 
             logger.LogDebug($"node-dss POST result for {_nodeDssServerUri}data/{_theirID} {res.StatusCode}.");
         }
@@ -148,7 +148,7 @@ namespace SIPSorcery.Net
 
                     try
                     {
-                        res = await httpClient.GetAsync($"{_nodeDssServerUri}data/{_ourID}", ct);
+                        res = await httpClient.GetAsync($"{_nodeDssServerUri}data/{_ourID}", ct).ConfigureAwait(false);
                     }
                     catch (HttpRequestException e)
                         when (e.InnerException is SocketException && (e.InnerException as SocketException).SocketErrorCode == SocketError.ConnectionRefused)
@@ -156,7 +156,7 @@ namespace SIPSorcery.Net
                         if (isInitialReceive)
                         {
                             logger.LogDebug($"node-dss server initial connection attempt failed, will retry in {CONNECTION_RETRY_PERIOD}ms.");
-                            await Task.Delay(CONNECTION_RETRY_PERIOD);
+                            await Task.Delay(CONNECTION_RETRY_PERIOD).ConfigureAwait(false);
                             continue;
                         }
                         else
@@ -168,27 +168,27 @@ namespace SIPSorcery.Net
 
                     if (res.StatusCode == HttpStatusCode.OK)
                     {
-                        var content = await res.Content.ReadAsStringAsync();
+                        var content = await res.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                         if (!string.IsNullOrEmpty(content))
                         {
-                            var resp = await OnMessage(content, pc);
+                            var resp = await OnMessage(content, pc).ConfigureAwait(false);
 
                             if (resp != null)
                             {
-                                await SendToNSS(httpClient, resp);
+                                await SendToNSS(httpClient, resp).ConfigureAwait(false);
                             }
                         }
                         else if (isInitialReceive)
                         {
                             // We are the first peer to connect. Send the offer so it will be waiting
                             // for the remote peer.
-                            await SendOffer(httpClient);
+                            await SendOffer(httpClient).ConfigureAwait(false);
                         }
                         else
                         {
                             // There are no waiting messages for us.
-                            await Task.Delay(NODE_SERVER_POLL_PERIOD);
+                            await Task.Delay(NODE_SERVER_POLL_PERIOD).ConfigureAwait(false);
                         }
                     }
                     else
@@ -227,7 +227,7 @@ namespace SIPSorcery.Net
                 if (descriptionInit.type == RTCSdpType.offer)
                 {
                     var answerSdp = pc.createAnswer(null);
-                    await pc.setLocalDescription(answerSdp);
+                    await pc.setLocalDescription(answerSdp).ConfigureAwait(false);
 
                     return answerSdp.toJSON();
                 }

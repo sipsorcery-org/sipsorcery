@@ -266,7 +266,7 @@ namespace SIPSorcery.Media
 
                 _streamSourceTimer.Change(_audioSamplePeriodMilliseconds, _audioSamplePeriodMilliseconds);
 
-                await tcs.Task;
+                await tcs.Task.ConfigureAwait(false);
             }
         }
 
