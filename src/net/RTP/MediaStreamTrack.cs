@@ -18,9 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
-using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -105,11 +105,12 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc3890.
         /// </remarks>
-        public uint MaximumBandwidth 
-        {   get => _maxBandwith;
+        public uint MaximumBandwidth
+        {
+            get => _maxBandwith;
             set
             {
-                if(!IsRemote)
+                if (!IsRemote)
                 {
                     _maxBandwith = value;
                 }

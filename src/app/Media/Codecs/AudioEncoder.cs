@@ -58,7 +58,7 @@ namespace SIPSorcery.Media
         /// is they are not very popular for other VoIP systems and thereofre needlessly pollute the SDP.</param>
         public AudioEncoder(bool includeLinearFormats = false)
         {
-            if(includeLinearFormats)
+            if (includeLinearFormats)
             {
                 _supportedFormats.AddRange(_linearFormats);
             }

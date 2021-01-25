@@ -989,7 +989,7 @@ namespace SIPSorcery.Net
                 announcement.MediaStreamStatus = track.StreamStatus;
                 announcement.MLineIndex = mindex;
 
-                if(track.MaximumBandwidth > 0)
+                if (track.MaximumBandwidth > 0)
                 {
                     announcement.TIASBandwidth = track.MaximumBandwidth;
                 }

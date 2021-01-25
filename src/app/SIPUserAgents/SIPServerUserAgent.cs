@@ -1,4 +1,4 @@
-  //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: SIPServerUserAgent.cs
 //
 // Description: Implementation of a SIP Server User Agent that can be used to receive SIP calls.
@@ -400,7 +400,7 @@ namespace SIPSorcery.SIP.App
         {
             Redirect(redirectCode, redirectURI, null);
         }
-        
+
         public void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI, string[] customHeaders)
         {
             try

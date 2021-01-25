@@ -201,7 +201,7 @@ namespace SIPSorcery.SIP.App
             m_expiry = m_originalExpiry;
             m_exit = false;
             int callbackPeriod = (m_expiry - REGISTRATION_HEAD_TIME) * 1000;
-            logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR}, callback period {callbackPeriod/1000}s.");
+            logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR}, callback period {callbackPeriod / 1000}s.");
 
             if (callbackPeriod < REGISTER_MINIMUM_EXPIRY * 1000)
             {
@@ -424,7 +424,7 @@ namespace SIPSorcery.SIP.App
                             else
                             {
                                 SIPNonInviteTransaction regAuthTransaction = new SIPNonInviteTransaction(m_sipTransport, authenticatedRequest, registrarSIPEndPoint);
-                                regAuthTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => {  AuthResponseReceived(lep, rep, tn, rsp);return Task.FromResult(SocketError.Success); };
+                                regAuthTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { AuthResponseReceived(lep, rep, tn, rsp); return Task.FromResult(SocketError.Success); };
                                 regAuthTransaction.NonInviteTransactionTimedOut += (tn) => { RegistrationTimedOut(tn); };
                                 m_sipTransport.SendTransaction(regAuthTransaction);
                             }
@@ -464,7 +464,7 @@ namespace SIPSorcery.SIP.App
                         logger.LogWarning($"Registration unequivocal failure with {sipResponse.Status} for {m_sipAccountAOR}{(m_exit ? " ,no further registration attempts will be made" : "")}.");
                         string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
                         RegistrationFailed?.Invoke(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
-                        
+
                         m_waitForRegistrationMRE.Set();
                     }
                     else if (sipResponse.Status == SIPResponseStatusCodesEnum.IntervalTooBrief && m_expiry != 0)
@@ -527,7 +527,7 @@ namespace SIPSorcery.SIP.App
                     logger.LogWarning($"Registration unequivocal failure with {sipResponse.Status} for {m_sipAccountAOR}{(m_exit ? " ,no further registration attempts will be made" : "")}.");
                     string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
                     RegistrationFailed?.Invoke(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
-                    
+
                     m_waitForRegistrationMRE.Set();
                 }
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)

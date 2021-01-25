@@ -611,9 +611,9 @@ namespace SIPSorcery.SIP
         /// <returns>A new SIP URI if mangling took place. Null if no mangling occurred.</returns>
         public static SIPURI Mangle(SIPURI uri, IPEndPoint receivedOn)
         {
-            if(uri != null && receivedOn != null && IPAddress.TryParse(uri.HostAddress, out var ipv4Host))
+            if (uri != null && receivedOn != null && IPAddress.TryParse(uri.HostAddress, out var ipv4Host))
             {
-                
+
                 if (ipv4Host.IsPrivate() && !IPAddress.Equals(ipv4Host, receivedOn.Address))
                 {
                     var mangledURI = uri.CopyOf();
@@ -632,14 +632,14 @@ namespace SIPSorcery.SIP
         /// <returns>True if the default port is being used, false if not.</returns>
         public bool IsDefaultPort()
         {
-            if(HostPort == null)
+            if (HostPort == null)
             {
                 // If the URI does not contain an explicit port it means the default is implcit.
                 return true;
             }
             else if (int.TryParse(HostPort, out var port))
             {
-                switch(Protocol)
+                switch (Protocol)
                 {
                     case SIPProtocolsEnum.udp:
                     case SIPProtocolsEnum.tcp:

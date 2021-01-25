@@ -235,7 +235,7 @@ namespace SIPSorcery.Net
 
             announcement += (Connection == null) ? null : Connection.ToString();
 
-            if(TIASBandwidth > 0)
+            if (TIASBandwidth > 0)
             {
                 announcement += TIAS_BANDWIDTH_ATTRIBUE_PREFIX + TIASBandwidth + m_CRLF;
             }

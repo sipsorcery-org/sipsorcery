@@ -38,7 +38,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Optional property to allow the peer connection SDP offer options to be set.
         /// </summary>
-        public RTCOfferOptions OfferOptions {get; set;}
+        public RTCOfferOptions OfferOptions { get; set; }
 
         /// <summary>
         /// Optional filter that can be applied to remote ICE candidates. The filter is 
@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
                 logger.LogDebug("Got remote ICE candidate.");
 
                 bool useCandidate = true;
-                if(FilterRemoteICECandidates != null && !string.IsNullOrWhiteSpace(iceCandidateInit.candidate))
+                if (FilterRemoteICECandidates != null && !string.IsNullOrWhiteSpace(iceCandidateInit.candidate))
                 {
                     useCandidate = FilterRemoteICECandidates(iceCandidateInit);
                 }
@@ -99,10 +99,10 @@ namespace SIPSorcery.Net
 
             logger.LogDebug($"Web socket client connection from {Context.UserEndPoint}.");
 
-            _pc = await CreatePeerConnection();
+            _pc = await CreatePeerConnection().ConfigureAwait(false);
 
             var offerSdp = _pc.createOffer(OfferOptions);
-            await _pc.setLocalDescription(offerSdp);
+            await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
             _pc.onicecandidate += (iceCandidate) =>
             {
                 if (_pc.signalingState == RTCSignalingState.have_remote_offer)

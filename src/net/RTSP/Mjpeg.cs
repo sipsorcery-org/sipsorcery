@@ -391,7 +391,7 @@ namespace SIPSorcery.Net
             ushort RestartInterval = 0, RestartCount = 0;
             //A byte which is bit mapped
             byte PrecisionTable = 0;
-            ArraySegment<byte> tables = default(ArraySegment<byte>);
+            ArraySegment<byte> tables = default;
 
             //Using a new MemoryStream for a Buffer
             using (System.IO.MemoryStream Buffer = new System.IO.MemoryStream())

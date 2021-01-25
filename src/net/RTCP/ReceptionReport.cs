@@ -288,7 +288,7 @@ namespace SIPSorcery.Net
             //}
             //bool ready = update_seq(seq);
 
-            if(m_received == 0)
+            if (m_received == 0)
             {
                 m_base_seq = seq;
             }
@@ -298,9 +298,9 @@ namespace SIPSorcery.Net
             if (seq == m_max_seq + 1)
             {
                 // Packet is in sequence.
-                m_max_seq = seq; 
+                m_max_seq = seq;
             }
-            else if(seq == 0 && m_max_seq == ushort.MaxValue)
+            else if (seq == 0 && m_max_seq == ushort.MaxValue)
             {
                 // Packet is in sequence and a wrap around has occurred.
                 m_max_seq = seq;
@@ -309,12 +309,12 @@ namespace SIPSorcery.Net
             else
             {
                 // Out of order, duplicate or skipped sequence number.
-                if(seq > m_max_seq)
+                if (seq > m_max_seq)
                 {
                     // Seqnum is greater than expected. RTP packet is dropped or out of order.
                     m_max_seq = seq;
                 }
-                else if(seq < SEQ_NUM_WRAP_LOW && m_max_seq > SEQ_NUM_WRAP_HIGH)
+                else if (seq < SEQ_NUM_WRAP_LOW && m_max_seq > SEQ_NUM_WRAP_HIGH)
                 {
                     // Seqnum is out of order and has wrapped.
                     m_max_seq = seq;
@@ -328,7 +328,7 @@ namespace SIPSorcery.Net
                     //   likely indicates an RTP packet was delivered out of order.
                     m_bad_seq++;
                 }
-             }
+            }
 
             // Estimating the Interarrival Jitter as defined in RFC3550 Appendix A.8.
             uint transit = arrivalTimestamp - rtpTimestamp;

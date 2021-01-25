@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -173,8 +172,8 @@ namespace SIPSorcery.SIP
             copy.UnknownMethod = UnknownMethod;
             copy.URI = URI?.CopyOf();
             copy.Header = Header?.Copy();
-            
-            if(_body != null && _body.Length > 0)
+
+            if (_body != null && _body.Length > 0)
             {
                 copy._body = new byte[_body.Length];
                 Buffer.BlockCopy(copy._body, 0, copy._body, 0, copy._body.Length);

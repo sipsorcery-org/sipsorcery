@@ -69,12 +69,14 @@ namespace SIPSorcery.SIP.IntegrationTest
                 var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
                 var clientTask = Task.Run(async () =>
                 {
+#pragma warning disable RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                     await RunClient(
     clientChannel,
     serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
     testComplete,
     cancelServer,
     serverReadyEvent);
+#pragma warning restore RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                 });
 
                 serverReadyEvent.Wait();
@@ -114,12 +116,14 @@ namespace SIPSorcery.SIP.IntegrationTest
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
             var clientTask = Task.Run(async () =>
             {
+#pragma warning disable RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                 await RunClient(
 clientChannel,
 serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0))),
 testComplete,
 cancelServer,
 serverReadyEvent);
+#pragma warning restore RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
             });
 
             serverReadyEvent.Wait();
@@ -168,12 +172,14 @@ serverReadyEvent);
                 var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
                 var clientTask = Task.Run(async () =>
                 {
+#pragma warning disable RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                     await RunClient(
     clientChannel,
     serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
     testComplete,
     cancelServer,
     serverReadyEvent);
+#pragma warning restore RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                 });
 
                 serverReadyEvent.Wait();
@@ -215,12 +221,14 @@ serverReadyEvent);
             Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
             var clientTask = Task.Run(async () =>
             {
+#pragma warning disable RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                 await RunClient(
 clientChannel,
 serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0))),
 testComplete,
 cancelServer,
 serverReadyEvent);
+#pragma warning restore RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
             });
 
             serverReadyEvent.Wait();
@@ -275,7 +283,7 @@ serverReadyEvent);
 
                     logger.LogDebug($"Server URI {serverUri}.");
 
-                    var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverUri, testComplete, cancelServer, serverReadyEvent); });
+                    var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverUri, testComplete, cancelServer, serverReadyEvent).ConfigureAwait(false); });
 
                     serverReadyEvent.Wait();
                     if (!Task.WhenAny(new Task[] { clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
@@ -342,12 +350,14 @@ serverReadyEvent);
                 var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
                 var clientTask = Task.Run(async () =>
                 {
+#pragma warning disable RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                     await RunClient(
     clientChannel,
     serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
     testComplete,
     cancelServer,
     serverReadyEvent);
+#pragma warning restore RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                 });
 
                 if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
@@ -404,12 +414,14 @@ serverReadyEvent);
                 var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
                 var clientTask = Task.Run(async () =>
                 {
+#pragma warning disable RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                     await RunClient(
     clientChannel,
     serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.Loopback, 0))),
     testComplete,
     cancelServer,
     serverReadyEvent);
+#pragma warning restore RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
                 });
 
                 if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
@@ -576,7 +588,7 @@ serverReadyEvent);
 
             var serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, clientChannel.ListeningSIPEndPoint);
             var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
-            await sipTransport.SendRequestAsync(optionsRequest);
+            await sipTransport.SendRequestAsync(optionsRequest).ConfigureAwait(false);
 
             gotResponseMre.WaitOne(TRANSPORT_TEST_TIMEOUT, false);
 
@@ -629,7 +641,7 @@ serverReadyEvent);
             var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
             optionsRequest.Header.UnknownHeaders.Add($"X-Request-Random:{Crypto.GetRandomString(1000)}");
             optionsRequest.Header.UnknownHeaders.Add("X-Request-Final: TheEnd");
-            await sipTransport.SendRequestAsync(optionsRequest);
+            await sipTransport.SendRequestAsync(optionsRequest).ConfigureAwait(false);
 
             gotResponseMre.WaitOne(TRANSPORT_TEST_TIMEOUT, false);
 
@@ -764,9 +776,9 @@ serverReadyEvent);
                 logger.LogDebug($"RunClient waiting for server to get ready on {serverUri.CanonicalAddress}.");
                 serverReadyEvent.Wait(cts.Token);
 
-                await clientSIPTransport.SendRequestAsync(optionsRequest);
+                await clientSIPTransport.SendRequestAsync(optionsRequest).ConfigureAwait(false);
 
-                await tcs.Task;
+                await tcs.Task.ConfigureAwait(false);
             }
             catch (Exception excp)
             {

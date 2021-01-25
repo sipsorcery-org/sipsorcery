@@ -161,7 +161,7 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            catch(SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
+            catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
             {
                 // Thrown when close is called on a socket from this end. Safe to ignore.
             }
