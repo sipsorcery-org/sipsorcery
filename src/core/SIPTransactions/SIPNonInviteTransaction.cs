@@ -38,7 +38,7 @@ namespace SIPSorcery.SIP
             TransactionRemoved += SIPNonInviteTransaction_TransactionRemoved;
             TransactionRequestRetransmit += SIPNonInviteTransaction_TransactionRequestRetransmit;
 
-            if(sipRequest.RemoteSIPEndPoint != null)
+            if (sipRequest.RemoteSIPEndPoint != null)
             {
                 // This transaction type can be used to represent two different things:
                 // - a tx that the application wants to use to send a request reliably,

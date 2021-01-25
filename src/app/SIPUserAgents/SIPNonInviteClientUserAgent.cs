@@ -36,7 +36,7 @@ namespace SIPSorcery.SIP.App
         private string m_lastServerNonce;
 
         public event Action<SIPResponse> ResponseReceived;
-        
+
         public SIPNonInviteClientUserAgent(
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
@@ -53,7 +53,7 @@ namespace SIPSorcery.SIP.App
             {
                 SIPRequest req = GetRequest(method);
                 SIPNonInviteTransaction tran = new SIPNonInviteTransaction(m_sipTransport, req, m_outboundProxy);
-                
+
                 ManualResetEvent waitForResponse = new ManualResetEvent(false);
                 tran.NonInviteTransactionTimedOut += RequestTimedOut;
                 tran.NonInviteTransactionFinalResponseReceived += ServerResponseReceived;
@@ -68,7 +68,7 @@ namespace SIPSorcery.SIP.App
 
         private void RequestTimedOut(SIPTransaction sipTransaction)
         {
-            logger.LogWarning("Attempt to send " + sipTransaction.TransactionRequest.Method +" to " + m_callDescriptor.Uri + " timed out.");
+            logger.LogWarning("Attempt to send " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + " timed out.");
         }
 
         private Task<SocketError> ServerResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
@@ -76,7 +76,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                logger.LogDebug("Server response " + sipResponse.StatusCode + " " + reasonPhrase + " received for " + sipTransaction.TransactionRequest.Method +" to "  + m_callDescriptor.Uri + ".");
+                logger.LogDebug("Server response " + sipResponse.StatusCode + " " + reasonPhrase + " received for " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".");
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
@@ -103,7 +103,7 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         logger.LogDebug("Send request failed with " + sipResponse.StatusCode + " but no authentication header was supplied for " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".");
-                        
+
                         if (ResponseReceived != null)
                         {
                             ResponseReceived(sipResponse);
@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP.App
         {
             string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
             logger.LogDebug("Server response " + sipResponse.Status + " " + reasonPhrase + " received for authenticated " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".");
-            
+
             if (ResponseReceived != null)
             {
                 ResponseReceived(sipResponse);

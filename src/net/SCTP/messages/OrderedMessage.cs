@@ -108,7 +108,7 @@ namespace SIPSorcery.Net.Sctp
                 return;
             }
 
-            lock(myLock)
+            lock (myLock)
             {
                 if (isDone)
                 {

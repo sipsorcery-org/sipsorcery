@@ -185,7 +185,7 @@ namespace SIPSorcery.SIP.App
                 {
                     return true;
                 }
-                else if(m_byeTransaction != null && m_byeTransaction.DeliveryPending)
+                else if (m_byeTransaction != null && m_byeTransaction.DeliveryPending)
                 {
                     return true;
                 }

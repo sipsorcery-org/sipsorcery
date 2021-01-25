@@ -421,7 +421,7 @@ namespace SIPSorcery.Net
                                             string formatID = formatAttributeMatch.Result("${id}");
                                             string rtpmap = formatAttributeMatch.Result("${attribute}");
 
-                                            if(activeAnnouncement.ApplicationMediaFormats.ContainsKey(formatID))
+                                            if (activeAnnouncement.ApplicationMediaFormats.ContainsKey(formatID))
                                             {
                                                 activeAnnouncement.ApplicationMediaFormats[formatID] = activeAnnouncement.ApplicationMediaFormats[formatID].WithUpdatedRtpmap(rtpmap);
                                             }
@@ -495,7 +495,7 @@ namespace SIPSorcery.Net
                                             }
                                             else
                                             {
-                                                activeAnnouncement.ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID,null, fmtp));
+                                                activeAnnouncement.ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID, null, fmtp));
                                             }
                                         }
                                         else

@@ -275,7 +275,7 @@ namespace SIPSorcery.Media
 
             if (HasVideo)
             {
-                    await _videoTestPatternSource.PauseVideo();
+                await _videoTestPatternSource.PauseVideo();
 
                 //_videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH);
                 _videoTestPatternSource.SetFrameRate(TEST_PATTERN_FPS);

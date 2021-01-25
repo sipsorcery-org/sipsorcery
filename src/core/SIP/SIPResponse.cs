@@ -177,7 +177,7 @@ namespace SIPSorcery.SIP
             copy.StatusCode = StatusCode;
             copy.ReasonPhrase = ReasonPhrase;
             copy.Header = Header?.Copy();
-            
+
             if (_body != null && _body.Length > 0)
             {
                 copy._body = new byte[_body.Length];

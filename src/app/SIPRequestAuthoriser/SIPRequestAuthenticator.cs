@@ -14,7 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -34,9 +33,9 @@ namespace SIPSorcery.SIP.App
         /// Authenticates a SIP request.
         /// </summary>
         public static SIPRequestAuthenticationResult AuthenticateSIPRequest(
-            SIPEndPoint localSIPEndPoint, 
-            SIPEndPoint remoteEndPoint, 
-            SIPRequest sipRequest, 
+            SIPEndPoint localSIPEndPoint,
+            SIPEndPoint remoteEndPoint,
+            SIPRequest sipRequest,
             ISIPAccount sipAccount)
         {
             try
@@ -103,7 +102,7 @@ namespace SIPSorcery.SIP.App
                             {
                                 checkAuthReq.SetCredentials(sipAccount.SIPUsername, sipAccount.SIPPassword, uri, sipRequest.Method.ToString());
                             }
-                            else if(sipAccount.HA1Digest != null)
+                            else if (sipAccount.HA1Digest != null)
                             {
                                 checkAuthReq.SetCredentials(sipAccount.HA1Digest, uri, sipRequest.Method.ToString());
                             }
@@ -122,7 +121,7 @@ namespace SIPSorcery.SIP.App
                             else
                             {
                                 logger.LogWarning("Authentication token check failed for realm=" + sipAccount.SIPDomain + ", username=" + sipAccount.SIPUsername + ", uri=" + uri + ", nonce=" + requestNonce + ", method=" + sipRequest.Method + ".");
-                                
+
                                 SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, GetNonce());
                                 return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
                             }

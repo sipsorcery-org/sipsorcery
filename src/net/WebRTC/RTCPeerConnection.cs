@@ -447,15 +447,15 @@ namespace SIPSorcery.Net
                                 connectionState = (handshakeResult) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                                 onconnectionstatechange?.Invoke(connectionState);
 
-                               if (connectionState == RTCPeerConnectionState.connected)
-                               {
+                                if (connectionState == RTCPeerConnectionState.connected)
+                                {
                                     await base.Start().ConfigureAwait(false);
 
                                     if (RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
                                     {
                                         InitialiseSctpAssociation();
                                     }
-                               }
+                                }
                             }
                             catch (Exception excp)
                             {
@@ -545,10 +545,10 @@ namespace SIPSorcery.Net
             };
 
             try
-            { 
+            {
                 _peerSctpAssociation.Associate();
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogWarning($"SCTP exception initialising association. {excp.Message}");
             }
@@ -644,7 +644,7 @@ namespace SIPSorcery.Net
 
             SdpType sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
 
-            switch(signalingState)
+            switch (signalingState)
             {
                 case var sigState when sigState == RTCSignalingState.have_local_offer && sdpType == SdpType.offer:
                     logger.LogWarning($"RTCPeerConnection received an SDP offer but was already in {sigState} state. Remote offer rejected.");

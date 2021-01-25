@@ -190,7 +190,8 @@ namespace SIPSorcery
                                 cts.Cancel();
                                 break;
                             }
-                            else if (options.Period > 0)
+                            
+                            if (success && options.Period > 0)
                             {
                                 await Task.Delay(options.Period * 1000);
                             }
