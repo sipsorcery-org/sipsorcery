@@ -153,12 +153,10 @@ namespace demo
                 else if (state == RTCPeerConnectionState.closed)
                 {
                     await testPatternSource.CloseVideo();
-                    await testPatternSource.CloseVideo();
                     testPatternSource.Dispose();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    await testPatternSource.StartVideo();
                     await testPatternSource.StartVideo();
                 }
             };
