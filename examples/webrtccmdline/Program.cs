@@ -257,7 +257,7 @@ namespace SIPSorcery.Examples
                     throw new ArgumentException("The 'rest' option must contain 3 semi-colon separated fields, e.g. --rest=https://localhost:5001/api/webrtcsignal;myid;theirid.");
                 }
 
-                var webrtcRestPeer = new WebRTCRestPeer(fields[0], fields[1], fields[2], CreatePeerConnection);
+                var webrtcRestPeer = new WebRTCRestSignalingPeer(fields[0], fields[1], fields[2], CreatePeerConnection);
                 webrtcRestPeer.OfferOptions = _offerOptions;
                 webrtcRestPeer.AnswerOptions = _answerOptions;
 

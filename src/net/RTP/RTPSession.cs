@@ -2103,28 +2103,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Attempts to determine which media stream a received RTP packet is for based on the RTP socket
-        /// it was received on. This is for cases where media multiplexing is not in use (i.e. legacy RTP).
-        /// </summary>
-        /// <param name="localPort">The local port the RTP packet was received on.</param>
-        /// <returns>The media type for the received packet or null if it could not be determined.</returns>
-        private SDPMediaTypesEnum? GetMediaTypeForLocalPort(int localPort)
-        {
-            if (m_rtpChannels.ContainsKey(SDPMediaTypesEnum.audio) && m_rtpChannels[SDPMediaTypesEnum.audio].RTPPort == localPort)
-            {
-                return SDPMediaTypesEnum.audio;
-            }
-            else if (m_rtpChannels.ContainsKey(SDPMediaTypesEnum.video) && m_rtpChannels[SDPMediaTypesEnum.video].RTPPort == localPort)
-            {
-                return SDPMediaTypesEnum.video;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Attempts to get the audio or video media format for an RTP packet.
         /// </summary>
         /// <param name="header">The header of the received RTP packet.</param>

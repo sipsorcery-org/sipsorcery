@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: WebRTCRestPeer.cs
+// Filename: WebRTCRestSignalingPeer.cs
 //
 // Description: This class is NOT a required component for using WebRTC. It is a
-// convenience class provided to perform the signalling via a HTTP REST server.
+// convenience class provided to perform the signaling via a HTTP REST server.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -39,7 +39,7 @@ namespace SIPSorcery.Net
     /// This class is not a required component for using WebRTC. It is a
     /// convenience class provided to perform the signalling via a HTTP REST server.
     /// </summary>
-    public class WebRTCRestPeer
+    public class WebRTCRestSignalingPeer
     {
         private const int REST_SERVER_POLL_PERIOD = 2000;   // Period in milliseconds to poll the HTTP server to check for new messages.
         private const int CONNECTION_RETRY_PERIOD = 5000;   // Period in milliseconds to retry if the initial HTTP connection attempt fails.
@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
         /// <param name="ourID">The arbitrary ID this peer is using.</param>
         /// <param name="theirID">The arbitrary ID the remote peer is using.</param>
         /// <param name="createPeerConnection">Function delegate used to create a new WebRTC peer connection.</param>
-        public WebRTCRestPeer(
+        public WebRTCRestSignalingPeer(
             string restServerUri,
             string ourID,
             string theirID,
@@ -130,15 +130,11 @@ namespace SIPSorcery.Net
             };
             _pc.onicecandidate += async (cand) =>
             {
-                if ((OfferOptions?.X_ExcludeIceCandidates == true || AnswerOptions?.X_ExcludeIceCandidates == true) &&
-                    cand.type == RTCIceCandidateType.host)
+                if (cand.type != RTCIceCandidateType.host)
                 {
-                    logger.LogDebug($"webrtc-rest excluding host candidate: {cand.ToShortString()}.");
-                }
-                else
-                {
+                    // Host candidates are always included in the SDP offer or answer.
                     logger.LogDebug($"webrtc-rest onicecandidate: {cand.ToShortString()}.");
-                    await SendToNSS(restClient, cand.toJSON(), WebRTCSignalTypesEnum.ice);
+                    await SendToSignalingServer(restClient, cand.toJSON(), WebRTCSignalTypesEnum.ice);
                 }
             };
 
@@ -158,10 +154,10 @@ namespace SIPSorcery.Net
 
             await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
 
-            await SendToNSS(httpClient, offerSdp.toJSON(), WebRTCSignalTypesEnum.sdp).ConfigureAwait(false);
+            await SendToSignalingServer(httpClient, offerSdp.toJSON(), WebRTCSignalTypesEnum.sdp).ConfigureAwait(false);
         }
 
-        private async Task SendToNSS(HttpClient httpClient, string jsonStr, WebRTCSignalTypesEnum sendType)
+        private async Task SendToSignalingServer(HttpClient httpClient, string jsonStr, WebRTCSignalTypesEnum sendType)
         {
             var content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
             var res = await httpClient.PutAsync($"{_restServerUri}/{sendType}/{_ourID}/{_theirID}", content).ConfigureAwait(false);
@@ -208,7 +204,7 @@ namespace SIPSorcery.Net
 
                         if (resp != null)
                         {
-                            await SendToNSS(httpClient, resp, WebRTCSignalTypesEnum.sdp).ConfigureAwait(false);
+                            await SendToSignalingServer(httpClient, resp, WebRTCSignalTypesEnum.sdp).ConfigureAwait(false);
                         }
                     }
                     else if (res.StatusCode == HttpStatusCode.NoContent)
@@ -250,7 +246,7 @@ namespace SIPSorcery.Net
 
             if (RTCIceCandidateInit.TryParse(signal, out var iceCandidateInit))
             {
-                logger.LogDebug("Got remote ICE candidate.");
+                logger.LogDebug($"Got remote ICE candidate, {iceCandidateInit.candidate}");
 
                 bool useCandidate = true;
                 if (FilterRemoteICECandidates != null && !string.IsNullOrWhiteSpace(iceCandidateInit.candidate))
@@ -270,15 +266,16 @@ namespace SIPSorcery.Net
             else if (RTCSessionDescriptionInit.TryParse(signal, out var descriptionInit))
             {
                 logger.LogDebug($"Got remote SDP, type {descriptionInit.type}.");
+                //logger.LogDebug(descriptionInit.sdp);
 
                 var result = pc.setRemoteDescription(descriptionInit);
+                
                 if (result != SetDescriptionResultEnum.OK)
                 {
                     logger.LogWarning($"Failed to set remote description, {result}.");
                     pc.Close("failed to set remote description");
                 }
-
-                if (descriptionInit.type == RTCSdpType.offer)
+                else if (descriptionInit.type == RTCSdpType.offer)
                 {
                     var answerSdp = pc.createAnswer(AnswerOptions);
                     await pc.setLocalDescription(answerSdp).ConfigureAwait(false);
