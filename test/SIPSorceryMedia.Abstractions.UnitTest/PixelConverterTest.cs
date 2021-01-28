@@ -33,7 +33,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
         }
 
         /// <summary>
-        /// Tests that a BGR24 bitmap can be roundtripped to I420 and back again.
+        /// Tests that a BGR24 bitmap can be round tripped to I420 and back again.
         /// </summary>
         [Fact]
         public unsafe void RoundtripBgr24ToI420Test()
@@ -52,6 +52,31 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
             {
                 Bitmap roundTripBmp = new Bitmap(bmp.Width, bmp.Height, rtStride, PixelFormat.Format24bppRgb, (IntPtr)s);
                 roundTripBmp.Save("RoundtripBgr24ToI420Test.bmp");
+                roundTripBmp.Dispose();
+            }
+
+            bmp.Dispose();
+        }
+
+        /// <summary>
+        /// Tests that a BGRA32 bitmap can be round tripped to I420 and back again.
+        /// </summary>
+        [Fact]
+        public unsafe void RoundtripBgra32ToI420Test()
+        {
+            Bitmap bmp = new Bitmap("img/ref-bgra32.bmp");
+
+            Assert.Equal(PixelFormat.Format32bppRgb, bmp.PixelFormat);
+
+            byte[] buffer = BitmapToBuffer(bmp, out int stride);
+
+            byte[] i420 = PixelConverter.RGBAtoI420(buffer, bmp.Width, bmp.Height, stride);
+            byte[] bgr = PixelConverter.I420toBGR(i420, bmp.Width, bmp.Height, out int rtStride);
+
+            fixed (byte* s = bgr)
+            {
+                Bitmap roundTripBmp = new Bitmap(bmp.Width, bmp.Height, rtStride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                roundTripBmp.Save("RoundtripBgra32ToI420Test.bmp");
                 roundTripBmp.Dispose();
             }
 

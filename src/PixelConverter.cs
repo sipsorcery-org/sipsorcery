@@ -72,7 +72,7 @@ namespace SIPSorceryMedia.Abstractions
         /// </remarks>
         public static byte[] RGBAtoI420(byte[] rgba, int width, int height, int stride)
         {
-            if (rgba == null || rgba.Length < (width * height))
+            if (rgba == null || rgba.Length < (stride * height))
             {
                 throw new ApplicationException($"RGBA buffer supplied to RGBAtoI420 was too small, expected {stride * height} but got {rgba?.Length}.");
             }
@@ -99,7 +99,7 @@ namespace SIPSorceryMedia.Abstractions
                     u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
                     v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
 
-                    buffer[col + row * stride] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
+                    buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
 
                     int uvposn = col / 2 + row / 2 * width / 2;
 
