@@ -24567,54 +24567,117 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.Utility.ReverseEndian
   nameWithType: Utility.ReverseEndian
-- uid: SIPSorcery.Net.WebRTCNodeDssPeer
-  name: WebRTCNodeDssPeer
-  href: api/SIPSorcery.Net.WebRTCNodeDssPeer.html
-  commentId: T:SIPSorcery.Net.WebRTCNodeDssPeer
-  fullName: SIPSorcery.Net.WebRTCNodeDssPeer
-  nameWithType: WebRTCNodeDssPeer
-- uid: SIPSorcery.Net.WebRTCNodeDssPeer.#ctor(System.String,System.String,System.String,System.Func{System.Threading.Tasks.Task{SIPSorcery.Net.RTCPeerConnection}})
-  name: WebRTCNodeDssPeer(String, String, String, Func<Task<RTCPeerConnection>>)
-  href: api/SIPSorcery.Net.WebRTCNodeDssPeer.html#SIPSorcery_Net_WebRTCNodeDssPeer__ctor_System_String_System_String_System_String_System_Func_System_Threading_Tasks_Task_SIPSorcery_Net_RTCPeerConnection___
-  commentId: M:SIPSorcery.Net.WebRTCNodeDssPeer.#ctor(System.String,System.String,System.String,System.Func{System.Threading.Tasks.Task{SIPSorcery.Net.RTCPeerConnection}})
-  name.vb: WebRTCNodeDssPeer(String, String, String, Func(Of Task(Of RTCPeerConnection)))
-  fullName: SIPSorcery.Net.WebRTCNodeDssPeer.WebRTCNodeDssPeer(System.String, System.String, System.String, System.Func<System.Threading.Tasks.Task<SIPSorcery.Net.RTCPeerConnection>>)
-  fullName.vb: SIPSorcery.Net.WebRTCNodeDssPeer.WebRTCNodeDssPeer(System.String, System.String, System.String, System.Func(Of System.Threading.Tasks.Task(Of SIPSorcery.Net.RTCPeerConnection)))
-  nameWithType: WebRTCNodeDssPeer.WebRTCNodeDssPeer(String, String, String, Func<Task<RTCPeerConnection>>)
-  nameWithType.vb: WebRTCNodeDssPeer.WebRTCNodeDssPeer(String, String, String, Func(Of Task(Of RTCPeerConnection)))
-- uid: SIPSorcery.Net.WebRTCNodeDssPeer.#ctor*
-  name: WebRTCNodeDssPeer
-  href: api/SIPSorcery.Net.WebRTCNodeDssPeer.html#SIPSorcery_Net_WebRTCNodeDssPeer__ctor_
-  commentId: Overload:SIPSorcery.Net.WebRTCNodeDssPeer.#ctor
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer
+  name: WebRTCRestSignalingPeer
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html
+  commentId: T:SIPSorcery.Net.WebRTCRestSignalingPeer
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer
+  nameWithType: WebRTCRestSignalingPeer
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.#ctor(System.String,System.String,System.String,System.Func{System.Threading.Tasks.Task{SIPSorcery.Net.RTCPeerConnection}})
+  name: WebRTCRestSignalingPeer(String, String, String, Func<Task<RTCPeerConnection>>)
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer__ctor_System_String_System_String_System_String_System_Func_System_Threading_Tasks_Task_SIPSorcery_Net_RTCPeerConnection___
+  commentId: M:SIPSorcery.Net.WebRTCRestSignalingPeer.#ctor(System.String,System.String,System.String,System.Func{System.Threading.Tasks.Task{SIPSorcery.Net.RTCPeerConnection}})
+  name.vb: WebRTCRestSignalingPeer(String, String, String, Func(Of Task(Of RTCPeerConnection)))
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.WebRTCRestSignalingPeer(System.String, System.String, System.String, System.Func<System.Threading.Tasks.Task<SIPSorcery.Net.RTCPeerConnection>>)
+  fullName.vb: SIPSorcery.Net.WebRTCRestSignalingPeer.WebRTCRestSignalingPeer(System.String, System.String, System.String, System.Func(Of System.Threading.Tasks.Task(Of SIPSorcery.Net.RTCPeerConnection)))
+  nameWithType: WebRTCRestSignalingPeer.WebRTCRestSignalingPeer(String, String, String, Func<Task<RTCPeerConnection>>)
+  nameWithType.vb: WebRTCRestSignalingPeer.WebRTCRestSignalingPeer(String, String, String, Func(Of Task(Of RTCPeerConnection)))
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.#ctor*
+  name: WebRTCRestSignalingPeer
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer__ctor_
+  commentId: Overload:SIPSorcery.Net.WebRTCRestSignalingPeer.#ctor
   isSpec: "True"
-  fullName: SIPSorcery.Net.WebRTCNodeDssPeer.WebRTCNodeDssPeer
-  nameWithType: WebRTCNodeDssPeer.WebRTCNodeDssPeer
-- uid: SIPSorcery.Net.WebRTCNodeDssPeer.RTCPeerConnection
-  name: RTCPeerConnection
-  href: api/SIPSorcery.Net.WebRTCNodeDssPeer.html#SIPSorcery_Net_WebRTCNodeDssPeer_RTCPeerConnection
-  commentId: P:SIPSorcery.Net.WebRTCNodeDssPeer.RTCPeerConnection
-  fullName: SIPSorcery.Net.WebRTCNodeDssPeer.RTCPeerConnection
-  nameWithType: WebRTCNodeDssPeer.RTCPeerConnection
-- uid: SIPSorcery.Net.WebRTCNodeDssPeer.RTCPeerConnection*
-  name: RTCPeerConnection
-  href: api/SIPSorcery.Net.WebRTCNodeDssPeer.html#SIPSorcery_Net_WebRTCNodeDssPeer_RTCPeerConnection_
-  commentId: Overload:SIPSorcery.Net.WebRTCNodeDssPeer.RTCPeerConnection
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.WebRTCRestSignalingPeer
+  nameWithType: WebRTCRestSignalingPeer.WebRTCRestSignalingPeer
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.AnswerOptions
+  name: AnswerOptions
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_AnswerOptions
+  commentId: P:SIPSorcery.Net.WebRTCRestSignalingPeer.AnswerOptions
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.AnswerOptions
+  nameWithType: WebRTCRestSignalingPeer.AnswerOptions
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.AnswerOptions*
+  name: AnswerOptions
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_AnswerOptions_
+  commentId: Overload:SIPSorcery.Net.WebRTCRestSignalingPeer.AnswerOptions
   isSpec: "True"
-  fullName: SIPSorcery.Net.WebRTCNodeDssPeer.RTCPeerConnection
-  nameWithType: WebRTCNodeDssPeer.RTCPeerConnection
-- uid: SIPSorcery.Net.WebRTCNodeDssPeer.Start(System.Threading.CancellationTokenSource)
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.AnswerOptions
+  nameWithType: WebRTCRestSignalingPeer.AnswerOptions
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.FilterRemoteICECandidates
+  name: FilterRemoteICECandidates
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_FilterRemoteICECandidates
+  commentId: P:SIPSorcery.Net.WebRTCRestSignalingPeer.FilterRemoteICECandidates
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.FilterRemoteICECandidates
+  nameWithType: WebRTCRestSignalingPeer.FilterRemoteICECandidates
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.FilterRemoteICECandidates*
+  name: FilterRemoteICECandidates
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_FilterRemoteICECandidates_
+  commentId: Overload:SIPSorcery.Net.WebRTCRestSignalingPeer.FilterRemoteICECandidates
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.FilterRemoteICECandidates
+  nameWithType: WebRTCRestSignalingPeer.FilterRemoteICECandidates
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.OfferOptions
+  name: OfferOptions
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_OfferOptions
+  commentId: P:SIPSorcery.Net.WebRTCRestSignalingPeer.OfferOptions
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.OfferOptions
+  nameWithType: WebRTCRestSignalingPeer.OfferOptions
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.OfferOptions*
+  name: OfferOptions
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_OfferOptions_
+  commentId: Overload:SIPSorcery.Net.WebRTCRestSignalingPeer.OfferOptions
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.OfferOptions
+  nameWithType: WebRTCRestSignalingPeer.OfferOptions
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.RTCPeerConnection
+  name: RTCPeerConnection
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_RTCPeerConnection
+  commentId: P:SIPSorcery.Net.WebRTCRestSignalingPeer.RTCPeerConnection
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.RTCPeerConnection
+  nameWithType: WebRTCRestSignalingPeer.RTCPeerConnection
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.RTCPeerConnection*
+  name: RTCPeerConnection
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_RTCPeerConnection_
+  commentId: Overload:SIPSorcery.Net.WebRTCRestSignalingPeer.RTCPeerConnection
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.RTCPeerConnection
+  nameWithType: WebRTCRestSignalingPeer.RTCPeerConnection
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.Start(System.Threading.CancellationTokenSource)
   name: Start(CancellationTokenSource)
-  href: api/SIPSorcery.Net.WebRTCNodeDssPeer.html#SIPSorcery_Net_WebRTCNodeDssPeer_Start_System_Threading_CancellationTokenSource_
-  commentId: M:SIPSorcery.Net.WebRTCNodeDssPeer.Start(System.Threading.CancellationTokenSource)
-  fullName: SIPSorcery.Net.WebRTCNodeDssPeer.Start(System.Threading.CancellationTokenSource)
-  nameWithType: WebRTCNodeDssPeer.Start(CancellationTokenSource)
-- uid: SIPSorcery.Net.WebRTCNodeDssPeer.Start*
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_Start_System_Threading_CancellationTokenSource_
+  commentId: M:SIPSorcery.Net.WebRTCRestSignalingPeer.Start(System.Threading.CancellationTokenSource)
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.Start(System.Threading.CancellationTokenSource)
+  nameWithType: WebRTCRestSignalingPeer.Start(CancellationTokenSource)
+- uid: SIPSorcery.Net.WebRTCRestSignalingPeer.Start*
   name: Start
-  href: api/SIPSorcery.Net.WebRTCNodeDssPeer.html#SIPSorcery_Net_WebRTCNodeDssPeer_Start_
-  commentId: Overload:SIPSorcery.Net.WebRTCNodeDssPeer.Start
+  href: api/SIPSorcery.Net.WebRTCRestSignalingPeer.html#SIPSorcery_Net_WebRTCRestSignalingPeer_Start_
+  commentId: Overload:SIPSorcery.Net.WebRTCRestSignalingPeer.Start
   isSpec: "True"
-  fullName: SIPSorcery.Net.WebRTCNodeDssPeer.Start
-  nameWithType: WebRTCNodeDssPeer.Start
+  fullName: SIPSorcery.Net.WebRTCRestSignalingPeer.Start
+  nameWithType: WebRTCRestSignalingPeer.Start
+- uid: SIPSorcery.Net.WebRTCSignalTypesEnum
+  name: WebRTCSignalTypesEnum
+  href: api/SIPSorcery.Net.WebRTCSignalTypesEnum.html
+  commentId: T:SIPSorcery.Net.WebRTCSignalTypesEnum
+  fullName: SIPSorcery.Net.WebRTCSignalTypesEnum
+  nameWithType: WebRTCSignalTypesEnum
+- uid: SIPSorcery.Net.WebRTCSignalTypesEnum.any
+  name: any
+  href: api/SIPSorcery.Net.WebRTCSignalTypesEnum.html#SIPSorcery_Net_WebRTCSignalTypesEnum_any
+  commentId: F:SIPSorcery.Net.WebRTCSignalTypesEnum.any
+  fullName: SIPSorcery.Net.WebRTCSignalTypesEnum.any
+  nameWithType: WebRTCSignalTypesEnum.any
+- uid: SIPSorcery.Net.WebRTCSignalTypesEnum.ice
+  name: ice
+  href: api/SIPSorcery.Net.WebRTCSignalTypesEnum.html#SIPSorcery_Net_WebRTCSignalTypesEnum_ice
+  commentId: F:SIPSorcery.Net.WebRTCSignalTypesEnum.ice
+  fullName: SIPSorcery.Net.WebRTCSignalTypesEnum.ice
+  nameWithType: WebRTCSignalTypesEnum.ice
+- uid: SIPSorcery.Net.WebRTCSignalTypesEnum.sdp
+  name: sdp
+  href: api/SIPSorcery.Net.WebRTCSignalTypesEnum.html#SIPSorcery_Net_WebRTCSignalTypesEnum_sdp
+  commentId: F:SIPSorcery.Net.WebRTCSignalTypesEnum.sdp
+  fullName: SIPSorcery.Net.WebRTCSignalTypesEnum.sdp
+  nameWithType: WebRTCSignalTypesEnum.sdp
 - uid: SIPSorcery.Net.WebRTCWebSocketClient
   name: WebRTCWebSocketClient
   href: api/SIPSorcery.Net.WebRTCWebSocketClient.html
