@@ -51,23 +51,24 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v5.0.13-pre: Async fixes. Added convenience REST server for WebRTC signalling.
+    <PackageReleaseNotes>- v5.0.14-pre: Improvements to WebRTC Rest signaling. Set remote description bug fix. 
+- v5.0.13-pre: Async fixes. Added convenience REST server for WebRTC signaling.
 - v5.0.12-pre: Bug fixes for SIP DNS and incorrect clock rate used in rtpmap.
 - v5.0.11-pre: Helper methods for SIP URI and customising SIP headers at send time.
 - v5.0.10-pre: Improved support for sending large audio frames and SIP dialogue mangling.
 - v5.0.9-pre: Allow authentication via pre-computed digest as well as password.
 - v5.0.8-pre: Added interfaces to support B2B user agent.
-- v5.0.7-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
+- v5.0.7-pre: Updated to use latest abstractions package with change to IAudioEncoder and IVideoEncoder interfaces.
 - v5.0.6-pre: Added video format to IVideoSink GotVideo frame method. Added max bandwidth SDP attribute. Small refactor of RTP packetisation logic.
 - v5.0.5-pre: Use pixel conversion fixes that can cope with uneven image dimensions. 
 - v5.0.3: Added a warning when an attempt is made to depacketise H264.
-- v5.0.2: Added support for binary SIP payloads. Updated dependcies to latest stable versions (where available).
+- v5.0.2: Added support for binary SIP payloads. Updated dependencies to latest stable versions (where available).
 - v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>5.0.13-pre</Version>
-    <AssemblyVersion>5.0.13.0</AssemblyVersion>
-    <FileVersion>5.0.13.0</FileVersion>
+    <Version>5.0.14-pre</Version>
+    <AssemblyVersion>5.0.14.0</AssemblyVersion>
+    <FileVersion>5.0.14.0</FileVersion>
   </PropertyGroup>
 
 </Project>

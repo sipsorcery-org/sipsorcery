@@ -229,6 +229,8 @@ namespace SIPSorcery.Net
                     isInitialReceive = false;
                 }
             }
+            catch (OperationCanceledException) // Thrown if the task is explicitly cancelled by the consumer using a cancellation token.
+            { }
             catch (Exception excp)
             {
                 logger.LogError($"Exception receiving webrtc signal. {excp}");
