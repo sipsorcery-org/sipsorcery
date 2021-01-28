@@ -35,9 +35,9 @@ namespace demo
 {
     class Program
     {
-        private const string NODE_DSS_SERVER = "http://127.0.0.1:3000";
-        private const string NODE_DSS_MY_USER = "console";
-        private const string NODE_DSS_THEIR_USER = "unity";
+        private const string REST_SIGNALING_SERVER = "http://127.0.0.1:3000";
+        private const string REST_SIGNALING_MY_USER = "console";
+        private const string REST_SIGNALING_THEIR_USER = "unity";
         //private const string NODE_DSS_MY_USER = "cli";
         //private const string NODE_DSS_THEIR_USER = "svr";
 
@@ -54,7 +54,7 @@ namespace demo
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            var nodeDssWebRTCPeer = new WebRTCNodeDssPeer(NODE_DSS_SERVER, NODE_DSS_MY_USER, NODE_DSS_THEIR_USER, CreatePeerConnection);
+            var nodeDssWebRTCPeer = new WebRTCRestSignalingPeer(REST_SIGNALING_SERVER, REST_SIGNALING_MY_USER, REST_SIGNALING_THEIR_USER, CreatePeerConnection);
             await nodeDssWebRTCPeer.Start(cts);
 
             // Open a Window to display the video feed from the WebRTC peer.
