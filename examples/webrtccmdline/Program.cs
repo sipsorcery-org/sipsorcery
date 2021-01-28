@@ -58,7 +58,7 @@ namespace SIPSorcery.Examples
         public bool CreateJsonOffer { get; set; }
 
         [Option("stun", Required = false,
-            HelpText = "STUN or TURN server to use in the peer connection configuration. Format \"--stun=(stun|turn):host[:port][;username;password]\".")]
+            HelpText = "STUN or TURN server to use in the peer connection configuration. Format \"--stun '(stun|turn):host[:port][;username;password]'\".")]
         public string StunServer { get; set; }
 
         [Option("relayonly", Required = false,
@@ -66,7 +66,7 @@ namespace SIPSorcery.Examples
         public bool RelayOnly { get; set; }
 
         [Option("rest", Required = false,
-            HelpText = "Address and ID's for a REST, simple HTTP signalling, server to exchange SDP and ice candidates. Format \"--rest=https://localhost:5001/api/webrtcsignal;myid;theirid\".")]
+            HelpText = "Address and ID's for a REST, simple HTTP signalling, server to exchange SDP and ice candidates. Format \"--rest 'https://localhost:5001/api/webrtcsignal;myid;theirid'\".")]
         public string RestServer { get; set; }
 
         [Option("icetypes", Required = false,
