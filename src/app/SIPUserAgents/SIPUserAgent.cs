@@ -362,7 +362,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Creates a new SIP client and server combination user agent with a shared SIP transport instance.
         /// With a shared transport outgoing calls and registrations work the same but for incoming calls
-        /// and requests the destination needs to be co-ordinated externally.
+        /// and requests the destination needs to be coordinated externally.
         /// </summary>
         /// <param name="transport">The transport layer to use for requests and responses.</param>
         /// <param name="outboundProxy">Optional. If set all requests and responses will be forwarded to this

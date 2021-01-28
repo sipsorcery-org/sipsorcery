@@ -1353,6 +1353,7 @@ namespace SIPSorcery.Net
                         OnIceConnectionStateChange?.Invoke(IceConnectionState);
                     }
 
+                    candidatePair.RequestTransactionID = candidatePair.RequestTransactionID ?? Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
                     candidatePair.LastCheckSentAt = DateTime.Now;
                     candidatePair.ChecksSent++;
 

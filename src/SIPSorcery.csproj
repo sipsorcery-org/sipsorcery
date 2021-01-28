@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v5.0.12-pre: Bug fixes for SIP DNS and incorrect clock rate used in rtpmap.
+    <PackageReleaseNotes>- v5.0.13-pre: Async fixes. Added convenience REST server for WebRTC signalling.
+- v5.0.12-pre: Bug fixes for SIP DNS and incorrect clock rate used in rtpmap.
 - v5.0.11-pre: Helper methods for SIP URI and customising SIP headers at send time.
 - v5.0.10-pre: Improved support for sending large audio frames and SIP dialogue mangling.
 - v5.0.9-pre: Allow authentication via pre-computed digest as well as password.
@@ -64,9 +65,9 @@
 - v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <Version>5.0.12-pre</Version>
-    <AssemblyVersion>5.0.12.0</AssemblyVersion>
-    <FileVersion>5.0.12.0</FileVersion>
+    <Version>5.0.13-pre</Version>
+    <AssemblyVersion>5.0.13.0</AssemblyVersion>
+    <FileVersion>5.0.13.0</FileVersion>
   </PropertyGroup>
 
 </Project>
