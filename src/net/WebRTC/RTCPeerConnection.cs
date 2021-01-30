@@ -584,13 +584,12 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// As specified in https://www.w3.org/TR/webrtc/#dom-peerconnection-setlocaldescription.
         /// </remarks>
-        /// <param name="description">Optional. The session description to set as 
-        /// local description. If not supplied then an offer or answer will be created as required. 
+        /// <param name="init">Optional. The session description to set as 
+        /// local description. If not supplied then an offer or answer will be created as required.
         /// </param>
         public Task setLocalDescription(RTCSessionDescriptionInit init)
         {
-            RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
-            localDescription = description;
+            localDescription = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
 
             if (init.type == RTCSdpType.offer)
             {
@@ -629,16 +628,11 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Updates the session after receiving the remote SDP.
-        /// At this point check that the codecs match. We currently only support:
-        ///  - Audio: PCMU,
-        ///  - Video: VP8.
-        /// If they are not available there's no point carrying on.
         /// </summary>
-        /// <param name="sessionDescription">The answer/offer SDP from the remote party.</param>
+        /// <param name="init">The answer/offer SDP from the remote party.</param>
         public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
         {
-            RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
-            remoteDescription = description;
+            remoteDescription = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
 
             SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
@@ -649,8 +643,6 @@ namespace SIPSorcery.Net
                 case var sigState when sigState == RTCSignalingState.have_local_offer && sdpType == SdpType.offer:
                     logger.LogWarning($"RTCPeerConnection received an SDP offer but was already in {sigState} state. Remote offer rejected.");
                     return SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer;
-                default:
-                    break;
             }
 
             var setResult = base.SetRemoteDescription(sdpType, remoteSdp);
