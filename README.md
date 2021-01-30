@@ -6,10 +6,6 @@
 
 **Update Jan 2021:** The repository URLs for this project have changed from `sipsorcery` to `sipsorcery-org`. A redirect currently exists but if you encounter any issues you can update your remote git URL from the command line using the commands below (adjust for the name of your remote repo):
 
-`git remote set-url origin git@github.com:sipsorcery-org/sipsorcery.git`
-
-or
-
 `git remote set-url origin-http https://github.com/sipsorcery-org/sipsorcery`
 
 
@@ -27,7 +23,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
  - Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261),
  - Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550),
- - Web Real-time Communications [(WebRTC)](https://www.w3.org/TR/webrtc/),
+ - Web Real-time Communications [(WebRTC)](https://www.w3.org/TR/webrtc/), **as of 26 Jan 2021 now an official IETF and W3C specification**,
  - Interactive Connectivity Establishment [(ICE)](https://tools.ietf.org/html/rfc8445),
  - And more.
 
@@ -60,6 +56,10 @@ Install-Package SIPSorcery -v 5.0.3
 ## Documentation
 
 Class reference documentation and articles explaining common usage are available at [https://sipsorcery-org.github.io/sipsorcery/](https://sipsorcery-org.github.io/sipsorcery/).
+
+## Complimentary Server
+
+A free SIP account for GitHub users that can be used for SIP and WebRTC testing is available at [sipsorcery.cloud](sipsorcery.cloud).
 
 ## Getting Started VoIP
 

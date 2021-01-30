@@ -124,7 +124,7 @@ public class PlayerController : MonoBehaviour
 
 public class WebRTCPeer
 {
-    private const string REST_SIGNALING_SERVER = "https://devcall.sipsorcery.com/api/webrtcsignal";
+    private const string REST_SIGNALING_SERVER = "https://sipsorcery.cloud/api/webrtcsignal";
     private const string REST_SIGNALING_MY_ID = "uni";
     private const string REST_SIGNALING_THEIR_ID = "bro";
 
