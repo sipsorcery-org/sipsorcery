@@ -3609,22 +3609,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.VideoTestPatternSource
   nameWithType: VideoTestPatternSource.VideoTestPatternSource
-- uid: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420(System.Byte[],System.Int32,System.Int32)
-  name: BGRtoI420(Byte[], Int32, Int32)
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_BGRtoI420_System_Byte___System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Media.VideoTestPatternSource.BGRtoI420(System.Byte[],System.Int32,System.Int32)
-  name.vb: BGRtoI420(Byte(), Int32, Int32)
-  fullName: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420(System.Byte[], System.Int32, System.Int32)
-  fullName.vb: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420(System.Byte(), System.Int32, System.Int32)
-  nameWithType: VideoTestPatternSource.BGRtoI420(Byte[], Int32, Int32)
-  nameWithType.vb: VideoTestPatternSource.BGRtoI420(Byte(), Int32, Int32)
-- uid: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420*
-  name: BGRtoI420
-  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_BGRtoI420_
-  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.BGRtoI420
-  isSpec: "True"
-  fullName: SIPSorcery.Media.VideoTestPatternSource.BGRtoI420
-  nameWithType: VideoTestPatternSource.BGRtoI420
 - uid: SIPSorcery.Media.VideoTestPatternSource.CloseVideo
   name: CloseVideo()
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_CloseVideo
