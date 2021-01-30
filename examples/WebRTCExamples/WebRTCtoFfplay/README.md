@@ -38,4 +38,4 @@ To request the remote peer to send a video key frame press 'k'
 
  - `ffplay` may display some warning messages while it waits for a key frame. In the test application console press `k` a few times to get the remote peer to generate a key frame.
 
-- Once `ffplay` gets a keyframe a window should pop-up with the video and audio streams from the remote peer (check the task bar if ti doesn't appear as sometimes it stays minimised).
+- Once `ffplay` gets a keyframe a window should pop-up with the video and audio streams from the remote peer (check the task bar if it doesn't appear as sometimes it stays minimised).
