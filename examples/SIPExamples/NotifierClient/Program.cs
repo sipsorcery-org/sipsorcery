@@ -2,7 +2,7 @@
 // Filename: Program.cs
 //
 // Description: A getting started program to demonstrate how to subscribe to
-// a SIP server for Message Waiting Inidications (MWI).
+// a SIP server for Message Waiting Indications (MWI).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -32,7 +32,7 @@ namespace demo
 
         static void Main()
         {
-            Console.WriteLine("SIPSorcery Getting Started Demo");
+            Console.WriteLine("SIPSorcery Notification Client Demo");
 
             AddConsoleLogger();
             CancellationTokenSource exitCts = new CancellationTokenSource();
@@ -50,7 +50,7 @@ namespace demo
 
             mwiSubscriber.Start();
 
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) =>
             {
                 e.Cancel = true;
                 exitCts.Cancel();

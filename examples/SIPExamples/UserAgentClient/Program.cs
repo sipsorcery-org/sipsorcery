@@ -34,7 +34,7 @@ namespace demo
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sips:helloworld@sipsorcery.cloud";
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 

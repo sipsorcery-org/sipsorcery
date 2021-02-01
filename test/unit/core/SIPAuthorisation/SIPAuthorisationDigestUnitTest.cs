@@ -231,7 +231,7 @@ namespace SIPSorcery.SIP.UnitTests
         }
 
         [Fact]
-        public void GenreateDigestTest()
+        public void GenerateDigestTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -244,7 +244,22 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Digest = " + digest + ".");
             logger.LogDebug(authRequest.ToString());
 
-            Assert.True(true, "True was false.");
+            Assert.Equal("b1ea9d6b32e8dd0023a3feec14b16177", digest);
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void KnownHA1Digest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var digest = HTTPDigest.DigestCalcHA1("user", "sipsorcery.cloud", "password");
+
+            logger.LogDebug($"Digest = {digest}.");
+
+            Assert.Equal("f5732e14bef238badb2b4cb987d415f6", digest);
 
             logger.LogDebug("-----------------------------------------");
         }
