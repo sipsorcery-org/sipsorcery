@@ -31,7 +31,7 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
+        private static string DESTINATION = "sips:helloworld@sipsorcery.cloud";
 
         static async Task Main()
         {
