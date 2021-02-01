@@ -2,13 +2,13 @@
 // Filename: SIPUserField.cs
 //
 // Description: 
-// Encapsulates the format for the SIP Contact, From and To headers
+// Encapsulates the format for the SIP Contact, From and To headers.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 21 Apr 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 21 Apr 2006	Aaron Clauson	Created, Hobart, Australia.
 // 04 Sep 2008  Aaron Clauson   Changed display name to always use quotes. Some SIP stacks were
 //                              found to have problems with a comma in a non-quoted display name.
 //
@@ -24,6 +24,12 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP
 {
     /// <summary>
+    /// Encapsulates the format for the SIP Contact, From and To headers.
+    /// </summary>
+    /// <remarks>
+    /// If no "&lt;" and "&gt;" are present, all parameters after the URI are header
+    /// parameters, not URI parameters.
+    /// </remarks>
     /// <code>
     /// <![CDATA[
     /// name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
@@ -35,10 +41,6 @@ namespace SIPSorcery.SIP
     /// userinfo         =  ( user / telephone-subscriber ) [ ":" password ] "@"
     /// ]]>
     /// </code>
-    ///
-    /// If no "&lt;" and "&gt;" are present, all parameters after the URI are header
-    /// parameters, not URI parameters.
-    /// </summary>
     [DataContract]
     public class SIPUserField
     {
@@ -68,7 +70,7 @@ namespace SIPSorcery.SIP
 
         public static SIPUserField ParseSIPUserField(string userFieldStr)
         {
-            if (userFieldStr.IsNullOrBlank())
+            if (string.IsNullOrWhiteSpace(userFieldStr))
             {
                 throw new ArgumentException("A SIPUserField cannot be parsed from an empty string.");
             }
@@ -106,14 +108,10 @@ namespace SIPSorcery.SIP
                 position = trimUserField.IndexOf('>');
                 if (position != -1)
                 {
-                    addrSpecLen = trimUserField.Length - 1;
-                    if (position != -1)
-                    {
-                        addrSpecLen = position - 1;
+                    addrSpecLen = position - 1;
 
-                        string paramStr = trimUserField.Substring(position + 1).Trim();
-                        userField.Parameters = new SIPParameters(paramStr, PARAM_TAG_DELIMITER);
-                    }
+                    string paramStr = trimUserField.Substring(position + 1).Trim();
+                    userField.Parameters = new SIPParameters(paramStr, PARAM_TAG_DELIMITER);
 
                     string addrSpec = trimUserField.Substring(1, addrSpecLen);
 
