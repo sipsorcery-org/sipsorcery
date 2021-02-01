@@ -26,9 +26,9 @@ namespace demo
 {
     class Program
     {
-        private const string USERNAME = "username";
+        private const string USERNAME = "user";
         private const string PASSWORD = "password";
-        private const string SERVER = "sipsorcery.com";
+        private const string SERVER = "localhost";
 
         static void Main()
         {
@@ -37,16 +37,30 @@ namespace demo
             AddConsoleLogger();
             CancellationTokenSource exitCts = new CancellationTokenSource();
 
-            var sipTransport = new SIPTransport();
+            var sipTransport = new SIPTransport() { PreferIPv6NameResolution = true };
 
             EnableTraceLogs(sipTransport);
 
-            var mwiURI = SIPURI.ParseSIPURIRelaxed($"{USERNAME}@{SERVER}");
+            var mwiURI = SIPURI.ParseSIPURIRelaxed($"sip:{USERNAME}@{SERVER}");
             int expiry = 180;
 
-            SIPNotifierClient<SIPEvent> mwiSubscriber = new SIPNotifierClient<SIPEvent>(sipTransport, null, SIPEventPackage.MessageSummary, mwiURI, USERNAME, null, PASSWORD, expiry, null);
+            SIPNotifierClient mwiSubscriber = new SIPNotifierClient(sipTransport, null, SIPEventPackagesEnum.MessageSummary, mwiURI, USERNAME, null, PASSWORD, expiry, null);
             mwiSubscriber.SubscriptionFailed += (uri, failureStatus, errorMessage) => Console.WriteLine($"MWI failed for {uri}, {errorMessage}");
             mwiSubscriber.SubscriptionSuccessful += (uri) => Console.WriteLine($"MWI subscription successful for {uri}");
+            mwiSubscriber.NotificationReceived += (evt, msg) => Console.WriteLine($"MWI notification, type {evt}, message {msg}.");
+
+            sipTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                if (req.Method == SIPMethodsEnum.NOTIFY)
+                {
+                    await mwiSubscriber.GotNotificationRequest(lep, rep, req);
+                }
+                else
+                {
+                    SIPResponse notSupported = SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                    await sipTransport.SendResponseAsync(notSupported);
+                }
+            };
 
             mwiSubscriber.Start();
 
