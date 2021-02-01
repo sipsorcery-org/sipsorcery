@@ -31,10 +31,10 @@ namespace SIPSorcery.SIP.App
     /// generate. Different SIP event packages have different ways of representing their data. For example RFC4235
     /// uses XML to convey dialog notifications, RFC3842 uses plain text to convey message waiting indications.
     /// </summary>
-    public class SIPNotifierClient<T> where T : SIPEvent, new()
+    public class SIPNotifierClient
     {
         private const int DEFAULT_SUBSCRIBE_EXPIRY = 300;       // The default value to request on subscription requests.
-                                                                //private const int RETRY_POST_FAILURE_INTERVAL = 300;    // The interval to retry the subscription after a failure response or timeout.
+        //private const int RETRY_POST_FAILURE_INTERVAL = 300;    // The interval to retry the subscription after a failure response or timeout.
         private const int RESCHEDULE_SUBSCRIBE_MARGIN = 10;     // Reschedule subsequent subscriptions with a small margin to try and ensure there is no gap.
         private const int MAX_SUBSCRIBE_ATTEMPTS = 4;           // The maximum number of subscribe attempts that will be made without a failure condition before incurring a temporary failure.
 
@@ -44,7 +44,7 @@ namespace SIPSorcery.SIP.App
 
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
-        private SIPEventPackage m_sipEventPackage;
+        private SIPEventPackagesEnum m_sipEventPackage;
 
         private SIPURI m_resourceURI;
         private string m_authUsername;
@@ -70,14 +70,14 @@ namespace SIPSorcery.SIP.App
             get { return m_subscribeCallID; }
         }
 
-        public event Action<T> NotificationReceived;
+        public event Action<SIPEventPackagesEnum, string> NotificationReceived;
         public event Action<SIPURI, SIPResponseStatusCodesEnum, string> SubscriptionFailed;
         public event Action<SIPURI> SubscriptionSuccessful;
 
         public SIPNotifierClient(
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
-            SIPEventPackage sipEventPackage,
+            SIPEventPackagesEnum sipEventPackage,
             SIPURI resourceURI,
             string authUsername,
             string authDomain,
@@ -136,7 +136,7 @@ namespace SIPSorcery.SIP.App
                 //logger.LogDebug(sipRequest.ToString());
 
                 if (sipRequest.Method == SIPMethodsEnum.NOTIFY && sipRequest.Header.CallId == m_subscribeCallID &&
-                     sipRequest.Header.Event == m_sipEventPackage.ToString() && sipRequest.Body != null)
+                     SIPEventPackageType.Parse(sipRequest.Header.Event) == m_sipEventPackage && sipRequest.Body != null)
                 {
                     if (sipRequest.Header.CSeq <= m_remoteCSeq)
                     {
@@ -146,9 +146,7 @@ namespace SIPSorcery.SIP.App
                     {
                         //logger.LogDebug("New dialog info notification request received.");
                         m_remoteCSeq = sipRequest.Header.CSeq;
-                        T sipEvent = new T();
-                        sipEvent.Load(sipRequest.Body);
-                        NotificationReceived(sipEvent);
+                        NotificationReceived?.Invoke(m_sipEventPackage, sipRequest.Body);
                     }
                 }
                 else
@@ -219,8 +217,8 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Initiates a SUBSCRIBE request to a notification server.
         /// </summary>
-        /// <param name="subscribeToURI">The SIP user that dialog notifications are being subscribed to.</param>
-        public void Subscribe(SIPURI subscribeURI, int expiry, SIPEventPackage sipEventPackage, string subscribeCallID, SIPURI contactURI)
+        /// <param name="subscribeURI">The SIP user that dialog notifications are being subscribed to.</param>
+        public void Subscribe(SIPURI subscribeURI, int expiry, SIPEventPackagesEnum sipEventPackage, string subscribeCallID, SIPURI contactURI)
         {
             try
             {
@@ -240,7 +238,7 @@ namespace SIPSorcery.SIP.App
                         SIPMethodsEnum.SUBSCRIBE,
                         m_resourceURI,
                         new SIPToHeader(null, subscribeURI, m_subscriptionToTag),
-                        new SIPFromHeader(null, new SIPURI(m_authUsername, m_authDomain, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp), m_subscriptionFromTag));
+                        new SIPFromHeader(null, new SIPURI(m_authUsername, m_authDomain, null, m_resourceURI.Scheme, SIPProtocolsEnum.udp), m_subscriptionFromTag));
 
 
                     if (contactURI != null)
@@ -254,7 +252,7 @@ namespace SIPSorcery.SIP.App
 
                     subscribeRequest.Header.CSeq = m_localCSeq;
                     subscribeRequest.Header.Expires = expiry;
-                    subscribeRequest.Header.Event = sipEventPackage.ToString();
+                    subscribeRequest.Header.Event = SIPEventPackageType.GetEventHeader(sipEventPackage);
                     subscribeRequest.Header.CallId = subscribeCallID;
 
                     if (!m_filter.IsNullOrBlank())
@@ -266,9 +264,7 @@ namespace SIPSorcery.SIP.App
 
                     SIPNonInviteTransaction subscribeTransaction = new SIPNonInviteTransaction(m_sipTransport, subscribeRequest, m_outboundProxy);
                     subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
-                    subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
-
-                    m_sipTransport.SendTransaction(subscribeTransaction);
+                    subscribeTransaction.NonInviteTransactionTimedOut += SubscribeTransactionTimedOut;
 
                     LastSubscribeAttempt = DateTime.Now;
                 }
@@ -281,7 +277,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void SubsribeTransactionTimedOut(SIPTransaction sipTransaction)
+        private void SubscribeTransactionTimedOut(SIPTransaction sipTransaction)
         {
             if (SubscriptionFailed != null)
             {
@@ -366,7 +362,7 @@ namespace SIPSorcery.SIP.App
                             // Create a new transaction to establish the authenticated server call.
                             SIPNonInviteTransaction subscribeTransaction = new SIPNonInviteTransaction(m_sipTransport, authSubscribeRequest, m_outboundProxy);
                             subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
-                            subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
+                            subscribeTransaction.NonInviteTransactionTimedOut += SubscribeTransactionTimedOut;
 
                             m_sipTransport.SendTransaction(subscribeTransaction);
                         }

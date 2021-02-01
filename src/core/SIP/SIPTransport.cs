@@ -565,7 +565,7 @@ namespace SIPSorcery.SIP
                 sipRequest.Header = CustomiseRequestHeader(sendFromSIPEndPoint, dstEndPoint, sipRequest) ?? sipRequest.Header;
             }
 
-            // Once the channel has been determined check some specific header fields and replace the placeholder end point.
+            // Once the channel has been determined check some specific header fields and replace the place holder end point.
             sipRequest.Header = AdjustHeadersForEndPoint(sendFromSIPEndPoint, sipRequest.Header);
 
             return SendRequestAsync(sipChannel, sendFromSIPEndPoint, dstEndPoint, sipRequest);
@@ -821,7 +821,7 @@ namespace SIPSorcery.SIP
             {
                 if (!String.IsNullOrEmpty(ContactHost))
                 {
-                    // A custom ContactHost will always take precdence.
+                    // A custom ContactHost will always take precedence.
                     copy = copy ?? header.Copy();
                     if (IPAddress.TryParse(ContactHost, out _))
                     {

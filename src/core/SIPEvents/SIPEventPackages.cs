@@ -2,13 +2,15 @@
 // FileName: SIPEventPackages.cs
 //
 // Description:
-// Data structures and types related to RFC3265 "Session Initiation Protocol (SIP)-Specific Event Notification".
+// Data structures and types related to RFC3265 "Session Initiation Protocol
+// (SIP)-Specific Event Notification".
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 23 Feb 2010	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com).
+// 23 Feb 2010	Aaron Clauson	Created, Hobart, Australia.
+// 01 Feb 2021  Aaron Clauson   Simplified parsing of the event package type.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -19,99 +21,102 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
-    public class SIPEventConsts
+    public static class SIPEventConsts
     {
         public const string DIALOG_XML_NAMESPACE_URN = "urn:ietf:params:xml:ns:dialog-info";
         public const string PIDF_XML_NAMESPACE_URN = "urn:ietf:params:xml:ns:pidf";             // Presence Information Data Format XML namespace.
-        public const string SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX = "ss";                      // Used for custom sipsorcery elements in dialog event notification payloads.
-        public const string SIPSORCERY_DIALOG_XML_NAMESPACE_URN = "sipsorcery:dialog-info";     // Used for custom sipsorcery elements in dialog event notification payloads.
     }
 
-    public struct SIPEventPackage
+    public enum SIPEventPackagesEnum
     {
-        public static SIPEventPackage None = new SIPEventPackage(null);
-        public static SIPEventPackage Dialog = new SIPEventPackage("dialog");                   // RFC4235 "An INVITE-Initiated Dialog Event Package for the Session Initiation Protocol (SIP)".
-        public static SIPEventPackage MessageSummary = new SIPEventPackage("message-summary");  // RFC3842 "A Message Summary and Message Waiting Indication Event Package for the Session Initiation Protocol (SIP)"
-        public static SIPEventPackage Presence = new SIPEventPackage("presence");               // RFC3856.
-        public static SIPEventPackage Refer = new SIPEventPackage("refer");                     // RFC3515 "The Session Initiation Protocol (SIP) Refer Method".
+        None,
 
-        private string m_value;
+        /// <summary>
+        /// RFC4235 "An INVITE-Initiated Dialog Event Package for the Session Initiation Protocol (SIP)".
+        /// </summary>
+        Dialog,
 
-        private SIPEventPackage(string value)
-        {
-            m_value = value;
-        }
+        /// <summary>
+        /// RFC3842 "A Message Summary and Message Waiting Indication Event Package for the Session
+        /// Initiation Protocol (SIP)"
+        /// </summary>
+        MessageSummary,
+
+        /// <summary>
+        /// RFC3856.
+        /// </summary>
+        Presence,
+
+        /// <summary>
+        /// RFC3515 "The Session Initiation Protocol (SIP) Refer Method".
+        /// </summary>
+        Refer
+    }
+
+    public static class SIPEventPackageType
+    {
+        public const string DIALOG_EVENT_VALUE = "dialog";
+        public const string MESSAGE_SUMMARY_EVENT_VALUE = "message-summary";
+        public const string PRESENCE_EVENT_VALUE = "presence";
+        public const string REFER_EVENT_VALUE = "refer";
 
         public static bool IsValid(string value)
         {
-            if (value.IsNullOrBlank())
+            if (string.IsNullOrWhiteSpace(value))
             {
                 return false;
             }
-            else if (value.ToLower() == "dialog" || value.ToLower() == "message-summary" ||
-                value.ToLower() == "presence" || value.ToLower() == "refer")
-            {
-                return true;
-            }
-            else
-            {
-                return false;
+            else {
+                value = value.Trim();
+
+                return 
+                    string.Equals(value, DIALOG_EVENT_VALUE, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(value, MESSAGE_SUMMARY_EVENT_VALUE, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(value, PRESENCE_EVENT_VALUE, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(value, REFER_EVENT_VALUE, StringComparison.OrdinalIgnoreCase);
             }
         }
 
-        public static SIPEventPackage Parse(string value)
+        public static SIPEventPackagesEnum Parse(string value)
         {
             if (!IsValid(value))
             {
-                throw new ArgumentException("The value is not valid for a SIPEventPackage.");
+                return SIPEventPackagesEnum.None;
             }
             else
             {
-                string trimmedValue = value.Trim().ToLower();
-                switch (trimmedValue)
+                value = value.Trim().ToLower();
+                switch (value)
                 {
-                    case "dialog":
-                        return SIPEventPackage.Dialog;
-                    case "message-summary":
-                        return SIPEventPackage.MessageSummary;
-                    case "presence":
-                        return SIPEventPackage.Presence;
-                    case "refer":
-                        return SIPEventPackage.Refer;
+                    case DIALOG_EVENT_VALUE:
+                        return SIPEventPackagesEnum.Dialog;
+                    case MESSAGE_SUMMARY_EVENT_VALUE:
+                        return SIPEventPackagesEnum.MessageSummary;
+                    case PRESENCE_EVENT_VALUE:
+                        return SIPEventPackagesEnum.Presence;
+                    case REFER_EVENT_VALUE:
+                        return SIPEventPackagesEnum.Refer;
                     default:
-                        throw new ArgumentException("The value is not valid for a SIPEventPackage.");
+                        return SIPEventPackagesEnum.None;
                 }
             }
         }
 
-        public override string ToString()
+        public static string GetEventHeader(SIPEventPackagesEnum eventPackage)
         {
-            return m_value;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return AreEqual(this, (SIPEventPackage)obj);
-        }
-
-        public static bool AreEqual(SIPEventPackage x, SIPEventPackage y)
-        {
-            return x == y;
-        }
-
-        public static bool operator ==(SIPEventPackage x, SIPEventPackage y)
-        {
-            return x.m_value == y.m_value;
-        }
-
-        public static bool operator !=(SIPEventPackage x, SIPEventPackage y)
-        {
-            return !(x == y);
-        }
-
-        public override int GetHashCode()
-        {
-            return m_value.GetHashCode();
+            switch(eventPackage)
+            {
+                case SIPEventPackagesEnum.Dialog:
+                    return DIALOG_EVENT_VALUE;
+                case SIPEventPackagesEnum.MessageSummary:
+                    return MESSAGE_SUMMARY_EVENT_VALUE;
+                case SIPEventPackagesEnum.Presence:
+                    return PRESENCE_EVENT_VALUE;
+                case SIPEventPackagesEnum.Refer:
+                    return REFER_EVENT_VALUE;
+                default:
+                    return null;
+            }
         }
     }
 
@@ -129,7 +134,7 @@ namespace SIPSorcery.SIP
         recipient,
     }
 
-    public class SIPEventFilters
+    public static class SIPEventFilters
     {
         public const string SIP_DIALOG_INCLUDE_SDP = "includesdp=true";
     }

@@ -365,32 +365,40 @@ namespace SIPSorcery.SIP
                     }
                 };
                 bool willRaiseEvent = clientSocket.ConnectAsync(connectArgs);
-                if (!willRaiseEvent)
+                if (!willRaiseEvent && connectArgs.LastOperation == SocketAsyncOperation.Connect)
                 {
-                    if (connectArgs.LastOperation == SocketAsyncOperation.Connect)
-                    {
-                        connectTcs.SetResult(connectArgs.SocketError);
-                    }
+                    connectTcs.SetResult(connectArgs.SocketError);
                 }
 
                 var connectResult = await connectTcs.Task.ConfigureAwait(false);
 
-                logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel connect completed result for {localEndPoint}->{dstEndPoint} {connectResult}.");
-
                 if (connectResult != SocketError.Success)
                 {
-                    logger.LogWarning($"SIP {ProtDescr} Channel send to {dstEndPoint} failed. Attempt to create a client socket failed.");
+                    logger.LogWarning($"SIP {ProtDescr} Channel send to {dstEndPoint} failed. Attempt to create a client socket failed with {connectResult}.");
                 }
                 else
                 {
+                    if (localEndPoint.Port == 0)
+                    {
+                        Port = (clientSocket.LocalEndPoint as IPEndPoint).Port;
+                    }
+
+                    logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel connect completed result for {clientSocket.LocalEndPoint}->{dstEndPoint} {connectResult}.");
+
                     SIPStreamConnection sipStmConn = new SIPStreamConnection(clientSocket, clientSocket.RemoteEndPoint as IPEndPoint, SIPProtocol);
                     sipStmConn.SIPMessageReceived += SIPTCPMessageReceived;
 
-                    m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
+                    connectResult = await OnClientConnect(sipStmConn, serverCertificateName).ConfigureAwait(false);
 
-                    await OnClientConnect(sipStmConn, serverCertificateName).ConfigureAwait(false);
-
-                    await SendOnConnected(sipStmConn, buffer).ConfigureAwait(false);
+                    if (connectResult != SocketError.Success)
+                    {
+                        logger.LogWarning($"SIP {ProtDescr} Channel send to {dstEndPoint} failed. Attempt to connect to server at {dstEndPoint} failed with {connectResult}.");
+                    }
+                    else
+                    {
+                        m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
+                        await SendOnConnected(sipStmConn, buffer).ConfigureAwait(false);
+                    }
                 }
 
                 return connectResult;
@@ -407,7 +415,7 @@ namespace SIPSorcery.SIP
         /// Can start receiving immediately.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly connected client socket.</param>
-        protected virtual Task OnClientConnect(SIPStreamConnection streamConnection, string certificateName)
+        protected virtual Task<SocketError> OnClientConnect(SIPStreamConnection streamConnection, string certificateName)
         {
             SocketAsyncEventArgs recvArgs = streamConnection.RecvSocketArgs;
             recvArgs.AcceptSocket = streamConnection.StreamSocket;
@@ -420,8 +428,7 @@ namespace SIPSorcery.SIP
                 ProcessReceive(recvArgs);
             }
 
-            // Task.IsCompleted not available for net452.
-            return Task.FromResult(0);
+            return Task.FromResult(SocketError.Success);
         }
 
         public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
@@ -453,7 +460,7 @@ namespace SIPSorcery.SIP
                 {
                     throw new ApplicationException("An empty buffer was specified to Send in SIPTCPChannel.");
                 }
-                else if (DisableLocalTCPSocketsCheck == false && m_localTCPSockets.Contains(dstEndPoint.ToString()))
+                else if (!DisableLocalTCPSocketsCheck && m_localTCPSockets.Contains(dstEndPoint.ToString()))
                 {
                     logger.LogWarning($"SIP {ProtDescr} Channel blocked Send to {dstEndPoint} as it was identified as a locally hosted {ProtDescr} socket.\r\n" + Encoding.UTF8.GetString(buffer));
                     throw new ApplicationException($"A Send call was blocked in SIP {ProtDescr} Channel due to the destination being another local TCP socket.");

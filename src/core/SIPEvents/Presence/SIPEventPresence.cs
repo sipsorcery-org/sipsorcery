@@ -25,7 +25,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
-    public class SIPEventPresence : SIPEvent
+    public class SIPEventPresence
     {
         private static ILogger logger = Log.Logger;
 
@@ -42,7 +42,7 @@ namespace SIPSorcery.SIP
             Entity = entity.CopyOf();
         }
 
-        public override void Load(string presenceXMLStr)
+        public void Load(string presenceXMLStr)
         {
             try
             {
@@ -71,7 +71,7 @@ namespace SIPSorcery.SIP
             return presenceEvent;
         }
 
-        public override string ToXMLText()
+        public string ToXMLText()
         {
             XNamespace ns = m_pidfXMLNS;
 
