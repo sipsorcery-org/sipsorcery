@@ -131,17 +131,19 @@ Leaving to be escaped = &quot;:&quot; / &quot;@&quot; </code></pre>
 param-unreserved = &quot;[&quot; / &quot;]&quot; / &quot;/&quot; / &quot;:&quot; / &quot;&amp;&quot; / &quot;+&quot; / &quot;$&quot;
 Leaving to be escaped =  &quot;;&quot; / &quot;?&quot; / &quot;@&quot; / &quot;=&quot; / &quot;,&quot;</code></pre>
 </section>
-      <h4><a class="xref" href="SIPSorcery.SIP.SIPEvent.html">SIPEvent</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventConsts.html">SIPEventConsts</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialog.html">SIPEventDialog</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogInfo.html">SIPEventDialogInfo</a></h4>
-      <section></section>
+      <section><p>Represents the top level XML element on a SIP event dialog payload as described in:
+RFC4235 &quot;An INVITE-Initiated Dialog Event Package for the Session Initiation Protocol (SIP)&quot;.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogParticipant.html">SIPEventDialogParticipant</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventFilters.html">SIPEventFilters</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventPackageType.html">SIPEventPackageType</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventPresence.html">SIPEventPresence</a></h4>
       <section></section>
@@ -235,15 +237,7 @@ multiple packets.</p>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPUserAgentRolesTypes.html">SIPUserAgentRolesTypes</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPUserField.html">SIPUserField</a></h4>
-      <section><pre><code>name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
-addr-spec      =  SIP-URI / SIPS-URI / absoluteURI
-SIP-URI          =  &quot;sip:&quot; [ userinfo ] hostport
-uri-parameters [ headers ]
-SIPS-URI         =  &quot;sips:&quot; [ userinfo ] hostport
-uri-parameters [ headers ]
-userinfo         =  ( user / telephone-subscriber ) [ &quot;:&quot; password ] &quot;@&quot;</code></pre>
-<p>If no &quot;&lt;&quot; and &quot;&gt;&quot; are present, all parameters after the URI are header
-parameters, not URI parameters.</p>
+      <section><p>Encapsulates the format for the SIP Contact, From and To headers.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPValidationException.html">SIPValidationException</a></h4>
       <section></section>
@@ -283,8 +277,6 @@ sipTransport.AddSIPChannel(wssSipChannel);</code></pre>
   </h3>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogStateEvent.html">SIPEventDialogStateEvent</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventPackage.html">SIPEventPackage</a></h4>
-      <section></section>
     <h3 id="enums">Enums
   </h3>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPAuthorisationHeadersEnum.html">SIPAuthorisationHeadersEnum</a></h4>
@@ -298,6 +290,8 @@ sipTransport.AddSIPChannel(wssSipChannel);</code></pre>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogDirectionEnum.html">SIPEventDialogDirectionEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogInfoStateEnum.html">SIPEventDialogInfoStateEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventPackagesEnum.html">SIPEventPackagesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventPresenceStateEnum.html">SIPEventPresenceStateEnum</a></h4>
       <section></section>

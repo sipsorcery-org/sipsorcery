@@ -26627,175 +26627,134 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.TransactionComplete
   fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.TransactionComplete
   nameWithType: SIPNonInviteServerUserAgent.TransactionComplete
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1
-  name: SIPNotifierClient<T>
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html
-  commentId: T:SIPSorcery.SIP.App.SIPNotifierClient`1
-  name.vb: SIPNotifierClient(Of T)
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T)
-  nameWithType: SIPNotifierClient<T>
-  nameWithType.vb: SIPNotifierClient(Of T)
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.Int32,System.String)
-  name: SIPNotifierClient(SIPTransport, SIPEndPoint, SIPEventPackage, SIPURI, String, String, String, Int32, String)
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEventPackage_SIPSorcery_SIP_SIPURI_System_String_System_String_System_String_System_Int32_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient`1.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.Int32,System.String)
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.SIPNotifierClient(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEventPackage, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.Int32, System.String)
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).SIPNotifierClient(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEventPackage, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.Int32, System.String)
-  nameWithType: SIPNotifierClient<T>.SIPNotifierClient(SIPTransport, SIPEndPoint, SIPEventPackage, SIPURI, String, String, String, Int32, String)
-  nameWithType.vb: SIPNotifierClient(Of T).SIPNotifierClient(SIPTransport, SIPEndPoint, SIPEventPackage, SIPURI, String, String, String, Int32, String)
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.#ctor*
+- uid: SIPSorcery.SIP.App.SIPNotifierClient
   name: SIPNotifierClient
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1__ctor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient`1.#ctor
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html
+  commentId: T:SIPSorcery.SIP.App.SIPNotifierClient
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient
+  nameWithType: SIPNotifierClient
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEventPackagesEnum,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.Int32,System.String)
+  name: SIPNotifierClient(SIPTransport, SIPEndPoint, SIPEventPackagesEnum, SIPURI, String, String, String, Int32, String)
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEventPackagesEnum_SIPSorcery_SIP_SIPURI_System_String_System_String_System_String_System_Int32_System_String_
+  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEventPackagesEnum,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.Int32,System.String)
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.SIPNotifierClient(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEventPackagesEnum, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.Int32, System.String)
+  nameWithType: SIPNotifierClient.SIPNotifierClient(SIPTransport, SIPEndPoint, SIPEventPackagesEnum, SIPURI, String, String, String, Int32, String)
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.#ctor*
+  name: SIPNotifierClient
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient__ctor_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient.#ctor
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.SIPNotifierClient
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).SIPNotifierClient
-  nameWithType: SIPNotifierClient<T>.SIPNotifierClient
-  nameWithType.vb: SIPNotifierClient(Of T).SIPNotifierClient
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.CallID
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.SIPNotifierClient
+  nameWithType: SIPNotifierClient.SIPNotifierClient
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.CallID
   name: CallID
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_CallID
-  commentId: P:SIPSorcery.SIP.App.SIPNotifierClient`1.CallID
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.CallID
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).CallID
-  nameWithType: SIPNotifierClient<T>.CallID
-  nameWithType.vb: SIPNotifierClient(Of T).CallID
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.CallID*
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_CallID
+  commentId: P:SIPSorcery.SIP.App.SIPNotifierClient.CallID
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.CallID
+  nameWithType: SIPNotifierClient.CallID
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.CallID*
   name: CallID
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_CallID_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient`1.CallID
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_CallID_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient.CallID
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.CallID
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).CallID
-  nameWithType: SIPNotifierClient<T>.CallID
-  nameWithType.vb: SIPNotifierClient(Of T).CallID
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.CallID
+  nameWithType: SIPNotifierClient.CallID
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
   name: GotNotificationRequest(SIPEndPoint, SIPEndPoint, SIPRequest)
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_GotNotificationRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient`1.GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest)
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPNotifierClient<T>.GotNotificationRequest(SIPEndPoint, SIPEndPoint, SIPRequest)
-  nameWithType.vb: SIPNotifierClient(Of T).GotNotificationRequest(SIPEndPoint, SIPEndPoint, SIPRequest)
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.GotNotificationRequest*
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_GotNotificationRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_
+  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest)
+  nameWithType: SIPNotifierClient.GotNotificationRequest(SIPEndPoint, SIPEndPoint, SIPRequest)
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest*
   name: GotNotificationRequest
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_GotNotificationRequest_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient`1.GotNotificationRequest
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_GotNotificationRequest_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.GotNotificationRequest
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).GotNotificationRequest
-  nameWithType: SIPNotifierClient<T>.GotNotificationRequest
-  nameWithType.vb: SIPNotifierClient(Of T).GotNotificationRequest
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.LastSubscribeAttempt
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest
+  nameWithType: SIPNotifierClient.GotNotificationRequest
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.LastSubscribeAttempt
   name: LastSubscribeAttempt
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_LastSubscribeAttempt
-  commentId: P:SIPSorcery.SIP.App.SIPNotifierClient`1.LastSubscribeAttempt
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.LastSubscribeAttempt
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).LastSubscribeAttempt
-  nameWithType: SIPNotifierClient<T>.LastSubscribeAttempt
-  nameWithType.vb: SIPNotifierClient(Of T).LastSubscribeAttempt
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.LastSubscribeAttempt*
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_LastSubscribeAttempt
+  commentId: P:SIPSorcery.SIP.App.SIPNotifierClient.LastSubscribeAttempt
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.LastSubscribeAttempt
+  nameWithType: SIPNotifierClient.LastSubscribeAttempt
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.LastSubscribeAttempt*
   name: LastSubscribeAttempt
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_LastSubscribeAttempt_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient`1.LastSubscribeAttempt
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_LastSubscribeAttempt_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient.LastSubscribeAttempt
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.LastSubscribeAttempt
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).LastSubscribeAttempt
-  nameWithType: SIPNotifierClient<T>.LastSubscribeAttempt
-  nameWithType.vb: SIPNotifierClient(Of T).LastSubscribeAttempt
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.NotificationReceived
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.LastSubscribeAttempt
+  nameWithType: SIPNotifierClient.LastSubscribeAttempt
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.NotificationReceived
   name: NotificationReceived
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_NotificationReceived
-  commentId: E:SIPSorcery.SIP.App.SIPNotifierClient`1.NotificationReceived
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.NotificationReceived
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).NotificationReceived
-  nameWithType: SIPNotifierClient<T>.NotificationReceived
-  nameWithType.vb: SIPNotifierClient(Of T).NotificationReceived
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.Resubscribe
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_NotificationReceived
+  commentId: E:SIPSorcery.SIP.App.SIPNotifierClient.NotificationReceived
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.NotificationReceived
+  nameWithType: SIPNotifierClient.NotificationReceived
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.Resubscribe
   name: Resubscribe()
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_Resubscribe
-  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient`1.Resubscribe
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.Resubscribe()
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).Resubscribe()
-  nameWithType: SIPNotifierClient<T>.Resubscribe()
-  nameWithType.vb: SIPNotifierClient(Of T).Resubscribe()
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.Resubscribe*
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Resubscribe
+  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient.Resubscribe
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Resubscribe()
+  nameWithType: SIPNotifierClient.Resubscribe()
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.Resubscribe*
   name: Resubscribe
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_Resubscribe_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient`1.Resubscribe
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Resubscribe_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient.Resubscribe
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.Resubscribe
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).Resubscribe
-  nameWithType: SIPNotifierClient<T>.Resubscribe
-  nameWithType.vb: SIPNotifierClient(Of T).Resubscribe
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.Start
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Resubscribe
+  nameWithType: SIPNotifierClient.Resubscribe
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.Start
   name: Start()
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_Start
-  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient`1.Start
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.Start()
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).Start()
-  nameWithType: SIPNotifierClient<T>.Start()
-  nameWithType.vb: SIPNotifierClient(Of T).Start()
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.Start*
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Start
+  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient.Start
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Start()
+  nameWithType: SIPNotifierClient.Start()
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.Start*
   name: Start
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_Start_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient`1.Start
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Start_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient.Start
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.Start
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).Start
-  nameWithType: SIPNotifierClient<T>.Start
-  nameWithType.vb: SIPNotifierClient(Of T).Start
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.Stop
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Start
+  nameWithType: SIPNotifierClient.Start
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.Stop
   name: Stop()
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_Stop
-  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient`1.Stop
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.Stop()
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).Stop()
-  nameWithType: SIPNotifierClient<T>.Stop()
-  nameWithType.vb: SIPNotifierClient(Of T).Stop()
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.Stop*
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Stop
+  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient.Stop
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Stop()
+  nameWithType: SIPNotifierClient.Stop()
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.Stop*
   name: Stop
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_Stop_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient`1.Stop
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Stop_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient.Stop
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.Stop
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).Stop
-  nameWithType: SIPNotifierClient<T>.Stop
-  nameWithType.vb: SIPNotifierClient(Of T).Stop
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.Subscribe(SIPSorcery.SIP.SIPURI,System.Int32,SIPSorcery.SIP.SIPEventPackage,System.String,SIPSorcery.SIP.SIPURI)
-  name: Subscribe(SIPURI, Int32, SIPEventPackage, String, SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_Subscribe_SIPSorcery_SIP_SIPURI_System_Int32_SIPSorcery_SIP_SIPEventPackage_System_String_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient`1.Subscribe(SIPSorcery.SIP.SIPURI,System.Int32,SIPSorcery.SIP.SIPEventPackage,System.String,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.Subscribe(SIPSorcery.SIP.SIPURI, System.Int32, SIPSorcery.SIP.SIPEventPackage, System.String, SIPSorcery.SIP.SIPURI)
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).Subscribe(SIPSorcery.SIP.SIPURI, System.Int32, SIPSorcery.SIP.SIPEventPackage, System.String, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPNotifierClient<T>.Subscribe(SIPURI, Int32, SIPEventPackage, String, SIPURI)
-  nameWithType.vb: SIPNotifierClient(Of T).Subscribe(SIPURI, Int32, SIPEventPackage, String, SIPURI)
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.Subscribe*
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Stop
+  nameWithType: SIPNotifierClient.Stop
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.Subscribe(SIPSorcery.SIP.SIPURI,System.Int32,SIPSorcery.SIP.SIPEventPackagesEnum,System.String,SIPSorcery.SIP.SIPURI)
+  name: Subscribe(SIPURI, Int32, SIPEventPackagesEnum, String, SIPURI)
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Subscribe_SIPSorcery_SIP_SIPURI_System_Int32_SIPSorcery_SIP_SIPEventPackagesEnum_System_String_SIPSorcery_SIP_SIPURI_
+  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient.Subscribe(SIPSorcery.SIP.SIPURI,System.Int32,SIPSorcery.SIP.SIPEventPackagesEnum,System.String,SIPSorcery.SIP.SIPURI)
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Subscribe(SIPSorcery.SIP.SIPURI, System.Int32, SIPSorcery.SIP.SIPEventPackagesEnum, System.String, SIPSorcery.SIP.SIPURI)
+  nameWithType: SIPNotifierClient.Subscribe(SIPURI, Int32, SIPEventPackagesEnum, String, SIPURI)
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.Subscribe*
   name: Subscribe
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_Subscribe_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient`1.Subscribe
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Subscribe_
+  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient.Subscribe
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.Subscribe
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).Subscribe
-  nameWithType: SIPNotifierClient<T>.Subscribe
-  nameWithType.vb: SIPNotifierClient(Of T).Subscribe
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.SubscriptionFailed
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Subscribe
+  nameWithType: SIPNotifierClient.Subscribe
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.SubscriptionFailed
   name: SubscriptionFailed
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_SubscriptionFailed
-  commentId: E:SIPSorcery.SIP.App.SIPNotifierClient`1.SubscriptionFailed
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.SubscriptionFailed
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).SubscriptionFailed
-  nameWithType: SIPNotifierClient<T>.SubscriptionFailed
-  nameWithType.vb: SIPNotifierClient(Of T).SubscriptionFailed
-- uid: SIPSorcery.SIP.App.SIPNotifierClient`1.SubscriptionSuccessful
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_SubscriptionFailed
+  commentId: E:SIPSorcery.SIP.App.SIPNotifierClient.SubscriptionFailed
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.SubscriptionFailed
+  nameWithType: SIPNotifierClient.SubscriptionFailed
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.SubscriptionSuccessful
   name: SubscriptionSuccessful
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html#SIPSorcery_SIP_App_SIPNotifierClient_1_SubscriptionSuccessful
-  commentId: E:SIPSorcery.SIP.App.SIPNotifierClient`1.SubscriptionSuccessful
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient<T>.SubscriptionSuccessful
-  fullName.vb: SIPSorcery.SIP.App.SIPNotifierClient(Of T).SubscriptionSuccessful
-  nameWithType: SIPNotifierClient<T>.SubscriptionSuccessful
-  nameWithType.vb: SIPNotifierClient(Of T).SubscriptionSuccessful
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_SubscriptionSuccessful
+  commentId: E:SIPSorcery.SIP.App.SIPNotifierClient.SubscriptionSuccessful
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.SubscriptionSuccessful
+  nameWithType: SIPNotifierClient.SubscriptionSuccessful
 - uid: SIPSorcery.SIP.App.SIPPacketMangler
   name: SIPPacketMangler
   href: api/SIPSorcery.SIP.App.SIPPacketMangler.html
@@ -30627,51 +30586,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPEscape.SIPURIUserUnescape
   nameWithType: SIPEscape.SIPURIUserUnescape
-- uid: SIPSorcery.SIP.SIPEvent
-  name: SIPEvent
-  href: api/SIPSorcery.SIP.SIPEvent.html
-  commentId: T:SIPSorcery.SIP.SIPEvent
-  fullName: SIPSorcery.SIP.SIPEvent
-  nameWithType: SIPEvent
-- uid: SIPSorcery.SIP.SIPEvent.#ctor
-  name: SIPEvent()
-  href: api/SIPSorcery.SIP.SIPEvent.html#SIPSorcery_SIP_SIPEvent__ctor
-  commentId: M:SIPSorcery.SIP.SIPEvent.#ctor
-  fullName: SIPSorcery.SIP.SIPEvent.SIPEvent()
-  nameWithType: SIPEvent.SIPEvent()
-- uid: SIPSorcery.SIP.SIPEvent.#ctor*
-  name: SIPEvent
-  href: api/SIPSorcery.SIP.SIPEvent.html#SIPSorcery_SIP_SIPEvent__ctor_
-  commentId: Overload:SIPSorcery.SIP.SIPEvent.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEvent.SIPEvent
-  nameWithType: SIPEvent.SIPEvent
-- uid: SIPSorcery.SIP.SIPEvent.Load(System.String)
-  name: Load(String)
-  href: api/SIPSorcery.SIP.SIPEvent.html#SIPSorcery_SIP_SIPEvent_Load_System_String_
-  commentId: M:SIPSorcery.SIP.SIPEvent.Load(System.String)
-  fullName: SIPSorcery.SIP.SIPEvent.Load(System.String)
-  nameWithType: SIPEvent.Load(String)
-- uid: SIPSorcery.SIP.SIPEvent.Load*
-  name: Load
-  href: api/SIPSorcery.SIP.SIPEvent.html#SIPSorcery_SIP_SIPEvent_Load_
-  commentId: Overload:SIPSorcery.SIP.SIPEvent.Load
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEvent.Load
-  nameWithType: SIPEvent.Load
-- uid: SIPSorcery.SIP.SIPEvent.ToXMLText
-  name: ToXMLText()
-  href: api/SIPSorcery.SIP.SIPEvent.html#SIPSorcery_SIP_SIPEvent_ToXMLText
-  commentId: M:SIPSorcery.SIP.SIPEvent.ToXMLText
-  fullName: SIPSorcery.SIP.SIPEvent.ToXMLText()
-  nameWithType: SIPEvent.ToXMLText()
-- uid: SIPSorcery.SIP.SIPEvent.ToXMLText*
-  name: ToXMLText
-  href: api/SIPSorcery.SIP.SIPEvent.html#SIPSorcery_SIP_SIPEvent_ToXMLText_
-  commentId: Overload:SIPSorcery.SIP.SIPEvent.ToXMLText
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEvent.ToXMLText
-  nameWithType: SIPEvent.ToXMLText
 - uid: SIPSorcery.SIP.SIPEventConsts
   name: SIPEventConsts
   href: api/SIPSorcery.SIP.SIPEventConsts.html
@@ -30690,18 +30604,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPEventConsts.PIDF_XML_NAMESPACE_URN
   fullName: SIPSorcery.SIP.SIPEventConsts.PIDF_XML_NAMESPACE_URN
   nameWithType: SIPEventConsts.PIDF_XML_NAMESPACE_URN
-- uid: SIPSorcery.SIP.SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX
-  name: SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX
-  href: api/SIPSorcery.SIP.SIPEventConsts.html#SIPSorcery_SIP_SIPEventConsts_SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX
-  commentId: F:SIPSorcery.SIP.SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX
-  fullName: SIPSorcery.SIP.SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX
-  nameWithType: SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_PREFIX
-- uid: SIPSorcery.SIP.SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN
-  name: SIPSORCERY_DIALOG_XML_NAMESPACE_URN
-  href: api/SIPSorcery.SIP.SIPEventConsts.html#SIPSorcery_SIP_SIPEventConsts_SIPSORCERY_DIALOG_XML_NAMESPACE_URN
-  commentId: F:SIPSorcery.SIP.SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN
-  fullName: SIPSorcery.SIP.SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN
-  nameWithType: SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN
 - uid: SIPSorcery.SIP.SIPEventDialog
   name: SIPEventDialog
   href: api/SIPSorcery.SIP.SIPEventDialog.html
@@ -31248,146 +31150,111 @@ references:
   commentId: F:SIPSorcery.SIP.SIPEventFilters.SIP_DIALOG_INCLUDE_SDP
   fullName: SIPSorcery.SIP.SIPEventFilters.SIP_DIALOG_INCLUDE_SDP
   nameWithType: SIPEventFilters.SIP_DIALOG_INCLUDE_SDP
-- uid: SIPSorcery.SIP.SIPEventPackage
-  name: SIPEventPackage
-  href: api/SIPSorcery.SIP.SIPEventPackage.html
-  commentId: T:SIPSorcery.SIP.SIPEventPackage
-  fullName: SIPSorcery.SIP.SIPEventPackage
-  nameWithType: SIPEventPackage
-- uid: SIPSorcery.SIP.SIPEventPackage.AreEqual(SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPEventPackage)
-  name: AreEqual(SIPEventPackage, SIPEventPackage)
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_AreEqual_SIPSorcery_SIP_SIPEventPackage_SIPSorcery_SIP_SIPEventPackage_
-  commentId: M:SIPSorcery.SIP.SIPEventPackage.AreEqual(SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPEventPackage)
-  fullName: SIPSorcery.SIP.SIPEventPackage.AreEqual(SIPSorcery.SIP.SIPEventPackage, SIPSorcery.SIP.SIPEventPackage)
-  nameWithType: SIPEventPackage.AreEqual(SIPEventPackage, SIPEventPackage)
-- uid: SIPSorcery.SIP.SIPEventPackage.AreEqual*
-  name: AreEqual
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_AreEqual_
-  commentId: Overload:SIPSorcery.SIP.SIPEventPackage.AreEqual
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEventPackage.AreEqual
-  nameWithType: SIPEventPackage.AreEqual
-- uid: SIPSorcery.SIP.SIPEventPackage.Dialog
+- uid: SIPSorcery.SIP.SIPEventPackagesEnum
+  name: SIPEventPackagesEnum
+  href: api/SIPSorcery.SIP.SIPEventPackagesEnum.html
+  commentId: T:SIPSorcery.SIP.SIPEventPackagesEnum
+  fullName: SIPSorcery.SIP.SIPEventPackagesEnum
+  nameWithType: SIPEventPackagesEnum
+- uid: SIPSorcery.SIP.SIPEventPackagesEnum.Dialog
   name: Dialog
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_Dialog
-  commentId: F:SIPSorcery.SIP.SIPEventPackage.Dialog
-  fullName: SIPSorcery.SIP.SIPEventPackage.Dialog
-  nameWithType: SIPEventPackage.Dialog
-- uid: SIPSorcery.SIP.SIPEventPackage.Equals(System.Object)
-  name: Equals(Object)
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_Equals_System_Object_
-  commentId: M:SIPSorcery.SIP.SIPEventPackage.Equals(System.Object)
-  fullName: SIPSorcery.SIP.SIPEventPackage.Equals(System.Object)
-  nameWithType: SIPEventPackage.Equals(Object)
-- uid: SIPSorcery.SIP.SIPEventPackage.Equals*
-  name: Equals
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_Equals_
-  commentId: Overload:SIPSorcery.SIP.SIPEventPackage.Equals
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEventPackage.Equals
-  nameWithType: SIPEventPackage.Equals
-- uid: SIPSorcery.SIP.SIPEventPackage.GetHashCode
-  name: GetHashCode()
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_GetHashCode
-  commentId: M:SIPSorcery.SIP.SIPEventPackage.GetHashCode
-  fullName: SIPSorcery.SIP.SIPEventPackage.GetHashCode()
-  nameWithType: SIPEventPackage.GetHashCode()
-- uid: SIPSorcery.SIP.SIPEventPackage.GetHashCode*
-  name: GetHashCode
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_GetHashCode_
-  commentId: Overload:SIPSorcery.SIP.SIPEventPackage.GetHashCode
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEventPackage.GetHashCode
-  nameWithType: SIPEventPackage.GetHashCode
-- uid: SIPSorcery.SIP.SIPEventPackage.IsValid(System.String)
-  name: IsValid(String)
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_IsValid_System_String_
-  commentId: M:SIPSorcery.SIP.SIPEventPackage.IsValid(System.String)
-  fullName: SIPSorcery.SIP.SIPEventPackage.IsValid(System.String)
-  nameWithType: SIPEventPackage.IsValid(String)
-- uid: SIPSorcery.SIP.SIPEventPackage.IsValid*
-  name: IsValid
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_IsValid_
-  commentId: Overload:SIPSorcery.SIP.SIPEventPackage.IsValid
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEventPackage.IsValid
-  nameWithType: SIPEventPackage.IsValid
-- uid: SIPSorcery.SIP.SIPEventPackage.MessageSummary
+  href: api/SIPSorcery.SIP.SIPEventPackagesEnum.html#SIPSorcery_SIP_SIPEventPackagesEnum_Dialog
+  commentId: F:SIPSorcery.SIP.SIPEventPackagesEnum.Dialog
+  fullName: SIPSorcery.SIP.SIPEventPackagesEnum.Dialog
+  nameWithType: SIPEventPackagesEnum.Dialog
+- uid: SIPSorcery.SIP.SIPEventPackagesEnum.MessageSummary
   name: MessageSummary
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_MessageSummary
-  commentId: F:SIPSorcery.SIP.SIPEventPackage.MessageSummary
-  fullName: SIPSorcery.SIP.SIPEventPackage.MessageSummary
-  nameWithType: SIPEventPackage.MessageSummary
-- uid: SIPSorcery.SIP.SIPEventPackage.None
+  href: api/SIPSorcery.SIP.SIPEventPackagesEnum.html#SIPSorcery_SIP_SIPEventPackagesEnum_MessageSummary
+  commentId: F:SIPSorcery.SIP.SIPEventPackagesEnum.MessageSummary
+  fullName: SIPSorcery.SIP.SIPEventPackagesEnum.MessageSummary
+  nameWithType: SIPEventPackagesEnum.MessageSummary
+- uid: SIPSorcery.SIP.SIPEventPackagesEnum.None
   name: None
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_None
-  commentId: F:SIPSorcery.SIP.SIPEventPackage.None
-  fullName: SIPSorcery.SIP.SIPEventPackage.None
-  nameWithType: SIPEventPackage.None
-- uid: SIPSorcery.SIP.SIPEventPackage.op_Equality(SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPEventPackage)
-  name: Equality(SIPEventPackage, SIPEventPackage)
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_op_Equality_SIPSorcery_SIP_SIPEventPackage_SIPSorcery_SIP_SIPEventPackage_
-  commentId: M:SIPSorcery.SIP.SIPEventPackage.op_Equality(SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPEventPackage)
-  fullName: SIPSorcery.SIP.SIPEventPackage.Equality(SIPSorcery.SIP.SIPEventPackage, SIPSorcery.SIP.SIPEventPackage)
-  nameWithType: SIPEventPackage.Equality(SIPEventPackage, SIPEventPackage)
-- uid: SIPSorcery.SIP.SIPEventPackage.op_Equality*
-  name: Equality
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_op_Equality_
-  commentId: Overload:SIPSorcery.SIP.SIPEventPackage.op_Equality
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEventPackage.Equality
-  nameWithType: SIPEventPackage.Equality
-- uid: SIPSorcery.SIP.SIPEventPackage.op_Inequality(SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPEventPackage)
-  name: Inequality(SIPEventPackage, SIPEventPackage)
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_op_Inequality_SIPSorcery_SIP_SIPEventPackage_SIPSorcery_SIP_SIPEventPackage_
-  commentId: M:SIPSorcery.SIP.SIPEventPackage.op_Inequality(SIPSorcery.SIP.SIPEventPackage,SIPSorcery.SIP.SIPEventPackage)
-  fullName: SIPSorcery.SIP.SIPEventPackage.Inequality(SIPSorcery.SIP.SIPEventPackage, SIPSorcery.SIP.SIPEventPackage)
-  nameWithType: SIPEventPackage.Inequality(SIPEventPackage, SIPEventPackage)
-- uid: SIPSorcery.SIP.SIPEventPackage.op_Inequality*
-  name: Inequality
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_op_Inequality_
-  commentId: Overload:SIPSorcery.SIP.SIPEventPackage.op_Inequality
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEventPackage.Inequality
-  nameWithType: SIPEventPackage.Inequality
-- uid: SIPSorcery.SIP.SIPEventPackage.Parse(System.String)
-  name: Parse(String)
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_Parse_System_String_
-  commentId: M:SIPSorcery.SIP.SIPEventPackage.Parse(System.String)
-  fullName: SIPSorcery.SIP.SIPEventPackage.Parse(System.String)
-  nameWithType: SIPEventPackage.Parse(String)
-- uid: SIPSorcery.SIP.SIPEventPackage.Parse*
-  name: Parse
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_Parse_
-  commentId: Overload:SIPSorcery.SIP.SIPEventPackage.Parse
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEventPackage.Parse
-  nameWithType: SIPEventPackage.Parse
-- uid: SIPSorcery.SIP.SIPEventPackage.Presence
+  href: api/SIPSorcery.SIP.SIPEventPackagesEnum.html#SIPSorcery_SIP_SIPEventPackagesEnum_None
+  commentId: F:SIPSorcery.SIP.SIPEventPackagesEnum.None
+  fullName: SIPSorcery.SIP.SIPEventPackagesEnum.None
+  nameWithType: SIPEventPackagesEnum.None
+- uid: SIPSorcery.SIP.SIPEventPackagesEnum.Presence
   name: Presence
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_Presence
-  commentId: F:SIPSorcery.SIP.SIPEventPackage.Presence
-  fullName: SIPSorcery.SIP.SIPEventPackage.Presence
-  nameWithType: SIPEventPackage.Presence
-- uid: SIPSorcery.SIP.SIPEventPackage.Refer
+  href: api/SIPSorcery.SIP.SIPEventPackagesEnum.html#SIPSorcery_SIP_SIPEventPackagesEnum_Presence
+  commentId: F:SIPSorcery.SIP.SIPEventPackagesEnum.Presence
+  fullName: SIPSorcery.SIP.SIPEventPackagesEnum.Presence
+  nameWithType: SIPEventPackagesEnum.Presence
+- uid: SIPSorcery.SIP.SIPEventPackagesEnum.Refer
   name: Refer
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_Refer
-  commentId: F:SIPSorcery.SIP.SIPEventPackage.Refer
-  fullName: SIPSorcery.SIP.SIPEventPackage.Refer
-  nameWithType: SIPEventPackage.Refer
-- uid: SIPSorcery.SIP.SIPEventPackage.ToString
-  name: ToString()
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_ToString
-  commentId: M:SIPSorcery.SIP.SIPEventPackage.ToString
-  fullName: SIPSorcery.SIP.SIPEventPackage.ToString()
-  nameWithType: SIPEventPackage.ToString()
-- uid: SIPSorcery.SIP.SIPEventPackage.ToString*
-  name: ToString
-  href: api/SIPSorcery.SIP.SIPEventPackage.html#SIPSorcery_SIP_SIPEventPackage_ToString_
-  commentId: Overload:SIPSorcery.SIP.SIPEventPackage.ToString
+  href: api/SIPSorcery.SIP.SIPEventPackagesEnum.html#SIPSorcery_SIP_SIPEventPackagesEnum_Refer
+  commentId: F:SIPSorcery.SIP.SIPEventPackagesEnum.Refer
+  fullName: SIPSorcery.SIP.SIPEventPackagesEnum.Refer
+  nameWithType: SIPEventPackagesEnum.Refer
+- uid: SIPSorcery.SIP.SIPEventPackageType
+  name: SIPEventPackageType
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html
+  commentId: T:SIPSorcery.SIP.SIPEventPackageType
+  fullName: SIPSorcery.SIP.SIPEventPackageType
+  nameWithType: SIPEventPackageType
+- uid: SIPSorcery.SIP.SIPEventPackageType.DIALOG_EVENT_VALUE
+  name: DIALOG_EVENT_VALUE
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_DIALOG_EVENT_VALUE
+  commentId: F:SIPSorcery.SIP.SIPEventPackageType.DIALOG_EVENT_VALUE
+  fullName: SIPSorcery.SIP.SIPEventPackageType.DIALOG_EVENT_VALUE
+  nameWithType: SIPEventPackageType.DIALOG_EVENT_VALUE
+- uid: SIPSorcery.SIP.SIPEventPackageType.GetEventHeader(SIPSorcery.SIP.SIPEventPackagesEnum)
+  name: GetEventHeader(SIPEventPackagesEnum)
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_GetEventHeader_SIPSorcery_SIP_SIPEventPackagesEnum_
+  commentId: M:SIPSorcery.SIP.SIPEventPackageType.GetEventHeader(SIPSorcery.SIP.SIPEventPackagesEnum)
+  fullName: SIPSorcery.SIP.SIPEventPackageType.GetEventHeader(SIPSorcery.SIP.SIPEventPackagesEnum)
+  nameWithType: SIPEventPackageType.GetEventHeader(SIPEventPackagesEnum)
+- uid: SIPSorcery.SIP.SIPEventPackageType.GetEventHeader*
+  name: GetEventHeader
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_GetEventHeader_
+  commentId: Overload:SIPSorcery.SIP.SIPEventPackageType.GetEventHeader
   isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPEventPackage.ToString
-  nameWithType: SIPEventPackage.ToString
+  fullName: SIPSorcery.SIP.SIPEventPackageType.GetEventHeader
+  nameWithType: SIPEventPackageType.GetEventHeader
+- uid: SIPSorcery.SIP.SIPEventPackageType.IsValid(System.String)
+  name: IsValid(String)
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_IsValid_System_String_
+  commentId: M:SIPSorcery.SIP.SIPEventPackageType.IsValid(System.String)
+  fullName: SIPSorcery.SIP.SIPEventPackageType.IsValid(System.String)
+  nameWithType: SIPEventPackageType.IsValid(String)
+- uid: SIPSorcery.SIP.SIPEventPackageType.IsValid*
+  name: IsValid
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_IsValid_
+  commentId: Overload:SIPSorcery.SIP.SIPEventPackageType.IsValid
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPEventPackageType.IsValid
+  nameWithType: SIPEventPackageType.IsValid
+- uid: SIPSorcery.SIP.SIPEventPackageType.MESSAGE_SUMMARY_EVENT_VALUE
+  name: MESSAGE_SUMMARY_EVENT_VALUE
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_MESSAGE_SUMMARY_EVENT_VALUE
+  commentId: F:SIPSorcery.SIP.SIPEventPackageType.MESSAGE_SUMMARY_EVENT_VALUE
+  fullName: SIPSorcery.SIP.SIPEventPackageType.MESSAGE_SUMMARY_EVENT_VALUE
+  nameWithType: SIPEventPackageType.MESSAGE_SUMMARY_EVENT_VALUE
+- uid: SIPSorcery.SIP.SIPEventPackageType.Parse(System.String)
+  name: Parse(String)
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_Parse_System_String_
+  commentId: M:SIPSorcery.SIP.SIPEventPackageType.Parse(System.String)
+  fullName: SIPSorcery.SIP.SIPEventPackageType.Parse(System.String)
+  nameWithType: SIPEventPackageType.Parse(String)
+- uid: SIPSorcery.SIP.SIPEventPackageType.Parse*
+  name: Parse
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_Parse_
+  commentId: Overload:SIPSorcery.SIP.SIPEventPackageType.Parse
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPEventPackageType.Parse
+  nameWithType: SIPEventPackageType.Parse
+- uid: SIPSorcery.SIP.SIPEventPackageType.PRESENCE_EVENT_VALUE
+  name: PRESENCE_EVENT_VALUE
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_PRESENCE_EVENT_VALUE
+  commentId: F:SIPSorcery.SIP.SIPEventPackageType.PRESENCE_EVENT_VALUE
+  fullName: SIPSorcery.SIP.SIPEventPackageType.PRESENCE_EVENT_VALUE
+  nameWithType: SIPEventPackageType.PRESENCE_EVENT_VALUE
+- uid: SIPSorcery.SIP.SIPEventPackageType.REFER_EVENT_VALUE
+  name: REFER_EVENT_VALUE
+  href: api/SIPSorcery.SIP.SIPEventPackageType.html#SIPSorcery_SIP_SIPEventPackageType_REFER_EVENT_VALUE
+  commentId: F:SIPSorcery.SIP.SIPEventPackageType.REFER_EVENT_VALUE
+  fullName: SIPSorcery.SIP.SIPEventPackageType.REFER_EVENT_VALUE
+  nameWithType: SIPEventPackageType.REFER_EVENT_VALUE
 - uid: SIPSorcery.SIP.SIPEventPresence
   name: SIPEventPresence
   href: api/SIPSorcery.SIP.SIPEventPresence.html
@@ -32532,24 +32399,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CONTENTTYPE
   fullName: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CONTENTTYPE
   nameWithType: SIPHeaders.SIP_HEADER_CONTENTTYPE
-- uid: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CRM_COMPANY_NAME
-  name: SIP_HEADER_CRM_COMPANY_NAME
-  href: api/SIPSorcery.SIP.SIPHeaders.html#SIPSorcery_SIP_SIPHeaders_SIP_HEADER_CRM_COMPANY_NAME
-  commentId: F:SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CRM_COMPANY_NAME
-  fullName: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CRM_COMPANY_NAME
-  nameWithType: SIPHeaders.SIP_HEADER_CRM_COMPANY_NAME
-- uid: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CRM_PERSON_NAME
-  name: SIP_HEADER_CRM_PERSON_NAME
-  href: api/SIPSorcery.SIP.SIPHeaders.html#SIPSorcery_SIP_SIPHeaders_SIP_HEADER_CRM_PERSON_NAME
-  commentId: F:SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CRM_PERSON_NAME
-  fullName: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CRM_PERSON_NAME
-  nameWithType: SIPHeaders.SIP_HEADER_CRM_PERSON_NAME
-- uid: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CRM_PICTURE_URL
-  name: SIP_HEADER_CRM_PICTURE_URL
-  href: api/SIPSorcery.SIP.SIPHeaders.html#SIPSorcery_SIP_SIPHeaders_SIP_HEADER_CRM_PICTURE_URL
-  commentId: F:SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CRM_PICTURE_URL
-  fullName: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CRM_PICTURE_URL
-  nameWithType: SIPHeaders.SIP_HEADER_CRM_PICTURE_URL
 - uid: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CSEQ
   name: SIP_HEADER_CSEQ
   href: api/SIPSorcery.SIP.SIPHeaders.html#SIPSorcery_SIP_SIPHeaders_SIP_HEADER_CSEQ
@@ -35569,6 +35418,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTLSChannel.SendOnConnected
   nameWithType: SIPTLSChannel.SendOnConnected
+- uid: SIPSorcery.SIP.SIPTLSChannel.TLS_CONNECTION_TIMEOUT
+  name: TLS_CONNECTION_TIMEOUT
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_TLS_CONNECTION_TIMEOUT
+  commentId: F:SIPSorcery.SIP.SIPTLSChannel.TLS_CONNECTION_TIMEOUT
+  fullName: SIPSorcery.SIP.SIPTLSChannel.TLS_CONNECTION_TIMEOUT
+  nameWithType: SIPTLSChannel.TLS_CONNECTION_TIMEOUT
 - uid: SIPSorcery.SIP.SIPToHeader
   name: SIPToHeader
   href: api/SIPSorcery.SIP.SIPToHeader.html
