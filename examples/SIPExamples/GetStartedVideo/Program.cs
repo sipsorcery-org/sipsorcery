@@ -35,7 +35,7 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "aaron@127.0.0.1:6060"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
+        private static string DESTINATION = "videotest@sipsorcery.cloud";
         private static int CALL_TIMEOUT_SECONDS = 20;
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
@@ -94,7 +94,7 @@ namespace demo
             var userAgent = new SIPUserAgent(_sipTransport, null, true);
             userAgent.OnCallHungup += (dialog) => exitMRE.Set();
             var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
-            windowsAudioEndPoint.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
+            windowsAudioEndPoint.RestrictFormats(format => format.Codec == AudioCodecsEnum.G722);
             var windowsVideoEndPoint = new WindowsVideoEndPoint(new VpxVideoEncoder());
 
             // Fallback to a test pattern source if accessing the Windows webcam fails.
@@ -150,9 +150,6 @@ namespace demo
                         }
                     }));
                 };
-
-                windowsAudioEndPoint.PauseAudio().Wait();
-                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
             }
             else
             {

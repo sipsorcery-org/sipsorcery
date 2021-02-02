@@ -37,7 +37,7 @@ namespace demo
             AddConsoleLogger();
             CancellationTokenSource exitCts = new CancellationTokenSource();
 
-            var sipTransport = new SIPTransport() { PreferIPv6NameResolution = true };
+            var sipTransport = new SIPTransport();
 
             EnableTraceLogs(sipTransport);
 
