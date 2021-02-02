@@ -56,7 +56,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The remote end point for the stream.
         /// </summary>
-        public IPEndPoint RemoteEndPoint;
+        public SIPEndPoint RemoteSIPEndPoint;
 
         /// <summary>
         /// The connection protocol in use for this stream (TCP or TLS).
@@ -95,11 +95,11 @@ namespace SIPSorcery.SIP
         /// <param name="streamSocket">The local socket the stream is using.</param>
         /// <param name="remoteEndPoint">The remote network end point of this connection.</param>
         /// <param name="connectionProtocol">Whether the stream is TCP or TLS.</param>
-        public SIPStreamConnection(Socket streamSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol)
+        public SIPStreamConnection(Socket streamSocket, SIPEndPoint remoteSIPEndPoint, SIPProtocolsEnum connectionProtocol)
         {
             StreamSocket = streamSocket;
             LastTransmission = DateTime.Now;
-            RemoteEndPoint = remoteEndPoint;
+            RemoteSIPEndPoint = remoteSIPEndPoint;
             ConnectionProtocol = connectionProtocol;
             ConnectionID = Crypto.GetRandomInt(CONNECTION_ID_LENGTH).ToString();
 
@@ -131,7 +131,7 @@ namespace SIPSorcery.SIP
                 {
                     LastTransmission = DateTime.Now;
                     SIPEndPoint localEndPoint = new SIPEndPoint(ConnectionProtocol, StreamSocket.LocalEndPoint as IPEndPoint, recvChannel.ID, ConnectionID);
-                    SIPEndPoint remoteEndPoint = new SIPEndPoint(ConnectionProtocol, RemoteEndPoint, recvChannel.ID, ConnectionID);
+                    SIPEndPoint remoteEndPoint = new SIPEndPoint(ConnectionProtocol, RemoteSIPEndPoint.GetIPEndPoint(), recvChannel.ID, ConnectionID);
                     SIPMessageReceived(recvChannel, localEndPoint, remoteEndPoint, sipMsgBuffer);
                 }
 

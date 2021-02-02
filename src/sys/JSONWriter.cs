@@ -50,17 +50,25 @@ namespace TinyJson
                 stringBuilder.Append('"');
                 string str = item.ToString();
                 for (int i = 0; i < str.Length; ++i)
+                {
                     if (str[i] < ' ' || str[i] == '"' || str[i] == '\\')
                     {
                         stringBuilder.Append('\\');
                         int j = "\"\\\n\r\t\b\f".IndexOf(str[i]);
                         if (j >= 0)
+                        {
                             stringBuilder.Append("\"\\nrtbf"[j]);
+                        }
                         else
+                        {
                             stringBuilder.AppendFormat("u{0:X4}", (UInt32)str[i]);
+                        }
                     }
                     else
+                    {
                         stringBuilder.Append(str[i]);
+                    }
+                }
                 stringBuilder.Append('"');
             }
             else if (type == typeof(byte) || type == typeof(sbyte))
@@ -109,9 +117,13 @@ namespace TinyJson
                 for (int i = 0; i < list.Count; i++)
                 {
                     if (isFirst)
+                    {
                         isFirst = false;
+                    }
                     else
+                    {
                         stringBuilder.Append(',');
+                    }
                     AppendValue(stringBuilder, list[i]);
                 }
                 stringBuilder.Append(']');
@@ -133,9 +145,13 @@ namespace TinyJson
                 foreach (object key in dict.Keys)
                 {
                     if (isFirst)
+                    {
                         isFirst = false;
+                    }
                     else
+                    {
                         stringBuilder.Append(',');
+                    }
                     stringBuilder.Append('\"');
                     stringBuilder.Append((string)key);
                     stringBuilder.Append("\":");
@@ -152,15 +168,21 @@ namespace TinyJson
                 for (int i = 0; i < fieldInfos.Length; i++)
                 {
                     if (fieldInfos[i].IsDefined(typeof(IgnoreDataMemberAttribute), true))
+                    {
                         continue;
+                    }
 
                     object value = fieldInfos[i].GetValue(item);
                     if (value != null)
                     {
                         if (isFirst)
+                        {
                             isFirst = false;
+                        }
                         else
+                        {
                             stringBuilder.Append(',');
+                        }
                         stringBuilder.Append('\"');
                         stringBuilder.Append(GetMemberName(fieldInfos[i]));
                         stringBuilder.Append("\":");
@@ -171,15 +193,21 @@ namespace TinyJson
                 for (int i = 0; i < propertyInfo.Length; i++)
                 {
                     if (!propertyInfo[i].CanRead || propertyInfo[i].IsDefined(typeof(IgnoreDataMemberAttribute), true))
+                    {
                         continue;
+                    }
 
                     object value = propertyInfo[i].GetValue(item, null);
                     if (value != null)
                     {
                         if (isFirst)
+                        {
                             isFirst = false;
+                        }
                         else
+                        {
                             stringBuilder.Append(',');
+                        }
                         stringBuilder.Append('\"');
                         stringBuilder.Append(GetMemberName(propertyInfo[i]));
                         stringBuilder.Append("\":");
@@ -197,7 +225,9 @@ namespace TinyJson
             {
                 DataMemberAttribute dataMemberAttribute = (DataMemberAttribute)Attribute.GetCustomAttribute(member, typeof(DataMemberAttribute), true);
                 if (!string.IsNullOrEmpty(dataMemberAttribute.Name))
+                {
                     return dataMemberAttribute.Name;
+                }
             }
 
             return member.Name;

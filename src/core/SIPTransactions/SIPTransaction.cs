@@ -360,7 +360,7 @@ namespace SIPSorcery.SIP
 
             FireTransactionTraceMessage($"Transaction send final response {finalResponse.ShortDescription}");
 
-            m_sipTransport.SendTransaction(this);
+            m_sipTransport.AddTransaction(this);
         }
 
         protected virtual Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)
@@ -398,7 +398,7 @@ namespace SIPSorcery.SIP
                     }
 
                     ReliableProvisionalResponse = sipResponse;
-                    m_sipTransport.SendTransaction(this);
+                    m_sipTransport.AddTransaction(this);
                     return Task.FromResult(SocketError.Success);
                 }
                 else
@@ -422,7 +422,7 @@ namespace SIPSorcery.SIP
                 UpdateTransactionState(SIPTransactionStatesEnum.Calling);
             }
 
-            m_sipTransport.SendTransaction(this);
+            m_sipTransport.AddTransaction(this);
         }
 
         protected SIPResponse GetInfoResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum sipResponseCode)

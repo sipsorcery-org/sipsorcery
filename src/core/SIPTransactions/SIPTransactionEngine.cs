@@ -463,6 +463,8 @@ namespace SIPSorcery.SIP
 
                                         if (sendResult != SocketError.Success && sendResult != SocketError.InProgress)
                                         {
+                                            logger.LogWarning($"SIP transaction send failed in state {transaction.TransactionState} with error {sendResult}.");
+
                                             // Example of failures here are requiring a specific TCP or TLS connection that no longer exists
                                             // or attempting to send to a UDP socket that has previously returned an ICMP error.
                                             transaction.DeliveryPending = false;

@@ -513,7 +513,7 @@ namespace SIPSorcery.SIP.App
 
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
 
-            inviteHeader.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader() };
+            inviteHeader.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader(inviteRequest.URI.Scheme) };
             inviteHeader.Contact[0].ContactURI.User = sipCallDescriptor.Username;
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = m_userAgent;

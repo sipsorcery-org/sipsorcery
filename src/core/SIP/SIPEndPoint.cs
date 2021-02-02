@@ -17,6 +17,7 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
@@ -36,7 +37,7 @@ namespace SIPSorcery.SIP
         private const string CHANNELID_ATTRIBUTE_NAME = "cid";
         private const string CONNECTIONID_ATTRIBUTE_NAME = "xid";
 
-        public static SIPEndPoint Empty { get; } = new SIPEndPoint(SIPProtocolsEnum.udp, null, 0);
+        public static SIPEndPoint Empty { get; } = new SIPEndPoint();
 
         /// <summary>
         /// The transport/application layer protocol the SIP end point is using.
@@ -71,23 +72,25 @@ namespace SIPSorcery.SIP
         /// Instantiates a new SIP end point from a network end point. Non specified properties
         /// will be set to their defaults.
         /// </summary>
-        public SIPEndPoint(IPEndPoint endPoint)
-        {
-            Protocol = SIPProtocolsEnum.udp;
-            Address = endPoint.Address;
-            Port = endPoint.Port;
-        }
+        public SIPEndPoint(IPEndPoint endPoint) :
+            this(SIPProtocolsEnum.udp, endPoint.Address, endPoint.Port, null, null)
+        { }
 
         /// <summary>
         /// Instantiates a new SIP end point from a network end point. Non specified properties
         /// will be set to their defaults.
         /// </summary>
-        public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port)
-        {
-            Protocol = protocol;
-            Address = address;
-            Port = port;
-        }
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port) :
+            this(protocol, address, port, null, null)
+        { }
+
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint) :
+            this(protocol, endPoint, null, null)
+        { }
+
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint, string channelID, string connectionID) :
+            this(protocol, endPoint.Address, endPoint.Port, channelID, connectionID)
+        { }
 
         /// <summary>
         /// Instantiates a new SIP end point.
@@ -101,7 +104,7 @@ namespace SIPSorcery.SIP
         public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port, string channelID, string connectionID)
         {
             Protocol = protocol;
-            Address = address;
+            Address = address?.IsIPv4MappedToIPv6 == true ? address.MapToIPv4() : address;
             Port = (port == 0) ? SIPConstants.GetDefaultPort(Protocol) : port;
             ChannelID = channelID;
             ConnectionID = connectionID;
@@ -116,24 +119,8 @@ namespace SIPSorcery.SIP
                 throw new ApplicationException($"Could not parse SIPURI host {sipURI.Host} as an IP end point.");
             }
 
-            Address = endPoint.Address;
+            Address = endPoint.Address?.IsIPv4MappedToIPv6 == true ? endPoint.Address.MapToIPv4() : endPoint.Address;
             Port = (endPoint.Port == 0) ? SIPConstants.GetDefaultPort(Protocol) : endPoint.Port;
-        }
-
-        public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint)
-        {
-            Protocol = protocol;
-            Address = endPoint.Address;
-            Port = (endPoint.Port == 0) ? SIPConstants.GetDefaultPort(Protocol) : endPoint.Port;
-        }
-
-        public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint, string channelID, string connectionID)
-        {
-            Protocol = protocol;
-            Address = endPoint.Address;
-            Port = (endPoint.Port == 0) ? SIPConstants.GetDefaultPort(Protocol) : endPoint.Port;
-            ChannelID = channelID;
-            ConnectionID = connectionID;
         }
 
         /// <summary>
@@ -237,8 +224,7 @@ namespace SIPSorcery.SIP
             else
             {
                 IPEndPoint ep = new IPEndPoint(Address, Port);
-                string result = Protocol + ":" + ep.ToString();
-                return result;
+                return $"{Protocol}:{ep}";
             }
         }
 
@@ -292,13 +278,54 @@ namespace SIPSorcery.SIP
 
         public SIPEndPoint CopyOf()
         {
-            SIPEndPoint copy = new SIPEndPoint(Protocol, new IPAddress(Address.GetAddressBytes()), Port, ChannelID, ConnectionID);
-            return copy;
+            return new SIPEndPoint(Protocol, new IPAddress(Address.GetAddressBytes()), Port, ChannelID, ConnectionID);
         }
 
-        public IPEndPoint GetIPEndPoint()
+        /// <summary>
+        /// Get the IP end point from the SIP end point
+        /// </summary>
+        /// <param name="mapIpv4ToIpv6">Set to true if a resultant IPv4 end point should be mapped to IPv6.
+        /// This is required in some cases when using dual mode sockets. For example Mono requires that a destination IP
+        /// end point for a dual mode socket is set as IPv6.</param>
+        /// <returns>An IP end point.</returns>
+        public IPEndPoint GetIPEndPoint(bool mapIpv4ToIpv6 = false)
         {
-            return new IPEndPoint(Address, Port);
+            if (mapIpv4ToIpv6 && Address.AddressFamily == AddressFamily.InterNetwork)
+            {
+                return new IPEndPoint(Address.MapToIPv6(), Port);
+            }
+            else
+            {
+                return new IPEndPoint(Address, Port);
+            }
+        }
+
+        /// <summary>
+        /// Determines whether the socket destination for two different SIP end points are equal.
+        /// </summary>
+        /// <param name="endPoint1">First end point to compare.</param>
+        /// <param name="endPoint2">Second end point to compare.</param>
+        /// <returns>True if the end points both resolve to the same protocol and IP end point.</returns>
+        public static bool AreSocketsEqual(SIPEndPoint endPoint1, SIPEndPoint endPoint2)
+        {
+            if (endPoint1 == Empty || endPoint2 == Empty)
+            {
+                return false;
+            }
+            else
+            {
+                var ep1Address = (endPoint1.Address.IsIPv4MappedToIPv6) ? endPoint1.Address.MapToIPv4() : endPoint1.Address;
+                var ep2Address = (endPoint2.Address.IsIPv4MappedToIPv6) ? endPoint2.Address.MapToIPv4() : endPoint2.Address;
+
+                return endPoint1.Protocol == endPoint2.Protocol &&
+                    endPoint1.Port == endPoint2.Port &&
+                    ep1Address.Equals(ep2Address) ;
+            }
+        }
+
+        public bool IsSocketEqual(SIPEndPoint endPoint)
+        {
+            return AreSocketsEqual(this, endPoint);
         }
     }
 }

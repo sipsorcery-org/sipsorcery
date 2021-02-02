@@ -247,7 +247,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        subscribeRequest.Header.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader() };
+                        subscribeRequest.Header.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader(subscribeRequest.URI.Scheme) };
                     }
 
                     subscribeRequest.Header.CSeq = m_localCSeq;
@@ -267,6 +267,8 @@ namespace SIPSorcery.SIP.App
                     subscribeTransaction.NonInviteTransactionTimedOut += SubscribeTransactionTimedOut;
 
                     LastSubscribeAttempt = DateTime.Now;
+
+                    subscribeTransaction.SendRequest();
                 }
             }
             catch (Exception excp)
@@ -364,7 +366,8 @@ namespace SIPSorcery.SIP.App
                             subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
                             subscribeTransaction.NonInviteTransactionTimedOut += SubscribeTransactionTimedOut;
 
-                            m_sipTransport.SendTransaction(subscribeTransaction);
+                            //m_sipTransport.SendTransaction(subscribeTransaction);
+                            subscribeTransaction.SendRequest();
                         }
                     }
                     else

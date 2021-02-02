@@ -84,7 +84,7 @@ namespace SIPSorcery.SIP.UnitTests
             // Give sockets a chance to start up.
             //await Task.Delay(500);
 
-            await udpChan1.SendAsync(dstEndPoint, Encoding.UTF8.GetBytes(optionsReq.ToString()), null);
+            await udpChan1.SendAsync(dstEndPoint, Encoding.UTF8.GetBytes(optionsReq.ToString()), false, null);
 
             bool res = gotMessage.Task.Wait(1000);
 

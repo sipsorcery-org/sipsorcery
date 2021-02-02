@@ -24,8 +24,6 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class SIPRequest : SIPMessageBase
     {
-        private delegate bool IsLocalSIPSocketDelegate(string socket, SIPProtocolsEnum protocol);
-
         public string SIPVersion = m_sipFullVersion;
         public SIPMethodsEnum Method;
         public string UnknownMethod = null;

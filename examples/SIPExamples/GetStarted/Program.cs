@@ -31,7 +31,7 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "sips:helloworld@sipsorcery.cloud";
+        private static string DESTINATION = "sip:helloworld@sipsorcery.cloud";
 
         static async Task Main()
         {
@@ -41,6 +41,7 @@ namespace demo
             CancellationTokenSource exitCts = new CancellationTokenSource();
 
             var sipTransport = new SIPTransport();
+            sipTransport.PreferIPv6NameResolution = true;
 
             EnableTraceLogs(sipTransport);
 

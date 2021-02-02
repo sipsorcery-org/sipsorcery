@@ -730,7 +730,10 @@ namespace SIPSorcery.Net.Sctp
                 try
                 {
                     _al.onDCEPStream(_in, _in.getLabel(), dc.getPpid());
-                    if (_in.OnOpen != null) _in.OnOpen.Invoke();
+                    if (_in.OnOpen != null)
+                    {
+                        _in.OnOpen.Invoke();
+                    }
                 }
                 catch (Exception x)
                 {

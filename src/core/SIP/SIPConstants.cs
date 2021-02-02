@@ -216,6 +216,24 @@ namespace SIPSorcery.SIP
                 return false;
             }
         }
+
+        /// <summary>
+        /// Returns true for connectionless transport protocols, such as UDP, and false for
+        /// connection oriented protocols.
+        /// </summary>
+        /// <param name="protocol">The protocol to check.</param>
+        /// <returns>True if the protocol is connectionless.</returns>
+        public static bool IsConnectionless(SIPProtocolsEnum protocol)
+        {
+            if(protocol == SIPProtocolsEnum.udp)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     public static class SIPHeaders

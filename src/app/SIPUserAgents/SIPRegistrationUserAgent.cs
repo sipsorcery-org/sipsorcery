@@ -359,7 +359,8 @@ namespace SIPSorcery.SIP.App
                         regTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { ServerResponseReceived(lep, rep, tn, rsp); return Task.FromResult(SocketError.Success); };
                         regTransaction.NonInviteTransactionTimedOut += RegistrationTimedOut;
 
-                        m_sipTransport.SendTransaction(regTransaction);
+                        //m_sipTransport.SendTransaction(regTransaction);
+                        regTransaction.SendRequest();
                     }
                 }
             }
@@ -426,7 +427,8 @@ namespace SIPSorcery.SIP.App
                                 SIPNonInviteTransaction regAuthTransaction = new SIPNonInviteTransaction(m_sipTransport, authenticatedRequest, registrarSIPEndPoint);
                                 regAuthTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { AuthResponseReceived(lep, rep, tn, rsp); return Task.FromResult(SocketError.Success); };
                                 regAuthTransaction.NonInviteTransactionTimedOut += (tn) => { RegistrationTimedOut(tn); };
-                                m_sipTransport.SendTransaction(regAuthTransaction);
+                                //m_sipTransport.SendTransaction(regAuthTransaction);
+                                regAuthTransaction.SendRequest();
                             }
                         }
                     }

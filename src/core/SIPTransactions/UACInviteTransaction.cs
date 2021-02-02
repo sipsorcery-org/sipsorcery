@@ -63,8 +63,6 @@ namespace SIPSorcery.SIP
             TransactionTimedOut += UACInviteTransaction_TransactionTimedOut;
             TransactionRequestReceived += UACInviteTransaction_TransactionRequestReceived;
             TransactionRemoved += UACInviteTransaction_TransactionRemoved;
-
-            sipTransport.AddTransaction(this);
         }
 
         private void UACInviteTransaction_TransactionRemoved(SIPTransaction transaction)
