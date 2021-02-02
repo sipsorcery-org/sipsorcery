@@ -88,7 +88,8 @@ namespace SIPSorcery.SIP.App
                             SIPNonInviteTransaction authTransaction = new SIPNonInviteTransaction(m_sipTransport, authenticatedRequest, m_outboundProxy);
                             authTransaction.NonInviteTransactionFinalResponseReceived += AuthResponseReceived;
                             authTransaction.NonInviteTransactionTimedOut += RequestTimedOut;
-                            m_sipTransport.SendTransaction(authTransaction);
+                            //m_sipTransport.SendTransaction(authTransaction);
+                            authTransaction.SendRequest();
                         }
                         else
                         {

@@ -62,6 +62,12 @@ namespace SIPSorcery.SIP.App
         SDP RemoteDescription { get; }
 
         /// <summary>
+        /// Set if the session has been bound to a specific IP address.
+        /// Normally not required but some esoteric call or network set ups may need.
+        /// </summary>
+        IPAddress RtpBindAddress { get; }
+
+        /// <summary>
         /// Fired when the RTP channel is closed.
         /// </summary>
         event Action<string> OnRtpClosed;

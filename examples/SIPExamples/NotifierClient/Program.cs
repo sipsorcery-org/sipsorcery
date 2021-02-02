@@ -28,7 +28,7 @@ namespace demo
     {
         private const string USERNAME = "user";
         private const string PASSWORD = "password";
-        private const string SERVER = "localhost";
+        private const string SERVER = "sipsorcery.cloud";
 
         static void Main()
         {
@@ -37,11 +37,11 @@ namespace demo
             AddConsoleLogger();
             CancellationTokenSource exitCts = new CancellationTokenSource();
 
-            var sipTransport = new SIPTransport() { PreferIPv6NameResolution = true };
+            var sipTransport = new SIPTransport();
 
             EnableTraceLogs(sipTransport);
 
-            var mwiURI = SIPURI.ParseSIPURIRelaxed($"sip:{USERNAME}@{SERVER}");
+            var mwiURI = SIPURI.ParseSIPURIRelaxed($"{USERNAME}@{SERVER}");
             int expiry = 180;
 
             SIPNotifierClient mwiSubscriber = new SIPNotifierClient(sipTransport, null, SIPEventPackagesEnum.MessageSummary, mwiURI, USERNAME, null, PASSWORD, expiry, null);

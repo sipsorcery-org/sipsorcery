@@ -59,8 +59,6 @@ namespace SIPSorcery.SIP
         public const ushort DEFAULT_SIP_WEBSOCKET_PORT = 80;
         public const ushort DEFAULT_SIPS_WEBSOCKET_PORT = 443;
 
-        public const string NAT_SENDKEEPALIVES_VALUE = "y";
-
         public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE";
 
         private static string _userAgentVersion;
@@ -212,6 +210,24 @@ namespace SIPSorcery.SIP
                 return true;
             }
             catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns true for connectionless transport protocols, such as UDP, and false for
+        /// connection oriented protocols.
+        /// </summary>
+        /// <param name="protocol">The protocol to check.</param>
+        /// <returns>True if the protocol is connectionless.</returns>
+        public static bool IsConnectionless(SIPProtocolsEnum protocol)
+        {
+            if(protocol == SIPProtocolsEnum.udp)
+            {
+                return true;
+            }
+            else
             {
                 return false;
             }

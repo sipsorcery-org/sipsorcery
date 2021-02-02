@@ -67,14 +67,14 @@ namespace SIPSorcery.UnitTests
 
         public AutoResetEvent SIPMessageSent { get; }
 
-        public override Task<SocketError> SendAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
+        public override Task<SocketError> SendAsync(SIPEndPoint destinationEndPoint, byte[] buffer, bool canInitiateConnection, string connectionIDHint)
         {
             LastSIPMessageSent = System.Text.Encoding.UTF8.GetString(buffer);
             SIPMessageSent.Set();
             return Task.FromResult(SocketError.Success);
         }
 
-        public override Task<SocketError> SendSecureAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, string connectionIDHint)
+        public override Task<SocketError> SendSecureAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, bool canInitiateConnection, string connectionIDHint)
         {
             throw new NotImplementedException();
         }
@@ -143,6 +143,7 @@ namespace SIPSorcery.UnitTests
         public bool IsClosed { get; private set; }
         public bool HasAudio => true;
         public bool HasVideo => false;
+        public IPAddress RtpBindAddress => null;
 
 #pragma warning disable 67
         public event Action<string> OnRtpClosed;

@@ -49,7 +49,7 @@ namespace SIPSorcery.SIP
                 base.UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
             }
 
-            sipTransport.AddTransaction(this);
+            //sipTransport.AddTransaction(this);
         }
 
         private void SIPNonInviteTransaction_TransactionRemoved(SIPTransaction transaction)

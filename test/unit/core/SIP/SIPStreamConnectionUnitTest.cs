@@ -100,7 +100,7 @@ CRLF + CRLF +
 
             Socket dummySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
-            SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
+            SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new SIPEndPoint(SIPProtocolsEnum.tcp, IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; return Task.FromResult(0); };
 
@@ -151,7 +151,7 @@ CRLF +
 
             Socket dummySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
-            SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
+            SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new SIPEndPoint(SIPProtocolsEnum.tcp, IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; return Task.FromResult(0); };
             Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);

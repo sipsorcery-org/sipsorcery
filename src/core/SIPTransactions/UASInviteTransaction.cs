@@ -86,7 +86,7 @@ namespace SIPSorcery.SIP
             TransactionRemoved += UASInviteTransaction_TransactionRemoved;
             OnAckRequestReceived += UASInviteTransaction_OnAckRequestReceived;
 
-            sipTransport.AddTransaction(this);
+            //sipTransport.AddTransaction(this);
         }
 
         private Task<SocketError> UASInviteTransaction_OnAckRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
@@ -223,7 +223,11 @@ namespace SIPSorcery.SIP
                 okResponse.SetSendFromHints(TransactionRequest.LocalSIPEndPoint);
 
                 SIPHeader requestHeader = TransactionRequest.Header;
-                okResponse.Header = new SIPHeader(SIPContactHeader.GetDefaultSIPContactHeader(), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
+                okResponse.Header = new SIPHeader(
+                    SIPContactHeader.GetDefaultSIPContactHeader(TransactionRequest.URI.Scheme),
+                    requestHeader.From, requestHeader.To,
+                    requestHeader.CSeq,
+                    requestHeader.CallId);
                 okResponse.Header.To.ToTag = m_localTag;
                 okResponse.Header.CSeqMethod = requestHeader.CSeqMethod;
                 okResponse.Header.Vias = requestHeader.Vias;

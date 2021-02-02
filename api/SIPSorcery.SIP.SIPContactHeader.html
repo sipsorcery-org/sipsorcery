@@ -558,21 +558,38 @@ Specific parameters: q, expires.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPContactHeader_GetDefaultSIPContactHeader.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPContactHeader_GetDefaultSIPContactHeader_SIPSorcery_SIP_SIPSchemesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader(SIPSorcery.SIP.SIPSchemesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/SIPHeader.cs/#L611">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPContactHeader_GetDefaultSIPContactHeader_" data-uid="SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader*"></a>
-  <h4 id="SIPSorcery_SIP_SIPContactHeader_GetDefaultSIPContactHeader" data-uid="SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader">GetDefaultSIPContactHeader()</h4>
+  <h4 id="SIPSorcery_SIP_SIPContactHeader_GetDefaultSIPContactHeader_SIPSorcery_SIP_SIPSchemesEnum_" data-uid="SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader(SIPSorcery.SIP.SIPSchemesEnum)">GetDefaultSIPContactHeader(SIPSchemesEnum)</h4>
   <div class="markdown level1 summary"><p>Special SIP contact header that is recognised by the SIP transport classes Send methods. At send time this header will be replaced by
 one with IP end point details that reflect the socket the request or response was sent from.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static SIPContactHeader GetDefaultSIPContactHeader()</code></pre>
+    <pre><code class="lang-csharp hljs">public static SIPContactHeader GetDefaultSIPContactHeader(SIPSchemesEnum scheme)</code></pre>
   </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPSchemesEnum.html">SIPSchemesEnum</a></td>
+        <td><span class="parametername">scheme</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>

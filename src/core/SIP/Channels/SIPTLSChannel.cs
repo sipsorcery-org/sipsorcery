@@ -27,7 +27,8 @@ namespace SIPSorcery.SIP
 {
     public class SIPTLSChannel : SIPTCPChannel
     {
-        public static readonly int TLS_CONNECTION_TIMEOUT = SIPTimings.T2;
+        private const int CLOSE_CONNECTION_TIMEOUT = 500;
+        private const int TLS_ATTEMPT_CONNECT_TIMEOUT = 2000;
 
         private X509Certificate2 m_serverCertificate;
 
@@ -35,23 +36,23 @@ namespace SIPSorcery.SIP
 
         public bool BypassCertificateValidation { get; set; } = true;
 
-        public SIPTLSChannel(IPEndPoint endPoint)
-            : base(endPoint, SIPProtocolsEnum.tls, false)
+        public SIPTLSChannel(IPEndPoint endPoint, bool useDualMode = false)
+            : base(endPoint, SIPProtocolsEnum.tls, false, useDualMode)
         {
             if (endPoint == null)
             {
-                throw new ArgumentNullException("endPoint", "An IP end point must be supplied for a SIP TLS channel.");
+                throw new ArgumentNullException(nameof(endPoint), "An IP end point must be supplied for a SIP TLS channel.");
             }
 
             IsSecure = true;
         }
 
-        public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
-            : base(endPoint, SIPProtocolsEnum.tls, serverCertificate != null)
+        public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint, bool useDualMode = false)
+            : base(endPoint, SIPProtocolsEnum.tls, serverCertificate != null, useDualMode)
         {
             if (endPoint == null)
             {
-                throw new ArgumentNullException("endPoint", "An IP end point must be supplied for a SIP TLS channel.");
+                throw new ArgumentNullException(nameof(endPoint), "An IP end point must be supplied for a SIP TLS channel.");
             }
 
             IsSecure = true;
@@ -59,7 +60,7 @@ namespace SIPSorcery.SIP
 
             if (m_serverCertificate != null)
             {
-                logger.LogInformation($"SIP TLS Channel ready for {ListeningEndPoint} and certificate {m_serverCertificate.Subject}.");
+                logger.LogInformation($"SIP TLS Channel ready for {ListeningSIPEndPoint} and certificate {m_serverCertificate.Subject}.");
             }
             else
             {
@@ -83,7 +84,7 @@ namespace SIPSorcery.SIP
             //await sslStream.AuthenticateAsServerAsync(m_serverCertificate).ConfigureAwait(false);
             sslStream.AuthenticateAsServer(m_serverCertificate);
 
-            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningSIPEndPoint}<-{streamConnection.RemoteSIPEndPoint}.");
 
             //// Display the properties and settings for the authenticated stream.
             ////DisplaySecurityLevel(sslStream);
@@ -112,19 +113,19 @@ namespace SIPSorcery.SIP
             SslStream sslStream = new SslStream(networkStream, false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
             //DisplayCertificateInformation(sslStream);
 
-            var delayTask = Task.Delay(TLS_CONNECTION_TIMEOUT);
-            await Task.WhenAny(sslStream.AuthenticateAsClientAsync(serverCertificateName), delayTask).ConfigureAwait(false);
+            var timeoutTask = Task.Delay(TLS_ATTEMPT_CONNECT_TIMEOUT);
+            await Task.WhenAny(sslStream.AuthenticateAsClientAsync(serverCertificateName), timeoutTask).ConfigureAwait(false);
 
-            if (delayTask.IsCompleted)
+            if (timeoutTask.IsCompleted)
             {
-                logger.LogWarning($"SIP TLS channel timed out attempting to establish SSL stream with {streamConnection.StreamSocket?.RemoteEndPoint}.");
-                networkStream.Close(TLS_CONNECTION_TIMEOUT);
+                logger.LogWarning($"SIP TLS channel timed out attempting to establish SSL stream with {streamConnection.RemoteSIPEndPoint}.");
+                networkStream.Close(CLOSE_CONNECTION_TIMEOUT);
                 return SocketError.ProtocolNotSupported;
             }
             else if(!sslStream.IsAuthenticated)
             {
-                logger.LogWarning($"SIP TLS channel failed to establish SSL stream with {streamConnection.StreamSocket?.RemoteEndPoint}.");
-                networkStream.Close(TLS_CONNECTION_TIMEOUT);
+                logger.LogWarning($"SIP TLS channel failed to establish SSL stream with {streamConnection.RemoteSIPEndPoint}.");
+                networkStream.Close(CLOSE_CONNECTION_TIMEOUT);
                 return SocketError.ProtocolNotSupported;
             }
             else
@@ -132,7 +133,7 @@ namespace SIPSorcery.SIP
                 streamConnection.SslStream = sslStream;
                 streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 
-                logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+                logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningSIPEndPoint}->{streamConnection.RemoteSIPEndPoint}.");
 
                 sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
                 
@@ -154,7 +155,7 @@ namespace SIPSorcery.SIP
                 if (bytesRead == 0)
                 {
                     // SSL stream was disconnected by the remote end point sending a FIN or RST.
-                    logger.LogDebug($"TLS socket disconnected by {sipStreamConnection.RemoteEndPoint}.");
+                    logger.LogDebug($"TLS socket disconnected by {sipStreamConnection.RemoteSIPEndPoint}.");
                     OnSIPStreamDisconnected(sipStreamConnection, SocketError.ConnectionReset);
                 }
                 else
@@ -198,15 +199,13 @@ namespace SIPSorcery.SIP
         /// <param name="buffer">The data to send.</param>
         protected override Task SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)
         {
-            IPEndPoint dstEndPoint = sipStreamConn.RemoteEndPoint;
-
             try
             {
                 return sipStreamConn.SslStream.WriteAsync(buffer, 0, buffer.Length);
             }
             catch (SocketException sockExcp)
             {
-                logger.LogWarning($"SocketException SIP TLS Channel sending to {dstEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
+                logger.LogWarning($"SocketException SIP TLS Channel sending to {sipStreamConn.RemoteSIPEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
                 OnSIPStreamDisconnected(sipStreamConn, sockExcp.SocketErrorCode);
                 throw;
             }

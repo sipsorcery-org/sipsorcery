@@ -89,7 +89,7 @@
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_m_tcpServerListener">SIPTCPChannel.m_tcpServerListener</a>
+      <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_m_channelSocket">SIPTCPChannel.m_channelSocket</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_m_connectingSockets">SIPTCPChannel.m_connectingSockets</a>
@@ -98,10 +98,10 @@
       <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_DisableLocalTCPSocketsCheck">SIPTCPChannel.DisableLocalTCPSocketsCheck</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_">SIPTCPChannel.SendAsync(SIPEndPoint, Byte[], String)</a>
+      <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_">SIPTCPChannel.SendAsync(SIPEndPoint, Byte[], Boolean, String)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_">SIPTCPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, String)</a>
+      <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_">SIPTCPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnSIPStreamDisconnected_SIPSorcery_SIP_SIPStreamConnection_System_Net_Sockets_SocketError_">SIPTCPChannel.OnSIPStreamDisconnected(SIPStreamConnection, SocketError)</a>
@@ -204,18 +204,18 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.%23ctor(System.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_IPEndPoint_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.%23ctor(System.Net.IPEndPoint%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L38">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L39">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel__ctor_" data-uid="SIPSorcery.SIP.SIPTLSChannel.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_IPEndPoint_" data-uid="SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint)">SIPTLSChannel(IPEndPoint)</h4>
+  <h4 id="SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_IPEndPoint_System_Boolean_" data-uid="SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint,System.Boolean)">SIPTLSChannel(IPEndPoint, Boolean)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPTLSChannel(IPEndPoint endPoint)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPTLSChannel(IPEndPoint endPoint, bool useDualMode = false)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -232,6 +232,11 @@
         <td><span class="parametername">endPoint</span></td>
         <td></td>
       </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useDualMode</span></td>
+        <td></td>
+      </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
@@ -239,7 +244,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPAddress_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.%23ctor(System.Security.Cryptography.X509Certificates.X509Certificate2%2CSystem.Net.IPAddress%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L70">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L71">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel__ctor_" data-uid="SIPSorcery.SIP.SIPTLSChannel.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPAddress_System_Int32_" data-uid="SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)">SIPTLSChannel(X509Certificate2, IPAddress, Int32)</h4>
@@ -278,18 +283,18 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.%23ctor(System.Security.Cryptography.X509Certificates.X509Certificate2%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.%23ctor(System.Security.Cryptography.X509Certificates.X509Certificate2%2CSystem.Net.IPEndPoint%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L49">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L50">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel__ctor_" data-uid="SIPSorcery.SIP.SIPTLSChannel.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_" data-uid="SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint)">SIPTLSChannel(X509Certificate2, IPEndPoint)</h4>
+  <h4 id="SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_System_Boolean_" data-uid="SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean)">SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint, bool useDualMode = false)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -311,35 +316,9 @@
         <td><span class="parametername">endPoint</span></td>
         <td></td>
       </tr>
-    </tbody>
-  </table>
-  <h3 id="fields">Fields
-  </h3>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_TLS_CONNECTION_TIMEOUT.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.TLS_CONNECTION_TIMEOUT%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L30">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_SIP_SIPTLSChannel_TLS_CONNECTION_TIMEOUT" data-uid="SIPSorcery.SIP.SIPTLSChannel.TLS_CONNECTION_TIMEOUT">TLS_CONNECTION_TIMEOUT</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static readonly int TLS_CONNECTION_TIMEOUT</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
       <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useDualMode</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -351,7 +330,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_BypassCertificateValidation.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.BypassCertificateValidation%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L36">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L37">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel_BypassCertificateValidation_" data-uid="SIPSorcery.SIP.SIPTLSChannel.BypassCertificateValidation*"></a>
   <h4 id="SIPSorcery_SIP_SIPTLSChannel_BypassCertificateValidation" data-uid="SIPSorcery.SIP.SIPTLSChannel.BypassCertificateValidation">BypassCertificateValidation</h4>
@@ -381,7 +360,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_ProtDescr.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.ProtDescr%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L34">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L35">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel_ProtDescr_" data-uid="SIPSorcery.SIP.SIPTLSChannel.ProtDescr*"></a>
   <h4 id="SIPSorcery_SIP_SIPTLSChannel_ProtDescr" data-uid="SIPSorcery.SIP.SIPTLSChannel.ProtDescr">ProtDescr</h4>
@@ -415,7 +394,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_IsProtocolSupported_SIPSorcery_SIP_SIPProtocolsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.IsProtocolSupported(SIPSorcery.SIP.SIPProtocolsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L220">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L219">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel_IsProtocolSupported_" data-uid="SIPSorcery.SIP.SIPTLSChannel.IsProtocolSupported*"></a>
   <h4 id="SIPSorcery_SIP_SIPTLSChannel_IsProtocolSupported_SIPSorcery_SIP_SIPProtocolsEnum_" data-uid="SIPSorcery.SIP.SIPTLSChannel.IsProtocolSupported(SIPSorcery.SIP.SIPProtocolsEnum)">IsProtocolSupported(SIPProtocolsEnum)</h4>
@@ -467,7 +446,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_OnAccept_SIPSorcery_SIP_SIPStreamConnection_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.OnAccept(SIPSorcery.SIP.SIPStreamConnection)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L78">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L79">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel_OnAccept_" data-uid="SIPSorcery.SIP.SIPTLSChannel.OnAccept*"></a>
   <h4 id="SIPSorcery_SIP_SIPTLSChannel_OnAccept_SIPSorcery_SIP_SIPStreamConnection_" data-uid="SIPSorcery.SIP.SIPTLSChannel.OnAccept(SIPSorcery.SIP.SIPStreamConnection)">OnAccept(SIPStreamConnection)</h4>
@@ -503,7 +482,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L109">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L110">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_" data-uid="SIPSorcery.SIP.SIPTLSChannel.OnClientConnect*"></a>
   <h4 id="SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_String_" data-uid="SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.String)">OnClientConnect(SIPStreamConnection, String)</h4>
@@ -560,7 +539,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_SendOnConnected_SIPSorcery_SIP_SIPStreamConnection_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.SendOnConnected(SIPSorcery.SIP.SIPStreamConnection%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L199">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L200">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel_SendOnConnected_" data-uid="SIPSorcery.SIP.SIPTLSChannel.SendOnConnected*"></a>
   <h4 id="SIPSorcery_SIP_SIPTLSChannel_SendOnConnected_SIPSorcery_SIP_SIPStreamConnection_System_Byte___" data-uid="SIPSorcery.SIP.SIPTLSChannel.SendOnConnected(SIPSorcery.SIP.SIPStreamConnection,System.Byte[])">SendOnConnected(SIPStreamConnection, Byte[])</h4>

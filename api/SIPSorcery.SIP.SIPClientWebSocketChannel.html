@@ -569,13 +569,13 @@ over a web socket communications layer.</p>
   <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_IsProtocolSupported_SIPSorcery_SIP_SIPProtocolsEnum_">SIPChannel.IsProtocolSupported(SIPProtocolsEnum)</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint%2CSystem.Byte%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint%2CSystem.Byte%5B%5D%2CSystem.Boolean%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L119">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync*"></a>
-  <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)">SendAsync(SIPEndPoint, Byte[], String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)">SendAsync(SIPEndPoint, Byte[], Boolean, String)</h4>
   <div class="markdown level1 summary"><p>Ideally sends on the web socket channel should specify the connection ID. But if there's
 a good reason not to we can check if there is an existing client connection with the
 requested remote end point and use it.</p>
@@ -583,7 +583,7 @@ requested remote end point and use it.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public override Task&lt;SocketError&gt; SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)</code></pre>
+    <pre><code class="lang-csharp hljs">public override Task&lt;SocketError&gt; SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, bool canInitiateConnection, string connectionIDHint)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -606,6 +606,11 @@ requested remote end point and use it.</p>
         <td><span class="parametername">buffer</span></td>
         <td><p>The data to send.</p>
 </td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">canInitiateConnection</span></td>
+        <td></td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
@@ -632,22 +637,22 @@ requested remote end point and use it.</p>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_">SIPChannel.SendAsync(SIPEndPoint, Byte[], String)</a></div>
+  <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_">SIPChannel.SendAsync(SIPEndPoint, Byte[], Boolean, String)</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint%2CSystem.Byte%5B%5D%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint%2CSystem.Byte%5B%5D%2CSystem.String%2CSystem.Boolean%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L136">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync*"></a>
-  <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)">SendSecureAsync(SIPEndPoint, Byte[], String, String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)">SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)</h4>
   <div class="markdown level1 summary"><p>Send to a secure web socket server.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public override Task&lt;SocketError&gt; SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)</code></pre>
+    <pre><code class="lang-csharp hljs">public override Task&lt;SocketError&gt; SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, bool canInitiateConnection, string connectionIDHint)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -675,6 +680,11 @@ requested remote end point and use it.</p>
         <td></td>
       </tr>
       <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">canInitiateConnection</span></td>
+        <td></td>
+      </tr>
+      <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">connectionIDHint</span></td>
         <td></td>
@@ -697,7 +707,7 @@ requested remote end point and use it.</p>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_">SIPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, String)</a></div>
+  <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_">SIPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)</a></div>
   <h3 id="implements">Implements</h3>
   <div>
       <span class="xref">System.IDisposable</span>

@@ -608,9 +608,9 @@ namespace SIPSorcery.SIP
         /// Special SIP contact header that is recognised by the SIP transport classes Send methods. At send time this header will be replaced by 
         /// one with IP end point details that reflect the socket the request or response was sent from.
         /// </summary>
-        public static SIPContactHeader GetDefaultSIPContactHeader()
+        public static SIPContactHeader GetDefaultSIPContactHeader(SIPSchemesEnum scheme)
         {
-            return new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, IPAddress.Any, 0));
+            return new SIPContactHeader(null, new SIPURI(scheme, IPAddress.Any, 0));
         }
 
         public string RawHeader;

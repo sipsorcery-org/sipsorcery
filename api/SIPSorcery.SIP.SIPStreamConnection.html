@@ -117,19 +117,19 @@ multiple packets.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.%23ctor(System.Net.Sockets.Socket%2CSystem.Net.IPEndPoint%2CSIPSorcery.SIP.SIPProtocolsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.%23ctor(System.Net.Sockets.Socket%2CSIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPProtocolsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L98">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPStreamConnection__ctor_" data-uid="SIPSorcery.SIP.SIPStreamConnection.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_" data-uid="SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)">SIPStreamConnection(Socket, IPEndPoint, SIPProtocolsEnum)</h4>
+  <h4 id="SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_" data-uid="SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)">SIPStreamConnection(Socket, SIPEndPoint, SIPProtocolsEnum)</h4>
   <div class="markdown level1 summary"><p>Records the crucial stream connection properties and initialises the required buffers.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPStreamConnection(Socket streamSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPStreamConnection(Socket streamSocket, SIPEndPoint remoteSIPEndPoint, SIPProtocolsEnum connectionProtocol)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -148,10 +148,9 @@ multiple packets.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
-        <td><span class="parametername">remoteEndPoint</span></td>
-        <td><p>The remote network end point of this connection.</p>
-</td>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
+        <td><span class="parametername">remoteSIPEndPoint</span></td>
+        <td></td>
       </tr>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPProtocolsEnum.html">SIPProtocolsEnum</a></td>
@@ -312,18 +311,18 @@ multiple packets.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_RemoteEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.RemoteEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_RemoteSIPEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.RemoteSIPEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L59">View Source</a>
   </span>
-  <h4 id="SIPSorcery_SIP_SIPStreamConnection_RemoteEndPoint" data-uid="SIPSorcery.SIP.SIPStreamConnection.RemoteEndPoint">RemoteEndPoint</h4>
+  <h4 id="SIPSorcery_SIP_SIPStreamConnection_RemoteSIPEndPoint" data-uid="SIPSorcery.SIP.SIPStreamConnection.RemoteSIPEndPoint">RemoteSIPEndPoint</h4>
   <div class="markdown level1 summary"><p>The remote end point for the stream.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IPEndPoint RemoteEndPoint</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPEndPoint RemoteSIPEndPoint</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -335,7 +334,7 @@ multiple packets.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
         <td></td>
       </tr>
     </tbody>

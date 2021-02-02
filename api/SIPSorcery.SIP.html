@@ -179,14 +179,6 @@ a particular SIP extension.</p>
 optional setting on some SIP Headers (Contact, To, From, Via).
 This class also treats the header value of a SIP URI as a special case of a SIP parameter. The difference between
 a parameter and a SIP URI header is the start and delimiter characters used.</p>
-<pre><code>SIP URI with parameters:
-sip:1234@sip.com;key1=value1;key2=value2
-
-SIP URI with headers:
-sip:1234@sip.com?key1=value1&amp;key2=value2
-
-SIP URI with parameters and headers (parameters always come first):
-sip:1234@sip.com;key1=value1;key2=value2?key1=value1&amp;key2=value2</code></pre>
 </section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPProtocolsType.html">SIPProtocolsType</a></h4>
       <section></section>
@@ -215,7 +207,10 @@ overhead than UDP. The state of the connection has to be monitored and messages 
 multiple packets.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html">SIPTCPChannel</a></h4>
-      <section></section>
+      <section><p>SIP transport for TCP. Note this is also the base class for the SIPTLSChannel.
+For the TLS channel the TCP base class will accept or connect and then switch
+to the TLS class to upgrade to an SSL stream.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPTimings.html">SIPTimings</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPTLSChannel.html">SIPTLSChannel</a></h4>

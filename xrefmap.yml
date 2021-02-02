@@ -12889,6 +12889,19 @@ references:
   commentId: F:SIPSorcery.Net.RTPSession.RTP_MEDIA_PROFILE
   fullName: SIPSorcery.Net.RTPSession.RTP_MEDIA_PROFILE
   nameWithType: RTPSession.RTP_MEDIA_PROFILE
+- uid: SIPSorcery.Net.RTPSession.RtpBindAddress
+  name: RtpBindAddress
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RtpBindAddress
+  commentId: P:SIPSorcery.Net.RTPSession.RtpBindAddress
+  fullName: SIPSorcery.Net.RTPSession.RtpBindAddress
+  nameWithType: RTPSession.RtpBindAddress
+- uid: SIPSorcery.Net.RTPSession.RtpBindAddress*
+  name: RtpBindAddress
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RtpBindAddress_
+  commentId: Overload:SIPSorcery.Net.RTPSession.RtpBindAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.RtpBindAddress
+  nameWithType: RTPSession.RtpBindAddress
 - uid: SIPSorcery.Net.RTPSession.SendAudio(System.UInt32,System.Byte[])
   name: SendAudio(UInt32, Byte[])
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudio_System_UInt32_System_Byte___
@@ -24976,6 +24989,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.IMediaSession.RemoteDescription
   nameWithType: IMediaSession.RemoteDescription
+- uid: SIPSorcery.SIP.App.IMediaSession.RtpBindAddress
+  name: RtpBindAddress
+  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_RtpBindAddress
+  commentId: P:SIPSorcery.SIP.App.IMediaSession.RtpBindAddress
+  fullName: SIPSorcery.SIP.App.IMediaSession.RtpBindAddress
+  nameWithType: IMediaSession.RtpBindAddress
+- uid: SIPSorcery.SIP.App.IMediaSession.RtpBindAddress*
+  name: RtpBindAddress
+  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_RtpBindAddress_
+  commentId: Overload:SIPSorcery.SIP.App.IMediaSession.RtpBindAddress
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.IMediaSession.RtpBindAddress
+  nameWithType: IMediaSession.RtpBindAddress
 - uid: SIPSorcery.SIP.App.IMediaSession.SendDtmf(System.Byte,System.Threading.CancellationToken)
   name: SendDtmf(Byte, CancellationToken)
   href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_SendDtmf_System_Byte_System_Threading_CancellationToken_
@@ -29132,15 +29158,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.Port
   nameWithType: SIPChannel.Port
-- uid: SIPSorcery.SIP.SIPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: SendAsync(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: SendAsync(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPChannel.SendAsync(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPChannel.SendAsync(SIPEndPoint, Byte(), String)
+- uid: SIPSorcery.SIP.SIPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name: SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name.vb: SendAsync(SIPEndPoint, Byte(), Boolean, String)
+  fullName: SIPSorcery.SIP.SIPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.Boolean, System.String)
+  nameWithType: SIPChannel.SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  nameWithType.vb: SIPChannel.SendAsync(SIPEndPoint, Byte(), Boolean, String)
 - uid: SIPSorcery.SIP.SIPChannel.SendAsync*
   name: SendAsync
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_
@@ -29148,15 +29174,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.SendAsync
   nameWithType: SIPChannel.SendAsync
-- uid: SIPSorcery.SIP.SIPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name: SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, String)
-  fullName: SIPSorcery.SIP.SIPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.SIPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.String)
-  nameWithType: SIPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  nameWithType.vb: SIPChannel.SendSecureAsync(SIPEndPoint, Byte(), String, String)
+- uid: SIPSorcery.SIP.SIPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name: SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
+  fullName: SIPSorcery.SIP.SIPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.Boolean, System.String)
+  nameWithType: SIPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  nameWithType.vb: SIPChannel.SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
 - uid: SIPSorcery.SIP.SIPChannel.SendSecureAsync*
   name: SendSecureAsync
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendSecureAsync_
@@ -29279,15 +29305,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.IsProtocolSupported
   nameWithType: SIPClientWebSocketChannel.IsProtocolSupported
-- uid: SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: SendAsync(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: SendAsync(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPClientWebSocketChannel.SendAsync(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPClientWebSocketChannel.SendAsync(SIPEndPoint, Byte(), String)
+- uid: SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name: SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name.vb: SendAsync(SIPEndPoint, Byte(), Boolean, String)
+  fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.Boolean, System.String)
+  nameWithType: SIPClientWebSocketChannel.SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  nameWithType.vb: SIPClientWebSocketChannel.SendAsync(SIPEndPoint, Byte(), Boolean, String)
 - uid: SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync*
   name: SendAsync
   href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_
@@ -29295,15 +29321,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync
   nameWithType: SIPClientWebSocketChannel.SendAsync
-- uid: SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name: SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, String)
-  fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.String)
-  nameWithType: SIPClientWebSocketChannel.SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  nameWithType.vb: SIPClientWebSocketChannel.SendSecureAsync(SIPEndPoint, Byte(), String, String)
+- uid: SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name: SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
+  fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.Boolean, System.String)
+  nameWithType: SIPClientWebSocketChannel.SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  nameWithType.vb: SIPClientWebSocketChannel.SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
 - uid: SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync*
   name: SendSecureAsync
   href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_
@@ -29402,12 +29428,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPConstants.HEADER_DELIMITER_CHAR
   fullName: SIPSorcery.SIP.SIPConstants.HEADER_DELIMITER_CHAR
   nameWithType: SIPConstants.HEADER_DELIMITER_CHAR
-- uid: SIPSorcery.SIP.SIPConstants.NAT_SENDKEEPALIVES_VALUE
-  name: NAT_SENDKEEPALIVES_VALUE
-  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_NAT_SENDKEEPALIVES_VALUE
-  commentId: F:SIPSorcery.SIP.SIPConstants.NAT_SENDKEEPALIVES_VALUE
-  fullName: SIPSorcery.SIP.SIPConstants.NAT_SENDKEEPALIVES_VALUE
-  nameWithType: SIPConstants.NAT_SENDKEEPALIVES_VALUE
 - uid: SIPSorcery.SIP.SIPConstants.NONCE_TIMEOUT_MINUTES
   name: NONCE_TIMEOUT_MINUTES
   href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_NONCE_TIMEOUT_MINUTES
@@ -29627,12 +29647,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPContactHeader.EXPIRES_PARAMETER_KEY
   fullName: SIPSorcery.SIP.SIPContactHeader.EXPIRES_PARAMETER_KEY
   nameWithType: SIPContactHeader.EXPIRES_PARAMETER_KEY
-- uid: SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader
-  name: GetDefaultSIPContactHeader()
-  href: api/SIPSorcery.SIP.SIPContactHeader.html#SIPSorcery_SIP_SIPContactHeader_GetDefaultSIPContactHeader
-  commentId: M:SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader
-  fullName: SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader()
-  nameWithType: SIPContactHeader.GetDefaultSIPContactHeader()
+- uid: SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader(SIPSorcery.SIP.SIPSchemesEnum)
+  name: GetDefaultSIPContactHeader(SIPSchemesEnum)
+  href: api/SIPSorcery.SIP.SIPContactHeader.html#SIPSorcery_SIP_SIPContactHeader_GetDefaultSIPContactHeader_SIPSorcery_SIP_SIPSchemesEnum_
+  commentId: M:SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader(SIPSorcery.SIP.SIPSchemesEnum)
+  fullName: SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader(SIPSorcery.SIP.SIPSchemesEnum)
+  nameWithType: SIPContactHeader.GetDefaultSIPContactHeader(SIPSchemesEnum)
 - uid: SIPSorcery.SIP.SIPContactHeader.GetDefaultSIPContactHeader*
   name: GetDefaultSIPContactHeader
   href: api/SIPSorcery.SIP.SIPContactHeader.html#SIPSorcery_SIP_SIPContactHeader_GetDefaultSIPContactHeader_
@@ -30346,6 +30366,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPEndPoint.AreEqual
   nameWithType: SIPEndPoint.AreEqual
+- uid: SIPSorcery.SIP.SIPEndPoint.AreSocketsEqual(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  name: AreSocketsEqual(SIPEndPoint, SIPEndPoint)
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_AreSocketsEqual_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPEndPoint.AreSocketsEqual(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.SIPEndPoint.AreSocketsEqual(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPEndPoint.AreSocketsEqual(SIPEndPoint, SIPEndPoint)
+- uid: SIPSorcery.SIP.SIPEndPoint.AreSocketsEqual*
+  name: AreSocketsEqual
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_AreSocketsEqual_
+  commentId: Overload:SIPSorcery.SIP.SIPEndPoint.AreSocketsEqual
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPEndPoint.AreSocketsEqual
+  nameWithType: SIPEndPoint.AreSocketsEqual
 - uid: SIPSorcery.SIP.SIPEndPoint.ChannelID
   name: ChannelID
   href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_ChannelID
@@ -30424,12 +30457,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPEndPoint.GetHashCode
   nameWithType: SIPEndPoint.GetHashCode
-- uid: SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint
-  name: GetIPEndPoint()
-  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_GetIPEndPoint
-  commentId: M:SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint
-  fullName: SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint()
-  nameWithType: SIPEndPoint.GetIPEndPoint()
+- uid: SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint(System.Boolean)
+  name: GetIPEndPoint(Boolean)
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_GetIPEndPoint_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint(System.Boolean)
+  fullName: SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint(System.Boolean)
+  nameWithType: SIPEndPoint.GetIPEndPoint(Boolean)
 - uid: SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint*
   name: GetIPEndPoint
   href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_GetIPEndPoint_
@@ -30437,6 +30470,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint
   nameWithType: SIPEndPoint.GetIPEndPoint
+- uid: SIPSorcery.SIP.SIPEndPoint.IsSocketEqual(SIPSorcery.SIP.SIPEndPoint)
+  name: IsSocketEqual(SIPEndPoint)
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_IsSocketEqual_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPEndPoint.IsSocketEqual(SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.SIPEndPoint.IsSocketEqual(SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPEndPoint.IsSocketEqual(SIPEndPoint)
+- uid: SIPSorcery.SIP.SIPEndPoint.IsSocketEqual*
+  name: IsSocketEqual
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_IsSocketEqual_
+  commentId: Overload:SIPSorcery.SIP.SIPEndPoint.IsSocketEqual
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPEndPoint.IsSocketEqual
+  nameWithType: SIPEndPoint.IsSocketEqual
 - uid: SIPSorcery.SIP.SIPEndPoint.op_Equality(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
   name: Equality(SIPEndPoint, SIPEndPoint)
   href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_op_Equality_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
@@ -33610,6 +33656,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPProtocolsType.IsAllowedProtocol
   nameWithType: SIPProtocolsType.IsAllowedProtocol
+- uid: SIPSorcery.SIP.SIPProtocolsType.IsConnectionless(SIPSorcery.SIP.SIPProtocolsEnum)
+  name: IsConnectionless(SIPProtocolsEnum)
+  href: api/SIPSorcery.SIP.SIPProtocolsType.html#SIPSorcery_SIP_SIPProtocolsType_IsConnectionless_SIPSorcery_SIP_SIPProtocolsEnum_
+  commentId: M:SIPSorcery.SIP.SIPProtocolsType.IsConnectionless(SIPSorcery.SIP.SIPProtocolsEnum)
+  fullName: SIPSorcery.SIP.SIPProtocolsType.IsConnectionless(SIPSorcery.SIP.SIPProtocolsEnum)
+  nameWithType: SIPProtocolsType.IsConnectionless(SIPProtocolsEnum)
+- uid: SIPSorcery.SIP.SIPProtocolsType.IsConnectionless*
+  name: IsConnectionless
+  href: api/SIPSorcery.SIP.SIPProtocolsType.html#SIPSorcery_SIP_SIPProtocolsType_IsConnectionless_
+  commentId: Overload:SIPSorcery.SIP.SIPProtocolsType.IsConnectionless
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPProtocolsType.IsConnectionless
+  nameWithType: SIPProtocolsType.IsConnectionless
 - uid: SIPSorcery.SIP.SIPReplacesParameter
   name: SIPReplacesParameter
   href: api/SIPSorcery.SIP.SIPReplacesParameter.html
@@ -34906,12 +34965,12 @@ references:
   commentId: T:SIPSorcery.SIP.SIPStreamConnection
   fullName: SIPSorcery.SIP.SIPStreamConnection
   nameWithType: SIPStreamConnection
-- uid: SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
-  name: SIPStreamConnection(Socket, IPEndPoint, SIPProtocolsEnum)
-  href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_
-  commentId: M:SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
-  fullName: SIPSorcery.SIP.SIPStreamConnection.SIPStreamConnection(System.Net.Sockets.Socket, System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum)
-  nameWithType: SIPStreamConnection.SIPStreamConnection(Socket, IPEndPoint, SIPProtocolsEnum)
+- uid: SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
+  name: SIPStreamConnection(Socket, SIPEndPoint, SIPProtocolsEnum)
+  href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_
+  commentId: M:SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
+  fullName: SIPSorcery.SIP.SIPStreamConnection.SIPStreamConnection(System.Net.Sockets.Socket, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum)
+  nameWithType: SIPStreamConnection.SIPStreamConnection(Socket, SIPEndPoint, SIPProtocolsEnum)
 - uid: SIPSorcery.SIP.SIPStreamConnection.#ctor*
   name: SIPStreamConnection
   href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection__ctor_
@@ -35004,12 +35063,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPStreamConnection.RecvStartPosn
   nameWithType: SIPStreamConnection.RecvStartPosn
-- uid: SIPSorcery.SIP.SIPStreamConnection.RemoteEndPoint
-  name: RemoteEndPoint
-  href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection_RemoteEndPoint
-  commentId: F:SIPSorcery.SIP.SIPStreamConnection.RemoteEndPoint
-  fullName: SIPSorcery.SIP.SIPStreamConnection.RemoteEndPoint
-  nameWithType: SIPStreamConnection.RemoteEndPoint
+- uid: SIPSorcery.SIP.SIPStreamConnection.RemoteSIPEndPoint
+  name: RemoteSIPEndPoint
+  href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection_RemoteSIPEndPoint
+  commentId: F:SIPSorcery.SIP.SIPStreamConnection.RemoteSIPEndPoint
+  fullName: SIPSorcery.SIP.SIPStreamConnection.RemoteSIPEndPoint
+  nameWithType: SIPStreamConnection.RemoteSIPEndPoint
 - uid: SIPSorcery.SIP.SIPStreamConnection.SIPMessageReceived
   name: SIPMessageReceived
   href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection_SIPMessageReceived
@@ -35040,24 +35099,24 @@ references:
   commentId: T:SIPSorcery.SIP.SIPTCPChannel
   fullName: SIPSorcery.SIP.SIPTCPChannel
   nameWithType: SIPTCPChannel
-- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPAddress,System.Int32)
-  name: SIPTCPChannel(IPAddress, Int32)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPAddress_System_Int32_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPAddress,System.Int32)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPAddress, System.Int32)
-  nameWithType: SIPTCPChannel.SIPTCPChannel(IPAddress, Int32)
-- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint)
-  name: SIPTCPChannel(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint)
-  nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint)
-- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,System.Boolean)
-  name: SIPTCPChannel(IPEndPoint, SIPProtocolsEnum, Boolean)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum, System.Boolean)
-  nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, SIPProtocolsEnum, Boolean)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPAddress,System.Int32,System.Boolean)
+  name: SIPTCPChannel(IPAddress, Int32, Boolean)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPAddress_System_Int32_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPAddress,System.Int32,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPAddress, System.Int32, System.Boolean)
+  nameWithType: SIPTCPChannel.SIPTCPChannel(IPAddress, Int32, Boolean)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,System.Boolean,System.Boolean)
+  name: SIPTCPChannel(IPEndPoint, SIPProtocolsEnum, Boolean, Boolean)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,System.Boolean,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum, System.Boolean, System.Boolean)
+  nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, SIPProtocolsEnum, Boolean, Boolean)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
+  name: SIPTCPChannel(IPEndPoint, Boolean)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, System.Boolean)
+  nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, Boolean)
 - uid: SIPSorcery.SIP.SIPTCPChannel.#ctor*
   name: SIPTCPChannel
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_
@@ -35148,18 +35207,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.IsProtocolSupported
   nameWithType: SIPTCPChannel.IsProtocolSupported
+- uid: SIPSorcery.SIP.SIPTCPChannel.m_channelSocket
+  name: m_channelSocket
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_m_channelSocket
+  commentId: F:SIPSorcery.SIP.SIPTCPChannel.m_channelSocket
+  fullName: SIPSorcery.SIP.SIPTCPChannel.m_channelSocket
+  nameWithType: SIPTCPChannel.m_channelSocket
 - uid: SIPSorcery.SIP.SIPTCPChannel.m_connectingSockets
   name: m_connectingSockets
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_m_connectingSockets
   commentId: F:SIPSorcery.SIP.SIPTCPChannel.m_connectingSockets
   fullName: SIPSorcery.SIP.SIPTCPChannel.m_connectingSockets
   nameWithType: SIPTCPChannel.m_connectingSockets
-- uid: SIPSorcery.SIP.SIPTCPChannel.m_tcpServerListener
-  name: m_tcpServerListener
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_m_tcpServerListener
-  commentId: F:SIPSorcery.SIP.SIPTCPChannel.m_tcpServerListener
-  fullName: SIPSorcery.SIP.SIPTCPChannel.m_tcpServerListener
-  nameWithType: SIPTCPChannel.m_tcpServerListener
 - uid: SIPSorcery.SIP.SIPTCPChannel.OnAccept(SIPSorcery.SIP.SIPStreamConnection)
   name: OnAccept(SIPStreamConnection)
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnAccept_SIPSorcery_SIP_SIPStreamConnection_
@@ -35212,15 +35271,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.ProtDescr
   nameWithType: SIPTCPChannel.ProtDescr
-- uid: SIPSorcery.SIP.SIPTCPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: SendAsync(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: SendAsync(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPTCPChannel.SendAsync(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPTCPChannel.SendAsync(SIPEndPoint, Byte(), String)
+- uid: SIPSorcery.SIP.SIPTCPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name: SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name.vb: SendAsync(SIPEndPoint, Byte(), Boolean, String)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.Boolean, System.String)
+  nameWithType: SIPTCPChannel.SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  nameWithType.vb: SIPTCPChannel.SendAsync(SIPEndPoint, Byte(), Boolean, String)
 - uid: SIPSorcery.SIP.SIPTCPChannel.SendAsync*
   name: SendAsync
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_
@@ -35244,15 +35303,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.SendOnConnected
   nameWithType: SIPTCPChannel.SendOnConnected
-- uid: SIPSorcery.SIP.SIPTCPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name: SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, String)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.String)
-  nameWithType: SIPTCPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  nameWithType.vb: SIPTCPChannel.SendSecureAsync(SIPEndPoint, Byte(), String, String)
+- uid: SIPSorcery.SIP.SIPTCPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name: SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.Boolean, System.String)
+  nameWithType: SIPTCPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  nameWithType.vb: SIPTCPChannel.SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
 - uid: SIPSorcery.SIP.SIPTCPChannel.SendSecureAsync*
   name: SendSecureAsync
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendSecureAsync_
@@ -35312,24 +35371,24 @@ references:
   commentId: T:SIPSorcery.SIP.SIPTLSChannel
   fullName: SIPSorcery.SIP.SIPTLSChannel
   nameWithType: SIPTLSChannel
-- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint)
-  name: SIPTLSChannel(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Net.IPEndPoint)
-  nameWithType: SIPTLSChannel.SIPTLSChannel(IPEndPoint)
+- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
+  name: SIPTLSChannel(IPEndPoint, Boolean)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_IPEndPoint_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Net.IPEndPoint, System.Boolean)
+  nameWithType: SIPTLSChannel.SIPTLSChannel(IPEndPoint, Boolean)
 - uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)
   name: SIPTLSChannel(X509Certificate2, IPAddress, Int32)
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPAddress_System_Int32_
   commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)
   fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPAddress, System.Int32)
   nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPAddress, Int32)
-- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint)
-  name: SIPTLSChannel(X509Certificate2, IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPEndPoint)
-  nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPEndPoint)
+- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean)
+  name: SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPEndPoint, System.Boolean)
+  nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean)
 - uid: SIPSorcery.SIP.SIPTLSChannel.#ctor*
   name: SIPTLSChannel
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_
@@ -35418,12 +35477,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTLSChannel.SendOnConnected
   nameWithType: SIPTLSChannel.SendOnConnected
-- uid: SIPSorcery.SIP.SIPTLSChannel.TLS_CONNECTION_TIMEOUT
-  name: TLS_CONNECTION_TIMEOUT
-  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_TLS_CONNECTION_TIMEOUT
-  commentId: F:SIPSorcery.SIP.SIPTLSChannel.TLS_CONNECTION_TIMEOUT
-  fullName: SIPSorcery.SIP.SIPTLSChannel.TLS_CONNECTION_TIMEOUT
-  nameWithType: SIPTLSChannel.TLS_CONNECTION_TIMEOUT
 - uid: SIPSorcery.SIP.SIPToHeader
   name: SIPToHeader
   href: api/SIPSorcery.SIP.SIPToHeader.html
@@ -36307,19 +36360,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.AddSIPChannel
   nameWithType: SIPTransport.AddSIPChannel
-- uid: SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)
-  name: AddTransaction(SIPTransaction)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddTransaction_SIPSorcery_SIP_SIPTransaction_
-  commentId: M:SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)
-  fullName: SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)
-  nameWithType: SIPTransport.AddTransaction(SIPTransaction)
-- uid: SIPSorcery.SIP.SIPTransport.AddTransaction*
-  name: AddTransaction
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddTransaction_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.AddTransaction
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.AddTransaction
-  nameWithType: SIPTransport.AddTransaction
 - uid: SIPSorcery.SIP.SIPTransport.BlackholeAddress
   name: BlackholeAddress
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_BlackholeAddress
@@ -36409,12 +36449,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.GetSIPChannels
   nameWithType: SIPTransport.GetSIPChannels
-- uid: SIPSorcery.SIP.SIPTransport.m_allowedSIPMethods
-  name: m_allowedSIPMethods
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_m_allowedSIPMethods
-  commentId: F:SIPSorcery.SIP.SIPTransport.m_allowedSIPMethods
-  fullName: SIPSorcery.SIP.SIPTransport.m_allowedSIPMethods
-  nameWithType: SIPTransport.m_allowedSIPMethods
 - uid: SIPSorcery.SIP.SIPTransport.PreferIPv6NameResolution
   name: PreferIPv6NameResolution
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_PreferIPv6NameResolution
@@ -36542,19 +36576,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.SendResponseAsync
   nameWithType: SIPTransport.SendResponseAsync
-- uid: SIPSorcery.SIP.SIPTransport.SendTransaction(SIPSorcery.SIP.SIPTransaction)
-  name: SendTransaction(SIPTransaction)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendTransaction_SIPSorcery_SIP_SIPTransaction_
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendTransaction(SIPSorcery.SIP.SIPTransaction)
-  fullName: SIPSorcery.SIP.SIPTransport.SendTransaction(SIPSorcery.SIP.SIPTransaction)
-  nameWithType: SIPTransport.SendTransaction(SIPTransaction)
-- uid: SIPSorcery.SIP.SIPTransport.SendTransaction*
-  name: SendTransaction
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendTransaction_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendTransaction
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.SendTransaction
-  nameWithType: SIPTransport.SendTransaction
 - uid: SIPSorcery.SIP.SIPTransport.Shutdown
   name: Shutdown()
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_Shutdown
@@ -36785,15 +36806,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPUDPChannel.IsProtocolSupported
   nameWithType: SIPUDPChannel.IsProtocolSupported
-- uid: SIPSorcery.SIP.SIPUDPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: SendAsync(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: SendAsync(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPUDPChannel.SendAsync(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPUDPChannel.SendAsync(SIPEndPoint, Byte(), String)
+- uid: SIPSorcery.SIP.SIPUDPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name: SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name.vb: SendAsync(SIPEndPoint, Byte(), Boolean, String)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.Boolean, System.String)
+  nameWithType: SIPUDPChannel.SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  nameWithType.vb: SIPUDPChannel.SendAsync(SIPEndPoint, Byte(), Boolean, String)
 - uid: SIPSorcery.SIP.SIPUDPChannel.SendAsync*
   name: SendAsync
   href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendAsync_
@@ -36801,15 +36822,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPUDPChannel.SendAsync
   nameWithType: SIPUDPChannel.SendAsync
-- uid: SIPSorcery.SIP.SIPUDPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name: SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, String)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.String)
-  nameWithType: SIPUDPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  nameWithType.vb: SIPUDPChannel.SendSecureAsync(SIPEndPoint, Byte(), String, String)
+- uid: SIPSorcery.SIP.SIPUDPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name: SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.Boolean, System.String)
+  nameWithType: SIPUDPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  nameWithType.vb: SIPUDPChannel.SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
 - uid: SIPSorcery.SIP.SIPUDPChannel.SendSecureAsync*
   name: SendSecureAsync
   href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendSecureAsync_
@@ -37907,15 +37928,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPWebSocketChannel.IsProtocolSupported
   nameWithType: SIPWebSocketChannel.IsProtocolSupported
-- uid: SIPSorcery.SIP.SIPWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: SendAsync(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: SendAsync(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPWebSocketChannel.SendAsync(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPWebSocketChannel.SendAsync(SIPEndPoint, Byte(), String)
+- uid: SIPSorcery.SIP.SIPWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name: SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)
+  name.vb: SendAsync(SIPEndPoint, Byte(), Boolean, String)
+  fullName: SIPSorcery.SIP.SIPWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.Boolean, System.String)
+  nameWithType: SIPWebSocketChannel.SendAsync(SIPEndPoint, Byte[], Boolean, String)
+  nameWithType.vb: SIPWebSocketChannel.SendAsync(SIPEndPoint, Byte(), Boolean, String)
 - uid: SIPSorcery.SIP.SIPWebSocketChannel.SendAsync*
   name: SendAsync
   href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel_SendAsync_
@@ -37923,15 +37944,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPWebSocketChannel.SendAsync
   nameWithType: SIPWebSocketChannel.SendAsync
-- uid: SIPSorcery.SIP.SIPWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name: SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)
-  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, String)
-  fullName: SIPSorcery.SIP.SIPWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.SIPWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.String)
-  nameWithType: SIPWebSocketChannel.SendSecureAsync(SIPEndPoint, Byte[], String, String)
-  nameWithType.vb: SIPWebSocketChannel.SendSecureAsync(SIPEndPoint, Byte(), String, String)
+- uid: SIPSorcery.SIP.SIPWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name: SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)
+  name.vb: SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
+  fullName: SIPSorcery.SIP.SIPWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String, System.Boolean, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String, System.Boolean, System.String)
+  nameWithType: SIPWebSocketChannel.SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)
+  nameWithType.vb: SIPWebSocketChannel.SendSecureAsync(SIPEndPoint, Byte(), String, Boolean, String)
 - uid: SIPSorcery.SIP.SIPWebSocketChannel.SendSecureAsync*
   name: SendSecureAsync
   href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel_SendSecureAsync_
