@@ -59,8 +59,6 @@ namespace SIPSorcery.SIP
         public const ushort DEFAULT_SIP_WEBSOCKET_PORT = 80;
         public const ushort DEFAULT_SIPS_WEBSOCKET_PORT = 443;
 
-        public const string NAT_SENDKEEPALIVES_VALUE = "y";
-
         public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE";
 
         private static string _userAgentVersion;

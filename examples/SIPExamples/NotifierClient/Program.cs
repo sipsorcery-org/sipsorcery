@@ -41,7 +41,7 @@ namespace demo
 
             EnableTraceLogs(sipTransport);
 
-            var mwiURI = SIPURI.ParseSIPURIRelaxed($"sips:{USERNAME}@{SERVER}");
+            var mwiURI = SIPURI.ParseSIPURIRelaxed($"{USERNAME}@{SERVER}");
             int expiry = 180;
 
             SIPNotifierClient mwiSubscriber = new SIPNotifierClient(sipTransport, null, SIPEventPackagesEnum.MessageSummary, mwiURI, USERNAME, null, PASSWORD, expiry, null);
