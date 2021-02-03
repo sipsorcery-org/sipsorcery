@@ -135,7 +135,10 @@
     <PackageReference Include="SIPSorcery" Version="5.0.18-pre" />
 >>>>>>> master
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.10-pre" />
+<<<<<<< HEAD
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.31-pre" />
+>>>>>>> master
+=======
 >>>>>>> master
   </ItemGroup>
 

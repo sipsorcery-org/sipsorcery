@@ -1311,5 +1311,45 @@ namespace SIPSorcery.SIP
         {
             Shutdown();
         }
+
+        /// <summary>
+        /// Helper method to enable logging of SIP request, responses and retransmits.
+        /// </summary>
+        public void EnableTraceLogs()
+        {
+            SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
+            {
+                logger.LogDebug($"Request received: {localEP}<-{remoteEP} {req.StatusLine}");
+                logger.LogTrace(req.ToString());
+            };
+
+            SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
+            {
+                logger.LogDebug($"Request sent: {localEP}->{remoteEP} {req.StatusLine}");
+                logger.LogTrace(req.ToString());
+            };
+
+            SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                logger.LogDebug($"Response received: {localEP}<-{remoteEP} {resp.ShortDescription}");
+                logger.LogTrace(resp.ToString());
+            };
+
+            SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                logger.LogDebug($"Response sent: {localEP}->{remoteEP} {resp.ShortDescription}");
+                logger.LogTrace(resp.ToString());
+            };
+
+            SIPRequestRetransmitTraceEvent += (tx, req, count) =>
+            {
+                logger.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+            };
+
+            SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
+            {
+                logger.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+            };
+        }
     }
 }

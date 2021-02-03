@@ -26685,19 +26685,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPNotifierClient.CallID
   nameWithType: SIPNotifierClient.CallID
-- uid: SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
-  name: GotNotificationRequest(SIPEndPoint, SIPEndPoint, SIPRequest)
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_GotNotificationRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPNotifierClient.GotNotificationRequest(SIPEndPoint, SIPEndPoint, SIPRequest)
-- uid: SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest*
-  name: GotNotificationRequest
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_GotNotificationRequest_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient.GotNotificationRequest
-  nameWithType: SIPNotifierClient.GotNotificationRequest
 - uid: SIPSorcery.SIP.App.SIPNotifierClient.LastSubscribeAttempt
   name: LastSubscribeAttempt
   href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_LastSubscribeAttempt
@@ -36436,6 +36423,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.Dispose
   nameWithType: SIPTransport.Dispose
+- uid: SIPSorcery.SIP.SIPTransport.EnableTraceLogs
+  name: EnableTraceLogs()
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_EnableTraceLogs
+  commentId: M:SIPSorcery.SIP.SIPTransport.EnableTraceLogs
+  fullName: SIPSorcery.SIP.SIPTransport.EnableTraceLogs()
+  nameWithType: SIPTransport.EnableTraceLogs()
+- uid: SIPSorcery.SIP.SIPTransport.EnableTraceLogs*
+  name: EnableTraceLogs
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_EnableTraceLogs_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.EnableTraceLogs
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransport.EnableTraceLogs
+  nameWithType: SIPTransport.EnableTraceLogs
 - uid: SIPSorcery.SIP.SIPTransport.GetSIPChannels
   name: GetSIPChannels()
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetSIPChannels

@@ -101,6 +101,9 @@ namespace SIPSorcery.SIP.App
         public void Start()
         {
             m_exit = false;
+
+            m_sipTransport.SIPTransportRequestReceived += GotNotificationRequest;
+
             ThreadPool.QueueUserWorkItem(delegate { StartSubscription(); });
         }
 
@@ -114,6 +117,9 @@ namespace SIPSorcery.SIP.App
 
                     m_exit = true;
                     m_attempts = 0;
+
+                    m_sipTransport.SIPTransportRequestReceived -= GotNotificationRequest;
+
                     ThreadPool.QueueUserWorkItem(delegate
                     { Subscribe(m_resourceURI, 0, m_sipEventPackage, m_subscribeCallID, null); });
                 }
@@ -124,40 +130,34 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public async Task GotNotificationRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        /// <summary>
+        /// This method handles incoming requests from the SIP transport instance. It may be working in
+        /// conjunction with other receivers on the same SIP transport so it should filter the requests
+        /// to identify the NOTIFY requests for this subscription.
+        /// </summary>
+        /// <param name="localSIPEndPoint">The local SIP end point the request was received on.</param>
+        /// <param name="remoteEndPoint">The remote SIP end point the request was received from.</param>
+        /// <param name="sipRequest">The SIP request.</param>
+        private async Task GotNotificationRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            try
+            if (sipRequest.Method == SIPMethodsEnum.NOTIFY && sipRequest.Header.CallId == m_subscribeCallID &&
+                 SIPEventPackageType.Parse(sipRequest.Header.Event) == m_sipEventPackage && sipRequest.Body != null)
             {
                 logger.LogDebug($"SIPNotifierClient GotNotificationRequest for {sipRequest.Method} {sipRequest.URI} {sipRequest.Header.CSeq}.");
 
                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                 await m_sipTransport.SendResponseAsync(okResponse).ConfigureAwait(false);
 
-                //logger.LogDebug(sipRequest.ToString());
-
-                if (sipRequest.Method == SIPMethodsEnum.NOTIFY && sipRequest.Header.CallId == m_subscribeCallID &&
-                     SIPEventPackageType.Parse(sipRequest.Header.Event) == m_sipEventPackage && sipRequest.Body != null)
+                if (sipRequest.Header.CSeq <= m_remoteCSeq)
                 {
-                    if (sipRequest.Header.CSeq <= m_remoteCSeq)
-                    {
-                        logger.LogWarning($"A duplicate NOTIFY request received by SIPNotifierClient for subscription Call-ID {m_subscribeCallID}.");
-                    }
-                    else
-                    {
-                        //logger.LogDebug("New dialog info notification request received.");
-                        m_remoteCSeq = sipRequest.Header.CSeq;
-                        NotificationReceived?.Invoke(m_sipEventPackage, sipRequest.Body);
-                    }
+                    logger.LogWarning($"A duplicate NOTIFY request received by SIPNotifierClient for subscription Call-ID {m_subscribeCallID}.");
                 }
                 else
                 {
-                    logger.LogWarning($"A request received by SIPNotifierClient did not match the subscription details, request Call-ID={sipRequest.Header.CallId}, subscribed Call-ID={m_subscribeCallID}.");
-                    logger.LogDebug(sipRequest.ToString());
+                    //logger.LogDebug("New dialog info notification request received.");
+                    m_remoteCSeq = sipRequest.Header.CSeq;
+                    NotificationReceived?.Invoke(m_sipEventPackage, sipRequest.Body);
                 }
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception GotNotificationRequest. " + excp.Message);
             }
         }
 
@@ -176,6 +176,8 @@ namespace SIPSorcery.SIP.App
             try
             {
                 logger.LogDebug($"SIPNotifierClient starting for {m_resourceURI} and event package {m_sipEventPackage}.");
+
+                
 
                 while (!m_exit)
                 {

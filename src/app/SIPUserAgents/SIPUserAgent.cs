@@ -520,23 +520,26 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void Hangup()
         {
-            m_cts.Cancel();
-
-            if (MediaSession != null && !MediaSession.IsClosed)
+            if (IsCallActive)
             {
-                MediaSession?.Close("call hungup");
+                m_cts.Cancel();
+
+                if (MediaSession != null && !MediaSession.IsClosed)
+                {
+                    MediaSession?.Close("call hungup");
+                }
+
+                if (m_sipDialogue != null && m_sipDialogue.DialogueState != SIPDialogueStateEnum.Terminated)
+                {
+                    m_sipDialogue.Hangup(m_transport, m_outboundProxy);
+                    m_byeTransaction = m_sipDialogue.m_byeTransaction;
+                }
+
+                IsOnLocalHold = false;
+                IsOnRemoteHold = false;
+
+                CallEnded();
             }
-
-            if (m_sipDialogue != null && m_sipDialogue.DialogueState != SIPDialogueStateEnum.Terminated)
-            {
-                m_sipDialogue.Hangup(m_transport, m_outboundProxy);
-                m_byeTransaction = m_sipDialogue.m_byeTransaction;
-            }
-
-            IsOnLocalHold = false;
-            IsOnRemoteHold = false;
-
-            CallEnded();
         }
 
         /// <summary>

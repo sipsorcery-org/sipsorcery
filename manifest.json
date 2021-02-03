@@ -465,7 +465,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.VideoTestPatternSource.html",
-          "hash": "XLpS+O2m6d21kHCzIx5tmg=="
+          "hash": "FZBADmjapDbKGE+1LPqOkg=="
         }
       },
       "is_incremental": false,
@@ -3201,7 +3201,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPNotifierClient.html",
-          "hash": "+nPlDhylJ1fvnHrxT0KLdg=="
+          "hash": "xi0rlVj3BphLhKjeJOQBsg=="
         }
       },
       "is_incremental": false,
@@ -3285,7 +3285,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "2IC+PEnl8LMhLFRxPzFbtQ=="
+          "hash": "7Sk5Wz3PI34e/9r76shiLA=="
         }
       },
       "is_incremental": false,
@@ -4317,7 +4317,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransport.html",
-          "hash": "bcIqUFEjoG3x8hrSgSC9Kw=="
+          "hash": "xR43Kot545UjMhWF+HMBhQ=="
         }
       },
       "is_incremental": false,
