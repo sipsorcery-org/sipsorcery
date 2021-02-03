@@ -96,6 +96,20 @@ namespace SIPSorcery.SIP.App
             m_resourceURI = resourceURI.CopyOf();
             m_subscribeCallID = CallProperties.CreateNewCallId();
             m_subscriptionFromTag = CallProperties.CreateNewTag();
+
+            sipTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                if (req.Method == SIPMethodsEnum.NOTIFY)
+                {
+                    await GotNotificationRequest(lep, rep, req);
+                }
+                else
+                {
+                    SIPResponse notSupported = SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                    await sipTransport.SendResponseAsync(notSupported);
+                }
+            };
+
         }
 
         public void Start()
