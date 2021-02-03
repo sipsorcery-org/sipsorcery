@@ -97,7 +97,7 @@ namespace SIPSorcery.SIP.App
             m_subscribeCallID = CallProperties.CreateNewCallId();
             m_subscriptionFromTag = CallProperties.CreateNewTag();
 
-            sipTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            m_sipTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
             {
                 if (req.Method == SIPMethodsEnum.NOTIFY)
                 {
