@@ -111,7 +111,8 @@ namespace SIPSorcery.SIP
                     if (sipResponse.Header.RSeq > 0)
                     {
                         // Send a PRACK for this provisional response.
-                        PRackRequest = GetAcknowledgeRequest(sipResponse, SIPMethodsEnum.PRACK, null, null);
+                        m_cseq++;
+                        PRackRequest = GetAcknowledgeRequest(sipResponse, SIPMethodsEnum.PRACK, m_cseq, null, null);
                         await SendRequestAsync(PRackRequest).ConfigureAwait(false);
                     }
                 }
@@ -151,7 +152,7 @@ namespace SIPSorcery.SIP
                 {
                     if (_sendOkAckManually == false)
                     {
-                        AckRequest = GetAcknowledgeRequest(sipResponse, SIPMethodsEnum.ACK, null, null);
+                        AckRequest = GetAcknowledgeRequest(sipResponse, SIPMethodsEnum.ACK, sipResponse.Header.CSeq, null, null);
                         await SendRequestAsync(AckRequest).ConfigureAwait(false);
                     }
                 }
@@ -192,9 +193,10 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="ackResponse">The response being acknowledged.</param>
         /// <param name="ackMethod">The acknowledgement request method, either ACK or PRACK.</param>
+        /// <param name="cseq">The SIP CSeq header value to set on the acknowledge request.</param>
         /// <param name="content">The optional content body for the ACK request.</param>
         /// <param name="contentType">The optional content type.</param>
-        private SIPRequest GetAcknowledgeRequest(SIPResponse ackResponse, SIPMethodsEnum ackMethod, string content, string contentType)
+        private SIPRequest GetAcknowledgeRequest(SIPResponse ackResponse, SIPMethodsEnum ackMethod, int cseq, string content, string contentType)
         {
             if (ackResponse.Header.To != null)
             {
@@ -218,7 +220,7 @@ namespace SIPSorcery.SIP
             }
 
             // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
-            var ackRequest = GetNewTxACKRequest(ackMethod, ackResponse, requestURI);
+            var ackRequest = GetNewTxACKRequest(ackMethod, cseq, ackResponse, requestURI);
 
             if (content.NotNullOrBlank())
             {
@@ -252,14 +254,12 @@ namespace SIPSorcery.SIP
         /// acceptable, the UAC core MUST generate a valid answer in the ACK and
         /// then send a BYE immediately.
         /// </remarks>
-        private SIPRequest GetNewTxACKRequest(SIPMethodsEnum method, SIPResponse sipResponse, SIPURI ackURI)
+        private SIPRequest GetNewTxACKRequest(SIPMethodsEnum method, int cseq, SIPResponse sipResponse, SIPURI ackURI)
         {
-            m_cseq++;
-
             SIPRequest acknowledgeRequest = new SIPRequest(method, ackURI.ToString());
             acknowledgeRequest.SetSendFromHints(sipResponse.LocalSIPEndPoint);
 
-            SIPHeader header = new SIPHeader(TransactionRequest.Header.From, sipResponse.Header.To, m_cseq, sipResponse.Header.CallId);
+            SIPHeader header = new SIPHeader(TransactionRequest.Header.From, sipResponse.Header.To, cseq, sipResponse.Header.CallId);
             header.CSeqMethod = method;
             header.AuthenticationHeader = TransactionRequest.Header.AuthenticationHeader;
             header.ProxySendFrom = TransactionRequest.Header.ProxySendFrom;
