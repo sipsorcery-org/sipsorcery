@@ -1454,33 +1454,39 @@ namespace SIPSorcery.SIP.App
             {
                 if (sipResponse.Body == null && ((MediaSession as RTPSession)?.IsStarted ?? false))
                 {
+                    // This is a special case where no SDP answer was received in the Ok response or the ACK 
+                    // BUT an SDP answer was supplied in a 183 Session Progress response. 
+                    // TODO: Find the specification that details this behaviour.
+                    // See https://github.com/sipsorcery-org/sipsorcery/issues/414.
                     m_sipDialogue = uac.SIPDialogue;
                     m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 
                     logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} was answered; no media update from early media.");
 
                     ClientCallAnswered?.Invoke(uac, sipResponse);
-                    return;
-                }
-                var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
-
-                if (setDescriptionResult == SetDescriptionResultEnum.OK)
-                {
-                    await MediaSession.Start().ConfigureAwait(false);
-
-                    m_sipDialogue = uac.SIPDialogue;
-                    m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
-
-                    logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} was answered.");
-
-                    ClientCallAnswered?.Invoke(uac, sipResponse);
                 }
                 else
                 {
-                    logger.LogWarning($"Call attempt was answered with {sipResponse.ShortDescription} but an {setDescriptionResult} error occurred setting the remote description.");
-                    ClientCallFailed?.Invoke(uac, $"Failed to set the remote description {setDescriptionResult}", sipResponse);
-                    uac.SIPDialogue?.Hangup(this.m_transport, this.m_outboundProxy);
-                    CallEnded();
+                    var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
+
+                    if (setDescriptionResult == SetDescriptionResultEnum.OK)
+                    {
+                        await MediaSession.Start().ConfigureAwait(false);
+
+                        m_sipDialogue = uac.SIPDialogue;
+                        m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+
+                        logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} was answered.");
+
+                        ClientCallAnswered?.Invoke(uac, sipResponse);
+                    }
+                    else
+                    {
+                        logger.LogWarning($"Call attempt was answered with {sipResponse.ShortDescription} but an {setDescriptionResult} error occurred setting the remote description.");
+                        ClientCallFailed?.Invoke(uac, $"Failed to set the remote description {setDescriptionResult}", sipResponse);
+                        uac.SIPDialogue?.Hangup(this.m_transport, this.m_outboundProxy);
+                        CallEnded();
+                    }
                 }
             }
             else

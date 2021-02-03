@@ -61,7 +61,7 @@ namespace demo
             ManualResetEvent exitMRE = new ManualResetEvent(false);
 
             var sipTransport = new SIPTransport();
-            //sipTransport.EnableTraceLogs();
+            // sipTransport.EnableTraceLogs();
             var userAgent = new SIPUserAgent(sipTransport, null, true);
 
             #region Set up a simple Windows Form with two picture boxes. 
