@@ -220,7 +220,10 @@ namespace SIPSorcery.Media
 
                     StampI420Buffer(_testI420Buffer, TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _frameCount);
 
-                    OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420);
+                    if (OnVideoSourceRawSample != null)
+                    {
+                        GenerateRawSample(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer);
+                    }
 
                     if (_videoEncoder != null && OnVideoSourceEncodedSample != null && !_formatManager.SelectedFormat.IsEmpty())
                     {
@@ -240,6 +243,17 @@ namespace SIPSorcery.Media
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Consumers subscribing to the <seealso cref="OnVideoSourceRawSample"/> will most likely want bitmap samples.
+        /// This method takes the I420 buffer for the test patten frame, converts it to BGR and fire the event.
+        /// </summary>
+        /// <param name="i420Buffer">The I420 buffer representing the test pattern.</param>
+        private void GenerateRawSample(int width, int height, byte[] i420Buffer)
+        {
+            var bgr = PixelConverter.I420toBGR(i420Buffer, width, height, out _);
+            OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, width, height,bgr, VideoPixelFormatsEnum.Bgr);
         }
 
         /// <summary>
