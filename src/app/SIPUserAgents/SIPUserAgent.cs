@@ -1449,6 +1449,16 @@ namespace SIPSorcery.SIP.App
         {
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
+                if (sipResponse.Body == null && ((MediaSession as RTPSession)?.IsStarted ?? false))
+                {
+                    m_sipDialogue = uac.SIPDialogue;
+                    m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+
+                    logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} was answered; no media update from early media.");
+
+                    ClientCallAnswered?.Invoke(uac, sipResponse);
+                    return;
+                }
                 var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
 
                 if (setDescriptionResult == SetDescriptionResultEnum.OK)
