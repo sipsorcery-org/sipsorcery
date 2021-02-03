@@ -80,7 +80,15 @@ namespace demo
                 Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
                 if (resp.Status == SIPResponseStatusCodesEnum.SessionProgress)
                 {
-                    await rtpSession.Start();
+                    if (resp.Body != null)
+                    {
+                        var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
+                        if (result == SetDescriptionResultEnum.OK)
+                        {
+                            await rtpSession.Start();
+                            Log.LogInformation($"Remote SDP set from in progress response. RTP session started.");
+                        }
+                    }
                 }
             };
             uac.CallFailed += (uac, err, resp) =>
@@ -94,14 +102,22 @@ namespace demo
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                    var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
-                    if (result == SetDescriptionResultEnum.OK)
+                    if (resp.Body != null)
                     {
-                        await rtpSession.Start();
+                        var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
+                        if (result == SetDescriptionResultEnum.OK)
+                        {
+                            await rtpSession.Start();
+                        }
+                        else
+                        {
+                            Log.LogWarning($"Failed to set remote description {result}.");
+                            uac.Hangup();
+                        }
                     }
-                    else
+                    else if(!rtpSession.IsStarted)
                     {
-                        Log.LogWarning($"Failed to set remote description {result}.");
+                        Log.LogWarning($"Failed to set get remote description in session progress or final response.");
                         uac.Hangup();
                     }
                 }
