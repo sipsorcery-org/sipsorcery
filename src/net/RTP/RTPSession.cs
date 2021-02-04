@@ -1000,6 +1000,11 @@ namespace SIPSorcery.Net
                     announcement.TIASBandwidth = track.MaximumBandwidth;
                 }
 
+                if (track.Ssrc != 0)
+                {
+                    announcement.SsrcAttributes.Add(new SDPSsrcAttribute(track.Ssrc, null, null));
+                }
+
                 sdp.Media.Add(announcement);
             }
 
