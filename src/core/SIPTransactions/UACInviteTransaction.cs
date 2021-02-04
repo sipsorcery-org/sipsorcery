@@ -27,7 +27,8 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP
 {
     /// <summary>
-    /// SIP transaction that initiates a call to a SIP User Agent Server. This transaction processes outgoing calls SENT by the application.
+    /// SIP transaction that initiates a call to a SIP User Agent Server. This transaction 
+    /// processes outgoing calls SENT by the application.
     /// </summary>
     public class UACInviteTransaction : SIPTransaction
     {
@@ -38,6 +39,7 @@ namespace SIPSorcery.SIP
         private bool _sendOkAckManually = false;
         internal bool _disablePrackSupport = false;
         internal bool m_sentPrack;                  // Records whether the PRACK request was sent.
+        private int m_cseq;
 
         /// <summary>
         /// Default constructor for user agent client INVITE transaction.
@@ -57,6 +59,7 @@ namespace SIPSorcery.SIP
             CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
             _sendOkAckManually = sendOkAckManually;
             _disablePrackSupport = disablePrackSupport;
+            m_cseq = sipRequest.Header.CSeq;
 
             TransactionFinalResponseReceived += UACInviteTransaction_TransactionFinalResponseReceived;
             TransactionInformationResponseReceived += UACInviteTransaction_TransactionInformationResponseReceived;
@@ -108,7 +111,8 @@ namespace SIPSorcery.SIP
                     if (sipResponse.Header.RSeq > 0)
                     {
                         // Send a PRACK for this provisional response.
-                        PRackRequest = GetPRackRequest(sipResponse);
+                        m_cseq++;
+                        PRackRequest = GetAcknowledgeRequest(sipResponse, SIPMethodsEnum.PRACK, m_cseq, null, null);
                         await SendRequestAsync(PRackRequest).ConfigureAwait(false);
                     }
                 }
@@ -148,7 +152,7 @@ namespace SIPSorcery.SIP
                 {
                     if (_sendOkAckManually == false)
                     {
-                        AckRequest = Get2xxAckRequest(null, null);
+                        AckRequest = GetAcknowledgeRequest(sipResponse, SIPMethodsEnum.ACK, sipResponse.Header.CSeq, null, null);
                         await SendRequestAsync(AckRequest).ConfigureAwait(false);
                     }
                 }
@@ -183,56 +187,54 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Sends the ACK request as a new transaction. This is required for 2xx responses.
+        /// Generates the ACK or PRACK request to acknoledge a response. This method generates the ACK requests 
+        /// for INVITE 2xx and PRACK for 1xx responses. The request needs to be sent as part of a new transaction. 
+        /// Note for constucting the ACK for INVITE >= 300 responses is <seealso cref="GetInTransactionACKRequest"/>.
         /// </summary>
+        /// <param name="ackResponse">The response being acknowledged.</param>
+        /// <param name="ackMethod">The acknowledgement request method, either ACK or PRACK.</param>
+        /// <param name="cseq">The SIP CSeq header value to set on the acknowledge request.</param>
         /// <param name="content">The optional content body for the ACK request.</param>
         /// <param name="contentType">The optional content type.</param>
-        private SIPRequest Get2xxAckRequest(string content, string contentType)
+        private SIPRequest GetAcknowledgeRequest(SIPResponse ackResponse, SIPMethodsEnum ackMethod, int cseq, string content, string contentType)
         {
-            try
+            if (ackResponse.Header.To != null)
             {
-                var sipResponse = m_transactionFinalResponse;
-
-                if (sipResponse.Header.To != null)
-                {
-                    m_remoteTag = sipResponse.Header.To.ToTag;
-                }
-
-                SIPURI ackURI = m_transactionRequest.URI;
-                if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
-                {
-                    ackURI = sipResponse.Header.Contact[0].ContactURI;
-                    // Don't mangle private contacts if there is a Record-Route header. If a proxy is putting private IP's in a Record-Route header that's its problem.
-                    if ((sipResponse.Header.RecordRoutes == null || sipResponse.Header.RecordRoutes.Length == 0)
-                        && IPSocket.IsPrivateAddress(ackURI.Host) && !sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
-                    {
-                        // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should mangle the contact. 
-                        SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom);
-                        ackURI.Host = remoteUASSIPEndPoint.GetIPEndPoint().ToString();
-                    }
-                }
-
-                // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
-                var ackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.ACK, sipResponse, ackURI);
-
-                if (content.NotNullOrBlank())
-                {
-                    ackRequest.Body = content;
-                    ackRequest.Header.ContentLength = ackRequest.Body.Length;
-                    ackRequest.Header.ContentType = contentType;
-                }
-
-                return ackRequest;
+                m_remoteTag = ackResponse.Header.To.ToTag;
             }
-            catch (Exception excp)
+
+            SIPURI requestURI = m_transactionRequest.URI.CopyOf();
+            if (ackResponse.Header.Contact?.Count > 0)
             {
-                logger.LogError($"Exception Get2xxAckRequest. {excp.Message}");
-                throw;
+                requestURI = ackResponse.Header.Contact[0].ContactURI;
+                // Don't mangle private contacts if there is a Record-Route header. If a proxy is putting private IP's 
+                // in a Record-Route header that's its problem.
+                if ((ackResponse.Header.RecordRoutes == null || ackResponse.Header.RecordRoutes.Length == 0)
+                    && IPSocket.IsPrivateAddress(requestURI.Host) && !ackResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
+                {
+                    // Setting the Proxy-ReceivedOn header is how an upstream proxy will let an agent know it should 
+                    // mangle the contact. 
+                    SIPEndPoint remoteUASSIPEndPoint = SIPEndPoint.ParseSIPEndPoint(ackResponse.Header.ProxyReceivedFrom);
+                    requestURI.Host = remoteUASSIPEndPoint.GetIPEndPoint().ToString();
+                }
             }
+
+            // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
+            var ackRequest = GetNewTxACKRequest(ackMethod, cseq, ackResponse, requestURI);
+
+            if (content.NotNullOrBlank())
+            {
+                ackRequest.Body = content;
+                ackRequest.Header.ContentLength = ackRequest.Body.Length;
+                ackRequest.Header.ContentType = contentType;
+            }
+
+            return ackRequest;
         }
 
         /// <summary>
-        /// New transaction ACK requests are for 2xx responses, i.e. INVITE accepted and dialogue being created.
+        /// New transaction ACK requests are for 2xx responses, i.e. INVITE accepted and 
+        /// dialogue being created.
         /// </summary>
         /// <remarks>
         /// From RFC 3261 Chapter 13.2.2.4 - ACK for 2xx final responses
@@ -252,30 +254,39 @@ namespace SIPSorcery.SIP
         /// acceptable, the UAC core MUST generate a valid answer in the ACK and
         /// then send a BYE immediately.
         /// </remarks>
-        private SIPRequest GetNewTransactionAcknowledgeRequest(SIPMethodsEnum method, SIPResponse sipResponse, SIPURI ackURI)
+        private SIPRequest GetNewTxACKRequest(SIPMethodsEnum method, int cseq, SIPResponse sipResponse, SIPURI ackURI)
         {
-            SIPRequest ackRequest = new SIPRequest(method, ackURI.ToString());
-            ackRequest.SetSendFromHints(sipResponse.LocalSIPEndPoint);
+            SIPRequest acknowledgeRequest = new SIPRequest(method, ackURI.ToString());
+            acknowledgeRequest.SetSendFromHints(sipResponse.LocalSIPEndPoint);
 
-            SIPHeader header = new SIPHeader(TransactionRequest.Header.From, sipResponse.Header.To, sipResponse.Header.CSeq, sipResponse.Header.CallId);
+            SIPHeader header = new SIPHeader(TransactionRequest.Header.From, sipResponse.Header.To, cseq, sipResponse.Header.CallId);
             header.CSeqMethod = method;
             header.AuthenticationHeader = TransactionRequest.Header.AuthenticationHeader;
-            header.ProxySendFrom = base.TransactionRequest.Header.ProxySendFrom;
+            header.ProxySendFrom = TransactionRequest.Header.ProxySendFrom;
 
             // If the UAS supplies a desired Record-Route list use that first. Otherwise fall back to any Route list used in the original transaction.
             if (sipResponse.Header.RecordRoutes != null)
             {
                 header.Routes = sipResponse.Header.RecordRoutes.Reversed();
             }
-            else if (base.TransactionRequest.Header.Routes != null)
+            else if (TransactionRequest.Header.Routes != null)
             {
-                header.Routes = base.TransactionRequest.Header.Routes;
+                header.Routes = TransactionRequest.Header.Routes;
             }
 
-            ackRequest.Header = header;
-            ackRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
+            acknowledgeRequest.Header = header;
+            acknowledgeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
-            return ackRequest;
+            if(method == SIPMethodsEnum.PRACK)
+            {
+                m_sentPrack = true;
+
+                acknowledgeRequest.Header.RAckRSeq = sipResponse.Header.RSeq;
+                acknowledgeRequest.Header.RAckCSeq = sipResponse.Header.CSeq;
+                acknowledgeRequest.Header.RAckCSeqMethod = sipResponse.Header.CSeqMethod;
+            }
+
+            return acknowledgeRequest;
         }
 
         /// <summary>
@@ -333,25 +344,6 @@ namespace SIPSorcery.SIP
         {
             UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
             CDR?.Cancelled(cancelReason);
-        }
-
-        /// <summary>
-        /// Sends a PRACK request to acknowledge a provisional response as per RFC3262.
-        /// </summary>
-        /// <param name="progressResponse">The provisional response being acknowledged.</param>
-        public SIPRequest GetPRackRequest(SIPResponse progressResponse)
-        {
-            m_sentPrack = true;
-
-            // PRACK requests create a new transaction and get routed based on SIP request fields.
-            var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI);
-
-            prackRequest.Header.RAckRSeq = progressResponse.Header.RSeq;
-            prackRequest.Header.RAckCSeq = progressResponse.Header.CSeq;
-            prackRequest.Header.RAckCSeqMethod = progressResponse.Header.CSeqMethod;
-            prackRequest.Header.CSeq++;
-
-            return prackRequest;
         }
     }
 }
