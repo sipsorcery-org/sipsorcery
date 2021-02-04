@@ -39,7 +39,7 @@ namespace demo
             AddConsoleLogger(LogEventLevel.Verbose);
 
             var sipTransport = new SIPTransport();
-            //sipTransport.EnableTraceLogs();
+            sipTransport.EnableTraceLogs();
 
             var mwiURI = SIPURI.ParseSIPURIRelaxed($"{USERNAME}@{SERVER}");
             int expiry = 180;

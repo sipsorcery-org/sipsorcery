@@ -23,6 +23,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
+using Serilog.Events;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -48,7 +49,7 @@ namespace demo
             bool isCallHungup = false;
             bool hasCallFailed = false;
 
-            Log = AddConsoleLogger();
+            Log = AddConsoleLogger(LogEventLevel.Verbose);
 
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
             if (args != null && args.Length > 0)
@@ -63,7 +64,7 @@ namespace demo
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
             //sipTransport.PreferIPv6NameResolution = true;
-            EnableTraceLogs(sipTransport);
+            sipTransport.EnableTraceLogs();
 
             var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
             audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA || x.Codec == AudioCodecsEnum.PCMU);
@@ -200,53 +201,14 @@ namespace demo
         }
 
         /// <summary>
-        /// Enable detailed SIP log messages.
-        /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
-        {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-        }
-
-        /// <summary>
         /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger(
+            LogEventLevel logLevel = LogEventLevel.Debug)
         {
             var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(logLevel)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(serilogLogger);
