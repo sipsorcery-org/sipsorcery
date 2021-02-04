@@ -39,9 +39,7 @@ namespace demo
 {
     class Program
     {
-        //private static string DESTINATION = "videotest@sipsorcery.cloud";
-        //private static string DESTINATION = "aaron@192.168.0.50:6060";
-        private static string DESTINATION = "101@192.168.0.48";
+        private static string DESTINATION = "echo@sipsorcery.cloud";
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
 
