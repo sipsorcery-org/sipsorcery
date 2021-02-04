@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: Exmaple of connecting to the Janus WebRTC Server and creating a
+// Description: Example of connecting to the Janus WebRTC Server and creating a
 // WebRTC echo connection.
 //
 // Author(s):
