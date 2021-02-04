@@ -38004,19 +38004,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.UACInviteTransaction.CancelCall
   nameWithType: UACInviteTransaction.CancelCall
-- uid: SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest(SIPSorcery.SIP.SIPResponse)
-  name: GetPRackRequest(SIPResponse)
-  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_GetPRackRequest_SIPSorcery_SIP_SIPResponse_
-  commentId: M:SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest(SIPSorcery.SIP.SIPResponse)
-  fullName: SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest(SIPSorcery.SIP.SIPResponse)
-  nameWithType: UACInviteTransaction.GetPRackRequest(SIPResponse)
-- uid: SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest*
-  name: GetPRackRequest
-  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_GetPRackRequest_
-  commentId: Overload:SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest
-  nameWithType: UACInviteTransaction.GetPRackRequest
 - uid: SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest
   name: SendInviteRequest()
   href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_SendInviteRequest
