@@ -29,6 +29,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
+using Serilog.Events;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -39,9 +40,7 @@ namespace demo
 {
     class Program
     {
-        //private static string DESTINATION = "videotest@sipsorcery.cloud";
-        //private static string DESTINATION = "aaron@192.168.0.50:6060";
-        private static string DESTINATION = "101@192.168.0.48";
+        private static string DESTINATION = "echo@sipsorcery.cloud";
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
 
@@ -61,7 +60,7 @@ namespace demo
             ManualResetEvent exitMRE = new ManualResetEvent(false);
 
             var sipTransport = new SIPTransport();
-            // sipTransport.EnableTraceLogs();
+            sipTransport.EnableTraceLogs();
             var userAgent = new SIPUserAgent(sipTransport, null, true);
 
             #region Set up a simple Windows Form with two picture boxes. 
@@ -259,11 +258,12 @@ namespace demo
         /// <summary>
         /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger(
+            LogEventLevel logLevel = LogEventLevel.Debug)
         {
             var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(logLevel)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(serilogLogger);
