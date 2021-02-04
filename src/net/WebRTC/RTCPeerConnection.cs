@@ -1009,6 +1009,11 @@ namespace SIPSorcery.Net
                         iceCandidatesAdded = true;
                     }
 
+                    if (track.Ssrc != 0)
+                    {
+                        announcement.SsrcAttributes.Add(new SDPSsrcAttribute(track.Ssrc, null, null));
+                    }
+
                     offerSdp.Media.Add(announcement);
                 }
             }
