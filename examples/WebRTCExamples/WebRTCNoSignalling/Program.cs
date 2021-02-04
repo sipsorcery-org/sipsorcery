@@ -193,7 +193,7 @@ namespace WebRTCServer
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {
