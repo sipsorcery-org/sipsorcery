@@ -625,7 +625,7 @@ namespace SIPSorcery.SIP.App
             updateHeader.Routes = inviteHeader.Routes;
             updateHeader.ProxySendFrom = inviteHeader.ProxySendFrom;
 
-            SIPViaHeader viaHeader = new SIPViaHeader(inviteRequest.LocalSIPEndPoint, CallProperties.CreateBranchId());
+            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), CallProperties.CreateBranchId());
             updateHeader.Vias.PushViaHeader(viaHeader);
 
             return updateRequest;
