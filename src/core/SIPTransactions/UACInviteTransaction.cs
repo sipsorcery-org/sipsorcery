@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -329,7 +330,7 @@ namespace SIPSorcery.SIP
 
             ackRequest.Header = header;
 
-            SIPViaHeader viaHeader = new SIPViaHeader(sipResponse.LocalSIPEndPoint, sipResponse.Header.Vias.TopViaHeader.Branch);
+            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), sipResponse.Header.Vias.TopViaHeader.Branch);
             ackRequest.Header.Vias.PushViaHeader(viaHeader);
 
             return ackRequest;
