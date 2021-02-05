@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
+using RestSharp;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
@@ -34,25 +35,20 @@ namespace demo
     class Program
     {
         private const string JANUS_BASE_URI = "http://192.168.0.39:8088/janus/";
+        //private const string WEBRTC_SIGNALING_JANUS_URL = "https://localhost:5001/api/webrtcsignal/janus";
+        private const string WEBRTC_SIGNALING_JANUS_URL = "https://sipsorcery.cloud/api/webrtcsignal/janus";
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
 
+        private static bool _useJanusRest = false;
+
         static async Task Main()
         {
-            Console.WriteLine("Janus + SIPSorcery Echo Test Demo");
+            Console.WriteLine("Janus Echo Test Demo");
 
             AddConsoleLogger();
 
             CancellationTokenSource cts = new CancellationTokenSource();
-            JanusRestClient janusClient = new JanusRestClient(
-                JANUS_BASE_URI,
-                SIPSorcery.LogFactory.CreateLogger<JanusRestClient>(), 
-                cts.Token);
-
-            var serverInfo = await janusClient.GetServerInfo().ConfigureAwait(false);
-            Console.WriteLine($"Name={serverInfo.name}.");
-            Console.WriteLine($"Version={serverInfo.version}.");
-
             bool isFormActivated = false;
 
             #region Set up a simple Windows Form with two picture boxes. 
@@ -106,7 +102,7 @@ namespace demo
 
                 if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
                 {
-                    await videoSource.CloseVideo();
+                    await videoSource.CloseVideo().ConfigureAwait(false);
                     videoSource.Dispose();
                 }
             };
@@ -158,16 +154,57 @@ namespace demo
             await pc.setLocalDescription(new RTCSessionDescriptionInit { type = RTCSdpType.offer, sdp = offer.ToString() }).ConfigureAwait(false);
             Console.WriteLine($"SDP Offer: {pc.localDescription.sdp}");
 
-            await videoSource.StartVideo();
+            await videoSource.StartVideo().ConfigureAwait(false);
 
-            janusClient.OnJanusEvent += async (resp) =>
+            if (_useJanusRest)
             {
-                if (resp.jsep != null)
-                {
-                    Console.WriteLine($"get event jsep={resp.jsep.type}.");
+                JanusRestClient janusClient = new JanusRestClient(
+                    JANUS_BASE_URI,
+                    SIPSorcery.LogFactory.CreateLogger<JanusRestClient>(),
+                    cts.Token);
 
-                    Console.WriteLine($"SDP Answer: {resp.jsep.sdp}");
-                    var result = pc.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = resp.jsep.sdp });
+                //var serverInfo = await janusClient.GetServerInfo().ConfigureAwait(false);
+                //Console.WriteLine($"Name={serverInfo.name}.");
+                //Console.WriteLine($"Version={serverInfo.version}.");
+
+                janusClient.OnJanusEvent += async (resp) =>
+                {
+                    if (resp.jsep != null)
+                    {
+                        Console.WriteLine($"get event jsep={resp.jsep.type}.");
+
+                        Console.WriteLine($"SDP Answer: {resp.jsep.sdp}");
+                        var result = pc.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = resp.jsep.sdp });
+                        Console.WriteLine($"SDP Answer: {pc.remoteDescription.sdp}");
+
+                        if (result == SetDescriptionResultEnum.OK)
+                        {
+                            Console.WriteLine("Starting peer connection.");
+                            await pc.Start().ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Error setting remote SDP description {result}.");
+                        }
+                    }
+                };
+
+                await janusClient.StartSession().ConfigureAwait(false);
+                await janusClient.StartEcho(offer.ToString()).ConfigureAwait(false);
+            }
+            else
+            {
+                //RestClient signalingClient = new RestClient($"{WEBRTC_SIGNALING_JANUS_URL}?duration=15");
+                RestClient signalingClient = new RestClient($"{WEBRTC_SIGNALING_JANUS_URL}");
+                var echoTestReq = new RestRequest(string.Empty, Method.POST, DataFormat.Json);
+                echoTestReq.AddJsonBody(pc.localDescription.sdp.ToString());
+                var echoTestResp = await signalingClient.ExecutePostAsync<string>(echoTestReq).ConfigureAwait(false);
+
+                if (echoTestResp.IsSuccessful)
+                {
+                    var sdpAnswer = echoTestResp.Data;
+                    Console.WriteLine($"SDP Answer: {sdpAnswer}");
+                    var result = pc.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = sdpAnswer });
                     Console.WriteLine($"SDP Answer: {pc.remoteDescription.sdp}");
 
                     if (result == SetDescriptionResultEnum.OK)
@@ -180,17 +217,19 @@ namespace demo
                         Console.WriteLine($"Error setting remote SDP description {result}.");
                     }
                 }
-            };
-
-            await janusClient.StartSession().ConfigureAwait(false);
-            await janusClient.StartEcho(offer.ToString()).ConfigureAwait(false);
+                else
+                {
+                    Console.WriteLine($"Janus echo test plugin request failed {echoTestResp.ErrorMessage}.");
+                }
+            }
 
             Console.WriteLine("Press any key to exit...");
             Console.ReadLine();
 
             isFormActivated = false;
             cts.Cancel();
-            await janusClient.DestroySession().ConfigureAwait(false);
+
+            //await janusClient.DestroySession().ConfigureAwait(false);
         }
 
         /// <summary>
