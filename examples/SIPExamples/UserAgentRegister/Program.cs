@@ -30,7 +30,7 @@ namespace SIPSorcery.Register
     {
         private const string USERNAME = "user";
         private const string PASSWORD = "password";
-        private const string DOMAIN = "sipsorcery.cloud";
+        private const string DOMAIN = "sips:sipsorcery.cloud";
         private const int EXPIRY = 120;
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
@@ -50,9 +50,9 @@ namespace SIPSorcery.Register
             var regUserAgent = new SIPRegistrationUserAgent(sipTransport, USERNAME, PASSWORD, DOMAIN, EXPIRY);
 
             // Event handlers for the different stages of the registration.
-            regUserAgent.RegistrationFailed += (uri, err) => Log.LogError($"{uri}: {err}");
+            regUserAgent.RegistrationFailed += (uri, err) => Log.LogWarning($"{uri}: {err}");
             regUserAgent.RegistrationTemporaryFailure += (uri, msg) => Log.LogWarning($"{uri}: {msg}");
-            regUserAgent.RegistrationRemoved += (uri) => Log.LogError($"{uri} registration failed.");
+            regUserAgent.RegistrationRemoved += (uri) => Log.LogWarning($"{uri} registration failed.");
             regUserAgent.RegistrationSuccessful += (uri) => Log.LogInformation($"{uri} registration succeeded.");
 
             // Start the thread to perform the initial registration and then periodically resend it.

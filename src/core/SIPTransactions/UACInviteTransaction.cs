@@ -35,7 +35,7 @@ namespace SIPSorcery.SIP
     {
         public event SIPTransactionResponseReceivedDelegate UACInviteTransactionInformationResponseReceived;
         public event SIPTransactionResponseReceivedDelegate UACInviteTransactionFinalResponseReceived;
-        public event SIPTransactionTimedOutDelegate UACInviteTransactionTimedOut;
+        public event SIPTransactionFailedDelegate UACInviteTransactionFailed;
 
         private bool _sendOkAckManually = false;
         internal bool _disablePrackSupport = false;
@@ -64,18 +64,8 @@ namespace SIPSorcery.SIP
 
             TransactionFinalResponseReceived += UACInviteTransaction_TransactionFinalResponseReceived;
             TransactionInformationResponseReceived += UACInviteTransaction_TransactionInformationResponseReceived;
-            TransactionTimedOut += UACInviteTransaction_TransactionTimedOut;
+            TransactionFailed += UACInviteTransaction_TransactionFailed;
             TransactionRequestReceived += UACInviteTransaction_TransactionRequestReceived;
-            TransactionRemoved += UACInviteTransaction_TransactionRemoved;
-        }
-
-        private void UACInviteTransaction_TransactionRemoved(SIPTransaction transaction)
-        {
-            // Remove event handlers.
-            UACInviteTransactionInformationResponseReceived = null;
-            UACInviteTransactionFinalResponseReceived = null;
-            UACInviteTransactionTimedOut = null;
-            CDR = null;
         }
 
         public void SendInviteRequest()
@@ -89,18 +79,10 @@ namespace SIPSorcery.SIP
             return Task.FromResult(SocketError.Fault);
         }
 
-        private void UACInviteTransaction_TransactionTimedOut(SIPTransaction sipTransaction)
+        private void UACInviteTransaction_TransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
-            try
-            {
-                UACInviteTransactionTimedOut?.Invoke(sipTransaction);
-                CDR?.TimedOut();
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception UACInviteTransaction_TransactionTimedOut. " + excp.Message);
-                throw;
-            }
+            UACInviteTransactionFailed?.Invoke(sipTransaction, failureReason);
+            CDR?.TimedOut();
         }
 
         private async Task<SocketError> UACInviteTransaction_TransactionInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
@@ -188,9 +170,9 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Generates the ACK or PRACK request to acknoledge a response. This method generates the ACK requests 
+        /// Generates the ACK or PRACK request to acknowledge a response. This method generates the ACK requests 
         /// for INVITE 2xx and PRACK for 1xx responses. The request needs to be sent as part of a new transaction. 
-        /// Note for constucting the ACK for INVITE >= 300 responses is <seealso cref="GetInTransactionACKRequest"/>.
+        /// Note for constructing the ACK for INVITE >= 300 responses is <seealso cref="GetInTransactionACKRequest"/>.
         /// </summary>
         /// <param name="ackResponse">The response being acknowledged.</param>
         /// <param name="ackMethod">The acknowledgement request method, either ACK or PRACK.</param>
@@ -278,7 +260,7 @@ namespace SIPSorcery.SIP
             acknowledgeRequest.Header = header;
             acknowledgeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
-            if(method == SIPMethodsEnum.PRACK)
+            if (method == SIPMethodsEnum.PRACK)
             {
                 m_sentPrack = true;
 

@@ -198,7 +198,7 @@
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionFinalResponseReceived">SIPTransaction.TransactionFinalResponseReceived</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionTimedOut">SIPTransaction.TransactionTimedOut</a>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionFailed">SIPTransaction.TransactionFailed</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_OnAckRequestReceived">SIPTransaction.OnAckRequestReceived</a>
@@ -214,9 +214,6 @@
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionTraceMessage">SIPTransaction.TransactionTraceMessage</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionRemoved">SIPTransaction.TransactionRemoved</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_sipTransport">SIPTransaction.m_sipTransport</a>
@@ -262,12 +259,6 @@
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_OnTimedOutProvisionalResponse">SIPTransaction.OnTimedOutProvisionalResponse()</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_FireTransactionTimedOut">SIPTransaction.FireTransactionTimedOut()</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_FireTransactionRemoved">SIPTransaction.FireTransactionRemoved()</a>
     </div>
     <div>
       <span class="xref">System.Object.Equals(System.Object)</span>
@@ -348,7 +339,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPNonInviteTransaction_SendRequest.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIPTransactions/SIPNonInviteTransaction.cs/#L89">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIPTransactions/SIPNonInviteTransaction.cs/#L77">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPNonInviteTransaction_SendRequest_" data-uid="SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest*"></a>
   <h4 id="SIPSorcery_SIP_SIPNonInviteTransaction_SendRequest" data-uid="SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest">SendRequest()</h4>
@@ -363,7 +354,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPNonInviteTransaction_SendResponse_SIPSorcery_SIP_SIPResponse_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPNonInviteTransaction.SendResponse(SIPSorcery.SIP.SIPResponse)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIPTransactions/SIPNonInviteTransaction.cs/#L94">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIPTransactions/SIPNonInviteTransaction.cs/#L82">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPNonInviteTransaction_SendResponse_" data-uid="SIPSorcery.SIP.SIPNonInviteTransaction.SendResponse*"></a>
   <h4 id="SIPSorcery_SIP_SIPNonInviteTransaction_SendResponse_SIPSorcery_SIP_SIPResponse_" data-uid="SIPSorcery.SIP.SIPNonInviteTransaction.SendResponse(SIPSorcery.SIP.SIPResponse)">SendResponse(SIPResponse)</h4>
@@ -417,6 +408,35 @@
     <tbody>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPTransactionRequestReceivedDelegate.html">SIPTransactionRequestReceivedDelegate</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPNonInviteTransaction_NonInviteTransactionFailed.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionFailed%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIPTransactions/SIPNonInviteTransaction.cs/#L26">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_SIPNonInviteTransaction_NonInviteTransactionFailed" data-uid="SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionFailed">NonInviteTransactionFailed</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event SIPTransactionFailedDelegate NonInviteTransactionFailed</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPTransactionFailedDelegate.html">SIPTransactionFailedDelegate</a></td>
         <td></td>
       </tr>
     </tbody>
@@ -504,35 +524,6 @@
     <tbody>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPTransactionRequestRetransmitDelegate.html">SIPTransactionRequestRetransmitDelegate</a></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPNonInviteTransaction_NonInviteTransactionTimedOut.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionTimedOut%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIPTransactions/SIPNonInviteTransaction.cs/#L26">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_SIP_SIPNonInviteTransaction_NonInviteTransactionTimedOut" data-uid="SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionTimedOut">NonInviteTransactionTimedOut</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public event SIPTransactionTimedOutDelegate NonInviteTransactionTimedOut</code></pre>
-  </div>
-  <h5 class="eventType">Event Type</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.SIPTransactionTimedOutDelegate.html">SIPTransactionTimedOutDelegate</a></td>
         <td></td>
       </tr>
     </tbody>

@@ -78,7 +78,7 @@ namespace SIPSorcery
         /// </summary>
         private static readonly List<SIPRegisterAccount> _sipAccounts = new List<SIPRegisterAccount>
         {
-            new SIPRegisterAccount( "softphonesample", "password", "sipsorcery.com", 120)
+            new SIPRegisterAccount( "user", "password", "sipsorcery.cloud", 120)
         };
 
         private static SIPTransport _sipTransport;
@@ -116,7 +116,7 @@ namespace SIPSorcery
             _sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(IPAddress.Any, SIPS_LISTEN_PORT)));
             // If it's desired to listen on a single IP address use the equivalent of:
             //_sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Parse("192.168.11.50"), SIP_LISTEN_PORT)));
-            EnableTraceLogs(_sipTransport, true);
+            _sipTransport.EnableTraceLogs();
 
             _sipTransport.SIPTransportRequestReceived += OnRequest;
 
@@ -302,7 +302,7 @@ namespace SIPSorcery
             List<AudioCodecsEnum> codecs = new List<AudioCodecsEnum> { AudioCodecsEnum.PCMU, AudioCodecsEnum.PCMA, AudioCodecsEnum.G722 };
 
             var audioSource = AudioSourcesEnum.SineWave;
-            if (string.IsNullOrEmpty(dst) || !Enum.IsDefined(typeof(AudioSourcesEnum), dst) || !Enum.TryParse(dst, out audioSource))
+            if (string.IsNullOrEmpty(dst) || !Enum.TryParse(dst, out audioSource))
             {
                 audioSource = AudioSourcesEnum.Music;
             }
@@ -379,7 +379,7 @@ namespace SIPSorcery
                     ua.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
                     ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
                     ua.OnRtpEvent += (evt, hdr) => Log.LogDebug($"rtp event {evt.EventID}, duration {evt.Duration}, end of event {evt.EndOfEvent}, timestamp {hdr.Timestamp}, marker {hdr.MarkerBit}.");
-                    ua.OnTransactionTraceMessage += (tx, msg) => Log.LogDebug($"uas tx {tx.TransactionId}: {msg}");
+                    //ua.OnTransactionTraceMessage += (tx, msg) => Log.LogDebug($"uas tx {tx.TransactionId}: {msg}");
                     ua.ServerCallRingTimeout += (uas) =>
                     {
                         Log.LogWarning($"Incoming call timed out in {uas.ClientTransaction.TransactionState} state waiting for client ACK, terminating.");
@@ -466,78 +466,6 @@ namespace SIPSorcery
 
                 _registrations.TryAdd($"{sipAccount.Username}@{sipAccount.Domain}", regUserAgent);
             }
-        }
-
-        /// <summary>
-        /// Enable detailed SIP log messages.
-        /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport, bool fullSIP)
-        {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
-
-                if (!fullSIP)
-                {
-                    Log.LogDebug(req.StatusLine);
-                }
-                else
-                {
-                    Log.LogDebug(req.ToString());
-                }
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
-
-                if (!fullSIP)
-                {
-                    Log.LogDebug(req.StatusLine);
-                }
-                else
-                {
-                    Log.LogDebug(req.ToString());
-                }
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
-
-                if (!fullSIP)
-                {
-                    Log.LogDebug(resp.ShortDescription);
-                }
-                else
-                {
-                    Log.LogDebug(resp.ToString());
-                }
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
-
-                if (!fullSIP)
-                {
-                    Log.LogDebug(resp.ShortDescription);
-                }
-                else
-                {
-                    Log.LogDebug(resp.ToString());
-                }
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
         }
 
         /// <summary>

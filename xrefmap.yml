@@ -25539,12 +25539,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.SIPDialogue
   nameWithType: ISIPServerUserAgent.SIPDialogue
-- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.TransactionComplete
-  name: TransactionComplete
-  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_TransactionComplete
-  commentId: E:SIPSorcery.SIP.App.ISIPServerUserAgent.TransactionComplete
-  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.TransactionComplete
-  nameWithType: ISIPServerUserAgent.TransactionComplete
 - uid: SIPSorcery.SIP.App.SdpType
   name: SdpType
   href: api/SIPSorcery.SIP.App.SdpType.html
@@ -27464,12 +27458,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SIPDialogue
   nameWithType: SIPServerUserAgent.SIPDialogue
-- uid: SIPSorcery.SIP.App.SIPServerUserAgent.TransactionComplete
-  name: TransactionComplete
-  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_TransactionComplete
-  commentId: E:SIPSorcery.SIP.App.SIPServerUserAgent.TransactionComplete
-  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.TransactionComplete
-  nameWithType: SIPServerUserAgent.TransactionComplete
 - uid: SIPSorcery.SIP.App.SIPUASDelegate
   name: SIPUASDelegate
   href: api/SIPSorcery.SIP.App.SIPUASDelegate.html
@@ -33170,6 +33158,12 @@ references:
   commentId: E:SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteRequestReceived
   fullName: SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteRequestReceived
   nameWithType: SIPNonInviteTransaction.NonInviteRequestReceived
+- uid: SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionFailed
+  name: NonInviteTransactionFailed
+  href: api/SIPSorcery.SIP.SIPNonInviteTransaction.html#SIPSorcery_SIP_SIPNonInviteTransaction_NonInviteTransactionFailed
+  commentId: E:SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionFailed
+  fullName: SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionFailed
+  nameWithType: SIPNonInviteTransaction.NonInviteTransactionFailed
 - uid: SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionFinalResponseReceived
   name: NonInviteTransactionFinalResponseReceived
   href: api/SIPSorcery.SIP.SIPNonInviteTransaction.html#SIPSorcery_SIP_SIPNonInviteTransaction_NonInviteTransactionFinalResponseReceived
@@ -33188,12 +33182,6 @@ references:
   commentId: E:SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionRequestRetransmit
   fullName: SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionRequestRetransmit
   nameWithType: SIPNonInviteTransaction.NonInviteTransactionRequestRetransmit
-- uid: SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionTimedOut
-  name: NonInviteTransactionTimedOut
-  href: api/SIPSorcery.SIP.SIPNonInviteTransaction.html#SIPSorcery_SIP_SIPNonInviteTransaction_NonInviteTransactionTimedOut
-  commentId: E:SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionTimedOut
-  fullName: SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionTimedOut
-  nameWithType: SIPNonInviteTransaction.NonInviteTransactionTimedOut
 - uid: SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest
   name: SendRequest()
   href: api/SIPSorcery.SIP.SIPNonInviteTransaction.html#SIPSorcery_SIP_SIPNonInviteTransaction_SendRequest
@@ -35674,32 +35662,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransaction.DeliveryPending
   fullName: SIPSorcery.SIP.SIPTransaction.DeliveryPending
   nameWithType: SIPTransaction.DeliveryPending
-- uid: SIPSorcery.SIP.SIPTransaction.FireTransactionRemoved
-  name: FireTransactionRemoved()
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_FireTransactionRemoved
-  commentId: M:SIPSorcery.SIP.SIPTransaction.FireTransactionRemoved
-  fullName: SIPSorcery.SIP.SIPTransaction.FireTransactionRemoved()
-  nameWithType: SIPTransaction.FireTransactionRemoved()
-- uid: SIPSorcery.SIP.SIPTransaction.FireTransactionRemoved*
-  name: FireTransactionRemoved
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_FireTransactionRemoved_
-  commentId: Overload:SIPSorcery.SIP.SIPTransaction.FireTransactionRemoved
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransaction.FireTransactionRemoved
-  nameWithType: SIPTransaction.FireTransactionRemoved
-- uid: SIPSorcery.SIP.SIPTransaction.FireTransactionTimedOut
-  name: FireTransactionTimedOut()
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_FireTransactionTimedOut
-  commentId: M:SIPSorcery.SIP.SIPTransaction.FireTransactionTimedOut
-  fullName: SIPSorcery.SIP.SIPTransaction.FireTransactionTimedOut()
-  nameWithType: SIPTransaction.FireTransactionTimedOut()
-- uid: SIPSorcery.SIP.SIPTransaction.FireTransactionTimedOut*
-  name: FireTransactionTimedOut
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_FireTransactionTimedOut_
-  commentId: Overload:SIPSorcery.SIP.SIPTransaction.FireTransactionTimedOut
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransaction.FireTransactionTimedOut
-  nameWithType: SIPTransaction.FireTransactionTimedOut
 - uid: SIPSorcery.SIP.SIPTransaction.GetInfoResponse(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponseStatusCodesEnum)
   name: GetInfoResponse(SIPRequest, SIPResponseStatusCodesEnum)
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_GetInfoResponse_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponseStatusCodesEnum_
@@ -36016,6 +35978,12 @@ references:
   commentId: E:SIPSorcery.SIP.SIPTransaction.TransactionDuplicateResponse
   fullName: SIPSorcery.SIP.SIPTransaction.TransactionDuplicateResponse
   nameWithType: SIPTransaction.TransactionDuplicateResponse
+- uid: SIPSorcery.SIP.SIPTransaction.TransactionFailed
+  name: TransactionFailed
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionFailed
+  commentId: E:SIPSorcery.SIP.SIPTransaction.TransactionFailed
+  fullName: SIPSorcery.SIP.SIPTransaction.TransactionFailed
+  nameWithType: SIPTransaction.TransactionFailed
 - uid: SIPSorcery.SIP.SIPTransaction.TransactionFinalResponse
   name: TransactionFinalResponse
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionFinalResponse
@@ -36054,12 +36022,6 @@ references:
   commentId: E:SIPSorcery.SIP.SIPTransaction.TransactionInformationResponseReceived
   fullName: SIPSorcery.SIP.SIPTransaction.TransactionInformationResponseReceived
   nameWithType: SIPTransaction.TransactionInformationResponseReceived
-- uid: SIPSorcery.SIP.SIPTransaction.TransactionRemoved
-  name: TransactionRemoved
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionRemoved
-  commentId: E:SIPSorcery.SIP.SIPTransaction.TransactionRemoved
-  fullName: SIPSorcery.SIP.SIPTransaction.TransactionRemoved
-  nameWithType: SIPTransaction.TransactionRemoved
 - uid: SIPSorcery.SIP.SIPTransaction.TransactionRequest
   name: TransactionRequest
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionRequest
@@ -36130,12 +36092,6 @@ references:
   commentId: E:SIPSorcery.SIP.SIPTransaction.TransactionStateChanged
   fullName: SIPSorcery.SIP.SIPTransaction.TransactionStateChanged
   nameWithType: SIPTransaction.TransactionStateChanged
-- uid: SIPSorcery.SIP.SIPTransaction.TransactionTimedOut
-  name: TransactionTimedOut
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionTimedOut
-  commentId: E:SIPSorcery.SIP.SIPTransaction.TransactionTimedOut
-  fullName: SIPSorcery.SIP.SIPTransaction.TransactionTimedOut
-  nameWithType: SIPTransaction.TransactionTimedOut
 - uid: SIPSorcery.SIP.SIPTransaction.TransactionTraceMessage
   name: TransactionTraceMessage
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionTraceMessage
@@ -36180,12 +36136,12 @@ references:
   commentId: T:SIPSorcery.SIP.SIPTransactionCancelledDelegate
   fullName: SIPSorcery.SIP.SIPTransactionCancelledDelegate
   nameWithType: SIPTransactionCancelledDelegate
-- uid: SIPSorcery.SIP.SIPTransactionRemovedDelegate
-  name: SIPTransactionRemovedDelegate
-  href: api/SIPSorcery.SIP.SIPTransactionRemovedDelegate.html
-  commentId: T:SIPSorcery.SIP.SIPTransactionRemovedDelegate
-  fullName: SIPSorcery.SIP.SIPTransactionRemovedDelegate
-  nameWithType: SIPTransactionRemovedDelegate
+- uid: SIPSorcery.SIP.SIPTransactionFailedDelegate
+  name: SIPTransactionFailedDelegate
+  href: api/SIPSorcery.SIP.SIPTransactionFailedDelegate.html
+  commentId: T:SIPSorcery.SIP.SIPTransactionFailedDelegate
+  fullName: SIPSorcery.SIP.SIPTransactionFailedDelegate
+  nameWithType: SIPTransactionFailedDelegate
 - uid: SIPSorcery.SIP.SIPTransactionRequestReceivedDelegate
   name: SIPTransactionRequestReceivedDelegate
   href: api/SIPSorcery.SIP.SIPTransactionRequestReceivedDelegate.html
@@ -36264,12 +36220,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransactionStatesEnum.Trying
   fullName: SIPSorcery.SIP.SIPTransactionStatesEnum.Trying
   nameWithType: SIPTransactionStatesEnum.Trying
-- uid: SIPSorcery.SIP.SIPTransactionTimedOutDelegate
-  name: SIPTransactionTimedOutDelegate
-  href: api/SIPSorcery.SIP.SIPTransactionTimedOutDelegate.html
-  commentId: T:SIPSorcery.SIP.SIPTransactionTimedOutDelegate
-  fullName: SIPSorcery.SIP.SIPTransactionTimedOutDelegate
-  nameWithType: SIPTransactionTimedOutDelegate
 - uid: SIPSorcery.SIP.SIPTransactionTraceMessageDelegate
   name: SIPTransactionTraceMessageDelegate
   href: api/SIPSorcery.SIP.SIPTransactionTraceMessageDelegate.html
@@ -38017,6 +37967,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest
   nameWithType: UACInviteTransaction.SendInviteRequest
+- uid: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionFailed
+  name: UACInviteTransactionFailed
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionFailed
+  commentId: E:SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionFailed
+  fullName: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionFailed
+  nameWithType: UACInviteTransaction.UACInviteTransactionFailed
 - uid: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionFinalResponseReceived
   name: UACInviteTransactionFinalResponseReceived
   href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionFinalResponseReceived
@@ -38029,12 +37985,6 @@ references:
   commentId: E:SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionInformationResponseReceived
   fullName: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionInformationResponseReceived
   nameWithType: UACInviteTransaction.UACInviteTransactionInformationResponseReceived
-- uid: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionTimedOut
-  name: UACInviteTransactionTimedOut
-  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionTimedOut
-  commentId: E:SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionTimedOut
-  fullName: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionTimedOut
-  nameWithType: UACInviteTransaction.UACInviteTransactionTimedOut
 - uid: SIPSorcery.SIP.UASInviteTransaction
   name: UASInviteTransaction
   href: api/SIPSorcery.SIP.UASInviteTransaction.html
@@ -38137,12 +38087,12 @@ references:
   commentId: E:SIPSorcery.SIP.UASInviteTransaction.UASInviteTransactionCancelled
   fullName: SIPSorcery.SIP.UASInviteTransaction.UASInviteTransactionCancelled
   nameWithType: UASInviteTransaction.UASInviteTransactionCancelled
-- uid: SIPSorcery.SIP.UASInviteTransaction.UASInviteTransactionTimedOut
-  name: UASInviteTransactionTimedOut
-  href: api/SIPSorcery.SIP.UASInviteTransaction.html#SIPSorcery_SIP_UASInviteTransaction_UASInviteTransactionTimedOut
-  commentId: E:SIPSorcery.SIP.UASInviteTransaction.UASInviteTransactionTimedOut
-  fullName: SIPSorcery.SIP.UASInviteTransaction.UASInviteTransactionTimedOut
-  nameWithType: UASInviteTransaction.UASInviteTransactionTimedOut
+- uid: SIPSorcery.SIP.UASInviteTransaction.UASInviteTransactionFailed
+  name: UASInviteTransactionFailed
+  href: api/SIPSorcery.SIP.UASInviteTransaction.html#SIPSorcery_SIP_UASInviteTransaction_UASInviteTransactionFailed
+  commentId: E:SIPSorcery.SIP.UASInviteTransaction.UASInviteTransactionFailed
+  fullName: SIPSorcery.SIP.UASInviteTransaction.UASInviteTransactionFailed
+  nameWithType: UASInviteTransaction.UASInviteTransactionFailed
 - uid: SIPSorcery.Sys
   name: SIPSorcery.Sys
   href: api/SIPSorcery.Sys.html

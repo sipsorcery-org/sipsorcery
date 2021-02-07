@@ -37,8 +37,6 @@ namespace SIPSorcery.SIP.App
 
         event SIPUASDelegate CallCancelled;
         event SIPUASDelegate NoRingTimeout;
-        event SIPUASDelegate TransactionComplete;
-        //event SIPUASStateChangedDelegate UASStateChanged;
 
         bool AuthenticateCall();
         void Progress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody);

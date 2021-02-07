@@ -28,7 +28,7 @@ namespace SIPSorcery.SIP
     public class SIPTLSChannel : SIPTCPChannel
     {
         private const int CLOSE_CONNECTION_TIMEOUT = 500;
-        private const int TLS_ATTEMPT_CONNECT_TIMEOUT = 2000;
+        private const int TLS_ATTEMPT_CONNECT_TIMEOUT = 5000;
 
         private X509Certificate2 m_serverCertificate;
 
@@ -114,30 +114,34 @@ namespace SIPSorcery.SIP
             //DisplayCertificateInformation(sslStream);
 
             var timeoutTask = Task.Delay(TLS_ATTEMPT_CONNECT_TIMEOUT);
-            await Task.WhenAny(sslStream.AuthenticateAsClientAsync(serverCertificateName), timeoutTask).ConfigureAwait(false);
+            var sslStreamTask = sslStream.AuthenticateAsClientAsync(serverCertificateName);
+            await Task.WhenAny(sslStreamTask, timeoutTask).ConfigureAwait(false);
 
-            if (timeoutTask.IsCompleted)
+            if(sslStreamTask.IsCompleted)
             {
-                logger.LogWarning($"SIP TLS channel timed out attempting to establish SSL stream with {streamConnection.RemoteSIPEndPoint}.");
-                networkStream.Close(CLOSE_CONNECTION_TIMEOUT);
-                return SocketError.ProtocolNotSupported;
-            }
-            else if(!sslStream.IsAuthenticated)
-            {
-                logger.LogWarning($"SIP TLS channel failed to establish SSL stream with {streamConnection.RemoteSIPEndPoint}.");
-                networkStream.Close(CLOSE_CONNECTION_TIMEOUT);
-                return SocketError.ProtocolNotSupported;
+                if (!sslStream.IsAuthenticated)
+                {
+                    logger.LogWarning($"SIP TLS channel failed to establish SSL stream with {streamConnection.RemoteSIPEndPoint}.");
+                    networkStream.Close(CLOSE_CONNECTION_TIMEOUT);
+                    return SocketError.ProtocolNotSupported;
+                }
+                else
+                {
+                    streamConnection.SslStream = sslStream;
+                    streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
+
+                    logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningSIPEndPoint}->{streamConnection.RemoteSIPEndPoint}.");
+
+                    sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
+
+                    return SocketError.Success;
+                }
             }
             else
             {
-                streamConnection.SslStream = sslStream;
-                streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
-
-                logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningSIPEndPoint}->{streamConnection.RemoteSIPEndPoint}.");
-
-                sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
-                
-                return SocketError.Success;
+                logger.LogWarning($"SIP TLS channel timed out attempting to establish SSL stream with {streamConnection.RemoteSIPEndPoint}.");
+                networkStream.Close(CLOSE_CONNECTION_TIMEOUT);
+                return SocketError.TimedOut;
             }
         }
 
