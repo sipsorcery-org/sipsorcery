@@ -252,7 +252,6 @@ namespace SIPSorcery.SIP.UnitTests
 
         void SetTransactionTraceEvents(SIPTransaction transaction)
         {
-            transaction.TransactionRemoved += new SIPTransactionRemovedDelegate(transaction_TransactionRemoved);
             transaction.TransactionStateChanged += new SIPTransactionStateChangeDelegate(transaction_TransactionStateChanged);
             transaction.TransactionTraceMessage += new SIPTransactionTraceMessageDelegate(transaction_TransactionTraceMessage);
         }

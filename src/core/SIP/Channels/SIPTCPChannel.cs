@@ -66,7 +66,7 @@ namespace SIPSorcery.SIP
         private const int MAX_TCP_CONNECTIONS = 1000;          // Maximum number of connections for the TCP listener.
         private const int PRUNE_CONNECTIONS_INTERVAL = 60000;  // The period at which to prune the connections.
         private const int PRUNE_NOTRANSMISSION_MINUTES = 70;   // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
-        private const int TCP_ATTEMPT_CONNECT_TIMEOUT = 2000;
+        private const int TCP_ATTEMPT_CONNECT_TIMEOUT = 5000;
 
         /// <summary>
         /// This is the main object managed by this class. It is the socket listening for incoming connections.

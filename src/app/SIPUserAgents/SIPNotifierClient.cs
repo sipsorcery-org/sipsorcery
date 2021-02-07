@@ -266,7 +266,7 @@ namespace SIPSorcery.SIP.App
 
                     SIPNonInviteTransaction subscribeTransaction = new SIPNonInviteTransaction(m_sipTransport, subscribeRequest, m_outboundProxy);
                     subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
-                    subscribeTransaction.NonInviteTransactionTimedOut += SubscribeTransactionTimedOut;
+                    subscribeTransaction.NonInviteTransactionFailed += SubscribeTransactionFailed;
 
                     LastSubscribeAttempt = DateTime.Now;
 
@@ -281,9 +281,10 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void SubscribeTransactionTimedOut(SIPTransaction sipTransaction)
+        private void SubscribeTransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
-            SubscriptionFailed?.Invoke(m_resourceURI, SIPResponseStatusCodesEnum.ServerTimeout, "Subscription request to " + m_resourceURI.ToString() + " timed out.");
+            var responseCode = (failureReason == SocketError.TimedOut) ? SIPResponseStatusCodesEnum.ServerTimeout : SIPResponseStatusCodesEnum.InternalServerError;
+            SubscriptionFailed?.Invoke(m_resourceURI, responseCode, $"Subscription request to {m_resourceURI} failed with {failureReason}.");
             m_waitForSubscribeResponse.Set();
         }
 
@@ -362,7 +363,7 @@ namespace SIPSorcery.SIP.App
                             // Create a new transaction to establish the authenticated server call.
                             SIPNonInviteTransaction subscribeTransaction = new SIPNonInviteTransaction(m_sipTransport, authSubscribeRequest, m_outboundProxy);
                             subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
-                            subscribeTransaction.NonInviteTransactionTimedOut += SubscribeTransactionTimedOut;
+                            subscribeTransaction.NonInviteTransactionFailed += SubscribeTransactionFailed;
 
                             //m_sipTransport.SendTransaction(subscribeTransaction);
                             subscribeTransaction.SendRequest();

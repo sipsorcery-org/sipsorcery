@@ -225,7 +225,7 @@ namespace SIPSorcery.SIP.App
 
                 m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                 m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
-                m_serverTransaction.UACInviteTransactionTimedOut += ServerTimedOut;
+                m_serverTransaction.UACInviteTransactionFailed += ServerTransactionFailed;
 
                 m_serverTransaction.SendInviteRequest();
 
@@ -319,7 +319,7 @@ namespace SIPSorcery.SIP.App
                 byeRequest.SetSendFromHints(m_serverTransaction.TransactionRequest.LocalSIPEndPoint);
                 SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
                 byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                byeTransaction.NonInviteTransactionTimedOut += (tx) => logger.LogDebug($"Bye request for {m_sipCallDescriptor.Uri} timed out.");
+                byeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogWarning($"Bye request for {m_sipCallDescriptor.Uri} failed with {reason}.");
                 byeTransaction.SendRequest();
             }
             catch (Exception excp)
@@ -406,7 +406,7 @@ namespace SIPSorcery.SIP.App
                             }
                             m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                             m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
-                            m_serverTransaction.UACInviteTransactionTimedOut += ServerTimedOut;
+                            m_serverTransaction.UACInviteTransactionFailed += ServerTransactionFailed;
 
                             m_serverTransaction.SendInviteRequest();
                         }
@@ -462,11 +462,11 @@ namespace SIPSorcery.SIP.App
             return Task.FromResult(SocketError.Success);
         }
 
-        private void ServerTimedOut(SIPTransaction sipTransaction)
+        private void ServerTransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
             if (!m_callCancelled)
             {
-                CallFailed?.Invoke(this, "Timeout, no response from server", null);
+                CallFailed?.Invoke(this, failureReason.ToString(), null);
             }
         }
 
@@ -492,7 +492,7 @@ namespace SIPSorcery.SIP.App
                     authRequest.Header.CSeq++;
 
                     SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, authRequest, m_outboundProxy);
-                    authByeTransaction.NonInviteTransactionTimedOut += (tx) => logger.LogDebug($"Authenticated Bye request for {m_sipCallDescriptor.Uri} timed out.");
+                    authByeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogWarning($"Authenticated Bye request for {m_sipCallDescriptor.Uri} failed with {reason}.");
                     authByeTransaction.SendRequest();
                 }
 

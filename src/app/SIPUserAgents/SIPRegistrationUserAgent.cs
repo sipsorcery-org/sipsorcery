@@ -292,7 +292,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (!m_exit)
                 {
-                    logger.LogDebug("Stopping SIP registration user agent for " + m_sipAccountAOR.ToString() + ".");
+                    logger.LogDebug($"Stopping SIP registration user agent for {m_sipAccountAOR}.");
 
                     m_exit = true;
                     m_waitForRegistrationMRE.Set();
@@ -346,20 +346,18 @@ namespace SIPSorcery.SIP.App
 
                     if (registrarSIPEndPoint == null)
                     {
-                        logger.LogWarning("SIPRegistrationAgent could not resolve " + m_registrarHost + ".");
-
-                        RegistrationFailed?.Invoke(m_sipAccountAOR, "Could not resolve " + m_registrarHost + ".");
+                        logger.LogWarning($"SIPRegistrationAgent could not resolve {m_registrarHost}.");
+                        RegistrationFailed?.Invoke(m_sipAccountAOR, $"Could not resolve {m_registrarHost}.");
                     }
                     else
                     {
-                        logger.LogDebug("Initiating registration to " + m_registrarHost + " at " + registrarSIPEndPoint.ToString() + " for " + m_sipAccountAOR.ToString() + ".");
+                        logger.LogDebug($"Initiating registration to {m_registrarHost} at {registrarSIPEndPoint} for {m_sipAccountAOR}.");
                         SIPRequest regRequest = GetRegistrationRequest();
 
                         SIPNonInviteTransaction regTransaction = new SIPNonInviteTransaction(m_sipTransport, regRequest, registrarSIPEndPoint);
                         regTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { ServerResponseReceived(lep, rep, tn, rsp); return Task.FromResult(SocketError.Success); };
-                        regTransaction.NonInviteTransactionTimedOut += RegistrationTimedOut;
+                        regTransaction.NonInviteTransactionFailed += RegistrationTransactionFailed;
 
-                        //m_sipTransport.SendTransaction(regTransaction);
                         regTransaction.SendRequest();
                     }
                 }
@@ -371,10 +369,10 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void RegistrationTimedOut(SIPTransaction sipTransaction)
+        private void RegistrationTransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
             m_isRegistered = false;
-            RegistrationTemporaryFailure?.Invoke(m_sipAccountAOR, "Registration transaction to " + m_registrarHost + " for " + m_sipAccountAOR.ToString() + " timed out.");
+            RegistrationTemporaryFailure?.Invoke(m_sipAccountAOR, $"Registration transaction to {m_registrarHost} for {m_sipAccountAOR} failed with {failureReason}.");
             m_waitForRegistrationMRE.Set();
         }
 
@@ -385,7 +383,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                logger.LogDebug("Server response " + sipResponse.Status + " received for " + m_sipAccountAOR.ToString() + ".");
+                logger.LogDebug($"Server response {sipResponse.Status} received for {m_sipAccountAOR}.");
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
@@ -425,18 +423,21 @@ namespace SIPSorcery.SIP.App
                             else
                             {
                                 SIPNonInviteTransaction regAuthTransaction = new SIPNonInviteTransaction(m_sipTransport, authenticatedRequest, registrarSIPEndPoint);
-                                regAuthTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { AuthResponseReceived(lep, rep, tn, rsp); return Task.FromResult(SocketError.Success); };
-                                regAuthTransaction.NonInviteTransactionTimedOut += (tn) => { RegistrationTimedOut(tn); };
-                                //m_sipTransport.SendTransaction(regAuthTransaction);
+                                regAuthTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) =>
+                                {
+                                    AuthResponseReceived(lep, rep, tn, rsp);
+                                    return Task.FromResult(SocketError.Success);
+                                };
+                                regAuthTransaction.NonInviteTransactionFailed += RegistrationTransactionFailed;
                                 regAuthTransaction.SendRequest();
                             }
                         }
                     }
                     else
                     {
-                        logger.LogWarning("Registration failed with " + sipResponse.Status + " but no authentication header was supplied for " + m_sipAccountAOR.ToString() + ".");
+                        logger.LogWarning($"Registration failed with {sipResponse.Status} but no authentication header was supplied for {m_sipAccountAOR}.");
                         m_isRegistered = false;
-                        RegistrationTemporaryFailure?.Invoke(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + " but no authentication header was supplied.");
+                        RegistrationTemporaryFailure?.Invoke(m_sipAccountAOR, $"Registration failed with {sipResponse.Status} but no authentication header was supplied.");
                         m_waitForRegistrationMRE.Set();
                     }
                 }
@@ -463,7 +464,7 @@ namespace SIPSorcery.SIP.App
                         // SIP account does not appear to exist.
                         m_exit = m_exitOnUnequivocalFailure;
 
-                        logger.LogWarning($"Registration unequivocal failure with {sipResponse.Status} for {m_sipAccountAOR}{(m_exit ? " ,no further registration attempts will be made" : "")}.");
+                        logger.LogWarning($"Registration unequivocal failure with {sipResponse.Status} for {m_sipAccountAOR}{(m_exit ? ", no further registration attempts will be made" : "")}.");
                         string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
                         RegistrationFailed?.Invoke(m_sipAccountAOR, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
 
@@ -477,16 +478,16 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        logger.LogWarning("Registration failed with " + sipResponse.Status + " for " + m_sipAccountAOR.ToString() + ".");
+                        logger.LogWarning($"Registration failed with {sipResponse.Status} for {m_sipAccountAOR}.");
                         m_isRegistered = false;
-                        RegistrationTemporaryFailure?.Invoke(m_sipAccountAOR, "Registration failed with " + sipResponse.Status + ".");
+                        RegistrationTemporaryFailure?.Invoke(m_sipAccountAOR, $"Registration failed with {sipResponse.Status}.");
                         m_waitForRegistrationMRE.Set();
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPRegistrationUserAgent ServerResponseReceived (" + remoteEndPoint + "). " + excp.Message);
+                logger.LogError($"Exception SIPRegistrationUserAgent ServerResponseReceived ({remoteEndPoint}). {excp}");
             }
         }
 
@@ -497,7 +498,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                logger.LogDebug("Server auth response " + sipResponse.Status + " received for " + m_sipAccountAOR.ToString() + ".");
+                logger.LogDebug($"Server auth response {sipResponse.Status} received for {m_sipAccountAOR}.");
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
                 {
@@ -631,75 +632,59 @@ namespace SIPSorcery.SIP.App
 
         private SIPRequest GetRegistrationRequest()
         {
-            try
+            SIPURI registerURI = m_sipAccountAOR.CopyOf();
+            registerURI.User = null;
+
+            SIPRequest registerRequest = SIPRequest.GetRequest(
+                SIPMethodsEnum.REGISTER,
+                registerURI,
+                new SIPToHeader(this.UserDisplayName, m_sipAccountAOR, null),
+                new SIPFromHeader(this.UserDisplayName, m_sipAccountAOR, CallProperties.CreateNewTag()));
+
+            registerRequest.Header.Contact = new List<SIPContactHeader> { new SIPContactHeader(this.UserDisplayName, m_contactURI) };
+            registerRequest.Header.CSeq = ++m_cseq;
+            registerRequest.Header.CallId = m_callID;
+            registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : m_userAgent;
+            registerRequest.Header.Expires = m_expiry;
+
+            if (m_customHeaders != null && m_customHeaders.Length > 0)
             {
-                SIPURI registerURI = m_sipAccountAOR.CopyOf();
-                registerURI.User = null;
-
-                SIPRequest registerRequest = SIPRequest.GetRequest(
-                    SIPMethodsEnum.REGISTER,
-                    registerURI,
-                    new SIPToHeader(this.UserDisplayName, m_sipAccountAOR, null),
-                    new SIPFromHeader(this.UserDisplayName, m_sipAccountAOR, CallProperties.CreateNewTag()));
-
-                registerRequest.Header.Contact = new List<SIPContactHeader> { new SIPContactHeader(this.UserDisplayName, m_contactURI) };
-                registerRequest.Header.CSeq = ++m_cseq;
-                registerRequest.Header.CallId = m_callID;
-                registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : m_userAgent;
-                registerRequest.Header.Expires = m_expiry;
-
-                if (m_customHeaders != null && m_customHeaders.Length > 0)
+                foreach (var header in m_customHeaders)
                 {
-                    foreach (var header in m_customHeaders)
-                    {
-                        registerRequest.Header.UnknownHeaders.Add(header);
-                    }
+                    registerRequest.Header.UnknownHeaders.Add(header);
                 }
-
-                if (AdjustRegister == null)
-                {
-                    return registerRequest;
-                }
-
-                return AdjustRegister(registerRequest);
             }
-            catch (Exception excp)
+
+            if (AdjustRegister == null)
             {
-                logger.LogError("Exception GetRegistrationRequest. " + excp.Message);
-                throw;
+                return registerRequest;
             }
+
+            return AdjustRegister(registerRequest);
         }
 
         private SIPRequest GetAuthenticatedRegistrationRequest(SIPRequest registerRequest, SIPResponse sipResponse)
         {
-            try
+            SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
+            string username = (m_authUsername != null) ? m_authUsername : m_sipAccountAOR.User;
+            authRequest.SetCredentials(username, m_password, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
+            if (!this.m_realm.IsNullOrBlank())
             {
-                SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                string username = (m_authUsername != null) ? m_authUsername : m_sipAccountAOR.User;
-                authRequest.SetCredentials(username, m_password, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
-                if (!this.m_realm.IsNullOrBlank())
-                {
-                    authRequest.Realm = this.m_realm;
-                }
-
-                SIPRequest regRequest = registerRequest.Copy();
-                regRequest.SetSendFromHints(registerRequest.LocalSIPEndPoint);
-
-                regRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                regRequest.Header.From.FromTag = CallProperties.CreateNewTag();
-                regRequest.Header.To.ToTag = null;
-                regRequest.Header.CSeq = ++m_cseq;
-
-                regRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
-                regRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-
-                return regRequest;
+                authRequest.Realm = this.m_realm;
             }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception GetAuthenticatedRegistrationRequest. " + excp.Message);
-                throw;
-            }
+
+            SIPRequest regRequest = registerRequest.Copy();
+            regRequest.SetSendFromHints(registerRequest.LocalSIPEndPoint);
+
+            regRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
+            regRequest.Header.From.FromTag = CallProperties.CreateNewTag();
+            regRequest.Header.To.ToTag = null;
+            regRequest.Header.CSeq = ++m_cseq;
+
+            regRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
+            regRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
+
+            return regRequest;
         }
     }
 }
