@@ -145,7 +145,7 @@ namespace SIPSorcery.Media
         private void AudioFormatsNegotiated(List<AudioFormat> audoFormats)
         {
             var audioFormat = audoFormats.First();
-            logger.LogDebug($"Setting audio sink and source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
+            logger.LogDebug($"Setting audio sink and source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate} (RTP clock rate {audioFormat.RtpClockRate}).");
             Media.AudioSink?.SetAudioSinkFormat(audioFormat);
             Media.AudioSource?.SetAudioSourceFormat(audioFormat);
             _audioExtrasSource.SetAudioSourceFormat(audioFormat);
@@ -255,13 +255,13 @@ namespace SIPSorcery.Media
 
             if (HasVideo)
             {
-                await Media.VideoSource.PauseVideo();
+                await Media.VideoSource.PauseVideo().ConfigureAwait(false);
 
                 //_videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH);
                 _videoTestPatternSource.SetFrameRate(TEST_PATTERN_ONHOLD_FPS);
 
                 Media.VideoSource.ForceKeyFrame();
-                await _videoTestPatternSource.ResumeVideo();
+                await _videoTestPatternSource.ResumeVideo().ConfigureAwait(false);
             }
         }
 
@@ -275,7 +275,7 @@ namespace SIPSorcery.Media
 
             if (HasVideo)
             {
-                    await _videoTestPatternSource.PauseVideo();
+                await _videoTestPatternSource.PauseVideo().ConfigureAwait(false);
 
                 //_videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH);
                 _videoTestPatternSource.SetFrameRate(TEST_PATTERN_FPS);
@@ -284,11 +284,11 @@ namespace SIPSorcery.Media
 
                 if (!_videoCaptureDeviceFailed)
                 {
-                    await Media.VideoSource.ResumeVideo();
+                    await Media.VideoSource.ResumeVideo().ConfigureAwait(false);
                 }
                 else
                 {
-                    await _videoTestPatternSource.ResumeVideo();
+                    await _videoTestPatternSource.ResumeVideo().ConfigureAwait(false);
                 }
             }
         }

@@ -53,9 +53,9 @@ namespace SIPSorcery.SIP
         /// Special SIP Via header that is recognised by the SIP transport classes Send methods. At send time this header will be replaced by 
         /// one with IP end point details that reflect the socket the request or response was sent from.
         /// </summary>
-        public static SIPViaHeader GetDefaultSIPViaHeader()
+        public static SIPViaHeader GetDefaultSIPViaHeader(SIPProtocolsEnum protocol = SIPProtocolsEnum.udp)
         {
-            return new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), CallProperties.CreateBranchId(), SIPProtocolsEnum.udp);
+            return new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), CallProperties.CreateBranchId(), protocol);
         }
 
         public string Version;
@@ -608,9 +608,9 @@ namespace SIPSorcery.SIP
         /// Special SIP contact header that is recognised by the SIP transport classes Send methods. At send time this header will be replaced by 
         /// one with IP end point details that reflect the socket the request or response was sent from.
         /// </summary>
-        public static SIPContactHeader GetDefaultSIPContactHeader()
+        public static SIPContactHeader GetDefaultSIPContactHeader(SIPSchemesEnum scheme)
         {
-            return new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, IPAddress.Any, 0));
+            return new SIPContactHeader(null, new SIPURI(scheme, IPAddress.Any, 0));
         }
 
         public string RawHeader;
@@ -1366,11 +1366,6 @@ namespace SIPSorcery.SIP
         public string ProxyReceivedFrom;        // The remote socket that the Proxy received the SIP message on.
         public string ProxySendFrom;            // The Proxy socket that the SIP message should be transmitted from.
 
-        // Non-core custom headers for CRM integration.
-        public string CRMPersonName;                // The matching name from the CRM system for the caller.
-        public string CRMCompanyName;               // The matching company name from the CRM system for the caller.
-        public string CRMPictureURL;                 // If available a URL for a picture for the person or company from the CRM system for the caller.
-
         public List<string> UnknownHeaders = new List<string>();    // Holds any unrecognised headers.
 
         public List<SIPExtensions> RequiredExtensions = new List<SIPExtensions>();
@@ -1931,24 +1926,6 @@ namespace SIPSorcery.SIP
                             sipHeader.Warning = headerValue;
                         }
                         #endregion
-                        #region CRM-PersonName.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CRM_PERSON_NAME.ToLower())
-                        {
-                            sipHeader.CRMPersonName = headerValue;
-                        }
-                        #endregion
-                        #region CRM-CompanyName.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CRM_COMPANY_NAME.ToLower())
-                        {
-                            sipHeader.CRMCompanyName = headerValue;
-                        }
-                        #endregion
-                        #region CRM-AvatarURL.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CRM_PICTURE_URL.ToLower())
-                        {
-                            sipHeader.CRMPictureURL = headerValue;
-                        }
-                        #endregion
                         #region ETag
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_ETAG.ToLower())
                         {
@@ -2144,11 +2121,6 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
                 headersBuilder.Append((ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
                 headersBuilder.Append((ProxySendFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_SENDFROM + ": " + ProxySendFrom + m_CRLF : null);
-
-                // CRM Headers.
-                headersBuilder.Append((CRMPersonName != null) ? SIPHeaders.SIP_HEADER_CRM_PERSON_NAME + ": " + CRMPersonName + m_CRLF : null);
-                headersBuilder.Append((CRMCompanyName != null) ? SIPHeaders.SIP_HEADER_CRM_COMPANY_NAME + ": " + CRMCompanyName + m_CRLF : null);
-                headersBuilder.Append((CRMPictureURL != null) ? SIPHeaders.SIP_HEADER_CRM_PICTURE_URL + ": " + CRMPictureURL + m_CRLF : null);
 
                 // Unknown SIP headers
                 foreach (string unknownHeader in UnknownHeaders)

@@ -8,7 +8,8 @@
 // 
 // History:
 // 14 Feb 2006	Aaron Clauson	Created, Dublin, Ireland.
-// 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
+// 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses 
+//                              as per RFC3262.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -31,14 +32,30 @@ namespace SIPSorcery.SIP
         Terminated = 5,
         Trying = 6,
 
-        Cancelled = 7,      // This state is not in the SIP RFC but is deemed the most practical way to record that an INVITE has been cancelled. Other states will have ramifications for the transaction lifetime.
+        /// <summary>
+        /// This state is not in the SIP RFC but is deemed the most practical 
+        /// way to record that an INVITE has been cancelled. Other states 
+        /// will have ramifications for the transaction lifetime.
+        /// </summary>
+        Cancelled = 7
     }
 
     public enum SIPTransactionTypesEnum
     {
-        InviteServer = 1,   // User agent server transaction.
+        /// <summary>
+        /// User agent server transaction.
+        /// </summary>
+        InviteServer = 1,
+
+        /// <summary>
+        /// All non-INVITE transaction types.
+        /// </summary>
         NonInvite = 2,
-        InviteClient = 3,   // User agent client transaction.
+
+        /// <summary>
+        /// User agent client transaction.
+        /// </summary>
+        InviteClient = 3,
     }
 
     /// <summary>
@@ -75,7 +92,10 @@ namespace SIPSorcery.SIP
     {
         protected static ILogger logger = Log.Logger;
 
-        protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for (typically 10 mins).    
+        /// <summary>
+        /// Maximum time an INVITE will be left ringing for (typically 10 minutes).
+        /// </summary>
+        protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME;
 
         public int Retransmits = 0;
         public int AckRetransmits = 0;
@@ -85,8 +105,8 @@ namespace SIPSorcery.SIP
         public bool DeliveryPending = true;
 
         /// <summary>
-        /// If the transport layer does not receive a response to the request in the alloted 
-        /// time the request will be marked as failed.
+        /// If the transport layer does not receive a response to the request in the 
+        /// allotted time the request will be marked as failed.
         /// </summary>
         public bool DeliveryFailed = false;
 
@@ -108,8 +128,8 @@ namespace SIPSorcery.SIP
         public DateTime Created = DateTime.Now;
 
         /// <summary>
-        /// For INVITEs this is the time they received the final response and is used to calculate the time 
-        /// they expire as T6 after this.
+        /// For INVITEs this is the time they received the final response and is used to 
+        /// calculate the time they expire as T6 after this.
         /// </summary>
         public DateTime CompletedAt = DateTime.Now;
 
@@ -193,7 +213,7 @@ namespace SIPSorcery.SIP
         protected event SIPTransactionRequestReceivedDelegate TransactionRequestReceived;
         protected event SIPTransactionResponseReceivedDelegate TransactionInformationResponseReceived;
         protected event SIPTransactionResponseReceivedDelegate TransactionFinalResponseReceived;
-        protected event SIPTransactionTimedOutDelegate TransactionTimedOut;
+        protected event SIPTransactionFailedDelegate TransactionFailed;
 
         /// <summary>
         /// The UAS transaction needs the ACK request if the original INVITE did not have an SDP offer.
@@ -208,8 +228,6 @@ namespace SIPSorcery.SIP
         // Events that don't affect the transaction processing, i.e. used for logging/tracing.
         public event SIPTransactionStateChangeDelegate TransactionStateChanged;
         public event SIPTransactionTraceMessageDelegate TransactionTraceMessage;
-
-        public event SIPTransactionRemovedDelegate TransactionRemoved;       // This is called just before the SIPTransaction is expired and is to let consumer classes know to remove their event handlers to prevent memory leaks.
 
         protected SIPTransport m_sipTransport;
 
@@ -256,7 +274,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPTransaction (ctor). " + excp.Message);
+                logger.LogError($"Exception SIPTransaction.{excp}");
                 throw;
             }
         }
@@ -268,7 +286,7 @@ namespace SIPSorcery.SIP
 
         public void GotRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            FireTransactionTraceMessage($"Transaction received Request {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction received Request {localSIPEndPoint}<-{remoteEndPoint}: {sipRequest.StatusLine}");
             TransactionRequestReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
@@ -276,7 +294,7 @@ namespace SIPSorcery.SIP
         {
             if (TransactionState == SIPTransactionStatesEnum.Completed || TransactionState == SIPTransactionStatesEnum.Confirmed)
             {
-                FireTransactionTraceMessage($"Transaction received duplicate response {localSIPEndPoint.ToString()}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
+                TransactionTraceMessage?.Invoke(this, $"Transaction received duplicate response {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
                 TransactionDuplicateResponse?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipResponse);
 
                 if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.INVITE)
@@ -297,7 +315,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                FireTransactionTraceMessage($"Transaction received Response {localSIPEndPoint.ToString()}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
+                TransactionTraceMessage?.Invoke(this, $"Transaction received Response {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
 
                 if (sipResponse.StatusCode >= 100 && sipResponse.StatusCode <= 199)
                 {
@@ -327,7 +345,9 @@ namespace SIPSorcery.SIP
         {
             m_transactionState = transactionState;
 
-            if (transactionState == SIPTransactionStatesEnum.Confirmed || transactionState == SIPTransactionStatesEnum.Terminated || transactionState == SIPTransactionStatesEnum.Cancelled)
+            if (transactionState == SIPTransactionStatesEnum.Confirmed ||
+                transactionState == SIPTransactionStatesEnum.Terminated ||
+                transactionState == SIPTransactionStatesEnum.Cancelled)
             {
                 DeliveryPending = false;
             }
@@ -336,10 +356,8 @@ namespace SIPSorcery.SIP
                 CompletedAt = DateTime.Now;
             }
 
-            if (TransactionStateChanged != null)
-            {
-                FireTransactionStateChangedEvent();
-            }
+            TransactionStateChanged?.Invoke(this);
+            TransactionTraceMessage?.Invoke(this, $"Transaction state changed to {this.TransactionState}.");
         }
 
         protected virtual void SendFinalResponse(SIPResponse finalResponse)
@@ -358,14 +376,14 @@ namespace SIPSorcery.SIP
             DeliveryFailed = false;
             HasTimedOut = false;
 
-            FireTransactionTraceMessage($"Transaction send final response {finalResponse.ShortDescription}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction send final response {finalResponse.ShortDescription}");
 
-            m_sipTransport.SendTransaction(this);
+            m_sipTransport.AddTransaction(this);
         }
 
         protected virtual Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)
         {
-            FireTransactionTraceMessage($"Transaction send info response (is reliable {PrackSupported}) {sipResponse.ShortDescription}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction send info response (is reliable {PrackSupported}) {sipResponse.ShortDescription}");
 
             if (sipResponse.StatusCode == 100)
             {
@@ -398,7 +416,7 @@ namespace SIPSorcery.SIP
                     }
 
                     ReliableProvisionalResponse = sipResponse;
-                    m_sipTransport.SendTransaction(this);
+                    m_sipTransport.AddTransaction(this);
                     return Task.FromResult(SocketError.Success);
                 }
                 else
@@ -415,14 +433,14 @@ namespace SIPSorcery.SIP
 
         protected void SendReliableRequest()
         {
-            FireTransactionTraceMessage($"Transaction send request reliable {TransactionRequest.StatusLine}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction send request reliable {TransactionRequest.StatusLine}");
 
             if (TransactionType == SIPTransactionTypesEnum.InviteClient && this.TransactionRequest.Method == SIPMethodsEnum.INVITE)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Calling);
             }
 
-            m_sipTransport.SendTransaction(this);
+            m_sipTransport.AddTransaction(this);
         }
 
         protected SIPResponse GetInfoResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum sipResponseCode)
@@ -446,20 +464,6 @@ namespace SIPSorcery.SIP
                 logger.LogError("Exception GetInformationalResponse. " + excp.Message);
                 throw;
             }
-        }
-
-        internal void RemoveEventHandlers()
-        {
-            // Remove all event handlers.
-            TransactionRequestReceived = null;
-            TransactionInformationResponseReceived = null;
-            TransactionFinalResponseReceived = null;
-            TransactionTimedOut = null;
-            TransactionDuplicateResponse = null;
-            TransactionRequestRetransmit = null;
-            TransactionStateChanged = null;
-            TransactionTraceMessage = null;
-            TransactionRemoved = null;
         }
 
         public void ACKReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
@@ -543,7 +547,7 @@ namespace SIPSorcery.SIP
         internal void RequestRetransmit()
         {
             TransactionRequestRetransmit?.Invoke(this, this.TransactionRequest, this.Retransmits); ;
-            FireTransactionTraceMessage($"Transaction send request retransmit {Retransmits} {this.TransactionRequest.StatusLine}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction send request retransmit {Retransmits} {this.TransactionRequest.StatusLine}");
         }
 
         /// <summary>
@@ -559,7 +563,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Marks a transaction as expired and prevents anymore delivery attempts of outstanding 
+        /// Marks a transaction as expired and prevents any more delivery attempts of outstanding 
         /// requests of responses.
         /// </summary>
         internal void Expire(DateTime now)
@@ -568,8 +572,18 @@ namespace SIPSorcery.SIP
             DeliveryFailed = true;
             TimedOutAt = now;
             HasTimedOut = true;
+            TransactionTraceMessage?.Invoke(this, $"Transaction failed due to a timeout {this.TransactionFinalResponse.ShortDescription}");
+            TransactionFailed?.Invoke(this, SocketError.TimedOut);
             UpdateTransactionState(SIPTransactionStatesEnum.Terminated);
-            FireTransactionTimedOut();
+        }
+
+        internal void Failed(SocketError failureReason)
+        {
+            DeliveryPending = false;
+            DeliveryFailed = true;
+            TransactionTraceMessage?.Invoke(this, $"Transaction failed {failureReason} {this.TransactionFinalResponse.ShortDescription}");
+            TransactionFailed?.Invoke(this, failureReason);
+            UpdateTransactionState(SIPTransactionStatesEnum.Terminated);
         }
 
         /// <summary>
@@ -608,67 +622,17 @@ namespace SIPSorcery.SIP
 
         public void OnRetransmitFinalResponse()
         {
-            FireTransactionTraceMessage($"Transaction send response retransmit {Retransmits} {this.TransactionFinalResponse.ShortDescription}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction send response retransmit {Retransmits} {this.TransactionFinalResponse.ShortDescription}");
         }
 
         public void OnRetransmitProvisionalResponse()
         {
-            FireTransactionTraceMessage($"Transaction send provisional response retransmit {Retransmits} {this.ReliableProvisionalResponse.ShortDescription}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction send provisional response retransmit {Retransmits} {this.ReliableProvisionalResponse.ShortDescription}");
         }
 
         public void OnTimedOutProvisionalResponse()
         {
-            FireTransactionTraceMessage($"Transaction provisional response delivery timed out {this.ReliableProvisionalResponse?.ShortDescription}");
-        }
-
-        public void FireTransactionTimedOut()
-        {
-            try
-            {
-                TransactionTimedOut?.Invoke(this);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception FireTransactionTimedOut (" + TransactionId + " " + TransactionRequest.URI.ToString() + ", callid=" + TransactionRequest.Header.CallId + ", " + this.GetType().ToString() + "). " + excp.Message);
-            }
-        }
-
-        public void FireTransactionRemoved()
-        {
-            try
-            {
-                TransactionRemoved?.Invoke(this);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception FireTransactionRemoved. " + excp.Message);
-            }
-        }
-
-        private void FireTransactionStateChangedEvent()
-        {
-            FireTransactionTraceMessage($"Transaction state changed to {this.TransactionState}.");
-
-            try
-            {
-                TransactionStateChanged?.Invoke(this);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception FireTransactionStateChangedEvent. " + excp.Message);
-            }
-        }
-
-        private void FireTransactionTraceMessage(string message)
-        {
-            try
-            {
-                TransactionTraceMessage?.Invoke(this, message);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception FireTransactionTraceMessage. " + excp.Message);
-            }
+            TransactionTraceMessage?.Invoke(this, $"Transaction provisional response delivery timed out {this.ReliableProvisionalResponse?.ShortDescription}");
         }
 
         #endregion

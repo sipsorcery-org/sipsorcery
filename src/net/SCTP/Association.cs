@@ -17,12 +17,10 @@
 // Modified by Andrés Leone Gámez
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
@@ -336,7 +334,8 @@ namespace SIPSorcery.Net.Sctp
                 {
                     logger.LogDebug("Association receive failed " + ex.GetType().Name + " " + ex.ToString());
                 }
-            });
+            })
+            { IsBackground = true };
             _rcv.Priority = ThreadPriority.Highest;
             _rcv.Name = "AssocRcv" + __assocNo;
             _rcv.Start();
@@ -731,7 +730,10 @@ namespace SIPSorcery.Net.Sctp
                 try
                 {
                     _al.onDCEPStream(_in, _in.getLabel(), dc.getPpid());
-                    if (_in.OnOpen != null) _in.OnOpen.Invoke();
+                    if (_in.OnOpen != null)
+                    {
+                        _in.OnOpen.Invoke();
+                    }
                 }
                 catch (Exception x)
                 {

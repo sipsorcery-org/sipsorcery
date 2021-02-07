@@ -235,7 +235,7 @@ namespace SIPSorcery.Net
 
             announcement += (Connection == null) ? null : Connection.ToString();
 
-            if(TIASBandwidth > 0)
+            if (TIASBandwidth > 0)
             {
                 announcement += TIAS_BANDWIDTH_ATTRIBUE_PREFIX + TIASBandwidth + m_CRLF;
             }
@@ -370,12 +370,12 @@ namespace SIPSorcery.Net
                     {
                         if (appFormat.Value.Rtpmap != null)
                         {
-                            sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Rtpmap}{m_CRLF}");
+                            sb.Append($"{MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Rtpmap}{m_CRLF}");
                         }
 
                         if (appFormat.Value.Fmtp != null)
                         {
-                            sb.Append($"{SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Fmtp}{m_CRLF}");
+                            sb.Append($"{MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Fmtp}{m_CRLF}");
                         }
                     }
 
@@ -398,16 +398,16 @@ namespace SIPSorcery.Net
                         {
                             // Well known media formats are not required to add an rtpmap but we do so any way as some SIP
                             // stacks don't work without it.
-                            formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Name() + "/" + mediaFormat.ClockRate() + m_CRLF;
+                            formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Name() + "/" + mediaFormat.ClockRate() + m_CRLF;
                         }
                         else
                         {
-                            formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
+                            formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
                         }
 
                         if (mediaFormat.Fmtp != null)
                         {
-                            formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Fmtp + m_CRLF;
+                            formatAttributes += MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Fmtp + m_CRLF;
                         }
                     }
                 }

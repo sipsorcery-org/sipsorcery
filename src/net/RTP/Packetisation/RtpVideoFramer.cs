@@ -97,7 +97,7 @@ namespace SIPSorcery.Net
                 //var hdr = rtpPacket.Header;
                 var frameStream = _h264Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
-                if(frameStream != null)
+                if (frameStream != null)
                 {
                     return frameStream.ToArray();
                 }

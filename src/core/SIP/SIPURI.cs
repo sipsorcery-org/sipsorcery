@@ -28,8 +28,6 @@ namespace SIPSorcery.SIP
     [DataContract]
     public class SIPURI
     {
-        public const int DNS_RESOLUTION_TIMEOUT = 2000;    // Timeout for resolving DNS hosts in milliseconds.
-
         public const char SCHEME_ADDR_SEPARATOR = ':';
         public const char USER_HOST_SEPARATOR = '@';
         public const char PARAM_TAG_DELIMITER = ';';
@@ -599,6 +597,68 @@ namespace SIPSorcery.SIP
             }
 
             return copy;
+        }
+
+        /// <summary>
+        /// Checks whether the specified SIP URI Host field contains a private IPv4 address
+        /// and if so and the recevied on IP address is different then "mangles" the host to
+        /// contain the received on IP end point. The purpose of the mangling is to assist
+        /// in dealing with IPv4 NAT's.
+        /// If the SIP URI host is IPv6 or a host name no mangling will be done.
+        /// </summary>
+        /// <param name="uri">The SIP URI to mangle.</param>
+        /// <param name="receivedOn">The IP end point that the SIP message was received from.</param>
+        /// <returns>A new SIP URI if mangling took place. Null if no mangling occurred.</returns>
+        public static SIPURI Mangle(SIPURI uri, IPEndPoint receivedOn)
+        {
+            if (uri != null && receivedOn != null && IPAddress.TryParse(uri.HostAddress, out var ipv4Host))
+            {
+
+                if (ipv4Host.IsPrivate() && !IPAddress.Equals(ipv4Host, receivedOn.Address))
+                {
+                    var mangledURI = uri.CopyOf();
+                    mangledURI.Host = mangledURI.Host.Replace(mangledURI.Host, receivedOn.ToString());
+                    return mangledURI;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Indicates whether the SIP URI is using the default port for its protocol.
+        /// Default ports are 5060 for UDP and TCP, 5061 for TLS, 80 for WS and 443 for WSS.
+        /// </summary>
+        /// <returns>True if the default port is being used, false if not.</returns>
+        public bool IsDefaultPort()
+        {
+            if (HostPort == null)
+            {
+                // If the URI does not contain an explicit port it means the default is implcit.
+                return true;
+            }
+            else if (int.TryParse(HostPort, out var port))
+            {
+                switch (Protocol)
+                {
+                    case SIPProtocolsEnum.udp:
+                    case SIPProtocolsEnum.tcp:
+                        return port == SIPConstants.DEFAULT_SIP_PORT;
+                    case SIPProtocolsEnum.tls:
+                        return port == SIPConstants.DEFAULT_SIP_TLS_PORT;
+                    case SIPProtocolsEnum.ws:
+                        return port == SIPConstants.DEFAULT_SIP_WEBSOCKET_PORT;
+                    case SIPProtocolsEnum.wss:
+                        return port == SIPConstants.DEFAULT_SIPS_WEBSOCKET_PORT;
+                    default:
+                        return false;
+                }
+            }
+            else
+            {
+                // Couldn't understand the port. Assume it's not a default.
+                return false;
+            }
         }
     }
 }

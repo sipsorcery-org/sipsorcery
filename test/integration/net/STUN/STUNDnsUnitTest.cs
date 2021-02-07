@@ -41,7 +41,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("localhost", out var stunUri);
-            var result = await STUNDns.Resolve(stunUri);
+            var result = await STUNDns.Resolve(stunUri).ConfigureAwait(false);
 
             Assert.NotNull(result);
             Assert.Equal(IPAddress.Loopback, result.Address);
@@ -59,7 +59,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("localhost", out var stunUri);
-            var result = await STUNDns.Resolve(stunUri, true);
+            var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
             Assert.NotNull(result);
 
@@ -99,7 +99,7 @@ namespace SIPSorcery.Net.IntegrationTests
                 logger.LogDebug($"Attempting DNS lookup for {localHostname}.");
 
                 STUNUri.TryParse(localHostname, out var stunUri);
-                var result = await STUNDns.Resolve(stunUri);
+                var result = await STUNDns.Resolve(stunUri).ConfigureAwait(false);
 
                 Assert.NotNull(result);
 
@@ -128,7 +128,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
                 logger.LogDebug($"Attempting DNS lookup for {stunUri}.");
 
-                var result = await STUNDns.Resolve(stunUri, true);
+                var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
                 Assert.NotNull(result);
 
@@ -159,7 +159,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("stun.sipsorcery.com:3478", out var stunUri);
-            var result = await STUNDns.Resolve(stunUri);
+            var result = await STUNDns.Resolve(stunUri).ConfigureAwait(false);
 
             Assert.NotNull(result);
 
@@ -176,7 +176,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("www.google.com", out var stunUri);
-            var result = await STUNDns.Resolve(stunUri, true);
+            var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
             logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
 
@@ -197,7 +197,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("www.sipsorcery.com", out var stunUri);
-            var result = await STUNDns.Resolve(stunUri, true);
+            var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
             logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
 
@@ -215,7 +215,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("sipsorcery.com", out var stunUri);
-            var result = await STUNDns.Resolve(stunUri);
+            var result = await STUNDns.Resolve(stunUri).ConfigureAwait(false);
 
             Assert.NotNull(result);
 
@@ -232,7 +232,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("sipsorcery.com", out var stunUri);
-            var result = await STUNDns.Resolve(stunUri, true);
+            var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
             Assert.NotNull(result);
 
@@ -252,7 +252,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("idontexist", out var stunUri);
-            var result = await STUNDns.Resolve(stunUri, true);
+            var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
             logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
 
@@ -269,7 +269,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("somehost.fsdfergerw.com", out var stunUri);
-            var result = await STUNDns.Resolve(stunUri, true);
+            var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
             logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
 

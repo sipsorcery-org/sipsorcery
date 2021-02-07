@@ -14,8 +14,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-
 namespace SIPSorcery.SIP.App
 {
     public delegate void SIPUASDelegate(ISIPServerUserAgent uas);
@@ -39,8 +37,6 @@ namespace SIPSorcery.SIP.App
 
         event SIPUASDelegate CallCancelled;
         event SIPUASDelegate NoRingTimeout;
-        event SIPUASDelegate TransactionComplete;
-        //event SIPUASStateChangedDelegate UASStateChanged;
 
         bool AuthenticateCall();
         void Progress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody);

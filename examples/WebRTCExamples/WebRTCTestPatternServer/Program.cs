@@ -9,13 +9,13 @@
 // 
 // History:
 // 17 Jan 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 27 Jan 2021  Aaron Clauson   Switched from node-dss to REST signaling.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
@@ -36,15 +36,16 @@ namespace demo
 {
     public class Options
     {
-        [Option("nodedss", Required = false,
-            HelpText = "Address and ID's for a node-dss simple signalling server to exchange SDP and ice candidates. Format \"--nodedss=http://127.0.0.1:3000;myid;theirid\".")]
-        public string NodeDssServer { get; set; }
+        [Option("rest", Required = false,
+            HelpText = "Address and ID's for a REST, simple HTTP signalling, server to exchange SDP and ice candidates. Format \"--rest=https://localhost:5001/api/webrtcsignal;myid;theirid\".")]
+        public string RestSignalingServer { get; set; }
     }
 
     class Program
     {
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
+        private const int TEST_PATTERN_FRAMES_PER_SECOND = 30;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
@@ -73,7 +74,7 @@ namespace demo
             //}
             X509Certificate2 cert = null;
 
-            if (options?.NodeDssServer == null)
+            if (options?.RestSignalingServer == null)
             {
                 // Start web socket.
                 Console.WriteLine("Starting web socket server...");
@@ -86,18 +87,18 @@ namespace demo
             }
             else
             {
-                string[] fields = options.NodeDssServer.Split(';');
+                string[] fields = options.RestSignalingServer.Split(';');
                 if (fields.Length < 3)
                 {
-                    throw new ArgumentException("The 'nodedss' option must contain 3 semi-colon separated fields, e.g. --nodedss=http://127.0.0.1:3000;myid;theirid.");
+                    throw new ArgumentException("The 'rest' option must contain 3 semi-colon separated fields, e.g. --rest=https://localhost:5001/api/webrtcsignal;myid;theirid.");
                 }
 
-                Console.WriteLine($"Sending offer to node dss server at {fields[0]}, our ID={fields[1]}, their ID={fields[2]}.");
+                Console.WriteLine($"Connecting to REST signaling server at {fields[0]}, our ID={fields[1]}, their ID={fields[2]}.");
 
-                var nodeDssPeer = new WebRTCNodeDssPeer(fields[0], fields[1], fields[2], () => CreatePeerConnection(cert));
-                await nodeDssPeer.Start(cts);
+                var restSignalingPeer = new WebRTCRestSignalingPeer(fields[0], fields[1], fields[2], () => CreatePeerConnection(cert));
+                await restSignalingPeer.Start(cts);
 
-                Console.WriteLine($"Waiting for node DSS peer to connect...");
+                Console.WriteLine($"Waiting for remote REST signaling peer to connect...");
                 Console.WriteLine("Press ctrl-c to exit.");
             }
 
@@ -126,7 +127,7 @@ namespace demo
 
             //var testPatternSource = new VideoTestPatternSource(new SIPSorceryMedia.Encoders.VideoEncoder());
             var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
-            testPatternSource.SetFrameRate(60);
+            testPatternSource.SetFrameRate(TEST_PATTERN_FRAMES_PER_SECOND);
             //testPatternSource.SetMaxFrameRate(true);
             //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             //videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
@@ -153,12 +154,10 @@ namespace demo
                 else if (state == RTCPeerConnectionState.closed)
                 {
                     await testPatternSource.CloseVideo();
-                    await testPatternSource.CloseVideo();
                     testPatternSource.Dispose();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    await testPatternSource.StartVideo();
                     await testPatternSource.StartVideo();
                 }
             };
@@ -170,9 +169,15 @@ namespace demo
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
             pc.onsignalingstatechange += () =>
             {
-                if(pc.signalingState == RTCSignalingState.have_remote_offer)
+                if(pc.signalingState == RTCSignalingState.have_local_offer)
                 {
-                    logger.LogDebug(pc.RemoteDescription.ToString());
+                    logger.LogDebug($"Local SDP set, type {pc.localDescription.type}.");
+                    logger.LogDebug(pc.localDescription.sdp.ToString());
+                }
+                else if(pc.signalingState == RTCSignalingState.have_remote_offer)
+                {
+                    logger.LogDebug($"Remote SDP set, type {pc.remoteDescription.type}.");
+                    logger.LogDebug(pc.remoteDescription.sdp.ToString());
                 }
             };
 

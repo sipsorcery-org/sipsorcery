@@ -23,7 +23,7 @@ namespace SIPSorcery.SIP
     {
         public event SIPTransactionResponseReceivedDelegate NonInviteTransactionInfoResponseReceived;
         public event SIPTransactionResponseReceivedDelegate NonInviteTransactionFinalResponseReceived;
-        public event SIPTransactionTimedOutDelegate NonInviteTransactionTimedOut;
+        public event SIPTransactionFailedDelegate NonInviteTransactionFailed;
         public event SIPTransactionRequestReceivedDelegate NonInviteRequestReceived;
         public event SIPTransactionRequestRetransmitDelegate NonInviteTransactionRequestRetransmit;
 
@@ -34,11 +34,10 @@ namespace SIPSorcery.SIP
             TransactionRequestReceived += SIPNonInviteTransaction_TransactionRequestReceived;
             TransactionInformationResponseReceived += SIPNonInviteTransaction_TransactionInformationResponseReceived;
             TransactionFinalResponseReceived += SIPNonInviteTransaction_TransactionFinalResponseReceived;
-            TransactionTimedOut += SIPNonInviteTransaction_TransactionTimedOut;
-            TransactionRemoved += SIPNonInviteTransaction_TransactionRemoved;
+            TransactionFailed += SIPNonInviteTransaction_TransactionFailed;
             TransactionRequestRetransmit += SIPNonInviteTransaction_TransactionRequestRetransmit;
 
-            if(sipRequest.RemoteSIPEndPoint != null)
+            if (sipRequest.RemoteSIPEndPoint != null)
             {
                 // This transaction type can be used to represent two different things:
                 // - a tx that the application wants to use to send a request reliably,
@@ -48,22 +47,11 @@ namespace SIPSorcery.SIP
                 // needs to be signalled that it is now at the request processing stage.
                 base.UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
             }
-
-            sipTransport.AddTransaction(this);
         }
 
-        private void SIPNonInviteTransaction_TransactionRemoved(SIPTransaction transaction)
+        private void SIPNonInviteTransaction_TransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
-            // Remove all event handlers.
-            NonInviteTransactionInfoResponseReceived = null;
-            NonInviteTransactionFinalResponseReceived = null;
-            NonInviteTransactionTimedOut = null;
-            NonInviteRequestReceived = null;
-        }
-
-        private void SIPNonInviteTransaction_TransactionTimedOut(SIPTransaction sipTransaction)
-        {
-            NonInviteTransactionTimedOut?.Invoke(this);
+            NonInviteTransactionFailed?.Invoke(this, failureReason);
         }
 
         private Task<SocketError> SIPNonInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)

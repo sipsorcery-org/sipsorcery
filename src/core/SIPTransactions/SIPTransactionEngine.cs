@@ -259,13 +259,6 @@ namespace SIPSorcery.SIP
             m_pendingTransactions.TryRemove(transactionId, out _);
         }
 
-        private void RemoveTransaction(SIPTransaction transaction)
-        {
-            // Remove all event handlers.
-            transaction.RemoveEventHandlers();
-            RemoveTransaction(transaction.TransactionId);
-        }
-
         /// <summary>
         ///  Checks whether there is only a single transaction outstanding for a Call-ID header. This is used in an experimental trial of matching
         ///  ACK's on the Call-ID if the full check fails.
@@ -463,12 +456,11 @@ namespace SIPSorcery.SIP
 
                                         if (sendResult != SocketError.Success && sendResult != SocketError.InProgress)
                                         {
+                                            logger.LogWarning($"SIP transaction send failed in state {transaction.TransactionState} with error {sendResult}.");
+
                                             // Example of failures here are requiring a specific TCP or TLS connection that no longer exists
                                             // or attempting to send to a UDP socket that has previously returned an ICMP error.
-                                            transaction.DeliveryPending = false;
-                                            transaction.DeliveryFailed = true;
-                                            transaction.TimedOutAt = DateTime.Now;
-                                            transaction.FireTransactionTimedOut();
+                                            transaction.Failed(sendResult);
                                         }
                                     }
                                 }
@@ -585,7 +577,8 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                // If there is no tx request then it must be a PRack request we're being asked to send reliably.
+                // If there is no transaction request then it must be a PRack request we're being asked 
+                // to send reliably.
                 SIPRequest req = transaction.TransactionRequest ?? transaction.PRackRequest;
 
                 if (transaction.OutboundProxy != null)
@@ -699,8 +692,7 @@ namespace SIPSorcery.SIP
                     if (m_pendingTransactions.ContainsKey(transactionId))
                     {
                         SIPTransaction expiredTransaction = m_pendingTransactions[transactionId];
-                        expiredTransaction.FireTransactionRemoved();
-                        RemoveTransaction(expiredTransaction);
+                        RemoveTransaction(expiredTransaction.TransactionId);
                     }
                 }
             }

@@ -39,6 +39,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VideoPhoneCmdLine", "VideoP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CustomAudioCodec", "CustomAudioCodec\CustomAudioCodec.csproj", "{21B364D0-D885-442B-B053-E39FCB0F94CF}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NotifierClient", "NotifierClient\NotifierClient.csproj", "{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -265,6 +267,18 @@ Global
 		{21B364D0-D885-442B-B053-E39FCB0F94CF}.Release|x64.Build.0 = Release|Any CPU
 		{21B364D0-D885-442B-B053-E39FCB0F94CF}.Release|x86.ActiveCfg = Release|Any CPU
 		{21B364D0-D885-442B-B053-E39FCB0F94CF}.Release|x86.Build.0 = Release|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Debug|x64.Build.0 = Debug|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Debug|x86.Build.0 = Debug|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Release|x64.ActiveCfg = Release|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Release|x64.Build.0 = Release|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Release|x86.ActiveCfg = Release|Any CPU
+		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

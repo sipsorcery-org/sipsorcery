@@ -40,7 +40,7 @@ namespace SIPSorcery.Net.Sctp
         {
             _udpSock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             _udpSock.Connect("localhost", toPort);
-            _rcv = new Thread(run);
+            _rcv = new Thread(run) { IsBackground = true };
             _rcv.Name = "UDPForwarding_rcv";
             _rcv.Start();
             SCTPStreamBehaviour behave = mkBehave();

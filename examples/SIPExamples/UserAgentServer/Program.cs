@@ -68,7 +68,7 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static int SIP_LISTEN_PORT = 5060;
+        private static int SIP_LISTEN_PORT = 5080;
         private static int SIPS_LISTEN_PORT = 5061;
         //private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
         //private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
@@ -174,7 +174,7 @@ namespace SIPSorcery
                                 rtpCts = new CancellationTokenSource();
 
                                 UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
-                                uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, uasTransaction);
+                                uas = new SIPServerUserAgent(sipTransport, null, uasTransaction, null);
                                 uas.CallCancelled += (uasAgent) =>
                                 {
                                     rtpCts?.Cancel();

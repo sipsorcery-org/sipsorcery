@@ -224,7 +224,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader(dummyFrom), new SIPToHeader(null, dummyURI, null), 1, CallProperties.CreateNewCallId());
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
-            inviteHeader.Contact = new List<SIPContactHeader> { SIPContactHeader.GetDefaultSIPContactHeader() };
+            inviteHeader.Contact = new List<SIPContactHeader> { SIPContactHeader.GetDefaultSIPContactHeader(inviteRequest.URI.Scheme) };
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = "unittest";
             inviteRequest.Header = inviteHeader;
@@ -252,7 +252,6 @@ namespace SIPSorcery.SIP.UnitTests
 
         void SetTransactionTraceEvents(SIPTransaction transaction)
         {
-            transaction.TransactionRemoved += new SIPTransactionRemovedDelegate(transaction_TransactionRemoved);
             transaction.TransactionStateChanged += new SIPTransactionStateChangeDelegate(transaction_TransactionStateChanged);
             transaction.TransactionTraceMessage += new SIPTransactionTraceMessageDelegate(transaction_TransactionTraceMessage);
         }

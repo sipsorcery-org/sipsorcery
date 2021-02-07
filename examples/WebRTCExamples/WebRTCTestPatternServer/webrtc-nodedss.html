@@ -10,7 +10,7 @@
         "use strict";
 
         const STUN_URL = "stun:stun.sipsorcery.com";
-        const NODE_DSS_URL = "http://127.0.0.1:3000";
+        const NODE_DSS_URL = "https://localhost:5001/api/webrtcsignal";
         const NODE_DSS_OUR_ID = "cli";
         const NODE_DSS_THEIR_ID = "svr";
         const NODE_DSS_POLL_PERIOD = 5000;
@@ -19,6 +19,7 @@
         var nodeDssUrl = NODE_DSS_URL;
         var nodeDssOurID = NODE_DSS_OUR_ID;
         var nodeDssTheirID = NODE_DSS_THEIR_ID;
+        var isConnected = false;
         var isClosed = false;
 
         $(document).ready(function () {
@@ -32,13 +33,16 @@
             pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
 
             pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
-            pc.onicecandidate = evt => evt.candidate && sendSignal(JSON.stringify(evt.candidate));
+            pc.onicecandidate = evt => evt.candidate && sendSignal(JSON.stringify(evt.candidate), "ice");
+            pc.onconnectionstatechange = () => {
+                console.log("onconnectionstatechange: " + pc.connectionState);
+                isConnected = (pc.connectionState == "connected");
+            }
 
             // Diagnostics.
             pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
             pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
             pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
-            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
 
             nodeDssUrl = $('#nodedssurl').val();
             nodeDssOurID = $('#ourID').val();
@@ -47,12 +51,12 @@
             pollNodeDss();
         };
 
-        function sendSignal(msg) {
-            //console.log(`sendSignal ${msg}`);
+        function sendSignal(msg, type) {
+            console.log(`sendSignal ${nodeDssUrl}/${type}/${nodeDssOurID}/${nodeDssTheirID}`);
 
             $.ajax({
-                url: `${nodeDssUrl}/data/${nodeDssTheirID}`,
-                type: 'POST',
+                url: `${nodeDssUrl}/${type}/${nodeDssOurID}/${nodeDssTheirID}`,
+                type: 'PUT',
                 contentType: 'application/json',
                 data: msg,
                 success: onSuccess,
@@ -67,7 +71,7 @@
 
             if (!isClosed) {
                 $.ajax({
-                    url: `${nodeDssUrl}/data/${nodeDssOurID}`,
+                    url: `${nodeDssUrl}/${nodeDssOurID}/${nodeDssTheirID}`,
                     type: 'GET',
                     success: onSuccess,
                     error: onError
@@ -87,14 +91,17 @@
                 if (pc.localDescription == null) {
                     await pc.createAnswer()
                         .then((answer) => pc.setLocalDescription(answer))
-                        .then(() => { sendSignal(JSON.stringify(pc.localDescription)) });
+                        .then(() => { sendSignal(JSON.stringify(pc.localDescription), "sdp") });
                 }
             }
-            pollNodeDss();
+
+            if (!isClosed && !isConnected) {
+                pollNodeDss(NODE_DSS_POLL_PERIOD);
+            }
         }
 
        async function onError(xhr, status, error) {
-            if (!isClosed && error == "Not Found" && pc.localDescription == null) {
+            if (!isClosed && !isConnected && error == "Not Found" && pc.localDescription == null) {
                 pollNodeDss(NODE_DSS_POLL_PERIOD);
             }
             else {

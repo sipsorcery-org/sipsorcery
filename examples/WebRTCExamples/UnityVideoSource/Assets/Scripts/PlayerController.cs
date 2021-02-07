@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 using TMPro;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Media;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 using SIPSorcery.Net;
 using System.Threading;
 
@@ -124,13 +124,13 @@ public class PlayerController : MonoBehaviour
 
 public class WebRTCPeer
 {
-    private const string NODE_DSS_SERVER = "http://127.0.0.1:3000";
-    private const string NODE_DSS_MY_USER = "unity";
-    private const string NODE_DSS_THEIR_USER = "console";
+    private const string REST_SIGNALING_SERVER = "https://sipsorcery.cloud/api/webrtcsignal";
+    private const string REST_SIGNALING_MY_ID = "uni";
+    private const string REST_SIGNALING_THEIR_ID = "bro";
 
     private static Microsoft.Extensions.Logging.ILogger logger;
 
-    private WebRTCNodeDssPeer _webrtcNodePeer;
+    private WebRTCRestSignalingPeer _webrtcRestSignaling;
     public SIPSorceryMedia.Encoders.VideoEncoderEndPoint VideoEncoderEndPoint { get; }
     private CancellationTokenSource _cts;
 
@@ -141,22 +141,23 @@ public class WebRTCPeer
         VideoEncoderEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
         _cts = new CancellationTokenSource();
 
-        _webrtcNodePeer = new WebRTCNodeDssPeer(
-            NODE_DSS_SERVER,
-            NODE_DSS_MY_USER,
-            NODE_DSS_THEIR_USER,
+        _webrtcRestSignaling = new WebRTCRestSignalingPeer(
+            REST_SIGNALING_SERVER,
+            REST_SIGNALING_MY_ID,
+            REST_SIGNALING_THEIR_ID,
             this.CreatePeerConnection);
     }
 
     public Task Start()
     {
-        return _webrtcNodePeer.Start(_cts);
+        return _webrtcRestSignaling.Start(_cts);
+        //return Task.CompletedTask;
     }
 
     public void Close(string reason)
     {
         _cts.Cancel();
-        _webrtcNodePeer?.RTCPeerConnection?.Close(reason);
+        _webrtcRestSignaling?.RTCPeerConnection?.Close(reason);
     }
 
     private Task<SIPSorcery.Net.RTCPeerConnection> CreatePeerConnection()
@@ -164,46 +165,45 @@ public class WebRTCPeer
         var pc = new SIPSorcery.Net.RTCPeerConnection(null);
 
         // Set up sources and hook up send events to peer connection.
-        AudioExtrasSource audioSrc = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.None });
-        audioSrc.OnAudioSourceEncodedSample += pc.SendAudio;
+        //AudioExtrasSource audioSrc = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.None });
+        //audioSrc.OnAudioSourceEncodedSample += pc.SendAudio;
         //var testPatternSource = new VideoTestPatternSource();
         //testPatternSource.SetMaxFrameRate(true);
         //testPatternSource.OnVideoSourceRawSample += VideoEncoderEndPoint.ExternalVideoSourceRawSample;
         VideoEncoderEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
 
         // Add tracks.
-        var audioTrack = new SIPSorcery.Net.MediaStreamTrack(audioSrc.GetAudioSourceFormats(), SIPSorcery.Net.MediaStreamStatusEnum.SendOnly);
-        pc.addTrack(audioTrack);
+        //var audioTrack = new SIPSorcery.Net.MediaStreamTrack(audioSrc.GetAudioSourceFormats(), SIPSorcery.Net.MediaStreamStatusEnum.SendOnly);
+        //pc.addTrack(audioTrack);
         var videoTrack = new SIPSorcery.Net.MediaStreamTrack(VideoEncoderEndPoint.GetVideoSourceFormats(), SIPSorcery.Net.MediaStreamStatusEnum.SendOnly);
         pc.addTrack(videoTrack);
 
         // Handlers to set the codecs to use on the sources once the SDP negotiation is complete.
-        pc.OnVideoFormatsNegotiated += (sdpFormat) => VideoEncoderEndPoint.SetVideoSourceFormat(SIPSorcery.Net.SDPMediaFormatInfo.GetVideoCodecForSdpFormat(sdpFormat.First().FormatCodec));
-        pc.OnAudioFormatsNegotiated += (sdpFormat) =>
-            audioSrc.SetAudioSourceFormat(SIPSorcery.Net.SDPMediaFormatInfo.GetAudioCodecForSdpFormat(sdpFormat.First().FormatCodec));
+        pc.OnVideoFormatsNegotiated += (sdpFormat) => VideoEncoderEndPoint.SetVideoSourceFormat(sdpFormat.First());
+        //pc.OnAudioFormatsNegotiated += (sdpFormat) => audioSrc.SetAudioSourceFormat(sdpFormat.First());
 
         pc.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
         pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
-        pc.onconnectionstatechange += async (state) =>
+        pc.onconnectionstatechange += (state) =>
         {
             logger.LogDebug($"Peer connection connected changed to {state}.");
             if (state == SIPSorcery.Net.RTCPeerConnectionState.connected)
             {
-                await audioSrc.StartAudio();
+                //await audioSrc.StartAudio();
                 //await testPatternSource.StartVideo();
             }
             else if (state == SIPSorcery.Net.RTCPeerConnectionState.closed || state == SIPSorcery.Net.RTCPeerConnectionState.failed)
             {
-                await audioSrc.CloseAudio();
+                //await audioSrc.CloseAudio();
                 //await testPatternSource.CloseVideo();
             }
         };
 
-        pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) =>
-        {
-            bool hasUseCandidate = msg.Attributes.Any(x => x.AttributeType == SIPSorcery.Net.STUNAttributeTypesEnum.UseCandidate);
-            logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}, use candidate {hasUseCandidate}.");
-        };
+        //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) =>
+        //{
+        //    bool hasUseCandidate = msg.Attributes.Any(x => x.AttributeType == SIPSorcery.Net.STUNAttributeTypesEnum.UseCandidate);
+        //    logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}, use candidate {hasUseCandidate}.");
+        //};
 
         return Task.FromResult(pc);
     }

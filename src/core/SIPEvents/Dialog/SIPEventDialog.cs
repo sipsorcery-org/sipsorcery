@@ -25,7 +25,6 @@ namespace SIPSorcery.SIP
     public class SIPEventDialog
     {
         private static readonly string m_dialogXMLNS = SIPEventConsts.DIALOG_XML_NAMESPACE_URN;
-        private static readonly string m_sipsorceryXMLNS = SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN;
 
         public string ID;                               // The ID is a only mandatory attribute for a dialog element.
         public string CallID;
@@ -61,19 +60,6 @@ namespace SIPSorcery.SIP
                 //RemoteParticipant = new SIPEventDialogParticipant(sipDialogue.RemoteUserField.Name, sipDialogue.RemoteUserField.URI, sipDialogue.RemoteTarget, sipDialogue.CSeq, sipDialogue.RemoteSDP);
                 RemoteParticipant = new SIPEventDialogParticipant(sipDialogue.RemoteUserField.Name, sipDialogue.RemoteUserField.URI, sipDialogue.RemoteTarget, sipDialogue.CSeq);
                 BridgeID = (sipDialogue.BridgeId != Guid.Empty) ? sipDialogue.BridgeId.ToString() : null;
-
-                if (sipDialogue.Direction == SIPCallDirection.In)
-                {
-                    RemoteParticipant.CRMPersonName = sipDialogue.CRMPersonName;
-                    RemoteParticipant.CRMCompanyName = sipDialogue.CRMCompanyName;
-                    RemoteParticipant.CRMPictureURL = sipDialogue.CRMPictureURL;
-                }
-                else if (sipDialogue.Direction == SIPCallDirection.Out)
-                {
-                    LocalParticipant.CRMPersonName = sipDialogue.CRMPersonName;
-                    LocalParticipant.CRMCompanyName = sipDialogue.CRMCompanyName;
-                    LocalParticipant.CRMPictureURL = sipDialogue.CRMPictureURL;
-                }
             }
         }
 
@@ -95,7 +81,6 @@ namespace SIPSorcery.SIP
         public static SIPEventDialog Parse(XElement dialogElement)
         {
             XNamespace ns = m_dialogXMLNS;
-            XNamespace ss = m_sipsorceryXMLNS;
 
             SIPEventDialog eventDialog = new SIPEventDialog();
             eventDialog.ID = dialogElement.Attribute("id").Value;
@@ -110,7 +95,6 @@ namespace SIPSorcery.SIP
             eventDialog.StateEvent = (stateElement.Attribute("event") != null) ? SIPEventDialogStateEvent.Parse(stateElement.Attribute("event").Value) : SIPEventDialogStateEvent.None;
 
             eventDialog.Duration = (dialogElement.Element(ns + "duration") != null) ? Convert.ToInt32(dialogElement.Element(ns + "duration").Value) : 0;
-            eventDialog.BridgeID = (dialogElement.Element(ss + "bridgeid") != null) ? dialogElement.Element(ss + "bridgeid").Value : null;
 
             eventDialog.LocalParticipant = (dialogElement.Element(ns + "local") != null) ? SIPEventDialogParticipant.Parse(dialogElement.Element(ns + "local")) : null;
             eventDialog.RemoteParticipant = (dialogElement.Element(ns + "remote") != null) ? SIPEventDialogParticipant.Parse(dialogElement.Element(ns + "remote")) : null;
@@ -121,7 +105,6 @@ namespace SIPSorcery.SIP
         public XElement ToXML()
         {
             XNamespace ns = m_dialogXMLNS;
-            XNamespace ss = m_sipsorceryXMLNS;
 
             XElement eventDialogElement = new XElement(ns + "dialog",
                 new XAttribute("id", ID),
@@ -143,12 +126,8 @@ namespace SIPSorcery.SIP
             { eventDialogElement.Element(ns + "state").Add(new XAttribute("event", StateEvent.ToString())); }
             if (Duration != 0)
             { eventDialogElement.Add(new XElement(ns + "duration", Duration)); }
-            if (BridgeID != null)
-            { eventDialogElement.Add(new XElement(ss + "bridgeid", BridgeID)); }
-            //if (LocalParticipant != null) { eventDialogElement.Add(LocalParticipant.ToXML("local", filter)); }
             if (LocalParticipant != null)
             { eventDialogElement.Add(LocalParticipant.ToXML("local")); }
-            //if (RemoteParticipant != null) { eventDialogElement.Add(RemoteParticipant.ToXML("remote", filter)); }
             if (RemoteParticipant != null)
             { eventDialogElement.Add(RemoteParticipant.ToXML("remote")); }
 

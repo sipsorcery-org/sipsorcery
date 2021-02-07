@@ -11,6 +11,7 @@
 
 using System.Net;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -668,6 +669,256 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.NotNull(referToUri);
             Assert.Equal("sip:1@127.0.0.1", referToUri.ToParameterlessString());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a private IPv4 address gets mangled correctly.
+        /// </summary>
+        [Fact]
+        public void MangleUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@192.168.0.50:5060?Replaces=xyz");
+            SIPURI mangled = SIPURI.Mangle(uri, IPSocket.Parse("67.222.131.147:5090"));
+
+            logger.LogDebug($"Mangled URI {mangled}.");
+
+            Assert.NotNull(mangled);
+            Assert.Equal("sip:user@67.222.131.147:5090?Replaces=xyz", mangled.ToString());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a private IPv4 address and no port gets mangled correctly.
+        /// </summary>
+        [Fact]
+        public void MangleNoPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@192.168.0.50?Replaces=xyz");
+            SIPURI mangled = SIPURI.Mangle(uri, IPSocket.Parse("67.222.131.147:5090"));
+
+            logger.LogDebug($"Mangled URI {mangled}.");
+
+            Assert.NotNull(mangled);
+            Assert.Equal("sip:user@67.222.131.147:5090?Replaces=xyz", mangled.ToString());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a private IPv4 address and that was recived on an IPv6
+        /// end point gets mangled correctly.
+        /// </summary>
+        [Fact]
+        public void MangleReceiveOnIPv6UnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@192.168.0.50:5060?Replaces=xyz");
+            SIPURI mangled = SIPURI.Mangle(uri, IPSocket.Parse("[2001:730:3ec2::10]:5090"));
+
+            logger.LogDebug($"Mangled URI {mangled}.");
+
+            Assert.NotNull(mangled);
+            Assert.Equal("sip:user@[2001:730:3ec2::10]:5090?Replaces=xyz", mangled.ToString());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a does not get mangled when the received on IP address
+        /// is the same private IP address as the URI host.
+        /// </summary>
+        [Fact]
+        public void NoMangleSameAddressUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@192.168.0.50:5060?Replaces=xyz");
+            SIPURI mangled = SIPURI.Mangle(uri, IPSocket.Parse("192.168.0.50:5060"));
+
+            Assert.Null(mangled);
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a public IPv4 address does not get mangled.
+        /// </summary>
+        [Fact]
+        public void NoManglePublicIPv4UnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@67.222.131.149:5060?Replaces=xyz");
+            SIPURI mangled = SIPURI.Mangle(uri, IPSocket.Parse("67.222.131.147:5060"));
+
+            Assert.Null(mangled);
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a hostname does not get mangled.
+        /// </summary>
+        [Fact]
+        public void NoMangleHostnameUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@sipsorcery.com:5060?Replaces=xyz");
+            SIPURI mangled = SIPURI.Mangle(uri, IPSocket.Parse("67.222.131.147:5060"));
+
+            Assert.Null(mangled);
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with an IPv6 host does not get mangled.
+        /// </summary>
+        [Fact]
+        public void NoMangleIPv6UnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:5060?Replaces=xyz");
+            SIPURI mangled = SIPURI.Mangle(uri, IPSocket.Parse("67.222.131.147:5060"));
+
+            Assert.Null(mangled);
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default UDP port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultUdpPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:5060?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.udp, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a the port not set is correctly recognised as using the
+        /// default port.
+        /// </summary>
+        [Fact]
+        public void DefaultUdpPortWhenNotSetUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.udp, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a non-default UDP port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void NonDefaultUdpPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:5080?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.udp, uri.Protocol);
+            Assert.False(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default TCP port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultTcpPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:5060;transport=tcp?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.tcp, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default TLS port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultTlsPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sips:user@[2001:730:3ec2::10]:5061?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.tls, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default Web Socket port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultWebSocketPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:80;transport=ws?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.ws, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with a default Secure Web Socket port is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void DefaultSecureWebSocketPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = SIPURI.ParseSIPURI("sip:user@[2001:730:3ec2::10]:443;transport=wss?Replaces=xyz");
+
+            Assert.Equal(SIPProtocolsEnum.wss, uri.Protocol);
+            Assert.True(uri.IsDefaultPort());
 
             logger.LogDebug("-----------------------------------------");
         }

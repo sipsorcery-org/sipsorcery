@@ -500,9 +500,13 @@ namespace SIPSorcery.Net
                     //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)
                     //https://tools.ietf.org/id/draft-ietf-tls-dtls13-31.html#rfc.section.5.7
                     if (receiveLen == DTLS_RETRANSMISSION_CODE)
+                    {
                         _waitMillis = BackOff(_waitMillis);
+                    }
                     else
+                    {
                         _waitMillis = RetransmissionMilliseconds;
+                    }
 
                     return receiveLen;
                 }

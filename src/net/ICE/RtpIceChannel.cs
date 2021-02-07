@@ -855,7 +855,7 @@ namespace SIPSorcery.Net
 
                 foreach (var remoteCandidate in _remoteCandidates)
                 {
-                    await UpdateChecklist(_relayChecklistCandidate, remoteCandidate);
+                    await UpdateChecklist(_relayChecklistCandidate, remoteCandidate).ConfigureAwait(false);
                 }
             }
 
@@ -895,7 +895,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        remoteCandidateIPAddr = await MdnsResolve(remoteCandidate.address);
+                        remoteCandidateIPAddr = await MdnsResolve(remoteCandidate.address).ConfigureAwait(false);
                         if (remoteCandidateIPAddr == null)
                         {
                             logger.LogWarning($"RTP ICE channel MDNS resolver failed to resolve {remoteCandidate.address}.");
@@ -912,7 +912,7 @@ namespace SIPSorcery.Net
                 else
                 {
                     // The candidate string can be a hostname or an IP address.
-                    var lookupResult = await _dnsLookupClient.QueryAsync(remoteCandidate.address, DnsClient.QueryType.A);
+                    var lookupResult = await _dnsLookupClient.QueryAsync(remoteCandidate.address, DnsClient.QueryType.A).ConfigureAwait(false);
 
                     if (lookupResult.Answers.Count > 0)
                     {
@@ -1091,7 +1091,7 @@ namespace SIPSorcery.Net
                         {
                             // The local relay candidate has already been checked and any hostnames 
                             // resolved when the ICE servers were checked.
-                            await UpdateChecklist(_relayChecklistCandidate, candidate);
+                            await UpdateChecklist(_relayChecklistCandidate, candidate).ConfigureAwait(false);
                         }
                     }
                 }
@@ -1353,6 +1353,7 @@ namespace SIPSorcery.Net
                         OnIceConnectionStateChange?.Invoke(IceConnectionState);
                     }
 
+                    candidatePair.RequestTransactionID = candidatePair.RequestTransactionID ?? Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
                     candidatePair.LastCheckSentAt = DateTime.Now;
                     candidatePair.ChecksSent++;
 
@@ -1390,7 +1391,7 @@ namespace SIPSorcery.Net
                 {
                     // Safe to wait here as the candidates from an ICE server will always be IP addresses only,
                     // no DNS lookups required.
-                    await AddCandidatesForIceServer(iceServer);
+                    await AddCandidatesForIceServer(iceServer).ConfigureAwait(false);
                 }
             }
             else
@@ -1549,12 +1550,12 @@ namespace SIPSorcery.Net
                                 logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding request: {matchingChecklistEntry.RemoteCandidate.ToShortString()}.");
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
-                            else if(matchingChecklistEntry.RemoteCandidate.ToString() != NominatedEntry.RemoteCandidate.ToString())
+                            else if (matchingChecklistEntry.RemoteCandidate.ToString() != NominatedEntry.RemoteCandidate.ToString())
                             {
                                 // The remote peer is changing the nominated candidate.
                                 logger.LogDebug($"ICE RTP channel remote peer nominated a new candidate: {matchingChecklistEntry.RemoteCandidate.ToShortString()}.");
                                 SetNominatedEntry(matchingChecklistEntry);
-                            }                           
+                            }
                         }
 
                         matchingChecklistEntry.LastBindingRequestReceivedAt = DateTime.Now;

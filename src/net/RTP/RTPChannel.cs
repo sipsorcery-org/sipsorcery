@@ -161,7 +161,7 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            catch(SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
+            catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
             {
                 // Thrown when close is called on a socket from this end. Safe to ignore.
             }
@@ -431,8 +431,9 @@ namespace SIPSorcery.Net
 
                     //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
                     if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
+                    {
                         dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
-
+                    }
 
                     sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
                     return SocketError.Success;

@@ -32,6 +32,7 @@ namespace SIPSorcery.SIP.App
         Guid ID { get; }
         string SIPUsername { get; }
         string SIPPassword { get; }
+        string HA1Digest { get; }   // Digest of the username + domain + password. Can be used for authentication instead of the password field.
         string SIPDomain { get; }
         bool IsDisabled { get; }
     }

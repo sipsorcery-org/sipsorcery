@@ -29,11 +29,8 @@ namespace SIPSorcery.Media
         private G722Codec _g722Decoder;
         private G722CodecState _g722DecoderState;
 
-        private List<AudioFormat> _supportedFormats = new List<AudioFormat>
+        private List<AudioFormat> _linearFormats = new List<AudioFormat>
         {
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
             new AudioFormat(AudioCodecsEnum.L16, 117, 16000),
             new AudioFormat(AudioCodecsEnum.L16, 118, 8000),
 
@@ -41,26 +38,32 @@ namespace SIPSorcery.Media
             //new AudioFormat(121, "L16", "L16/48000", null),
         };
 
+        private List<AudioFormat> _supportedFormats = new List<AudioFormat>
+        {
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
+        };
+
         public List<AudioFormat> SupportedFormats
         {
             get => _supportedFormats;
         }
 
-        //public bool IsSupported(AudioFormat format)
-        //{
-        //    switch (format.Codec)
-        //    {
-        //        case AudioCodecsEnum.G722:
-        //        case AudioCodecsEnum.PCMA:
-        //        case AudioCodecsEnum.PCMU:
-        //        case AudioCodecsEnum.L16:
-        //        case AudioCodecsEnum.PCM_S16LE:
-        //            return true;
-        //        default:
-        //            return false;
-        //    }
-        //}
-  
+        /// <summary>
+        /// Creates a new audio encoder instance.
+        /// </summary>
+        /// <param name="includeLinearFormats">If set to true the linear audio formats will be added
+        /// to the list of supported formats. The reason they are only included if explicitly requested
+        /// is they are not very popular for other VoIP systems and thereofre needlessly pollute the SDP.</param>
+        public AudioEncoder(bool includeLinearFormats = false)
+        {
+            if (includeLinearFormats)
+            {
+                _supportedFormats.AddRange(_linearFormats);
+            }
+        }
+
         public byte[] EncodeAudio(short[] pcm, AudioFormat format)
         {
             if (format.Codec == AudioCodecsEnum.G722)
@@ -89,9 +92,9 @@ namespace SIPSorcery.Media
             {
                 // When netstandard2.1 can be used.
                 //return MemoryMarshal.Cast<short, byte>(pcm)
-                
+
                 // Put on the wire in network byte order (big endian).
-                return pcm.SelectMany(x => new byte[] { (byte)(x >> 8), (byte)(x) } ).ToArray();
+                return pcm.SelectMany(x => new byte[] { (byte)(x >> 8), (byte)(x) }).ToArray();
             }
             else if (format.Codec == AudioCodecsEnum.PCM_S16LE)
             {
@@ -133,7 +136,7 @@ namespace SIPSorcery.Media
             {
                 return encodedSample.Select(x => MuLawDecoder.MuLawToLinearSample(x)).ToArray();
             }
-            else if(format.Codec == AudioCodecsEnum.L16)
+            else if (format.Codec == AudioCodecsEnum.L16)
             {
                 // Samples are on the wire as big endian.
                 return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => (short)(encodedSample[i * 2] << 8 | encodedSample[i * 2 + 1])).ToArray();
@@ -166,7 +169,7 @@ namespace SIPSorcery.Media
                 // Crude up-sample to 48Khz by 6x each sample. This sounds bad, use for testing only.
                 return pcm.SelectMany(x => new short[] { x, x, x, x, x, x }).ToArray();
             }
-            else if(inRate == 16000 && outRate == 8000)
+            else if (inRate == 16000 && outRate == 8000)
             {
                 // Crude down-sample to 8Khz by skipping every second sample.
                 return pcm.Where((x, i) => i % 2 == 0).ToArray();

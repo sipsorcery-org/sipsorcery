@@ -72,7 +72,7 @@ namespace SIPSorcery.Net.UnitTests
                     channel2.Start();
 
                     // Give the socket receive tasks time to fire up.
-                    await Task.Delay(2000);
+                    await Task.Delay(2000).ConfigureAwait(false);
 
                     IPAddress channel2Address = (channel2.RTPLocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Loopback : IPAddress.Loopback;
                     IPEndPoint channel2Dst = new IPEndPoint(channel2Address, channel2.RTPPort);
