@@ -466,7 +466,8 @@ namespace SIPSorcery.Net
         /// <param name="connectionAddress">Optional. If specified this IP address
         /// will be used as the address advertised in the SDP offer. If not provided
         /// the kernel routing table will be used to determine the local IP address used
-        /// for Internet access.</param>
+        /// for Internet access. Any and IPv6Any are special cases. If they are set the respective
+        /// Internet facing IPv4 or IPv6 address will be used.</param>
         /// <returns>A task that when complete contains the SDP offer.</returns>
         public virtual SDP CreateOffer(IPAddress connectionAddress)
         {
@@ -490,7 +491,8 @@ namespace SIPSorcery.Net
         /// <param name="connectionAddress">Optional. If set this address will be used as 
         /// the SDP Connection address. If not specified the Operating System routing table
         /// will be used to lookup the address used to connect to the SDP connection address
-        /// from the remote offer.</param>
+        /// from the remote offer. Any and IPv6Any are special cases. If they are set the respective
+        /// Internet facing IPv4 or IPv6 address will be used.</param>
         /// <returns>A task that when complete contains the SDP answer.</returns>
         /// <remarks>As specified in https://tools.ietf.org/html/rfc3264#section-6.1.
         ///  "If the answerer has no media formats in common for a particular
@@ -926,13 +928,14 @@ namespace SIPSorcery.Net
         /// <param name="tracks">The list of tracks to generate the session description for.</param>
         /// <param name="connectionAddress">Optional. If set this address will be used as 
         /// the SDP Connection address. If not specified the Internet facing address will
-        /// be used.</param>
+        /// be used. IPAddress.Any and IPAddress. Any and IPv6Any are special cases. If they are set the respective
+        /// Internet facing IPv4 or IPv6 address will be used.</param>
         /// <returns>A session description payload.</returns>
         private SDP GetSessionDesciption(List<MediaStreamTrack> tracks, IPAddress connectionAddress)
         {
             IPAddress localAddress = connectionAddress;
 
-            if (localAddress == null)
+            if (localAddress == null || localAddress == IPAddress.Any || localAddress == IPAddress.IPv6Any)
             {
                 if (m_bindAddress != null)
                 {
@@ -964,7 +967,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    localAddress = NetServices.InternetDefaultAddress;
+                    localAddress = (localAddress == IPAddress.IPv6Any) ? NetServices.InternetDefaultIPv6Address : NetServices.InternetDefaultAddress;
                 }
             }
 

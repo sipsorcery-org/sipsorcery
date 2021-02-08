@@ -177,6 +177,21 @@ namespace SIPSorcery.Sys.UnitTests
         }
 
         /// <summary>
+        /// Tests that the local IPv6 address for accessing the Internet on this machine can be determined.
+        /// </summary>
+        [Fact]
+        public void GetInternetIPv6AddressUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var localInternetIPv6Address = NetServices.InternetDefaultIPv6Address;
+            Assert.NotNull(localInternetIPv6Address);
+
+            logger.LogDebug($"Local Internet IPv6 address {localInternetIPv6Address}.");
+        }
+
+        /// <summary>
         /// Tests that RTP and control listeners can be created with a pseudo-random port assignment.
         /// </summary>
         [Fact]
