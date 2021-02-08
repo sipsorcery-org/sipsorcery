@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v5.0.26-pre: Improve SIP transaction logic to report failures with an error code.
+    <PackageReleaseNotes>- v5.0.27-pre: Fix bug not setting cname on SSRC attribute which breaks WebRTC browsers.
+- v5.0.26-pre: Improve SIP transaction logic to report failures with an error code.
 - v5.0.20-pre: Add SSRC attributes to SDP offes and answers (required for WebRTC to work with Janus).
 - v5.0.19-pre: Supply test pattern raw samples as RGB. Fixed construction of SIP PRACK requests.
 - v5.0.18-pre: Refactor of SIP event logic. Substantial tune of SIP transport and channels to improve dual mode IPv6 and TLS connections.
@@ -70,9 +71,9 @@
 - v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>5.0.26-pre</Version>
-    <AssemblyVersion>5.0.26.0</AssemblyVersion>
-    <FileVersion>5.0.26.0</FileVersion>
+    <Version>5.0.27-pre</Version>
+    <AssemblyVersion>5.0.27.0</AssemblyVersion>
+    <FileVersion>5.0.27.0</FileVersion>
   </PropertyGroup>
 
 </Project>
