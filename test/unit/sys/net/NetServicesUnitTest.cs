@@ -185,10 +185,18 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localInternetIPv6Address = NetServices.InternetDefaultIPv6Address;
-            Assert.NotNull(localInternetIPv6Address);
+            if (Socket.OSSupportsIPv6)
+            {
 
-            logger.LogDebug($"Local Internet IPv6 address {localInternetIPv6Address}.");
+                var localInternetIPv6Address = NetServices.InternetDefaultIPv6Address;
+                Assert.NotNull(localInternetIPv6Address);
+
+                logger.LogDebug($"Local Internet IPv6 address {localInternetIPv6Address}.");
+            }
+            else
+            {
+                logger.LogDebug("Test skipped due to no OS IPv6 support.");
+            }
         }
 
         /// <summary>
