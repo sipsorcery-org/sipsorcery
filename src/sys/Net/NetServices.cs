@@ -546,16 +546,19 @@ namespace SIPSorcery.Sys
                 {
                     UdpClient udpClient = new UdpClient();
                     udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
-                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
                 }
                 else
                 {
                     UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6);
                     udpClient.Connect(destination, NETWORK_TEST_PORT);
-                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
                 }
 
-                m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
+                if (localAddress != null)
+                {
+                    m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
+                }
 
                 return localAddress;
             }

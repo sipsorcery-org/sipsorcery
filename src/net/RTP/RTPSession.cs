@@ -967,7 +967,15 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    localAddress = (localAddress == IPAddress.IPv6Any) ? NetServices.InternetDefaultIPv6Address : NetServices.InternetDefaultAddress;
+                    if (localAddress == IPAddress.IPv6Any && NetServices.InternetDefaultIPv6Address != null)
+                    {
+                        // If an IPv6 address has been requested AND there is a public IPv6 address available use it.
+                        localAddress = NetServices.InternetDefaultIPv6Address;
+                    }
+                    else
+                    {
+                        localAddress = NetServices.InternetDefaultAddress;
+                    }
                 }
             }
 
