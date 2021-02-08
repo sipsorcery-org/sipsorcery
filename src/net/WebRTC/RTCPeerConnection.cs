@@ -1011,7 +1011,13 @@ namespace SIPSorcery.Net
 
                     if (track.Ssrc != 0)
                     {
-                        announcement.SsrcAttributes.Add(new SDPSsrcAttribute(track.Ssrc, null, null));
+                        string trackCname = track.Kind == SDPMediaTypesEnum.video ?
+                       VideoRtcpSession?.Cname : AudioRtcpSession?.Cname;
+
+                        if (trackCname != null)
+                        {
+                            announcement.SsrcAttributes.Add(new SDPSsrcAttribute(track.Ssrc, trackCname, null));
+                        }
                     }
 
                     offerSdp.Media.Add(announcement);

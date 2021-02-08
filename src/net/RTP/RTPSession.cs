@@ -770,7 +770,7 @@ namespace SIPSorcery.Net
 
             if (track.StreamStatus == MediaStreamStatusEnum.Inactive)
             {
-                // Inactive tracks don't use/require any local resources. Instead they are placeholders
+                // Inactive tracks don't use/require any local resources. Instead they are place holders
                 // so that the session description offers/answers can be balanced with the remote party.
                 // For example if the remote party offers audio and video but we only support audio we
                 // can reject the call or we can accept the audio and answer with an inactive video
@@ -1013,7 +1013,13 @@ namespace SIPSorcery.Net
 
                 if (track.Ssrc != 0)
                 {
-                    announcement.SsrcAttributes.Add(new SDPSsrcAttribute(track.Ssrc, null, null));
+                    string trackCname = track.Kind == SDPMediaTypesEnum.video ?
+                        VideoRtcpSession?.Cname : AudioRtcpSession?.Cname;
+
+                    if (trackCname != null)
+                    {
+                        announcement.SsrcAttributes.Add(new SDPSsrcAttribute(track.Ssrc, trackCname, null));
+                    }
                 }
 
                 sdp.Media.Add(announcement);
