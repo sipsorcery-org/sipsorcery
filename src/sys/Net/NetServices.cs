@@ -545,14 +545,28 @@ namespace SIPSorcery.Sys
                 if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
                 {
                     UdpClient udpClient = new UdpClient();
-                    udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
-                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    try
+                    {
+                        udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
+                        localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    }
+                    catch(SocketException)
+                    {
+                        // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
+                    }
                 }
                 else
                 {
                     UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6);
-                    udpClient.Connect(destination, NETWORK_TEST_PORT);
-                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    try
+                    {
+                        udpClient.Connect(destination, NETWORK_TEST_PORT);
+                        localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    }
+                    catch (SocketException)
+                    {
+                        // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
+                    }
                 }
 
                 if (localAddress != null)
