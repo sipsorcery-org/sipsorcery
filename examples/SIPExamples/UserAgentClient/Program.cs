@@ -17,6 +17,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -46,24 +47,37 @@ namespace demo
 
             // Plumbing code to facilitate a graceful exit.
             ManualResetEvent exitMre = new ManualResetEvent(false);
+            bool preferIPv6 = false;
             bool isCallHungup = false;
             bool hasCallFailed = false;
 
             Log = AddConsoleLogger(LogEventLevel.Verbose);
 
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
-            if (args != null && args.Length > 0)
+            if (args?.Length > 0)
             {
                 if (!SIPURI.TryParse(args[0], out callUri))
                 {
                     Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
                 }
             }
-            Log.LogInformation($"Call destination {callUri}.");
+            if(args?.Length > 1 && args[1] == "ipv6")
+            {
+                preferIPv6 = true;
+            }
+
+            if (preferIPv6)
+            {
+                Log.LogInformation($"Call destination {callUri}, preferencing IPv6.");
+            }
+            else
+            {
+                Log.LogInformation($"Call destination {callUri}.");
+            }
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            //sipTransport.PreferIPv6NameResolution = true;
+            sipTransport.PreferIPv6NameResolution = preferIPv6;
             sipTransport.EnableTraceLogs();
 
             var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
@@ -71,7 +85,7 @@ namespace demo
             //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.G722);
             var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
 
-            var offerSDP = rtpSession.CreateOffer(null);
+            var offerSDP = rtpSession.CreateOffer(preferIPv6 ? IPAddress.IPv6Any : IPAddress.Any);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
