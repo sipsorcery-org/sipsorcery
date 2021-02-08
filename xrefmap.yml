@@ -38983,6 +38983,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.GetLocalAddressForRemote
   nameWithType: NetServices.GetLocalAddressForRemote
+- uid: SIPSorcery.Sys.NetServices.GetLocalIPv6AddressForInternet
+  name: GetLocalIPv6AddressForInternet()
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalIPv6AddressForInternet
+  commentId: M:SIPSorcery.Sys.NetServices.GetLocalIPv6AddressForInternet
+  fullName: SIPSorcery.Sys.NetServices.GetLocalIPv6AddressForInternet()
+  nameWithType: NetServices.GetLocalIPv6AddressForInternet()
+- uid: SIPSorcery.Sys.NetServices.GetLocalIPv6AddressForInternet*
+  name: GetLocalIPv6AddressForInternet
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalIPv6AddressForInternet_
+  commentId: Overload:SIPSorcery.Sys.NetServices.GetLocalIPv6AddressForInternet
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetServices.GetLocalIPv6AddressForInternet
+  nameWithType: NetServices.GetLocalIPv6AddressForInternet
 - uid: SIPSorcery.Sys.NetServices.InternetDefaultAddress
   name: InternetDefaultAddress
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_InternetDefaultAddress
@@ -38996,6 +39009,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.InternetDefaultAddress
   nameWithType: NetServices.InternetDefaultAddress
+- uid: SIPSorcery.Sys.NetServices.InternetDefaultIPv6Address
+  name: InternetDefaultIPv6Address
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_InternetDefaultIPv6Address
+  commentId: P:SIPSorcery.Sys.NetServices.InternetDefaultIPv6Address
+  fullName: SIPSorcery.Sys.NetServices.InternetDefaultIPv6Address
+  nameWithType: NetServices.InternetDefaultIPv6Address
+- uid: SIPSorcery.Sys.NetServices.InternetDefaultIPv6Address*
+  name: InternetDefaultIPv6Address
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_InternetDefaultIPv6Address_
+  commentId: Overload:SIPSorcery.Sys.NetServices.InternetDefaultIPv6Address
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetServices.InternetDefaultIPv6Address
+  nameWithType: NetServices.InternetDefaultIPv6Address
 - uid: SIPSorcery.Sys.NetServices.LocalIPAddresses
   name: LocalIPAddresses
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_LocalIPAddresses
