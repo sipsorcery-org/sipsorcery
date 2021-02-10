@@ -38,7 +38,7 @@ namespace demo
 
         public WebRTCEchoService(ILoggerFactory loggerFactory)
         {
-            _logger = loggerFactory.CreateLogger<WebRTCEchoService>();
+            _logger = loggerFactory.CreateLogger< WebRTCEchoService>();
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

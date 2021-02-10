@@ -70,12 +70,28 @@ namespace demo
                     if (!echoSvc.IsInUse(id))
                     {
                         context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                        await context.Response.WriteAsync("The provided id did not match an existing peer connection. Please request an offer first.");
+                        await context.Response.WriteAsync("The provided id did not match an existing peer connection. Please get an offer first.");
                     }
                     else
                     {
                         var answer = await JsonSerializer.DeserializeAsync<RTCSessionDescriptionInit>(context.Request.Body, jsonOptions);
                         echoSvc.SetRemoteDescription(id, answer);
+                        await context.Response.CompleteAsync();
+                    }
+                });
+
+                endpoints.MapPost("/ice/{id}", async context =>
+                {
+                    var id = context.Request.RouteValues["id"] as string;
+                    if (!echoSvc.IsInUse(id))
+                    {
+                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                        await context.Response.WriteAsync("The provided id did not match an existing peer connection. Please get an offer first.");
+                    }
+                    else
+                    {
+                        var candidate = await JsonSerializer.DeserializeAsync<RTCIceCandidateInit>(context.Request.Body, jsonOptions);
+                        echoSvc.AddIceCandidate(id, candidate);
                         await context.Response.CompleteAsync();
                     }
                 });
