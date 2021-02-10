@@ -10,6 +10,7 @@
 
             var offerUrl = `${signalUrl}/offer/${localID}`;
             var answerUrl = `${signalUrl}/answer/${localID}`;
+            var iceUrl = `${signalUrl}/ice/${localID}`;
 
             this.LocalID = localID;
 
@@ -24,6 +25,14 @@
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
+
+            this.sendIce = async function (candidate) {
+                await fetch(iceUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(candidate),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
         }
 
     </script>
@@ -32,6 +41,7 @@
 
         "use strict";
 
+        const STUN_SERVER = "stun:stun.sipsorcery.com";
         const NOISE_FRAME_WIDTH = 80;
         const NOISE_FRAME_HEIGHT = 60;
 
@@ -56,9 +66,10 @@
             let noiseStm = whiteNoise(NOISE_FRAME_WIDTH, NOISE_FRAME_HEIGHT);
             document.getElementById("localVideoCtl").srcObject = noiseStm;
 
-            // Create the peer connections.
-            pc = createPeer("echoVideoCtl", noiseStm);
             let signaler = new RestSignaler(signalingUrl, localID);
+
+            // Create the peer connections.
+            pc = createPeer("echoVideoCtl", noiseStm, signaler);
 
             // Create the signaler, get the offer and send the answer back.
             var offer = await signaler.getOffer();
@@ -74,14 +85,18 @@
             }
         }
 
-        function createPeer(videoCtlID, noiseStm) {
+        function createPeer(videoCtlID, noiseStm, signaler) {
 
             console.log("Creating peer ...");
             isClosed = false;
 
-            let pc = new RTCPeerConnection();
+            let pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_SERVER }] });
             noiseStm.getTracks().forEach(track => pc.addTrack(track, noiseStm));
             pc.ontrack = evt => document.getElementById(videoCtlID).srcObject = evt.streams[0];
+            pc.onicecandidate = evt => {
+                console.log(JSON.stringify(evt.candidate));
+                evt.candidate && signaler.sendIce(evt.candidate);
+            }
 
             return pc;
         }
