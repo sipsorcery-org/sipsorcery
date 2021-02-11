@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
         public string algorithm;
 
         /// <summary>
-        /// The value of the certificate fingerprint in lowercase hex string as expressed utilizing 
+        /// The value of the certificate fingerprint in lower-case hex string as expressed utilising 
         /// the syntax of 'fingerprint' in [RFC4572] Section 5.
         /// </summary>
         public string value;
@@ -260,17 +260,6 @@ namespace SIPSorcery.Net
         /// causing connection issues.
         /// </summary>
         public IPAddress X_BindAddress;
-
-        /// <summary>
-        /// Optional. If the remote signalling address is known at the time of creating the peer
-        /// connection it can be used to select the interface that host ICE candidates will be
-        /// gathered on. Restricting the host candidate IP addresses to a single interface is 
-        /// as per the recommendation at:
-        /// https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2.
-        /// If this is not set then the default is to use the Internet facing interface as
-        /// returned by the OS routing table.
-        /// </summary>
-        public IPAddress X_RemoteSignallingAddress;
 
         /// <summary>
         /// Optional. If set to true the feedback profile set in the SDP offers and answers will be

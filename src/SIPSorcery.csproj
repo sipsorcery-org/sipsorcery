@@ -71,9 +71,9 @@
 - v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>5.0.27-pre</Version>
-    <AssemblyVersion>5.0.27.0</AssemblyVersion>
-    <FileVersion>5.0.27.0</FileVersion>
+    <Version>5.0.28-pre</Version>
+    <AssemblyVersion>5.0.28.0</AssemblyVersion>
+    <FileVersion>5.0.28.0</FileVersion>
   </PropertyGroup>
 
 </Project>
