@@ -9,6 +9,7 @@ branches:
 skip_tags: true
 image: Visual Studio 2019
 build_script:
+- dotnet nuget add source "https://aaronrc.pkgs.visualstudio.com/sipsorcery.cloud/_packaging/sipsorcery-dev/nuget/v3/index.json"
 - nuget restore -DisableParallelProcessing examples/sipexamples/sipexamples.sln
 - msbuild examples/sipexamples/sipexamples.sln
 - nuget restore -DisableParallelProcessing examples/sipexamples/GetStartedNetFramework/GetStartedNetFramework.sln

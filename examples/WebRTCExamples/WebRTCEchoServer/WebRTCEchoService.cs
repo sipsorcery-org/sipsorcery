@@ -85,55 +85,77 @@ namespace demo
 
             _logger.LogDebug($"Generating new offer for ID {id}.");
 
-            var peerConnection = new RTCPeerConnection();
-            
-            if(_publicIPv4 != null)
+            var pc = new RTCPeerConnection();
+
+            if (_publicIPv4 != null)
             {
-                var rtpPort = peerConnection.GetRtpChannel().RTPPort;
+                var rtpPort = pc.GetRtpChannel().RTPPort;
                 var publicIPv4Candidate = new RTCIceCandidate(RTCIceProtocol.udp, _publicIPv4, (ushort)rtpPort, RTCIceCandidateType.host);
-                peerConnection.addLocalIceCandidate(publicIPv4Candidate);
+                pc.addLocalIceCandidate(publicIPv4Candidate);
             }
 
             if (_publicIPv6 != null)
             {
-                var rtpPort = peerConnection.GetRtpChannel().RTPPort;
+                var rtpPort = pc.GetRtpChannel().RTPPort;
                 var publicIPv6Candidate = new RTCIceCandidate(RTCIceProtocol.udp, _publicIPv6, (ushort)rtpPort, RTCIceCandidateType.host);
-                peerConnection.addLocalIceCandidate(publicIPv6Candidate);
+                pc.addLocalIceCandidate(publicIPv6Candidate);
             }
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false,
                 new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendRecv);
-            peerConnection.addTrack(audioTrack);
+            pc.addTrack(audioTrack);
             MediaStreamTrack videoTrack = new MediaStreamTrack(new VideoFormat(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID), MediaStreamStatusEnum.SendRecv);
-            peerConnection.addTrack(videoTrack);
+            pc.addTrack(videoTrack);
 
-            peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+            pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
-                peerConnection.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
+                pc.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
                 //_logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, SeqNum {rtpPkt.Header.SequenceNumber}.");
             };
             //peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             //peerConnection.OnSendReport += RtpSession_OnSendReport;
 
-            peerConnection.OnTimeout += (mediaType) => _logger.LogWarning($"Timeout for {mediaType}.");
-            peerConnection.onconnectionstatechange += (state) =>
+            pc.onsignalingstatechange += () =>
             {
-                _logger.LogDebug($"Peer connection {id} state changed to {state}.");
+                if(pc.signalingState == RTCSignalingState.have_remote_offer)
+                {
+                    // This peer is acting as an echo server so deactivate any media streams that the
+                    // remote peer is not intending to send.
+                    if(pc.AudioRemoteTrack.StreamStatus != MediaStreamStatusEnum.SendRecv)
+                    {
+                        _logger.LogDebug($"Setting audio stream to inactive due to remote peer audio stream status of {pc.AudioRemoteTrack.StreamStatus}.");
+                        pc.SetMediaStreamStatus(SDPMediaTypesEnum.audio, MediaStreamStatusEnum.Inactive);
+                    }
 
-                if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
-                {
-                    _peerConnections.TryRemove(id, out _);
-                }
-                else if (state == RTCPeerConnectionState.connected)
-                {
-                    _logger.LogDebug("Peer connection connected.");
+                    if (pc.VideoRemoteTrack.StreamStatus != MediaStreamStatusEnum.SendRecv)
+                    {
+                        _logger.LogDebug($"Setting video stream to inactive due to remote peer video stream status of {pc.VideoRemoteTrack.StreamStatus}.");
+                        pc.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.Inactive);
+                    }
                 }
             };
 
-            var offerSdp = peerConnection.createOffer(null);
-            await peerConnection.setLocalDescription(offerSdp);
+            pc.OnTimeout += (mediaType) => _logger.LogWarning($"Timeout for {mediaType}.");
+            pc.onconnectionstatechange += (state) =>
+            {
+                _logger.LogDebug($"Peer connection {id} state changed to {state}.");
 
-            _peerConnections.TryAdd(id, peerConnection);
+                if (state == RTCPeerConnectionState.failed)
+                {
+                    pc.Close("ice failure");
+                }
+
+                if (_peerConnections.ContainsKey(id) && !(state == RTCPeerConnectionState.@new || state == RTCPeerConnectionState.connecting))
+                {
+                    // If the peer connection has finished with ICE remove it so the signaling ID can be re-used.
+                    _peerConnections.TryRemove(id, out _);
+                }
+            };
+
+            var offerSdp = pc.createOffer(null);
+            await pc.setLocalDescription(offerSdp);
+
+            _peerConnections.TryAdd(id, pc);
 
             //_logger.LogTrace($"Offer SDP for {id}:\n{offerSdp.sdp}");
             Console.WriteLine($"Offer SDP for {id}:\n{offerSdp.sdp}");
