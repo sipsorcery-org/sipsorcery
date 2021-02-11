@@ -8301,12 +8301,6 @@ references:
   commentId: F:SIPSorcery.Net.RTCConfiguration.X_BindAddress
   fullName: SIPSorcery.Net.RTCConfiguration.X_BindAddress
   nameWithType: RTCConfiguration.X_BindAddress
-- uid: SIPSorcery.Net.RTCConfiguration.X_RemoteSignallingAddress
-  name: X_RemoteSignallingAddress
-  href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_X_RemoteSignallingAddress
-  commentId: F:SIPSorcery.Net.RTCConfiguration.X_RemoteSignallingAddress
-  fullName: SIPSorcery.Net.RTCConfiguration.X_RemoteSignallingAddress
-  nameWithType: RTCConfiguration.X_RemoteSignallingAddress
 - uid: SIPSorcery.Net.RTCConfiguration.X_UseRtpFeedbackProfile
   name: X_UseRtpFeedbackProfile
   href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_X_UseRtpFeedbackProfile
@@ -8783,6 +8777,12 @@ references:
   commentId: M:SIPSorcery.Net.RTCIceCandidate.#ctor(SIPSorcery.Net.RTCIceCandidateInit)
   fullName: SIPSorcery.Net.RTCIceCandidate.RTCIceCandidate(SIPSorcery.Net.RTCIceCandidateInit)
   nameWithType: RTCIceCandidate.RTCIceCandidate(RTCIceCandidateInit)
+- uid: SIPSorcery.Net.RTCIceCandidate.#ctor(SIPSorcery.Net.RTCIceProtocol,System.Net.IPAddress,System.UInt16,SIPSorcery.Net.RTCIceCandidateType)
+  name: RTCIceCandidate(RTCIceProtocol, IPAddress, UInt16, RTCIceCandidateType)
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate__ctor_SIPSorcery_Net_RTCIceProtocol_System_Net_IPAddress_System_UInt16_SIPSorcery_Net_RTCIceCandidateType_
+  commentId: M:SIPSorcery.Net.RTCIceCandidate.#ctor(SIPSorcery.Net.RTCIceProtocol,System.Net.IPAddress,System.UInt16,SIPSorcery.Net.RTCIceCandidateType)
+  fullName: SIPSorcery.Net.RTCIceCandidate.RTCIceCandidate(SIPSorcery.Net.RTCIceProtocol, System.Net.IPAddress, System.UInt16, SIPSorcery.Net.RTCIceCandidateType)
+  nameWithType: RTCIceCandidate.RTCIceCandidate(RTCIceProtocol, IPAddress, UInt16, RTCIceCandidateType)
 - uid: SIPSorcery.Net.RTCIceCandidate.#ctor*
   name: RTCIceCandidate
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate__ctor_
@@ -9637,6 +9637,12 @@ references:
   commentId: T:SIPSorcery.Net.RTCPeerConnection
   fullName: SIPSorcery.Net.RTCPeerConnection
   nameWithType: RTCPeerConnection
+- uid: SIPSorcery.Net.RTCPeerConnection.#ctor
+  name: RTCPeerConnection()
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__ctor
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.#ctor
+  fullName: SIPSorcery.Net.RTCPeerConnection.RTCPeerConnection()
+  nameWithType: RTCPeerConnection.RTCPeerConnection()
 - uid: SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration)
   name: RTCPeerConnection(RTCConfiguration)
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__ctor_SIPSorcery_Net_RTCConfiguration_
@@ -9669,6 +9675,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.addIceCandidate
   nameWithType: RTCPeerConnection.addIceCandidate
+- uid: SIPSorcery.Net.RTCPeerConnection.addLocalIceCandidate(SIPSorcery.Net.RTCIceCandidate)
+  name: addLocalIceCandidate(RTCIceCandidate)
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_addLocalIceCandidate_SIPSorcery_Net_RTCIceCandidate_
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.addLocalIceCandidate(SIPSorcery.Net.RTCIceCandidate)
+  fullName: SIPSorcery.Net.RTCPeerConnection.addLocalIceCandidate(SIPSorcery.Net.RTCIceCandidate)
+  nameWithType: RTCPeerConnection.addLocalIceCandidate(RTCIceCandidate)
+- uid: SIPSorcery.Net.RTCPeerConnection.addLocalIceCandidate*
+  name: addLocalIceCandidate
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_addLocalIceCandidate_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.addLocalIceCandidate
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.addLocalIceCandidate
+  nameWithType: RTCPeerConnection.addLocalIceCandidate
 - uid: SIPSorcery.Net.RTCPeerConnection.canTrickleIceCandidates
   name: canTrickleIceCandidates
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_canTrickleIceCandidates
