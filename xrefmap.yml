@@ -12896,6 +12896,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RemoteRtpEventPayloadID
   nameWithType: RTPSession.RemoteRtpEventPayloadID
+- uid: SIPSorcery.Net.RTPSession.RTCP_RR_NOSTREAM_SSRC
+  name: RTCP_RR_NOSTREAM_SSRC
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTCP_RR_NOSTREAM_SSRC
+  commentId: F:SIPSorcery.Net.RTPSession.RTCP_RR_NOSTREAM_SSRC
+  fullName: SIPSorcery.Net.RTPSession.RTCP_RR_NOSTREAM_SSRC
+  nameWithType: RTPSession.RTCP_RR_NOSTREAM_SSRC
 - uid: SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   name: RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
