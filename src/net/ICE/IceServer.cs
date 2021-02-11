@@ -92,7 +92,11 @@ namespace SIPSorcery.Net
         internal STUNUri _uri;
         internal string _username;
         internal string _password;
-        internal int _id;           // An incrementing number that needs to be unique for each server in the session.
+
+        /// <summary>
+        /// An incrementing number that needs to be unique for each server in the session.
+        /// </summary>
+        internal int _id;
 
         /// <summary>
         /// The end point for this STUN or TURN server. Will be set asynchronously once

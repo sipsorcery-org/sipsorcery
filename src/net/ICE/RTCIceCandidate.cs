@@ -89,7 +89,7 @@ namespace SIPSorcery.Net
         public ushort port { get; set; }
 
         /// <summary>
-        /// The typ of ICE candidate, host, srflx etc.
+        /// The type of ICE candidate, host, srflx etc.
         /// </summary>
         public RTCIceCandidateType type { get; set; }
 
@@ -132,6 +132,19 @@ namespace SIPSorcery.Net
                 relatedAddress = iceCandidate.relatedAddress;
                 relatedPort = iceCandidate.relatedPort;
             }
+        }
+
+        /// <summary>
+        /// Convenience constructor for cases when the application wants
+        /// to create an ICE candidate,
+        /// </summary>
+        public RTCIceCandidate(
+             RTCIceProtocol cProtocol,
+            IPAddress cAddress,
+            ushort cPort,
+            RTCIceCandidateType cType)
+        {
+            SetAddressProperties(cProtocol, cAddress, cPort, cType, null, 0);
         }
 
         public void SetAddressProperties(
