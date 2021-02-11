@@ -111,7 +111,7 @@ namespace SIPSorcery.SIP
                     }
                     catch (Exception excp)
                     {
-                        logger.LogWarning("Exception SIPTransportConfig Adding SIP Channel for " + sipEndPoint + ". " + excp.Message);
+                        logger.LogWarning(excp, "Exception SIPTransportConfig Adding SIP Channel for " + sipEndPoint + ". " + excp.Message);
                     }
                 }
             }

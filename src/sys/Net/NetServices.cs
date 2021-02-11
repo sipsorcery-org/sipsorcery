@@ -498,12 +498,12 @@ namespace SIPSorcery.Sys
                 }
                 catch (PlatformNotSupportedException platExcp)
                 {
-                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with a platform exception {platExcp.Message}");
+                    logger.LogWarning(platExcp, $"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with a platform exception {platExcp.Message}");
                     hasDualModeReceiveSupport = false;
                 }
                 catch (Exception excp)
                 {
-                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with {excp.Message}");
+                    logger.LogWarning(excp, $"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with {excp.Message}");
                     hasDualModeReceiveSupport = false;
                 }
                 finally
