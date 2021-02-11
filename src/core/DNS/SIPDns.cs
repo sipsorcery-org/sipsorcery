@@ -314,7 +314,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (Exception srvExcp)
                         {
-                            logger.LogWarning($"SIPDNS exception on SRV lookup. {srvExcp.Message}.");
+                            logger.LogWarning(srvExcp, $"SIPDNS exception on SRV lookup. {srvExcp.Message}.");
                         }
                         queryType = preferIPv6 ? QueryType.AAAA : QueryType.A;
 
@@ -337,7 +337,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (Exception srvExcp)
                         {
-                            logger.LogWarning($"SIPDNS exception on AAAA lookup. {srvExcp.Message}.");
+                            logger.LogWarning(srvExcp, $"SIPDNS exception on AAAA lookup. {srvExcp.Message}.");
                             queryType = QueryType.A;
                         }
 
@@ -365,7 +365,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (Exception srvExcp)
                         {
-                            logger.LogWarning($"SIPDNS exception on A lookup. {srvExcp.Message}.");
+                            logger.LogWarning(srvExcp, $"SIPDNS exception on A lookup. {srvExcp.Message}.");
                             result = SIPEndPoint.Empty;
                         }
 

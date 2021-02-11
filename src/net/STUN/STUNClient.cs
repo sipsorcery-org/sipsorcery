@@ -92,7 +92,7 @@ namespace SIPSorcery.Net
                         }
                         catch (Exception recvExcp)
                         {
-                            logger.LogWarning("Exception STUNClient Receive. " + recvExcp.Message);
+                            logger.LogWarning(recvExcp, "Exception STUNClient Receive. " + recvExcp.Message);
                         }
                     }, state: null);
 

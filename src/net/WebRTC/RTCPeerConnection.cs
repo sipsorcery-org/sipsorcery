@@ -459,7 +459,7 @@ namespace SIPSorcery.Net
                             }
                             catch (Exception excp)
                             {
-                                logger.LogWarning($"RTCPeerConnection DTLS handshake failed. {excp.Message}");
+                                logger.LogWarning(excp, $"RTCPeerConnection DTLS handshake failed. {excp.Message}");
 
                                 connectionState = RTCPeerConnectionState.failed;
                                 onconnectionstatechange?.Invoke(connectionState);
@@ -550,7 +550,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogWarning($"SCTP exception initialising association. {excp.Message}");
+                logger.LogWarning(excp, $"SCTP exception initialising association. {excp.Message}");
             }
         }
 

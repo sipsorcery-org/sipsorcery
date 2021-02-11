@@ -198,7 +198,7 @@ namespace SIPSorcery.SIP
                 catch (Exception acceptExcp)
                 {
                     // This exception gets thrown if the remote end disconnects during the socket accept.
-                    logger.LogWarning($"Exception SIP {ProtDescr} Channel accepting socket ({acceptExcp.GetType()}). {acceptExcp.Message}");
+                    logger.LogWarning(acceptExcp, $"Exception SIP {ProtDescr} Channel accepting socket ({acceptExcp.GetType()}). {acceptExcp.Message}");
                 }
             }
         }
@@ -540,7 +540,7 @@ namespace SIPSorcery.SIP
             }
             catch (SocketException sockExcp)
             {
-                logger.LogWarning($"SocketException SIP {ProtDescr} Channel SendOnConnected {sipStreamConn.RemoteSIPEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
+                logger.LogWarning(sockExcp, $"SocketException SIP {ProtDescr} Channel SendOnConnected {sipStreamConn.RemoteSIPEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
                 OnSIPStreamDisconnected(sipStreamConn, sockExcp.SocketErrorCode);
                 throw;
             }
@@ -762,7 +762,7 @@ namespace SIPSorcery.SIP
                         catch (SocketException sockExcp)
                         {
                             // Will be thrown if the socket is already closed.
-                            logger.LogWarning($"Socket error in PruneConnections. {sockExcp.Message} ({sockExcp.ErrorCode}).");
+                            logger.LogWarning(sockExcp, $"Socket error in PruneConnections. {sockExcp.Message} ({sockExcp.ErrorCode}).");
                         }
                         catch (Exception pruneExcp)
                         {
