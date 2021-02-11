@@ -2,7 +2,7 @@
 // Filename: HomeController.cs
 //
 // Description: Default ASP.Net MVC controller for WebRTC example. This
-// controller's purpose is to server up the HTML page with the WebRTC client
+// controller's purpose is to serve up the HTML page with the WebRTC client
 // side script.
 //
 // Author(s):

@@ -35,7 +35,7 @@ namespace demo
 {
     class Program
     {
-        private const string REST_SIGNALING_SERVER = "https://devcall.sipsorcery.com/api/webrtcsignal";
+        private const string REST_SIGNALING_SERVER = "https://sipsorcery.cloud/api/webrtcsignal";
         private const string REST_SIGNALING_MY_USER = "con";
         private const string REST_SIGNALING_THEIR_USER = "bro";
 
@@ -52,8 +52,8 @@ namespace demo
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            var nodeDssWebRTCPeer = new WebRTCRestSignalingPeer(REST_SIGNALING_SERVER, REST_SIGNALING_MY_USER, REST_SIGNALING_THEIR_USER, CreatePeerConnection);
-            await nodeDssWebRTCPeer.Start(cts);
+            var restPeer = new WebRTCRestSignalingPeer(REST_SIGNALING_SERVER, REST_SIGNALING_MY_USER, REST_SIGNALING_THEIR_USER, CreatePeerConnection);
+            await restPeer.Start(cts);
 
             // Open a Window to display the video feed from the WebRTC peer.
             _form = new Form();
@@ -125,11 +125,11 @@ namespace demo
                 }
             };
 
-            peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) =>
-            {
-                bool hasUseCandidate = msg.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.UseCandidate);
-                Console.WriteLine($"STUN {msg.Header.MessageType} received from {ep}, use candidate {hasUseCandidate}.");
-            };
+            //peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) =>
+            //{
+            //    bool hasUseCandidate = msg.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.UseCandidate);
+            //    Console.WriteLine($"STUN {msg.Header.MessageType} received from {ep}, use candidate {hasUseCandidate}.");
+            //};
 
             peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
