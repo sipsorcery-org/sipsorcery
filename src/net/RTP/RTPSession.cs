@@ -138,13 +138,13 @@ namespace SIPSorcery.Net
         /// srtp_protect():
         /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN
         /// into the location in memory immediately following the RTP packet.
-        /// Callers MUST ensure that this much writable memory is available in
+        /// Callers MUST ensure that this much writeable memory is available in
         /// the buffer that holds the RTP packet.
         /// 
         /// srtp_protect_rtcp():
         /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN+4
         /// to the location in memory immediately following the RTCP packet.
-        /// Callers MUST ensure that this much writable memory is available in
+        /// Callers MUST ensure that this much writeable memory is available in
         /// the buffer that holds the RTCP packet.
         /// </summary>
         public const int SRTP_MAX_PREFIX_LENGTH = 148;
@@ -156,6 +156,13 @@ namespace SIPSorcery.Net
         private const int SDP_SESSIONID_LENGTH = 10;             // The length of the pseudo-random string to use for the session ID.
         public const int DTMF_EVENT_DURATION = 1200;            // Default duration for a DTMF event.
         public const int DTMF_EVENT_PAYLOAD_ID = 101;
+
+        /// <summary>
+        /// When there are no RTP packets being sent for an audio or video stream webrtc.lib
+        /// still sends RTCP Receiver Reports with this hard coded SSRC. No doubt it's defined
+        /// in an RFC somewhere but I wasn't able to find it from a quick search.
+        /// </summary>
+        public const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
 
         private static ILogger logger = Log.Logger;
 
@@ -1812,6 +1819,8 @@ namespace SIPSorcery.Net
                         else
                         {
                             buffer = buffer.Take(outBufLen).ToArray();
+                            //logger.LogTrace("RTCP:");
+                            //logger.LogTrace(buffer.HexStr());
                         }
                     }
 
@@ -1874,10 +1883,15 @@ namespace SIPSorcery.Net
                                 rtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
                                 OnReceiveReport?.Invoke(remoteEndPoint, rtcpSession.MediaType, rtcpPkt);
                             }
+                            else if(rtcpPkt.ReceiverReport?.SSRC == RTCP_RR_NOSTREAM_SSRC)
+                            {
+                                // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
+                            }
                             else if (AudioRtcpSession?.PacketsReceivedCount > 0 || VideoRtcpSession?.PacketsReceivedCount > 0)
                             {
                                 // Only give this warning if we've received at least one RTP packet.
                                 logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
+                                logger.LogTrace(rtcpPkt.GetDebugSummary());
                             }
                         }
                     }
