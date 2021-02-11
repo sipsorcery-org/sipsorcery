@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>demo</RootNamespace>
-    <AssemblyName>webrtc-echo</AssemblyName>
+    <AssemblyName>webrtcecho</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
