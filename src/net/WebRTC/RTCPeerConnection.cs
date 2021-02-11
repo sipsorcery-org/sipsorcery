@@ -485,9 +485,10 @@ namespace SIPSorcery.Net
                                     InitialiseSctpAssociation();
                                 }
                             }
-                            catch (Exception excp)
-                            {
-                                logger.LogWarning(excp, $"RTCPeerConnection DTLS handshake failed. {excp.Message}");
+                        }
+                        catch (Exception excp)
+                        {
+                            logger.LogWarning(excp, $"RTCPeerConnection DTLS handshake failed. {excp.Message}");
 
                             connectionState = RTCPeerConnectionState.failed;
                             onconnectionstatechange?.Invoke(connectionState);
