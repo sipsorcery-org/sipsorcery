@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Rewrite;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -47,7 +48,9 @@ namespace demo
             {
                 var jsonOptions = new JsonSerializerOptions();
                 jsonOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-                var echoSvc = new WebRTCEchoService(app.ApplicationServices.GetService<ILoggerFactory>());
+                var echoSvc = new WebRTCEchoService(
+                    app.ApplicationServices.GetService<ILoggerFactory>(),
+                    app.ApplicationServices.GetService<IConfiguration>());
 
                 endpoints.MapGet("/offer/{id}", async context =>
                 {
