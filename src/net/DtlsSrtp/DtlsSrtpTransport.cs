@@ -199,7 +199,7 @@ namespace SIPSorcery.Net
                 }
                 catch (System.Exception excp)
                 {
-                    logger.LogWarning($"DTLS handshake as client failed. {excp.Message}");
+                    logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
 
                     // Declare handshake as failed
                     _handshakeComplete = false;
@@ -249,7 +249,7 @@ namespace SIPSorcery.Net
                 }
                 catch (System.Exception excp)
                 {
-                    logger.LogWarning($"DTLS handshake as server failed. {excp.Message}");
+                    logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
 
                     // Declare handshake as failed
                     _handshakeComplete = false;

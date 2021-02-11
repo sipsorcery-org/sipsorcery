@@ -175,7 +175,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogWarning("Exception STUNListener Close. " + excp.Message);
+                logger.LogWarning(excp, "Exception STUNListener Close. " + excp.Message);
             }
         }
     }

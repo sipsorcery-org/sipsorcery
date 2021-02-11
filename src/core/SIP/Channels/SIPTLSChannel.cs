@@ -185,13 +185,13 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.LogWarning($"IOException SIPTLSChannel OnReadCallback. {ioExcp.Message}");
+                    logger.LogWarning(ioExcp, $"IOException SIPTLSChannel OnReadCallback. {ioExcp.Message}");
                     OnSIPStreamDisconnected(sipStreamConnection, SocketError.Fault);
                 }
             }
             catch (Exception excp)
             {
-                logger.LogWarning($"Exception SIPTLSChannel OnReadCallback. {excp.Message}");
+                logger.LogWarning(excp, $"Exception SIPTLSChannel OnReadCallback. {excp.Message}");
                 OnSIPStreamDisconnected(sipStreamConnection, SocketError.Fault);
             }
         }
@@ -209,7 +209,7 @@ namespace SIPSorcery.SIP
             }
             catch (SocketException sockExcp)
             {
-                logger.LogWarning($"SocketException SIP TLS Channel sending to {sipStreamConn.RemoteSIPEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
+                logger.LogWarning(sockExcp, $"SocketException SIP TLS Channel sending to {sipStreamConn.RemoteSIPEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
                 OnSIPStreamDisconnected(sipStreamConn, sockExcp.SocketErrorCode);
                 throw;
             }

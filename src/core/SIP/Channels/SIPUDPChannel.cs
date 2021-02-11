@@ -158,7 +158,7 @@ namespace SIPSorcery.SIP
 
                     // This exception can occur as the result of a Send operation. It's caused by an ICMP packet from a remote host
                     // rejecting an incoming UDP packet. If that happens we want to stop further sends to the socket for a short period.
-                    logger.LogWarning($"SocketException SIPUDPChannel EndReceiveFrom from {remSIPEndPoint} ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                    logger.LogWarning(sockExcp, $"SocketException SIPUDPChannel EndReceiveFrom from {remSIPEndPoint} ({sockExcp.ErrorCode}). {sockExcp.Message}");
 
                     m_sendFailures.TryAdd(remSIPEndPoint.GetIPEndPoint(), DateTime.Now);
                 }
@@ -233,7 +233,7 @@ namespace SIPSorcery.SIP
                 // ToDo. Pretty sure these exceptions get thrown when an ICMP message comes back indicating there is no listening
                 // socket on the other end. It would be nice to be able to relate that back to the socket that the data was sent to
                 // so that we know to stop sending.
-                logger.LogWarning($"SocketException SIPUDPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                logger.LogWarning(sockExcp, $"SocketException SIPUDPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
@@ -321,7 +321,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogWarning($"Exception SIPUDPChannel Close. {excp}");
+                logger.LogWarning(excp, $"Exception SIPUDPChannel Close. {excp.Message}");
             }
         }
 

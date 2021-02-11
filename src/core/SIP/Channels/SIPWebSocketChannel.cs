@@ -332,7 +332,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogWarning("Exception SIPWebSocketChannel Close. " + excp.Message);
+                logger.LogWarning(excp, "Exception SIPWebSocketChannel Close. " + excp.Message);
             }
         }
 
