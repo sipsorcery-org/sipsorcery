@@ -1,11 +1,24 @@
+//-----------------------------------------------------------------------------
+// Filename: Startup.cs
+//
+// Description: Minimal ASP.NET Core initialisation for a WebRTC Echo Test service.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+// 
+// History:
+// 10 Feb 2021	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Rewrite;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 
@@ -25,15 +38,12 @@ namespace demo
                                 .AllowAnyMethod();
                     });
             });
+
+            services.AddTransient<WebRTCEchoServer>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
             app.UseCors();
             app.UseStaticFiles();
             app.UseRouting();
@@ -48,54 +58,31 @@ namespace demo
             {
                 var jsonOptions = new JsonSerializerOptions();
                 jsonOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-                var echoSvc = new WebRTCEchoService(
-                    app.ApplicationServices.GetService<ILoggerFactory>(),
-                    app.ApplicationServices.GetService<IConfiguration>());
 
-                endpoints.MapGet("/offer/{id}", async context =>
+                endpoints.MapPost("/offer", async context =>
                 {
                     var id = context.Request.RouteValues["id"] as string;
-                    if (echoSvc.IsInUse(id))
+                    var offer = await JsonSerializer.DeserializeAsync<RTCSessionDescriptionInit>(context.Request.Body, jsonOptions);
+
+                    if (offer != null && offer.type == RTCSdpType.offer)
                     {
-                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                        await context.Response.WriteAsync("The provided id is already in use. Please try a different one.");
+                        var echoSvc = app.ApplicationServices.GetService<WebRTCEchoServer>();
+
+                        var answer = await echoSvc.GotOffer(offer);
+                        if (answer != null)
+                        {
+                            await JsonSerializer.SerializeAsync(context.Response.Body, answer, jsonOptions);
+                        }
+                        else
+                        {
+                            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                            await context.Response.WriteAsync("Failed to get an answer.");
+                        }
                     }
                     else
                     {
-                        var offer = await echoSvc.GetOffer(id);
-                        await JsonSerializer.SerializeAsync(context.Response.Body, offer, jsonOptions);
-                    }
-                });
-
-                endpoints.MapPost("/answer/{id}", async context =>
-                {
-                    var id = context.Request.RouteValues["id"] as string;
-                    if (!echoSvc.IsInUse(id))
-                    {
                         context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                        await context.Response.WriteAsync("The provided id did not match an existing peer connection. Please get an offer first.");
-                    }
-                    else
-                    {
-                        var answer = await JsonSerializer.DeserializeAsync<RTCSessionDescriptionInit>(context.Request.Body, jsonOptions);
-                        echoSvc.SetRemoteDescription(id, answer);
-                        await context.Response.CompleteAsync();
-                    }
-                });
-
-                endpoints.MapPost("/ice/{id}", async context =>
-                {
-                    var id = context.Request.RouteValues["id"] as string;
-                    if (!echoSvc.IsInUse(id))
-                    {
-                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                        await context.Response.WriteAsync("The provided id did not match an existing peer connection. Please get an offer first.");
-                    }
-                    else
-                    {
-                        var candidate = await JsonSerializer.DeserializeAsync<RTCIceCandidateInit>(context.Request.Body, jsonOptions);
-                        echoSvc.AddIceCandidate(id, candidate);
-                        await context.Response.CompleteAsync();
+                        await context.Response.WriteAsync("Invalid offer.");
                     }
                 });
             });

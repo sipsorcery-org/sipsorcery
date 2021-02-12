@@ -36,7 +36,8 @@ namespace demo
 {
     class Program
     {
-        private const string SIGNALING_SERVER = "http://localhost:5002";
+        //private const string SIGNALING_SERVER = "http://localhost:5002";
+        private const string SIGNALING_SERVER = "http://[2603:1020:203:3::6]:5003";
         private const string SIGNALING_OFFER_RESOURCE = "offer";
         private const string SIGNALING_ANSWER_RESOURCE = "answer";
         private const int RANDOM_LOCALID_LENGTH = 8;
