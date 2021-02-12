@@ -6,32 +6,14 @@
 
         "use strict";
 
-        function RestSignaler(signalUrl, localID) {
+        function Signaler(signalUrl) {
 
-            var offerUrl = `${signalUrl}/offer/${localID}`;
-            var answerUrl = `${signalUrl}/answer/${localID}`;
-            var iceUrl = `${signalUrl}/ice/${localID}`;
-
-            this.LocalID = localID;
-
-            this.getOffer = async function() {
-                return (await fetch(offerUrl)).json();
-            }
-
-            this.sendAnswer = async function (answer) {
-                await fetch(answerUrl, {
+            this.sendOffer = async function (offer) {
+                return (await fetch(signalUrl, {
                     method: 'POST',
-                    body: JSON.stringify(answer),
+                    body: JSON.stringify(offer),
                     headers: { 'Content-Type': 'application/json' }
-                });
-            }
-
-            this.sendIce = async function (candidate) {
-                await fetch(iceUrl, {
-                    method: 'POST',
-                    body: JSON.stringify(candidate),
-                    headers: { 'Content-Type': 'application/json' }
-                });
+                })).json();
             }
         }
 
@@ -49,7 +31,8 @@
         var isClosed = true;
 
         window.onload = () => {
-            document.getElementById('signalingUrl').value = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+            let host = window.location.hostname.concat(window.location.port ? `:${window.location.port}` : "");
+            document.getElementById('signalingUrl').value = `${window.location.protocol}//${host}/offer`;
         };
 
         async function start() {
@@ -59,44 +42,42 @@
                 await closePeer();
             }
 
+            isClosed = false;
+
             let signalingUrl = document.getElementById('signalingUrl').value;
-            let localID = "id-" + Math.floor(Math.random() * 1000);
 
             // Create the noise.
             let noiseStm = whiteNoise(NOISE_FRAME_WIDTH, NOISE_FRAME_HEIGHT);
             document.getElementById("localVideoCtl").srcObject = noiseStm;
 
-            let signaler = new RestSignaler(signalingUrl, localID);
+            let signaler = new Signaler(signalingUrl);
 
             // Create the peer connections.
-            pc = createPeer("echoVideoCtl", noiseStm, signaler);
+            pc = createPeer("echoVideoCtl", noiseStm);
 
-            // Create the signaler, get the offer and send the answer back.
-            var offer = await signaler.getOffer();
+            let offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
 
-            if (offer != null) {
-                await pc.setRemoteDescription(offer);
-                let answer = await pc.createAnswer();
-                pc.setLocalDescription(answer);
-                await signaler.sendAnswer(answer);
+            var answer = await signaler.sendOffer(offer);
+
+            if (answer != null) {
+                console.log(answer.sdp)
+                await pc.setRemoteDescription(answer);
             }
             else {
+                console.log("Failed to get an answer from the Echo Test peer.")
                 pc.close();
             }
         }
 
-        function createPeer(videoCtlID, noiseStm, signaler) {
+        function createPeer(videoCtlID, noiseStm) {
 
             console.log("Creating peer ...");
-            isClosed = false;
 
             let pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_SERVER }] });
             noiseStm.getTracks().forEach(track => pc.addTrack(track, noiseStm));
             pc.ontrack = evt => document.getElementById(videoCtlID).srcObject = evt.streams[0];
-            pc.onicecandidate = evt => {
-                console.log(JSON.stringify(evt.candidate));
-                evt.candidate && signaler.sendIce(evt.candidate);
-            }
+            pc.onicecandidate = evt => evt.candidate && console.log(evt.candidate);
 
             return pc;
         }
