@@ -537,7 +537,13 @@ namespace SIPSorcery.Net
         ///   
         /// This implementation implements Mode 2.
         /// </summary>
-        /// <remarks>See https://tools.ietf.org/html/rfc8445#section-5.1.1.1</remarks>
+        /// <remarks>
+        /// See https://tools.ietf.org/html/rfc8445#section-5.1.1.1
+        /// See https://tools.ietf.org/html/rfc6874 for a recommendation on how scope or zone ID's
+        /// should be represented as strings in IPv6 link local addresses. Due to parsing
+        /// issues in at least two other WebRTC stacks (as of Feb 2021) any zone ID is removed
+        /// from an ICE candidate string.
+        /// </remarks>
         /// <returns>A list of "host" ICE candidates for the local machine.</returns>
         private List<RTCIceCandidate> GetHostCandidates()
         {
@@ -568,14 +574,14 @@ namespace SIPSorcery.Net
                 {
                     // IPv6 dual mode listening on [::] means we can use all valid local addresses.
                     localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress)
-                        .Where(x => !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
+                        .Where(x => !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal && !x.IsIPv6LinkLocal).ToList();
                 }
                 else
                 {
                     // IPv6 but not dual mode on [::] means can use all valid local IPv6 addresses.
                     localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress)
                         .Where(x => x.AddressFamily == AddressFamily.InterNetworkV6
-                        && !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
+                        && !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal && !x.IsIPv6LinkLocal).ToList();
                 }
             }
             else if (IPAddress.Any.Equals(rtpBindAddress))
