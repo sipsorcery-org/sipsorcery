@@ -37,10 +37,10 @@ namespace demo
     {
         //private const string SIGNALING_SERVER = "https://sipsorcery.cloud/janus/echo/offer";
         //private const string SIGNALING_SERVER = "https://sipsorcery.cloud/sipsorcery/echo/offer";
-        private const string SIGNALING_SERVER = "https://sipsorcery.cloud/aiortc/echo/offer";
+        //private const string SIGNALING_SERVER = "https://sipsorcery.cloud/aiortc/echo/offer";
 
         //private const string SIGNALING_SERVER = "http://localhost:5002/offer";
-        //private const string SIGNALING_SERVER = "http://localhost:8080/offer";
+        private const string SIGNALING_SERVER = "http://localhost:8080/offer";
 
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;

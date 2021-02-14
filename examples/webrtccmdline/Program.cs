@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -76,6 +77,10 @@ namespace SIPSorcery.Examples
         [Option("accepticetypes", Required = false,
             HelpText = "Only accept ICE candidates of these types from the remote peer and ignore any others. Format \"--accepticetypes=(host|srflx|relay)\".")]
         public string AcceptIceTypes { get; set; }
+
+        [Option("echo", Required = false,
+             HelpText = "Acts a client peer for a WebRTC echo server (see https://github.com/sipsorcery/webrtc-echoes). Format \"--echo 'http://localhost:8080/offer\".")]
+        public string EchoServer { get; set; }
     }
 
     class Program
@@ -266,6 +271,33 @@ namespace SIPSorcery.Examples
                     webrtcRestPeer.FilterRemoteICECandidates = (init) => _acceptIceTypes.Any(x => x == RTCIceCandidate.Parse(init.candidate).type);
                 }
                 await webrtcRestPeer.Start(exitCts);
+            }
+            else if(options.EchoServer != null)
+            {
+                // Create offer and send to echo server.
+                var pc = await Createpc(null, _stunServer, _relayOnly);
+
+                var signaler = new HttpClient();
+
+                var offer = pc.createOffer(null);
+                await pc.setLocalDescription(offer);
+
+                var content = new StringContent(offer.toJSON(), Encoding.UTF8, "application/json");
+                var response = await signaler.PostAsync($"{options.EchoServer}", content);
+                var answerStr = await response.Content.ReadAsStringAsync();
+
+                if (RTCSessionDescriptionInit.TryParse(answerStr, out var answerInit))
+                {
+                    var setAnswerResult = pc.setRemoteDescription(answerInit);
+                    if (setAnswerResult != SetDescriptionResultEnum.OK)
+                    {
+                        Console.WriteLine($"Set remote description failed {setAnswerResult}.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Failed to parse SDP answer from echo server.");
+                }
             }
 
             _ = Task.Run(() => ProcessInput(exitCts));
