@@ -57,7 +57,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public int TimeoutMilliseconds = DEFAULT_TIMEOUT_MILLISECONDS;
 
-
         /// <summary>
         /// Sets the period in milliseconds that receive will wait before try retransmission
         /// </summary>
@@ -199,7 +198,14 @@ namespace SIPSorcery.Net
                 }
                 catch (System.Exception excp)
                 {
-                    logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
+                    if (excp.InnerException is TimeoutException)
+                    {
+                        logger.LogWarning(excp, $"DTLS handshake as client timed out waiting for handshake to complete.");
+                    }
+                    else
+                    {
+                        logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
+                    }
 
                     // Declare handshake as failed
                     _handshakeComplete = false;
@@ -249,7 +255,14 @@ namespace SIPSorcery.Net
                 }
                 catch (System.Exception excp)
                 {
-                    logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
+                    if (excp.InnerException is TimeoutException)
+                    {
+                        logger.LogWarning(excp, $"DTLS handshake as server timed out waiting for handshake to complete.");
+                    }
+                    else
+                    {
+                        logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
+                    }
 
                     // Declare handshake as failed
                     _handshakeComplete = false;

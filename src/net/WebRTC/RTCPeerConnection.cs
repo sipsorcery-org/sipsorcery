@@ -226,9 +226,21 @@ namespace SIPSorcery.Net
 
         public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.stable;
 
-        public RTCIceGatheringState iceGatheringState { get; private set; } = RTCIceGatheringState.@new;
+        public RTCIceGatheringState iceGatheringState
+        {
+            get
+            {
+                return _rtpIceChannel != null ? _rtpIceChannel.IceGatheringState : RTCIceGatheringState.@new;
+            }
+        }
 
-        public RTCIceConnectionState iceConnectionState { get; private set; } = RTCIceConnectionState.@new;
+        public RTCIceConnectionState iceConnectionState
+        {
+            get
+            {
+                return _rtpIceChannel != null ? _rtpIceChannel.IceConnectionState : RTCIceConnectionState.@new;
+            }
+        }
 
         public RTCPeerConnectionState connectionState { get; private set; } = RTCPeerConnectionState.@new;
 
@@ -394,7 +406,6 @@ namespace SIPSorcery.Net
                 _configuration = new RTCConfiguration();
             }
 
-
             if (_dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
@@ -422,6 +433,7 @@ namespace SIPSorcery.Net
 
             onnegotiationneeded?.Invoke();
 
+            // This is the point the ICE session potentially starts contacting STUN and TURN servers.
             _rtpIceChannel.StartGathering();
         }
 
@@ -429,10 +441,12 @@ namespace SIPSorcery.Net
         /// Event handler for ICE connection state changes.
         /// </summary>
         /// <param name="state">The new ICE connection state.</param>
-        private async void IceConnectionStateChange(RTCIceConnectionState state)
+        private async void IceConnectionStateChange(RTCIceConnectionState iceState)
         {
-            if (iceConnectionState == RTCIceConnectionState.connected &&
-                state == RTCIceConnectionState.connected)
+            oniceconnectionstatechange?.Invoke(iceConnectionState);
+
+            if (connectionState == RTCPeerConnectionState.connected &&
+                iceState == RTCIceConnectionState.connected)
             {
                 // Already connected. This event is due to change in the nominated remote candidate.
                 var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
@@ -442,19 +456,19 @@ namespace SIPSorcery.Net
             }
             else
             {
-                if (state == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
+                if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
                 {
                     if (_dtlsHandle != null)
                     {
                         // The ICE connection state change is due to a re-connection.
-                        iceConnectionState = state;
-                        oniceconnectionstatechange?.Invoke(iceConnectionState);
-
                         connectionState = RTCPeerConnectionState.connected;
                         onconnectionstatechange?.Invoke(connectionState);
                     }
                     else
                     {
+                        connectionState = RTCPeerConnectionState.connecting;
+                        onconnectionstatechange?.Invoke(connectionState);
+
                         var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
                         base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
@@ -496,13 +510,12 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                iceConnectionState = state;
-                oniceconnectionstatechange?.Invoke(iceConnectionState);
-
                 if (iceConnectionState == RTCIceConnectionState.checking)
                 {
-                    connectionState = RTCPeerConnectionState.connecting;
-                    onconnectionstatechange?.Invoke(connectionState);
+                    // Not sure about this correspondence between the ICE and peer connection states.
+                    // TODO: Double check spec.
+                    //connectionState = RTCPeerConnectionState.connecting;
+                    //onconnectionstatechange?.Invoke(connectionState);
                 }
                 else if (iceConnectionState == RTCIceConnectionState.disconnected)
                 {
@@ -614,9 +627,6 @@ namespace SIPSorcery.Net
             {
                 _rtpIceChannel.IsController = true;
             }
-
-            // This is the point the ICE session potentially starts contacting STUN and TURN servers.
-            //IceSession.StartGathering();
 
             signalingState = RTCSignalingState.have_local_offer;
             onsignalingstatechange?.Invoke();
