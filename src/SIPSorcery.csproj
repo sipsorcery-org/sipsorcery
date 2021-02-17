@@ -18,9 +18,9 @@
 
   <ItemGroup>
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.9" />
-    <PackageReference Include="DnsClient" Version="1.4.0-beta-20200801.7" />
+    <PackageReference Include="DnsClient" Version="1.4.0" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.4-pre" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.1.0" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v5.0.32-pre: Fixed race condition in RTCPeerConnection for ICE channel connecting prior to remote offer arriving.
+    <PackageReleaseNotes>- v5.1.0: Stable release.
+- v5.0.32-pre: Fixed race condition in RTCPeerConnection for ICE channel connecting prior to remote offer arriving.
 - v5.0.31-pre: Allow local ICE candidates to be set on RTCPeerConnection.
 - v5.0.27-pre: Fix bug not setting cname on SSRC attribute which breaks WebRTC browsers.
 - v5.0.26-pre: Improve SIP transaction logic to report failures with an error code.
@@ -73,9 +74,9 @@
 - v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>5.0.32-pre</Version>
-    <AssemblyVersion>5.0.32.0</AssemblyVersion>
-    <FileVersion>5.0.32.0</FileVersion>
+    <Version>5.1.0</Version>
+    <AssemblyVersion>5.1.0.0</AssemblyVersion>
+    <FileVersion>5.1.0.0</FileVersion>
   </PropertyGroup>
 
 </Project>
