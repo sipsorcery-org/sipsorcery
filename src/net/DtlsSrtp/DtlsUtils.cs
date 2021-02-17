@@ -483,7 +483,7 @@ namespace SIPSorcery.Net
             return (tlsCertificate, subjectKeyPair.Private);
         }
 
-        /// <remarks>Plagarised from https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs.
+        /// <remarks>Plagiarised from https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs.
         /// NOTE: netstandard2.1+ and netcoreapp3.1+ have x509.CopyWithPrivateKey which will avoid the need to
         /// use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X509 certificates.</remarks>
         public static X509Certificate2 ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate bouncyCert, AsymmetricCipherKeyPair keyPair)
