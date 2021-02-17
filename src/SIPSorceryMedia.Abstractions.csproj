@@ -21,12 +21,13 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Abstractions</RepositoryUrl>
-    <Version>1.0.4-pre</Version>
-    <AssemblyVersion>1.0.4.0</AssemblyVersion>
-    <FileVersion>1.0.4.0</FileVersion>
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
-    <PackageReleaseNotes>-v1.0.4-pre: Changed IAudioEncoder and IVideoEncoder to use SupportedFormats property instead of IsSupported method.
+    <PackageReleaseNotes>-v1.1.0: Stable release.
+-v1.0.4-pre: Changed IAudioEncoder and IVideoEncoder to use SupportedFormats property instead of IsSupported method.
 -v1.0.3-pre: Added video format to IVideoSink.GotVideoFrame. Removed 'V1' from namespace, the versioning mechanism is not going to be suitable for such a formative API.
 -v1.0.2-pre: Improved pixel conversion routines to take a stride parameter and handle uneven dimensions.
 -1.0.1: Added NV12 as a pixel format option.
