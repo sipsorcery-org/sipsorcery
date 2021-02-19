@@ -164,32 +164,6 @@ namespace SIPSorcery.Net.Sctp
             return nBytesAcked;
         }
 
-        public uint markAsAcked(DataChunk dc)
-        {
-            uint nBytesAcked = 0;
-            if (chunkMap.TryGetValue(dc.tsn, out var c))
-            {
-                c.acked = true;
-                c.retransmit = false;
-                nBytesAcked = c.getDataSize();
-                lock (myLock)
-                {
-                    nBytes -= nBytesAcked;
-                }
-                c.setData(new byte[0]);
-            }
-            else
-            {
-                dc.acked = true;
-                dc.retransmit = false;
-                nBytesAcked = dc.getDataSize();
-                //nBytes -= nBytesAcked;
-                dc.setData(new byte[0]);
-            }
-
-            return nBytesAcked;
-        }
-
         public bool getLastTSNReceived(out uint tsn)
         {
             var s = updateSortedKeys();

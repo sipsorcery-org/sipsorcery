@@ -21,6 +21,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
+using SIPSorcery.Executor;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -47,7 +48,7 @@ namespace SIPSorcery.Net
         IDtlsSrtpPeer connection = null;
 
         /// <summary>The collection of chunks to be written.</summary>
-        private BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
+        private ProducerConsumerQueue<byte[]> _chunks = new ProducerConsumerQueue<byte[]>();
 
         public DtlsTransport Transport { get; private set; }
 
@@ -457,14 +458,14 @@ namespace SIPSorcery.Net
             if (_isClosed)
                 return;
 
-            _chunks.Add(buf);
+            _chunks.Produce(buf);
         }
 
         public int Read(byte[] buffer, int offset, int count, int timeout)
         {
             try
             {
-                if (_chunks.TryTake(out var item, timeout))
+                if (_chunks.Consume(out var item, timeout))
                 {
                     Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
                     return item.Length;

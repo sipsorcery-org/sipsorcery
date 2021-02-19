@@ -150,7 +150,10 @@ namespace SIPSorcery.Net.Sctp
         {
             if (reassemblyQueue.push(pd, out var blocks))
             {
-                SCTPMessage m = new SCTPMessage(this, blocks);
+                if (blocks.Count == 0)
+                    return;
+
+                var m = new SCTPMessage(this, blocks);
                 m.deliver(_sl);
             }
         }

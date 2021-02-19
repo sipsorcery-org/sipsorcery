@@ -178,6 +178,9 @@ namespace SIPSorcery.Net.Sctp
                     case ChunkType.ERROR:
                         ret = new ErrorChunk(type, flags, length, pkt);
                         break;
+                    case ChunkType.FORWARDTSN:
+                        ret = new ForwardTsnChunk(type, flags, length, pkt);
+                        break;
                     default:
                         logger.LogWarning($"SCTP unknown chunk type received {type}.");
                         ret = new FailChunk(type, flags, length, pkt);

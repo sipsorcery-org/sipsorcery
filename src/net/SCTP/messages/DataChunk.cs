@@ -109,7 +109,7 @@ namespace SIPSorcery.Net.Sctp
         private bool _gapAck;
         private long _retryTime;
         public int _retryCount;
-        private long _sentTime;
+        public long since { get; set; }
         public bool retransmit;
         public bool _abandoned;
         public bool allInFlight;
@@ -121,6 +121,10 @@ namespace SIPSorcery.Net.Sctp
             get
             {
                 return _tsn;
+            }
+            set
+            {
+                _tsn = value;
             }
         }
         public bool endingFragment
@@ -165,21 +169,21 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
-        public void setAbandoned(bool val)
+        public void setAbandoned(bool abandoned)
         {
             if (Head != null)
             {
-                Head.setAbandoned(val);
+                Head._abandoned = abandoned;
                 return;
             }
-            this._abandoned = val;
+            this._abandoned = abandoned;
         }
 
         internal bool abandoned()
         {
             if (Head != null)
             {
-                return Head.abandoned();
+                return Head._abandoned && Head.allInFlight;
             }
             return _abandoned && allInFlight;
         }
@@ -468,16 +472,6 @@ namespace SIPSorcery.Net.Sctp
         public int Compare(DataChunk o1, DataChunk o2)
         {
             return (int)(o1._tsn - o2._tsn);
-        }
-
-        public long getSentTime()
-        {
-            return _sentTime;
-        }
-
-        public void setSentTime(long now)
-        {
-            _sentTime = now;
         }
 
         internal void setAllInflight()

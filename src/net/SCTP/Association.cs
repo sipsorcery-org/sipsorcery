@@ -25,6 +25,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
 using SCTP4CS.Utils;
@@ -174,7 +175,7 @@ namespace SIPSorcery.Net.Sctp
 
         private string name;
         protected static ILogger logger = Log.Logger;
-        protected AutoResetEvent awakeWriteLoop = new AutoResetEvent(false);
+        protected object writeLoopCh = new object();
 
         protected LimitedConcurrentQueue<DataChunk> _freeBlocks;
 
@@ -449,6 +450,7 @@ namespace SIPSorcery.Net.Sctp
         }
 
         private object myLock = new object();
+        private object sendReceiveLock = new object();
         void handleChunkStart()
         {
             lock (myLock)
@@ -467,7 +469,7 @@ namespace SIPSorcery.Net.Sctp
                     // Send SACK now!
                     ackState = AcknowlegeState.Immediate;
                     _ackTimer.stop();
-                    awakeWriteLoop.Set();
+                    awakeWriteLoop();
                 }
                 else if (delayedAckTriggered)
                 {
@@ -475,6 +477,15 @@ namespace SIPSorcery.Net.Sctp
                     ackState = AcknowlegeState.Delay;
                     _ackTimer.start();
                 }
+            }
+        }
+
+        void awakeWriteLoop()
+        {
+            if (Monitor.TryEnter(writeLoopCh, 100))
+            {
+                Monitor.PulseAll(writeLoopCh);
+                Monitor.Exit(writeLoopCh);
             }
         }
 
@@ -594,7 +605,7 @@ namespace SIPSorcery.Net.Sctp
                 }
             });
             _rcv.IsBackground = true;
-            //_rcv.Priority = ThreadPriority.Highest;
+            _rcv.Priority = ThreadPriority.Highest;
             _rcv.Name = name + "_rcv";
             _rcv.Start();
         }
@@ -623,6 +634,10 @@ namespace SIPSorcery.Net.Sctp
                                 _transp.Send(buf.Data, buf.offset, buf.Limit);
                             }
                         }
+                        catch (OutputLengthException ex)
+                        {
+                            logger.LogDebug(ex, ex.Message);
+                        }
                         catch (SocketException e)
                         {
                             // ignore. it should be a timeout.
@@ -635,7 +650,14 @@ namespace SIPSorcery.Net.Sctp
                                     throw;
                             }
                         }
-                        awakeWriteLoop.WaitOne(1000);
+
+                        lock (writeLoopCh)
+                        {
+                            if (!Monitor.Wait(writeLoopCh, 10))
+                            {
+                                Monitor.PulseAll(writeLoopCh);
+                            }
+                        }
                     }
                     logger.LogDebug("SCTP message receive was empty, closing association listener.");
 
@@ -656,7 +678,7 @@ namespace SIPSorcery.Net.Sctp
                 }
             });
             _send.IsBackground = true;
-            //_send.Priority = ThreadPriority.Highest;
+            _send.Priority = ThreadPriority.Highest;
             _send.Name = name + "_send";
             _send.Start();
         }
@@ -764,7 +786,7 @@ namespace SIPSorcery.Net.Sctp
         // createForwardTSN generates ForwardTSN chunk.
         // This method will be be called if useForwardTSN is set to false.
         // The caller should hold the lock.
-        Chunk[] createForwardTSN()
+        Chunk createForwardTSN()
         {
             // RFC 3758 Sec 3.5 C4
             var streamMap = new Dictionary<int, int>(); // to report only once per SI
@@ -784,7 +806,9 @@ namespace SIPSorcery.Net.Sctp
                     streamMap[c.getStreamId()] = c.getSSeqNo();
                 }
             }
-            return new Chunk[0];
+            var chunk = new ForwardTsnChunk();
+            chunk.newCumulativeTSN = advancedPeerTSNAckPoint;
+            return chunk;
         }
 
         private Packet[] gatherOutboundDataAndReconfigPackets()
@@ -960,18 +984,18 @@ namespace SIPSorcery.Net.Sctp
                 c.setAllInflight();
             }
 
-            var now = TimeExtension.CurrentTimeMillis();
             // Assign TSN
-            c.setTsn(generateNextTSN());
-            c.setGapAck(false);
-            c.setRetryTime(now + getT3() - 1);
-            c.setSentTime(now); // use to calculate RTT and also for maxPacketLifeTime
-            c._retryCount = 1;          // being sent for the first time
+            c.tsn = generateNextTSN();
+            //c.setGapAck(false);
+            //c.setRetryTime(now + getT3() - 1);
+            c.since = TimeExtension.CurrentTimeMillis(); // use to calculate RTT and also for maxPacketLifeTime
+            c.nSent = 1;
+
+            //c._retryCount = 1;          // being sent for the first time
             checkPartialReliabilityStatus(c);
 
             // Push it into the inflightQueue
             this.inflightQueue.pushNoCheck(c);
-            awakeWriteLoop.Set();
         }
 
         public long getT3()
@@ -1037,7 +1061,7 @@ namespace SIPSorcery.Net.Sctp
                     else if (s.reliabilityType == ReliabilityType.TypeTimed)
                     {
                         long now = TimeExtension.CurrentTimeMillis();
-                        var elapsed = now - c.getSentTime();
+                        var elapsed = now - c.since;
                         if (elapsed > s.reliabilityValue)
                         {
                             c.setAbandoned(true);
@@ -1102,10 +1126,11 @@ namespace SIPSorcery.Net.Sctp
                 {
                     pendingQueue.push(c);
                 }
-                awakeWriteLoop.Set();
                 //logger.LogDebug($"SCTP packet send: {Packet.getHex(obb)}");
             }
+            awakeWriteLoop();
         }
+
 
         /**
 		 * decide if we want to do the webRTC specified bidirectional init _very_
@@ -1178,19 +1203,13 @@ namespace SIPSorcery.Net.Sctp
                         }
                         break;
                     case ChunkType.HEARTBEAT:
-                        reply = new Packet[] { makePacket(((HeartBeatChunk)c).mkReply()) };
+                        reply = handleHeartbeat((HeartBeatChunk)c);
                         break;
                     case ChunkType.COOKIE_ECHO:
-                        logger.LogTrace("got cookie echo " + c.ToString());
-                        reply = new Packet[] { makePacket(cookieEchoDeal((CookieEchoChunk)c)) };
+                        reply = handleCookieEcho((CookieEchoChunk)c);
                         break;
                     case ChunkType.COOKIE_ACK:
-                        logger.LogTrace("got cookie ack " + c.ToString());
-                        if (state == State.COOKIEECHOED)
-                        {
-                            t1Cookie.stop();
-                            state = State.ESTABLISHED;
-                        }
+                        handleCookieAck();
                         break;
                     case ChunkType.DATA:
                         //logger.LogDebug("got data " + c.ToString());
@@ -1217,11 +1236,18 @@ namespace SIPSorcery.Net.Sctp
                     case ChunkType.RE_CONFIG:
                         reply = new Packet[] { makePacket(reconfigState.deal((ReConfigChunk)c)) };
                         break;
+                    case ChunkType.FORWARDTSN:
+                        reply = handleForwardTSN((ForwardTsnChunk)c);
+                        break;
+                    default:
+                        logger.LogTrace($"Unknown packet passed");
+                        int x = 0;
+                        break;
                 }
                 if (reply?.Length > 0)
                 {
                     this.controlQueue.pushAll(reply);
-                    awakeWriteLoop.Set();
+                    awakeWriteLoop();
                 }
                 if ((state == State.ESTABLISHED) && (oldState != State.ESTABLISHED))
                 {
@@ -1245,8 +1271,88 @@ namespace SIPSorcery.Net.Sctp
             }
         }
 
+        private Packet[] handleForwardTSN(ForwardTsnChunk c)
+        {
+            logger.LogTrace($"{name} FwdTSN: {c}");
+
+	        if (!useForwardTSN)
+            {
+                logger.LogWarning("[%s] received FwdTSN but not enabled");
+                ErrorChunk cerr = new ErrorChunk();
+                // Return an error chunk
+                //cerr := &chunkError{
+                // errorCauses: []errorCause{&errorCauseUnrecognizedChunkType{}},
+                //}
+                //outbound := &packet{}
+                //outbound.verificationTag = a.peerVerificationTag
+                //outbound.sourcePort = a.sourcePort
+                //outbound.destinationPort = a.destinationPort
+                //outbound.chunks = []chunk{cerr}
+                return new Packet[] { makePacket(cerr) };
+	        }
+
+            // From RFC 3758 Sec 3.6:
+            //   Note, if the "New Cumulative TSN" value carried in the arrived
+            //   FORWARD TSN chunk is found to be behind or at the current cumulative
+            //   TSN point, the data receiver MUST treat this FORWARD TSN as out-of-
+            //   date and MUST NOT update its Cumulative TSN.  The receiver SHOULD
+            //   send a SACK to its peer (the sender of the FORWARD TSN) since such a
+            //   duplicate may indicate the previous SACK was lost in the network.
+
+            logger.LogTrace($"{name} should send ack? newCumTSN={c.newCumulativeTSN} peerLastTSN={peerLastTSN}\n");
+	        if (Utils.sna32LTE(c.newCumulativeTSN, peerLastTSN))
+            {
+                logger.LogTrace($"{name} sending ack on Forward TSN");
+                ackState = AcknowlegeState.Immediate;
+                _ackTimer.stop();
+                awakeWriteLoop();
+                return new Packet[0];
+	        }
+
+	        // From RFC 3758 Sec 3.6:
+	        //   the receiver MUST perform the same TSN handling, including duplicate
+	        //   detection, gap detection, SACK generation, cumulative TSN
+	        //   advancement, etc. as defined in RFC 2960 [2]---with the following
+	        //   exceptions and additions.
+
+	        //   When a FORWARD TSN chunk arrives, the data receiver MUST first update
+	        //   its cumulative TSN point to the value carried in the FORWARD TSN
+	        //   chunk,
+
+	        // Advance peerLastTSN
+	        while (Utils.sna32LT(peerLastTSN, c.newCumulativeTSN))
+            {
+                payloadQueue.pop(peerLastTSN + 1, out var dc); // may not exist
+                peerLastTSN++;
+	        }
+
+	        // Report new peerLastTSN value and abandoned largest SSN value to
+	        // corresponding streams so that the abandoned chunks can be removed
+	        // from the reassemblyQueue.
+	        //for _, forwarded := range c.streams {
+		       // if s, ok := a.streams[forwarded.identifier]; ok {
+			      //  s.handleForwardTSNForOrdered(forwarded.sequence)
+		       // }
+	        //}
+
+	        // TSN may be forewared for unordered chunks. ForwardTSN chunk does not
+	        // report which stream identifier it skipped for unordered chunks.
+	        // Therefore, we need to broadcast this event to all existing streams for
+	        // unordered chunks.
+	        // See https://github.com/pion/sctp/issues/106
+	        //for _, s := range a.streams {
+		       // s.handleForwardTSNForUnordered(c.newCumulativeTSN)
+	        //}
+
+            return handlePeerLastTSNAndAcknowledgement(false);
+        }
+
         public Packet makePacket(params Chunk[] cs)
         {
+            if (cs == null || cs.Length == 0)
+            {
+                return null;
+            }
             Packet ob = new Packet(sourcePort, destinationPort, peerVerificationTag);
             foreach (Chunk r in cs)
             {
@@ -1334,7 +1440,7 @@ namespace SIPSorcery.Net.Sctp
             var outbound = new Packet(sourcePort, destinationPort, peerVerificationTag);
             outbound.Add(storedInit);
             this.controlQueue.push(outbound);
-            awakeWriteLoop.Set();
+            awakeWriteLoop();
         }
 
         void sendCookieEcho()
@@ -1347,7 +1453,7 @@ namespace SIPSorcery.Net.Sctp
             logger.LogDebug($"{name} sending COOKIE-ECHO");
 
             controlQueue.push(makePacket(storedCookieEcho));
-            awakeWriteLoop.Set();
+            awakeWriteLoop();
         }
 
         protected virtual Packet[] handleInitAck(Packet p, InitAckChunk i)
@@ -1393,6 +1499,71 @@ namespace SIPSorcery.Net.Sctp
             t1Cookie.start(rtoMgr.getRTO());
             this.state = State.COOKIEECHOED;
             return null;
+        }
+
+        public Packet[] handleHeartbeat(HeartBeatChunk c)
+        {
+            logger.LogTrace($"{name} chunkheartbeat");
+            return new Packet[] { makePacket(c.mkReply()) };
+        }
+
+        private Packet[] handleCookieEcho(CookieEchoChunk c)
+        {
+            var state = this.state;
+            logger.LogTrace($"{name} COOKIE-ECHO received in state {state}");
+            switch(state)
+            {
+                case State.ESTABLISHED:
+                    {
+                        if (checkCookieEcho(c.getCookieData()) == null)
+                        {
+                            return new Packet[0];
+                        }
+                    }
+                    break;
+                case State.CLOSED:
+                case State.COOKIEWAIT:
+                case State.COOKIEECHOED:
+                    {
+                        if (checkCookieEcho(c.getCookieData()) == null)
+                        {
+                            return new Packet[0];
+                        }
+
+                        t1Init.stop();
+                        storedInit = null;
+
+                        t1Cookie.stop();
+                        storedCookieEcho = null;
+                        this.state = State.ESTABLISHED;
+                    }
+                    break;
+                default:
+                    return new Packet[0];
+            }
+            var reply = new Chunk[1];
+            reply[0] = new CookieAckChunk();
+            return new Packet[] { makePacket(reply) };
+            //reply = new Packet[] { makePacket(cookieEchoDeal((CookieEchoChunk)c)) };
+        }
+
+        private void handleCookieAck()
+        {
+            var state = this.state;
+            logger.LogDebug($"{name} COOKIE-ACK received in state {state}");
+	        if (state != State.COOKIEECHOED)
+            {
+                // RFC 4960
+                // 5.2.5.  Handle Duplicate COOKIE-ACK.
+                //   At any state other than COOKIE-ECHOED, an endpoint should silently
+                //   discard a received COOKIE ACK chunk.
+                return;
+	        }
+
+            t1Cookie.stop();
+            storedCookieEcho = null;
+
+            state = State.ESTABLISHED;
         }
 
         /* <pre>
@@ -1565,7 +1736,7 @@ namespace SIPSorcery.Net.Sctp
                 return null;
             }
             payloadQueue.push(dc, peerLastTSN);
-            awakeWriteLoop.Set();
+
             return makePacket(repa.ToArray());
         }
 
@@ -1630,6 +1801,7 @@ namespace SIPSorcery.Net.Sctp
                     }
                 }
 
+                c.Head = null;
                 _freeBlocks.Enqueue(c);
             }
 
@@ -1654,7 +1826,7 @@ namespace SIPSorcery.Net.Sctp
             {
                 immediateAckTriggered = true;
             }
-            awakeWriteLoop.Set();
+            awakeWriteLoop();
             return reply.ToArray();
         }
 
@@ -1864,10 +2036,7 @@ namespace SIPSorcery.Net.Sctp
                 cs[0] = reconfigState.makeClose(st);
 
                 this.controlQueue.push(makePacket(cs[0]));
-                if (!_isDone)
-                { 
-                    awakeWriteLoop.Set();
-                }                
+                awakeWriteLoop();
             }
         }
 
@@ -1930,7 +2099,7 @@ namespace SIPSorcery.Net.Sctp
                 {
                     var pkt = makePacket(DataChannelOpen);
                     controlQueue.push(pkt);
-                    awakeWriteLoop.Set();
+                    awakeWriteLoop();
                 }
                 catch (Exception end)
                 {
@@ -1979,7 +2148,7 @@ namespace SIPSorcery.Net.Sctp
                 _send = null;
                 _isDone = true;
                 _transp?.Close();
-                awakeWriteLoop?.Dispose();
+                awakeWriteLoop();
                 closeAllTimers();
                 _al.onDisAssociated(this);
                 state = State.CLOSED;
@@ -2105,7 +2274,7 @@ namespace SIPSorcery.Net.Sctp
                     willSendForwardTSN = true;
                 }
 
-                awakeWriteLoop.Set();
+                awakeWriteLoop();
             }
 
             if (inflightQueue.size() > 0)
@@ -2118,7 +2287,7 @@ namespace SIPSorcery.Net.Sctp
 
             if (cumTSNAckPointAdvanced)
             {
-                awakeWriteLoop.Set();
+                awakeWriteLoop();
             }
         }
 
@@ -2226,7 +2395,7 @@ namespace SIPSorcery.Net.Sctp
                 }
                 else
                 {
-                    logger.LogInformation($"{name} cwnd did not grow: cwnd={cwnd} ssthresh={ssthresh} acked={totalBytesAcked} FR={inFastRecovery} pending={pendingQueue.size()}");
+                    logger.LogTrace($"{name} cwnd did not grow: cwnd={cwnd} ssthresh={ssthresh} acked={totalBytesAcked} FR={inFastRecovery} pending={pendingQueue.size()}");
                 }
             }
             else
@@ -2287,7 +2456,7 @@ namespace SIPSorcery.Net.Sctp
                         t3RTX.stop();
                     }
 
-                    var nBytesAcked = inflightQueue.markAsAcked(c);
+                    var nBytesAcked = c.getDataSize();
 
                     if (bytesAckedPerStream.TryGetValue(c.getStreamId(), out var amount))
                     {
@@ -2312,7 +2481,7 @@ namespace SIPSorcery.Net.Sctp
                         minTSN2MeasureRTT = myNextTSN;
 
                         var time = TimeExtension.CurrentTimeMillis();
-                        var rtt = time - c.getSentTime();
+                        var rtt = time - c.since;
 
                         var srtt = rtoMgr.setNewRTT(rtt);
 
@@ -2328,6 +2497,7 @@ namespace SIPSorcery.Net.Sctp
                     inFastRecovery = false;
                 }
 
+                c.Head = null;
                 _freeBlocks.Enqueue(c);
             }
 
@@ -2365,7 +2535,7 @@ namespace SIPSorcery.Net.Sctp
                             minTSN2MeasureRTT = myNextTSN;
 
                             var time = TimeExtension.CurrentTimeMillis();
-                            var rtt = time - c.getSentTime();
+                            var rtt = time - c.since;
                             var srtt = rtoMgr.setNewRTT(rtt);
 
                             logger.LogTrace($"{name} SACK: measured-rtt={rtt} srtt={srtt} new-rto={rtoMgr.getRTO()}");
@@ -2459,7 +2629,7 @@ namespace SIPSorcery.Net.Sctp
                     */
 
                     inflightQueue.markAllToRetrasmit();
-                    awakeWriteLoop.Set();
+                    awakeWriteLoop();
 
                     return;
                 }
@@ -2467,7 +2637,7 @@ namespace SIPSorcery.Net.Sctp
                 if (id == (int)TimerType.Reconfig)
                 {
                     willRetransmitReconfig = true;
-                    awakeWriteLoop.Set();
+                    awakeWriteLoop();
                 }
             }
             finally
@@ -2526,7 +2696,7 @@ namespace SIPSorcery.Net.Sctp
                 logger.LogTrace($"{name} ack timed out (ackState: {ackState})");
                 stats.incAckTimeouts();
                 ackState = AcknowlegeState.Immediate;
-                awakeWriteLoop.Set();
+                awakeWriteLoop();
             }
         }
     }

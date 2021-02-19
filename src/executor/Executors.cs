@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SIPSorcery.executor
+namespace SIPSorcery.Executor
 {
     public static class Executors
     {

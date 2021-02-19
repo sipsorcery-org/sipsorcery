@@ -83,11 +83,14 @@ namespace SIPSorcery.Net.Sctp
                 }
             }
             _data = new byte[tot];
-            uint offs = 0;
-            foreach (DataChunk dc in chunks)
+            if (tot > 0)
             {
-                Array.Copy(dc.getData(), 0, _data, offs, dc.getDataSize());
-                offs += dc.getDataSize();
+                uint offs = 0;
+                foreach (DataChunk dc in chunks)
+                {
+                    Array.Copy(dc.getData(), 0, _data, offs, dc.getDataSize());
+                    offs += dc.getDataSize();
+                }
             }
         }
 
