@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
@@ -538,7 +539,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return DTLS_RECEIVE_ERROR_CODE;
+                throw new SocketException(DTLS_RECEIVE_ERROR_CODE);
             }
         }
 
