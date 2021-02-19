@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -25,8 +24,6 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class SIPRequest : SIPMessageBase
     {
-        private delegate bool IsLocalSIPSocketDelegate(string socket, SIPProtocolsEnum protocol);
-
         public string SIPVersion = m_sipFullVersion;
         public SIPMethodsEnum Method;
         public string UnknownMethod = null;
@@ -173,8 +170,8 @@ namespace SIPSorcery.SIP
             copy.UnknownMethod = UnknownMethod;
             copy.URI = URI?.CopyOf();
             copy.Header = Header?.Copy();
-            
-            if(_body != null && _body.Length > 0)
+
+            if (_body != null && _body.Length > 0)
             {
                 copy._body = new byte[_body.Length];
                 Buffer.BlockCopy(copy._body, 0, copy._body, 0, copy._body.Length);

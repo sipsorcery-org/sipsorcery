@@ -2,7 +2,7 @@
 // Filename: Program.cs
 //
 // Description: A getting started program to demonstrate how to subscribe to
-// a SIP server for Message Waiting Inidications (MWI).
+// a SIP server for Message Waiting Indications (MWI).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -19,6 +19,7 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
+using Serilog.Events;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -26,93 +27,51 @@ namespace demo
 {
     class Program
     {
-        private const string USERNAME = "username";
+        private const string USERNAME = "user";
         private const string PASSWORD = "password";
-        private const string SERVER = "sipsorcery.com";
+        private const string SERVER = "sipsorcery.cloud";
 
         static void Main()
         {
-            Console.WriteLine("SIPSorcery Getting Started Demo");
+            Console.WriteLine("SIPSorcery Notification Client Demo");
 
-            AddConsoleLogger();
-            CancellationTokenSource exitCts = new CancellationTokenSource();
+            // Use verbose to get display the full SIP messages.
+            AddConsoleLogger(LogEventLevel.Verbose);
 
             var sipTransport = new SIPTransport();
-
-            EnableTraceLogs(sipTransport);
+            sipTransport.EnableTraceLogs();
 
             var mwiURI = SIPURI.ParseSIPURIRelaxed($"{USERNAME}@{SERVER}");
             int expiry = 180;
 
-            SIPNotifierClient<SIPEvent> mwiSubscriber = new SIPNotifierClient<SIPEvent>(sipTransport, null, SIPEventPackage.MessageSummary, mwiURI, USERNAME, null, PASSWORD, expiry, null);
+            SIPNotifierClient mwiSubscriber = new SIPNotifierClient(sipTransport, null, SIPEventPackagesEnum.MessageSummary, mwiURI, USERNAME, null, PASSWORD, expiry, null);
             mwiSubscriber.SubscriptionFailed += (uri, failureStatus, errorMessage) => Console.WriteLine($"MWI failed for {uri}, {errorMessage}");
             mwiSubscriber.SubscriptionSuccessful += (uri) => Console.WriteLine($"MWI subscription successful for {uri}");
+            mwiSubscriber.NotificationReceived += (evt, msg) => Console.WriteLine($"MWI notification, type {evt}, message {msg}.");
 
             mwiSubscriber.Start();
 
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-            {
-                e.Cancel = true;
-                exitCts.Cancel();
-            };
-
-            Console.WriteLine("press ctrl-c to exit...");
-            exitCts.Token.WaitHandle.WaitOne();
+            Console.WriteLine("pressany key to exit...");
+            Console.ReadLine();
 
             Console.WriteLine("Exiting...");
 
             // Clean up.
+            mwiSubscriber.Stop();
+            Thread.Sleep(1000);
             sipTransport.Shutdown();
         }
 
         /// <summary>
-        /// Enable detailed SIP log messages.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and 
+        /// warning messages are not required.
         /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
-        {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Console.WriteLine($"Request received: {localEP}<-{remoteEP}");
-                Console.WriteLine(req.ToString());
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Console.WriteLine($"Request sent: {localEP}->{remoteEP}");
-                Console.WriteLine(req.ToString());
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Console.WriteLine($"Response received: {localEP}<-{remoteEP}");
-                Console.WriteLine(resp.ToString());
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Console.WriteLine($"Response sent: {localEP}->{remoteEP}");
-                Console.WriteLine(resp.ToString());
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Console.WriteLine($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Console.WriteLine($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-        }
-
-        /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-        /// </summary>
-        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger(
+            LogEventLevel logLevel = LogEventLevel.Debug)
         {
             var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(logLevel)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(serilogLogger);

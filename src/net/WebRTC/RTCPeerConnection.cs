@@ -184,8 +184,17 @@ namespace SIPSorcery.Net
 
         public List<RTCDataChannel> DataChannels { get; private set; } = new List<RTCDataChannel>();
 
+        private Org.BouncyCastle.Crypto.Tls.Certificate _dtlsCertificate;
+        private Org.BouncyCastle.Crypto.AsymmetricKeyParameter _dtlsPrivateKey;
         private DtlsSrtpTransport _dtlsHandle;
         public RTCPeerSctpAssociation _peerSctpAssociation;
+
+        /// <summary>
+        /// Local ICE candidates that have been supplied directly by the application.
+        /// Useful for cases where the application may has extra information about the
+        /// network set up such as 1:1 NATs as used by Azure and AWS.
+        /// </summary>
+        private List<RTCIceCandidate> _applicationIceCandidates = new List<RTCIceCandidate>();
 
         /// <summary>
         /// The ICE role the peer is acting in.
@@ -217,9 +226,21 @@ namespace SIPSorcery.Net
 
         public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.stable;
 
-        public RTCIceGatheringState iceGatheringState { get; private set; } = RTCIceGatheringState.@new;
+        public RTCIceGatheringState iceGatheringState
+        {
+            get
+            {
+                return _rtpIceChannel != null ? _rtpIceChannel.IceGatheringState : RTCIceGatheringState.@new;
+            }
+        }
 
-        public RTCIceConnectionState iceConnectionState { get; private set; } = RTCIceConnectionState.@new;
+        public RTCIceConnectionState iceConnectionState
+        {
+            get
+            {
+                return _rtpIceChannel != null ? _rtpIceChannel.IceConnectionState : RTCIceConnectionState.@new;
+            }
+        }
 
         public RTCPeerConnectionState connectionState { get; private set; } = RTCPeerConnectionState.@new;
 
@@ -312,6 +333,13 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
+        public RTCPeerConnection() :
+            this(null)
+        { }
+
+        /// <summary>
+        /// Constructor to create a new RTC peer connection instance.
+        /// </summary>
         /// <param name="configuration">Optional.</param>
         public RTCPeerConnection(RTCConfiguration configuration) :
             base(true, true, true, configuration?.X_BindAddress)
@@ -322,9 +350,6 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException("RTCPeerConnection must have at least one ICE server specified for a relay only transport policy.");
             }
-
-            Org.BouncyCastle.Crypto.Tls.Certificate dtlsCertificate = null;
-            Org.BouncyCastle.Crypto.AsymmetricKeyParameter dtlsPrivateKey = null;
 
             if (configuration != null)
             {
@@ -366,8 +391,8 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        dtlsCertificate = DtlsUtils.LoadCertificateChain(usableCert.Certificate);
-                        dtlsPrivateKey = DtlsUtils.LoadPrivateKeyResource(usableCert.Certificate);
+                        _dtlsCertificate = DtlsUtils.LoadCertificateChain(usableCert.Certificate);
+                        _dtlsPrivateKey = DtlsUtils.LoadPrivateKeyResource(usableCert.Certificate);
                     }
                 }
 
@@ -381,14 +406,13 @@ namespace SIPSorcery.Net
                 _configuration = new RTCConfiguration();
             }
 
-
-            if (dtlsCertificate == null)
+            if (_dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
-                (dtlsCertificate, dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
             }
 
-            DtlsCertificateFingerprint = DtlsUtils.Fingerprint(dtlsCertificate);
+            DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
 
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
@@ -400,45 +424,64 @@ namespace SIPSorcery.Net
             _rtpIceChannel = GetRtpChannel();
 
             _rtpIceChannel.OnIceCandidate += (candidate) => _onIceCandidate?.Invoke(candidate);
-            _rtpIceChannel.OnIceConnectionStateChange += async (state) =>
+            _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
+            _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
+            _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
+
+            OnRtpClosed += Close;
+            OnRtcpBye += Close;
+
+            onnegotiationneeded?.Invoke();
+
+            // This is the point the ICE session potentially starts contacting STUN and TURN servers.
+            _rtpIceChannel.StartGathering();
+        }
+
+        /// <summary>
+        /// Event handler for ICE connection state changes.
+        /// </summary>
+        /// <param name="state">The new ICE connection state.</param>
+        private async void IceConnectionStateChange(RTCIceConnectionState iceState)
+        {
+            oniceconnectionstatechange?.Invoke(iceConnectionState);
+
+            if (connectionState == RTCPeerConnectionState.connected &&
+                iceState == RTCIceConnectionState.connected)
             {
-                if (iceConnectionState == RTCIceConnectionState.connected &&
-                    state == RTCIceConnectionState.connected)
-                {
-                    // Already connected. This event is due to change in the nominated remote candidate.
-                    var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
-                    base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
+                // Already connected. This event is due to change in the nominated remote candidate.
+                var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
-                    logger.LogInformation($"ICE changing connected remote end point to {AudioDestinationEndPoint}.");
-                }
-                else
+                logger.LogInformation($"ICE changing connected remote end point to {AudioDestinationEndPoint}.");
+            }
+            else
+            {
+                if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
                 {
-                    if (state == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
+                    if (_dtlsHandle != null)
                     {
-                        if (_dtlsHandle != null)
-                        {
-                            // The ICE connection state change is due to a re-connection.
-                            iceConnectionState = state;
-                            oniceconnectionstatechange?.Invoke(iceConnectionState);
+                        // The ICE connection state change is due to a re-connection.
+                        connectionState = RTCPeerConnectionState.connected;
+                        onconnectionstatechange?.Invoke(connectionState);
+                    }
+                    else
+                    {
+                        connectionState = RTCPeerConnectionState.connecting;
+                        onconnectionstatechange?.Invoke(connectionState);
 
-                            connectionState = RTCPeerConnectionState.connected;
-                            onconnectionstatechange?.Invoke(connectionState);
-                        }
-                        else
-                        {
-                            var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
-                            base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
+                        var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                        base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
-                            logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
+                        logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
 
-                            _dtlsHandle = new DtlsSrtpTransport(
-                                        IceRole == IceRolesEnum.active ?
-                                        (IDtlsSrtpPeer)new DtlsSrtpClient(dtlsCertificate, dtlsPrivateKey) :
-                                        (IDtlsSrtpPeer)new DtlsSrtpServer(dtlsCertificate, dtlsPrivateKey));
+                        _dtlsHandle = new DtlsSrtpTransport(
+                                    IceRole == IceRolesEnum.active ?
+                                    (IDtlsSrtpPeer)new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) :
+                                    (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey));
 
-                            _dtlsHandle.OnAlert += OnDtlsAlert;
+                        _dtlsHandle.OnAlert += OnDtlsAlert;
 
-                            logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
+                        logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
 
                             try
                             {
@@ -464,49 +507,38 @@ namespace SIPSorcery.Net
                             {
                                 logger.LogWarning($"RTCPeerConnection DTLS handshake failed. {excp.Message}");
 
-                                connectionState = RTCPeerConnectionState.failed;
-                                onconnectionstatechange?.Invoke(connectionState);
-                            }
-                        }
-                    }
-
-                    iceConnectionState = state;
-                    oniceconnectionstatechange?.Invoke(iceConnectionState);
-
-                    if (iceConnectionState == RTCIceConnectionState.checking)
-                    {
-                        connectionState = RTCPeerConnectionState.connecting;
-                        onconnectionstatechange?.Invoke(connectionState);
-                    }
-                    else if (iceConnectionState == RTCIceConnectionState.disconnected)
-                    {
-                        if (connectionState == RTCPeerConnectionState.connected)
-                        {
-                            connectionState = RTCPeerConnectionState.disconnected;
-                            onconnectionstatechange?.Invoke(connectionState);
-                        }
-                        else
-                        {
                             connectionState = RTCPeerConnectionState.failed;
                             onconnectionstatechange?.Invoke(connectionState);
                         }
                     }
-                    else if (iceConnectionState == RTCIceConnectionState.failed)
+                }
+
+                if (iceConnectionState == RTCIceConnectionState.checking)
+                {
+                    // Not sure about this correspondence between the ICE and peer connection states.
+                    // TODO: Double check spec.
+                    //connectionState = RTCPeerConnectionState.connecting;
+                    //onconnectionstatechange?.Invoke(connectionState);
+                }
+                else if (iceConnectionState == RTCIceConnectionState.disconnected)
+                {
+                    if (connectionState == RTCPeerConnectionState.connected)
+                    {
+                        connectionState = RTCPeerConnectionState.disconnected;
+                        onconnectionstatechange?.Invoke(connectionState);
+                    }
+                    else
                     {
                         connectionState = RTCPeerConnectionState.failed;
                         onconnectionstatechange?.Invoke(connectionState);
                     }
                 }
-            };
-            _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
-            _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
-
-            OnRtpClosed += Close;
-            OnRtcpBye += Close;
-
-            onnegotiationneeded?.Invoke();
-
-            _rtpIceChannel.StartGathering();
+                else if (iceConnectionState == RTCIceConnectionState.failed)
+                {
+                    connectionState = RTCPeerConnectionState.failed;
+                    onconnectionstatechange?.Invoke(connectionState);
+                }
+            }
         }
 
         /// <summary>
@@ -548,12 +580,12 @@ namespace SIPSorcery.Net
             };
 
             try
-            { 
+            {
                 _peerSctpAssociation.Associate();
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
-                logger.LogWarning($"SCTP exception initialising association. {excp.Message}");
+                logger.LogWarning(excp, $"SCTP exception initialising association. {excp.Message}");
             }
         }
 
@@ -587,21 +619,17 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// As specified in https://www.w3.org/TR/webrtc/#dom-peerconnection-setlocaldescription.
         /// </remarks>
-        /// <param name="description">Optional. The session description to set as 
-        /// local description. If not supplied then an offer or answer will be created as required. 
+        /// <param name="init">Optional. The session description to set as 
+        /// local description. If not supplied then an offer or answer will be created as required.
         /// </param>
         public Task setLocalDescription(RTCSessionDescriptionInit init)
         {
-            RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
-            localDescription = description;
+            localDescription = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
 
             if (init.type == RTCSdpType.offer)
             {
                 _rtpIceChannel.IsController = true;
             }
-
-            // This is the point the ICE session potentially starts contacting STUN and TURN servers.
-            //IceSession.StartGathering();
 
             signalingState = RTCSignalingState.have_local_offer;
             onsignalingstatechange?.Invoke();
@@ -632,28 +660,21 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Updates the session after receiving the remote SDP.
-        /// At this point check that the codecs match. We currently only support:
-        ///  - Audio: PCMU,
-        ///  - Video: VP8.
-        /// If they are not available there's no point carrying on.
         /// </summary>
-        /// <param name="sessionDescription">The answer/offer SDP from the remote party.</param>
+        /// <param name="init">The answer/offer SDP from the remote party.</param>
         public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
         {
-            RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
-            remoteDescription = description;
+            remoteDescription = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
 
             SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
             SdpType sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
 
-            switch(signalingState)
+            switch (signalingState)
             {
                 case var sigState when sigState == RTCSignalingState.have_local_offer && sdpType == SdpType.offer:
                     logger.LogWarning($"RTCPeerConnection received an SDP offer but was already in {sigState} state. Remote offer rejected.");
                     return SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer;
-                default:
-                    break;
             }
 
             var setResult = base.SetRemoteDescription(sdpType, remoteSdp);
@@ -963,7 +984,6 @@ namespace SIPSorcery.Net
             bool iceCandidatesAdded = false;
             int mediaIndex = 0;
 
-            //oferSdp.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
             offerSdp.DtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
 
             // Local function to add ICE candidates to one of the media announcements.
@@ -975,6 +995,11 @@ namespace SIPSorcery.Net
 
                     // Add ICE candidates.
                     foreach (var iceCandidate in _rtpIceChannel.Candidates)
+                    {
+                        announcement.IceCandidates.Add(iceCandidate.ToString());
+                    }
+
+                    foreach (var iceCandidate in _applicationIceCandidates)
                     {
                         announcement.IceCandidates.Add(iceCandidate.ToString());
                     }
@@ -1019,6 +1044,17 @@ namespace SIPSorcery.Net
                     {
                         AddIceCandidates(announcement);
                         iceCandidatesAdded = true;
+                    }
+
+                    if (track.Ssrc != 0)
+                    {
+                        string trackCname = track.Kind == SDPMediaTypesEnum.video ?
+                       VideoRtcpSession?.Cname : AudioRtcpSession?.Cname;
+
+                        if (trackCname != null)
+                        {
+                            announcement.SsrcAttributes.Add(new SDPSsrcAttribute(track.Ssrc, trackCname, null));
+                        }
                     }
 
                     offerSdp.Media.Add(announcement);
@@ -1126,9 +1162,26 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Adds a remote ICE candidate to the list this peer is attempting to connect against.
+        /// Used to add a local ICE candidate. These are for candidates that the application may
+        /// want to provide in addition to the ones that will be automatically determined. An
+        /// example is when a machine is behind a 1:1 NAT and the application wants a host 
+        /// candidate with the public IP address to be included.
         /// </summary>
-        /// <param name="candidateInit">The remote candidate to add.</param>
+        /// <param name="candidateInit">The ICE candidate to add.</param>
+        /// <example>
+        /// var natCandidate = new RTCIceCandidate(RTCIceProtocol.udp, natAddress, natPort, RTCIceCandidateType.host);
+        /// pc.addLocalIceCandidate(natCandidate);
+        /// </example>
+        public void addLocalIceCandidate(RTCIceCandidate candidate)
+        {
+            candidate.usernameFragment = _rtpIceChannel.LocalIceUser;
+            _applicationIceCandidates.Add(candidate);
+        }
+
+        /// <summary>
+        /// Used to add remote ICE candidates to the peer connection's checklist.
+        /// </summary>
+        /// <param name="candidateInit">The remote ICE candidate to add.</param>
         public void addIceCandidate(RTCIceCandidateInit candidateInit)
         {
             RTCIceCandidate candidate = new RTCIceCandidate(candidateInit);

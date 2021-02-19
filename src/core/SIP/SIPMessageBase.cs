@@ -56,7 +56,7 @@ namespace SIPSorcery.SIP
             }
             set
             {
-                if(value == null)
+                if (value == null)
                 {
                     _body = null;
                 }

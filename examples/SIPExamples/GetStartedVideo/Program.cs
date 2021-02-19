@@ -2,13 +2,18 @@
 // Filename: Program.cs
 //
 // Description: A getting started program to demonstrate how to use the
-// SIPSorcery library to place a video call.
+// SIPSorcery library to send and receive a video stream.
+//
+// This example uses a test pattern video source and has no audio. For a
+// demo that is more like a video phone, and hence more complicated, 
+// see the VideoPhoneCmdLine demo.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 21 Feb 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 02 Feb 2021  Aaron Clauson   Simplified by switching to video test pattern only.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -16,7 +21,7 @@
 
 using System;
 using System.Drawing;
-using System.IO;
+using System.Drawing.Imaging;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -24,28 +29,27 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
+using Serilog.Events;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
-using SIPSorceryMedia.Windows;
 
 namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "aaron@127.0.0.1:6060"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
-        private static int CALL_TIMEOUT_SECONDS = 20;
+        private static string DESTINATION = "echo@sipsorcery.cloud";
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
-        private static SIPTransport _sipTransport;
         private static Form _form;
         private static PictureBox _remoteVideoPicBox;
         private static PictureBox _localVideoPicBox;
+        private static bool _isFormActivated;
 
         static async Task Main()
         {
@@ -55,11 +59,12 @@ namespace demo
             Log = AddConsoleLogger();
             ManualResetEvent exitMRE = new ManualResetEvent(false);
 
-            _sipTransport = new SIPTransport();
+            var sipTransport = new SIPTransport();
+            sipTransport.EnableTraceLogs();
+            var userAgent = new SIPUserAgent(sipTransport, null, true);
 
-            EnableTraceLogs(_sipTransport);
+            #region Set up a simple Windows Form with two picture boxes. 
 
-            // Open a window to display the video feed from the remote SIP party.
             _form = new Form();
             _form.AutoSize = true;
             _form.BackgroundImageLayout = ImageLayout.Center;
@@ -78,168 +83,103 @@ namespace demo
             _form.Controls.Add(_localVideoPicBox);
             _form.Controls.Add(_remoteVideoPicBox);
 
+            #endregion
+
             Application.EnableVisualStyles();
             ThreadPool.QueueUserWorkItem(delegate { Application.Run(_form); });
+            _form.FormClosing += (sender, e) => _isFormActivated = false;
+            _form.Activated += (sender, e) => _isFormActivated = true;
+            _form.FormClosed += (sender, e) => userAgent.Hangup();
+            userAgent.OnCallHungup += (dialog) =>
+            {
+                if (_isFormActivated) { _form.Close(); }
+            };
 
-            ManualResetEvent formMre = new ManualResetEvent(false);
-            _form.Activated += (object sender, EventArgs e) => formMre.Set();
-
-            Console.WriteLine("Waiting for form activation.");
-            formMre.WaitOne();
-
-            _sipTransport.SIPTransportRequestReceived += OnSIPTransportRequestReceived;
-
-            string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-            var userAgent = new SIPUserAgent(_sipTransport, null, true);
-            userAgent.OnCallHungup += (dialog) => exitMRE.Set();
-            var windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
-            windowsAudioEndPoint.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
-            var windowsVideoEndPoint = new WindowsVideoEndPoint(new VpxVideoEncoder());
-
-            // Fallback to a test pattern source if accessing the Windows webcam fails.
+            // Video sink and source to generate and consume VP8 video streams.
             var testPattern = new VideoTestPatternSource(new VpxVideoEncoder());
+            var vp8VideoSink = new VideoEncoderEndPoint();
 
+            // Add the video sink and source to the media session.
             MediaEndPoints mediaEndPoints = new MediaEndPoints
             {
-                AudioSink = windowsAudioEndPoint,
-                AudioSource = windowsAudioEndPoint,
-                VideoSink = windowsVideoEndPoint,
-                VideoSource = windowsVideoEndPoint,
+                VideoSink = vp8VideoSink,
+                VideoSource = testPattern,
             };
-
-            var voipMediaSession = new VoIPMediaSession(mediaEndPoints, testPattern);
+            var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
             voipMediaSession.AcceptRtpFromAny = true;
 
-            windowsVideoEndPoint.OnVideoSourceRawSample += (uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
+            #region Connect the video frames generate from the sink and source to the Windows form.
+
+            testPattern.OnVideoSourceRawSample += (uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
             {
-                _form?.BeginInvoke(new Action(() =>
-                {
-                    unsafe
-                    {
-                        fixed (byte* s = sample)
-                        {
-                            System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                            _localVideoPicBox.Image = bmpImage;
-                        }
-                    }
-                }));
-            };
-
-            Console.WriteLine("Starting local video source...");
-            await windowsVideoEndPoint.StartVideo().ConfigureAwait(false);
-
-            // Place the call and wait for the result.
-            Task<bool> callTask = userAgent.Call(DESTINATION, null, null, voipMediaSession);
-            callTask.Wait(CALL_TIMEOUT_SECONDS * 1000);
-
-            if (callTask.Result)
-            {
-                Log.LogInformation("Call attempt successful.");
-                windowsVideoEndPoint.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+                if (_isFormActivated)
                 {
                     _form?.BeginInvoke(new Action(() =>
                     {
-                        unsafe
+                        if (_form.Handle != IntPtr.Zero)
                         {
-                            fixed (byte* s = bmp)
+                            unsafe
                             {
-                                System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                _remoteVideoPicBox.Image = bmpImage;
+                                fixed (byte* s = sample)
+                                {
+                                    var bmpImage = new Bitmap(width, height, width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                    _localVideoPicBox.Image = bmpImage;
+                                }
                             }
                         }
                     }));
-                };
-
-                windowsAudioEndPoint.PauseAudio().Wait();
-                voipMediaSession.AudioExtrasSource.SetSource(AudioSourcesEnum.Music);
-            }
-            else
-            {
-                Log.LogWarning("Call attempt failed.");
-                Console.WriteLine("Press ctrl-c to exit.");
-            }
-
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-            {
-                e.Cancel = true;
-                Log.LogInformation("Exiting...");
-                exitMRE.Set();
+                }
             };
-            exitMRE.WaitOne();
+
+            vp8VideoSink.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+            {
+                if (_isFormActivated)
+                {
+                    _form?.BeginInvoke(new Action(() =>
+                    {
+                        if (_form.Handle != IntPtr.Zero)
+                        {
+                            unsafe
+                            {
+                                fixed (byte* s = bmp)
+                                {
+                                    var bmpImage = new Bitmap((int)width, (int)height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                                    _remoteVideoPicBox.Image = bmpImage;
+                                }
+                            }
+                        }
+                    }));
+                }
+            };
+
+            #endregion
+
+            // Place the call.
+            var callResult = await userAgent.Call(DESTINATION, null, null, voipMediaSession).ConfigureAwait(false);
+            Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
+
+            Console.WriteLine("Press any key to hangup and exit.");
+            Console.ReadLine();
 
             if (userAgent.IsCallActive)
             {
-                Log.LogInformation("Hanging up.");
+                _isFormActivated = false;
                 userAgent.Hangup();
-
-                Task.Delay(1000).Wait();
+                await Task.Delay(1000).ConfigureAwait(false);
             }
 
-            // Clean up.
-            _form.BeginInvoke(new Action(() => _form.Close()));
-            _sipTransport.Shutdown();
-        }
-
-        private static Task OnSIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
-        {
-            if (sipRequest.Method == SIPMethodsEnum.INFO)
-            {
-                var notImplResp = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
-                return _sipTransport.SendResponseAsync(notImplResp);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Enable detailed SIP log messages.
-        /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
-        {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
+            sipTransport.Shutdown();
         }
 
         /// <summary>
         /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger(
+            LogEventLevel logLevel = LogEventLevel.Debug)
         {
             var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(logLevel)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(serilogLogger);

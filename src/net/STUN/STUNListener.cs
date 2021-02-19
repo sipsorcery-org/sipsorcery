@@ -79,7 +79,7 @@ namespace SIPSorcery.Net
 
                 m_stunConn = stunConn;
 
-                Thread listenThread = new Thread(new ThreadStart(Listen)){IsBackground = true};
+                Thread listenThread = new Thread(new ThreadStart(Listen)) { IsBackground = true };
                 listenThread.Start();
 
                 return localEndPoint;
@@ -175,7 +175,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogWarning("Exception STUNListener Close. " + excp.Message);
+                logger.LogWarning(excp, "Exception STUNListener Close. " + excp.Message);
             }
         }
     }

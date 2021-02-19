@@ -52,7 +52,7 @@ namespace SIPSorcery.SIP
     /// - A DNS server has been observed to not respond at all to NAPTR or SRV record queries meaning lookups for
     ///   them will permanently time out.
     /// </remarks>
-    public class SIPDns
+    public static class SIPDns
     {
         public const string MDNS_TLD = "local"; // Top Level Domain name for multicast lookups as per RFC6762.
         public const int DNS_TIMEOUT_SECONDS = 1;
@@ -67,8 +67,6 @@ namespace SIPSorcery.SIP
         /// an extra delay.
         /// </summary>
         public static bool UseANYLookups = false;
-
-        //public static List<DnsClient.NameServer> DefaultNameServers { get; set; }
 
         private static LookupClient _lookupClient;
         public static LookupClient LookupClient
@@ -102,14 +100,14 @@ namespace SIPSorcery.SIP
 
         public static SIPEndPoint ResolveFromCache(SIPURI uri, bool preferIPv6)
         {
-            if (uri == null || String.IsNullOrWhiteSpace(uri.MAddrOrHostAddress))
+            if (uri == null || string.IsNullOrWhiteSpace(uri.MAddrOrHostAddress))
             {
                 throw new ArgumentNullException("uri", "SIP DNS resolve was supplied an empty input.");
             }
 
             if (!ushort.TryParse(uri.HostPort, out var uriPort))
             {
-                uriPort = SIPConstants.DEFAULT_SIP_PORT;
+                uriPort = (uri.Scheme == SIPSchemesEnum.sip) ? SIPConstants.DEFAULT_SIP_PORT : SIPConstants.DEFAULT_SIP_TLS_PORT;
             }
 
             if (IPAddress.TryParse(uri.MAddrOrHostAddress, out var ipAddress))
@@ -119,8 +117,11 @@ namespace SIPSorcery.SIP
             }
             else if (!uri.MAddrOrHostAddress.Contains(".") || uri.MAddrOrHostAddress.EndsWith(MDNS_TLD))
             {
-                // No caching for local network hostnames.
-                return null;
+                // The meaning of "cached" is being extended here to include any DNS lookups that can be done
+                // by the OS. Since these lookups cannot be sent to an external DNS server they cannot be
+                // stored in the external lookup client's cache. The assumption, which should be fairly reasonable,
+                // is that lookups that can be done from a DNS server on the local subnet should be fast.
+                return ResolveLocalHostname(uri, preferIPv6);
             }
             else
             {
@@ -146,14 +147,14 @@ namespace SIPSorcery.SIP
         /// <returns>A SIPEndPoint or null.</returns>
         public static Task<SIPEndPoint> ResolveAsync(SIPURI uri, bool preferIPv6, CancellationToken ct)
         {
-            if (uri == null || String.IsNullOrWhiteSpace(uri.MAddrOrHostAddress))
+            if (uri == null || string.IsNullOrWhiteSpace(uri.MAddrOrHostAddress))
             {
                 throw new ArgumentNullException("uri", "SIP DNS resolve was supplied an empty input.");
             }
 
             if (!ushort.TryParse(uri.HostPort, out var uriPort))
             {
-                uriPort = SIPConstants.DEFAULT_SIP_PORT;
+                uriPort = (uri.Scheme == SIPSchemesEnum.sip) ? SIPConstants.DEFAULT_SIP_PORT : SIPConstants.DEFAULT_SIP_TLS_PORT;
             }
 
             if (IPAddress.TryParse(uri.MAddrOrHostAddress, out var ipAddress))
@@ -313,7 +314,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (Exception srvExcp)
                         {
-                            logger.LogWarning($"SIPDNS exception on SRV lookup. {srvExcp.Message}.");
+                            logger.LogWarning(srvExcp, $"SIPDNS exception on SRV lookup. {srvExcp.Message}.");
                         }
                         queryType = preferIPv6 ? QueryType.AAAA : QueryType.A;
 
@@ -336,7 +337,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (Exception srvExcp)
                         {
-                            logger.LogWarning($"SIPDNS exception on AAAA lookup. {srvExcp.Message}.");
+                            logger.LogWarning(srvExcp, $"SIPDNS exception on AAAA lookup. {srvExcp.Message}.");
                             queryType = QueryType.A;
                         }
 
@@ -364,7 +365,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (Exception srvExcp)
                         {
-                            logger.LogWarning($"SIPDNS exception on A lookup. {srvExcp.Message}.");
+                            logger.LogWarning(srvExcp, $"SIPDNS exception on A lookup. {srvExcp.Message}.");
                             result = SIPEndPoint.Empty;
                         }
 
@@ -441,12 +442,12 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// The lookup is for a local network host. Use the OS DNS logic as the 
+        /// The lookup is for a local network host. Use the OS DNS logic as the
         /// main DNS client can be configured to use external DNS servers that won't
         /// be able to lookup this hostname.
         /// </summary>
         /// <param name="uri">The SIP URI to lookup.</param>
-        /// <param name="queryType">Whether the lookup should prefer an IPv6 result.</param>
+        /// <param name="preferIPv6">Whether the lookup should prefer an IPv6 result.</param>
         /// <returns>A SIP end point for the host or null if the URI cannot be resolved.</returns>
         private static SIPEndPoint ResolveLocalHostname(SIPURI uri, bool preferIPv6)
         {
@@ -455,7 +456,7 @@ namespace SIPSorcery.SIP
 
             if (!ushort.TryParse(uri.HostPort, out var uriPort))
             {
-                uriPort = SIPConstants.DEFAULT_SIP_PORT;
+                uriPort = (uri.Scheme == SIPSchemesEnum.sip) ? SIPConstants.DEFAULT_SIP_PORT : SIPConstants.DEFAULT_SIP_TLS_PORT;
             }
 
             IPHostEntry hostEntry = null;

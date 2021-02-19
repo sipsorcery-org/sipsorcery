@@ -34,10 +34,35 @@ namespace SIPSorcery.Sys
     {
         private const int RTP_RECEIVE_BUFFER_SIZE = 1000000;
         private const int RTP_SEND_BUFFER_SIZE = 1000000;
-        private const int MAXIMUM_UDP_PORT_BIND_ATTEMPTS = 25;          // The maximum number of re-attempts that will be made when trying to bind a UDP socket.
-        private const string INTERNET_IPADDRESS = "8.8.8.8";              // IP address to use when getting default IP address from OS. No connection is established.
-        private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on MacOS).
-        private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
+
+        /// <summary>
+        /// The maximum number of re-attempts that will be made when trying to bind a UDP socket.
+        /// </summary>
+        private const int MAXIMUM_UDP_PORT_BIND_ATTEMPTS = 25;
+
+        /// <summary>
+        /// IP address to use when getting default IP address from OS.
+        /// No connection is established.
+        /// </summary>
+        private const string INTERNET_IPADDRESS = "8.8.8.8";
+
+        /// <summary>
+        /// IP address to use when getting default IPv6 address from OS.
+        /// No connection is established.
+        /// </summary>
+        private const string INTERNET_IPv6ADDRESS = "2001:4860:4860::8888";
+
+        /// <summary>
+        /// Port to use when doing a Udp.Connect to determine local IP
+        /// address (port 0 does not work on MacOS).
+        /// </summary>
+        private const int NETWORK_TEST_PORT = 5060;
+
+        /// <summary>
+        /// The amount of time to leave the result of a local IP address
+        /// determination in the cache.
+        /// </summary>
+        private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;
 
         private static ILogger logger = Log.Logger;
 
@@ -117,6 +142,24 @@ namespace SIPSorcery.Sys
             }
         }
         private static IPAddress _internetDefaultAddress = null;
+
+        /// <summary>
+        /// The local IPv6 address this machine uses to communicate with the Internet.
+        /// </summary>
+        public static IPAddress InternetDefaultIPv6Address
+        {
+            get
+            {
+                // TODO: Reset if the local network interfaces change.
+                if (_internetDefaultIPv6Address == null)
+                {
+                    _internetDefaultIPv6Address = GetLocalIPv6AddressForInternet();
+                }
+
+                return _internetDefaultIPv6Address;
+            }
+        }
+        private static IPAddress _internetDefaultIPv6Address = null;
 
         /// <summary>
         /// Checks whether an IP address can be used on the underlying System.
@@ -455,12 +498,12 @@ namespace SIPSorcery.Sys
                 }
                 catch (PlatformNotSupportedException platExcp)
                 {
-                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with a platform exception {platExcp.Message}");
+                    logger.LogWarning(platExcp, $"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with a platform exception {platExcp.Message}");
                     hasDualModeReceiveSupport = false;
                 }
                 catch (Exception excp)
                 {
-                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with {excp.Message}");
+                    logger.LogWarning(excp, $"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with {excp.Message}");
                     hasDualModeReceiveSupport = false;
                 }
                 finally
@@ -502,17 +545,34 @@ namespace SIPSorcery.Sys
                 if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
                 {
                     UdpClient udpClient = new UdpClient();
-                    udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
-                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                    try
+                    {
+                        udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
+                        localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    }
+                    catch(SocketException)
+                    {
+                        // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
+                    }
                 }
                 else
                 {
                     UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6);
-                    udpClient.Connect(destination, NETWORK_TEST_PORT);
-                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                    try
+                    {
+                        udpClient.Connect(destination, NETWORK_TEST_PORT);
+                        localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    }
+                    catch (SocketException)
+                    {
+                        // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
+                    }
                 }
 
-                m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
+                if (localAddress != null)
+                {
+                    m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
+                }
 
                 return localAddress;
             }
@@ -525,6 +585,16 @@ namespace SIPSorcery.Sys
         public static IPAddress GetLocalAddressForInternet()
         {
             var internetAddress = IPAddress.Parse(INTERNET_IPADDRESS);
+            return GetLocalAddressForRemote(internetAddress);
+        }
+
+        /// <summary>
+        /// Gets the default local IPv6 address for this machine for communicating with the Internet.
+        /// </summary>
+        /// <returns>The local address this machine should use for communicating with the Internet.</returns>
+        public static IPAddress GetLocalIPv6AddressForInternet()
+        {
+            var internetAddress = IPAddress.Parse(INTERNET_IPv6ADDRESS);
             return GetLocalAddressForRemote(internetAddress);
         }
 

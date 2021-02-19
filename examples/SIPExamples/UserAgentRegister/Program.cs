@@ -20,6 +20,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
+using Serilog.Events;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -27,39 +28,68 @@ namespace SIPSorcery.Register
 {
     class Program
     {
-        private const string USERNAME = "softphonesample";
-        private const string PASSWORD = "password";
-        private const string DOMAIN = "sipsorcery.com";
-        private const int EXPIRY = 120;
+        private const string DEFAULT_SERVER = "sips:sipsorcery.cloud";
+        private const string DEFAULT_USERNAME = "user";
+        private const string DEFAULT_PASSWORD = "password";
+        private const int DEFAULT_EXPIRY = 120;
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
-        static void Main()
+        static void Main(string[] args)
         {
             Console.WriteLine("SIPSorcery registration user agent example.");
             Console.WriteLine("Press ctrl-c to exit.");
 
-            Log = AddConsoleLogger();
+            Log = AddConsoleLogger(LogEventLevel.Verbose);
+
+            string server = DEFAULT_SERVER;
+            string username = DEFAULT_USERNAME;
+            string password = DEFAULT_PASSWORD;
+            int expiry = DEFAULT_EXPIRY;
+
+            int posn = 0;
+            while(posn < args?.Length && posn <= 3)
+            {
+                switch(posn)
+                {
+                    case 0:
+                        server = args[posn++].Trim();
+                        break;
+                    case 1:
+                        username = args[posn++].Trim();
+                        break;
+                    case 2:
+                        password = args[posn++].Trim();
+                        break;
+                    case 3:
+                        int.TryParse(args[posn++], out expiry);
+                        break;
+                }
+            }
+
+            Console.WriteLine("Attempting registration with:");
+            Console.WriteLine($" server: {server}");
+            Console.WriteLine($" username: {username}");
+            Console.WriteLine($" expiry: {expiry}");
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-
-            EnableTraceLogs(sipTransport);
+            sipTransport.EnableTraceLogs();
 
             // Create a client user agent to maintain a periodic registration with a SIP server.
-            var regUserAgent = new SIPRegistrationUserAgent(sipTransport, USERNAME, PASSWORD, DOMAIN, EXPIRY);
+            var regUserAgent = new SIPRegistrationUserAgent(sipTransport, username, password, server, expiry);
 
             // Event handlers for the different stages of the registration.
-            regUserAgent.RegistrationFailed += (uri, err) => Log.LogError($"{uri.ToString()}: {err}");
-            regUserAgent.RegistrationTemporaryFailure += (uri, msg) => Log.LogWarning($"{uri.ToString()}: {msg}");
-            regUserAgent.RegistrationRemoved += (uri) => Log.LogError($"{uri.ToString()} registration failed.");
-            regUserAgent.RegistrationSuccessful += (uri) => Log.LogInformation($"{uri.ToString()} registration succeeded.");
+            regUserAgent.RegistrationFailed += (uri, err) => Log.LogWarning($"{uri}: {err}");
+            regUserAgent.RegistrationTemporaryFailure += (uri, msg) => Log.LogWarning($"{uri}: {msg}");
+            regUserAgent.RegistrationRemoved += (uri) => Log.LogWarning($"{uri} registration failed.");
+            regUserAgent.RegistrationSuccessful += (uri) => Log.LogInformation($"{uri} registration succeeded.");
 
             // Start the thread to perform the initial registration and then periodically resend it.
             regUserAgent.Start();
 
             ManualResetEvent exitMRE = new ManualResetEvent(false);
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) =>
             {
                 e.Cancel = true;
                 Log.LogInformation("Exiting...");
@@ -73,53 +103,15 @@ namespace SIPSorcery.Register
         }
 
         /// <summary>
-        /// Enable detailed SIP log messages.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug 
+        /// and warning messages are not required.
         /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
-        {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-        }
-
-        /// <summary>
-        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-        /// </summary>
-        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger(
+            LogEventLevel logLevel = LogEventLevel.Debug)
         {
             var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(logLevel)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(serilogLogger);

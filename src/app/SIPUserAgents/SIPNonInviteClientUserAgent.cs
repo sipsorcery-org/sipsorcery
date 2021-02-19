@@ -36,7 +36,7 @@ namespace SIPSorcery.SIP.App
         private string m_lastServerNonce;
 
         public event Action<SIPResponse> ResponseReceived;
-        
+
         public SIPNonInviteClientUserAgent(
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
@@ -53,9 +53,9 @@ namespace SIPSorcery.SIP.App
             {
                 SIPRequest req = GetRequest(method);
                 SIPNonInviteTransaction tran = new SIPNonInviteTransaction(m_sipTransport, req, m_outboundProxy);
-                
+
                 ManualResetEvent waitForResponse = new ManualResetEvent(false);
-                tran.NonInviteTransactionTimedOut += RequestTimedOut;
+                tran.NonInviteTransactionFailed += TransactionFailed;
                 tran.NonInviteTransactionFinalResponseReceived += ServerResponseReceived;
                 tran.SendRequest();
             }
@@ -66,9 +66,9 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void RequestTimedOut(SIPTransaction sipTransaction)
+        private void TransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
-            logger.LogWarning("Attempt to send " + sipTransaction.TransactionRequest.Method +" to " + m_callDescriptor.Uri + " timed out.");
+            logger.LogWarning($"Attempt to send {sipTransaction.TransactionRequest.Method} to {m_callDescriptor.Uri} failed with {failureReason}.");
         }
 
         private Task<SocketError> ServerResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
@@ -76,7 +76,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                logger.LogDebug("Server response " + sipResponse.StatusCode + " " + reasonPhrase + " received for " + sipTransaction.TransactionRequest.Method +" to "  + m_callDescriptor.Uri + ".");
+                logger.LogDebug("Server response " + sipResponse.StatusCode + " " + reasonPhrase + " received for " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".");
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
@@ -87,35 +87,24 @@ namespace SIPSorcery.SIP.App
                             SIPRequest authenticatedRequest = GetAuthenticatedRequest(sipTransaction.TransactionRequest, sipResponse);
                             SIPNonInviteTransaction authTransaction = new SIPNonInviteTransaction(m_sipTransport, authenticatedRequest, m_outboundProxy);
                             authTransaction.NonInviteTransactionFinalResponseReceived += AuthResponseReceived;
-                            authTransaction.NonInviteTransactionTimedOut += RequestTimedOut;
-                            m_sipTransport.SendTransaction(authTransaction);
+                            authTransaction.NonInviteTransactionFailed += TransactionFailed;
+                            authTransaction.SendRequest();
                         }
                         else
                         {
                             logger.LogDebug("Send request received an authentication required response but no credentials were available.");
-
-                            if (ResponseReceived != null)
-                            {
-                                ResponseReceived(sipResponse);
-                            }
+                            ResponseReceived?.Invoke(sipResponse);
                         }
                     }
                     else
                     {
                         logger.LogDebug("Send request failed with " + sipResponse.StatusCode + " but no authentication header was supplied for " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".");
-                        
-                        if (ResponseReceived != null)
-                        {
-                            ResponseReceived(sipResponse);
-                        }
+                        ResponseReceived?.Invoke(sipResponse);
                     }
                 }
                 else
                 {
-                    if (ResponseReceived != null)
-                    {
-                        ResponseReceived(sipResponse);
-                    }
+                    ResponseReceived?.Invoke(sipResponse);
                 }
             }
             catch (Exception excp)
@@ -133,7 +122,7 @@ namespace SIPSorcery.SIP.App
         {
             string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
             logger.LogDebug("Server response " + sipResponse.Status + " " + reasonPhrase + " received for authenticated " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".");
-            
+
             if (ResponseReceived != null)
             {
                 ResponseReceived(sipResponse);

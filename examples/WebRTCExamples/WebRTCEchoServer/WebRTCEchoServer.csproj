@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>demo</RootNamespace>
+    <AssemblyName>webrtcecho</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include=".azure\deployscripts\deploy.sh">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SIPSorcery" Version="5.0.31-pre" />
+  </ItemGroup>
+
+</Project>

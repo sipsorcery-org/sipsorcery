@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        "use strict";
+
+        function Signaler(signalUrl) {
+
+            this.sendOffer = async function (offer) {
+                return (await fetch(signalUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(offer),
+                    headers: { 'Content-Type': 'application/json' }
+                })).json();
+            }
+        }
+
+    </script>
+
+    <script type="text/javascript">
+
+        "use strict";
+
+        const STUN_SERVER = "stun:stun.sipsorcery.com";
+        const NOISE_FRAME_WIDTH = 80;
+        const NOISE_FRAME_HEIGHT = 60;
+
+        var pc;
+        var isClosed = true;
+
+        window.onload = () => {
+            let host = window.location.hostname.concat(window.location.port ? `:${window.location.port}` : "");
+            document.getElementById('signalingUrl').value = `${window.location.protocol}//${host}/offer`;
+        };
+
+        async function start() {
+
+            if (!isClosed) {
+                // Close any existing peer connection.
+                await closePeer();
+            }
+
+            isClosed = false;
+
+            let signalingUrl = document.getElementById('signalingUrl').value;
+
+            // Create the noise.
+            let noiseStm = whiteNoise(NOISE_FRAME_WIDTH, NOISE_FRAME_HEIGHT);
+            document.getElementById("localVideoCtl").srcObject = noiseStm;
+
+            let signaler = new Signaler(signalingUrl);
+
+            // Create the peer connections.
+            pc = createPeer("echoVideoCtl", noiseStm);
+
+            let offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            var answer = await signaler.sendOffer(offer);
+
+            if (answer != null) {
+                console.log(answer.sdp)
+                await pc.setRemoteDescription(answer);
+            }
+            else {
+                console.log("Failed to get an answer from the Echo Test server.")
+                pc.close();
+            }
+        }
+
+        function createPeer(videoCtlID, noiseStm) {
+
+            console.log("Creating peer ...");
+
+            let pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_SERVER }] });
+            noiseStm.getTracks().forEach(track => pc.addTrack(track, noiseStm));
+            pc.ontrack = evt => document.getElementById(videoCtlID).srcObject = evt.streams[0];
+            pc.onicecandidate = evt => evt.candidate && console.log(evt.candidate);
+
+            return pc;
+        }
+
+        async function closePeer() {
+            console.log("Closing...")
+            isClosed = true;
+            await pc?.close();
+        };
+
+        function whiteNoise(width, height) {
+            const canvas = Object.assign(document.createElement("canvas"), { width, height });
+            const ctx = canvas.getContext('2d');
+            ctx.fillRect(0, 0, width, height);
+            const p = ctx.getImageData(0, 0, width, height);
+            requestAnimationFrame(function draw() {
+                if (!isClosed) {
+                    for (var i = 0; i < p.data.length; i++) {
+                        p.data[i++] = Math.random() * 255;
+                        p.data[i++] = Math.random() * 255;
+                        p.data[i++] = Math.random() * 255;
+                    }
+                    ctx.putImageData(p, 0, 0);
+                    requestAnimationFrame(draw);
+                }
+            });
+            return canvas.captureStream();
+        }
+
+    </script>
+</head>
+<body>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Source</th>
+                <th>Echo</th>
+            </tr>
+        </thead>
+        <tr>
+            <td>
+                <video controls autoplay="autoplay" id="localVideoCtl" width="320" height="240"></video>
+            </td>
+            <td>
+                <video controls autoplay="autoplay" id="echoVideoCtl" width="320" height="240"></video>
+            </td>
+
+        </tr>
+    </table>
+
+    <div>
+        <label>Signaling URL:</label> <input type="text" id="signalingUrl" size="40" /><br />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+</body>

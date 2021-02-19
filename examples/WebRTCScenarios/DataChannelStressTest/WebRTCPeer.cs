@@ -156,14 +156,14 @@ namespace SIPSorcery.Demo
             }
         }
 
-        public async Task SendAsync(string label, byte[] data)
+        public void SendAsync(string label, byte[] data)
         {
             if (_dataChannels.ContainsKey(label))
             {
                 var dc = _dataChannels[label];
                 if (dc.IsOpened)
                 {
-                    await _dataChannels[label].sendasync(data).ConfigureAwait(false);
+                    _dataChannels[label].send(data);
                 }
                 else
                 {

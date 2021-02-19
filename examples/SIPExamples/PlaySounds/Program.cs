@@ -34,11 +34,7 @@ namespace demo
 {
     class Program
     {
-        //private static string DESTINATION = "aaron@192.168.0.149";
-        //private static string DESTINATION = "sip:pcdodo@192.168.0.50";
-        //private static SIPEndPoint OUTBOUND_PROXY = SIPEndPoint.ParseSIPEndPoint("udp:192.168.0.149:5060");
-        private static string DESTINATION = "sip:aaron@192.168.0.50:6060";
-        //private static string DESTINATION = "sip:7002@192.168.0.48";
+        private static string DESTINATION = "aaron@192.168.0.147";
         private static SIPEndPoint OUTBOUND_PROXY = null;
 
         private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
@@ -52,8 +48,7 @@ namespace demo
             CancellationTokenSource exitCts = new CancellationTokenSource();
 
             var sipTransport = new SIPTransport();
-
-            EnableTraceLogs(sipTransport);
+            sipTransport.EnableTraceLogs();
 
             var userAgent = new SIPUserAgent(sipTransport, OUTBOUND_PROXY);
             userAgent.ClientCallFailed += (uac, error, sipResponse) => Console.WriteLine($"Call failed {error}.");
@@ -61,7 +56,7 @@ namespace demo
             userAgent.OnCallHungup += (dialog) => exitCts.Cancel();
 
             var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
-            windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.G722);
+            //windowsAudio.RestrictFormats(format => format.Codec == AudioCodecsEnum.G722);
             var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
             voipMediaSession.AcceptRtpFromAny = true;
             //voipMediaSession.AudioExtrasSource.AudioSamplePeriodMilliseconds = 20;
@@ -143,7 +138,7 @@ namespace demo
 
                     await Task.Delay(200, exitCts.Token);
                 }
-                catch (System.Threading.Tasks.TaskCanceledException)
+                catch (TaskCanceledException)
                 { }
 
                 // Switch to the external microphone input source.
@@ -166,46 +161,6 @@ namespace demo
 
             // Clean up.
             sipTransport.Shutdown();
-        }
-
-        /// <summary>
-        /// Enable detailed SIP log messages.
-        /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
-        {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Console.WriteLine($"Request received: {localEP}<-{remoteEP}");
-                Console.WriteLine(req.ToString());
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Console.WriteLine($"Request sent: {localEP}->{remoteEP}");
-                Console.WriteLine(req.ToString());
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Console.WriteLine($"Response received: {localEP}<-{remoteEP}");
-                Console.WriteLine(resp.ToString());
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Console.WriteLine($"Response sent: {localEP}->{remoteEP}");
-                Console.WriteLine(resp.ToString());
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Console.WriteLine($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Console.WriteLine($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
         }
 
         /// <summary>

@@ -58,7 +58,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public int TimeoutMilliseconds = DEFAULT_TIMEOUT_MILLISECONDS;
 
-
         /// <summary>
         /// Sets the period in milliseconds that receive will wait before try retransmission
         /// </summary>
@@ -200,7 +199,14 @@ namespace SIPSorcery.Net
                 }
                 catch (System.Exception excp)
                 {
-                    logger.LogWarning($"DTLS handshake as client failed. {excp.Message}");
+                    if (excp.InnerException is TimeoutException)
+                    {
+                        logger.LogWarning(excp, $"DTLS handshake as client timed out waiting for handshake to complete.");
+                    }
+                    else
+                    {
+                        logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
+                    }
 
                     // Declare handshake as failed
                     _handshakeComplete = false;
@@ -250,7 +256,14 @@ namespace SIPSorcery.Net
                 }
                 catch (System.Exception excp)
                 {
-                    logger.LogWarning($"DTLS handshake as server failed. {excp.Message}");
+                    if (excp.InnerException is TimeoutException)
+                    {
+                        logger.LogWarning(excp, $"DTLS handshake as server timed out waiting for handshake to complete.");
+                    }
+                    else
+                    {
+                        logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
+                    }
 
                     // Declare handshake as failed
                     _handshakeComplete = false;
@@ -504,9 +517,13 @@ namespace SIPSorcery.Net
                     //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)
                     //https://tools.ietf.org/id/draft-ietf-tls-dtls13-31.html#rfc.section.5.7
                     if (receiveLen == DTLS_RETRANSMISSION_CODE)
+                    {
                         _waitMillis = BackOff(_waitMillis);
+                    }
                     else
+                    {
                         _waitMillis = RetransmissionMilliseconds;
+                    }
 
                     return receiveLen;
                 }

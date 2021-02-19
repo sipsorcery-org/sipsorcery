@@ -75,7 +75,7 @@ namespace SIPSorcery.Net
     }
 
     /// <summary>
-    /// Properties to influence the initialisation of an ICE candidate.
+    /// Represents an ICE candidate and associated properties that link it to the SDP.
     /// </summary>
     /// <remarks>
     /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicecandidateinit.

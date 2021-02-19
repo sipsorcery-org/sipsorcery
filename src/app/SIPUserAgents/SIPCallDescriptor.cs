@@ -177,7 +177,7 @@ namespace SIPSorcery.SIP.App
             string dstUri,
             string sdp)
         {
-            if(string.IsNullOrWhiteSpace(dstUri))
+            if (string.IsNullOrWhiteSpace(dstUri))
             {
                 throw new ArgumentNullException(nameof(dstUri), "A destination must be supplied when creating a SIPCallDescriptor.");
             }

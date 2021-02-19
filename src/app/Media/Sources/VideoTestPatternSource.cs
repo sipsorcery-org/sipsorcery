@@ -2,7 +2,7 @@
 // Filename: VideoTestPatternSource.cs
 //
 // Description: Implements a video test pattern source based on a static 
-// jpeg file.
+// I420 file.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -112,47 +112,6 @@ namespace SIPSorcery.Media
             throw new NotImplementedException("The test pattern video source does not use a device.");
         public bool IsVideoSourcePaused() => _isPaused;
 
-        //public void SetEmbeddedTestPatternPath(string path)
-        //{
-        //    var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
-        //    var testPatternStm = assem.GetManifestResourceStream(path);
-
-        //    if (testPatternStm == null)
-        //    {
-        //        OnVideoSourceError?.Invoke($"Video test pattern source could not locate embedded path {path}.");
-        //    }
-        //    else
-        //    {
-        //        logger.LogDebug($"Test pattern loaded from embedded resource {path}.");
-
-        //        lock (_sendTestPatternTimer)
-        //        {
-        //            var bmp = new Bitmap(testPatternStm);
-        //            LoadI420Buffer(bmp);
-        //            bmp.Dispose();
-        //        }
-        //    }
-        //}
-
-        //public void SetTestPatternPath(string path)
-        //{
-        //    if (!File.Exists(path))
-        //    {
-        //        logger.LogWarning($"The test pattern file could not be found at {path}.");
-        //    }
-        //    else
-        //    {
-        //        logger.LogDebug($"Test pattern loaded from {path}.");
-
-        //        lock (_sendTestPatternTimer)
-        //        {
-        //            var bmp = new Bitmap(path);
-        //            LoadI420Buffer(bmp);
-        //            bmp.Dispose();
-        //        }
-        //    }
-        //}
-
         public void SetFrameRate(int framesPerSecond)
         {
             if (framesPerSecond < MINIMUM_FRAMES_PER_SECOND || framesPerSecond > MAXIMUM_FRAMES_PER_SECOND)
@@ -239,13 +198,6 @@ namespace SIPSorcery.Media
             return Task.CompletedTask;
         }
 
-        //private void LoadI420Buffer(Bitmap bitmap)
-        //{
-        //    _testBufferWidth = bitmap.Width;
-        //    _testBufferHeight = bitmap.Height;
-        //    _testI420Buffer = BitmapToI420(bitmap);
-        //}
-
         private void GenerateMaxFrames()
         {
             DateTime lastGenerateTime = DateTime.Now;
@@ -266,15 +218,12 @@ namespace SIPSorcery.Media
                 {
                     _frameCount++;
 
-                    //var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
-                    //AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-                    //// This event handler could get removed while the timestamp text is being added.
-                    //OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, _testPattern.Width, _testPattern.Height, BitmapToBGR24(stampedTestPattern as Bitmap), VideoPixelFormatsEnum.Bgr);
-                    //stampedTestPattern?.Dispose();
-                    //OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, _testPatternWidth, _testPatternHeight, _testPatternI420, VideoPixelFormatsEnum.I420);
                     StampI420Buffer(_testI420Buffer, TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _frameCount);
 
-                    OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420);
+                    if (OnVideoSourceRawSample != null)
+                    {
+                        GenerateRawSample(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer);
+                    }
 
                     if (_videoEncoder != null && OnVideoSourceEncodedSample != null && !_formatManager.SelectedFormat.IsEmpty())
                     {
@@ -296,98 +245,15 @@ namespace SIPSorcery.Media
             }
         }
 
-        //private void AddTimeStampAndLocation(System.Drawing.Image image, string timeStamp, string locationText)
-        //{
-        //    int pixelHeight = (int)(image.Height * TEXT_SIZE_PERCENTAGE);
-
-        //    Graphics g = Graphics.FromImage(image);
-        //    g.SmoothingMode = SmoothingMode.AntiAlias;
-        //    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        //    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-        //    using (StringFormat format = new StringFormat())
-        //    {
-        //        format.LineAlignment = StringAlignment.Center;
-        //        format.Alignment = StringAlignment.Center;
-
-        //        using (Font f = new Font("Tahoma", pixelHeight, GraphicsUnit.Pixel))
-        //        {
-        //            using (var gPath = new GraphicsPath())
-        //            {
-        //                float emSize = g.DpiY * f.Size / POINTS_PER_INCH;
-        //                if (locationText != null)
-        //                {
-        //                    gPath.AddString(locationText, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, TEXT_MARGIN_PIXELS, image.Width, pixelHeight), format);
-        //                }
-
-        //                gPath.AddString(timeStamp /* + " -- " + fps.ToString("0.00") + " fps" */, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, image.Height - (pixelHeight + TEXT_MARGIN_PIXELS), image.Width, pixelHeight), format);
-        //                g.FillPath(Brushes.White, gPath);
-        //                g.DrawPath(new Pen(Brushes.Black, pixelHeight * TEXT_OUTLINE_REL_THICKNESS), gPath);
-        //            }
-        //        }
-        //    }
-        //}
-
-        //public static byte[] BitmapToBGR24(Bitmap bitmap)
-        //{
-        //    if (bitmap.PixelFormat != PixelFormat.Format24bppRgb)
-        //    {
-        //        throw new ApplicationException("BitmapToRGB24 cannot convert from a non 24bppRgb pixel format.");
-        //    }
-
-        //    // NOTE: Pixel formats that have "Rgb" in their name, such as PixelFormat.Format24bppRgb,
-        //    // use a buffer format of BGR. Many issues on StackOverflow regarding this,
-        //    // e.g. https://stackoverflow.com/questions/5106505/converting-gdi-pixelformat-to-wpf-pixelformat.
-        //    // Needs to be taken into account by the receiver of the BGR buffer.
-
-        //    BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, bitmap.PixelFormat);
-        //    var length = Math.Abs(bitmapData.Stride) * bitmapData.Height;
-
-        //    byte[] bgrValues = new byte[length];
-
-        //    Marshal.Copy(bitmapData.Scan0, bgrValues, 0, length);
-        //    bitmap.UnlockBits(bitmapData);
-
-        //    return bgrValues;
-        //}
-
-        //public static byte[] BitmapToI420(Bitmap bitmap)
-        //{
-        //    return BGRtoI420(BitmapToBGR24(bitmap), bitmap.Width, bitmap.Height);
-        //}
-
-        public static byte[] BGRtoI420(byte[] bgr, int width, int height)
+        /// <summary>
+        /// Consumers subscribing to the <seealso cref="OnVideoSourceRawSample"/> will most likely want bitmap samples.
+        /// This method takes the I420 buffer for the test patten frame, converts it to BGR and fire the event.
+        /// </summary>
+        /// <param name="i420Buffer">The I420 buffer representing the test pattern.</param>
+        private void GenerateRawSample(int width, int height, byte[] i420Buffer)
         {
-            int size = width * height;
-            int uOffset = size;
-            int vOffset = size + size / 4;
-            int r, g, b, y, u, v;
-            int posn = 0;
-
-            byte[] buffer = new byte[width * height * 3 / 2];
-
-            for (int row = 0; row < height; row++)
-            {
-                for (int col = 0; col < width; col++)
-                {
-                    b = bgr[posn++] & 0xff;
-                    g = bgr[posn++] & 0xff;
-                    r = bgr[posn++] & 0xff;
-
-                    y = (int)(0.299 * r + 0.587 * g + 0.114 * b);
-                    u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
-                    v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
-
-                    buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
-
-                    int uvposn = col / 2 + row / 2 * width / 2;
-
-                    buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
-                    buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
-                }
-            }
-
-            return buffer;
+            var bgr = PixelConverter.I420toBGR(i420Buffer, width, height, out _);
+            OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, width, height,bgr, VideoPixelFormatsEnum.Bgr);
         }
 
         /// <summary>
@@ -396,7 +262,7 @@ namespace SIPSorcery.Media
         /// </summary>
         public static void StampI420Buffer(byte[] i420Buffer, int width, int height, int frameNumber)
         {
-            // Draws a varying gray scale square in the bottom right corner on the base I420 buffer.
+            // Draws a varying grey scale square in the bottom right corner on the base I420 buffer.
             int startX = width - STAMP_BOX_SIZE - STAMP_BOX_PADDING;
             int startY = height - STAMP_BOX_SIZE - STAMP_BOX_PADDING;
 

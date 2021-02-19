@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP
 
         public event SIPTransactionCancelledDelegate UASInviteTransactionCancelled;
         public event SIPTransactionRequestReceivedDelegate NewCallReceived;
-        public event SIPTransactionTimedOutDelegate UASInviteTransactionTimedOut;
+        public event SIPTransactionFailedDelegate UASInviteTransactionFailed;
 
         /// <summary>
         /// An application will be interested in getting a notification about the ACK request if it
@@ -82,11 +82,8 @@ namespace SIPSorcery.SIP
             TransactionRequestReceived += UASInviteTransaction_TransactionRequestReceived;
             TransactionInformationResponseReceived += UASInviteTransaction_TransactionResponseReceived;
             TransactionFinalResponseReceived += UASInviteTransaction_TransactionResponseReceived;
-            TransactionTimedOut += UASInviteTransaction_TransactionTimedOut;
-            TransactionRemoved += UASInviteTransaction_TransactionRemoved;
+            TransactionFailed += UASInviteTransaction_TransactionFailed;
             OnAckRequestReceived += UASInviteTransaction_OnAckRequestReceived;
-
-            sipTransport.AddTransaction(this);
         }
 
         private Task<SocketError> UASInviteTransaction_OnAckRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
@@ -94,18 +91,9 @@ namespace SIPSorcery.SIP
             return OnAckReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
-        private void UASInviteTransaction_TransactionRemoved(SIPTransaction transaction)
+        private void UASInviteTransaction_TransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
-            // Remove event handlers.
-            UASInviteTransactionCancelled = null;
-            NewCallReceived = null;
-            UASInviteTransactionTimedOut = null;
-            CDR = null;
-        }
-
-        private void UASInviteTransaction_TransactionTimedOut(SIPTransaction sipTransaction)
-        {
-            UASInviteTransactionTimedOut?.Invoke(this);
+            UASInviteTransactionFailed?.Invoke(this, failureReason);
             CDR?.TimedOut();
         }
 
@@ -159,30 +147,14 @@ namespace SIPSorcery.SIP
 
         public new Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)
         {
-            try
-            {
-                CDR?.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
-                return base.SendProvisionalResponse(sipResponse);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception UASInviteTransaction SendProvisionalResponse. " + excp.Message);
-                throw;
-            }
+            CDR?.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+            return base.SendProvisionalResponse(sipResponse);
         }
 
         public new void SendFinalResponse(SIPResponse sipResponse)
         {
-            try
-            {
-                CDR?.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, null, null);
-                base.SendFinalResponse(sipResponse);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception UASInviteTransaction SendFinalResponse. " + excp.Message);
-                throw;
-            }
+            CDR?.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+            base.SendFinalResponse(sipResponse);
         }
 
         /// <summary>
@@ -192,58 +164,46 @@ namespace SIPSorcery.SIP
         /// <returns>A socket error with the result of the cancel.</returns>
         public void CancelCall()
         {
-            try
+            if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
             {
-                if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
-                {
-                    base.UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
-                    UASInviteTransactionCancelled?.Invoke(this);
+                base.UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
+                UASInviteTransactionCancelled?.Invoke(this);
 
-                    SIPResponse cancelResponse = SIPResponse.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
-                    cancelResponse.Header.To.ToTag = LocalTag;
-                    base.SendFinalResponse(cancelResponse);
-                }
-                else
-                {
-                    logger.LogWarning("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
-                }
+                SIPResponse cancelResponse = SIPResponse.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
+                cancelResponse.Header.To.ToTag = LocalTag;
+                base.SendFinalResponse(cancelResponse);
             }
-            catch (Exception excp)
+            else
             {
-                logger.LogError("Exception UASInviteTransaction CancelCall. " + excp.Message);
-                throw;
+                logger.LogWarning("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
             }
         }
 
         public SIPResponse GetOkResponse(string contentType, string messageBody)
         {
-            try
-            {
-                SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null);
-                okResponse.SetSendFromHints(TransactionRequest.LocalSIPEndPoint);
+            SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null);
+            okResponse.SetSendFromHints(TransactionRequest.LocalSIPEndPoint);
 
-                SIPHeader requestHeader = TransactionRequest.Header;
-                okResponse.Header = new SIPHeader(SIPContactHeader.GetDefaultSIPContactHeader(), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
-                okResponse.Header.To.ToTag = m_localTag;
-                okResponse.Header.CSeqMethod = requestHeader.CSeqMethod;
-                okResponse.Header.Vias = requestHeader.Vias;
-                okResponse.Header.Server = m_sipServerAgent;
-                okResponse.Header.MaxForwards = Int32.MinValue;
-                okResponse.Header.RecordRoutes = requestHeader.RecordRoutes;
-                okResponse.Header.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB
-                    + ((PrackSupported == true) ? ", " + SIPExtensionHeaders.PRACK : "");
+            SIPHeader requestHeader = TransactionRequest.Header;
+            okResponse.Header = new SIPHeader(
+                SIPContactHeader.GetDefaultSIPContactHeader(TransactionRequest.URI.Scheme),
+                requestHeader.From, requestHeader.To,
+                requestHeader.CSeq,
+                requestHeader.CallId);
+            okResponse.Header.To.ToTag = m_localTag;
+            okResponse.Header.CSeqMethod = requestHeader.CSeqMethod;
+            okResponse.Header.Vias = requestHeader.Vias;
+            okResponse.Header.Server = m_sipServerAgent;
+            okResponse.Header.MaxForwards = Int32.MinValue;
+            okResponse.Header.RecordRoutes = requestHeader.RecordRoutes;
+            okResponse.Header.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB
+                + ((PrackSupported == true) ? ", " + SIPExtensionHeaders.PRACK : "");
 
-                okResponse.Body = messageBody;
-                okResponse.Header.ContentType = contentType;
-                okResponse.Header.ContentLength = (messageBody != null) ? messageBody.Length : 0;
+            okResponse.Body = messageBody;
+            okResponse.Header.ContentType = contentType;
+            okResponse.Header.ContentLength = (messageBody != null) ? messageBody.Length : 0;
 
-                return okResponse;
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception GetOkResponse. " + excp.Message);
-                throw;
-            }
+            return okResponse;
         }
     }
 }

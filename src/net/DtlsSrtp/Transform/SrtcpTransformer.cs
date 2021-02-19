@@ -159,7 +159,7 @@ namespace SIPSorcery.Net
             foreach (var ssrc in keys)
             {
                 if (contexts.TryRemove(ssrc, out var context))
-                { 
+                {
                     context.Close();
                 }
             }

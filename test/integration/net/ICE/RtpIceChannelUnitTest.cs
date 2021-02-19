@@ -165,7 +165,9 @@ namespace SIPSorcery.Net.IntegrationTests
             var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
             rtpIceChannel.AddRemoteCandidate(remoteCandidate2);
 
+#pragma warning disable RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
             await Task.Delay(500);
+#pragma warning restore RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
 
             foreach (var entry in rtpIceChannel._checklist)
             {
@@ -201,7 +203,7 @@ namespace SIPSorcery.Net.IntegrationTests
             rtpIceChannel.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
             rtpIceChannel.StartGathering();
 
-            await Task.Delay(2000);
+            await Task.Delay(2000).ConfigureAwait(false);
 
             var checklistEntry = rtpIceChannel._checklist.Single();
 
@@ -237,11 +239,11 @@ namespace SIPSorcery.Net.IntegrationTests
 
             logger.LogDebug($"ICE session retry interval {rtpIceChannel.RTO}ms.");
 
-            await Task.Delay(1000);
+            await Task.Delay(1000).ConfigureAwait(false);
 
             rtpIceChannel._checklist.Single().FirstCheckSentAt = DateTime.Now.Subtract(TimeSpan.FromSeconds(RtpIceChannel.FAILED_TIMEOUT_PERIOD));
 
-            await Task.Delay(1000);
+            await Task.Delay(1000).ConfigureAwait(false);
 
             Assert.Equal(ChecklistEntryState.Failed, rtpIceChannel._checklist.Single().State);
             Assert.Equal(ChecklistState.Failed, rtpIceChannel._checklistState);
@@ -287,14 +289,14 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelB.IceConnectionState);
 
             // Give the RTP channel listeners time to start.
-            await Task.Delay(500);
+            await Task.Delay(500).ConfigureAwait(false);
 
             // Exchange ICE candidates.
             rtpIceChannelA.Candidates.ForEach(x => rtpIceChannelB.AddRemoteCandidate(x));
             rtpIceChannelB.Candidates.ForEach(x => rtpIceChannelA.AddRemoteCandidate(x));
 
             // Give the RTP ICE channel checklists time to send the first few checks.
-            await Task.Delay(4000);
+            await Task.Delay(4000).ConfigureAwait(false);
 
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelA.IceConnectionState);
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelB.IceConnectionState);
@@ -314,7 +316,7 @@ namespace SIPSorcery.Net.IntegrationTests
             using (MockTurnServer mockStunServer = new MockTurnServer())
             {
                 // Give the TURN server socket receive tasks time to fire up.
-                await Task.Delay(1000);
+                await Task.Delay(1000).ConfigureAwait(false);
 
                 var iceServers = new List<RTCIceServer> {
                 new RTCIceServer
@@ -360,7 +362,7 @@ namespace SIPSorcery.Net.IntegrationTests
             using (MockTurnServer mockTurnServer = new MockTurnServer())
             {
                 // Give the TURN server socket receive tasks time to fire up.
-                await Task.Delay(1000);
+                await Task.Delay(1000).ConfigureAwait(false);
 
                 var iceServers = new List<RTCIceServer> {
                 new RTCIceServer
@@ -515,7 +517,7 @@ namespace SIPSorcery.Net.IntegrationTests
             {
                 logger.LogDebug("Waiting for channel A to acquire peer reflexive candidates.");
                 retries++;
-                await Task.Delay(500);
+                await Task.Delay(500).ConfigureAwait(false);
             }
 
             Assert.True(rtpIceChannelA._remoteCandidates.Count > 0);
@@ -527,7 +529,7 @@ namespace SIPSorcery.Net.IntegrationTests
             // This pause is so that channel A can process the new remote candidates supplied by B.
             // These candidates are host candidates and should replace the peer reflexive candidates
             // that were automatically created previously.
-            await Task.Delay(1000);
+            await Task.Delay(1000).ConfigureAwait(false);
 
             logger.LogDebug("Setting remote credentials for channel A.");
 
@@ -556,7 +558,7 @@ namespace SIPSorcery.Net.IntegrationTests
             using (MockTurnServer mockStunServer = new MockTurnServer())
             {
                 // Give the TURN server socket receive tasks time to fire up.
-                await Task.Delay(1000);
+                await Task.Delay(1000).ConfigureAwait(false);
 
                 var iceServers = new List<RTCIceServer> {
                 new RTCIceServer

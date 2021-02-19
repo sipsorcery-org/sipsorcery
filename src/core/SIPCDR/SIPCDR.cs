@@ -162,7 +162,7 @@ namespace SIPSorcery.SIP
             IsAnswered = false;
             IsHungup = false;
 
-            CDRCreated(this);
+            CDRCreated?.Invoke(this);
         }
 
         public void Progress(SIPResponseStatusCodesEnum progressStatus, string progressReason, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
@@ -185,72 +185,44 @@ namespace SIPSorcery.SIP
 
         public void Answered(int answerStatusCode, SIPResponseStatusCodesEnum answerStatus, string answerReason, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint)
         {
-            try
+            IsAnswered = true;
+            AnswerTime = DateTime.UtcNow;
+            AnswerStatus = (int)answerStatus;
+            AnswerReasonPhrase = answerReason;
+            AnsweredAt = DateTime.Now;
+
+            if (localEndPoint != null)
             {
-                IsAnswered = true;
-                AnswerTime = DateTime.UtcNow;
-                AnswerStatus = (int)answerStatus;
-                AnswerReasonPhrase = answerReason;
-                AnsweredAt = DateTime.Now;
-
-                if (localEndPoint != null)
-                {
-                    LocalSIPEndPoint = localEndPoint;
-                }
-
-                if (remoteEndPoint != null)
-                {
-                    RemoteEndPoint = remoteEndPoint;
-                }
-
-                CDRAnswered(this);
+                LocalSIPEndPoint = localEndPoint;
             }
-            catch (Exception excp)
+
+            if (remoteEndPoint != null)
             {
-                logger.LogError("Exception SIPCDR Answered. " + excp);
+                RemoteEndPoint = remoteEndPoint;
             }
+
+            CDRAnswered?.Invoke(this);
         }
 
         public void Cancelled(string cancelReason = null)
         {
-            try
-            {
-                HangupReason = (cancelReason != null) ? cancelReason : "Client cancelled";
-                CDRAnswered(this);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPCDR Cancelled. " + excp);
-            }
+            HangupReason = (cancelReason != null) ? cancelReason : "Client cancelled";
+            CDRAnswered?.Invoke(this);
         }
 
         public void TimedOut()
         {
-            try
-            {
-                HangupReason = "Timed out";
-                CDRAnswered(this);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPCDR TimedOut. " + excp);
-            }
+            HangupReason = "Timed out";
+            CDRAnswered?.Invoke(this);
         }
 
         public void Hungup(string hangupReason)
         {
-            try
-            {
-                IsHungup = true;
-                HangupTime = DateTime.UtcNow;
-                HangupReason = hangupReason;
+            IsHungup = true;
+            HangupTime = DateTime.UtcNow;
+            HangupReason = hangupReason;
 
-                CDRHungup(this);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPCDR Hungup. " + excp);
-            }
+            CDRHungup?.Invoke(this);
         }
 
         public int GetProgressDuration()
@@ -265,14 +237,7 @@ namespace SIPSorcery.SIP
 
         public void Updated()
         {
-            try
-            {
-                CDRUpdated(this);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPCDR Updated. " + excp);
-            }
+            CDRUpdated?.Invoke(this);
         }
     }
 }

@@ -17,12 +17,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
+using Serilog.Events;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -34,7 +36,7 @@ namespace demo
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sips:helloworld@sipsorcery.cloud";
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
@@ -45,32 +47,45 @@ namespace demo
 
             // Plumbing code to facilitate a graceful exit.
             ManualResetEvent exitMre = new ManualResetEvent(false);
+            bool preferIPv6 = false;
             bool isCallHungup = false;
             bool hasCallFailed = false;
 
-            Log = AddConsoleLogger();
+            Log = AddConsoleLogger(LogEventLevel.Verbose);
 
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
-            if (args != null && args.Length > 0)
+            if (args?.Length > 0)
             {
                 if (!SIPURI.TryParse(args[0], out callUri))
                 {
                     Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
                 }
             }
-            Log.LogInformation($"Call destination {callUri}.");
+            if(args?.Length > 1 && args[1] == "ipv6")
+            {
+                preferIPv6 = true;
+            }
+
+            if (preferIPv6)
+            {
+                Log.LogInformation($"Call destination {callUri}, preferencing IPv6.");
+            }
+            else
+            {
+                Log.LogInformation($"Call destination {callUri}.");
+            }
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            //sipTransport.PreferIPv6NameResolution = true;
-            EnableTraceLogs(sipTransport);
+            sipTransport.PreferIPv6NameResolution = preferIPv6;
+            sipTransport.EnableTraceLogs();
 
             var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
             audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA || x.Codec == AudioCodecsEnum.PCMU);
             //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.G722);
             var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
 
-            var offerSDP = rtpSession.CreateOffer(null);
+            var offerSDP = rtpSession.CreateOffer(preferIPv6 ? IPAddress.IPv6Any : IPAddress.Any);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
@@ -80,7 +95,15 @@ namespace demo
                 Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
                 if (resp.Status == SIPResponseStatusCodesEnum.SessionProgress)
                 {
-                    await rtpSession.Start();
+                    if (resp.Body != null)
+                    {
+                        var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
+                        if (result == SetDescriptionResultEnum.OK)
+                        {
+                            await rtpSession.Start();
+                            Log.LogInformation($"Remote SDP set from in progress response. RTP session started.");
+                        }
+                    }
                 }
             };
             uac.CallFailed += (uac, err, resp) =>
@@ -94,14 +117,22 @@ namespace demo
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                    var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
-                    if (result == SetDescriptionResultEnum.OK)
+                    if (resp.Body != null)
                     {
-                        await rtpSession.Start();
+                        var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
+                        if (result == SetDescriptionResultEnum.OK)
+                        {
+                            await rtpSession.Start();
+                        }
+                        else
+                        {
+                            Log.LogWarning($"Failed to set remote description {result}.");
+                            uac.Hangup();
+                        }
                     }
-                    else
+                    else if(!rtpSession.IsStarted)
                     {
-                        Log.LogWarning($"Failed to set remote description {result}.");
+                        Log.LogWarning($"Failed to set get remote description in session progress or final response.");
                         uac.Hangup();
                     }
                 }
@@ -142,7 +173,6 @@ namespace demo
                 null);
 
             uac.Call(callDescriptor, null);
-            uac.ServerTransaction.TransactionTraceMessage += (tx, msg) => Log.LogInformation($"UAC tx trace message. {msg}");
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
@@ -184,53 +214,14 @@ namespace demo
         }
 
         /// <summary>
-        /// Enable detailed SIP log messages.
-        /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
-        {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-        }
-
-        /// <summary>
         /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger(
+            LogEventLevel logLevel = LogEventLevel.Debug)
         {
             var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(logLevel)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(serilogLogger);

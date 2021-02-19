@@ -18,9 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
-using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -105,11 +105,12 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc3890.
         /// </remarks>
-        public uint MaximumBandwidth 
-        {   get => _maxBandwith;
+        public uint MaximumBandwidth
+        {
+            get => _maxBandwith;
             set
             {
-                if(!IsRemote)
+                if (!IsRemote)
                 {
                     _maxBandwith = value;
                 }
@@ -136,8 +137,9 @@ namespace SIPSorcery.Net
         /// to remove capabilities we don't support.</param>
         /// <param name="streamStatus">The initial stream status for the media track. Defaults to
         /// send receive.</param>
-        /// <param name="ssrcAttributes">If th track is being created from an SDP announcement this
-        /// parameter contains a list of </param>
+        /// <param name="ssrcAttributes">Optional. If the track is being created from an SDP announcement this
+        /// parameter contains a list of the SSRC attributes that should then match the RTP header SSRC value
+        /// for this track.</param>
         public MediaStreamTrack(
             SDPMediaTypesEnum kind,
             bool isRemote,
@@ -163,7 +165,10 @@ namespace SIPSorcery.Net
             {
                 foreach (var ssrcAttr in ssrcAttributes)
                 {
-                    SdpSsrc.Add(ssrcAttr.SSRC, ssrcAttr);
+                    if (!SdpSsrc.ContainsKey(ssrcAttr.SSRC))
+                    {
+                        SdpSsrc.Add(ssrcAttr.SSRC, ssrcAttr);
+                    }
                 }
             }
         }

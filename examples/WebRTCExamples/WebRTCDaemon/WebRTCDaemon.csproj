@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <UserSecretsId>dotnet-WebRTCDaemon-4CFBC03A-E49E-41C5-97C2-810C6F5AA313</UserSecretsId>
+    <TargetFramework>net5</TargetFramework>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
@@ -28,7 +27,7 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
-    <PackageReference Include="SIPSorcery" Version="5.0.11-pre" />
+    <PackageReference Include="SIPSorcery" Version="5.0.31-pre" />
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.10-pre" />
   </ItemGroup>
 

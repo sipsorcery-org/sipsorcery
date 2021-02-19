@@ -33,8 +33,8 @@ namespace SIPSorcery.Demo
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
         private const int dataSize = 64000;
         private static int lastNum;
-        private const int totalItems = 100;
-        private const int totalPairs = 3;
+        private const int totalItems = 1000;
+        private const int totalPairs = 10;
 
         static void Main(string[] args)
         {
@@ -161,7 +161,7 @@ namespace SIPSorcery.Demo
                                 packetNum.Num = i;
                                 packetNum.QueueName = $"{peerA._peerName} {sendLabel} {name}";
                                 packetNum.Data = new byte[dataSize];
-                                await peerA.SendAsync(sendLabel, packetNum.ToData()).ConfigureAwait(false);
+                                peerA.SendAsync(sendLabel, packetNum.ToData());
                             }
                             catch (Exception ex)
                             {
@@ -224,12 +224,14 @@ namespace SIPSorcery.Demo
             {
                 var pieceNum = BitConverter.ToInt32(obj, 0);
                 //logger.LogDebug($"{Name}: data channel ({_dataChannel.label}:{_dataChannel.id}): {pieceNum}.");
-                logger.LogDebug($"{peer._peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
+                //logger.LogDebug($"{peer._peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
+                Console.WriteLine($"{peer._peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
             }
             else
             {
                 var packet = BytesToStructure<Message>(obj);
-                logger.LogDebug($"{peer._peerName}: Data channel receive: {packet.QueueName} Num: {packet.Num}.");
+                //logger.LogDebug($"{peer._peerName}: Data channel receive: {packet.QueueName} Num: {packet.Num}.");
+                Console.WriteLine($"{peer._peerName}: Data channel receive: {packet.QueueName} Num: {packet.Num}.");
                 lastNum = packet.Num;
             }
         }
@@ -259,7 +261,7 @@ namespace SIPSorcery.Demo
         {
             var seriLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Verbose)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(seriLogger);

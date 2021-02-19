@@ -1006,7 +1006,7 @@ a=sendrecv";
         }
 
         /// <summary>
-        /// Tests that parsing an SDP media format attribute which specifies a dynamic media format fmtp in advance of the 
+        /// Tests that parsing an SDP media format attribute which specifies a dynamic media format fmtp in advance of the
         /// rtpmap works correctly.
         /// </summary>
         [Fact]
@@ -1123,7 +1123,7 @@ a=sendrecv
         }
 
         /// <summary>
-        /// Tests that a TIAS bandwith attribute (RFC3890) can be successfully round tripped.
+        /// Tests that a TIAS bandwidth attribute (RFC3890) can be successfully round tripped.
         /// </summary>
         [Fact]
         public void TIASBandwidthAttributeRoundTripTest()
@@ -1158,6 +1158,96 @@ a=sendrecv
             SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
 
             Assert.Equal(256000U, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().TIASBandwidth);
+        }
+
+        /// <summary>
+        /// Tests that parsing an SDP offer from FireFox gets parsed correctly.
+        /// </summary>
+        [Fact]
+        public void ParseFireFoxOfferSDPUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=mozilla...THIS_IS_SDPARTA-84.0.1 7017023008463685090 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+a=sendrecv
+a=fingerprint:sha-256 F8:1E:8A:E3:F9:8F:2B:9F:98:E0:BF:92:07:59:70:47:A6:D0:6F:FF:00:9E:35:9A:5E:40:D6:F2:FA:03:CF:76
+a=group:BUNDLE 0
+a=ice-options:trickle
+a=msid-semantic:WMS *
+m=video 9 UDP/TLS/RTP/SAVPF 120 124 121 125 126 127 97 98
+c=IN IP4 0.0.0.0
+a=sendrecv
+a=extmap:3 urn:ietf:params:rtp-hdrext:sdes:mid
+a=extmap:4 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:5 urn:ietf:params:rtp-hdrext:toffset
+a=extmap:6/recvonly http://www.webrtc.org/experiments/rtp-hdrext/playout-delay
+a=extmap:7 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=fmtp:126 profile-level-id=42e01f;level-asymmetry-allowed=1;packetization-mode=1
+a=fmtp:97 profile-level-id=42e01f;level-asymmetry-allowed=1
+a=fmtp:120 max-fs=12288;max-fr=60
+a=fmtp:124 apt=120
+a=fmtp:121 max-fs=12288;max-fr=60
+a=fmtp:125 apt=121
+a=fmtp:127 apt=126
+a=fmtp:98 apt=97
+a=ice-pwd:6c1a776836afb21f4d135d3818ecb5be
+a=ice-ufrag:6b59155f
+a=mid:0
+a=msid:{d5fb36cb-d7ac-44d9-948d-14a1718fe738} {996a7e79-c6f3-49a2-9773-3e9df5245791}
+a=rtcp-fb:120 nack
+a=rtcp-fb:120 nack pli
+a=rtcp-fb:120 ccm fir
+a=rtcp-fb:120 goog-remb
+a=rtcp-fb:120 transport-cc
+a=rtcp-fb:121 nack
+a=rtcp-fb:121 nack pli
+a=rtcp-fb:121 ccm fir
+a=rtcp-fb:121 goog-remb
+a=rtcp-fb:121 transport-cc
+a=rtcp-fb:126 nack
+a=rtcp-fb:126 nack pli
+a=rtcp-fb:126 ccm fir
+a=rtcp-fb:126 goog-remb
+a=rtcp-fb:126 transport-cc
+a=rtcp-fb:97 nack
+a=rtcp-fb:97 nack pli
+a=rtcp-fb:97 ccm fir
+a=rtcp-fb:97 goog-remb
+a=rtcp-fb:97 transport-cc
+a=rtcp-mux
+a=rtcp-rsize
+a=rtpmap:120 VP8/90000
+a=rtpmap:124 rtx/90000
+a=rtpmap:121 VP9/90000
+a=rtpmap:125 rtx/90000
+a=rtpmap:126 H264/90000
+a=rtpmap:127 rtx/90000
+a=rtpmap:97 H264/90000
+a=rtpmap:98 rtx/90000
+a=setup:actpass
+a=ssrc:3366495178 cname:{7eee5d94-87f0-4e5e-a6ae-ac6f067c4782}
+a=ssrc:777490417 cname:{7eee5d94-87f0-4e5e-a6ae-ac6f067c4782}
+a=ssrc-group:FID 3366495178 777490417";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("BUNDLE 0", sdp.Group);
+            Assert.Equal("BUNDLE 0", rndTripSdp.Group);
+            Assert.Null(sdp.Media.First().IceCandidates);
+            Assert.Null(rndTripSdp.Media.First().IceCandidates);
+            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3366495178U);
+            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 777490417U);
+            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3366495178U);
+            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 777490417U);
         }
     }
 }

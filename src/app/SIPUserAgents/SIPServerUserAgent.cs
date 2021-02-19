@@ -1,4 +1,4 @@
-  //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: SIPServerUserAgent.cs
 //
 // Description: Implementation of a SIP Server User Agent that can be used to receive SIP calls.
@@ -75,7 +75,7 @@ namespace SIPSorcery.SIP.App
         {
             get
             {
-                if (!String.IsNullOrEmpty(m_uasTransaction.TransactionRequest.Body))
+                if (!string.IsNullOrEmpty(m_uasTransaction.TransactionRequest.Body))
                 {
                     return SDP.ParseSDPDescription(m_uasTransaction.TransactionRequest.Body);
                 }
@@ -99,16 +99,6 @@ namespace SIPSorcery.SIP.App
         public event SIPUASDelegate NoRingTimeout;
 
         /// <summary>
-        /// The underlying invite transaction has reached the completed state.
-        /// </summary>
-        public event SIPUASDelegate TransactionComplete;
-
-        /// <summary>
-        /// The underlying invite transaction has changed state.
-        /// </summary>
-        //public event SIPUASStateChangedDelegate UASStateChanged;
-
-        /// <summary>
         /// Gets fired when the call successfully negotiates an SDP offer/answer and creates a new dialog.
         /// Typically this can occur at the same time as the transaction final response is sent. But in cases
         /// where the initial INVITE does not contain an SDP offer the dialog will not be created until the 
@@ -127,14 +117,8 @@ namespace SIPSorcery.SIP.App
             m_uasTransaction = uasTransaction;
             m_sipAccount = sipAccount;
 
-            m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;
+            m_uasTransaction.UASInviteTransactionFailed += ClientTransactionFailed;
             m_uasTransaction.UASInviteTransactionCancelled += UASTransactionCancelled;
-            m_uasTransaction.TransactionRemoved += new SIPTransactionRemovedDelegate(UASTransaction_TransactionRemoved);
-        }
-
-        private void UASTransaction_TransactionRemoved(SIPTransaction sipTransaction)
-        {
-            TransactionComplete?.Invoke(this);
         }
 
         public bool AuthenticateCall()
@@ -400,7 +384,7 @@ namespace SIPSorcery.SIP.App
         {
             Redirect(redirectCode, redirectURI, null);
         }
-        
+
         public void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI, string[] customHeaders)
         {
             try
@@ -518,10 +502,14 @@ namespace SIPSorcery.SIP.App
             CallCancelled?.Invoke(this);
         }
 
-        private void ClientTimedOut(SIPTransaction sipTransaction)
+        private void ClientTransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
-            logger.LogDebug($"SIPServerUserAgent client timed out in transaction state {m_uasTransaction.TransactionState}.");
-            NoRingTimeout?.Invoke(this);
+            logger.LogDebug($"SIPServerUserAgent client failed with {failureReason} in transaction state {m_uasTransaction.TransactionState}.");
+
+            if (sipTransaction.HasTimedOut)
+            {
+                NoRingTimeout?.Invoke(this);
+            }
         }
     }
 }

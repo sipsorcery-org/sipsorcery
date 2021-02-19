@@ -149,7 +149,7 @@ namespace SIPSorcery.Net
                 sb.AppendLine("BYE");
             }
 
-            if(SDesReport != null)
+            if (SDesReport != null)
             {
                 sb.AppendLine($"SDES: SSRC={SDesReport.SSRC}, CNAME={SDesReport.CNAME}");
             }
@@ -166,8 +166,8 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-           
-            if(ReceiverReport != null)
+
+            if (ReceiverReport != null)
             {
                 var recv = ReceiverReport;
                 sb.AppendLine($"Receiver: SSRC={recv.SSRC}");

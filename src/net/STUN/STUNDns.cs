@@ -216,7 +216,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogWarning($"STUNDns lookup failure for {host} and query {queryType}. {excp.Message}");
+                logger.LogWarning(excp, $"STUNDns lookup failure for {host} and query {queryType}. {excp.Message}");
             }
 
             if (queryType == QueryType.AAAA)

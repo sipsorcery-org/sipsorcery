@@ -98,7 +98,7 @@ namespace SIPSorcery.Net
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3262
                 // the BeginReceiveFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
                 // case the socket can be considered to be unusable and there's no point trying another receive.
-                logger.LogError($"Exception UdpReceiver.BeginReceiveFrom. {excp.Message}");
+                logger.LogError(excp, $"Exception UdpReceiver.BeginReceiveFrom. {excp.Message}");
                 Close(excp.Message);
             }
         }
@@ -161,7 +161,7 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            catch(SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
+            catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
             {
                 // Thrown when close is called on a socket from this end. Safe to ignore.
             }
@@ -176,7 +176,7 @@ namespace SIPSorcery.Net
                 // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
                 // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
                 // error since the remote party may not have initialised their socket yet.
-                logger.LogWarning($"SocketException UdpReceiver.EndReceiveFrom ({sockExcp.SocketErrorCode}). {sockExcp}");
+                logger.LogWarning(sockExcp,$"SocketException UdpReceiver.EndReceiveFrom ({sockExcp.SocketErrorCode}). {sockExcp.Message}");
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
@@ -431,8 +431,9 @@ namespace SIPSorcery.Net
 
                     //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
                     if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
+                    {
                         dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
-
+                    }
 
                     sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
                     return SocketError.Success;
@@ -471,7 +472,7 @@ namespace SIPSorcery.Net
                 // - the RTP connection may start sending before the remote socket starts listening,
                 // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
                 //   or new socket during the transition.
-                logger.LogWarning($"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                logger.LogWarning(sockExcp, $"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }

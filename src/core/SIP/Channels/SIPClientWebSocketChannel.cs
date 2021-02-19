@@ -116,7 +116,7 @@ namespace SIPSorcery.SIP
         /// <param name="buffer">The data to send.</param>
         /// <param name="connectionIDHint">The ID of the specific web socket connection to try and send the message on.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
+        public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, bool canInitiateConnection, string connectionIDHint)
         {
             if (dstEndPoint == null)
             {
@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Send to a secure web socket server.
         /// </summary>
-        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, bool canInitiateConnection, string connectionIDHint)
         {
             if (dstEndPoint == null)
             {
@@ -314,7 +314,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogWarning("Exception SIPClientWebSocketChannel Close. " + excp.Message);
+                logger.LogWarning(excp, "Exception SIPClientWebSocketChannel Close. " + excp.Message);
             }
         }
 

@@ -72,7 +72,7 @@ namespace SCTP4CS.Utils
                 {
                     if (closing || (timeout < Timeout.Infinite) || !Monitor.Wait(queue, timeout))
                     {
-                        value = default(T);
+                        value = default;
                         return false;
                     }
                 }

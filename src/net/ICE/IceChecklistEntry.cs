@@ -193,7 +193,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Timestamp for the most recent binding request received from the remote peer.
         /// </summary>
-        public DateTime LastBindingRequestReceivedAt { get; set;}
+        public DateTime LastBindingRequestReceivedAt { get; set; }
 
         /// <summary>
         /// Creates a new entry for the ICE session checklist.

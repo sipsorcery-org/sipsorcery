@@ -6,10 +6,6 @@
 
 **Update Jan 2021:** The repository URLs for this project have changed from `sipsorcery` to `sipsorcery-org`. A redirect currently exists but if you encounter any issues you can update your remote git URL from the command line using the commands below (adjust for the name of your remote repo):
 
-`git remote set-url origin git@github.com:sipsorcery-org/sipsorcery.git`
-
-or
-
 `git remote set-url origin-http https://github.com/sipsorcery-org/sipsorcery`
 
 
@@ -27,7 +23,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
  - Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261),
  - Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550),
- - Web Real-time Communications [(WebRTC)](https://www.w3.org/TR/webrtc/),
+ - Web Real-time Communications [(WebRTC)](https://www.w3.org/TR/webrtc/), **as of 26 Jan 2021 now an official IETF and W3C specification**,
  - Interactive Connectivity Establishment [(ICE)](https://tools.ietf.org/html/rfc8445),
  - And more.
 
@@ -61,6 +57,10 @@ Install-Package SIPSorcery -v 5.0.3
 
 Class reference documentation and articles explaining common usage are available at [https://sipsorcery-org.github.io/sipsorcery/](https://sipsorcery-org.github.io/sipsorcery/).
 
+## Complimentary Server
+
+A free SIP account for GitHub users that can be used for SIP and WebRTC testing is available at [sipsorcery.cloud](https://sipsorcery.cloud).
+
 ## Getting Started VoIP
 
 The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia.Windows` library to play the received audio and only works on Windows (due to lack of .NET Core audio device support on non-Windows platforms).
@@ -86,7 +86,7 @@ namespace SIPGetStarted
 {
     class Program
     {
-         private static string DESTINATION = "time@sipsorcery.com";
+         private static string DESTINATION = "helloworld@sipsorcery.cloud";
         
         static async Task Main()
         {
@@ -145,7 +145,6 @@ dotnet run
 using System;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
@@ -169,8 +168,8 @@ namespace demo
             webSocketServer.Start();
 
             Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-
-            Console.WriteLine("Press any key to hangup and exit.");
+            
+            Console.WriteLine("Press any key exit.");
             Console.ReadLine();
         }
 
@@ -190,26 +189,20 @@ namespace demo
             {
                 Console.WriteLine($"Peer connection state change to {state}.");
 
-                if (state == RTCPeerConnectionState.failed)
+                switch(state)
                 {
-                    pc.Close("ice disconnection");
-                }
-                else if (state == RTCPeerConnectionState.closed)
-                {
-                    await testPatternSource.CloseVideo();
-                    testPatternSource.Dispose();
-                }
-                else if (state == RTCPeerConnectionState.connected)
-                {
-                    await testPatternSource.StartVideo();
+                    case RTCPeerConnectionState.connected:
+                        await testPatternSource.StartVideo();
+                        break;
+                    case RTCPeerConnectionState.failed:
+                        pc.Close("ice disconnection");
+                        break;
+                    case RTCPeerConnectionState.closed:
+                        await testPatternSource.CloseVideo();
+                        testPatternSource.Dispose();
+                        break;
                 }
             };
-
-            // Diagnostics.
-            pc.OnReceiveReport += (re, media, rr) => Console.WriteLine($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-            pc.OnSendReport += (media, sr) => Console.WriteLine($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
-            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => Console.WriteLine($"STUN {msg.Header.MessageType} received from {ep}.");
-            pc.oniceconnectionstatechange += (state) => Console.WriteLine($"ICE connection state change to {state}.");
 
             return Task.FromResult(pc);
         }
@@ -235,19 +228,14 @@ Create an HTML file, paste the contents below into it, open it in a browser that
             pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
             pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
 
-            // Diagnostics.
-            pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
-            pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
-            pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
-            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
-
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
             ws.onmessage = async function (evt) {
-                if (/^[\{"'\s]*candidate/.test(evt.data)) {
-                    pc.addIceCandidate(JSON.parse(evt.data));
+                var obj = JSON.parse(evt.data);
+                if (obj?.candidate) {
+                    pc.addIceCandidate(obj);
                 }
-                else {
-                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+                else if (obj?.sdp) {
+                    await pc.setRemoteDescription(new RTCSessionDescription(obj));
                     pc.createAnswer()
                         .then((answer) => pc.setLocalDescription(answer))
                         .then(() => ws.send(JSON.stringify(pc.localDescription)));
@@ -256,8 +244,8 @@ Create an HTML file, paste the contents below into it, open it in a browser that
         };
 
         async function closePeer() {
-            await pc.close();
-            await ws.close();
+            await pc?.close();
+            await ws?.close();
         };
 
     </script>
@@ -281,7 +269,7 @@ Create an HTML file, paste the contents below into it, open it in a browser that
 
 **Result:**
 
-If successful the browser should display a test pattern image. The `dotnet` console should display a steady stream of RTCP reports that are being received from the Browser.
+If successful the browser should display a test pattern image.
 
 The [examples folder](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples) contains sample code to demonstrate other common WebRTC cases.
 
