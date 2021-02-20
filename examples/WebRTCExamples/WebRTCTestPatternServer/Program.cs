@@ -45,7 +45,7 @@ namespace demo
     {
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
-        private const int TEST_PATTERN_FRAMES_PER_SECOND = 30;
+        private const int TEST_PATTERN_FRAMES_PER_SECOND = 5; //30;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
