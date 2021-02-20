@@ -32,7 +32,7 @@ namespace Vpx.Net.UnitTest
         }
 
         /// <summary>
-        /// Tests initialising and destorying the VP8 decoder.
+        /// Tests initialising and destroying the VP8 decoder.
         /// </summary>
         [Fact]
         public unsafe void InitialiseDecoderTest()
@@ -361,7 +361,7 @@ namespace Vpx.Net.UnitTest
 
             int count = 0;
             foreach (var frame in frames)
-             {
+            {
                 logger.LogDebug($"DECODING FRAME {count}:");
 
                 byte[] buffer = HexStr.ParseHexStr(frame);
@@ -442,6 +442,57 @@ namespace Vpx.Net.UnitTest
                 }
 
                 count++;
+            }
+        }
+
+        /// <summary>
+        /// The encoded frames in this sequence were generated from the WebRTC Test Pattern demo using
+        /// the FFMpeg codec (which wraps libvpx but could be doing something different).
+        /// </summary>
+        [Fact]
+        public unsafe void DecodeTestPatternSequence()
+        {
+            vpx_codec_ctx_t decoder = new vpx_codec_ctx_t();
+            vpx_codec_iface_t algo = vp8_dx.vpx_codec_vp8_dx();
+            vpx_codec_dec_cfg_t cfg = new vpx_codec_dec_cfg_t { threads = 1 };
+            vpx_codec_err_t res = vpx_decoder.vpx_codec_dec_init(decoder, algo, cfg, 0);
+
+            Assert.Equal(vpx_codec_err_t.VPX_CODEC_OK, res);
+            Assert.NotNull(decoder);
+
+            FileStream fs = new FileStream("capture.stm", FileMode.Open, FileAccess.Read);
+
+            int count = 0;
+            byte[] buffer = new byte[100000];
+
+            while (fs.Position < fs.Length)
+            {
+                string lenStr = null;
+                char c = (char)fs.ReadByte();
+                while (c != ',')
+                {
+                    lenStr += c;
+                    c = (char)fs.ReadByte();
+                }
+
+                int len = Convert.ToInt32(lenStr);
+                logger.LogDebug($"Reading frame of length {len}.");
+                fs.Read(buffer, 0, len);
+
+                logger.LogDebug($"DECODING FRAME {count++}:");
+
+                fixed (byte* pBuffer = buffer)
+                {
+                    var result = vpx_decoder.vpx_codec_decode(decoder, pBuffer, (uint)len, IntPtr.Zero, 0);
+                    Assert.Equal(vpx_codec_err_t.VPX_CODEC_OK, result);
+                }
+
+                IntPtr iter = IntPtr.Zero;
+                var img = vpx_decoder.vpx_codec_get_frame(decoder, iter);
+
+                Assert.NotNull(img);
+                Assert.Equal(640U, img.d_w);
+                Assert.Equal(480U, img.d_h);
             }
         }
     }

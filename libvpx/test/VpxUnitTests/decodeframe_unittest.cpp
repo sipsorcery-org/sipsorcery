@@ -368,5 +368,58 @@ namespace VpxUnitTests
         count++;
       }
     }
+
+    /// <summary>
+    /// The encoded frames in this sequence were generated from the WebRTC Test Pattern demo using
+    /// the FFMpeg codec (which wraps libvpx but could be doing something different).
+    /// </summary>
+    TEST_METHOD(DecodeTestPatternSequence)
+    {
+      Logger::WriteMessage("DecodeTestPatternSequence\n");
+
+      vpx_codec_enc_cfg_t vpxConfig;
+
+      // Initialise codec configuration.
+      vpx_codec_err_t res = vpx_codec_enc_config_default(vpx_codec_vp8_cx(), &vpxConfig, 0);
+
+      Assert::AreEqual((int)VPX_CODEC_OK, (int)res);
+
+      vpx_codec_ctx_t decoder;
+      res = vpx_codec_dec_init(&decoder, vpx_codec_vp8_dx(), NULL, 0);
+
+      Assert::AreEqual((int)VPX_CODEC_OK, (int)res);
+
+      std::ifstream captureStm("capture.stm", std::ifstream::binary);
+      int count = 0;
+
+      while (captureStm) {
+        std::string lenStr;
+        char c = (char)captureStm.get();
+        if (c == EOF) {
+          break;
+        }
+        while (c != ',')
+        {
+          lenStr += c;
+          c = (char)captureStm.get();
+        }
+
+        int len = atoi(lenStr.c_str());
+        Logger::WriteMessage(std::string("Reading frame of length " + std::to_string(len) + ":\n").c_str());
+        std::vector<uint8_t> buffer(len);
+        captureStm.read((char*)buffer.data(), len);
+
+        Logger::WriteMessage(std::string("DECODE FRAME " + std::to_string(count++) + ":\n").c_str());
+
+        res = vpx_codec_decode(&decoder, buffer.data(), buffer.size(), nullptr, 0);
+
+        Assert::AreEqual((int)VPX_CODEC_OK, (int)res);
+
+        vpx_codec_iter_t decoder_iter = NULL;
+        vpx_image_t* decodedImg = vpx_codec_get_frame(&decoder, &decoder_iter);
+
+        Assert::IsNotNull(decodedImg);
+      }
+    }
   };
 }

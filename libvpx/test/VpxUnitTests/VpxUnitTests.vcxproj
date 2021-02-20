@@ -180,6 +180,9 @@
     <ClInclude Include="strutils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="capture.stm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="testpattern_keyframe.vp8">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </None>

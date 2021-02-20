@@ -214,11 +214,11 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
         /* do 2nd order transform on the dc block */
         if (xd->eobs[24] > 1) {
 
-          dump_subblock_coefficients(xd);
+          //dump_subblock_coefficients(xd);
 
           vp8_dequantize_b(b, xd->dequant_y2);
 
-          dump_subblock_coefficients(xd);
+          //dump_subblock_coefficients(xd);
 
           vp8_short_inv_walsh4x4(&b->dqcoeff[0], xd->qcoeff);
           memset(b->qcoeff, 0, 16 * sizeof(b->qcoeff[0]));
@@ -586,7 +586,7 @@ static void decode_mb_rows(VP8D_COMP *pbi) {
 
       decode_macroblock(pbi, xd, mb_idx);
 
-      dump_macro_block(xd, mb_idx);
+      //dump_macro_block(xd, mb_idx);
 
       mb_idx++;
       xd->left_available = 1;

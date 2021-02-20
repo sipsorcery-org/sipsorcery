@@ -31,5 +31,20 @@ namespace Vpx.Net.UnitTest
 
             alloccommon.vp8_de_alloc_frame_buffers(oci);
         }
+
+        /// <summary>
+        /// Sanity check that arrays are references.
+        /// </summary>
+        [Fact]
+        public void CheckArrayDecrement()
+        {
+            VP8D_COMP pbi = onyxd.create_decompressor(new VP8D_CONFIG { Width = 640, Height = 480 });
+            VP8_COMMON pc = pbi.common;
+
+            pc.fb_idx_ref_cnt[0] = 1;
+            pc.fb_idx_ref_cnt[0]--;
+
+            Assert.Equal(0, pc.fb_idx_ref_cnt[0]);
+        }
     }
 }

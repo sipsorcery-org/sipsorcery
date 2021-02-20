@@ -348,8 +348,8 @@ namespace Vpx.Net
             xd.mode_info_stride = pc.mode_info_stride;
             xd.corrupted = 0; /* init without corruption */
 
-            xd.fullpixel_mask = 0xffffffff;
-            if (pc.full_pixel > 0) xd.fullpixel_mask = 0xfffffff8;
+            xd.fullpixel_mask = -1; // 0xffffffff;
+            if (pc.full_pixel > 0) xd.fullpixel_mask = -8;// 0xfffffff8;
         }
 
         public static int vp8_decode_frame(VP8D_COMP pbi)

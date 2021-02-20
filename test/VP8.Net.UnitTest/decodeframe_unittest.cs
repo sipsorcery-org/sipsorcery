@@ -78,7 +78,7 @@ namespace Vpx.Net.UnitTest
 
             decodeframe.init_frame(pbi);
 
-            Assert.Equal(0xffffffff, pbi.mb.fullpixel_mask);
+            Assert.Equal(-1, pbi.mb.fullpixel_mask);
         }
 
         /// <summary>

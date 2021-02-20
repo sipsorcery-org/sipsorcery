@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Abstractions.V1;
 
 namespace Vpx.Net
 {
@@ -26,10 +25,15 @@ namespace Vpx.Net
     {
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<VP8Codec>();
 
-        public static readonly List<VideoCodecsEnum> SupportedCodecs = new List<VideoCodecsEnum>
+        private static readonly List<VideoFormat> _supportedFormats = new List<VideoFormat>
         {
-            VideoCodecsEnum.VP8
+            new VideoFormat(VideoCodecsEnum.VP8, 100)
         };
+
+        public List<VideoFormat> SupportedFormats
+        {
+            get { return _supportedFormats; }
+        }
 
         //private Vp8Codec _vp8Encoder;
         private vpx_codec_ctx_t _vp8Decoder;
@@ -67,7 +71,7 @@ namespace Vpx.Net
             //    return encodedBuffer;
             //}
 
-            return null;
+            throw new NotImplementedException("TODO: The encoder has not yet been ported.");
         }
 
         public unsafe IEnumerable<VideoSample> DecodeVideo(byte[] frame, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
@@ -125,7 +129,7 @@ namespace Vpx.Net
                         }
                     }
 
-                    byte[] rgb = PixelConverter.I420toBGR(decodedBuffer, dwidth, dheight);
+                    byte[] rgb = PixelConverter.I420toBGR(decodedBuffer, dwidth, dheight, out _);
                     return new List<VideoSample> { new VideoSample { Width = img.d_w, Height = img.d_h, Sample = rgb } };
                 }
 

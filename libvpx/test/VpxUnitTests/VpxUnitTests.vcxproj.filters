@@ -65,5 +65,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="testpattern_keyframe.vp8" />
+    <None Include="capture.stm" />
   </ItemGroup>
 </Project>

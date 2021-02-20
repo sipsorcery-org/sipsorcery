@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 
+#include <iostream>
+
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace VpxUnitTests

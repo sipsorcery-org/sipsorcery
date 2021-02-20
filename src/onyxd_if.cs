@@ -244,6 +244,7 @@ namespace Vpx.Net
             }
 
             //assert(i < NUM_YV12_BUFFERS);
+
             cm.fb_idx_ref_cnt[i] = 1;
             return i;
         }

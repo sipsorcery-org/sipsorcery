@@ -240,7 +240,7 @@ namespace Vpx.Net
 
         /* 16 Y blocks, 4 U, 4 V, 1 DC 2nd order block, each with 16 entries. */
         public BLOCKD[] block = new BLOCKD[25];
-        public uint fullpixel_mask;
+        public int fullpixel_mask;
 
         public YV12_BUFFER_CONFIG pre; /* Filtered copy of previous frame reconstruction */
         public YV12_BUFFER_CONFIG dst;
