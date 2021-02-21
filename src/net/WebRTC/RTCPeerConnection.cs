@@ -445,96 +445,98 @@ namespace SIPSorcery.Net
         {
             oniceconnectionstatechange?.Invoke(iceConnectionState);
 
-            if (connectionState == RTCPeerConnectionState.connected &&
-                iceState == RTCIceConnectionState.connected)
+            if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
             {
-                // Already connected. This event is due to change in the nominated remote candidate.
-                var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
-                base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
-
-                logger.LogInformation($"ICE changing connected remote end point to {AudioDestinationEndPoint}.");
-            }
-            else
-            {
-                if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
+                if (_dtlsHandle != null)
                 {
-                    if (_dtlsHandle != null)
+                    if (base.AudioDestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
+                        base.AudioDestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
+                    {
+                        // Already connected and this event is due to change in the nominated remote candidate.
+                        var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                        base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
+
+                        logger.LogInformation($"ICE changing connected remote end point to {AudioDestinationEndPoint}.");
+                    }
+                   
+                    if(connectionState == RTCPeerConnectionState.disconnected || 
+                        connectionState == RTCPeerConnectionState.failed)
                     {
                         // The ICE connection state change is due to a re-connection.
                         connectionState = RTCPeerConnectionState.connected;
                         onconnectionstatechange?.Invoke(connectionState);
                     }
-                    else
+                }
+                else
+                {
+                    connectionState = RTCPeerConnectionState.connecting;
+                    onconnectionstatechange?.Invoke(connectionState);
+
+                    var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                    base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
+
+                    logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
+
+                    _dtlsHandle = new DtlsSrtpTransport(
+                                IceRole == IceRolesEnum.active ?
+                                (IDtlsSrtpPeer)new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) :
+                                (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey));
+
+                    _dtlsHandle.OnAlert += OnDtlsAlert;
+
+                    logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
+
+                    try
                     {
-                        connectionState = RTCPeerConnectionState.connecting;
+                        bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
+
+                        connectionState = (handshakeResult) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                         onconnectionstatechange?.Invoke(connectionState);
 
-                        var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
-                        base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
-
-                        logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
-
-                        _dtlsHandle = new DtlsSrtpTransport(
-                                    IceRole == IceRolesEnum.active ?
-                                    (IDtlsSrtpPeer)new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) :
-                                    (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey));
-
-                        _dtlsHandle.OnAlert += OnDtlsAlert;
-
-                        logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
-
-                        try
+                        if (connectionState == RTCPeerConnectionState.connected)
                         {
-                            bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
+                            await base.Start().ConfigureAwait(false);
 
-                            connectionState = (handshakeResult) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
-                            onconnectionstatechange?.Invoke(connectionState);
-
-                            if (connectionState == RTCPeerConnectionState.connected)
+                            if (RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
                             {
-                                await base.Start().ConfigureAwait(false);
-
-                                if (RemoteDescription.Media.Any(x => x.Media == SDPMediaTypesEnum.application))
-                                {
-                                    InitialiseSctpAssociation();
-                                }
+                                InitialiseSctpAssociation();
                             }
                         }
-                        catch (Exception excp)
-                        {
-                            logger.LogWarning(excp, $"RTCPeerConnection DTLS handshake failed. {excp.Message}");
-
-                            connectionState = RTCPeerConnectionState.failed;
-                            onconnectionstatechange?.Invoke(connectionState);
-                        }
                     }
-                }
+                    catch (Exception excp)
+                    {
+                        logger.LogWarning(excp, $"RTCPeerConnection DTLS handshake failed. {excp.Message}");
 
-                if (iceConnectionState == RTCIceConnectionState.checking)
-                {
-                    // Not sure about this correspondence between the ICE and peer connection states.
-                    // TODO: Double check spec.
-                    //connectionState = RTCPeerConnectionState.connecting;
-                    //onconnectionstatechange?.Invoke(connectionState);
-                }
-                else if (iceConnectionState == RTCIceConnectionState.disconnected)
-                {
-                    if (connectionState == RTCPeerConnectionState.connected)
-                    {
-                        connectionState = RTCPeerConnectionState.disconnected;
-                        onconnectionstatechange?.Invoke(connectionState);
-                    }
-                    else
-                    {
                         connectionState = RTCPeerConnectionState.failed;
                         onconnectionstatechange?.Invoke(connectionState);
                     }
                 }
-                else if (iceConnectionState == RTCIceConnectionState.failed)
+            }
+
+            if (iceConnectionState == RTCIceConnectionState.checking)
+            {
+                // Not sure about this correspondence between the ICE and peer connection states.
+                // TODO: Double check spec.
+                //connectionState = RTCPeerConnectionState.connecting;
+                //onconnectionstatechange?.Invoke(connectionState);
+            }
+            else if (iceConnectionState == RTCIceConnectionState.disconnected)
+            {
+                if (connectionState == RTCPeerConnectionState.connected)
+                {
+                    connectionState = RTCPeerConnectionState.disconnected;
+                    onconnectionstatechange?.Invoke(connectionState);
+                }
+                else
                 {
                     connectionState = RTCPeerConnectionState.failed;
                     onconnectionstatechange?.Invoke(connectionState);
                 }
+            }
+            else if (iceConnectionState == RTCIceConnectionState.failed)
+            {
+                connectionState = RTCPeerConnectionState.failed;
+                onconnectionstatechange?.Invoke(connectionState);
             }
         }
 
