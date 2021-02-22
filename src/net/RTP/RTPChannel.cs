@@ -128,29 +128,28 @@ namespace SIPSorcery.Net
                         //}
 
                         byte[] packetBuffer = new byte[bytesRead];
-                        // TODO: When .NET Frmework support is dropped switch to using a slice instead of a copy.
+                        // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
                         Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
                         OnPacketReceived?.Invoke(this, m_localEndPoint.Port, remoteEP as IPEndPoint, packetBuffer);
                     }
                 }
 
                 // If there is still data available it should be read now. This is more efficient than calling
-                // BeginReceiveFrom which will incur the overheaed of creating the callback and then immediately firing it.
+                // BeginReceiveFrom which will incur the overhead of creating the callback and then immediately firing it.
                 // It also avoids the situation where if the application cannot keep up with the network then BeginReceiveFrom
                 // will be called synchronously (if data is available it calls the callback method immediately) which can
                 // create a very nasty stack.
                 if (!m_isClosed && m_udpSocket.Available > 0)
                 {
-                    EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-
                     while (!m_isClosed && m_udpSocket.Available > 0)
                     {
+                        EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                         int bytesReadSync = m_udpSocket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
 
                         if (bytesReadSync > 0)
                         {
                             byte[] packetBufferSync = new byte[bytesReadSync];
-                            // TODO: When .NET Frmework support is dropped switch to using a slice instead of a copy.
+                            // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
                             Buffer.BlockCopy(m_recvBuffer, 0, packetBufferSync, 0, bytesReadSync);
                             OnPacketReceived?.Invoke(this, m_localEndPoint.Port, remoteEP as IPEndPoint, packetBufferSync);
                         }
