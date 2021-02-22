@@ -38,7 +38,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public IceServer IceServer { get; internal set; }
 
-        public string candidate { get; set; }
+        public string candidate => ToString();
 
         public string sdpMid { get; set; }
 
