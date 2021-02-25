@@ -51,7 +51,7 @@ namespace demo
 
             mwiSubscriber.Start();
 
-            Console.WriteLine("pressany key to exit...");
+            Console.WriteLine("press any key to exit...");
             Console.ReadLine();
 
             Console.WriteLine("Exiting...");
