@@ -11,6 +11,7 @@
 // 17 Apr 2020	Aaron Clauson	Created, Dublin, Ireland.
 // 01 Aug 2020  Aaron Clauson   Switched from PortAudioSharp to 
 //                              ProjectCeilidh.PortAudio.
+// 26 Feb 2021  Aaron Clauson   Refactored PortAudioEndPoint to use latest abstractions.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -39,27 +40,24 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
-using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
 namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
-        //private static string DESTINATION = "*61@192.168.11.48";
-        //private static string DESTINATION = "aaron@192.168.11.50:6060";
+        private static string DESTINATION = "helloworld@sipsorcery.cloud";
 
         static async Task Main()
         {
-            Console.WriteLine("SIPSorcery Getting Started Demo");
+            Console.WriteLine("SIPSorcery Getting Started PortAudio Demo (YMMV)");
 
             AddConsoleLogger();
 
-            var sipTransport = new SIPTransport();
-            var userAgent = new SIPUserAgent(sipTransport, null);
+            var userAgent = new SIPUserAgent();
             var portAudioEndPoint = new PortAudioEndPoint(new AudioEncoder());
             var voipMediaSession = new VoIPMediaSession(portAudioEndPoint.ToMediaEndPoints());
+            voipMediaSession.AcceptRtpFromAny = true;
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, voipMediaSession);
@@ -75,9 +73,6 @@ namespace demo
 
                 await Task.Delay(1000);
             }
-
-            // Clean up.
-            sipTransport.Shutdown();
         }
 
         /// <summary>
