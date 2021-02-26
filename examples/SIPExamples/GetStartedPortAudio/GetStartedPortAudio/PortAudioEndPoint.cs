@@ -26,7 +26,7 @@ using Microsoft.Extensions.Logging;
 using ProjectCeilidh.PortAudio;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions.V1;
+using SIPSorceryMedia.Abstractions;
 
 namespace demo
 {
@@ -41,7 +41,6 @@ namespace demo
 
         public readonly static AudioSamplingRatesEnum AudioPlaybackRate = AudioSamplingRatesEnum.Rate8KHz;
 
-
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<PortAudioEndPoint>();
 
         private PortAudioDevice _portAudioOutputDevice;
@@ -55,22 +54,15 @@ namespace demo
         private bool _isClosed = false;
 
         private IAudioEncoder _audioEncoder;
-        private AudioCodecsEnum _selectedSourceFormat = AudioCodecsEnum.PCMU;
-        private AudioCodecsEnum _selectedSinkFormat = AudioCodecsEnum.PCMU;
-        private List<AudioCodecsEnum> _supportedCodecs = new List<AudioCodecsEnum>(SupportedCodecs);
-
+        private MediaFormatManager<AudioFormat> _audioFormatManager;
 
         public event EncodedSampleDelegate OnAudioSourceEncodedSample;
+
+#pragma warning disable CS0067
         public event RawAudioSampleDelegate OnAudioSourceRawSample;
         public event SourceErrorDelegate OnAudioSourceError;
         public event SourceErrorDelegate OnAudioSinkError;
-
-        public static readonly List<AudioCodecsEnum> SupportedCodecs = new List<AudioCodecsEnum>
-        {
-            AudioCodecsEnum.PCMU,
-            AudioCodecsEnum.PCMA,
-            AudioCodecsEnum.G722
-        };
+#pragma warning restore CS0067
 
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
@@ -78,6 +70,7 @@ namespace demo
         public PortAudioEndPoint(IAudioEncoder audioEncoder)
         {
             _audioEncoder = audioEncoder;
+            _audioFormatManager = new MediaFormatManager<AudioFormat>(_audioEncoder.SupportedFormats);
 
             var apiType = PortAudioHostApiType.DirectSound;
 
@@ -98,6 +91,23 @@ namespace demo
                             new PortAudioSampleFormat(PortAudioSampleFormat.PortAudioNumberFormat.Signed, AUDIO_BYTES_PER_SAMPLE),
                             TimeSpan.FromMilliseconds(SAMPLING_PERIOD_MILLISECONDS), AUDIO_SAMPLING_RATE, WriteDataCallback);
         }
+
+        public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) =>
+            throw new NotImplementedException();
+        public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
+        public bool IsAudioSourcePaused() => false;
+        public void RestrictFormats(Func<AudioFormat, bool> filter) => _audioFormatManager.RestrictFormats(filter);
+        public List<AudioFormat> GetAudioSourceFormats() => _audioFormatManager.GetSourceFormats();
+        public void SetAudioSourceFormat(AudioFormat audioFormat) => _audioFormatManager.SetSelectedFormat(audioFormat);
+        public Task PauseAudio() => throw new NotImplementedException();
+        public Task ResumeAudio() => throw new NotImplementedException();
+
+        public void SetAudioSinkFormat(AudioFormat audioFormat) => _audioFormatManager.SetSelectedFormat(audioFormat);
+        public Task PauseAudioSink() => throw new NotImplementedException();
+        public Task ResumeAudioSink() => throw new NotImplementedException();
+        public Task StartAudioSink() => StartAudio();
+        public Task CloseAudioSink() => CloseAudio();
+        public List<AudioFormat> GetAudioSinkFormats() => _audioFormatManager.GetSourceFormats();
 
         private int ReadAudioDataCalback(byte[] buffer, int offset, int count)
         {
@@ -136,37 +146,14 @@ namespace demo
 
         void WriteDataCallback(byte[] buffer, int offset, int count)
         {
-            byte[] encodedSample = _audioEncoder.EncodeAudio(buffer.Skip(offset).Take(count).ToArray(), _selectedSourceFormat, AudioSourceSamplingRate);
-            OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
-        }
+            var copy = new byte[count];
+            Buffer.BlockCopy(buffer, offset, copy, 0, count);
 
-        /// <summary>
-        /// Requests that the audio sink and source only advertise support for the supplied list of codecs.
-        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
-        /// used.
-        /// </summary>
-        /// <param name="codecs">The list of codecs to restrict advertised support to.</param>
-        public void RestrictCodecs(List<AudioCodecsEnum> codecs)
-        {
-            if (codecs == null || codecs.Count == 0)
-            {
-                _supportedCodecs = new List<AudioCodecsEnum>(SupportedCodecs);
-            }
-            else
-            {
-                _supportedCodecs = new List<AudioCodecsEnum>();
-                foreach (var codec in codecs)
-                {
-                    if (SupportedCodecs.Any(x => x == codec))
-                    {
-                        _supportedCodecs.Add(codec);
-                    }
-                    else
-                    {
-                        logger.LogWarning($"Not including unsupported codec {codec} in filtered list.");
-                    }
-                }
-            }
+            byte[] encodedSample = _audioEncoder.EncodeAudio(
+                copy.Where((x, i) => i % 2 == 0).Select((y, i) => (short)(copy[i * 2] << 8 | copy[i * 2 + 1])).ToArray(), 
+                _audioFormatManager.SelectedFormat);
+
+            OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
         }
 
         public MediaEndPoints ToMediaEndPoints()
@@ -176,16 +163,6 @@ namespace demo
                 AudioSource = this,
                 AudioSink = this,
             };
-        }
-
-        public Task PauseAudio()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ResumeAudio()
-        {
-            throw new NotImplementedException();
         }
 
         public Task StartAudio()
@@ -215,44 +192,16 @@ namespace demo
             return Task.CompletedTask;
         }
 
-        public List<AudioCodecsEnum> GetAudioSourceFormats()
-        {
-            return _supportedCodecs;
-        }
-
-        public void SetAudioSourceFormat(AudioCodecsEnum audioFormat)
-        {
-            _selectedSourceFormat = audioFormat;
-        }
-
-        public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<AudioCodecsEnum> GetAudioSinkFormats()
-        {
-            return _supportedCodecs;
-        }
-
-        public void SetAudioSinkFormat(AudioCodecsEnum audioFormat)
-        {
-            _selectedSinkFormat = audioFormat;
-        }
-
         public void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
         {
-            if (_audioEncoder != null && _audioEncoder.IsSupported(_selectedSinkFormat))
+            var pcmSample = _audioEncoder.DecodeAudio(payload, _audioFormatManager.SelectedFormat);
+
+            lock (_pendingRemoteSamples)
             {
-                var pcmSample = _audioEncoder.DecodeAudio(payload, _selectedSinkFormat, AudioPlaybackRate);
-
-                lock (_pendingRemoteSamples)
-                {
-                    _pendingRemoteSamples.AddRange(pcmSample);
-                }
-
-                _remoteSampleReady.Set();
+                _pendingRemoteSamples.AddRange(pcmSample.SelectMany(x => new byte[] { (byte)(x >> 8), (byte)(x) }).ToArray());
             }
+
+            _remoteSampleReady.Set();
         }
     }
 }
