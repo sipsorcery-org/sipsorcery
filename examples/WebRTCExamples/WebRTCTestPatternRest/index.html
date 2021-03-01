@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        "use strict";
+
+        function RestSignaler(signalUrl) {
+
+            this.sendOffer = async function (offer) {
+                return (await fetch(signalUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(offer),
+                    headers: { 'Content-Type': 'application/json' }
+                })).json();
+            }
+        }
+
+    </script>
+
+    <script type="text/javascript">
+
+        "use strict";
+
+        const STUN_SERVER = "stun:stun.sipsorcery.com";
+        const ICE_GATHERING_TIMEOUT = 3000;
+        const VIDEO_CODEC = "video/VP8";
+
+        var pc;
+        var signaler;
+        var isClosed = true;
+        var isOfferSent = false;
+
+        async function start() {
+
+            if (!isClosed) {
+                // Close any existing peer connection.
+                await closePeer();
+            }
+
+            isOfferSent = false;
+
+            let signalingUrl = document.getElementById('signalingUrl').value;
+
+            signaler = new RestSignaler(signalingUrl);
+
+            // Create the peer connections.
+            pc = createPeer("videoCtl");
+
+            pc.onicegatheringstatechange = async () => {
+                console.log(`onicegatheringstatechange: ${pc.iceGatheringState}.`);
+
+                if (pc.iceGatheringState === 'complete') {
+                    sendOffer();
+                }
+            }
+
+            let offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            //setTimeout(sendOffer, ICE_GATHERING_TIMEOUT);
+        }
+
+        async function sendOffer() {
+
+            if (!isOfferSent) {
+                isOfferSent = true;
+
+                var offerWithIce = pc.localDescription;
+                console.log(`Offer:\n${offerWithIce.sdp}`);
+                var answer = await signaler.sendOffer(offerWithIce);
+
+                if (answer != null) {
+                    console.log(`Answer:\n${answer.sdp}`);
+                    await pc.setRemoteDescription(answer);
+                }
+                else {
+                    console.log("Failed to get an answer from the Echo Test server.")
+                    pc.close();
+                }
+            }
+        }
+
+        function createPeer(videoCtlID) {
+
+            console.log("Creating peer ...");
+            isClosed = false;
+
+            let pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_SERVER }] });
+            let transceiver = pc.addTransceiver("video", { direction: "recvonly" });
+            transceiver.setCodecPreferences([{ mimeType: VIDEO_CODEC, clockRate: 90000 }]);
+            pc.ontrack = evt => document.getElementById(videoCtlID).srcObject = evt.streams[0];
+            pc.onicecandidate = evt => evt.candidate && console.log(evt.candidate);
+
+            // Diagnostics.
+            pc.onicegatheringstatechange = () => console.log(`onicegatheringstatechange: ${pc.iceGatheringState}.`);
+            pc.oniceconnectionstatechange = () => console.log(`oniceconnectionstatechange: ${pc.iceConnectionState}.`);
+            pc.onsignalingstatechange = () => console.log(`onsignalingstatechange: ${pc.signalingState}.`);
+            pc.onconnectionstatechange = () => console.log(`onconnectionstatechange: ${pc.connectionState}.`);
+
+            return pc;
+        }
+
+        async function closePeer() {
+            console.log("Closing...")
+            isClosed = true;
+            await pc?.close();
+        };
+
+    </script>
+</head>
+<body>
+
+	<video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+
+    <div>
+        <label>Signaling URL:</label> <input type="text" id="signalingUrl" size="40" value="http://localhost:8080/offer" /><br />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+</body>
