@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const STUN_URL = "stun:stun.sipsorcery.com";
+        const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
+
+        var pc, ws;
+
+        async function start() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+
+            pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+            await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                .then(stm => stm.getTracks().forEach(track => pc.addTrack(track, stm)));
+
+            ws = new WebSocket(document.querySelector('#websockurl').value, []);
+            ws.onmessage = async function (evt) {
+                if (/^[\{"'\s]*candidate/.test(evt.data)) {
+                    pc.addIceCandidate(JSON.parse(evt.data));
+                }
+                else {
+                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+                    pc.createAnswer()
+                        .then((answer) => pc.setLocalDescription(answer))
+                        .then(() => ws.send(JSON.stringify(pc.localDescription)));
+                }
+            };
+        };
+
+        async function closePeer() {
+            pc.getSenders().forEach(sender => {
+                sender.track.stop();
+                pc.removeTrack(sender);
+            });
+            await pc.close();
+            await ws.close();
+        };
+
+    </script>
+</head>
+<body>
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+    <div>
+        <input type="text" id="websockurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+</body>
+
+<script>
+    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+</script>
