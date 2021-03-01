@@ -237,15 +237,14 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// Same as the async method of the same name but returns a task that waits for the 
-        /// stream send to complete.
+        /// Attempts to send audio samples from a stream, typically a file, input.
         /// </summary>
         /// <param name="audioStream">The stream containing the 16 bit PCM sampled at either 8 or 16Khz 
         /// to send to the remote party.</param>
         /// <param name="streamSampleRate">The sample rate of the supplied PCM samples. Supported rates are
         /// 8 or 16 KHz.</param>
         /// <returns>A task that completes once the stream has been fully sent.</returns>
-        public async Task SendAudioFromStream(Stream audioStream, AudioSamplingRatesEnum streamSampleRate)
+        public Task SendAudioFromStream(Stream audioStream, AudioSamplingRatesEnum streamSampleRate)
         {
             if (!_isClosed && audioStream != null && audioStream.Length > 0)
             {
@@ -266,7 +265,11 @@ namespace SIPSorcery.Media
 
                 _streamSourceTimer.Change(_audioSamplePeriodMilliseconds, _audioSamplePeriodMilliseconds);
 
-                await tcs.Task.ConfigureAwait(false);
+                return tcs.Task;
+            }
+            else
+            {
+                return Task.CompletedTask;
             }
         }
 
@@ -481,6 +484,12 @@ namespace SIPSorcery.Media
                         StopSendFromAudioStream();
                     }
                 }
+
+                if(!_streamSendInProgress)
+                {
+                    // An error has occurred or a request has been made to stop the stream.
+                    _streamSourceReader?.Close();
+                }
             }
         }
 
@@ -527,7 +536,6 @@ namespace SIPSorcery.Media
         /// </summary>
         private void StopSendFromAudioStream()
         {
-            _streamSourceReader?.Close();
             _streamSourceTimer?.Dispose();
             _streamSendInProgress = false;
 
