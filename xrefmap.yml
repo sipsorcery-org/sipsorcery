@@ -5494,12 +5494,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpTransport.Dispose
   nameWithType: DtlsSrtpTransport.Dispose
-- uid: SIPSorcery.Net.DtlsSrtpTransport.DoHandshake
-  name: DoHandshake()
-  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DoHandshake
-  commentId: M:SIPSorcery.Net.DtlsSrtpTransport.DoHandshake
-  fullName: SIPSorcery.Net.DtlsSrtpTransport.DoHandshake()
-  nameWithType: DtlsSrtpTransport.DoHandshake()
+- uid: SIPSorcery.Net.DtlsSrtpTransport.DoHandshake(System.String@)
+  name: DoHandshake(out String)
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DoHandshake_System_String__
+  commentId: M:SIPSorcery.Net.DtlsSrtpTransport.DoHandshake(System.String@)
+  name.vb: DoHandshake(ByRef String)
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.DoHandshake(out System.String)
+  fullName.vb: SIPSorcery.Net.DtlsSrtpTransport.DoHandshake(ByRef System.String)
+  nameWithType: DtlsSrtpTransport.DoHandshake(out String)
+  nameWithType.vb: DtlsSrtpTransport.DoHandshake(ByRef String)
 - uid: SIPSorcery.Net.DtlsSrtpTransport.DoHandshake*
   name: DoHandshake
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DoHandshake_
@@ -5507,32 +5510,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpTransport.DoHandshake
   nameWithType: DtlsSrtpTransport.DoHandshake
-- uid: SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsClient
-  name: DoHandshakeAsClient()
-  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DoHandshakeAsClient
-  commentId: M:SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsClient
-  fullName: SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsClient()
-  nameWithType: DtlsSrtpTransport.DoHandshakeAsClient()
-- uid: SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsClient*
-  name: DoHandshakeAsClient
-  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DoHandshakeAsClient_
-  commentId: Overload:SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsClient
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsClient
-  nameWithType: DtlsSrtpTransport.DoHandshakeAsClient
-- uid: SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsServer
-  name: DoHandshakeAsServer()
-  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DoHandshakeAsServer
-  commentId: M:SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsServer
-  fullName: SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsServer()
-  nameWithType: DtlsSrtpTransport.DoHandshakeAsServer()
-- uid: SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsServer*
-  name: DoHandshakeAsServer
-  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DoHandshakeAsServer_
-  commentId: Overload:SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsServer
-  isSpec: "True"
-  fullName: SIPSorcery.Net.DtlsSrtpTransport.DoHandshakeAsServer
-  nameWithType: DtlsSrtpTransport.DoHandshakeAsServer
 - uid: SIPSorcery.Net.DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE
   name: DTLS_RECEIVE_ERROR_CODE
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DTLS_RECEIVE_ERROR_CODE
