@@ -7,7 +7,7 @@
 // - "Session Description Protocol (SDP) Offer/Answer procedures for
 //   Interactive Connectivity Establishment(ICE)" [ed: specification for
 //   including ICE candidates in SDP]:
-//   https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39
+//   https://tools.ietf.org/html/rfc8839
 // - "Session Description Protocol (SDP) Offer/Answer Procedures For Stream
 //   Control Transmission Protocol(SCTP) over Datagram Transport Layer
 //   Security(DTLS) Transport." [ed: specification for negotiating
@@ -979,10 +979,11 @@ namespace SIPSorcery.Net
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
 
+            string dtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
             bool iceCandidatesAdded = false;
             int mediaIndex = 0;
 
-            offerSdp.DtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
+            //offerSdp.DtlsFingerprint = dtlsFingerprint;
 
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)
@@ -1036,7 +1037,7 @@ namespace SIPSorcery.Net
                     announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
                     announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
                     announcement.IceOptions = ICE_OPTIONS;
-                    announcement.DtlsFingerprint = offerSdp.DtlsFingerprint;
+                    announcement.DtlsFingerprint = dtlsFingerprint;
 
                     if (iceCandidatesAdded == false && !excludeIceCandidates)
                     {
@@ -1083,7 +1084,7 @@ namespace SIPSorcery.Net
                     dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
                     dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
                     dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
-                    dataChannelAnnouncement.DtlsFingerprint = offerSdp.DtlsFingerprint;
+                    dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
 
                     if (iceCandidatesAdded == false && !excludeIceCandidates)
                     {
@@ -1305,11 +1306,13 @@ namespace SIPSorcery.Net
                 rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
             };
 
-            var handshakeResult = dtlsHandle.DoHandshake();
+            var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);
 
             if (!handshakeResult)
             {
-                logger.LogWarning($"RTCPeerConnection DTLS handshake failed.");
+                handshakeError = handshakeError ?? "unknown";
+                logger.LogWarning($"RTCPeerConnection DTLS handshake failed with error {handshakeError}.");
+                Close("dtls handshake failed");
                 return false;
             }
             else
@@ -1322,6 +1325,7 @@ namespace SIPSorcery.Net
                 if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
                 {
                     logger.LogWarning($"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
+                    Close("dtls fingerprint mismatch");
                     return false;
                 }
                 else
