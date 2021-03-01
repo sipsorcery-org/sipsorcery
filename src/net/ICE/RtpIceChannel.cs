@@ -1175,7 +1175,7 @@ namespace SIPSorcery.Net
                         DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds > FAILED_TIMEOUT_PERIOD)
                     {
                         // No checklist entries were made available before the failed timeout.
-                        logger.LogWarning($"ICE RTP channel failed to connect as no checklist entries became available within {DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds}s.");
+                        logger.LogWarning($"ICE RTP channel failed to connect as no checklist entries became available within {DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds:0.##}s.");
 
                         _checklistState = ChecklistState.Failed;
                         //IceConnectionState = RTCIceConnectionState.disconnected;

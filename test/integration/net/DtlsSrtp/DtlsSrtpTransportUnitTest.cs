@@ -86,8 +86,8 @@ namespace SIPSorcery.Net.IntegrationTests
                 dtlsClientTransport.WriteToRecvStream(buf);
             };
 
-            var serverTask = Task.Run<bool>(dtlsServerTransport.DoHandshake);
-            var clientTask = Task.Run<bool>(dtlsClientTransport.DoHandshake);
+            var serverTask = Task.Run<bool>(() => dtlsServerTransport.DoHandshake(out _));
+            var clientTask = Task.Run<bool>(() => dtlsClientTransport.DoHandshake(out _));
 
             bool didComplete = Task.WaitAll(new Task[] { serverTask, clientTask }, 5000);
 
@@ -120,7 +120,7 @@ namespace SIPSorcery.Net.IntegrationTests
             DtlsSrtpTransport dtlsClientTransport = new DtlsSrtpTransport(new DtlsSrtpClient());
             dtlsClientTransport.TimeoutMilliseconds = 2000;
 
-            var result = await Task.Run<bool>(dtlsClientTransport.DoHandshake);
+            var result = await Task.Run<bool>(() => dtlsClientTransport.DoHandshake(out _));
 
             Assert.False(result);
         }
@@ -137,7 +137,7 @@ namespace SIPSorcery.Net.IntegrationTests
             DtlsSrtpTransport dtlsServerTransport = new DtlsSrtpTransport(new DtlsSrtpServer());
             dtlsServerTransport.TimeoutMilliseconds = 2000;
 
-            var result = await Task.Run<bool>(dtlsServerTransport.DoHandshake);
+            var result = await Task.Run<bool>(() => dtlsServerTransport.DoHandshake(out _));
 
             Assert.False(result);
         }

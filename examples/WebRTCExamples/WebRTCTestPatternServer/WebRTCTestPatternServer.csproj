@@ -13,7 +13,6 @@
     <PackageReference Include="SIPSorcery" Version="5.1.0" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.10-pre" />
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="0.0.10-pre" />
-    <PackageReference Include="EmbedIO" Version="3.4.3" />
   </ItemGroup>
 
   <ItemGroup>
