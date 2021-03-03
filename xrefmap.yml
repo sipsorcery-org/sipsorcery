@@ -8278,6 +8278,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCConfiguration.X_BindAddress
   fullName: SIPSorcery.Net.RTCConfiguration.X_BindAddress
   nameWithType: RTCConfiguration.X_BindAddress
+- uid: SIPSorcery.Net.RTCConfiguration.X_ICEIncludeAllInterfaceAddresses
+  name: X_ICEIncludeAllInterfaceAddresses
+  href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_X_ICEIncludeAllInterfaceAddresses
+  commentId: F:SIPSorcery.Net.RTCConfiguration.X_ICEIncludeAllInterfaceAddresses
+  fullName: SIPSorcery.Net.RTCConfiguration.X_ICEIncludeAllInterfaceAddresses
+  nameWithType: RTCConfiguration.X_ICEIncludeAllInterfaceAddresses
 - uid: SIPSorcery.Net.RTCConfiguration.X_UseRtpFeedbackProfile
   name: X_UseRtpFeedbackProfile
   href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_X_UseRtpFeedbackProfile
@@ -12054,15 +12060,15 @@ references:
   commentId: M:SIPSorcery.Net.RtpIceChannel.#ctor
   fullName: SIPSorcery.Net.RtpIceChannel.RtpIceChannel()
   nameWithType: RtpIceChannel.RtpIceChannel()
-- uid: SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
-  name: RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy)
-  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel__ctor_System_Net_IPAddress_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_
-  commentId: M:SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
-  name.vb: RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy)
-  fullName: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List<SIPSorcery.Net.RTCIceServer>, SIPSorcery.Net.RTCIceTransportPolicy)
-  fullName.vb: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List(Of SIPSorcery.Net.RTCIceServer), SIPSorcery.Net.RTCIceTransportPolicy)
-  nameWithType: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy)
-  nameWithType.vb: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy)
+- uid: SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy,System.Boolean)
+  name: RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy, Boolean)
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel__ctor_System_Net_IPAddress_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_System_Boolean_
+  commentId: M:SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy,System.Boolean)
+  name.vb: RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy, Boolean)
+  fullName: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List<SIPSorcery.Net.RTCIceServer>, SIPSorcery.Net.RTCIceTransportPolicy, System.Boolean)
+  fullName.vb: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List(Of SIPSorcery.Net.RTCIceServer), SIPSorcery.Net.RTCIceTransportPolicy, System.Boolean)
+  nameWithType: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy, Boolean)
+  nameWithType.vb: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy, Boolean)
 - uid: SIPSorcery.Net.RtpIceChannel.#ctor*
   name: RtpIceChannel
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel__ctor_
@@ -38946,12 +38952,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket
   nameWithType: NetServices.CreateRtpSocket
-- uid: SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress)
-  name: GetLocalAddressesOnInterface(IPAddress)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressesOnInterface_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress)
-  fullName: SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress)
-  nameWithType: NetServices.GetLocalAddressesOnInterface(IPAddress)
+- uid: SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress,System.Boolean)
+  name: GetLocalAddressesOnInterface(IPAddress, Boolean)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressesOnInterface_System_Net_IPAddress_System_Boolean_
+  commentId: M:SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress,System.Boolean)
+  fullName: SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress, System.Boolean)
+  nameWithType: NetServices.GetLocalAddressesOnInterface(IPAddress, Boolean)
 - uid: SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface*
   name: GetLocalAddressesOnInterface
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressesOnInterface_
