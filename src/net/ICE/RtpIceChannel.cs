@@ -245,6 +245,7 @@ namespace SIPSorcery.Net
         private Timer _connectivityChecksTimer;
         private Timer _processIceServersTimer;
         private DateTime _checklistStartedAt = DateTime.MinValue;
+        private bool _includeAllInterfaceAddresses = false;
 
         public event Action<RTCIceCandidate> OnIceCandidate;
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
@@ -292,28 +293,33 @@ namespace SIPSorcery.Net
         /// Creates a new instance of an RTP ICE channel to provide RTP channel functions 
         /// with ICE connectivity checks.
         /// </summary>
-        /// <param name="bindAddress"> Optional. If supplied this address will 
-        /// dictate which local interface host ICE candidates will be gathered from.
-        /// Restricting the host candidate IP addresses to a single interface is 
-        /// as per the recommendation at:
-        /// https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2.
-        /// If this is not set then the default is to use the Internet facing interface as
-        /// returned by the OS routing table.</param>
+        /// <param name="bindAddress"> Optional. If this is not set then the default is to 
+        /// bind to the IPv6 wildcard address in dual mode to the IPv4 wildcard address if
+        /// IPv6 is not available.</param>
         /// <param name="component">The component (RTP or RTCP) the channel is being used for. Note
         /// for cases where RTP and RTCP are multiplexed the component is set to RTP.</param>
         /// <param name="iceServers">A list of STUN or TURN servers that can be used by this ICE agent.</param>
         /// <param name="policy">Determines which ICE candidates can be used in this RTP ICE Channel.</param>
+        /// <param name="includeAllInterfaceAddresses">If set to true then IP addresses from ALL local  
+        /// interfaces will be used for host ICE candidates. If left as the default false value host 
+        /// candidates will be restricted to the single interface that the OS routing table matches to
+        /// the destination address or the Internet facing interface if the destination is not known.
+        /// The restrictive behaviour is as per the recommendation at:
+        /// https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2.
+        /// </param>
         public RtpIceChannel(
             IPAddress bindAddress,
             RTCIceComponent component,
             List<RTCIceServer> iceServers = null,
-            RTCIceTransportPolicy policy = RTCIceTransportPolicy.all) :
+            RTCIceTransportPolicy policy = RTCIceTransportPolicy.all,
+            bool includeAllInterfaceAddresses = false) :
             base(false, bindAddress)
         {
             _bindAddress = bindAddress;
             Component = component;
             _iceServers = iceServers;
             _policy = policy;
+            _includeAllInterfaceAddresses = includeAllInterfaceAddresses;
 
             LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);
             LocalIcePassword = Crypto.GetRandomString(ICE_PASSWORD_LENGTH);
@@ -584,13 +590,13 @@ namespace SIPSorcery.Net
                 if (base.RtpSocket.DualMode)
                 {
                     // IPv6 dual mode listening on [::] means we can use all valid local addresses.
-                    localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress)
+                    localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress, _includeAllInterfaceAddresses)
                         .Where(x => !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal && !x.IsIPv6LinkLocal).ToList();
                 }
                 else
                 {
                     // IPv6 but not dual mode on [::] means can use all valid local IPv6 addresses.
-                    localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress)
+                    localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress, _includeAllInterfaceAddresses)
                         .Where(x => x.AddressFamily == AddressFamily.InterNetworkV6
                         && !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal && !x.IsIPv6LinkLocal).ToList();
                 }
@@ -598,7 +604,7 @@ namespace SIPSorcery.Net
             else if (IPAddress.Any.Equals(rtpBindAddress))
             {
                 // IPv4 on 0.0.0.0 means can use all valid local IPv4 addresses.
-                localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress)
+                localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress, _includeAllInterfaceAddresses)
                     .Where(x => x.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(x)).ToList();
             }
             else
