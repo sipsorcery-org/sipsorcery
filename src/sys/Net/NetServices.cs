@@ -100,7 +100,8 @@ namespace SIPSorcery.Sys
         /// 
         /// TODO:  Clear this cache if the state of the local network interfaces change.
         /// </summary>
-        private static ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable = new ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>>();
+        private static ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable =
+            new ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>>();
 
         /// <summary>
         /// The list of IP addresses that this machine can use.
@@ -550,7 +551,7 @@ namespace SIPSorcery.Sys
                         udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
                         localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
                     }
-                    catch(SocketException)
+                    catch (SocketException)
                     {
                         // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
                     }
@@ -608,8 +609,15 @@ namespace SIPSorcery.Sys
         /// </summary>
         /// <param name="destination">Optional. If not specified the interface that
         /// connects to the Internet will be used.</param>
-        /// <returns>A list of local IP addresses on the identified interface.</returns>
-        public static List<IPAddress> GetLocalAddressesOnInterface(IPAddress destination)
+        /// <param name="includeAllInterfaces">By default only the single interface that is used to
+        /// connect to the destination address (or internet address if it's null) will be 
+        /// used to get the list of IP addresses. This default behaviour is to shield all local
+        /// IP addresses being included in ICE candidates. In some circumstances, and after
+        /// weighing up the security concerns, it's very useful to include all interfaces in
+        /// when generating the address list. Setting this parameter to true will cause all 
+        /// interfaces to be used irrespective of the destination address.</param>
+        /// <returns>A list of local IP addresses on the identified interface(s).</returns>
+        public static List<IPAddress> GetLocalAddressesOnInterface(IPAddress destination, bool includeAllInterfaces = false)
         {
             IPAddress localAddress = GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS));
 
@@ -623,14 +631,15 @@ namespace SIPSorcery.Sys
                 {
                     IPInterfaceProperties ipProps = n.GetIPProperties();
 
-                    // Use this interface if it has the local IP address for the destination.
-                    // If the local address couldn't be determined use the first available interface.
-                    if (localAddress == null || ipProps.UnicastAddresses.Any(x => x.Address.Equals(localAddress)))
+                    if (includeAllInterfaces)
                     {
-                        foreach (var unicastAddr in ipProps.UnicastAddresses)
-                        {
-                            localAddresses.Add(unicastAddr.Address);
-                        }
+                        localAddresses.AddRange(ipProps.UnicastAddresses.Select(x => x.Address));
+                    }
+                    else if (localAddress == null || ipProps.UnicastAddresses.Any(x => x.Address.Equals(localAddress)))
+                    {
+                        // Use this interface if it has the local IP address for the destination.
+                        // If the local address couldn't be determined use the first available interface.
+                        localAddresses.AddRange(ipProps.UnicastAddresses.Select(x => x.Address));
                         break;
                     }
                 }

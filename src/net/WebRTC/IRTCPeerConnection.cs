@@ -266,6 +266,18 @@ namespace SIPSorcery.Net
         /// UDP/TLS/RTP/SAVPF instead of UDP/TLS/RTP/SAVP.
         /// </summary>
         public bool X_UseRtpFeedbackProfile;
+
+        /// <summary>
+        /// When gathering host ICE candidates for the local machine the default behaviour is
+        /// to only use IP addresses on the interface that the OS routing table selects to connect
+        /// to the destination, or the Internet facing interface if the destination is unknown.
+        /// This default behaviour is to shield the leaking of all local IP addresses into ICE 
+        /// candidates. In some circumstances, and after weighing up the security concerns, 
+        /// it's very useful to include all interfaces in when generating the address list. 
+        /// Setting this parameter to true will cause all interfaces to be used irrespective of 
+        /// the destination address
+        /// </summary>
+        public bool X_ICEIncludeAllInterfaceAddresses;
     }
 
     /// <summary>

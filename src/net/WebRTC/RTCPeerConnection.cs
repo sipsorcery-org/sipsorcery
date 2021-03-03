@@ -600,7 +600,8 @@ namespace SIPSorcery.Net
                 _configuration?.X_BindAddress,
                 RTCIceComponent.rtp,
                 _configuration?.iceServers,
-                _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all);
+                _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
+                _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false);
 
             m_rtpChannels.Add(mediaType, rtpIceChannel);
 
@@ -982,8 +983,6 @@ namespace SIPSorcery.Net
             string dtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
             bool iceCandidatesAdded = false;
             int mediaIndex = 0;
-
-            //offerSdp.DtlsFingerprint = dtlsFingerprint;
 
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)
