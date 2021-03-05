@@ -25,7 +25,6 @@
 
         const STUN_SERVER = "stun:stun.sipsorcery.com";
         const ICE_GATHERING_TIMEOUT = 3000;
-        const VIDEO_CODEC = "video/VP8";
 
         var pc;
         var signaler;
@@ -87,9 +86,12 @@
             console.log("Creating peer ...");
             isClosed = false;
 
+            //RTCRtpReceiver.getCapabilities("video");
+
             let pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_SERVER }] });
             let transceiver = pc.addTransceiver("video", { direction: "recvonly" });
-            transceiver.setCodecPreferences([{ mimeType: VIDEO_CODEC, clockRate: 90000 }]);
+            //transceiver.setCodecPreferences([{ mimeType: "video/VP8", clockRate: 90000 }]);
+            transceiver.setCodecPreferences([{ mimeType: "video/H264", clockRate: 90000, sdpFmtpLine: "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42001f" }]);
             pc.ontrack = evt => document.getElementById(videoCtlID).srcObject = evt.streams[0];
             pc.onicecandidate = evt => evt.candidate && console.log(evt.candidate);
 
