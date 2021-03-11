@@ -16,7 +16,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-
 namespace SIPSorcery.SIP.UnitTests
 {
     [Trait("Category", "unit")]
@@ -96,6 +95,30 @@ namespace SIPSorcery.SIP.UnitTests
 
             udpChan1.Close();
             udpChan2.Close();
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that getting a default contact URI for a SIP channel works correctly.
+        /// </summary>
+        [Fact]
+        public void GetDefaultContactURIUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var udpChan = new SIPUDPChannel(IPAddress.Any, 0);
+
+            logger.LogDebug($"Listening end point {udpChan.ListeningSIPEndPoint}.");
+
+            var contactURI = udpChan.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(udpChan.SIPProtocol, SIPChannel.InternetDefaultAddress, 0));
+
+            Assert.NotNull(contactURI);
+
+            logger.LogDebug($"Contact URI: {contactURI}.");
+
+            udpChan.Close();
 
             logger.LogDebug("-----------------------------------------");
         }

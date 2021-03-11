@@ -784,6 +784,44 @@ a=sendrecv";
             sipTransportD.Shutdown();
         }
 
+        /// <summary>
+        /// Checks that an incoming call can be cancelled after it has been accepted (set to ringing)
+        /// by the receiver.
+        /// </summary>
+        [Fact]
+        public async Task CancelCallUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport aliceTransport = new SIPTransport();
+            aliceTransport.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+            var alice = new SIPUserAgent(aliceTransport, null, true);
+            SIPServerUserAgent uas = null;
+            // Auto accept but NOT answering.
+            alice.OnIncomingCall += (ua, req) => uas = ua.AcceptCall(req);
+
+            SIPTransport bobTransport = new SIPTransport();
+            bobTransport.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+            var bob = new SIPUserAgent(bobTransport, null, true);
+
+            var callTask = bob.Call(alice.ContactURI.ToString(), null, null, CreateMediaSession());
+
+            await Task.Delay(500);
+
+            Assert.True(bob.IsRinging);
+            Assert.NotNull(uas);
+            Assert.False(uas.IsCancelled);
+
+            bob.Cancel();
+
+            await Task.Delay(500);
+
+            Assert.False(alice.IsCallActive);
+            Assert.False(bob.IsCallActive);
+            Assert.True(uas.IsCancelled);
+        }
+
         private IMediaSession CreateMediaSession()
         {
             return new MockMediaSession();
