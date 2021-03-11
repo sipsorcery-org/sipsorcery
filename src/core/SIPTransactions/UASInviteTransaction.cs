@@ -84,6 +84,11 @@ namespace SIPSorcery.SIP
             TransactionFinalResponseReceived += UASInviteTransaction_TransactionResponseReceived;
             TransactionFailed += UASInviteTransaction_TransactionFailed;
             OnAckRequestReceived += UASInviteTransaction_OnAckRequestReceived;
+
+            // UAS transactions need to be added to the engine immediately so that CANCEL
+            // requests can be matched. Outbound transaction types don't need to be added to the 
+            // engine until they need to be sent.
+            sipTransport.AddTransaction(this);
         }
 
         private Task<SocketError> UASInviteTransaction_OnAckRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)

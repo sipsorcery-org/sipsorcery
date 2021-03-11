@@ -51,7 +51,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>- v5.1.1-pre: Bug fix to audio extras source. Added use all interfaces option for peer connection.
+    <PackageReleaseNotes>- v5.1.1: Bug fix to audio extras source. Added use all interfaces option for peer connection.
 - v5.1.0: Stable release.
 - v5.0.32-pre: Fixed race condition in RTCPeerConnection for ICE channel connecting prior to remote offer arriving.
 - v5.0.31-pre: Allow local ICE candidates to be set on RTCPeerConnection.

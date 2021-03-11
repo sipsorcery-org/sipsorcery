@@ -224,6 +224,28 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// The default SIP URI that this URI can be contacted on. Depending on the SIP transport
+        /// being used by the agent there may be multiple ways of contacting it. In that case the
+        /// first URI found is used.
+        /// </summary>
+        public SIPURI ContactURI
+        {
+            get
+            {
+                if (m_transport.GetSIPChannels().Count > 0)
+                {
+                    var firstChannel = m_transport.GetSIPChannels()[0];
+                    return firstChannel.GetContactURI(SIPSchemesEnum.sip,
+                        new SIPEndPoint(firstChannel.SIPProtocol, SIPChannel.InternetDefaultAddress, 0));
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        /// <summary>
         /// The remote party has received our call request and is working on it.
         /// </summary>
         public event SIPCallResponseDelegate ClientCallTrying;
