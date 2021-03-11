@@ -27646,6 +27646,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.Close
   nameWithType: SIPUserAgent.Close
+- uid: SIPSorcery.SIP.App.SIPUserAgent.ContactURI
+  name: ContactURI
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_ContactURI
+  commentId: P:SIPSorcery.SIP.App.SIPUserAgent.ContactURI
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.ContactURI
+  nameWithType: SIPUserAgent.ContactURI
+- uid: SIPSorcery.SIP.App.SIPUserAgent.ContactURI*
+  name: ContactURI
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_ContactURI_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.ContactURI
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.ContactURI
+  nameWithType: SIPUserAgent.ContactURI
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Dialogue
   name: Dialogue
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Dialogue

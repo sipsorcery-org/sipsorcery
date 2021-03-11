@@ -3285,7 +3285,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "acOuFBZ1ZCIX9iMxXbC3LA=="
+          "hash": "JVkAV/9PNQJcdUsHXGHzaw=="
         }
       },
       "is_incremental": false,
@@ -4545,7 +4545,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.UASInviteTransaction.html",
-          "hash": "CIT3UHxgnSS5x4WBN77VSg=="
+          "hash": "u9VsAERfEwlA2EeQpXCoGQ=="
         }
       },
       "is_incremental": false,
