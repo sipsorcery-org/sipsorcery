@@ -70,9 +70,16 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            pc.createDataChannel("test", null);
+            var dc = pc.createDataChannel("test", null);
+            dc.onopen += () => logger.LogDebug($"Data channel {dc.label} opened.");
+            dc.onclose += () => logger.LogDebug($"Data channel {dc.label} closed.");
+            dc.onmessage += async (msg) =>
+            {
+                logger.LogInformation($"Data channel message received: {msg}.");
+                await dc.sendasync($"echo: {msg}");
+            };
 
-            pc.onconnectionstatechange += async (state) =>
+            pc.onconnectionstatechange += (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
 

@@ -6,16 +6,33 @@
 
         const STUN_URL = "stun:stun.sipsorcery.com";
         const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
+        //const DATA_CHANNEL_LABEL = "dc1"
 
-        var pc, ws;
+        var dc, pc, ws;
+        var isClosed = true;
 
         async function start() {
+
+            if (!isClosed) {
+                await closePeer();
+            }
+
             pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
 
-            pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
             pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
-            await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-                .then(stm => stm.getTracks().forEach(track => pc.addTrack(track, stm)));
+
+            pc.ondatachannel = (evt) => {
+                console.log(`ondatachannel event: ${evt}`);
+                dc = evt.channel;
+                dc.onopen = (event) => console.log(`data channel onopen: ${event}.`);
+                dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+                dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
+            }
+
+            //dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
+            //dc.onopen = (obj, event) => console.log(`data channel onopen: ${event}.`);
+            //dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+            //dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
 
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
             ws.onmessage = async function (evt) {
@@ -31,23 +48,30 @@
             };
         };
 
+        function sendMessage(message) {
+            console.log(`send message: ${message}.`);
+            dc?.send(message);
+        }
+
         async function closePeer() {
-            pc.getSenders().forEach(sender => {
-                sender.track.stop();
-                pc.removeTrack(sender);
-            });
-            await pc.close();
-            await ws.close();
+            isClosed = true;
+            await dc?.close();
+            await pc?.close();
+            await ws?.close();
         };
 
     </script>
 </head>
 <body>
-    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
     <div>
         <input type="text" id="websockurl" size="40" />
-        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="start();">Open</button>
         <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+    <div>
+        <input type="text" id="message" />
+        <button type="button" class="btn btn-success" onclick="sendMessage(document.querySelector('#message').value);">Send Message</button>
     </div>
 </body>
 
