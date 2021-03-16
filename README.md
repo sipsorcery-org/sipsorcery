@@ -13,10 +13,6 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 ![Real-time Communications Overview](./img/sipsorcery_realtime_overview.png)
 
-`*` Example library only. Not likely to be enhanced.
-
-`**` Incomplete prototype.
-
 **Supports both VoIP ([get started](#getting-started-voip)) and WebRTC ([get started](#getting-started-webrtc)).**
 
 **Some of the protocols supported:**
