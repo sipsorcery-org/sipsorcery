@@ -4,16 +4,12 @@
 | <sup>GitHub Actions</sup> | ![](https://github.com/sipsorcery-org/sipsorcery/workflows/win-x64/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/workflows/linux-x64/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/workflows/osx-x64/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/workflows/egs-win-x64/badge.svg) | |
 | <sup>Azure DevOps</sup>   | [![Build Status](https://dev.azure.com/aaronrc/SIPSorcery/_apis/build/status/sipsorcery.sipsorcery?branchName=master&jobName=Job&configuration=Job%20windows)](https://dev.azure.com/aaronrc/SIPSorcery/_build/latest?definitionId=3&branchName=master) | [![Build Status](https://dev.azure.com/aaronrc/SIPSorcery/_apis/build/status/sipsorcery.sipsorcery?branchName=master&jobName=Job&configuration=Job%20linux)](https://dev.azure.com/aaronrc/SIPSorcery/_build/latest?definitionId=3&branchName=master) | [![Build Status](https://dev.azure.com/aaronrc/SIPSorcery/_apis/build/status/sipsorcery.sipsorcery?branchName=master&jobName=Job&configuration=Job%20mac)](https://dev.azure.com/aaronrc/SIPSorcery/_build/latest?definitionId=3&branchName=master) | | |
 
-**Update Jan 2021:** The repository URLs for this project have changed from `sipsorcery` to `sipsorcery-org`. A redirect currently exists but if you encounter any issues you can update your remote git URL from the command line using the commands below (adjust for the name of your remote repo):
-
-`git remote set-url origin-http https://github.com/sipsorcery-org/sipsorcery`
-
 
 ## What Is It?
 
-**This fully C# library can be used to add Real-time Communications, typically audio and video calls, to .NET Core applications.**
+**This fully C# library can be used to add Real-time Communications, typically audio and video calls, to .NET applications.**
 
-The diagram below is a high level overview of a Real-time audio and video call between Alice and Bob. It illustrates where the `SIPSorcery` library can help.
+The diagram below is a high level overview of a Real-time audio and video call between Alice and Bob. It illustrates where the `SIPSorcery` and associated libraries can help.
 
 ![Real-time Communications Overview](./img/sipsorcery_realtime_overview.png)
 
@@ -29,37 +25,46 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 **Media End Points - Audio/Video Sinks and Sources:**
 
- - This library does not provide access to audio and video devices or native codecs. Providing cross platform access on top of .NET Core is a large undertaking. A number of efforts in separate libraries are currently in progress. 
-   - [SIPSorceryMedia.Windows](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows): Windows specific library that provides audio capture and playback. 
-   - [SIPSorceryMedia.Encoders](https://github.com/sipsorcery-org/SIPSorceryMedia.Encoders): A Windows specific wrapper for the [VP8](https://www.webmproject.org/) video codec. The examples in this repository use it.
-   - [SIPSorceryMedia.FFmpeg](https://github.com/sipsorcery-org/SIPSorceryMedia.FFmpeg): An in-progress effort to provide cross platform audio, video and codec functions using PInvoke and [FFmpeg](https://ffmpeg.org/).
-   - Others: **Contributions welcome**. Frequently requested are Xamarin Forms on Android/iOS and Unix (Linux and/or Mac). New implementations need to implement one or more of the Audio Sink/Source and/or Video Sink/Source interfaces from [SIPSorceryMedia.Abstractions](https://github.com/sipsorcery-org/SIPSorceryMedia.Abstractions/blob/master/src/V1/MediaEndPoints.cs).
+ - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Providing cross platform access to to these features on top of .NET is a large undertaking. A number of separate demonstration libraries show some different approaches to accessing audio/video devices and wrapping codecs with .NET. 
+   - [SIPSorceryMedia.Windows](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows): An example of a Windows specific library that provides audio capture and playback. 
+   - [SIPSorceryMedia.Encoders](https://github.com/sipsorcery-org/SIPSorceryMedia.Encoders): An example of a Windows specific wrapper for the [VP8](https://www.webmproject.org/) video codec.
+   - [SIPSorceryMedia.FFmpeg](https://github.com/sipsorcery-org/SIPSorceryMedia.FFmpeg): An example of a cross platform library that features audio and video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
+   - Others: **Contributions welcome**. Frequently requested are Xamarin Forms on Android/iOS and Unix (Linux and/or Mac). New implementations need to implement one or more of the Audio Sink/Source and/or Video Sink/Source interfaces from [SIPSorceryMedia.Abstractions](https://github.com/sipsorcery-org/SIPSorceryMedia.Abstractions/blob/master/src/MediaEndPoints.cs).
 
  - This library provides only a small number of audio and video codecs (G711 and G722). Additional codecs, particularly video ones, require C or C++ libraries. An effort is underway to port the [VP8](https://www.webmproject.org/) video codec to C# see [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
 
+ ## Road Map
+
+ As of March 2021 there are two main items on the road map:
+
+ - Rewrite the WebRTC SCTP implementation to improve the data channel support.
+ - Complete the VP8 .NET port to determine if a .NET video codec is feasible.
+
 ## Installation
 
-The library is compliant with .NET Standard 2.0 (encompassing .NET Core 2.0+) and .NET Framework 4.6.1 (theoretically also encompassed by `netstandard2.0` but set as an explicit target due to compatibility issues between the two). The demo applications mainly target .NET Core 3.1 with newer ones targeting .NET 5.0. It is available via NuGet.
+The library is compliant with .NET Standard 2.0 (encompassing .NET Core 2.0+), .NET Framework 4.6.1 (theoretically also encompassed by `netstandard2.0` but set as an explicit target due to compatibility issues between the two) and .NET 5. The demo applications mainly target .NET Core 3.1 with newer ones targeting .NET 5. It is available via NuGet.
 
 For .NET Core:
 
 ````bash
-dotnet add package SIPSorcery -v 5.0.3
+dotnet add package SIPSorcery -v 5.1.2
 ````
 
 With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](https://www.nuget.org/packages/SIPSorcery/)):
 
 ````ps1
-Install-Package SIPSorcery -v 5.0.3
+Install-Package SIPSorcery -v 5.1.2
 ````
 
 ## Documentation
 
 Class reference documentation and articles explaining common usage are available at [https://sipsorcery-org.github.io/sipsorcery/](https://sipsorcery-org.github.io/sipsorcery/).
 
-## Complimentary Server
+## Additional Resources
 
 A free SIP account for GitHub users that can be used for SIP and WebRTC testing is available at [sipsorcery.cloud](https://sipsorcery.cloud).
+
+For WebRTC testing the [webrtc-echoes](https://github.com/sipsorcery/webrtc-echoes) project has a number of basic WebRTC implementations in different libraries. It includes a set of [docker images](https://github.com/sipsorcery?tab=packages) which can be useful for testing during WebRTC application development.
 
 ## Getting Started VoIP
 
@@ -68,11 +73,11 @@ The simplest possible example to place an audio-only SIP call is shown below. Th
 ````bash
 dotnet new console --name SIPGetStarted -f netcoreapp3.1
 cd SIPGetStarted
-dotnet add package SIPSorcery -v 5.0.11-pre
-dotnet add package SIPSorceryMedia.Windows -v 0.0.30-pre
+dotnet add package SIPSorcery -v 5.1.2
+dotnet add package SIPSorceryMedia.Windows -v 0.0.31-pre
 # Paste the code below into Program.cs.
 dotnet run
-# If successful you will hear the current time read out.
+# If successful you will hear a "Hello World" announcement.
 ````
 
 ````csharp
@@ -135,7 +140,7 @@ The example relies on the Windows specific `SIPSorceryMedia.Encoders` package, w
 ````bash
 dotnet new console --name WebRTCGetStarted -f net5.0
 cd WebRTCGetStarted
-dotnet add package SIPSorcery -v 5.0.11-pre
+dotnet add package SIPSorcery -v 5.1.2
 dotnet add package SIPSorceryMedia.Encoders -v 0.0.10-pre
 # Paste the code below into Program.cs.
 dotnet run
@@ -272,4 +277,3 @@ Create an HTML file, paste the contents below into it, open it in a browser that
 If successful the browser should display a test pattern image.
 
 The [examples folder](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples) contains sample code to demonstrate other common WebRTC cases.
-
