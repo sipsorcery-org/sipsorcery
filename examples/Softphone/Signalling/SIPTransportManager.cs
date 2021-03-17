@@ -102,7 +102,7 @@ namespace SIPSorcery.SoftPhone
                         {
                             udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_DEFAULT_PORT));
                         }
-                        catch (SocketException bindExcp)
+                        catch (ApplicationException bindExcp)
                         {
                             logger.LogWarning($"Socket exception attempting to bind UDP channel to port {SIP_DEFAULT_PORT}, will use random port. {bindExcp.Message}.");
                             udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
