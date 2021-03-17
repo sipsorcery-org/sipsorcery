@@ -35,7 +35,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
  ## Road Map
 
- As of March 2021 there are two main items on the road map:
+ As of March 2021 the road map for this project is:
 
  - Rewrite the WebRTC SCTP implementation to improve the data channel support. In progress at [Sctp.Net](https://github.com/sipsorcery-org/Sctp.Net).
  - Complete the VP8 .NET port to determine if a .NET video codec is feasible. In progress at [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
