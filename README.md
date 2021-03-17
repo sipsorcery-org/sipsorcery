@@ -1,6 +1,6 @@
 # SIPSorceryMedia.Windows
 
-This project is an example of developing C# compomnents that access Windows audio and video devices and that inegrates with the [SIPSorcery](https://github.com/sipsorcery-org/sipsorcery) real-time communications library.
+This project is an example of developing a C# library that can access Windows audio and video devices and that inegrates with the [SIPSorcery](https://github.com/sipsorcery-org/sipsorcery) real-time communications library.
 
 The classes in this project provide functions to:
 
