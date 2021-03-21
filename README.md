@@ -37,7 +37,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
  As of March 2021 the road map for this project is:
 
- - Rewrite the WebRTC SCTP implementation to improve the data channel support. In progress at [Sctp.Net](https://github.com/sipsorcery-org/Sctp.Net).
+ - Rewrite the WebRTC SCTP implementation to improve the data channel support. In progress.
  - Complete the VP8 .NET port to determine if a .NET video codec is feasible. In progress at [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
  - Write cool WebRTC apps on [Xamarin](https://dotnet.microsoft.com/apps/xamarin), [MAUI](https://github.com/dotnet/maui), [Unity](https://unity.com/) etc. without any native library hassles!
 
