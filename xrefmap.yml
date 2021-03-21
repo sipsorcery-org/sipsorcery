@@ -38930,6 +38930,76 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetConvert.DoReverseEndian
   nameWithType: NetConvert.DoReverseEndian
+- uid: SIPSorcery.Sys.NetConvert.EndianFlip(System.UInt32)
+  name: EndianFlip(UInt32)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_EndianFlip_System_UInt32_
+  commentId: M:SIPSorcery.Sys.NetConvert.EndianFlip(System.UInt32)
+  fullName: SIPSorcery.Sys.NetConvert.EndianFlip(System.UInt32)
+  nameWithType: NetConvert.EndianFlip(UInt32)
+- uid: SIPSorcery.Sys.NetConvert.EndianFlip*
+  name: EndianFlip
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_EndianFlip_
+  commentId: Overload:SIPSorcery.Sys.NetConvert.EndianFlip
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetConvert.EndianFlip
+  nameWithType: NetConvert.EndianFlip
+- uid: SIPSorcery.Sys.NetConvert.ParseUInt16(System.Byte[],System.Int32)
+  name: ParseUInt16(Byte[], Int32)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ParseUInt16_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Sys.NetConvert.ParseUInt16(System.Byte[],System.Int32)
+  name.vb: ParseUInt16(Byte(), Int32)
+  fullName: SIPSorcery.Sys.NetConvert.ParseUInt16(System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Sys.NetConvert.ParseUInt16(System.Byte(), System.Int32)
+  nameWithType: NetConvert.ParseUInt16(Byte[], Int32)
+  nameWithType.vb: NetConvert.ParseUInt16(Byte(), Int32)
+- uid: SIPSorcery.Sys.NetConvert.ParseUInt16*
+  name: ParseUInt16
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ParseUInt16_
+  commentId: Overload:SIPSorcery.Sys.NetConvert.ParseUInt16
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetConvert.ParseUInt16
+  nameWithType: NetConvert.ParseUInt16
+- uid: SIPSorcery.Sys.NetConvert.ParseUInt32(System.Byte[],System.Int32)
+  name: ParseUInt32(Byte[], Int32)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ParseUInt32_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Sys.NetConvert.ParseUInt32(System.Byte[],System.Int32)
+  name.vb: ParseUInt32(Byte(), Int32)
+  fullName: SIPSorcery.Sys.NetConvert.ParseUInt32(System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Sys.NetConvert.ParseUInt32(System.Byte(), System.Int32)
+  nameWithType: NetConvert.ParseUInt32(Byte[], Int32)
+  nameWithType.vb: NetConvert.ParseUInt32(Byte(), Int32)
+- uid: SIPSorcery.Sys.NetConvert.ParseUInt32*
+  name: ParseUInt32
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ParseUInt32_
+  commentId: Overload:SIPSorcery.Sys.NetConvert.ParseUInt32
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetConvert.ParseUInt32
+  nameWithType: NetConvert.ParseUInt32
+- uid: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt16,System.Byte[],System.Int32)
+  name: ToBuffer(UInt16, Byte[], Int32)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ToBuffer_System_UInt16_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt16,System.Byte[],System.Int32)
+  name.vb: ToBuffer(UInt16, Byte(), Int32)
+  fullName: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt16, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt16, System.Byte(), System.Int32)
+  nameWithType: NetConvert.ToBuffer(UInt16, Byte[], Int32)
+  nameWithType.vb: NetConvert.ToBuffer(UInt16, Byte(), Int32)
+- uid: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt32,System.Byte[],System.Int32)
+  name: ToBuffer(UInt32, Byte[], Int32)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ToBuffer_System_UInt32_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt32,System.Byte[],System.Int32)
+  name.vb: ToBuffer(UInt32, Byte(), Int32)
+  fullName: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt32, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt32, System.Byte(), System.Int32)
+  nameWithType: NetConvert.ToBuffer(UInt32, Byte[], Int32)
+  nameWithType.vb: NetConvert.ToBuffer(UInt32, Byte(), Int32)
+- uid: SIPSorcery.Sys.NetConvert.ToBuffer*
+  name: ToBuffer
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ToBuffer_
+  commentId: Overload:SIPSorcery.Sys.NetConvert.ToBuffer
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetConvert.ToBuffer
+  nameWithType: NetConvert.ToBuffer
 - uid: SIPSorcery.Sys.NetServices
   name: NetServices
   href: api/SIPSorcery.Sys.NetServices.html
