@@ -16,12 +16,11 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net.Sctp;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class RTCDataChannel : SCTPStreamListener, IRTCDataChannel
+    public class RTCDataChannel : IRTCDataChannel
     {
         private static ILogger logger = Log.Logger;
 
@@ -48,7 +47,7 @@ namespace SIPSorcery.Net
 
         //public long MaxMessageSize { get; set; }
 
-        private SCTPStream _sctpStream;
+        //private SCTPStream _sctpStream;
 
         public string Error { get; private set; }
 
@@ -62,18 +61,18 @@ namespace SIPSorcery.Net
         public event Action<string> onmessage;
         public event Action<byte[]> onDatamessage;
 
-        internal void SetStream(SCTPStream s)
-        {
-            _sctpStream = s;
-            s.setSCTPStreamListener(this);
-            s.OnOpen = OnStreamOpened;
-        }
+        //internal void SetStream(SCTPStream s)
+        //{
+        //    _sctpStream = s;
+        //    s.setSCTPStreamListener(this);
+        //    s.OnOpen = OnStreamOpened;
+        //}
 
         internal void OnStreamOpened()
         {
             logger.LogDebug($"Data channel for label {label} now open.");
             IsOpened = true;
-            id = (ushort)_sctpStream.getNum();
+            //id = (ushort)_sctpStream.getNum();
             readyState = RTCDataChannelState.open;
             onopen?.Invoke();
         }
@@ -91,7 +90,7 @@ namespace SIPSorcery.Net
         {
             IsOpened = false;
             readyState = RTCDataChannelState.closing;
-            _sctpStream?.close();
+           //_sctpStream?.close();
             readyState = RTCDataChannelState.closed;
         }
 
@@ -103,7 +102,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                _sctpStream.send(data);
+                //_sctpStream.send(data);
             }
         }
 
@@ -115,7 +114,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                _sctpStream.send(data);
+                //_sctpStream.send(data);
             }
         }
 
@@ -128,7 +127,8 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return _sctpStream.sendasync(data);
+                //return _sctpStream.sendasync(data);
+                return Task.CompletedTask;
             }
         }
 
@@ -141,24 +141,25 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return _sctpStream.sendasync(data);
+                //return _sctpStream.sendasync(data);
+                return Task.CompletedTask;
             }
         }
 
-        public void close(SCTPStream s)
+        public void close(uint streamID)
         {
             IsOpened = false;
-            logger.LogDebug($"Data channel stream closed id {s.getNum()}.");
+            logger.LogDebug($"Data channel stream closed id {streamID}.");
             onclose?.Invoke();
         }
 
-        public void onDataMessage(SCTPStream s, byte[] data)
+        public void onDataMessage(uint streamID, byte[] data)
         {
             //logger.LogDebug($"Data channel received message (label={s.getLabel()}, streamID={s.getNum()}): {message}.");
             onDatamessage?.Invoke(data);
         }
 
-        public void onMessage(SCTPStream s, string message)
+        public void onMessage(uint streamID, string message)
         {
             //logger.LogDebug($"Data channel received message (label={s.getLabel()}, streamID={s.getNum()}): {message}.");
             onmessage?.Invoke(message);
