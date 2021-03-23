@@ -6,18 +6,27 @@
 // date with:
 // https://www.w3.org/TR/webrtc/#rtcdatachannel
 //
-// Specification Soup (as of 11 Jul 2020):
+// Remarks:
+// Specification Soup (as of 23 Mar @021):
+//
 // - Stream Control Transmission Protocol:
 // https://tools.ietf.org/html/rfc4960
+//
 // - WebRTC Data Channels:
-// https://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-13
+// https://tools.ietf.org/html/rfc8831
+//
 // - WebRTC Data Channel Establishment Protocol:
-// https://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-09
+// https://tools.ietf.org/html/rfc8832
+//
 // - Datagram Transport Layer Security (DTLS) Encapsulation of SCTP Packets:
 // https://tools.ietf.org/html/rfc8261
 //
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 11 Jul 2020	Aaron Clauson	Created.
+// 11 Jul 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 23 Mar 2021  Aaron Clauson   Refactored for new SCTP implementation.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
