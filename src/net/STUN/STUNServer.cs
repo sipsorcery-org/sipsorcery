@@ -215,6 +215,7 @@ namespace SIPSorcery.Net
                 // Add MappedAddress attribute to indicate the socket the request was received from.
                 STUNAddressAttribute mappedAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.MappedAddress, receivedEndPoint.Port, receivedEndPoint.Address);
                 stunResponse.Attributes.Add(mappedAddressAtt);
+                stunResponse.AddXORMappedAddressAttribute(receivedEndPoint.Address, receivedEndPoint.Port);//Compatible with the client code
 
                 // Add SourceAddress attribute to indicate the socket used to send the response.
                 if (primary)
