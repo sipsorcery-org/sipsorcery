@@ -97,6 +97,26 @@ namespace SIPSorcery.Net
             }
         }
 
+        private SctpChunkParameter()
+        { }
+
+        /// <summary>
+        /// Creates a new chunk parameter instance.
+        /// </summary>
+        public SctpChunkParameter(SctpChunkParameterType parameterType)
+        {
+            ParameterType = (ushort)parameterType;
+        }
+
+        /// <summary>
+        /// Creates a new chunk parameter instance.
+        /// </summary>
+        public SctpChunkParameter(SctpChunkParameterType parameterType, byte[] parameterValue)
+        {
+            ParameterType = (ushort)parameterType;
+            ParameterValue = parameterValue;
+        }
+
         /// <summary>
         /// Calculates the length for the chunk parameter.
         /// </summary>
@@ -241,6 +261,13 @@ namespace SIPSorcery.Net
     {
         public IPAddress Address;
 
+        public SctpAddressParameter(IPAddress address) :
+            base(address.AddressFamily == AddressFamily.InterNetwork ? 
+                SctpChunkParameterType.IPv4Address : SctpChunkParameterType.IPv6Address)
+        {
+            Address = address;
+        }
+
         public override ushort GetParameterLength() =>
             (ushort)(SCTP_PARAMETER_HEADER_LENGTH +
                 (Address.AddressFamily == AddressFamily.InterNetwork ? 4 : 16));
@@ -264,15 +291,9 @@ namespace SIPSorcery.Net
 
         public static SctpAddressParameter ParseParameter(byte[] buffer, int posn)
         {
-            var addrParam = new SctpAddressParameter();
-            ushort paramLen = addrParam.ParseFirstWord(buffer, posn);
-
-            addrParam.Address = new IPAddress(
-                new ReadOnlySpan<byte>(buffer,
-                posn + SCTP_PARAMETER_HEADER_LENGTH,
-                paramLen - SCTP_PARAMETER_HEADER_LENGTH).ToArray());
-
-            return addrParam;
+            var param = ParseSimpleChunkParameter(buffer, posn);
+            var address = new IPAddress(param.ParameterValue);
+            return new SctpAddressParameter(address);
         }
     }
 }

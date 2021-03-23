@@ -5,8 +5,7 @@
 // packets.
 //
 // Remarks:
-// The interface defined in https://tools.ietf.org/html/rfc4960#section-10 
-// was used as a basis for this class.
+// UDP encapsulation of SCTP: https://tools.ietf.org/html/rfc6951
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -29,20 +28,9 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.Net
 {
     /// <summary>
-    /// Contains the common methods that an SCTP transport layer needs to implement.
-    /// As well as being able to be carried directly in IP packets, SCTP packets can
-    /// also be wrapped in higher level protocols.
+    /// Represents an SCTP transport that encapsulates SCTP packet in UDP.
     /// </summary>
-    /// <remarks>
-    /// UDP encapsulation of SCTP: https://tools.ietf.org/html/rfc6951
-    /// DTLS encapsulation of SCTP: https://tools.ietf.org/html/rfc8261
-    /// </remarks>
-    public interface ISctpTransport
-    {
-        void Send(string associationID, byte[] buffer, int offset, int length);
-    }
-
-    public class SctpUdpTransport : ISctpTransport
+    public class SctpUdpTransport : SctpTransport
     {
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SctpUdpTransport>();
 
@@ -88,24 +76,33 @@ namespace SIPSorcery.Net
                 foreach (var chunk in pkt.Chunks)
                 {
                     logger.LogTrace($" chunk {chunk.KnownType}.");
-                    if (chunk.OptionalParameters != null)
+                    if (chunk.VariableParameters != null)
                     {
-                        foreach (var chunkParam in chunk.OptionalParameters)
+                        foreach (var chunkParam in chunk.VariableParameters)
                         {
                             logger.LogTrace($"  chunk Parameter {chunkParam.KnownType}.");
                         }
                     }
+                }
 
-                    switch (chunk.KnownType)
-                    {
-                        default:
-                            // TODO: Lookup association for packet.
-                            if (_associations.Count > 0)
-                            {
-                                _associations.Values.First().OnPacketReceived(pkt);
-                            }
-                            break;
-                    }
+                // Process packet.
+                if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                {
+                    // INIT packets have specific processing rules in order to prevent resource exhaustion.
+                    // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
+                    var initAckPacket = base.GetInitAck(pkt, remoteEndPoint);
+                    var buffer = initAckPacket.GetBytes();
+                    Send(null, buffer, 0, buffer.Length);
+                }
+                else if(pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                {
+
+                }
+
+                else
+                {
+                    // TODO: Lookup the existing association for the packet.
+                    _associations.Values.First().OnPacketReceived(pkt);
                 }
             }
             catch (Exception excp)
@@ -123,7 +120,7 @@ namespace SIPSorcery.Net
             logger.LogInformation($"SCTP transport encapsulation receiver closed with reason: {reason}.");
         }
 
-        public void Send(string associationID, byte[] buffer, int offset, int length)
+        public override void Send(string associationID, byte[] buffer, int offset, int length)
         {
             if (_associations.TryGetValue(associationID, out var assoc))
             {
@@ -131,12 +128,18 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Requests a new association be created.
+        /// </summary>
+        /// <param name="destination">The UDP endpoint to attempt to create the association with.</param>
+        /// <param name="sourcePort">The SCTP source port.</param>
+        /// <param name="destinationPort">The SCTP destination port.</param>
+        /// <returns>An SCTP association.</returns>
         public SctpAssociation Associate(IPEndPoint destination, ushort sourcePort, ushort destinationPort)
         {
-            var associationID = Guid.NewGuid().ToString();
-            var association = new SctpAssociation(this, associationID, destination, sourcePort, destinationPort);
+            var association = new SctpAssociation(this, destination, sourcePort, destinationPort);
 
-            if (_associations.TryAdd(associationID, association))
+            if (_associations.TryAdd(association.ID, association))
             {
                 association.Init();
                 return association;
@@ -147,197 +150,6 @@ namespace SIPSorcery.Net
                 association.Shutdown();
                 return null;
             }
-        }
-
-        /// <summary>
-        /// This method allows SCTP to initialise its internal data structures
-        /// and allocate necessary resources for setting up its operation
-        /// environment.
-        /// </summary>
-        /// <param name="localPort">SCTP port number, if the application wants it to be specified.</param>
-        /// <returns>The local SCTP instance name.</returns>
-        public string Initialize(ushort localPort)
-        {
-            return "local SCTP instance name";
-        }
-
-        /// <summary>
-        /// Initiates an association to a specific peer end point
-        /// </summary>
-        /// <param name="destination"></param>
-        /// <param name="streamCount"></param>
-        /// <returns>An association ID, which is a local handle to the SCTP association.</returns>
-        public string Associate(IPAddress destination, int streamCount)
-        {
-            return "association ID";
-        }
-
-        /// <summary>
-        /// Gracefully closes an association. Any locally queued user data will
-        /// be delivered to the peer.The association will be terminated only
-        /// after the peer acknowledges all the SCTP packets sent.
-        /// </summary>
-        /// <param name="associationID">Local handle to the SCTP association.</param>
-        public void Shutdown(string associationID)
-        {
-
-        }
-
-        /// <summary>
-        /// Ungracefully closes an association. Any locally queued user data
-        /// will be discarded, and an ABORT chunk is sent to the peer.
-        /// </summary>
-        /// <param name="associationID">Local handle to the SCTP association.</param>
-        public void Abort(string associationID)
-        {
-
-        }
-
-        /// <summary>
-        /// This is the main method to send user data via SCTP.
-        /// </summary>
-        /// <param name="associationID">Local handle to the SCTP association.</param>
-        /// <param name="buffer">The buffer holding the data to send.</param>
-        /// <param name="length">The number of bytes from the buffer to send.</param>
-        /// <param name="contextID">Optional. A 32-bit integer that will be carried in the
-        /// sending failure notification to the application if the transportation of
-        /// this user message fails.</param>
-        /// <param name="streamID">Optional. To indicate which stream to send the data on. If not
-        /// specified, stream 0 will be used.</param>
-        /// <param name="lifeTime">Optional. specifies the life time of the user data. The user
-        /// data will not be sent by SCTP after the life time expires.This
-        /// parameter can be used to avoid efforts to transmit stale user
-        /// messages.</param>
-        /// <returns></returns>
-        public string Send(string associationID, byte[] buffer, int length, int contextID, int streamID, int lifeTime)
-        {
-            return "ok";
-        }
-
-        /// <summary>
-        /// Instructs the local SCTP to use the specified destination transport
-        /// address as the primary path for sending packets.
-        /// </summary>
-        /// <param name="associationID"></param>
-        /// <returns></returns>
-        public string SetPrimary(string associationID)
-        {
-            // Note: Seems like this will be a noop for SCTP encapsulated in UDP.
-            return "ok";
-        }
-
-        /// <summary>
-        /// This method shall read the first user message in the SCTP in-queue
-        /// into the buffer specified by the application, if there is one available.The
-        /// size of the message read, in bytes, will be returned.
-        /// </summary>
-        /// <param name="associationID">Local handle to the SCTP association.</param>
-        /// <param name="buffer">The buffer to place the received data into.</param>
-        /// <param name="length">The maximum size of the data to receive.</param>
-        /// <param name="streamID">Optional. If specified indicates which stream to 
-        /// receive the data on.</param>
-        /// <returns></returns>
-        public int Receive(string associationID, byte[] buffer, int length, int streamID)
-        {
-            return 0;
-        }
-
-        /// <summary>
-        /// Returns the current status of the association.
-        /// </summary>
-        /// <param name="associationID">Local handle to the SCTP association.</param>
-        /// <returns></returns>
-        public SctpStatus Status(string associationID)
-        {
-            return new SctpStatus();
-        }
-
-        /// <summary>
-        /// Instructs the local endpoint to enable or disable heartbeat on the
-        /// specified destination transport address.
-        /// </summary>
-        /// <param name="associationID">Local handle to the SCTP association.</param>
-        /// <param name="interval">Indicates the frequency of the heartbeat if
-        /// this is to enable heartbeat on a destination transport address.
-        /// This value is added to the RTO of the destination transport
-        /// address.This value, if present, affects all destinations.</param>
-        /// <returns></returns>
-        public string ChangeHeartbeat(string associationID, int interval)
-        {
-            return "ok";
-        }
-
-        /// <summary>
-        /// Instructs the local endpoint to perform a HeartBeat on the specified
-        /// destination transport address of the given association.
-        /// </summary>
-        /// <param name="associationID">Local handle to the SCTP association.</param>
-        /// <returns>Indicates whether the transmission of the HEARTBEAT
-        /// chunk to the destination address is successful.</returns>
-        public string RequestHeartbeat(string associationID)
-        {
-            return "ok";
-        }
-
-        /// <summary>
-        /// Instructs the local SCTP to report the current Smoothed Round Trip Time (SRTT)
-        /// measurement on the specified destination transport address of the given 
-        /// association.
-        /// </summary>
-        /// <param name="associationID">Local handle to the SCTP association.</param>
-        /// <returns>An integer containing the most recent SRTT in milliseconds.</returns>
-        public int GetSrttReport(string associationID)
-        {
-            return 0;
-        }
-
-        /// <summary>
-        /// This method allows the local SCTP to customise the protocol
-        /// parameters.
-        /// </summary>
-        /// <param name="associationID">Local handle to the SCTP association.</param>
-        /// <param name="protocolParameters">The specific names and values of the
-        /// protocol parameters that the SCTP user wishes to customise.</param>
-        public void SetProtocolParameters(string associationID, object protocolParameters)
-        {
-
-        }
-
-        /// <summary>
-        /// ??
-        /// </summary>
-        /// <param name="dataRetrievalID">The identification passed to the application in the
-        /// failure notification.</param>
-        /// <param name="buffer">The buffer to store the received message.</param>
-        /// <param name="length">The maximum size of the data to receive.</param>
-        /// <param name="streamID">This is a return value that is set to indicate which
-        /// stream the data was sent to.</param>
-        public void ReceiveUnsent(string dataRetrievalID, byte[] buffer, int length, int streamID)
-        {
-
-        }
-
-        /// <summary>
-        /// ??
-        /// </summary>
-        /// <param name="dataRetrievalID">The identification passed to the application in the
-        /// failure notification.</param>
-        /// <param name="buffer">The buffer to store the received message.</param>
-        /// <param name="length">The maximum size of the data to receive.</param>
-        /// <param name="streamID">This is a return value that is set to indicate which
-        /// stream the data was sent to.</param>
-        public void ReceiveUnacknowledged(string dataRetrievalID, byte[] buffer, int length, int streamID)
-        {
-
-        }
-
-        /// <summary>
-        /// Release the resources for the specified SCTP instance.
-        /// </summary>
-        /// <param name="instanceName"></param>
-        public void Destroy(string instanceName)
-        {
-
         }
     }
 }

@@ -44,7 +44,10 @@ namespace demo
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
             var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => {
+                peer.CreatePeerConnection = CreatePeerConnection;
+                peer.WaitForRemoteOffer = true;
+            });
             webSocketServer.Start();
 
             Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
@@ -71,13 +74,13 @@ namespace demo
             var pc = new RTCPeerConnection(config);
 
             var dc = pc.createDataChannel("test", null);
-            dc.onopen += () => logger.LogDebug($"Data channel {dc.label} opened.");
-            dc.onclose += () => logger.LogDebug($"Data channel {dc.label} closed.");
-            dc.onmessage += async (msg) =>
-            {
-                logger.LogInformation($"Data channel message received: {msg}.");
-                await dc.sendasync($"echo: {msg}");
-            };
+            //dc.onopen += () => logger.LogDebug($"Data channel {dc.label} opened.");
+            //dc.onclose += () => logger.LogDebug($"Data channel {dc.label} closed.");
+            //dc.onmessage += async (msg) =>
+            //{
+            //    logger.LogInformation($"Data channel message received: {msg}.");
+            //    await dc.sendasync($"echo: {msg}");
+            //};
 
             pc.onconnectionstatechange += (state) =>
             {
@@ -94,6 +97,24 @@ namespace demo
             pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
             pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+            pc.onsignalingstatechange += () =>
+            {
+               switch(pc.signalingState)
+                {
+                    case RTCSignalingState.have_local_offer:
+                        logger.LogDebug($"Local offer SDP: {pc.localDescription.sdp}");
+                        break;
+                    case RTCSignalingState.have_remote_offer:
+                        logger.LogDebug($"Remote offer SDP: {pc.remoteDescription.sdp}");
+                        break;
+                    case var sigState when sigState == RTCSignalingState.stable && pc.IceRole == IceRolesEnum.passive:
+                        logger.LogDebug($"Remote answer SDP: {pc.remoteDescription.sdp}");
+                        break;
+                    case var sigState when sigState == RTCSignalingState.stable && pc.IceRole == IceRolesEnum.active:
+                        logger.LogDebug($"Local answer SDP: {pc.localDescription.sdp}");
+                        break;
+                }
+            };
 
             return Task.FromResult(pc);
         }
@@ -105,7 +126,7 @@ namespace demo
         {
             var seriLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Verbose)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(seriLogger);

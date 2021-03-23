@@ -101,7 +101,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public List<SctpChunkParameter> OptionalParameters;
+        public List<SctpChunkParameter> VariableParameters = new List<SctpChunkParameter>();
 
         public SctpChunk(SctpChunkType chunkType)
         {
@@ -115,6 +115,17 @@ namespace SIPSorcery.Net
         /// </summary>
         protected SctpChunk()
         { }
+
+        /// <summary>
+        /// Adds a variable parameter to a chunk. Variable parameters are those that do not
+        /// occupy a fixed position in the chunk parameter list. Instead they are appended 
+        /// as "variable length" parameters.
+        /// </summary>
+        /// <param name="chunkParameter">The chunk parameter to add to this chunk.</param>
+        public void AddChunkParamter(SctpChunkParameter chunkParameter)
+        {
+            VariableParameters.Add(chunkParameter);
+        }
 
         /// <summary>
         /// Calculates the length for the chunk. Chunks are required
@@ -203,7 +214,7 @@ namespace SIPSorcery.Net
         /// This method is suitable when:
         ///  - the chunk type is not recognised.
         ///  - the chunk type consists only of the 4 byte header and has 
-        ///    no extra fields or chunk value set.
+        ///    no fixed or variable parameters set.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
@@ -270,11 +281,10 @@ namespace SIPSorcery.Net
                     case SctpChunkType.SACK:
                         return SctpSackChunk.ParseChunk(buffer, posn);
                     case SctpChunkType.COOKIE_ACK:
+                    case SctpChunkType.COOKIE_ECHO:
                     case SctpChunkType.HEARTBEAT:
                     case SctpChunkType.HEARTBEAT_ACK:
                         return ParseSimpleChunk(buffer, posn);
-                    case SctpChunkType.COOKIE_ECHO:
-                        return SctpCookieEchoChunk.ParseChunk(buffer, posn);
                     case SctpChunkType.INIT:
                     case SctpChunkType.INIT_ACK:
                         return SctpInitChunk.ParseChunk(buffer, posn);
