@@ -46,7 +46,7 @@ namespace demo
             var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
             webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => {
                 peer.CreatePeerConnection = CreatePeerConnection;
-                peer.WaitForRemoteOffer = true;
+                peer.WaitForRemoteOffer = false;
             });
             webSocketServer.Start();
 

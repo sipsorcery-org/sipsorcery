@@ -263,7 +263,7 @@ namespace SIPSorcery.Demo
         {
             var seriLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Verbose)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(seriLogger);

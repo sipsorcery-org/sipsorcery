@@ -81,7 +81,10 @@ namespace SIPSorcery.Net
 
         public RTCPeerSctpAssociation RTCSctpAssociation { get; private set; }
 
-        public Action<RTCPeerSctpAssociation> OnAssociated;
+        /// <summary>
+        /// Event for notifications about changes to the SCTP transport state.
+        /// </summary>
+        public event Action<RTCSctpTransportState> OnStateChanged;
 
         private bool _isStarted;
         private bool _isClosed;
@@ -107,27 +110,19 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void SetState(RTCSctpTransportState newState)
-        {
-            state = newState;
-        }
-
         /// <summary>
         /// Attempts to create and initialise a new SCTP association with the remote party. Only one  
         /// end of the SCTP connection needs to initiate the association.
         /// </summary>
         /// <param name="sourcePort">The source port to use for the SCTP association.</param>
         /// <param name="destinationPort">The destination port to use for the SCTP association.</param>
-        public RTCPeerSctpAssociation Associate(ushort sourcePort, ushort destinationPort)
+        public void Associate(ushort sourcePort, ushort destinationPort)
         {
             SetState(RTCSctpTransportState.Connecting);
 
             RTCSctpAssociation = new RTCPeerSctpAssociation(this, sourcePort, destinationPort);
+            RTCSctpAssociation.OnAssociationStateChanged += OnAssociationStateChanged;
             RTCSctpAssociation.Init();
-
-            RTCSctpAssociation.OnAssociated += () => OnAssociated?.Invoke(RTCSctpAssociation);
-
-            return RTCSctpAssociation;
         }
 
         /// <summary>
@@ -135,7 +130,35 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Close()
         {
+            RTCSctpAssociation?.Shutdown();
             _isClosed = true;
+        }
+
+        /// <summary>
+        /// Event handler to coordinate changes to the SCTP association state with the overall
+        /// SCTP transport state.
+        /// </summary>
+        /// <param name="associationState">The state of the SCTP association.</param>
+        private void OnAssociationStateChanged(SctpAssociationState associationState)
+        {
+            if(associationState == SctpAssociationState.Established)
+            {
+                SetState(RTCSctpTransportState.Connected);
+            }
+            else if(associationState == SctpAssociationState.Closed)
+            {
+                SetState(RTCSctpTransportState.Closed);
+            }
+        }
+
+        /// <summary>
+        /// Sets the state for the SCTP transport.
+        /// </summary>
+        /// <param name="newState">The new state to set.</param>
+        private void SetState(RTCSctpTransportState newState)
+        {
+            state = newState;
+            OnStateChanged?.Invoke(state);
         }
 
         /// <summary>
@@ -175,7 +198,7 @@ namespace SIPSorcery.Net
 
                             logger.LogTrace($"SCTP sending INIT ACK chunk {initAckPacket.Header.DestinationPort}->{initAckPacket.Header.SourcePort}.");
 
-                            //Send(null, buffer, 0, buffer.Length);
+                            Send(null, buffer, 0, buffer.Length);
                         }
                         else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                         {
@@ -199,7 +222,6 @@ namespace SIPSorcery.Net
                                 Send(RTCSctpAssociation.ID, cookieAckBuffer, 0, cookieAckBuffer.Length);
 
                                 SetState(RTCSctpTransportState.Connected);
-                                OnAssociated?.Invoke(RTCSctpAssociation);
                             }
                         }
                         else

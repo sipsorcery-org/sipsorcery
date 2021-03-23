@@ -527,8 +527,10 @@ namespace SIPSorcery.Net
                     {
                         logger.LogWarning(excp, $"RTCPeerConnection DTLS handshake failed. {excp.Message}");
 
-                        connectionState = RTCPeerConnectionState.failed;
-                        onconnectionstatechange?.Invoke(connectionState);
+                        //connectionState = RTCPeerConnectionState.failed;
+                        //onconnectionstatechange?.Invoke(connectionState);
+
+                        Close("dtls handshake failed");
                     }
                 }
             }
@@ -786,7 +788,11 @@ namespace SIPSorcery.Net
 
                 _rtpIceChannel?.Close();
                 _dtlsHandle?.Close();
-                _peerSctpAssociation?.Shutdown();
+
+                if (sctp != null && sctp.state == RTCSctpTransportState.Connected)
+                {
+                    sctp?.Close();
+                }
 
                 base.Close(reason);
 
@@ -1225,32 +1231,43 @@ namespace SIPSorcery.Net
         /// </summary>
         private async Task InitialiseSctpTransport()
         {
-            sctp = new RTCSctpTransport(_dtlsHandle.Transport, _dtlsHandle.IsClient);
-            sctp.Start();
-
-            if(DataChannels.Count > 0)
+            try
             {
-                await InitialiseSctpAssociation().ConfigureAwait(false);
-            }
+                sctp = new RTCSctpTransport(_dtlsHandle.Transport, _dtlsHandle.IsClient);
+                sctp.OnStateChanged += OnSctpTransportStateChanged;
+                sctp.Start();
 
-            sctp.OnAssociated += async (assoc) =>
-            {
-                logger.LogDebug("SCTP association successfully initialised.");
-
-                if (_peerSctpAssociation == null)
+                if (DataChannels.Count > 0)
                 {
-                    _peerSctpAssociation = assoc;
-                    //_peerSctpAssociation.OnSCTPStreamOpen += OnSCTPStreamOpen;
-
-                    _peerSctpAssociation.OnData += (buffer) => logger.LogTrace($"SCTP data: {Encoding.UTF8.GetString(buffer)}");
-
-                    // Create new SCTP streams for any outstanding data channel requests.
-                    foreach (var dataChannel in DataChannels)
-                    {
-                        await CreateSctpStreamForDataChannel(dataChannel).ConfigureAwait(false);
-                    }
+                    await InitialiseSctpAssociation().ConfigureAwait(false);
                 }
-            };
+            }
+            catch(Exception excp)
+            {
+                logger.LogError($"SCTP exception establishing association, data channels will not be available. {excp}");
+                sctp?.Close();
+            }
+        }
+
+        /// <summary>
+        /// Event handler for changes to the SCTP transport state.
+        /// </summary>
+        /// <param name="state">The new transport state.</param>
+        private async void OnSctpTransportStateChanged(RTCSctpTransportState state)
+        {
+            if(state == RTCSctpTransportState.Connected)
+            {
+                logger.LogDebug("SCTP transport successfully connected.");
+                sctp.RTCSctpAssociation.OnData += (buffer) => logger.LogTrace($"SCTP data: {Encoding.UTF8.GetString(buffer)}");
+
+                //_peerSctpAssociation.OnSCTPStreamOpen += OnSCTPStreamOpen;
+
+                // Create new SCTP streams for any outstanding data channel requests.
+                foreach (var dataChannel in DataChannels)
+                {
+                    await CreateSctpStreamForDataChannel(dataChannel).ConfigureAwait(false);
+                }
+            }
         }
 
         /// <summary>
@@ -1259,34 +1276,34 @@ namespace SIPSorcery.Net
         /// </summary>
         private async Task InitialiseSctpAssociation()
         {
-            if (_peerSctpAssociation == null)
+            if (sctp.RTCSctpAssociation == null)
             {
                 // If a data channel was requested by the application then create the SCTP association.
                 var sctpAnn = RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
                 ushort destinationPort = sctpAnn?.SctpPort != null ? sctpAnn.SctpPort.Value : SCTP_DEFAULT_PORT;
 
-                _peerSctpAssociation = sctp.Associate(SCTP_DEFAULT_PORT, destinationPort);
+                sctp.Associate(SCTP_DEFAULT_PORT, destinationPort);
             }
 
-            if (!_peerSctpAssociation.IsAssociated)
+            if (sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
             {
-                TaskCompletionSource<bool> onAssociatedCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                _peerSctpAssociation.OnAssociationStateChanged += (assocState) =>
+                TaskCompletionSource<bool> onSctpConnectedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                sctp.OnStateChanged += (state) =>
                 {
-                    logger.LogDebug($"SCTP association for create data channel request changed to state {assocState}.");
+                    logger.LogDebug($"SCTP transport for create data channel request changed to state {state}.");
 
-                    if (assocState == SctpAssociationState.Established)
+                    if (state == RTCSctpTransportState.Connected)
                     {
-                        onAssociatedCompletion.TrySetResult(true);
+                        onSctpConnectedTcs.TrySetResult(true);
                     }
                 };
 
-                var completedTask = await Task.WhenAny(onAssociatedCompletion.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS)).ConfigureAwait(false);
+                var completedTask = await Task.WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000)).ConfigureAwait(false);
             }
 
-            if (_peerSctpAssociation == null || !_peerSctpAssociation.IsAssociated)
+            if (sctp.state != RTCSctpTransportState.Connected)
             {
-                throw new ApplicationException("Could not establish an SCTP association when attempting to create a data channel.");
+                throw new ApplicationException($"SCTP association timed out with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
             }
         }
 
@@ -1323,7 +1340,8 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    if (_peerSctpAssociation == null || !_peerSctpAssociation.IsAssociated)
+                    if (sctp.RTCSctpAssociation == null || 
+                        sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
                     {
                         await InitialiseSctpAssociation().ConfigureAwait(false);
                     }
