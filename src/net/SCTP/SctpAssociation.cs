@@ -63,7 +63,6 @@ namespace SIPSorcery.Net
         private static ILogger logger = LogFactory.CreateLogger<SctpAssociation>();
 
         SctpTransport _sctpTransport;
-        private SctpAssociationState _associationState;
         private ushort _sctpSourcePort;
         private ushort _sctpDestinationPort;
 
@@ -94,6 +93,11 @@ namespace SIPSorcery.Net
         /// the DTSL transport does not).
         /// </summary>
         public IPEndPoint Destination { get; private set; }
+
+        /// <summary>
+        /// Indicates the current connection state of the association.
+        /// </summary>
+        public SctpAssociationState State { get; private set; }
 
         public event Action<SctpAssociationState> OnAssociationStateChanged;
         public event Action<byte[]> OnData;
@@ -156,13 +160,13 @@ namespace SIPSorcery.Net
 
         public void Init()
         {
-            if (_associationState == SctpAssociationState.Closed)
+            if (State == SctpAssociationState.Closed)
             {
                 SendInit();
             }
             else
             {
-                logger.LogWarning($"SCTP Association cannot initialise an association in state {_associationState}.");
+                logger.LogWarning($"SCTP Association cannot initialise an association in state {State}.");
             }
         }
 
@@ -172,7 +176,7 @@ namespace SIPSorcery.Net
         /// <param name="packet">An SCTP packet received from the remote party.</param>
         internal void OnPacketReceived(SctpPacket packet)
         {
-            switch (_associationState)
+            switch (State)
             {
                 case SctpAssociationState.Closed:
                     // Send ABORT.
@@ -282,7 +286,7 @@ namespace SIPSorcery.Net
         private void SetState(SctpAssociationState state)
         {
             logger.LogDebug($"SCTP state for association {ID} changed to {state}.");
-            _associationState = state;
+            State = state;
             OnAssociationStateChanged?.Invoke(state);
         }
 

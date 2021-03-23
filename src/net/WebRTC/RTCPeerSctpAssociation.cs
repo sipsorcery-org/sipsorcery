@@ -33,14 +33,9 @@ namespace SIPSorcery.Net
         private RTCSctpTransport _rtcSctpTransport;
 
         /// <summary>
-        /// Indicates whether the SCTP association is ready for communications.
-        /// </summary>
-        public bool IsAssociated { get; private set; } = false;
-
-        /// <summary>
         /// Event to indicate the SCTP association is ready.
         /// </summary>
-        public Action OnAssociated;
+        //public Action OnAssociated;
 
         /// <summary>
         /// Event to indicate an SCTP stream has been opened. The stream open

@@ -485,14 +485,17 @@ namespace SIPSorcery.Net
 
         public void WriteToRecvStream(byte[] buf)
         {
-            _chunks.Add(buf);
+            if (!_isClosed)
+            {
+                _chunks.Add(buf);
+            }
         }
 
         public int Read(byte[] buffer, int offset, int count, int timeout)
         {
             try
             {
-                if (_chunks.TryTake(out var item, timeout))
+                if (!_isClosed && _chunks.TryTake(out var item, timeout))
                 {
                     Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
                     return item.Length;
@@ -525,7 +528,7 @@ namespace SIPSorcery.Net
                 }
                 else if (!_isClosed)
                 {
-                    waitMillis = (int)Math.Min(waitMillis, millisecondsRemaining);
+                    waitMillis = Math.Min(waitMillis, millisecondsRemaining);
                     var receiveLen = Read(buf, off, len, waitMillis);
 
                     //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)

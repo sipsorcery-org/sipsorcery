@@ -1420,6 +1420,11 @@ namespace SIPSorcery.Net
         /// <param name="remoteEndPoint">The remote end point the STUN packet was received from.</param>
         public async Task ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)
         {
+            if(_closed)
+            {
+                return;
+            }
+
             remoteEndPoint = (!remoteEndPoint.Address.IsIPv4MappedToIPv6) ? remoteEndPoint : new IPEndPoint(remoteEndPoint.Address.MapToIPv4(), remoteEndPoint.Port);
 
             OnStunMessageReceived?.Invoke(stunMessage, remoteEndPoint, wasRelayed);
@@ -1501,6 +1506,11 @@ namespace SIPSorcery.Net
         /// by this ICE channel (i.e. the ICE server that this channel is acting as the client with).</param>
         private void GotStunBindingRequest(STUNMessage bindingRequest, IPEndPoint remoteEndPoint, bool wasRelayed)
         {
+            if (_closed)
+            {
+                return;
+            }
+
             if (_policy == RTCIceTransportPolicy.relay && !wasRelayed)
             {
                 // If the policy is "relay only" then direct binding requests are not accepted.
