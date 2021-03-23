@@ -100,7 +100,7 @@ namespace SIPSorcery.Net
         public SctpAssociationState State { get; private set; }
 
         public event Action<SctpAssociationState> OnAssociationStateChanged;
-        public event Action<byte[]> OnData;
+        public event Action<SctpDataChunk> OnDataChunk;
 
         /// <summary>
         /// Create a new SCTP association instance where the INIT will be generated
@@ -226,10 +226,9 @@ namespace SIPSorcery.Net
                                 var sackChunk = new SctpSackChunk(_remoteTSN, ARwnd);
                                 SendChunk(sackChunk);
 
-                                if (dataChunk.UserData != null)
-                                {
-                                    OnData?.Invoke(dataChunk.UserData);
-                                }
+                                logger.LogTrace($"SCTP DATA chunk PPID {dataChunk.PPID}, stream ID {dataChunk.StreamID}, seq num {dataChunk.StreamSeqNum}.");
+                                    
+                                OnDataChunk?.Invoke(dataChunk);
 
                                 break;
 

@@ -4,7 +4,7 @@
 // Description: Contains an implementation for a WebRTC data channel.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 13 Jul 2020	Aaron Clauson	Created.
@@ -21,6 +21,11 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
+    /// <summary>
+    /// A WebRTC data channel is generic transport service
+    /// that allows peers to exchange generic data in a peer
+    /// to peer manner.
+    /// </summary>
     public class RTCDataChannel : IRTCDataChannel
     {
         private static ILogger logger = Log.Logger;
