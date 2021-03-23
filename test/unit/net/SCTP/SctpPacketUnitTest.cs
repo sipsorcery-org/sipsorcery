@@ -67,7 +67,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(2048, initChunk.NumberInboundStreams);
             Assert.Equal(1826049498U, initChunk.InitialTSN);
 
-            foreach(var chunkParam in initChunk.OptionalParameters)
+            foreach(var chunkParam in initChunk.VariableParameters)
             {
                 logger.LogDebug($"Chunk Parameter {chunkParam.KnownType}.");
                 if(chunkParam.KnownType == SctpChunkParameterType.IPv4Address ||
@@ -179,10 +179,10 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Single(sctpPkt.Chunks);
             Assert.Contains(sctpPkt.Chunks, (chunk) => { return chunk.KnownType == SctpChunkType.COOKIE_ECHO; });
 
-            var cookieEchoChunk = sctpPkt.Chunks.First() as SctpCookieEchoChunk;
+            var cookieEchoChunk = sctpPkt.Chunks.First();
 
             Assert.Equal(0x14, cookieEchoChunk.GetChunkPaddedLength());
-            Assert.Equal(0x10, cookieEchoChunk.Cookie.Length);
+            Assert.Equal(0x10, cookieEchoChunk.ChunkValue.Length);
 
             // Checksum does not match because the original cookie was too long and was truncated for testing purposes.
             // Verify checksum.

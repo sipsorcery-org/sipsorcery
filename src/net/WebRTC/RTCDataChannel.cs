@@ -8,6 +8,7 @@
 //
 // History:
 // 13 Jul 2020	Aaron Clauson	Created.
+// 22 Mar 2021  Aaron Clauson   Refactored for new SCTP implementation.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

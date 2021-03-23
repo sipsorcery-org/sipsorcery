@@ -134,7 +134,6 @@ namespace SIPSorcery.Net
         /// </summary>
         event Action onopen;
 
-
         //event Action onbufferedamountlow;
         event Action<string> onerror;
         //event Action onclosing;
@@ -145,6 +144,7 @@ namespace SIPSorcery.Net
         /// A message was successfully received.
         /// </summary>
         event Action<string> onmessage;
+
         string binaryType { get; set; }
         void send(string data);
         //void send(Blob data);

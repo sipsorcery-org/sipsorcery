@@ -23,8 +23,12 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.Net
 {
     /// <summary>
+    /// This class is used to represent both an INIT and INIT ACK chunk.
+    /// The only structural difference between them is the INIT ACK requires
+    /// the Cookie variable parameter to be set.
     /// The INIT chunk is used to initiate an SCTP association between two
-    /// endpoints.
+    /// endpoints. The INIT ACK chunk is used to respond to an incoming
+    /// INIT chunk from a remote party.
     /// </summary>
     public class SctpInitChunk : SctpChunk
     {
@@ -92,9 +96,9 @@ namespace SIPSorcery.Net
         public override ushort GetChunkLength()
         {
             ushort len = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
-            if (OptionalParameters != null)
+            if (VariableParameters != null)
             {
-                len += (ushort)(OptionalParameters.Sum(x => x.GetParameterPaddedLength()));
+                len += (ushort)(VariableParameters.Sum(x => x.GetParameterPaddedLength()));
             }
             return len;
         }
@@ -120,10 +124,10 @@ namespace SIPSorcery.Net
             NetConvert.ToBuffer(InitialTSN, buffer, startPosn + 12);
 
             // Write optional parameters.
-            if (OptionalParameters?.Count > 0)
+            if (VariableParameters?.Count > 0)
             {
                 int paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-                foreach(var optParam in OptionalParameters)
+                foreach(var optParam in VariableParameters)
                 {
                     paramPosn += optParam.WriteTo(buffer, paramPosn);
                 }
@@ -155,29 +159,10 @@ namespace SIPSorcery.Net
 
             if (paramPosn < paramsBufferLength)
             {
-                initChunk.OptionalParameters = ParseVariableParameters(buffer, paramPosn, paramsBufferLength);
+                initChunk.VariableParameters = ParseVariableParameters(buffer, paramPosn, paramsBufferLength);
             }
 
             return initChunk;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <remarks>
-        /// Supported optional parameters are:
-        /// - IPv4 Address,
-        /// - IPv6 Address,
-        /// - Cookie Preservative,
-        /// - Suggested Cookie Life-Span Increment,
-        /// - Host Name Address,
-        /// - Host Name,
-        /// - Supported Address Types,
-        /// - Address Type.
-        /// </remarks>
-        public void AddChunkParamter()
-        {
-            // TODO.
         }
     }
 }

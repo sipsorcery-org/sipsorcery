@@ -41,6 +41,17 @@ namespace SIPSorcery.Net
         public RTCOfferOptions OfferOptions { get; set; }
 
         /// <summary>
+        /// Optional property to allow the peer connection SDP answer options to be set.
+        /// </summary>
+        public RTCAnswerOptions AnswerOptions { get; set; }
+
+        /// <summary>
+        /// Can be set to true to wait for an SDP offer from the remote peer rather
+        /// then immediately sending the SDP offer.
+        /// </summary>
+        public bool WaitForRemoteOffer { get; set; }
+
+        /// <summary>
         /// Optional filter that can be applied to remote ICE candidates. The filter is 
         /// primarily intended for use in testing. In real application scenarios it's 
         /// normally desirable to accept all remote ICE candidates.
@@ -52,9 +63,9 @@ namespace SIPSorcery.Net
         public WebRTCWebSocketPeer()
         { }
 
-        protected override void OnMessage(MessageEventArgs e)
+        protected override async void OnMessage(MessageEventArgs e)
         {
-            logger.LogDebug($"OnMessage: {e.Data}");
+            //logger.LogDebug($"OnMessage: {e.Data}");
 
             if (RTCIceCandidateInit.TryParse(e.Data, out var iceCandidateInit))
             {
@@ -86,6 +97,19 @@ namespace SIPSorcery.Net
                     _pc.Close("failed to set remote description");
                     this.Close();
                 }
+                else
+                {
+                    if(_pc.signalingState == RTCSignalingState.have_remote_offer)
+                    {
+                        var answerSdp = _pc.createAnswer(AnswerOptions);
+                        await _pc.setLocalDescription(answerSdp).ConfigureAwait(false);
+
+                        logger.LogDebug($"Sending SDP answer to client {Context.UserEndPoint}.");
+                        //logger.LogDebug(answerSdp.sdp);
+
+                        Context.WebSocket.Send(answerSdp.toJSON());
+                    }
+                }
             }
             else
             {
@@ -101,8 +125,6 @@ namespace SIPSorcery.Net
 
             _pc = await CreatePeerConnection().ConfigureAwait(false);
 
-            var offerSdp = _pc.createOffer(OfferOptions);
-            await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
             _pc.onicecandidate += (iceCandidate) =>
             {
                 if (_pc.signalingState == RTCSignalingState.have_remote_offer)
@@ -111,10 +133,16 @@ namespace SIPSorcery.Net
                 }
             };
 
-            logger.LogDebug($"Sending SDP offer to client {Context.UserEndPoint}.");
-            logger.LogDebug(offerSdp.sdp);
+            if (!WaitForRemoteOffer)
+            {
+                var offerSdp = _pc.createOffer(OfferOptions);
+                await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
 
-            Context.WebSocket.Send(offerSdp.toJSON());
+                logger.LogDebug($"Sending SDP offer to client {Context.UserEndPoint}.");
+                logger.LogDebug(offerSdp.sdp);
+
+                Context.WebSocket.Send(offerSdp.toJSON());
+            }
         }
     }
 }

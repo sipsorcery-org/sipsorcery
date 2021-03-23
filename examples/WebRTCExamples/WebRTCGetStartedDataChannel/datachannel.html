@@ -4,9 +4,16 @@
 
     <script type="text/javascript">
 
+        /* Description: 
+         * A minimal WebRTC peer that tests data channel connectivity.
+         * The peer is acting in the SDP "receiver" role which means it accepts
+         * an SDP offer from the remote party and sends an SDP answer in return.
+         * These roles are relevant as they dictate the DTLS and SCTP roles/
+         */
+
         const STUN_URL = "stun:stun.sipsorcery.com";
         const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
-        //const DATA_CHANNEL_LABEL = "dc1"
+        const DATA_CHANNEL_LABEL = "dc1"
 
         var dc, pc, ws;
         var isClosed = true;
@@ -21,13 +28,20 @@
 
             pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
 
-            pc.ondatachannel = (evt) => {
-                console.log(`ondatachannel event: ${evt}`);
-                dc = evt.channel;
-                dc.onopen = (event) => console.log(`data channel onopen: ${event}.`);
-                dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
-                dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
+            pc.onconnectionstatechange = () => {
+                console.log("onconnectionstatechange: " + pc.connectionState);
+                if (pc.connectionState == "connected") {
+                    dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
+                }
             }
+
+            //pc.ondatachannel = (evt) => {
+            //    console.log(`ondatachannel event: ${evt}`);
+            //    dc = evt.channel;
+            //    dc.onopen = (event) => console.log(`data channel onopen: ${event}.`);
+            //    dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+            //    dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
+            //}
 
             //dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
             //dc.onopen = (obj, event) => console.log(`data channel onopen: ${event}.`);
@@ -36,11 +50,12 @@
 
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
             ws.onmessage = async function (evt) {
-                if (/^[\{"'\s]*candidate/.test(evt.data)) {
-                    pc.addIceCandidate(JSON.parse(evt.data));
+                var obj = JSON.parse(evt.data);
+                if (obj?.candidate) {
+                    pc.addIceCandidate(obj);
                 }
-                else {
-                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+                else if (obj?.sdp) {
+                    await pc.setRemoteDescription(new RTCSessionDescription(obj));
                     pc.createAnswer()
                         .then((answer) => pc.setLocalDescription(answer))
                         .then(() => ws.send(JSON.stringify(pc.localDescription)));

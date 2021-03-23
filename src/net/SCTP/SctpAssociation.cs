@@ -52,21 +52,31 @@ namespace SIPSorcery.Net
         public int PendingReceiptChunksCount;
     }
 
+    /// <summary>
+    /// An SCTP association represents an established connection between two SCTP endpoints.
+    /// This class also represents the Transmission Control Block (TCB) referred to in RFC4960.
+    /// </summary>
     public class SctpAssociation
     {
         public const uint DEFAULT_ADVERTISED_RECEIVE_WINDOW = 131072U;
 
         private static ILogger logger = LogFactory.CreateLogger<SctpAssociation>();
 
-        ISctpTransport _sctpTransport;
-        private string _id;
+        SctpTransport _sctpTransport;
         private SctpAssociationState _associationState;
         private ushort _sctpSourcePort;
         private ushort _sctpDestinationPort;
 
         private uint _verificationTag;
         private uint _tsn;
-        
+
+        /// <summary>
+        /// A unique ID for this association. The ID is not part of the SCTP protocol. It
+        /// is provided as a convenience measure in case a transport of application needs
+        /// to keep track of multiple associations.
+        /// </summary>
+        public readonly string ID;
+
         /// <summary>
         /// Advertised Receiver Window Credit. This value represents the dedicated 
         /// buffer space, in number of bytes, that will be used for the receive buffer 
@@ -76,6 +86,7 @@ namespace SIPSorcery.Net
 
         private uint _remoteVerificationTag;
         private uint _remoteTSN;
+        private uint _remoteARwnd;
 
         /// <summary>
         /// The remote destination end point for this association. The underlying transport
@@ -87,21 +98,60 @@ namespace SIPSorcery.Net
         public event Action<SctpAssociationState> OnAssociationStateChanged;
         public event Action<byte[]> OnData;
 
+        /// <summary>
+        /// Create a new SCTP association instance where the INIT will be generated
+        /// from this end of the connection.
+        /// </summary>
+        /// <param name="sctpTransport"></param>
+        /// <param name="destination"></param>
+        /// <param name="sctpSourcePort"></param>
+        /// <param name="sctpDestinationPort"></param>
         public SctpAssociation(
-            ISctpTransport sctpTransport,
-            string id,
+            SctpTransport sctpTransport,
             IPEndPoint destination,
             ushort sctpSourcePort,
             ushort sctpDestinationPort)
         {
             _sctpTransport = sctpTransport;
-            _id = id;
             Destination = destination;
             _sctpSourcePort = sctpSourcePort;
             _sctpDestinationPort = sctpDestinationPort;
             _verificationTag = Crypto.GetRandomUInt();
             _tsn = Crypto.GetRandomUInt();
+
+            ID = Guid.NewGuid().ToString();
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
+
+            SetState(SctpAssociationState.Closed);
+        }
+
+        /// <summary>
+        /// Create a new SCTP association instance where the INIT will be generated
+        /// from this end of the connection.
+        /// </summary>
+        /// <param name="sctpTransport"></param>
+        /// <param name="destination"></param>
+        /// <param name="cookie"></param>
+        public SctpAssociation(
+            SctpTransport sctpTransport,
+            SctpTransportCookie cookie)
+        {
+            _sctpTransport = sctpTransport;
+
+            _sctpSourcePort = cookie.SourcePort;
+            _sctpDestinationPort = cookie.DestinationPort;
+            _verificationTag = cookie.Tag;
+            _tsn = cookie.TSN;
+            ARwnd = cookie.ARwnd;
+            Destination = !string.IsNullOrEmpty(cookie.RemoteEndPoint) ?
+                IPSocket.Parse(cookie.RemoteEndPoint) : null;
+            _remoteVerificationTag = cookie.RemoteTag;
+            _remoteTSN = cookie.RemoteTSN;
+            _remoteARwnd = cookie.RemoteARwnd;
+
+            ID = Guid.NewGuid().ToString();
+
+            SetState(SctpAssociationState.Established);
         }
 
         public void Init()
@@ -125,7 +175,7 @@ namespace SIPSorcery.Net
             switch (_associationState)
             {
                 case SctpAssociationState.Closed:
-                    // TODO.
+                    // Send ABORT.
                     break;
 
                 case SctpAssociationState.CookieWait:
@@ -135,10 +185,16 @@ namespace SIPSorcery.Net
 
                         _remoteVerificationTag = initAckChunk.InitiateTag;
                         _remoteTSN = initAckChunk.InitialTSN;
+                        _remoteARwnd = initAckChunk.ARwnd;
 
-                        var cookie = initAckChunk.OptionalParameters.Where(x => x.KnownType == SctpChunkParameterType.StateCookie)
-                            .Single().ParameterValue;
-                        SendCoookieEcho(cookie);
+                        var cookie = initAckChunk.VariableParameters.Where(x => x.KnownType == SctpChunkParameterType.StateCookie)
+                          .Single().ParameterValue;
+
+                        // The cookie chunk parameter can be changed to a COOKE ECHO CHUNK by changing the first two bytes.
+                        // But it's more convenient to create a new chunk.
+                        var cookieEchoChunk = new SctpChunk(SctpChunkType.COOKIE_ECHO) { ChunkValue = cookie };
+                        SendChunk(cookieEchoChunk);
+                        SetState(SctpAssociationState.CookieEchoed);
                     }
                     else
                     {
@@ -149,6 +205,7 @@ namespace SIPSorcery.Net
                 case SctpAssociationState.CookieEchoed:
                     if (packet.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ACK))
                     {
+                        // Got the ACK for the COOKIE ECHO chunk we sent.
                         SetState(SctpAssociationState.Established);
                     }
 
@@ -202,6 +259,18 @@ namespace SIPSorcery.Net
             _tsn = (_tsn == UInt32.MaxValue) ? 0 : _tsn++;
         }
 
+        public SctpPacket GetPacket(SctpChunk chunk)
+        {
+            SctpPacket pkt = new SctpPacket(
+           _sctpSourcePort,
+           _sctpDestinationPort,
+           _remoteVerificationTag);
+
+            pkt.Chunks.Add(chunk);
+
+            return pkt;
+        }
+
         public void Shutdown()
         {
             SetState(SctpAssociationState.ShutdownSent);
@@ -212,7 +281,7 @@ namespace SIPSorcery.Net
 
         private void SetState(SctpAssociationState state)
         {
-            logger.LogDebug($"SCTP state for association {_id} changed to {state}.");
+            logger.LogDebug($"SCTP state for association {ID} changed to {state}.");
             _associationState = state;
             OnAssociationStateChanged?.Invoke(state);
         }
@@ -227,22 +296,10 @@ namespace SIPSorcery.Net
 
             SetState(SctpAssociationState.CookieWait);
 
+            logger.LogTrace($"SCTP sending INIT chunk {_sctpSourcePort}->{_sctpDestinationPort}.");
+
             byte[] buffer = init.GetBytes();
-            _sctpTransport.Send(_id, buffer, 0, buffer.Length);
-        }
-
-        /// <summary>
-        /// Sends the COOKIE ECHO packet after the INIT ACK has been received.
-        /// </summary>
-        /// <param name="initChunk">The INIT chunk from the INIT ACK packet.</param>
-        private void SendCoookieEcho(byte[] cookie)
-        {
-            SctpCookieEchoChunk cookieEchoChunk = new SctpCookieEchoChunk();
-            cookieEchoChunk.Cookie = cookie;
-
-            SendChunk(cookieEchoChunk);
-
-            SetState(SctpAssociationState.CookieEchoed);
+            _sctpTransport.Send(ID, buffer, 0, buffer.Length);
         }
 
         /// <summary>
@@ -259,7 +316,10 @@ namespace SIPSorcery.Net
             pkt.Chunks.Add(chunk);
 
             byte[] buffer = pkt.GetBytes();
-            _sctpTransport.Send(_id, buffer, 0, buffer.Length);
+
+            logger.LogTrace($"SCTP sending {chunk.KnownType} chunk {_sctpSourcePort}->{_sctpDestinationPort}.");
+
+            _sctpTransport.Send(ID, buffer, 0, buffer.Length);
         }
     }
 }
