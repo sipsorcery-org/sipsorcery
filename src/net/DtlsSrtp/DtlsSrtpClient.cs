@@ -77,7 +77,7 @@ namespace SIPSorcery.Net
 
         protected internal TlsSession mSession;
 
-        public bool ForceUseExtendedMasterSecret { get; set; }
+        public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
         //Received from server
         public Certificate ServerCertificate { get; internal set; }

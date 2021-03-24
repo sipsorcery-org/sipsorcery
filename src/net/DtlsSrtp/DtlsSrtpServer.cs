@@ -95,7 +95,7 @@ namespace SIPSorcery.Net
 
         //private AlgorithmCertificate algorithmCertificate;
 
-        public bool ForceUseExtendedMasterSecret { get; set; }
+        public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
         public Certificate ClientCertificate { get; private set; }
 

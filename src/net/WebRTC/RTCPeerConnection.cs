@@ -477,10 +477,12 @@ namespace SIPSorcery.Net
 
                     logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
 
-                    _dtlsHandle = new DtlsSrtpTransport(
-                                IceRole == IceRolesEnum.active ?
+                    IDtlsSrtpPeer dtlsSrtpPeer = IceRole == IceRolesEnum.active ?
                                 (IDtlsSrtpPeer)new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) :
-                                (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey));
+                                (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey);
+                    dtlsSrtpPeer.ForceUseExtendedMasterSecret = _configuration == null || _configuration.forceUseExtendedMasterSecret;
+
+                    _dtlsHandle = new DtlsSrtpTransport(dtlsSrtpPeer);
 
                     _dtlsHandle.OnAlert += OnDtlsAlert;
 
