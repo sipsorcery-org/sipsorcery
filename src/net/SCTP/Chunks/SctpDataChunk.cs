@@ -33,7 +33,7 @@ namespace SIPSorcery.Net
         /// The (U)nordered bit, if set to true, indicates that this is an
         /// unordered DATA chunk.
         /// </summary>
-        public bool Unordered { get; set; } = true;
+        public bool Unordered { get; set; } = false;
 
         /// <summary>
         /// The (B)eginning fragment bit, if set, indicates the first fragment
@@ -62,7 +62,7 @@ namespace SIPSorcery.Net
         /// This value represents the Stream Sequence Number of the following
         /// user data within the stream using the <seealso cref="StreamID"/>.
         /// </summary>
-        public uint StreamSeqNum;
+        public ushort StreamSeqNum;
 
         /// <summary>
         /// Payload Protocol Identifier (PPID). This value represents an application 
@@ -84,8 +84,11 @@ namespace SIPSorcery.Net
         /// Creates a new DATA chunk.
         /// </summary>
         /// <param name="tsn">The Transmission Sequence Number for this chunk.</param>
+        /// <param name="streamID">The stream ID for this data chunk.</param>
+        /// <param name="seqnum">The stream sequence number for this send. Set to 0 for unordered streams.</param>
+        /// <param name="ppid">The payload protocol ID for this data chunk.</param>
         /// <param name="data">The data to send.</param>
-        public SctpDataChunk(uint tsn, byte[] data) : base(SctpChunkType.DATA)
+        public SctpDataChunk(uint tsn, ushort streamID, ushort seqnum, uint ppid, byte[] data) : base(SctpChunkType.DATA)
         {
             ChunkFlags = (byte)(
                 (Unordered ? 0x04 : 0x0) +
@@ -93,6 +96,9 @@ namespace SIPSorcery.Net
                 (Ending ? 0x01 : 0x0));
 
             TSN = tsn;
+            StreamID = streamID;
+            StreamSeqNum = seqnum; 
+            PPID = ppid;
             UserData = data;
         }
 
@@ -108,7 +114,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Serialises an INIT or INIT ACK chunk to a pre-allocated buffer.
+        /// Serialises a DATA chunk to a pre-allocated buffer.
         /// </summary>
         /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
         /// must have the required space already allocated.</param>

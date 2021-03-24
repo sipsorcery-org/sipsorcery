@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -299,6 +300,7 @@ namespace SIPSorcery.Net
             // Didn't recognised the buffer as a well known chunk.
             // Return a simple chunk and leave it up to the application.
             logger.LogWarning($"SCTP chunk type of {chunkType} was not recognised.");
+            logger.LogTrace(buffer.Skip(SctpHeader.SCTP_HEADER_LENGTH).ToArray().HexStr(SCTP_CHUNK_HEADER_LENGTH));
 
             return ParseSimpleChunk(buffer, posn);
         }

@@ -55,13 +55,13 @@ namespace SIPSorcery.Net
         /// The transport over which all SCTP packets for data channels 
         /// will be sent and received.
         /// </summary>
-        public readonly DatagramTransport transport;
+        public DatagramTransport transport { get; private set; }
 
         /// <summary>
         /// Indicates the role of this peer in the DTLS connection. This influences
         /// the selection of stream ID's for SCTP messages.
         /// </summary>
-        public readonly bool IsDtlsClient;
+        public bool IsDtlsClient { get; private set; }
 
         /// <summary>
         /// The current state of the SCTP transport.
@@ -88,23 +88,25 @@ namespace SIPSorcery.Net
 
         private bool _isStarted;
         private bool _isClosed;
+        private ushort _lastStreamID;
 
-        public RTCSctpTransport(DatagramTransport dtlsTransport, bool isDtlsClient)
+        public RTCSctpTransport()
         {
-            transport = dtlsTransport;
-            IsDtlsClient = isDtlsClient;
-
             SetState(RTCSctpTransportState.Closed);
         }
 
         /// <summary>
         /// Starts the SCTP transport receive thread.
         /// </summary>
-        public void Start()
+        public void Start(DatagramTransport dtlsTransport, bool isDtlsClient)
         {
             if (!_isStarted)
             {
                 _isStarted = true;
+
+                transport = dtlsTransport;
+                IsDtlsClient = isDtlsClient;
+
                 var receiveThread = new Thread(DoReceive);
                 receiveThread.Start();
             }
@@ -130,7 +132,10 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Close()
         {
-            RTCSctpAssociation?.Shutdown();
+            if (state == RTCSctpTransportState.Connected)
+            {
+                RTCSctpAssociation?.Shutdown();
+            }
             _isClosed = true;
         }
 
@@ -183,7 +188,10 @@ namespace SIPSorcery.Net
                     else if (bytesRead > 0)
                     {
                         var pkt = SctpPacket.Parse(recvBuffer, 0, bytesRead);
-                        logger.LogDebug($"SCTP Packet received {pkt.Header.DestinationPort}<-{pkt.Header.SourcePort}.");
+                        
+                        logger.LogTrace($"SCTP Packet received {pkt.Header.DestinationPort}<-{pkt.Header.SourcePort}.");
+                        logger.LogTrace(recvBuffer.HexStr(bytesRead));
+
                         foreach (var chunk in pkt.Chunks)
                         {
                             logger.LogDebug($" chunk {chunk.KnownType}.");
@@ -222,6 +230,12 @@ namespace SIPSorcery.Net
                                 Send(RTCSctpAssociation.ID, cookieAckBuffer, 0, cookieAckBuffer.Length);
 
                                 SetState(RTCSctpTransportState.Connected);
+
+                                if(pkt.Chunks.Count > 1)
+                                {
+                                    // There could be DATA chunks after the COOKIE ECHO chunk.
+                                    RTCSctpAssociation.OnPacketReceived(pkt);
+                                }
                             }
                         }
                         else
@@ -252,7 +266,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            logger.LogInformation("SCTP association receive loop stopped.");
+            logger.LogInformation("SCTP association receive thread stopped.");
 
             SetState(RTCSctpTransportState.Closed);
         }

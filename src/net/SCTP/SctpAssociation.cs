@@ -125,8 +125,7 @@ namespace SIPSorcery.Net
 
             ID = Guid.NewGuid().ToString();
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
-
-            SetState(SctpAssociationState.Closed);
+            State = SctpAssociationState.Closed;
         }
 
         /// <summary>
@@ -237,6 +236,16 @@ namespace SIPSorcery.Net
                                 chunk.ChunkType = (byte)SctpChunkType.HEARTBEAT_ACK;
                                 SendChunk(chunk);
                                 break;
+
+                            case SctpChunkType.SACK:
+                                var sackRecvChunk = chunk as SctpSackChunk;
+                                logger.LogDebug($"SCTP SACK TSN ACK={sackRecvChunk.CumulativeTsnAck}, # gap ack blocks {sackRecvChunk.NumberGapAckBlocks}" +
+                                    $", # duplicate tsn {sackRecvChunk.NumberDuplicateTSNs}.");
+                                break;
+
+                            default:
+                                logger.LogWarning($"TODO: Add processing to SctpAssociation for chunk type {chunk.KnownType}.");
+                                break;
                         }
                     }
                     break;
@@ -252,14 +261,27 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void Send(string message)
+        public void SendData(ushort streamID, ushort seqnum, uint ppid, string message)
         {
+            if(string.IsNullOrEmpty(message))
+            {
+                throw new ArgumentNullException("The message cannot be empty when sending a data chunk on an SCTP association.");
+            }
+
+            SendData(streamID, seqnum, ppid, Encoding.UTF8.GetBytes(message));
+        }
+
+        public void SendData(ushort streamID, ushort seqnum, uint ppid, byte[] data)
+        {
+            _tsn = (_tsn == UInt32.MaxValue) ? 0 : _tsn + 1;
+
             SctpDataChunk dataChunk = new SctpDataChunk(
                 _tsn,
-                Encoding.UTF8.GetBytes(message));
+                streamID,
+                seqnum,
+                ppid,
+                data);
             SendChunk(dataChunk);
-
-            _tsn = (_tsn == UInt32.MaxValue) ? 0 : _tsn++;
         }
 
         public SctpPacket GetPacket(SctpChunk chunk)
@@ -321,6 +343,12 @@ namespace SIPSorcery.Net
             byte[] buffer = pkt.GetBytes();
 
             logger.LogTrace($"SCTP sending {chunk.KnownType} chunk {_sctpSourcePort}->{_sctpDestinationPort}.");
+            if (chunk is SctpDataChunk)
+            {
+                logger.LogDebug($"SCTP send chunk TSN {(chunk as SctpDataChunk).TSN}.");
+            }
+
+            logger.LogTrace(buffer.HexStr());
 
             _sctpTransport.Send(ID, buffer, 0, buffer.Length);
         }

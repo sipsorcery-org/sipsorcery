@@ -44,9 +44,9 @@
             //}
 
             dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
-            //dc.onopen = (obj, event) => console.log(`data channel onopen: ${event}.`);
-            //dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
-            //dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
+            dc.onopen = (obj, event) => console.log(`data channel onopen: ${event}.`);
+            dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+            dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
 
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
             ws.onopen = async function (evt) {
