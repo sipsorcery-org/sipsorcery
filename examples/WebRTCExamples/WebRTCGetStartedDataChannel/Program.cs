@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -65,22 +66,26 @@ namespace demo
             exitMre.WaitOne();
         }
 
-        private static Task<RTCPeerConnection> CreatePeerConnection()
+        private async static Task<RTCPeerConnection> CreatePeerConnection()
         {
             RTCConfiguration config = new RTCConfiguration
             {
                 iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
             };
             var pc = new RTCPeerConnection(config);
+            pc.ondatachannel += (rdc) =>
+            {
+                rdc.onopen += () => logger.LogDebug($"Data channel {rdc.label} opened.");
+                rdc.onclose += () => logger.LogDebug($"Data channel {rdc.label} closed.");
+                rdc.onmessage += (type, data) =>
+                {
+                    var msg = Encoding.UTF8.GetString(data);
+                    logger.LogInformation($"Data channel message {type} received: {msg}.");
+                    rdc.send($"echo: {msg}");
+                };
+            };
 
-            var dc = pc.createDataChannel("test", null);
-            //dc.onopen += () => logger.LogDebug($"Data channel {dc.label} opened.");
-            //dc.onclose += () => logger.LogDebug($"Data channel {dc.label} closed.");
-            //dc.onmessage += async (msg) =>
-            //{
-            //    logger.LogInformation($"Data channel message received: {msg}.");
-            //    await dc.sendasync($"echo: {msg}");
-            //};
+            var dc = await pc.createDataChannel("test", null);
 
             pc.onconnectionstatechange += (state) =>
             {
@@ -116,7 +121,7 @@ namespace demo
                 }
             };
 
-            return Task.FromResult(pc);
+            return pc;
         }
 
         /// <summary>

@@ -55,6 +55,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public ushort NumberDuplicateTSNs;
 
+        public ushort ReportsLength;
+
         private SctpSackChunk() : base(SctpChunkType.SACK)
         { }
 
@@ -75,7 +77,7 @@ namespace SIPSorcery.Net
         /// <returns>The padded length of the chunk.</returns>
         public override ushort GetChunkLength()
         {
-            return SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
+            return (ushort)(SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH + ReportsLength);
         }
 
         /// <summary>
@@ -107,6 +109,7 @@ namespace SIPSorcery.Net
         public static SctpSackChunk ParseChunk(byte[] buffer, int posn)
         {
             var sackChunk = new SctpSackChunk();
+            ushort chunkLen = sackChunk.ParseFirstWord(buffer, posn);
 
             ushort startPosn = (ushort)(posn + SCTP_CHUNK_HEADER_LENGTH);
 
@@ -114,6 +117,10 @@ namespace SIPSorcery.Net
             sackChunk.ARwnd = NetConvert.ParseUInt32(buffer, startPosn + 4);
             sackChunk.NumberGapAckBlocks = NetConvert.ParseUInt16(buffer, startPosn + 8);
             sackChunk.NumberDuplicateTSNs = NetConvert.ParseUInt16(buffer, startPosn + 10);
+
+            sackChunk.ReportsLength = (ushort)(chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH);
+
+            // TODO: Parse reports.
 
             return sackChunk;
         }

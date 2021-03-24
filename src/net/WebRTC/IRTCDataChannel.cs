@@ -152,13 +152,11 @@ namespace SIPSorcery.Net
         /// <summary>
         /// A message was successfully received.
         /// </summary>
-        event Action<string> onmessage;
+        event Action<DataChannelPayloadProtocols, byte[]> onmessage;
 
         string binaryType { get; set; }
         void send(string data);
-        //void send(Blob data);
         void send(byte[] data);
-        //void send(ArrayBufferView data);
     };
 
     public class RTCDataChannelInit

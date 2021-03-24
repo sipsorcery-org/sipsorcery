@@ -54,9 +54,16 @@ namespace SctpClientTestConsole
                 }
             };
 
-            association.OnData += (data) =>
+            association.OnDataChunk += (chunk) =>
             {
-                Console.WriteLine($"Data received: {Encoding.UTF8.GetString(data)}");
+                if (chunk.UserData?.Length > 0)
+                {
+                    Console.WriteLine($"Data received: {Encoding.UTF8.GetString(chunk.UserData)}");
+                }
+                else
+                {
+                    Console.WriteLine($"Data chunk received with no data.");
+                }
             };
 
             Console.WriteLine("press any key to exit...");

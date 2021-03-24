@@ -15,12 +15,31 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
+    /// <summary>
+    /// The assignments for SCTP payload protocol IDs used with
+    /// WebRTC data channels.
+    /// </summary>
+    /// <remarks>
+    /// See https://tools.ietf.org/html/rfc8831#section-8
+    /// </remarks>
+    public enum DataChannelPayloadProtocols : uint
+    {
+        WebRTC_DCEP = 50,           // Data Channel Establishment Protocol (DCEP).
+        WebRTC_String = 51,
+        WebRTC_Binary_Partial = 52, // Deprecated.
+        WebRTC_Binary = 53,
+        WebRTC_String_Partial = 54, // Deprecated.
+        WebRTC_String_Empty = 56,
+        WebRTC_Binary_Empty = 57
+    }
+
     /// <summary>
     /// A WebRTC data channel is generic transport service
     /// that allows peers to exchange generic data in a peer
@@ -53,32 +72,37 @@ namespace SIPSorcery.Net
 
         //public long MaxMessageSize { get; set; }
 
-        //private SCTPStream _sctpStream;
-
         public string Error { get; private set; }
 
         public bool IsOpened { get; private set; } = false;
+
+        private RTCSctpTransport _transport;
+        
+        /// <summary>
+        /// For ordered data channel streams this is the sequence number that
+        /// will be set on the SCTP DATA chunk.
+        /// The DCEP ACK uses the 0 sequence number.
+        /// </summary>
+        private ushort _seqnum = 1;
 
         public event Action onopen;
         //public event Action onbufferedamountlow;
         public event Action<string> onerror;
         //public event Action onclosing;
         public event Action onclose;
-        public event Action<string> onmessage;
-        public event Action<byte[]> onDatamessage;
+        public event Action<DataChannelPayloadProtocols, byte[]> onmessage;
 
-        //internal void SetStream(SCTPStream s)
-        //{
-        //    _sctpStream = s;
-        //    s.setSCTPStreamListener(this);
-        //    s.OnOpen = OnStreamOpened;
-        //}
+        public RTCDataChannel(RTCSctpTransport transport, RTCDataChannelInit init = null)
+        {
+            _transport = transport;
 
-        internal void OnStreamOpened()
+            // TODO: Apply init settings.
+        }
+
+        internal void GotAck()
         {
             logger.LogDebug($"Data channel for label {label} now open.");
             IsOpened = true;
-            //id = (ushort)_sctpStream.getNum();
             readyState = RTCDataChannelState.open;
             onopen?.Invoke();
         }
@@ -100,55 +124,57 @@ namespace SIPSorcery.Net
             readyState = RTCDataChannelState.closed;
         }
 
-        public void send(string data)
+        public void send(string message)
         {
-            if (!IsOpened)
+            if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning("An attempt was made to send on a closed data channel.");
+                logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
             }
             else
             {
-                //_sctpStream.send(data);
+                if (string.IsNullOrEmpty(message))
+                {
+                    _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                        _seqnum,
+                        (uint)DataChannelPayloadProtocols.WebRTC_String_Empty, 
+                        new byte[] { 0x00 });
+                }
+                else
+                {
+                    _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                        _seqnum,
+                        (uint)DataChannelPayloadProtocols.WebRTC_String,
+                        Encoding.UTF8.GetBytes(message));
+                }
+
+                _seqnum = (ushort)((_seqnum == UInt16.MaxValue) ? 0 : _seqnum + 1);
             }
         }
 
         public void send(byte[] data)
         {
-            if (!IsOpened)
+            if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning("An attempt was made to send on a closed data channel.");
+                logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
             }
             else
             {
-                //_sctpStream.send(data);
-            }
-        }
+                if (data?.Length == 0)
+                {
+                    _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                        _seqnum,
+                        (uint)DataChannelPayloadProtocols.WebRTC_Binary_Empty, 
+                        new byte[] { 0x00 });
+                }
+                else
+                {
+                    _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                        _seqnum,
+                        (uint)DataChannelPayloadProtocols.WebRTC_Binary,
+                       data);
+                }
 
-        public Task sendasync(string data)
-        {
-            if (!IsOpened)
-            {
-                logger.LogWarning("An attempt was made to send on a closed data channel.");
-                return Task.CompletedTask;
-            }
-            else
-            {
-                //return _sctpStream.sendasync(data);
-                return Task.CompletedTask;
-            }
-        }
-
-        public Task sendasync(byte[] data)
-        {
-            if (!IsOpened)
-            {
-                logger.LogWarning("An attempt was made to send on a closed data channel.");
-                return Task.CompletedTask;
-            }
-            else
-            {
-                //return _sctpStream.sendasync(data);
-                return Task.CompletedTask;
+                _seqnum = (ushort)((_seqnum == UInt16.MaxValue) ? 0 : _seqnum + 1);
             }
         }
 
@@ -159,16 +185,19 @@ namespace SIPSorcery.Net
             onclose?.Invoke();
         }
 
-        public void onDataMessage(uint streamID, byte[] data)
+        internal void GotData(ushort streamID, ushort streamSeqNum, uint ppID, byte[] data)
         {
-            //logger.LogDebug($"Data channel received message (label={s.getLabel()}, streamID={s.getNum()}): {message}.");
-            onDatamessage?.Invoke(data);
-        }
+            logger.LogTrace($"WebRTC data channel GotData stream ID {streamID}, stream seqnum {streamSeqNum}, ppid {ppID}, label {label}.");
 
-        public void onMessage(uint streamID, string message)
-        {
-            //logger.LogDebug($"Data channel received message (label={s.getLabel()}, streamID={s.getNum()}): {message}.");
-            onmessage?.Invoke(message);
+            if(Enum.IsDefined(typeof(DataChannelPayloadProtocols), ppID))
+            {
+                onmessage?.Invoke((DataChannelPayloadProtocols)ppID, data);
+            }
+            else
+            {
+                // Payload ID not recognised. Pass to application as raw data.
+                onmessage?.Invoke(DataChannelPayloadProtocols.WebRTC_Binary, data);
+            }
         }
     }
 }

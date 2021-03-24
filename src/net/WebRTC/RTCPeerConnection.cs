@@ -438,6 +438,8 @@ namespace SIPSorcery.Net
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
 
+            sctp = new RTCSctpTransport();
+
             // Request the underlying RTP session to create a single RTP channel that will
             // be used to multiplex all required media streams.
             addSingleTrack();
@@ -1233,16 +1235,15 @@ namespace SIPSorcery.Net
         {
             try
             {
-                sctp = new RTCSctpTransport(_dtlsHandle.Transport, _dtlsHandle.IsClient);
                 sctp.OnStateChanged += OnSctpTransportStateChanged;
-                sctp.Start();
+                sctp.Start(_dtlsHandle.Transport, _dtlsHandle.IsClient);
 
                 if (DataChannels.Count > 0)
                 {
-                    await InitialiseSctpAssociation().ConfigureAwait(false);
+                    //await InitialiseSctpAssociation().ConfigureAwait(false);
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogError($"SCTP exception establishing association, data channels will not be available. {excp}");
                 sctp?.Close();
@@ -1255,19 +1256,83 @@ namespace SIPSorcery.Net
         /// <param name="state">The new transport state.</param>
         private async void OnSctpTransportStateChanged(RTCSctpTransportState state)
         {
-            if(state == RTCSctpTransportState.Connected)
+            if (state == RTCSctpTransportState.Connected)
             {
                 logger.LogDebug("SCTP transport successfully connected.");
-                sctp.RTCSctpAssociation.OnData += (streamID, ppid, buffer) => 
-                    logger.LogTrace($"SCTP stream ID {streamID}, ppid {ppid}, data: {Encoding.UTF8.GetString(buffer)}");
 
-                //_peerSctpAssociation.OnSCTPStreamOpen += OnSCTPStreamOpen;
+                sctp.RTCSctpAssociation.OnDataChannelData += OnSctpAssociationDataChunk;
+                sctp.RTCSctpAssociation.OnDataChannelOpened += OnSctpAssociationDataChannelOpened;
+                sctp.RTCSctpAssociation.OnNewDataChannel += OnSctpAssociationNewDataChannel;
 
                 // Create new SCTP streams for any outstanding data channel requests.
                 foreach (var dataChannel in DataChannels)
                 {
                     await CreateSctpStreamForDataChannel(dataChannel).ConfigureAwait(false);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Event handler for a new data channel being opened by the remote peer.
+        /// </summary>
+        private void OnSctpAssociationNewDataChannel(ushort streamID, DataChannelTypes type, ushort priority, uint reliability, string label, string protocol)
+        {
+            logger.LogInformation($"WebRTC new data channel opened by remote peer for stream ID {streamID}, type {type}, " +
+                $"priority {priority}, reliability {reliability}, label {label}, protocol {protocol}.");
+
+            var dc = new RTCDataChannel(sctp) { id = streamID };
+
+            if (DataChannels.Any(x => x.id == streamID))
+            {
+                // TODO: What's the correct behaviour here?? I guess use the newest one and remove the old one?
+                logger.LogWarning($"WebRTC duplicate data channel requested for stream ID {streamID}.");
+            }
+            else
+            {
+                DataChannels.Add(dc);
+
+                ondatachannel?.Invoke(dc);
+            }
+        }
+
+        /// <summary>
+        /// Event handler for the confirmation that a data channel opened by this peer has been acknowledged.
+        /// </summary>
+        /// <param name="streamID">The ID of the stream corresponding to the acknowledged data channel.</param>
+        private void OnSctpAssociationDataChannelOpened(ushort streamID)
+        {
+            logger.LogInformation($"WebRTC data channel successfully opened stream ID {streamID}.");
+
+            var dc = DataChannels.SingleOrDefault(x => x.id == streamID);
+
+            if (dc != null)
+            {
+                dc.GotAck();
+            }
+            else
+            {
+                logger.LogWarning($"WebRTC data channel got ACK but data channel not found for stream ID {streamID}.");
+            }
+        }
+
+        /// <summary>
+        /// Event handler for an SCTP DATA chunk being received on the SCTP association.
+        /// </summary>
+        /// <param name="streamID">The stream ID of the chunk.</param>
+        /// <param name="streamSeqNum">The stream sequence number of the chunk. Will be 0 for unordered streams.</param>
+        /// <param name="ppID">The payload protocol ID for the chunk.</param>
+        /// <param name="data">The chunk data.</param>
+        private void OnSctpAssociationDataChunk(ushort streamID, ushort streamSeqNum, uint ppID, byte[] data)
+        {
+            var dc = DataChannels.SingleOrDefault(x => x.id == streamID);
+
+            if (dc != null)
+            {
+                dc.GotData(streamID, streamSeqNum, ppID, data);
+            }
+            else
+            {
+                logger.LogWarning($"WebRTC data channel got data but data channel not found for stream ID {streamID}.");
             }
         }
 
@@ -1286,7 +1351,7 @@ namespace SIPSorcery.Net
                 sctp.Associate(SCTP_DEFAULT_PORT, destinationPort);
             }
 
-            if (sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
+            if (sctp.state != RTCSctpTransportState.Connected)
             {
                 TaskCompletionSource<bool> onSctpConnectedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 sctp.OnStateChanged += (state) =>
@@ -1299,12 +1364,23 @@ namespace SIPSorcery.Net
                     }
                 };
 
-                var completedTask = await Task.WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000)).ConfigureAwait(false);
-            }
+                DateTime startTime = DateTime.Now;
 
-            if (sctp.state != RTCSctpTransportState.Connected)
-            {
-                throw new ApplicationException($"SCTP association timed out with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
+                var completedTask = await Task.WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000)).ConfigureAwait(false);
+
+                if (sctp.state != RTCSctpTransportState.Connected)
+                {
+                    var duration = DateTime.Now.Subtract(startTime).TotalMilliseconds;
+
+                    if (completedTask != onSctpConnectedTcs.Task)
+                    {
+                        throw new ApplicationException($"SCTP association timed out after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
+                    }
+                    else
+                    {
+                        throw new ApplicationException($"SCTP association failed after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
+                    }
+                }
             }
         }
 
@@ -1321,8 +1397,7 @@ namespace SIPSorcery.Net
         {
             logger.LogDebug($"Data channel create request for label {label}.");
 
-            // TODO: Apply the data channel init object to create the desired stream properties.
-            RTCDataChannel channel = new RTCDataChannel
+            RTCDataChannel channel = new RTCDataChannel(sctp, init)
             {
                 label = label,
             };
@@ -1341,7 +1416,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    if (sctp.RTCSctpAssociation == null || 
+                    if (sctp.RTCSctpAssociation == null ||
                         sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
                     {
                         await InitialiseSctpAssociation().ConfigureAwait(false);
@@ -1384,6 +1459,7 @@ namespace SIPSorcery.Net
         private async Task CreateSctpStreamForDataChannel(RTCDataChannel dataChannel)
         {
             logger.LogDebug($"Attempting to create SCTP stream for data channel with label {dataChannel.label}.");
+            //bool isLocalStreamID = (_isClient) ? s.getNum() % 2 == 0 : s.getNum() % 2 != 0;
 
             try
             {
@@ -1415,8 +1491,8 @@ namespace SIPSorcery.Net
 
             dtlsHandle.OnDataReady += (buf) =>
             {
-                //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-                rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
+                    //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
+                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
             };
 
             var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);

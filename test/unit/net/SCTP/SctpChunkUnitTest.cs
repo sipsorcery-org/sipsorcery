@@ -53,5 +53,20 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(0, rndTripChunk.ChunkFlags);
             Assert.Equal("0102030405", rndTripChunk.ChunkValue.HexStr());
         }
+
+        /// <summary>
+        /// Tests that a SACK chunk can be parsed correctly.
+        /// </summary>
+        [Fact]
+        public void ParseSACKChunk()
+        {
+            var sackBuffer = BufferUtils.ParseHexStr("13881388E48092946AB2050003000014D19244F60002000000000001A7498379");
+
+            var sackPkt = SctpPacket.Parse(sackBuffer);
+
+            Assert.NotNull(sackPkt);
+            Assert.Single(sackPkt.Chunks);
+
+        }
     }
 }

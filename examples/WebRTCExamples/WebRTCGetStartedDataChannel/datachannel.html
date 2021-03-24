@@ -23,6 +23,7 @@
             if (!isClosed) {
                 await closePeer();
             }
+            isClosed = false;
 
             pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
 
@@ -31,7 +32,11 @@
             pc.onconnectionstatechange = () => {
                 console.log("onconnectionstatechange: " + pc.connectionState);
                 if (pc.connectionState == "connected") {
+                    console.log(`creating data channel ${DATA_CHANNEL_LABEL}.`);
                     dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
+                    dc.onopen = (event) => console.log(`data channel onopen: id=${dc.id} ${event.data}.`);
+                    dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+                    dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
                 }
             }
 
