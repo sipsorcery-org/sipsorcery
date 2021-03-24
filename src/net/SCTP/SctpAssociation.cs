@@ -273,8 +273,6 @@ namespace SIPSorcery.Net
 
         public void SendData(ushort streamID, ushort seqnum, uint ppid, byte[] data)
         {
-            _tsn = (_tsn == UInt32.MaxValue) ? 0 : _tsn + 1;
-
             SctpDataChunk dataChunk = new SctpDataChunk(
                 _tsn,
                 streamID,
@@ -282,6 +280,8 @@ namespace SIPSorcery.Net
                 ppid,
                 data);
             SendChunk(dataChunk);
+
+            _tsn = (_tsn == UInt32.MaxValue) ? 0 : _tsn + 1;
         }
 
         public SctpPacket GetPacket(SctpChunk chunk)
