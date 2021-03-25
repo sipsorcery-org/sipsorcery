@@ -73,7 +73,7 @@ namespace SIPSorcery.Net
     public interface IDtlsSrtpPeer
     {
         event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
-
+        bool ForceUseExtendedMasterSecret { get; set; }
         SrtpPolicy GetSrtpPolicy();
         SrtpPolicy GetSrtcpPolicy();
         byte[] GetSrtpMasterServerKey();
@@ -94,6 +94,8 @@ namespace SIPSorcery.Net
         private RTCDtlsFingerprint mFingerPrint;
 
         //private AlgorithmCertificate algorithmCertificate;
+
+        public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
         public Certificate ClientCertificate { get; private set; }
 
@@ -436,7 +438,62 @@ namespace SIPSorcery.Net
 
         protected byte[] GetKeyingMaterial(int length)
         {
-            return mContext.ExportKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
+            return GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
+        }
+
+        protected virtual byte[] GetKeyingMaterial(string asciiLabel, byte[] context_value, int length)
+        {
+            if (context_value != null && !TlsUtilities.IsValidUint16(context_value.Length))
+            {
+                throw new ArgumentException("must have length less than 2^16 (or be null)", "context_value");
+            }
+
+            SecurityParameters sp = mContext.SecurityParameters;
+            if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
+            {
+                /*
+                 * RFC 7627 5.4. If a client or server chooses to continue with a full handshake without
+                 * the extended master secret extension, [..] the client or server MUST NOT export any
+                 * key material based on the new master secret for any subsequent application-level
+                 * authentication. In particular, it MUST disable [RFC5705] [..].
+                 */
+                throw new InvalidOperationException("cannot export keying material without extended_master_secret");
+            }
+
+            byte[] cr = sp.ClientRandom, sr = sp.ServerRandom;
+
+            int seedLength = cr.Length + sr.Length;
+            if (context_value != null)
+            {
+                seedLength += (2 + context_value.Length);
+            }
+
+            byte[] seed = new byte[seedLength];
+            int seedPos = 0;
+
+            Array.Copy(cr, 0, seed, seedPos, cr.Length);
+            seedPos += cr.Length;
+            Array.Copy(sr, 0, seed, seedPos, sr.Length);
+            seedPos += sr.Length;
+            if (context_value != null)
+            {
+                TlsUtilities.WriteUint16(context_value.Length, seed, seedPos);
+                seedPos += 2;
+                Array.Copy(context_value, 0, seed, seedPos, context_value.Length);
+                seedPos += context_value.Length;
+            }
+
+            if (seedPos != seedLength)
+            {
+                throw new InvalidOperationException("error in calculation of seed for export");
+            }
+
+            return TlsUtilities.PRF(mContext, sp.MasterSecret, asciiLabel, seed, length);
+        }
+
+        public override bool RequiresExtendedMasterSecret()
+        {
+            return ForceUseExtendedMasterSecret;
         }
 
         protected override int[] GetCipherSuites()

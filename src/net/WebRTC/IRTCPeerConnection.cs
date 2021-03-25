@@ -248,6 +248,8 @@ namespace SIPSorcery.Net
         public RTCRtcpMuxPolicy rtcpMuxPolicy;
         public List<RTCCertificate> certificates;
 
+        public bool forceUseExtendedMasterSecret = true;
+
         /// <summary>
         /// Size of the pre-fetched ICE pool. Defaults to 0.
         /// </summary>
