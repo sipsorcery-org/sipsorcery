@@ -84,6 +84,40 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Gets a cookie to send in an INIT ACK chunk. This method
+        /// is overloadable so that different transports can tailor how the cookie
+        /// is created. For example the WebRTC SCTP transport only ever uses a
+        /// single association so the local Tag and TSN properties must be
+        /// the same rather than random.
+        /// </summary>
+        protected virtual SctpTransportCookie GetInitAckCookie(
+            ushort sourcePort,
+            ushort destinationPort,
+            uint remoteTag,
+            uint remoteTSN,
+            uint remoteARwnd,
+            string remoteEndPoint)
+        {
+            var cookie = new SctpTransportCookie
+            {
+                SourcePort = sourcePort,
+                DestinationPort = destinationPort,
+                RemoteTag = remoteTag,
+                RemoteTSN = remoteTSN,
+                RemoteARwnd = remoteARwnd,
+                RemoteEndPoint = remoteEndPoint,
+                Tag = Crypto.GetRandomUInt(),
+                TSN = Crypto.GetRandomUInt(),
+                ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
+                CreatedAt = DateTime.Now.ToString("o"),
+                Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS,
+                HMAC = string.Empty
+            };
+
+            return cookie;
+        }
+
+        /// <summary>
         /// Creates the INIT ACK chunk and packet to send as a response to an SCTP
         /// packet containing an INIT chunk.
         /// </summary>
@@ -101,21 +135,13 @@ namespace SIPSorcery.Net
                 initPacket.Header.SourcePort,
                 initChunk.InitiateTag);
 
-            var cookie = new SctpTransportCookie
-            {
-                SourcePort = initPacket.Header.DestinationPort,
-                DestinationPort = initPacket.Header.SourcePort,
-                RemoteTag = initChunk.InitiateTag,
-                RemoteTSN = initChunk.InitialTSN,
-                RemoteARwnd = initChunk.ARwnd,
-                RemoteEndPoint = remoteEP != null ? remoteEP.ToString() : string.Empty,
-                Tag = Crypto.GetRandomUInt(),
-                TSN = Crypto.GetRandomUInt(),
-                ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
-                CreatedAt = DateTime.Now.ToString("o"),
-                Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS,
-                HMAC = string.Empty
-            };
+            var cookie = GetInitAckCookie(
+                initPacket.Header.DestinationPort,
+                initPacket.Header.SourcePort,
+                initChunk.InitiateTag,
+                initChunk.InitialTSN,
+                initChunk.ARwnd,
+                remoteEP != null ? remoteEP.ToString() : string.Empty);
 
             var json = cookie.ToJson();
             var jsonBuffer = Encoding.UTF8.GetBytes(json);

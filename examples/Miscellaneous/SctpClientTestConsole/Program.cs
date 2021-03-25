@@ -50,7 +50,7 @@ namespace SctpClientTestConsole
             {
                 if (state == SctpAssociationState.Established)
                 {
-                    association.Send("hi\n");
+                    association.SendData(0, 0, 0, "hi\n");
                 }
             };
 

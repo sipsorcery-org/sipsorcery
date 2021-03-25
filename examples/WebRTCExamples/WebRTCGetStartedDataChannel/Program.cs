@@ -47,7 +47,7 @@ namespace demo
             var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
             webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => {
                 peer.CreatePeerConnection = CreatePeerConnection;
-                peer.WaitForRemoteOffer = false;
+                peer.WaitForRemoteOffer = true;
             });
             webSocketServer.Start();
 
@@ -77,10 +77,10 @@ namespace demo
             {
                 rdc.onopen += () => logger.LogDebug($"Data channel {rdc.label} opened.");
                 rdc.onclose += () => logger.LogDebug($"Data channel {rdc.label} closed.");
-                rdc.onmessage += (type, data) =>
+                rdc.onmessage += (datachan, type, data) =>
                 {
                     var msg = Encoding.UTF8.GetString(data);
-                    logger.LogInformation($"Data channel message {type} received: {msg}.");
+                    logger.LogInformation($"Data channel {datachan.label} message {type} received: {msg}.");
                     rdc.send($"echo: {msg}");
                 };
             };
@@ -102,30 +102,13 @@ namespace demo
             pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
             pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
-            pc.onsignalingstatechange += () =>
-            {
-               switch(pc.signalingState)
-                {
-                    case RTCSignalingState.have_local_offer:
-                        logger.LogDebug($"Local offer SDP: {pc.localDescription.sdp}");
-                        break;
-                    case RTCSignalingState.have_remote_offer:
-                        logger.LogDebug($"Remote offer SDP: {pc.remoteDescription.sdp}");
-                        break;
-                    case var sigState when sigState == RTCSignalingState.stable && pc.IceRole == IceRolesEnum.passive:
-                        logger.LogDebug($"Remote answer SDP: {pc.remoteDescription.sdp}");
-                        break;
-                    case var sigState when sigState == RTCSignalingState.stable && pc.IceRole == IceRolesEnum.active:
-                        logger.LogDebug($"Local answer SDP: {pc.localDescription.sdp}");
-                        break;
-                }
-            };
+            pc.onsignalingstatechange += () => logger.LogDebug($"Signalling state changed to {pc.signalingState}.");
 
             return pc;
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {

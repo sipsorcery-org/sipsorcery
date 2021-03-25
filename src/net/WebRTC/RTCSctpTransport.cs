@@ -88,11 +88,45 @@ namespace SIPSorcery.Net
 
         private bool _isStarted;
         private bool _isClosed;
-        private ushort _lastStreamID;
 
-        public RTCSctpTransport()
+        public RTCSctpTransport(ushort sourcePort, ushort destinationPort)
         {
             SetState(RTCSctpTransportState.Closed);
+
+            RTCSctpAssociation = new RTCPeerSctpAssociation(this, sourcePort, destinationPort);
+            RTCSctpAssociation.OnAssociationStateChanged += OnAssociationStateChanged;
+        }
+
+        /// <summary>
+        /// Attempts to update the SCTP source port the association managed by this transport will use.
+        /// </summary>
+        /// <param name="port">The updated source port.</param>
+        public void UpdateSourcePort(ushort port)
+        {
+            if(state != RTCSctpTransportState.Closed)
+            {
+                logger.LogWarning($"SCTP source port cannot be updated when the transport is in state {state}.");
+            }
+            else
+            {
+                RTCSctpAssociation.UpdateSourcePort(port);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to update the SCTP destination port the association managed by this transport will use.
+        /// </summary>
+        /// <param name="port">The updated destination port.</param>
+        public void UpdateDestinationPort(ushort port)
+        {
+            if (state != RTCSctpTransportState.Closed)
+            {
+                logger.LogWarning($"SCTP destination port cannot be updated when the transport is in state {state}.");
+            }
+            else
+            {
+                RTCSctpAssociation.UpdateDestinationPort(port);
+            }
         }
 
         /// <summary>
@@ -113,17 +147,13 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Attempts to create and initialise a new SCTP association with the remote party. Only one  
-        /// end of the SCTP connection needs to initiate the association.
+        /// Attempts to create and initialise a new SCTP association with the remote party.
         /// </summary>
         /// <param name="sourcePort">The source port to use for the SCTP association.</param>
         /// <param name="destinationPort">The destination port to use for the SCTP association.</param>
-        public void Associate(ushort sourcePort, ushort destinationPort)
+        public void Associate()
         {
             SetState(RTCSctpTransportState.Connecting);
-
-            RTCSctpAssociation = new RTCPeerSctpAssociation(this, sourcePort, destinationPort);
-            RTCSctpAssociation.OnAssociationStateChanged += OnAssociationStateChanged;
             RTCSctpAssociation.Init();
         }
 
@@ -167,6 +197,39 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Gets a cookie to send in an INIT ACK chunk. This SCTP
+        /// transport for a WebRTC peer connection needs to use the same
+        /// local tag and TSN in every chunk as only a single association
+        /// is ever maintained.
+        /// </summary>
+        protected override SctpTransportCookie GetInitAckCookie(
+            ushort sourcePort,
+            ushort destinationPort,
+            uint remoteTag,
+            uint remoteTSN,
+            uint remoteARwnd,
+            string remoteEndPoint)
+        {
+            var cookie = new SctpTransportCookie
+            {
+                SourcePort = sourcePort,
+                DestinationPort = destinationPort,
+                RemoteTag = remoteTag,
+                RemoteTSN = remoteTSN,
+                RemoteARwnd = remoteARwnd,
+                RemoteEndPoint = remoteEndPoint,
+                Tag = RTCSctpAssociation.VerificationTag,
+                TSN = RTCSctpAssociation.TSN,
+                ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
+                CreatedAt = DateTime.Now.ToString("o"),
+                Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS,
+                HMAC = string.Empty
+            };
+
+            return cookie;
+        }
+
+        /// <summary>
         /// This method runs on a dedicated thread to listen for incoming SCTP
         /// packets on the DTLS transport.
         /// </summary>
@@ -190,7 +253,7 @@ namespace SIPSorcery.Net
                         var pkt = SctpPacket.Parse(recvBuffer, 0, bytesRead);
                         
                         logger.LogTrace($"SCTP Packet received {pkt.Header.DestinationPort}<-{pkt.Header.SourcePort}.");
-                        logger.LogTrace(recvBuffer.HexStr(bytesRead));
+                        //logger.LogTrace(recvBuffer.HexStr(bytesRead));
 
                         foreach (var chunk in pkt.Chunks)
                         {
@@ -219,8 +282,8 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                RTCSctpAssociation = new RTCPeerSctpAssociation(this, cookie);
-
+                                RTCSctpAssociation.InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
+                                
                                 var cookieAckChunk = new SctpChunk(SctpChunkType.COOKIE_ACK);
                                 var cookieAckPkt = RTCSctpAssociation.GetPacket(cookieAckChunk);
                                 var cookieAckBuffer = cookieAckPkt.GetBytes();
@@ -229,9 +292,9 @@ namespace SIPSorcery.Net
 
                                 Send(RTCSctpAssociation.ID, cookieAckBuffer, 0, cookieAckBuffer.Length);
 
-                                SetState(RTCSctpTransportState.Connected);
+                                RTCSctpAssociation.SetState(SctpAssociationState.Established);
 
-                                if(pkt.Chunks.Count > 1)
+                                if (pkt.Chunks.Count > 1)
                                 {
                                     // There could be DATA chunks after the COOKIE ECHO chunk.
                                     RTCSctpAssociation.OnPacketReceived(pkt);

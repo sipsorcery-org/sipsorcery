@@ -236,7 +236,7 @@ namespace SIPSorcery.Net
 
         public RTCSessionDescription pendingRemoteDescription => null;
 
-        public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.stable;
+        public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.closed;
 
         public RTCIceGatheringState iceGatheringState
         {
@@ -438,8 +438,6 @@ namespace SIPSorcery.Net
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
 
-            sctp = new RTCSctpTransport();
-
             // Request the underlying RTP session to create a single RTP channel that will
             // be used to multiplex all required media streams.
             addSingleTrack();
@@ -453,6 +451,8 @@ namespace SIPSorcery.Net
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
+
+            sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT);
 
             onnegotiationneeded?.Invoke();
 
@@ -754,6 +754,8 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
+
+                UpdatedSctpDestinationPort();
 
                 if (init.type == RTCSdpType.offer)
                 {
@@ -1129,7 +1131,7 @@ namespace SIPSorcery.Net
         {
             //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
-            // By this pint the RTP ICE channel has already processed any STUN packets which means 
+            // By this point the RTP ICE channel has already processed any STUN packets which means 
             // it's only necessary to separate RTP/RTCP from DTLS.
             // Because DTLS packets can be fragmented and RTP/RTCP should never be use the RTP/RTCP 
             // prefix to distinguish.
@@ -1226,6 +1228,22 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Once the SDP exchange has been made the SCTP transport ports are known. If the destination
+        /// port is not using the default value attempt to update it on teh SCTP transprot.
+        /// </summary>
+        private void UpdatedSctpDestinationPort()
+        {
+            // If a data channel was requested by the application then create the SCTP association.
+            var sctpAnn = RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
+            ushort destinationPort = sctpAnn?.SctpPort != null ? sctpAnn.SctpPort.Value : SCTP_DEFAULT_PORT;
+
+            if (destinationPort != SCTP_DEFAULT_PORT)
+            {
+                sctp.UpdateDestinationPort(destinationPort);
+            }
+        }
+
+        /// <summary>
         /// Initialises the SCTP transport. This will result in the DTLS SCTP transport listening 
         /// for incoming INIT packets if the remote peer attempts to create the association. The local
         /// peer will NOT attempt to establish the association at this point. It's up to the
@@ -1240,7 +1258,7 @@ namespace SIPSorcery.Net
 
                 if (DataChannels.Count > 0)
                 {
-                    //await InitialiseSctpAssociation().ConfigureAwait(false);
+                    await InitialiseSctpAssociation().ConfigureAwait(false);
                 }
             }
             catch (Exception excp)
@@ -1254,7 +1272,7 @@ namespace SIPSorcery.Net
         /// Event handler for changes to the SCTP transport state.
         /// </summary>
         /// <param name="state">The new transport state.</param>
-        private async void OnSctpTransportStateChanged(RTCSctpTransportState state)
+        private void OnSctpTransportStateChanged(RTCSctpTransportState state)
         {
             if (state == RTCSctpTransportState.Connected)
             {
@@ -1267,7 +1285,7 @@ namespace SIPSorcery.Net
                 // Create new SCTP streams for any outstanding data channel requests.
                 foreach (var dataChannel in DataChannels)
                 {
-                    await CreateSctpStreamForDataChannel(dataChannel).ConfigureAwait(false);
+                    OpenDataChannel(dataChannel);
                 }
             }
         }
@@ -1280,7 +1298,10 @@ namespace SIPSorcery.Net
             logger.LogInformation($"WebRTC new data channel opened by remote peer for stream ID {streamID}, type {type}, " +
                 $"priority {priority}, reliability {reliability}, label {label}, protocol {protocol}.");
 
-            var dc = new RTCDataChannel(sctp) { id = streamID };
+            // TODO: Set reliability, priority etc. properties on the data channel.
+            var dc = new RTCDataChannel(sctp) { id = streamID, label = label };
+
+            dc.SendDcepAck();
 
             if (DataChannels.Any(x => x.id == streamID))
             {
@@ -1342,13 +1363,9 @@ namespace SIPSorcery.Net
         /// </summary>
         private async Task InitialiseSctpAssociation()
         {
-            if (sctp.RTCSctpAssociation == null)
+            if (sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
             {
-                // If a data channel was requested by the application then create the SCTP association.
-                var sctpAnn = RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
-                ushort destinationPort = sctpAnn?.SctpPort != null ? sctpAnn.SctpPort.Value : SCTP_DEFAULT_PORT;
-
-                sctp.Associate(SCTP_DEFAULT_PORT, destinationPort);
+                sctp.Associate();
             }
 
             if (sctp.state != RTCSctpTransportState.Connected)
@@ -1422,57 +1439,40 @@ namespace SIPSorcery.Net
                         await InitialiseSctpAssociation().ConfigureAwait(false);
                     }
 
-                    await CreateSctpStreamForDataChannel(channel);
-
+                    OpenDataChannel(channel);
                     return channel;
                 }
             }
             else
             {
+                // Data channels can be created prior to the SCTP transport being available.
+                // They will act as placeholders and then be opened once the SCTP transport 
+                // becomes available.
                 return channel;
             }
         }
 
-        private void OnSCTPStreamOpen(object stream, bool isLocal)
-        {
-            //logger.LogDebug($"SCTP stream opened for label {stm.getLabel()} and stream ID {stm.getNum()} (is local stream ID {isLocal}).");
-
-            //    if (!isLocal)
-            //    {
-            //        // A new data channel that was opened by the remote peer.
-            //        RTCDataChannel dataChannel = new RTCDataChannel
-            //        {
-            //            label = stm.getLabel(),
-            //            id = (ushort)stm.getNum()
-            //        };
-            //        dataChannel.SetStream(stm);
-            //        DataChannels.Add(dataChannel);
-            //        ondatachannel?.Invoke(dataChannel);
-            //    }
-        }
-
         /// <summary>
-        /// Attempts to create and wire up the SCTP stream for a data channel.
+        /// Sends the Data Channel Establishment Protocol (DCEP) OPEN message to configure the data
+        /// channel on the remote peer.
         /// </summary>
-        /// <param name="dataChannel">The data channel to create the SCTP stream for.</param>
-        /// <returns>The Task being used to create the SCTP stream.</returns>
-        private async Task CreateSctpStreamForDataChannel(RTCDataChannel dataChannel)
+        /// <param name="dataChannel">The data channel to open.</param>
+        private void OpenDataChannel(RTCDataChannel dataChannel)
         {
-            logger.LogDebug($"Attempting to create SCTP stream for data channel with label {dataChannel.label}.");
-            //bool isLocalStreamID = (_isClient) ? s.getNum() % 2 == 0 : s.getNum() % 2 != 0;
+            logger.LogDebug($"WebRTC attempting to open data channel with label {dataChannel.label}.");
 
-            try
+            // Get next available stream ID.
+            ushort nextID = (ushort)((_dtlsHandle.IsClient) ? 0 : 1);
+            var lastAssignedDC = DataChannels.Where(x => x.id != null).OrderByDescending(x => x.id.GetValueOrDefault()).FirstOrDefault();
+            if(lastAssignedDC != null)
             {
-                //await _peerSctpAssociation.CreateStream(dataChannel.label).ConfigureAwait(false);
+                nextID = (ushort)(lastAssignedDC.id.Value + 2);
+            }
 
-                //logger.LogDebug($"SCTP stream successfully initialised for data channel with label {dataChannel.label}.");
-                //            dataChannel.SetStream(t.Result);
-            }
-            catch (Exception)
-            {
-                // logger.LogWarning($"Exception creating data channel {t.Exception.Flatten().Message}");
-                //                dataChannel.SetError(t.Exception.InnerExceptions.First().Message);
-            }
+            logger.LogDebug($"WebRTC setting stream ID to {nextID} for data channel {dataChannel.label}.");
+
+            dataChannel.id = nextID;
+            dataChannel.SendDcepOpen();
         }
 
         /// <summary>
@@ -1482,7 +1482,7 @@ namespace SIPSorcery.Net
         ///  or DtlsSrtpServer to work.
         /// </summary>
         /// <param name="dtlsHandle">The DTLS transport handle to perform the handshake with.</param>
-        /// <returns></returns>
+        /// <returns>True if the DTLS handshake is successful or false if not.</returns>
         private bool DoDtlsHandshake(DtlsSrtpTransport dtlsHandle)
         {
             logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");

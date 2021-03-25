@@ -274,7 +274,7 @@ namespace SIPSorcery.Net
                     else
                     {
                         handshakeError = "unknown";
-                        if(excp is Org.BouncyCastle.Crypto.Tls.TlsFatalAlert)
+                        if (excp is Org.BouncyCastle.Crypto.Tls.TlsFatalAlert)
                         {
                             handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
                         }
@@ -568,6 +568,7 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(buf, off, tempBuf, 0, len);
                 buf = tempBuf;
             }
+
             OnDataReady?.Invoke(buf);
         }
 

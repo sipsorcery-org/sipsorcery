@@ -64,6 +64,9 @@ namespace SIPSorcery.Net
     /// <summary>
     /// The RTCDataChannel interface represents a bi-directional data channel between two peers.
     /// </summary>
+    /// <remarks>
+    /// Specification https://www.w3.org/TR/webrtc/#webidl-1143016005
+    /// </remarks>
     interface IRTCDataChannel
     {
         /// <summary>
@@ -152,7 +155,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// A message was successfully received.
         /// </summary>
-        event Action<DataChannelPayloadProtocols, byte[]> onmessage;
+        event Action<RTCDataChannel, DataChannelPayloadProtocols, byte[]> onmessage;
 
         string binaryType { get; set; }
         void send(string data);
