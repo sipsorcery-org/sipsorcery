@@ -98,7 +98,7 @@ namespace SIPSorcery.Net
         ///  This field holds the IANA-defined message type for the
         /// DATA_CHANNEL_OPEN message.The value of this field is 0x03.
         /// </summary>
-        public byte MessageType;
+        public byte MessageType; 
 
         /// <summary>
         /// This field specifies the type of data channel to be opened.
@@ -215,6 +215,16 @@ namespace SIPSorcery.Net
             }
 
             return (ushort)posn;
+        }
+
+        /// <summary>
+        /// Serialises the DCEP OPEN message to a buffer.
+        /// </summary>
+        public byte[] GetBytes()
+        {
+            var buffer = new byte[GetLength()];
+            WriteTo(buffer, 0);
+            return buffer;
         }
     }
 }

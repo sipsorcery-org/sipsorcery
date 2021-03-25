@@ -66,8 +66,9 @@ namespace SIPSorcery.Net
         private ushort _sctpSourcePort;
         private ushort _sctpDestinationPort;
 
-        private uint _verificationTag;
-        private uint _tsn;
+        public uint VerificationTag { get; private set; }
+
+        public uint TSN { get; private set; }
 
         /// <summary>
         /// A unique ID for this association. The ID is not part of the SCTP protocol. It
@@ -84,8 +85,9 @@ namespace SIPSorcery.Net
         public uint ARwnd { get; private set; }
 
         private uint _remoteVerificationTag;
-        private uint _remoteTSN;
+        private uint _remoteExpectedTSN;
         private uint _remoteARwnd;
+        private uint _duplicateTSN;
 
         /// <summary>
         /// The remote destination end point for this association. The underlying transport
@@ -106,10 +108,6 @@ namespace SIPSorcery.Net
         /// Create a new SCTP association instance where the INIT will be generated
         /// from this end of the connection.
         /// </summary>
-        /// <param name="sctpTransport"></param>
-        /// <param name="destination"></param>
-        /// <param name="sctpSourcePort"></param>
-        /// <param name="sctpDestinationPort"></param>
         public SctpAssociation(
             SctpTransport sctpTransport,
             IPEndPoint destination,
@@ -120,8 +118,8 @@ namespace SIPSorcery.Net
             Destination = destination;
             _sctpSourcePort = sctpSourcePort;
             _sctpDestinationPort = sctpDestinationPort;
-            _verificationTag = Crypto.GetRandomUInt();
-            _tsn = Crypto.GetRandomUInt();
+            VerificationTag = Crypto.GetRandomUInt();
+            TSN = Crypto.GetRandomUInt();
 
             ID = Guid.NewGuid().ToString();
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
@@ -129,12 +127,9 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Create a new SCTP association instance where the INIT will be generated
-        /// from this end of the connection.
+        /// Create a new SCTP association instance from the cookie that was previously
+        /// sent to the remote party in an INIT ACK chunk.
         /// </summary>
-        /// <param name="sctpTransport"></param>
-        /// <param name="destination"></param>
-        /// <param name="cookie"></param>
         public SctpAssociation(
             SctpTransport sctpTransport,
             SctpTransportCookie cookie)
@@ -143,18 +138,49 @@ namespace SIPSorcery.Net
 
             _sctpSourcePort = cookie.SourcePort;
             _sctpDestinationPort = cookie.DestinationPort;
-            _verificationTag = cookie.Tag;
-            _tsn = cookie.TSN;
+            VerificationTag = cookie.Tag;
+            TSN = cookie.TSN;
             ARwnd = cookie.ARwnd;
             Destination = !string.IsNullOrEmpty(cookie.RemoteEndPoint) ?
                 IPSocket.Parse(cookie.RemoteEndPoint) : null;
-            _remoteVerificationTag = cookie.RemoteTag;
-            _remoteTSN = cookie.RemoteTSN;
-            _remoteARwnd = cookie.RemoteARwnd;
+
+            InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
 
             ID = Guid.NewGuid().ToString();
 
             SetState(SctpAssociationState.Established);
+        }
+
+        /// <summary>
+        /// Attempts to update the association's SCTP source port.
+        /// </summary>
+        /// <param name="port">The updated source port.</param>
+        public void UpdateSourcePort(ushort port)
+        {
+            if (State != SctpAssociationState.Closed)
+            {
+                logger.LogWarning($"SCTP source port cannot be updated when the association is in state {State}.");
+            }
+            else
+            {
+                _sctpSourcePort = port;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to update the association's SCTP destination port.
+        /// </summary>
+        /// <param name="port">The updated destination port.</param>
+        public void UpdateDestinationPort(ushort port)
+        {
+            if (State != SctpAssociationState.Closed )
+            {
+                logger.LogWarning($"SCTP destination port cannot be updated when the association is in state {State}.");
+            }
+            else
+            {
+                _sctpDestinationPort = port;
+            }
         }
 
         public void Init()
@@ -167,6 +193,19 @@ namespace SIPSorcery.Net
             {
                 logger.LogWarning($"SCTP Association cannot initialise an association in state {State}.");
             }
+        }
+
+        /// <summary>
+        /// Initialises the association's properties that record the state of the remote party.
+        /// </summary>
+        internal void InitRemoteProperties(
+            uint remoteVerificationTag,
+            uint remoteExpectedTSN,
+            uint remoteARwnd)
+        {
+            _remoteVerificationTag = remoteVerificationTag;
+            _remoteExpectedTSN = remoteExpectedTSN;
+            _remoteARwnd = remoteARwnd;
         }
 
         /// <summary>
@@ -186,9 +225,7 @@ namespace SIPSorcery.Net
                     {
                         var initAckChunk = packet.Chunks.Where(x => x.KnownType == SctpChunkType.INIT_ACK).Single() as SctpInitChunk;
 
-                        _remoteVerificationTag = initAckChunk.InitiateTag;
-                        _remoteTSN = initAckChunk.InitialTSN;
-                        _remoteARwnd = initAckChunk.ARwnd;
+                        InitRemoteProperties(initAckChunk.InitiateTag, initAckChunk.InitialTSN, initAckChunk.ARwnd);
 
                         var cookie = initAckChunk.VariableParameters.Where(x => x.KnownType == SctpChunkParameterType.StateCookie)
                           .Single().ParameterValue;
@@ -221,13 +258,22 @@ namespace SIPSorcery.Net
                         {
                             case SctpChunkType.DATA:
                                 var dataChunk = chunk as SctpDataChunk;
-                                _remoteTSN = dataChunk.TSN;
-                                var sackChunk = new SctpSackChunk(_remoteTSN, ARwnd);
+
+                                var sackChunk = new SctpSackChunk(dataChunk.TSN, ARwnd);
                                 SendChunk(sackChunk);
 
-                                logger.LogTrace($"SCTP DATA chunk PPID {dataChunk.PPID}, stream ID {dataChunk.StreamID}, seq num {dataChunk.StreamSeqNum}.");
-                                    
-                                OnDataChunk?.Invoke(dataChunk);
+                                // TDOD: Use sliding window to deal with TSN wrapping.
+                                if (dataChunk.TSN >= _remoteExpectedTSN)
+                                {
+                                    _remoteExpectedTSN = (_remoteExpectedTSN == UInt32.MaxValue) ? 0 : _remoteExpectedTSN + 1;
+                                    logger.LogTrace($"SCTP DATA chunk TSN {dataChunk.TSN}, PPID {dataChunk.PPID}, stream ID {dataChunk.StreamID}, seq num {dataChunk.StreamSeqNum}.");
+                                    OnDataChunk?.Invoke(dataChunk);
+                                }
+                                else
+                                {
+                                    logger.LogDebug($"SCTP duplicate data chunk received with TSN {dataChunk.TSN}.");
+                                    _duplicateTSN++;
+                                }
 
                                 break;
 
@@ -241,6 +287,13 @@ namespace SIPSorcery.Net
                                 var sackRecvChunk = chunk as SctpSackChunk;
                                 logger.LogDebug($"SCTP SACK TSN ACK={sackRecvChunk.CumulativeTsnAck}, # gap ack blocks {sackRecvChunk.NumberGapAckBlocks}" +
                                     $", # duplicate tsn {sackRecvChunk.NumberDuplicateTSNs}.");
+                                break;
+
+                            case SctpChunkType.COOKIE_ACK:
+                            case SctpChunkType.COOKIE_ECHO:
+                                // These chunks get processed by the SCTP transport layer prior to the association being instantiated.
+                                // This is part of the SCTP design to mitigate resource depletion attacks in the handshake.
+                                // There can be DATA or other chunks following the COOKIE chunks which is why this case may be hit.
                                 break;
 
                             default:
@@ -263,7 +316,7 @@ namespace SIPSorcery.Net
 
         public void SendData(ushort streamID, ushort seqnum, uint ppid, string message)
         {
-            if(string.IsNullOrEmpty(message))
+            if (string.IsNullOrEmpty(message))
             {
                 throw new ArgumentNullException("The message cannot be empty when sending a data chunk on an SCTP association.");
             }
@@ -274,14 +327,14 @@ namespace SIPSorcery.Net
         public void SendData(ushort streamID, ushort seqnum, uint ppid, byte[] data)
         {
             SctpDataChunk dataChunk = new SctpDataChunk(
-                _tsn,
+                TSN,
                 streamID,
                 seqnum,
                 ppid,
                 data);
             SendChunk(dataChunk);
 
-            _tsn = (_tsn == UInt32.MaxValue) ? 0 : _tsn + 1;
+            TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
         }
 
         public SctpPacket GetPacket(SctpChunk chunk)
@@ -300,11 +353,12 @@ namespace SIPSorcery.Net
         {
             SetState(SctpAssociationState.ShutdownSent);
 
-            SctpShutdownChunk shutdownChunk = new SctpShutdownChunk(_remoteTSN);
+            uint tsnAck = (_remoteExpectedTSN == 0) ? UInt32.MaxValue : _remoteExpectedTSN - 1;
+            SctpShutdownChunk shutdownChunk = new SctpShutdownChunk(tsnAck);
             SendChunk(shutdownChunk);
         }
 
-        private void SetState(SctpAssociationState state)
+        internal void SetState(SctpAssociationState state)
         {
             logger.LogDebug($"SCTP state for association {ID} changed to {state}.");
             State = state;
@@ -316,7 +370,7 @@ namespace SIPSorcery.Net
             // A packet containing an INIT chunk MUST have a zero Verification Tag (Pg 15).
             SctpPacket init = new SctpPacket(_sctpSourcePort, _sctpDestinationPort, 0);
 
-            SctpInitChunk initChunk = new SctpInitChunk(SctpChunkType.INIT, _verificationTag, _tsn, ARwnd);
+            SctpInitChunk initChunk = new SctpInitChunk(SctpChunkType.INIT, VerificationTag, TSN, ARwnd);
             init.Chunks.Add(initChunk);
 
             SetState(SctpAssociationState.CookieWait);
@@ -348,7 +402,7 @@ namespace SIPSorcery.Net
                 logger.LogDebug($"SCTP send chunk TSN {(chunk as SctpDataChunk).TSN}.");
             }
 
-            logger.LogTrace(buffer.HexStr());
+            //logger.LogTrace(buffer.HexStr());
 
             _sctpTransport.Send(ID, buffer, 0, buffer.Length);
         }

@@ -77,20 +77,20 @@ namespace SIPSorcery.Net
         public bool IsOpened { get; private set; } = false;
 
         private RTCSctpTransport _transport;
-        
+
         /// <summary>
         /// For ordered data channel streams this is the sequence number that
         /// will be set on the SCTP DATA chunk.
         /// The DCEP ACK uses the 0 sequence number.
         /// </summary>
-        private ushort _seqnum = 1;
+        private ushort _seqnum = 0;
 
         public event Action onopen;
         //public event Action onbufferedamountlow;
         public event Action<string> onerror;
         //public event Action onclosing;
         public event Action onclose;
-        public event Action<DataChannelPayloadProtocols, byte[]> onmessage;
+        public event Action<RTCDataChannel, DataChannelPayloadProtocols, byte[]> onmessage;
 
         public RTCDataChannel(RTCSctpTransport transport, RTCDataChannelInit init = null)
         {
@@ -119,11 +119,23 @@ namespace SIPSorcery.Net
         public void close()
         {
             IsOpened = false;
-            readyState = RTCDataChannelState.closing;
-           //_sctpStream?.close();
             readyState = RTCDataChannelState.closed;
+            // TODO. What actions are required?
         }
 
+        /// <summary>
+        /// Trivial function to increment and roll the data channel sequence 
+        /// number.
+        /// </summary>
+        private ushort IncrementSeqnum(ushort seqnum)
+        {
+            return (ushort)((seqnum == UInt16.MaxValue) ? 0 : seqnum + 1);
+        }
+
+        /// <summary>
+        /// Sends a string data payload on the data channel.
+        /// </summary>
+        /// <param name="message">The string message to send.</param>
         public void send(string message)
         {
             if (_transport.state != RTCSctpTransportState.Connected)
@@ -132,25 +144,32 @@ namespace SIPSorcery.Net
             }
             else
             {
-                if (string.IsNullOrEmpty(message))
+                lock (this)
                 {
-                    _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                        _seqnum,
-                        (uint)DataChannelPayloadProtocols.WebRTC_String_Empty, 
-                        new byte[] { 0x00 });
-                }
-                else
-                {
-                    _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                        _seqnum,
-                        (uint)DataChannelPayloadProtocols.WebRTC_String,
-                        Encoding.UTF8.GetBytes(message));
-                }
+                    if (string.IsNullOrEmpty(message))
+                    {
+                        _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                            _seqnum,
+                            (uint)DataChannelPayloadProtocols.WebRTC_String_Empty,
+                            new byte[] { 0x00 });
+                    }
+                    else
+                    {
+                        _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                            _seqnum,
+                            (uint)DataChannelPayloadProtocols.WebRTC_String,
+                            Encoding.UTF8.GetBytes(message));
+                    }
 
-                _seqnum = (ushort)((_seqnum == UInt16.MaxValue) ? 0 : _seqnum + 1);
+                    _seqnum = IncrementSeqnum(_seqnum);
+                }
             }
         }
 
+        /// <summary>
+        /// Sends a binary data payload on the data channel.
+        /// </summary>
+        /// <param name="data">The data to send.</param>
         public void send(byte[] data)
         {
             if (_transport.state != RTCSctpTransportState.Connected)
@@ -159,22 +178,66 @@ namespace SIPSorcery.Net
             }
             else
             {
-                if (data?.Length == 0)
+                lock (this)
                 {
-                    _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                        _seqnum,
-                        (uint)DataChannelPayloadProtocols.WebRTC_Binary_Empty, 
-                        new byte[] { 0x00 });
-                }
-                else
-                {
-                    _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                        _seqnum,
-                        (uint)DataChannelPayloadProtocols.WebRTC_Binary,
-                       data);
-                }
+                    if (data?.Length == 0)
+                    {
+                        _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                            _seqnum,
+                            (uint)DataChannelPayloadProtocols.WebRTC_Binary_Empty,
+                            new byte[] { 0x00 });
+                    }
+                    else
+                    {
+                        _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                            _seqnum,
+                            (uint)DataChannelPayloadProtocols.WebRTC_Binary,
+                           data);
+                    }
 
-                _seqnum = (ushort)((_seqnum == UInt16.MaxValue) ? 0 : _seqnum + 1);
+                    _seqnum = IncrementSeqnum(_seqnum);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends an OPEN Data Channel Establishment Protocol (DCEP) message
+        /// to open a data channel on the remote peer for send/receive.
+        /// </summary>
+        internal void SendDcepOpen()
+        {
+            var dcepOpen = new DataChannelOpenMessage()
+            {
+                MessageType = (byte)DataChannelMessageTypes.OPEN,
+                ChannelType = (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE_UNORDERED,
+                Label = label
+            };
+
+            lock (this)
+            {
+                _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                       _seqnum,
+                       (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
+                       dcepOpen.GetBytes());
+
+                _seqnum = IncrementSeqnum(_seqnum);
+            }
+        }
+
+        /// <summary>
+        /// Sends an ACK response for a Data Channel Establishment Protocol (DCEP)
+        /// control message.
+        /// </summary>
+        internal void SendDcepAck()
+        {
+            lock (this)
+            {
+                _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                       _seqnum,
+                       (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
+                       new byte[] { (byte)DataChannelMessageTypes.ACK });
+
+                _seqnum = IncrementSeqnum(_seqnum);
             }
         }
 
@@ -185,19 +248,22 @@ namespace SIPSorcery.Net
             onclose?.Invoke();
         }
 
+        /// <summary>
+        /// Event handler for an SCTP data chunk being received for this data channel.
+        /// </summary>
         internal void GotData(ushort streamID, ushort streamSeqNum, uint ppID, byte[] data)
         {
             logger.LogTrace($"WebRTC data channel GotData stream ID {streamID}, stream seqnum {streamSeqNum}, ppid {ppID}, label {label}.");
 
-            if(Enum.IsDefined(typeof(DataChannelPayloadProtocols), ppID))
+            // If the ppID is not recognised default to binary.
+            DataChannelPayloadProtocols payloadType = DataChannelPayloadProtocols.WebRTC_Binary;
+
+            if (Enum.IsDefined(typeof(DataChannelPayloadProtocols), ppID))
             {
-                onmessage?.Invoke((DataChannelPayloadProtocols)ppID, data);
+                payloadType = (DataChannelPayloadProtocols)ppID;
             }
-            else
-            {
-                // Payload ID not recognised. Pass to application as raw data.
-                onmessage?.Invoke(DataChannelPayloadProtocols.WebRTC_Binary, data);
-            }
+
+            onmessage?.Invoke(this, (DataChannelPayloadProtocols)ppID, data);
         }
     }
 }

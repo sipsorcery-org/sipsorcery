@@ -74,25 +74,7 @@ namespace SIPSorcery.Net
             : base(rtcSctpTransport, null, srcPort, dstPort)
         {
             _rtcSctpTransport = rtcSctpTransport;
-            logger.LogDebug($"SCTP creating association is client { _rtcSctpTransport.IsDtlsClient} {srcPort}:{dstPort}.");
-
-            OnDataChunk += OnDataChunkReceived;
-        }
-
-        /// <summary>
-        /// Creates a new SCTP association with the remote peer based on a cookie from a COOKIE ECHO 
-        /// SCTP chunk. The cookie is the result on an SCTP handshake and indicates the association 
-        /// is being created based on an initial request from the remote party.
-        /// </summary>
-        /// <param name="rtcSctpTransport">The DTLS transport that will be used to encapsulate the
-        /// SCTP packets.</param>
-        /// <param anme="cookie">The cookie supplied from the SCTP handshake.</param>
-        public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, SctpTransportCookie cookie)
-            : base(rtcSctpTransport, cookie)
-        {
-            _rtcSctpTransport = rtcSctpTransport;
-            logger.LogDebug($"SCTP creating association from handshake cookie, is client { _rtcSctpTransport.IsDtlsClient} " +
-                $"{cookie.SourcePort}:{cookie.DestinationPort}.");
+            logger.LogDebug($"SCTP creating association is client {_rtcSctpTransport.IsDtlsClient} {srcPort}:{dstPort}.");
 
             OnDataChunk += OnDataChunkReceived;
         }
@@ -115,13 +97,8 @@ namespace SIPSorcery.Net
                         case (byte)DataChannelMessageTypes.OPEN:
                             var dcepOpen = DataChannelOpenMessage.Parse(dc.UserData, 0);
 
-                            logger.LogTrace($"DCEP OPEN data[0..12]: {dc.UserData.HexStr(12)}.");
-
                             logger.LogDebug($"DCEP OPEN channel type {dcepOpen.ChannelType}, priority {dcepOpen.Priority}, " +
                                 $"reliability {dcepOpen.Reliability}, label {dcepOpen.Label}, protocol {dcepOpen.Protocol}.");
-
-                            // Send ACK.
-                            SendData(dataChunk.StreamID, 0, (uint)DataChannelPayloadProtocols.WebRTC_DCEP, new byte[] { (byte)DataChannelMessageTypes.ACK });
 
                             DataChannelTypes channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
                             if(Enum.IsDefined(typeof(DataChannelTypes), dcepOpen.ChannelType))
