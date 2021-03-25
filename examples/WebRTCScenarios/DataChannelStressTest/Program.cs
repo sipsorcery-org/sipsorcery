@@ -126,7 +126,7 @@ namespace SIPSorcery.Demo
                             var packetNum = new Message();
                             packetNum.Num = i;
                             packetNum.QueueName = $"{peerA._peerName} {sendLabel} {name}";
-                            packetNum.Data = new byte[64000];
+                            packetNum.Data = new byte[64];
                             await peerA.SendAsync(sendLabel, packetNum.ToData()).ConfigureAwait(false);
                         }
                         catch (Exception ex)
@@ -220,7 +220,7 @@ namespace SIPSorcery.Demo
             public int Num;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
             public string QueueName;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64000)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
             public byte[] Data;
             public byte[] ToData()
             {

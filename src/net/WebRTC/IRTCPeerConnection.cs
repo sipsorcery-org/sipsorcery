@@ -248,7 +248,21 @@ namespace SIPSorcery.Net
         public RTCRtcpMuxPolicy rtcpMuxPolicy;
         public List<RTCCertificate> certificates;
 
-        public bool forceUseExtendedMasterSecret = true;
+        /// <summary>
+        /// The Bouncy Castle DTLS logic enforces the use of Extended Master 
+        /// Secret Keys as per RFC7627. Some WebRTC implementations do not support
+        /// Extended Master Secret Keys (for example Kurento in Mar 2021) and this 
+        /// configuration option is made available for cases where an application
+        /// explicitly decides it's acceptable to disable them.
+        /// </summary>
+        /// <remarks>
+        /// From  https://tools.ietf.org/html/rfc7627#section-4:
+        /// "Clients and servers SHOULD NOT accept handshakes that do not use the
+        /// extended master secret, especially if they rely on features like
+        /// compound authentication that fall into the vulnerable cases described
+        /// in Section 6.1."
+        /// </remarks>
+        public bool X_DisableExtendedMasterSecretKey;
 
         /// <summary>
         /// Size of the pre-fetched ICE pool. Defaults to 0.
