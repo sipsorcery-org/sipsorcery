@@ -4711,6 +4711,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpClient.Fingerprint
   nameWithType: DtlsSrtpClient.Fingerprint
+- uid: SIPSorcery.Net.DtlsSrtpClient.ForceUseExtendedMasterSecret
+  name: ForceUseExtendedMasterSecret
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_ForceUseExtendedMasterSecret
+  commentId: P:SIPSorcery.Net.DtlsSrtpClient.ForceUseExtendedMasterSecret
+  fullName: SIPSorcery.Net.DtlsSrtpClient.ForceUseExtendedMasterSecret
+  nameWithType: DtlsSrtpClient.ForceUseExtendedMasterSecret
+- uid: SIPSorcery.Net.DtlsSrtpClient.ForceUseExtendedMasterSecret*
+  name: ForceUseExtendedMasterSecret
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_ForceUseExtendedMasterSecret_
+  commentId: Overload:SIPSorcery.Net.DtlsSrtpClient.ForceUseExtendedMasterSecret
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsSrtpClient.ForceUseExtendedMasterSecret
+  nameWithType: DtlsSrtpClient.ForceUseExtendedMasterSecret
 - uid: SIPSorcery.Net.DtlsSrtpClient.GetAuthentication
   name: GetAuthentication()
   href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_GetAuthentication
@@ -4743,6 +4756,15 @@ references:
   commentId: M:SIPSorcery.Net.DtlsSrtpClient.GetKeyingMaterial(System.Int32)
   fullName: SIPSorcery.Net.DtlsSrtpClient.GetKeyingMaterial(System.Int32)
   nameWithType: DtlsSrtpClient.GetKeyingMaterial(Int32)
+- uid: SIPSorcery.Net.DtlsSrtpClient.GetKeyingMaterial(System.String,System.Byte[],System.Int32)
+  name: GetKeyingMaterial(String, Byte[], Int32)
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_GetKeyingMaterial_System_String_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.GetKeyingMaterial(System.String,System.Byte[],System.Int32)
+  name.vb: GetKeyingMaterial(String, Byte(), Int32)
+  fullName: SIPSorcery.Net.DtlsSrtpClient.GetKeyingMaterial(System.String, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.DtlsSrtpClient.GetKeyingMaterial(System.String, System.Byte(), System.Int32)
+  nameWithType: DtlsSrtpClient.GetKeyingMaterial(String, Byte[], Int32)
+  nameWithType.vb: DtlsSrtpClient.GetKeyingMaterial(String, Byte(), Int32)
 - uid: SIPSorcery.Net.DtlsSrtpClient.GetKeyingMaterial*
   name: GetKeyingMaterial
   href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_GetKeyingMaterial_
@@ -4970,6 +4992,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpClient.ProcessServerExtensions
   nameWithType: DtlsSrtpClient.ProcessServerExtensions
+- uid: SIPSorcery.Net.DtlsSrtpClient.RequiresExtendedMasterSecret
+  name: RequiresExtendedMasterSecret()
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_RequiresExtendedMasterSecret
+  commentId: M:SIPSorcery.Net.DtlsSrtpClient.RequiresExtendedMasterSecret
+  fullName: SIPSorcery.Net.DtlsSrtpClient.RequiresExtendedMasterSecret()
+  nameWithType: DtlsSrtpClient.RequiresExtendedMasterSecret()
+- uid: SIPSorcery.Net.DtlsSrtpClient.RequiresExtendedMasterSecret*
+  name: RequiresExtendedMasterSecret
+  href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_RequiresExtendedMasterSecret_
+  commentId: Overload:SIPSorcery.Net.DtlsSrtpClient.RequiresExtendedMasterSecret
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsSrtpClient.RequiresExtendedMasterSecret
+  nameWithType: DtlsSrtpClient.RequiresExtendedMasterSecret
 - uid: SIPSorcery.Net.DtlsSrtpClient.ServerCertificate
   name: ServerCertificate
   href: api/SIPSorcery.Net.DtlsSrtpClient.html#SIPSorcery_Net_DtlsSrtpClient_ServerCertificate
@@ -5068,6 +5103,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpServer.Fingerprint
   nameWithType: DtlsSrtpServer.Fingerprint
+- uid: SIPSorcery.Net.DtlsSrtpServer.ForceUseExtendedMasterSecret
+  name: ForceUseExtendedMasterSecret
+  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_ForceUseExtendedMasterSecret
+  commentId: P:SIPSorcery.Net.DtlsSrtpServer.ForceUseExtendedMasterSecret
+  fullName: SIPSorcery.Net.DtlsSrtpServer.ForceUseExtendedMasterSecret
+  nameWithType: DtlsSrtpServer.ForceUseExtendedMasterSecret
+- uid: SIPSorcery.Net.DtlsSrtpServer.ForceUseExtendedMasterSecret*
+  name: ForceUseExtendedMasterSecret
+  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_ForceUseExtendedMasterSecret_
+  commentId: Overload:SIPSorcery.Net.DtlsSrtpServer.ForceUseExtendedMasterSecret
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsSrtpServer.ForceUseExtendedMasterSecret
+  nameWithType: DtlsSrtpServer.ForceUseExtendedMasterSecret
 - uid: SIPSorcery.Net.DtlsSrtpServer.GetCertificateRequest
   name: GetCertificateRequest()
   href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_GetCertificateRequest
@@ -5113,6 +5161,15 @@ references:
   commentId: M:SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.Int32)
   fullName: SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.Int32)
   nameWithType: DtlsSrtpServer.GetKeyingMaterial(Int32)
+- uid: SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.String,System.Byte[],System.Int32)
+  name: GetKeyingMaterial(String, Byte[], Int32)
+  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_GetKeyingMaterial_System_String_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.String,System.Byte[],System.Int32)
+  name.vb: GetKeyingMaterial(String, Byte(), Int32)
+  fullName: SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.String, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.String, System.Byte(), System.Int32)
+  nameWithType: DtlsSrtpServer.GetKeyingMaterial(String, Byte[], Int32)
+  nameWithType.vb: DtlsSrtpServer.GetKeyingMaterial(String, Byte(), Int32)
 - uid: SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial*
   name: GetKeyingMaterial
   href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_GetKeyingMaterial_
@@ -5412,6 +5469,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpServer.ProcessClientExtensions
   nameWithType: DtlsSrtpServer.ProcessClientExtensions
+- uid: SIPSorcery.Net.DtlsSrtpServer.RequiresExtendedMasterSecret
+  name: RequiresExtendedMasterSecret()
+  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_RequiresExtendedMasterSecret
+  commentId: M:SIPSorcery.Net.DtlsSrtpServer.RequiresExtendedMasterSecret
+  fullName: SIPSorcery.Net.DtlsSrtpServer.RequiresExtendedMasterSecret()
+  nameWithType: DtlsSrtpServer.RequiresExtendedMasterSecret()
+- uid: SIPSorcery.Net.DtlsSrtpServer.RequiresExtendedMasterSecret*
+  name: RequiresExtendedMasterSecret
+  href: api/SIPSorcery.Net.DtlsSrtpServer.html#SIPSorcery_Net_DtlsSrtpServer_RequiresExtendedMasterSecret_
+  commentId: Overload:SIPSorcery.Net.DtlsSrtpServer.RequiresExtendedMasterSecret
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsSrtpServer.RequiresExtendedMasterSecret
+  nameWithType: DtlsSrtpServer.RequiresExtendedMasterSecret
 - uid: SIPSorcery.Net.DtlsSrtpTransport
   name: DtlsSrtpTransport
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html
@@ -6670,6 +6740,19 @@ references:
   commentId: T:SIPSorcery.Net.IDtlsSrtpPeer
   fullName: SIPSorcery.Net.IDtlsSrtpPeer
   nameWithType: IDtlsSrtpPeer
+- uid: SIPSorcery.Net.IDtlsSrtpPeer.ForceUseExtendedMasterSecret
+  name: ForceUseExtendedMasterSecret
+  href: api/SIPSorcery.Net.IDtlsSrtpPeer.html#SIPSorcery_Net_IDtlsSrtpPeer_ForceUseExtendedMasterSecret
+  commentId: P:SIPSorcery.Net.IDtlsSrtpPeer.ForceUseExtendedMasterSecret
+  fullName: SIPSorcery.Net.IDtlsSrtpPeer.ForceUseExtendedMasterSecret
+  nameWithType: IDtlsSrtpPeer.ForceUseExtendedMasterSecret
+- uid: SIPSorcery.Net.IDtlsSrtpPeer.ForceUseExtendedMasterSecret*
+  name: ForceUseExtendedMasterSecret
+  href: api/SIPSorcery.Net.IDtlsSrtpPeer.html#SIPSorcery_Net_IDtlsSrtpPeer_ForceUseExtendedMasterSecret_
+  commentId: Overload:SIPSorcery.Net.IDtlsSrtpPeer.ForceUseExtendedMasterSecret
+  isSpec: "True"
+  fullName: SIPSorcery.Net.IDtlsSrtpPeer.ForceUseExtendedMasterSecret
+  nameWithType: IDtlsSrtpPeer.ForceUseExtendedMasterSecret
 - uid: SIPSorcery.Net.IDtlsSrtpPeer.GetRemoteCertificate
   name: GetRemoteCertificate()
   href: api/SIPSorcery.Net.IDtlsSrtpPeer.html#SIPSorcery_Net_IDtlsSrtpPeer_GetRemoteCertificate
@@ -8248,6 +8331,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCConfiguration.certificates
   fullName: SIPSorcery.Net.RTCConfiguration.certificates
   nameWithType: RTCConfiguration.certificates
+- uid: SIPSorcery.Net.RTCConfiguration.forceUseExtendedMasterSecret
+  name: forceUseExtendedMasterSecret
+  href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_forceUseExtendedMasterSecret
+  commentId: F:SIPSorcery.Net.RTCConfiguration.forceUseExtendedMasterSecret
+  fullName: SIPSorcery.Net.RTCConfiguration.forceUseExtendedMasterSecret
+  nameWithType: RTCConfiguration.forceUseExtendedMasterSecret
 - uid: SIPSorcery.Net.RTCConfiguration.iceCandidatePoolSize
   name: iceCandidatePoolSize
   href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_iceCandidatePoolSize
