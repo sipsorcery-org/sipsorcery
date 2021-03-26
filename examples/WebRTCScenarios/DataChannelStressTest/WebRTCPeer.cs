@@ -60,10 +60,10 @@ namespace SIPSorcery.Demo
             _peerName = peerName;
             _dataChannelLabel = dataChannelLabel;
 
-            PeerConnection = Createpc();
+            PeerConnection = Createpc().Result;
         }
 
-        private RTCPeerConnection Createpc()
+        private async Task<RTCPeerConnection> Createpc()
         {
             List<RTCCertificate> presetCertificates = null;
             if (File.Exists(LOCALHOST_CERTIFICATE_PATH))
@@ -82,9 +82,9 @@ namespace SIPSorcery.Demo
             pc.GetRtpChannel().MdnsResolve = MdnsResolve;
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"{_peerName}: STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
-            var dataChannel = pc.createDataChannel(_dataChannelLabel, null);
-            dataChannel.onDatamessage -= DataChannel_onDatamessage;
-            dataChannel.onDatamessage += DataChannel_onDatamessage;
+            var dataChannel = await pc.createDataChannel(_dataChannelLabel, null);
+            //dataChannel.onmessage -= DataChannel_onDatamessage;
+            dataChannel.onmessage += DataChannel_onDatamessage;
             _dataChannels.Add(_dataChannelLabel, dataChannel);
 
             pc.onicecandidateerror += (candidate, error) => logger.LogWarning($"{_peerName}: Error adding remote ICE candidate. {error} {candidate}");
@@ -116,8 +116,8 @@ namespace SIPSorcery.Demo
             pc.ondatachannel += (dc) =>
             {
                 dc.onopen += () => logger.LogDebug($"{_peerName}: Data channel now open label {dc.label}, stream ID {dc.id}.");
-                dc.onDatamessage -= DataChannel_onDatamessage;
-                dc.onDatamessage += DataChannel_onDatamessage;
+                //dc.onDatamessage -= DataChannel_onDatamessage;
+                dc.onmessage += DataChannel_onDatamessage;
                 logger.LogDebug($"{_peerName}: Data channel created by remote peer, label {dc.label}, stream ID {dc.id}.");
                 _dataChannels.Add(dc.label, dc);
             };
@@ -125,7 +125,7 @@ namespace SIPSorcery.Demo
             return pc;
         }
 
-        private void DataChannel_onDatamessage(byte[] obj)
+        private void DataChannel_onDatamessage(RTCDataChannel dc, DataChannelPayloadProtocols ppid, byte[] obj)
         {
             OnData?.Invoke(this, obj);
         }
