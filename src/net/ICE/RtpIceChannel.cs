@@ -5,23 +5,31 @@
 // described in the Interactive Connectivity Establishment RFC8445
 // https://tools.ietf.org/html/rfc8445.
 //
-// Additionally support for the following standards or proposed standards 
+// Remarks:
+//
+// Support for the following standards or proposed standards 
 // is included:
+//
 // - "Trickle ICE" as per draft RFC
 //   https://tools.ietf.org/html/draft-ietf-ice-trickle-21.
-// - "WebRTC IP Address Handling Requirements" as per draft RFC
+//
+// - "WebRTC IP Address Handling Requirements" as per draft RFC 
 //   https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12
 //   SECURITY NOTE: See https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2
 //   for recommendations on how a WebRTC application should expose a
 //   hosts IP address information. This implementation is using Mode 2.
+//
 // - Session Traversal Utilities for NAT (STUN)
 //   https://tools.ietf.org/html/rfc8553
+//
 // - Traversal Using Relays around NAT (TURN): Relay Extensions to 
 //   Session Traversal Utilities for NAT (STUN)
 //   https://tools.ietf.org/html/rfc5766
+//
 // - Using Multicast DNS to protect privacy when exposing ICE candidates
 //   draft-ietf-rtcweb-mdns-ice-candidates-04 [ed. not implemented as of 26 Jul 2020].
 //   https://tools.ietf.org/html/draft-ietf-rtcweb-mdns-ice-candidates-04
+//
 // - Multicast DNS
 //   https://tools.ietf.org/html/rfc6762
 //
@@ -42,7 +50,7 @@
 // c:\> dns-sd -G v4 fbba6380-2cc4-41b1-ab0d-61548dd28a29.local
 // c:\> dns-sd -G v6 b1f949b8-5ec9-41a6-b3ef-eb529f217de9.local
 // But it's expected that it's highly unlikely support will be added to .NET Core
-// anytime soon (AC 26 Jul 2020).
+// any time soon (AC 26 Jul 2020).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -246,6 +254,7 @@ namespace SIPSorcery.Net
         private Timer _processIceServersTimer;
         private DateTime _checklistStartedAt = DateTime.MinValue;
         private bool _includeAllInterfaceAddresses = false;
+        private ulong _iceTiebreaker;
 
         public event Action<RTCIceCandidate> OnIceCandidate;
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
@@ -320,6 +329,7 @@ namespace SIPSorcery.Net
             _iceServers = iceServers;
             _policy = policy;
             _includeAllInterfaceAddresses = includeAllInterfaceAddresses;
+            _iceTiebreaker = Crypto.GetRandomULong();
 
             LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);
             LocalIcePassword = Crypto.GetRandomString(ICE_PASSWORD_LENGTH);
@@ -1300,6 +1310,15 @@ namespace SIPSorcery.Net
             stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionID);
             stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(candidatePair.LocalPriority)));
+
+            if(IsController)
+            {
+                stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.IceControlling, NetConvert.GetBytes(_iceTiebreaker)));
+            }
+            else
+            {
+                stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.IceControlled, NetConvert.GetBytes(_iceTiebreaker)));
+            }
 
             if (setUseCandidate)
             {

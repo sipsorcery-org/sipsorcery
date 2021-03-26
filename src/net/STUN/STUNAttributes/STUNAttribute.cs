@@ -8,6 +8,7 @@
 //
 // History:
 // 26 Nov 2010	Aaron Clauson	Created, Hobart, Australia.
+// 26 Mar 2021  Aaron Clauson   Added ICE-CONTROLLED attribute.
 //
 // Notes:
 //
@@ -64,8 +65,9 @@ namespace SIPSorcery.Net
         AlternateServer = 0x8023,       // Added in RFC5389.
         FingerPrint = 0x8028,           // Added in RFC5389.
 
-        IceControlling = 0x802a,
-        Priority = 0x0024,
+        IceControlled = 0x8029,         // Added in RFC8445.
+        IceControlling = 0x802a,        // Added in RFC8445.
+        Priority = 0x0024,              // Added in RFC8445.
 
         UseCandidate = 0x0025,          // Added in RFC5245.
 
@@ -127,29 +129,19 @@ namespace SIPSorcery.Net
         public STUNAttribute(STUNAttributeTypesEnum attributeType, ushort value)
         {
             AttributeType = attributeType;
-
-            if (BitConverter.IsLittleEndian)
-            {
-                Value = BitConverter.GetBytes(NetConvert.DoReverseEndian(value));
-            }
-            else
-            {
-                Value = BitConverter.GetBytes(value);
-            }
+            Value = NetConvert.GetBytes(value);
         }
 
-        public STUNAttribute(STUNAttributeTypesEnum attributeType, int value)
+        public STUNAttribute(STUNAttributeTypesEnum attributeType, uint value)
         {
             AttributeType = attributeType;
+            Value = NetConvert.GetBytes(value);
+        }
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Value = BitConverter.GetBytes(NetConvert.DoReverseEndian(Convert.ToUInt32(value)));
-            }
-            else
-            {
-                Value = BitConverter.GetBytes(value);
-            }
+        public STUNAttribute(STUNAttributeTypesEnum attributeType, ulong value)
+        {
+            AttributeType = attributeType;
+            Value = NetConvert.GetBytes(value);
         }
 
         public static List<STUNAttribute> ParseMessageAttributes(byte[] buffer, int startIndex, int endIndex)
@@ -161,15 +153,9 @@ namespace SIPSorcery.Net
 
                 while (startAttIndex < endIndex)
                 {
-                    UInt16 stunAttributeType = BitConverter.ToUInt16(buffer, startAttIndex);
-                    UInt16 stunAttributeLength = BitConverter.ToUInt16(buffer, startAttIndex + 2);
+                    UInt16 stunAttributeType = NetConvert.ParseUInt16(buffer, startAttIndex);
+                    UInt16 stunAttributeLength = NetConvert.ParseUInt16(buffer, startAttIndex + 2);
                     byte[] stunAttributeValue = null;
-
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        stunAttributeType = NetConvert.DoReverseEndian(stunAttributeType);
-                        stunAttributeLength = NetConvert.DoReverseEndian(stunAttributeLength);
-                    }
 
                     if (stunAttributeLength > 0)
                     {

@@ -13,13 +13,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using Xunit;
 
-namespace SIPSorcery.UnitTests.Net
+namespace SIPSorcery.Net.UnitTests
 {
     [Trait("Category", "unit")]
     public class ReceptionReportUnitTest

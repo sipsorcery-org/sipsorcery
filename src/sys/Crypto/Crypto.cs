@@ -260,6 +260,13 @@ namespace SIPSorcery.Sys
             return BitConverter.ToUInt32(uint32Buffer, 0);
         }
 
+        public static UInt64 GetRandomULong()
+        {
+            byte[] uint64Buffer = new byte[8];
+            m_randomProvider.GetBytes(uint64Buffer);
+            return BitConverter.ToUInt64(uint64Buffer, 0);
+        }
+
         //public static string GetRandomString(int length)
         //{
         //    string randomStr = GetRandomInt(length).ToString();
