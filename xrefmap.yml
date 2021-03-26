@@ -8331,12 +8331,6 @@ references:
   commentId: F:SIPSorcery.Net.RTCConfiguration.certificates
   fullName: SIPSorcery.Net.RTCConfiguration.certificates
   nameWithType: RTCConfiguration.certificates
-- uid: SIPSorcery.Net.RTCConfiguration.forceUseExtendedMasterSecret
-  name: forceUseExtendedMasterSecret
-  href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_forceUseExtendedMasterSecret
-  commentId: F:SIPSorcery.Net.RTCConfiguration.forceUseExtendedMasterSecret
-  fullName: SIPSorcery.Net.RTCConfiguration.forceUseExtendedMasterSecret
-  nameWithType: RTCConfiguration.forceUseExtendedMasterSecret
 - uid: SIPSorcery.Net.RTCConfiguration.iceCandidatePoolSize
   name: iceCandidatePoolSize
   href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_iceCandidatePoolSize
@@ -8367,6 +8361,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCConfiguration.X_BindAddress
   fullName: SIPSorcery.Net.RTCConfiguration.X_BindAddress
   nameWithType: RTCConfiguration.X_BindAddress
+- uid: SIPSorcery.Net.RTCConfiguration.X_DisableExtendedMasterSecretKey
+  name: X_DisableExtendedMasterSecretKey
+  href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_X_DisableExtendedMasterSecretKey
+  commentId: F:SIPSorcery.Net.RTCConfiguration.X_DisableExtendedMasterSecretKey
+  fullName: SIPSorcery.Net.RTCConfiguration.X_DisableExtendedMasterSecretKey
+  nameWithType: RTCConfiguration.X_DisableExtendedMasterSecretKey
 - uid: SIPSorcery.Net.RTCConfiguration.X_ICEIncludeAllInterfaceAddresses
   name: X_ICEIncludeAllInterfaceAddresses
   href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_X_ICEIncludeAllInterfaceAddresses
@@ -22973,18 +22973,24 @@ references:
   fullName.vb: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Byte())
   nameWithType: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, Byte[])
   nameWithType.vb: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, Byte())
-- uid: SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32)
-  name: STUNAttribute(STUNAttributeTypesEnum, Int32)
-  href: api/SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Int32_
-  commentId: M:SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32)
-  fullName: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Int32)
-  nameWithType: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, Int32)
 - uid: SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.UInt16)
   name: STUNAttribute(STUNAttributeTypesEnum, UInt16)
   href: api/SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_UInt16_
   commentId: M:SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.UInt16)
   fullName: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.UInt16)
   nameWithType: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, UInt16)
+- uid: SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.UInt32)
+  name: STUNAttribute(STUNAttributeTypesEnum, UInt32)
+  href: api/SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_UInt32_
+  commentId: M:SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.UInt32)
+  fullName: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.UInt32)
+  nameWithType: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, UInt32)
+- uid: SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.UInt64)
+  name: STUNAttribute(STUNAttributeTypesEnum, UInt64)
+  href: api/SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_UInt64_
+  commentId: M:SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.UInt64)
+  fullName: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.UInt64)
+  nameWithType: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, UInt64)
 - uid: SIPSorcery.Net.STUNAttribute.#ctor*
   name: STUNAttribute
   href: api/SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute__ctor_
@@ -23159,6 +23165,12 @@ references:
   commentId: F:SIPSorcery.Net.STUNAttributeTypesEnum.FingerPrint
   fullName: SIPSorcery.Net.STUNAttributeTypesEnum.FingerPrint
   nameWithType: STUNAttributeTypesEnum.FingerPrint
+- uid: SIPSorcery.Net.STUNAttributeTypesEnum.IceControlled
+  name: IceControlled
+  href: api/SIPSorcery.Net.STUNAttributeTypesEnum.html#SIPSorcery_Net_STUNAttributeTypesEnum_IceControlled
+  commentId: F:SIPSorcery.Net.STUNAttributeTypesEnum.IceControlled
+  fullName: SIPSorcery.Net.STUNAttributeTypesEnum.IceControlled
+  nameWithType: STUNAttributeTypesEnum.IceControlled
 - uid: SIPSorcery.Net.STUNAttributeTypesEnum.IceControlling
   name: IceControlling
   href: api/SIPSorcery.Net.STUNAttributeTypesEnum.html#SIPSorcery_Net_STUNAttributeTypesEnum_IceControlling
@@ -38551,6 +38563,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.Crypto.GetRandomUInt16
   nameWithType: Crypto.GetRandomUInt16
+- uid: SIPSorcery.Sys.Crypto.GetRandomULong
+  name: GetRandomULong()
+  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetRandomULong
+  commentId: M:SIPSorcery.Sys.Crypto.GetRandomULong
+  fullName: SIPSorcery.Sys.Crypto.GetRandomULong()
+  nameWithType: Crypto.GetRandomULong()
+- uid: SIPSorcery.Sys.Crypto.GetRandomULong*
+  name: GetRandomULong
+  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetRandomULong_
+  commentId: Overload:SIPSorcery.Sys.Crypto.GetRandomULong
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.Crypto.GetRandomULong
+  nameWithType: Crypto.GetRandomULong
 - uid: SIPSorcery.Sys.Crypto.GetSHAHash(System.String[])
   name: GetSHAHash(String[])
   href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetSHAHash_System_String___
@@ -39032,6 +39057,31 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetConvert.EndianFlip
   nameWithType: NetConvert.EndianFlip
+- uid: SIPSorcery.Sys.NetConvert.GetBytes(System.UInt16)
+  name: GetBytes(UInt16)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_GetBytes_System_UInt16_
+  commentId: M:SIPSorcery.Sys.NetConvert.GetBytes(System.UInt16)
+  fullName: SIPSorcery.Sys.NetConvert.GetBytes(System.UInt16)
+  nameWithType: NetConvert.GetBytes(UInt16)
+- uid: SIPSorcery.Sys.NetConvert.GetBytes(System.UInt32)
+  name: GetBytes(UInt32)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_GetBytes_System_UInt32_
+  commentId: M:SIPSorcery.Sys.NetConvert.GetBytes(System.UInt32)
+  fullName: SIPSorcery.Sys.NetConvert.GetBytes(System.UInt32)
+  nameWithType: NetConvert.GetBytes(UInt32)
+- uid: SIPSorcery.Sys.NetConvert.GetBytes(System.UInt64)
+  name: GetBytes(UInt64)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_GetBytes_System_UInt64_
+  commentId: M:SIPSorcery.Sys.NetConvert.GetBytes(System.UInt64)
+  fullName: SIPSorcery.Sys.NetConvert.GetBytes(System.UInt64)
+  nameWithType: NetConvert.GetBytes(UInt64)
+- uid: SIPSorcery.Sys.NetConvert.GetBytes*
+  name: GetBytes
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_GetBytes_
+  commentId: Overload:SIPSorcery.Sys.NetConvert.GetBytes
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetConvert.GetBytes
+  nameWithType: NetConvert.GetBytes
 - uid: SIPSorcery.Sys.NetConvert.ParseUInt16(System.Byte[],System.Int32)
   name: ParseUInt16(Byte[], Int32)
   href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ParseUInt16_System_Byte___System_Int32_
@@ -39064,6 +39114,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetConvert.ParseUInt32
   nameWithType: NetConvert.ParseUInt32
+- uid: SIPSorcery.Sys.NetConvert.ParseUInt64(System.Byte[],System.Int32)
+  name: ParseUInt64(Byte[], Int32)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ParseUInt64_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Sys.NetConvert.ParseUInt64(System.Byte[],System.Int32)
+  name.vb: ParseUInt64(Byte(), Int32)
+  fullName: SIPSorcery.Sys.NetConvert.ParseUInt64(System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Sys.NetConvert.ParseUInt64(System.Byte(), System.Int32)
+  nameWithType: NetConvert.ParseUInt64(Byte[], Int32)
+  nameWithType.vb: NetConvert.ParseUInt64(Byte(), Int32)
+- uid: SIPSorcery.Sys.NetConvert.ParseUInt64*
+  name: ParseUInt64
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ParseUInt64_
+  commentId: Overload:SIPSorcery.Sys.NetConvert.ParseUInt64
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetConvert.ParseUInt64
+  nameWithType: NetConvert.ParseUInt64
 - uid: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt16,System.Byte[],System.Int32)
   name: ToBuffer(UInt16, Byte[], Int32)
   href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ToBuffer_System_UInt16_System_Byte___System_Int32_
@@ -39082,6 +39148,15 @@ references:
   fullName.vb: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt32, System.Byte(), System.Int32)
   nameWithType: NetConvert.ToBuffer(UInt32, Byte[], Int32)
   nameWithType.vb: NetConvert.ToBuffer(UInt32, Byte(), Int32)
+- uid: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt64,System.Byte[],System.Int32)
+  name: ToBuffer(UInt64, Byte[], Int32)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ToBuffer_System_UInt64_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt64,System.Byte[],System.Int32)
+  name.vb: ToBuffer(UInt64, Byte(), Int32)
+  fullName: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt64, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Sys.NetConvert.ToBuffer(System.UInt64, System.Byte(), System.Int32)
+  nameWithType: NetConvert.ToBuffer(UInt64, Byte[], Int32)
+  nameWithType.vb: NetConvert.ToBuffer(UInt64, Byte(), Int32)
 - uid: SIPSorcery.Sys.NetConvert.ToBuffer*
   name: ToBuffer
   href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_ToBuffer_
