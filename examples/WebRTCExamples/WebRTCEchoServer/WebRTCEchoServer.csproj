@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SIPSorcery" Version="5.1.2" />
+    <PackageReference Include="SIPSorcery" Version="5.1.5-pre" />
   </ItemGroup>
 
 </Project>
