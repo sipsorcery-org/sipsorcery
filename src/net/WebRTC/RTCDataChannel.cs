@@ -74,7 +74,7 @@ namespace SIPSorcery.Net
 
         public string Error { get; private set; }
 
-        public bool IsOpened { get; private set; } = false;
+        public bool IsOpened { get; internal set; } = false;
 
         private RTCSctpTransport _transport;
 
