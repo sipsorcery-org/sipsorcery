@@ -480,7 +480,7 @@ namespace SIPSorcery.Net
                     IDtlsSrtpPeer dtlsSrtpPeer = IceRole == IceRolesEnum.active ?
                                 (IDtlsSrtpPeer)new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) :
                                 (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey);
-                    dtlsSrtpPeer.ForceUseExtendedMasterSecret = _configuration == null || _configuration.forceUseExtendedMasterSecret;
+                    dtlsSrtpPeer.ForceUseExtendedMasterSecret = _configuration == null || !_configuration.X_DisableExtendedMasterSecretKey;
 
                     _dtlsHandle = new DtlsSrtpTransport(dtlsSrtpPeer);
 
