@@ -46,12 +46,6 @@ namespace SIPSorcery.Net
         public RTCAnswerOptions AnswerOptions { get; set; }
 
         /// <summary>
-        /// Can be set to true to wait for an SDP offer from the remote peer rather
-        /// then immediately sending the SDP offer.
-        /// </summary>
-        public bool WaitForRemoteOffer { get; set; }
-
-        /// <summary>
         /// Optional filter that can be applied to remote ICE candidates. The filter is 
         /// primarily intended for use in testing. In real application scenarios it's 
         /// normally desirable to accept all remote ICE candidates.
@@ -133,7 +127,7 @@ namespace SIPSorcery.Net
                 }
             };
 
-            if (!WaitForRemoteOffer)
+            if (base.Context.QueryString["role"] != "offer")
             {
                 var offerSdp = _pc.createOffer(OfferOptions);
                 await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);

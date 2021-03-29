@@ -34,7 +34,7 @@
                 if (pc.connectionState == "connected") {
                     console.log(`creating data channel ${DATA_CHANNEL_LABEL}.`);
                     dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
-                    dc.onopen = (event) => console.log(`data channel onopen: id=${dc.id} ${event.data}.`);
+                    dc.onopen = (event) => console.log(`data channel onopen: id=${dc.id}, label ${dc.label}.`);
                     dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
                     dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
                 }
@@ -90,7 +90,7 @@
     </div>
 
     <div>
-        <input type="text" id="message" />
+        <input type="text" id="message" value="hello world" />
         <button type="button" class="btn btn-success" onclick="sendMessage(document.querySelector('#message').value);">Send Message</button>
     </div>
 </body>

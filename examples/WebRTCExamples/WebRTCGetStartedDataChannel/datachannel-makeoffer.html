@@ -12,7 +12,7 @@
          */
 
         const STUN_URL = "stun:stun.sipsorcery.com";
-        const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
+        const WEBSOCKET_URL = "ws://127.0.0.1:8081/?role=offer"
         const DATA_CHANNEL_LABEL = "dc1"
 
         var dc, pc, ws;
@@ -44,7 +44,7 @@
             //}
 
             dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
-            dc.onopen = (obj, event) => console.log(`data channel onopen: ${event}.`);
+            dc.onopen = (event) => console.log(`data channel onopen: id=${dc.id}, label ${dc.label}.`);
             dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
             dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
 
@@ -91,7 +91,7 @@
     </div>
 
     <div>
-        <input type="text" id="message" />
+        <input type="text" id="message" value="hello world"/>
         <button type="button" class="btn btn-success" onclick="sendMessage(document.querySelector('#message').value);">Send Message</button>
     </div>
 </body>

@@ -47,7 +47,6 @@ namespace demo
             var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
             webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => {
                 peer.CreatePeerConnection = CreatePeerConnection;
-                peer.WaitForRemoteOffer = true;
             });
             webSocketServer.Start();
 
@@ -98,9 +97,9 @@ namespace demo
             };
 
             // Diagnostics.
-            pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-            pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
-            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
+            //pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+            //pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+            //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
             pc.onsignalingstatechange += () => logger.LogDebug($"Signalling state changed to {pc.signalingState}.");
 
