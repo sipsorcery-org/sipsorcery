@@ -6,9 +6,12 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
+// Jacek Dzija
+// Mateusz Greczek
 //
 // History:
 // ??	Aaron Clauson	Created, Hobart, Australia.
+// 30 Mar 2021 Jacek Dzija,Mateusz Greczek Added MSRP
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -25,7 +28,8 @@ namespace SIPSorcery.Net
         application = 3,
         data = 4,
         control = 5,
-        image = 6
+        image = 6,
+        message = 7
     }
 
     public class SDPMediaTypes
