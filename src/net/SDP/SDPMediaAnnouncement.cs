@@ -5,10 +5,13 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
+// Jacek Dzija
+// Mateusz Greczek
 //
 // History:
 // ??	Aaron Clauson	Created, Hobart, Australia.
 // rj2: add SDPSecurityDescription parser
+// 30 Mar 2021 Jacek Dzija,Mateusz Greczek Added MSRP
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,6 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.SDP;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
@@ -82,6 +86,7 @@ namespace SIPSorcery.Net
         public bool IceEndOfCandidates;         // If ICE candidate trickling is being used this needs to be set if all candidates have been gathered.
         public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
         public int MLineIndex = 0;
+        public string IP;
 
         /// <summary>
         /// If being used in a bundle this the ID for the announcement.
@@ -134,6 +139,11 @@ namespace SIPSorcery.Net
         ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
         /// </summary>
         public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
+
+        /// <summary>
+        ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
+        /// </summary>
+        public SDPMessageMediaFormat MessageMediaFormat = new SDPMessageMediaFormat();
 
         /// <summary>
         /// List of media formats for "application media announcements. Application media announcements have different
@@ -192,6 +202,15 @@ namespace SIPSorcery.Net
             }
         }
 
+        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, string iP, int port, SDPMessageMediaFormat messageMediaFormat)
+        {
+            Media = mediaType;
+            Port = port;
+            IP = iP;
+
+            MessageMediaFormat =  messageMediaFormat;
+        }
+
         public void ParseMediaFormats(string formatList)
         {
             if (!String.IsNullOrWhiteSpace(formatList))
@@ -204,6 +223,10 @@ namespace SIPSorcery.Net
                         if (Media == SDPMediaTypesEnum.application)
                         {
                             ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
+                        }
+                        else if (Media == SDPMediaTypesEnum.message)
+                        {
+                            //TODO
                         }
                         else
                         {
@@ -347,6 +370,10 @@ namespace SIPSorcery.Net
 
                 return sb.ToString().Trim();
             }
+            else if (Media == SDPMediaTypesEnum.message)
+            {
+                return "*";
+            }
             else
             {
                 string mediaFormatList = null;
@@ -385,6 +412,37 @@ namespace SIPSorcery.Net
                 {
                     return null;
                 }
+            }
+            else if (Media == SDPMediaTypesEnum.message)
+            {
+                StringBuilder sb = new StringBuilder();
+
+                var mediaFormat = MessageMediaFormat;
+                var acceptTypes = mediaFormat.AcceptTypes;
+                if (acceptTypes != null && acceptTypes.Count >0)
+                {
+                    sb.Append($"a=accept-types:");
+                    foreach (var type in acceptTypes)
+                    {
+                        sb.Append($"{type} ");
+                    }
+
+                    sb.Append($"{m_CRLF}");
+                }
+
+                if (mediaFormat.IP != null && mediaFormat.Port != null)
+                {
+                    sb.Append($"a=path:msrp://{mediaFormat.IP}:{mediaFormat.Port}");
+
+                    if (mediaFormat.Endpoint != null)
+                    {
+                        sb.Append($"/{mediaFormat.Endpoint}");
+                    }
+
+                    sb.Append($"{m_CRLF}");
+                }
+                
+                return sb.ToString();
             }
             else
             {
