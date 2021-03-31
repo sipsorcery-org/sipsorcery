@@ -30,14 +30,15 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate void OnRTCDataChannelData(ushort streamID, ushort streamSeqnum, uint ppid, byte[] data);
-
     public delegate void OnRTCDataChannelOpened(ushort streamID);
 
     public delegate void OnNewRTCDataChannel(ushort streamID, DataChannelTypes type, ushort priority, uint reliability, string label, string protocol);
 
     public class RTCPeerSctpAssociation : SctpAssociation
     {
+        // TODO: Add MTU path discovery.
+        public const ushort DEFAULT_DTLS_MTU = 1200;
+
         private static readonly ILogger logger = Log.Logger;
 
         /// <summary>
@@ -48,7 +49,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event notifications for user data on an SCTP stream representing a data channel.
         /// </summary>
-        public event OnRTCDataChannelData OnDataChannelData;
+        public event Action<SctpDataFrame> OnDataChannelData;
 
         /// <summary>
         /// Event notifications for the request to open a data channel being confirmed. This
@@ -71,31 +72,32 @@ namespace SIPSorcery.Net
         /// <param name="srcPort">The source port to use when forming the association.</param>
         /// <param name="dstPort">The destination port to use when forming the association.</param>
         public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, ushort srcPort, ushort dstPort)
-            : base(rtcSctpTransport, null, srcPort, dstPort)
+            : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU)
         {
             _rtcSctpTransport = rtcSctpTransport;
             logger.LogDebug($"SCTP creating association is client {_rtcSctpTransport.IsDtlsClient} {srcPort}:{dstPort}.");
 
-            OnDataChunk += OnDataChunkReceived;
+            OnData += OnDataFrameReceived;
         }
 
         /// <summary>
         /// Event handler for a DATA chunk being received. The chunk can be either a DCEP message or data channel data
         /// payload.
         /// </summary>
-        /// <param name="dataChunk">The received data chunk.</param>
-        private void OnDataChunkReceived(SctpDataChunk dataChunk)
+        /// <param name="dataFrame">The received data frame which could represent one or more chunks depending
+        /// on fragmentation..</param>
+        private void OnDataFrameReceived(SctpDataFrame dataFrame)
         {
-            switch (dataChunk)
+            switch (dataFrame)
             {
-                case var dc when dc.PPID == (uint)DataChannelPayloadProtocols.WebRTC_DCEP:
-                    switch (dc.UserData[0])
+                case var frame when frame.PPID == (uint)DataChannelPayloadProtocols.WebRTC_DCEP:
+                    switch (frame.UserData[0])
                     {
                         case (byte)DataChannelMessageTypes.ACK:
-                            OnDataChannelOpened?.Invoke(dataChunk.StreamID);
+                            OnDataChannelOpened?.Invoke(frame.StreamID);
                             break;
                         case (byte)DataChannelMessageTypes.OPEN:
-                            var dcepOpen = DataChannelOpenMessage.Parse(dc.UserData, 0);
+                            var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData, 0);
 
                             logger.LogDebug($"DCEP OPEN channel type {dcepOpen.ChannelType}, priority {dcepOpen.Priority}, " +
                                 $"reliability {dcepOpen.Reliability}, label {dcepOpen.Label}, protocol {dcepOpen.Protocol}.");
@@ -111,7 +113,7 @@ namespace SIPSorcery.Net
                             }
 
                             OnNewDataChannel?.Invoke(
-                                dataChunk.StreamID,
+                                frame.StreamID,
                                 channelType,
                                 dcepOpen.Priority,
                                 dcepOpen.Reliability,
@@ -120,13 +122,13 @@ namespace SIPSorcery.Net
 
                             break;
                         default:
-                            logger.LogWarning($"DCEP message type {dc.UserData[0]} not recognised, ignoring.");
+                            logger.LogWarning($"DCEP message type {frame.UserData[0]} not recognised, ignoring.");
                             break;
                     }
                     break;
 
                 default:
-                    OnDataChannelData?.Invoke(dataChunk.StreamID, dataChunk.StreamSeqNum, dataChunk.PPID, dataChunk.UserData);
+                    OnDataChannelData?.Invoke(dataFrame);
                     break;
             }
         }

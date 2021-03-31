@@ -54,11 +54,11 @@ namespace SctpClientTestConsole
                 }
             };
 
-            association.OnDataChunk += (chunk) =>
+            association.OnData += (frame) =>
             {
-                if (chunk.UserData?.Length > 0)
+                if (frame.UserData?.Length > 0)
                 {
-                    Console.WriteLine($"Data received: {Encoding.UTF8.GetString(chunk.UserData)}");
+                    Console.WriteLine($"Data received: {Encoding.UTF8.GetString(frame.UserData)}");
                 }
                 else
                 {

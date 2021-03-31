@@ -66,7 +66,6 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(sackPkt);
             Assert.Single(sackPkt.Chunks);
-
         }
     }
 }
