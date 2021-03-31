@@ -31,10 +31,10 @@ namespace SIPSorcery.Demo
     class Program
     {
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
-        private const int dataSize = 800; //64000;
+        private const int dataSize = 64000;
         private static int lastNum;
-        private const int totalItems = 10; //1000;
-        private const int totalPairs = 1; //10;
+        private const int totalItems = 1000;
+        private const int totalPairs = 10;
 
         static void Main(string[] args)
         {
@@ -126,7 +126,7 @@ namespace SIPSorcery.Demo
             //    Console.WriteLine($"ClientA: {sendLabel} Finished");
             //}));
 
-            string[] queueNames = new string[] { "ThreadA" };//, "ThreadB", "ThreadC" };
+            string[] queueNames = new string[] { "ThreadA", "ThreadB", "ThreadC" };
 
             foreach (var queueName in queueNames)
             {

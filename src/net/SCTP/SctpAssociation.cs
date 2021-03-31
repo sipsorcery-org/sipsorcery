@@ -319,8 +319,8 @@ namespace SIPSorcery.Net
 
                             case SctpChunkType.SACK:
                                 var sackRecvChunk = chunk as SctpSackChunk;
-                                logger.LogDebug($"SCTP SACK TSN ACK={sackRecvChunk.CumulativeTsnAck}, # gap ack blocks {sackRecvChunk.NumberGapAckBlocks}" +
-                                    $", # duplicate tsn {sackRecvChunk.NumberDuplicateTSNs}.");
+                                //logger.LogDebug($"SCTP SACK TSN ACK={sackRecvChunk.CumulativeTsnAck}, # gap ack blocks {sackRecvChunk.NumberGapAckBlocks}" +
+                                //    $", # duplicate tsn {sackRecvChunk.NumberDuplicateTSNs}.");
                                 break;
 
                             case SctpChunkType.COOKIE_ACK:
@@ -363,7 +363,7 @@ namespace SIPSorcery.Net
                 int offset = (index == 0) ? 0 : (index * _defaultMTU);
                 int payloadLength = (offset + _defaultMTU < data.Length) ? _defaultMTU : data.Length - offset;
 
-                // TODO: Replace with slice when System.Memory is introduced as a dependency.
+                // Future TODO: Replace with slice when System.Memory is introduced as a dependency.
                 byte[] payload = new byte[payloadLength];
                 Buffer.BlockCopy(data, offset, payload, 0, payloadLength);
 
@@ -414,7 +414,7 @@ namespace SIPSorcery.Net
 
         internal void SetState(SctpAssociationState state)
         {
-            logger.LogDebug($"SCTP state for association {ID} changed to {state}.");
+            //logger.LogDebug($"SCTP state for association {ID} changed to {state}.");
             State = state;
             OnAssociationStateChanged?.Invoke(state);
         }
@@ -429,7 +429,7 @@ namespace SIPSorcery.Net
 
             SetState(SctpAssociationState.CookieWait);
 
-            logger.LogTrace($"SCTP sending INIT chunk {_sctpSourcePort}->{_sctpDestinationPort}.");
+            //logger.LogTrace($"SCTP sending INIT chunk {_sctpSourcePort}->{_sctpDestinationPort}.");
 
             byte[] buffer = init.GetBytes();
             _sctpTransport.Send(ID, buffer, 0, buffer.Length);
@@ -450,11 +450,11 @@ namespace SIPSorcery.Net
 
             byte[] buffer = pkt.GetBytes();
 
-            logger.LogTrace($"SCTP sending {chunk.KnownType} chunk {_sctpSourcePort}->{_sctpDestinationPort}.");
-            if (chunk is SctpDataChunk)
-            {
-                logger.LogTrace($"SCTP send chunk TSN {(chunk as SctpDataChunk).TSN}.");
-            }
+            //logger.LogTrace($"SCTP sending {chunk.KnownType} chunk {_sctpSourcePort}->{_sctpDestinationPort}.");
+            //if (chunk is SctpDataChunk)
+            //{
+            //    logger.LogTrace($"SCTP send chunk TSN {(chunk as SctpDataChunk).TSN}.");
+            //}
 
             _sctpTransport.Send(ID, buffer, 0, buffer.Length);
         }

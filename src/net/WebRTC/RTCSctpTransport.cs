@@ -252,13 +252,13 @@ namespace SIPSorcery.Net
                     {
                         var pkt = SctpPacket.Parse(recvBuffer, 0, bytesRead);
                         
-                        logger.LogTrace($"SCTP Packet received {pkt.Header.DestinationPort}<-{pkt.Header.SourcePort}.");
+                        //logger.LogTrace($"SCTP Packet received {pkt.Header.DestinationPort}<-{pkt.Header.SourcePort}.");
                         //logger.LogTrace(recvBuffer.HexStr(bytesRead));
 
-                        foreach (var chunk in pkt.Chunks)
-                        {
-                            logger.LogDebug($" chunk {chunk.KnownType}.");
-                        }
+                        //foreach (var chunk in pkt.Chunks)
+                        //{
+                        //    logger.LogTrace($" chunk {chunk.KnownType}.");
+                        //}
 
                         if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
                         {
@@ -267,7 +267,7 @@ namespace SIPSorcery.Net
                             var initAckPacket = base.GetInitAck(pkt, null);
                             var buffer = initAckPacket.GetBytes();
 
-                            logger.LogTrace($"SCTP sending INIT ACK chunk {initAckPacket.Header.DestinationPort}->{initAckPacket.Header.SourcePort}.");
+                            //logger.LogTrace($"SCTP sending INIT ACK chunk {initAckPacket.Header.DestinationPort}->{initAckPacket.Header.SourcePort}.");
 
                             Send(null, buffer, 0, buffer.Length);
                         }
