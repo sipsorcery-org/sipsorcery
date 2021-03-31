@@ -191,6 +191,10 @@ namespace SIPSorcery.Net
                 throw new ApplicationException($"SCTP data chunk cannot be parsed as buffer too short for fixed parameter fields.");
             }
 
+            dataChunk.Unordered = (dataChunk.ChunkFlags & 0x04) > 0;
+            dataChunk.Begining = (dataChunk.ChunkFlags & 0x02) > 0;
+            dataChunk.Ending = (dataChunk.ChunkFlags & 0x01) > 0;
+
             int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
 
             dataChunk.TSN = NetConvert.ParseUInt32(buffer, startPosn);

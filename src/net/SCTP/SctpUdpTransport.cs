@@ -69,24 +69,24 @@ namespace SIPSorcery.Net
         {
             try
             {
-                logger.LogTrace($"SCTP packet received {packet.Length} bytes.");
+                //logger.LogTrace($"SCTP packet received {packet.Length} bytes.");
                 //logger.LogTrace(packet.HexStr());
 
                 var pkt = SctpPacket.Parse(packet);
 
                 // Diagnostics.
-                logger.LogTrace($"SCTP with {pkt.Chunks.Count} received.");
-                foreach (var chunk in pkt.Chunks)
-                {
-                    logger.LogTrace($" chunk {chunk.KnownType}.");
-                    if (chunk.VariableParameters != null)
-                    {
-                        foreach (var chunkParam in chunk.VariableParameters)
-                        {
-                            logger.LogTrace($"  chunk Parameter {chunkParam.KnownType}.");
-                        }
-                    }
-                }
+                //logger.LogTrace($"SCTP with {pkt.Chunks.Count} received.");
+                //foreach (var chunk in pkt.Chunks)
+                //{
+                //    logger.LogTrace($" chunk {chunk.KnownType}.");
+                //    if (chunk.VariableParameters != null)
+                //    {
+                //        foreach (var chunkParam in chunk.VariableParameters)
+                //        {
+                //            logger.LogTrace($"  chunk Parameter {chunkParam.KnownType}.");
+                //        }
+                //    }
+                //}
 
                 // Process packet.
                 if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
