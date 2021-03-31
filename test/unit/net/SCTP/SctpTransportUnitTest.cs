@@ -71,7 +71,7 @@ namespace SIPSorcery.Net.UnitTests
     }
 
     /// <summary>
-    /// This mock is used to get access to the SctpTransport protected methods.
+    /// This mock class is used to get access to the SctpTransport protected methods.
     /// </summary>
     internal class MockSctpTransport : SctpTransport
     {

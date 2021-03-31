@@ -32,6 +32,9 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SctpUdpTransport : SctpTransport
     {
+        // TODO: Add MTU path discovery.
+        public const ushort DEFAULT_UDP_MTU = 1300;
+
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SctpUdpTransport>();
 
         /// <summary>
@@ -96,7 +99,7 @@ namespace SIPSorcery.Net
                 }
                 else if(pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                 {
-
+                    // TODO:
                 }
 
                 else
@@ -137,7 +140,7 @@ namespace SIPSorcery.Net
         /// <returns>An SCTP association.</returns>
         public SctpAssociation Associate(IPEndPoint destination, ushort sourcePort, ushort destinationPort)
         {
-            var association = new SctpAssociation(this, destination, sourcePort, destinationPort);
+            var association = new SctpAssociation(this, destination, sourcePort, destinationPort, DEFAULT_UDP_MTU);
 
             if (_associations.TryAdd(association.ID, association))
             {

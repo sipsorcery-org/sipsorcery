@@ -33,8 +33,8 @@ namespace SIPSorcery.Demo
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
         private const int dataSize = 800; //64000;
         private static int lastNum;
-        private const int totalItems = 1000;
-        private const int totalPairs = 10;
+        private const int totalItems = 10; //1000;
+        private const int totalPairs = 1; //10;
 
         static void Main(string[] args)
         {

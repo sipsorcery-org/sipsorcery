@@ -25,6 +25,13 @@ namespace SIPSorcery.Net
     public class SctpDataChunk : SctpChunk
     {
         /// <summary>
+        /// An empty data chunk. The main use is to indicate a DATA chunk has
+        /// already been delivered to the Upper Layer Protocol (ULP) in 
+        /// <see cref="SctpDataFramer"/>.
+        /// </summary>
+        public static SctpDataChunk EmptyDataChunk = new SctpDataChunk();
+
+        /// <summary>
         /// The length in bytes of the fixed parameters used by the DATA chunk.
         /// </summary>
         public const int FIXED_PARAMETERS_LENGTH = 12;
@@ -83,23 +90,45 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Creates a new DATA chunk.
         /// </summary>
+        /// <param name="isUnordered">Must be set to true if the application wants to send this data chunk
+        /// without requiring it to be delivered to the remote part in order.</param>
+        /// <param name="isBegining">Must be set to true for the first chunk in a user data payload.</param>
+        /// <param name="isEnd">Must be set to true for the last chunk in a user data payload. Note that
+        /// <see cref="isBegining"/> and <see cref="isEnd"/> must both be set to true when the full payload
+        /// is being sent in a single data chunk.</param>
         /// <param name="tsn">The Transmission Sequence Number for this chunk.</param>
-        /// <param name="streamID">The stream ID for this data chunk.</param>
-        /// <param name="seqnum">The stream sequence number for this send. Set to 0 for unordered streams.</param>
-        /// <param name="ppid">The payload protocol ID for this data chunk.</param>
+        /// <param name="streamID">Optional. The stream ID for this data chunk.</param>
+        /// <param name="seqnum">Optional. The stream sequence number for this send. Set to 0 for unordered streams.</param>
+        /// <param name="ppid">Optional. The payload protocol ID for this data chunk.</param>
         /// <param name="data">The data to send.</param>
-        public SctpDataChunk(uint tsn, ushort streamID, ushort seqnum, uint ppid, byte[] data) : base(SctpChunkType.DATA)
+        public SctpDataChunk(
+            bool isUnordered,
+            bool isBegining,
+            bool isEnd,
+            uint tsn, 
+            ushort streamID, 
+            ushort seqnum, 
+            uint ppid, 
+            byte[] data) : base(SctpChunkType.DATA)
         {
-            ChunkFlags = (byte)(
-                (Unordered ? 0x04 : 0x0) +
-                (Begining ? 0x02 : 0x0) +
-                (Ending ? 0x01 : 0x0));
+            if(data == null || data.Length == 0)
+            {
+                throw new ArgumentNullException("data", "The SctpDataChunk data parameter cannot be empty.");
+            }
 
+            Unordered = isUnordered;
+            Begining = isBegining;
+            Ending = isEnd;
             TSN = tsn;
             StreamID = streamID;
             StreamSeqNum = seqnum; 
             PPID = ppid;
             UserData = data;
+
+            ChunkFlags = (byte)(
+                (Unordered ? 0x04 : 0x0) +
+                (Begining ? 0x02 : 0x0) +
+                (Ending ? 0x01 : 0x0));
         }
 
         /// <summary>
@@ -140,6 +169,11 @@ namespace SIPSorcery.Net
             }
 
             return GetChunkPaddedLength();
+        }
+
+        public bool IsEmpty()
+        {
+            return UserData == null;
         }
 
         /// <summary>

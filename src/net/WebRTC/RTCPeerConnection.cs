@@ -1343,17 +1343,17 @@ namespace SIPSorcery.Net
         /// <param name="streamSeqNum">The stream sequence number of the chunk. Will be 0 for unordered streams.</param>
         /// <param name="ppID">The payload protocol ID for the chunk.</param>
         /// <param name="data">The chunk data.</param>
-        private void OnSctpAssociationDataChunk(ushort streamID, ushort streamSeqNum, uint ppID, byte[] data)
+        private void OnSctpAssociationDataChunk(SctpDataFrame frame)
         {
-            var dc = DataChannels.SingleOrDefault(x => x.id == streamID);
+            var dc = DataChannels.SingleOrDefault(x => x.id == frame.StreamID);
 
             if (dc != null)
             {
-                dc.GotData(streamID, streamSeqNum, ppID, data);
+                dc.GotData(frame.StreamID, frame.StreamSeqNum, frame.PPID, frame.UserData);
             }
             else
             {
-                logger.LogWarning($"WebRTC data channel got data but data channel not found for stream ID {streamID}.");
+                logger.LogWarning($"WebRTC data channel got data but data channel not found for stream ID {frame.StreamID}.");
             }
         }
 

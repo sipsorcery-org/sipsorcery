@@ -282,17 +282,7 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                RTCSctpAssociation.InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
-                                
-                                var cookieAckChunk = new SctpChunk(SctpChunkType.COOKIE_ACK);
-                                var cookieAckPkt = RTCSctpAssociation.GetPacket(cookieAckChunk);
-                                var cookieAckBuffer = cookieAckPkt.GetBytes();
-
-                                logger.LogTrace($"SCTP sending COOKIE ACK chunk {cookieAckPkt.Header.DestinationPort}->{cookieAckPkt.Header.SourcePort}.");
-
-                                Send(RTCSctpAssociation.ID, cookieAckBuffer, 0, cookieAckBuffer.Length);
-
-                                RTCSctpAssociation.SetState(SctpAssociationState.Established);
+                                RTCSctpAssociation.GotCookie(cookie);
 
                                 if (pkt.Chunks.Count > 1)
                                 {
@@ -325,7 +315,7 @@ namespace SIPSorcery.Net
                 catch (ApplicationException appExcp)
                 {
                     // Treat application exceptions as recoverable, things like SCTP packet parse failures.
-                    logger.LogWarning($"SCTP error processing association receive {appExcp.Message}.");
+                    logger.LogWarning($"SCTP error processing association receive. {appExcp.Message}");
                 }
             }
 
