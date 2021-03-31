@@ -19,6 +19,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -93,6 +94,81 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
+            (var aAssoc, var bAssoc) = GetConnectedAssociations(1400);
+            
+            string message = "hello world";
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
+            aAssoc.SendData(0, 0, 0, Encoding.UTF8.GetBytes(message));
+
+            tcs.Task.Wait(3000);
+
+            Assert.True(tcs.Task.IsCompleted);
+            Assert.Equal(message, tcs.Task.Result);
+        }
+
+        /// <summary>
+        /// Tests sending a small fragmented data chunk between SCTP associations.
+        /// </summary>
+        [Fact]
+        public void SendFragmentedDataChunk()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            BlockingCollection<byte[]> _aOut = new BlockingCollection<byte[]>();
+            BlockingCollection<byte[]> _bOut = new BlockingCollection<byte[]>();
+
+            // Setting a very small MTU to force the sending association to use fragmented data chunks.
+            ushort dummyMTU = 4;
+
+            (var aAssoc, var bAssoc) = GetConnectedAssociations(dummyMTU);
+
+            string message = "hello world";
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
+            aAssoc.SendData(0, 0, 0, Encoding.UTF8.GetBytes(message));
+
+            tcs.Task.Wait(3000);
+
+            Assert.True(tcs.Task.IsCompleted);
+            Assert.Equal(message, tcs.Task.Result);
+        }
+
+        /// <summary>
+        /// Tests sending a large fragmented data chunk between SCTP associations.
+        /// </summary>
+        [Fact]
+        public void SendLargeFragmentedDataChunk()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            BlockingCollection<byte[]> _aOut = new BlockingCollection<byte[]>();
+            BlockingCollection<byte[]> _bOut = new BlockingCollection<byte[]>();
+
+            // Setting a very small MTU to force the sending association to use fragmented data chunks.
+            (var aAssoc, var bAssoc) = GetConnectedAssociations(1400);
+
+            byte[] dummyData = new byte[SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW];
+            Crypto.GetRandomBytes(dummyData);
+            string sha256Hash = Crypto.GetSHA256Hash(dummyData);
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            bAssoc.OnData += (frame) => tcs.TrySetResult(Crypto.GetSHA256Hash(frame.UserData));
+            aAssoc.SendData(0, 0, 0, dummyData);
+
+            tcs.Task.Wait(3000);
+
+            Assert.True(tcs.Task.IsCompleted);
+            Assert.Equal(sha256Hash, tcs.Task.Result);
+        }
+
+        /// <summary>
+        /// Helper method to create two SCTP associations and do the 4 way handshake to connect them.
+        /// </summary>
+        /// <returns>A task that will complete once the two associations are connected.</returns>
+        private (SctpAssociation a, SctpAssociation b) GetConnectedAssociations(ushort mtu)
+        {
             BlockingCollection<byte[]> _aOut = new BlockingCollection<byte[]>();
             BlockingCollection<byte[]> _bOut = new BlockingCollection<byte[]>();
 
@@ -127,85 +203,15 @@ namespace SIPSorcery.Net.UnitTests
 
             Task.WaitAll(new Task[] { aAssocTcs.Task, bAssocTcs.Task }, 5000);
 
-            Assert.Equal(SctpAssociationState.Established, aAssoc.State);
-            Assert.Equal(SctpAssociationState.Established, bAssoc.State);
-
-            string message = "hello world";
-            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
-            aAssoc.SendData(0, 0, 0, Encoding.UTF8.GetBytes(message));
-
-            tcs.Task.Wait(1000);
-
-            Assert.True(tcs.Task.IsCompleted);
-            Assert.Equal(message, tcs.Task.Result);
-
-            aTransport.Close();
-            bTransport.Close();
-        }
-
-        /// <summary>
-        /// Tests that two associations can establish a connection and then send multiple data 
-        /// chunks representing a single fragmented user data payload between them.
-        /// </summary>
-        [Fact]
-        public void SendFragmentedDataChunk()
-        {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            BlockingCollection<byte[]> _aOut = new BlockingCollection<byte[]>();
-            BlockingCollection<byte[]> _bOut = new BlockingCollection<byte[]>();
-
-            // Setting a very small MTU to force the sending association to use fragmented data chunks.
-            ushort dummyMTU = 4;
-
-            var aTransport = new MockB2BSctpTransport(_aOut, _bOut);
-            var aAssoc = new SctpAssociation(aTransport, null, 5000, 5000, dummyMTU);
-            aTransport.OnSctpPacket += aAssoc.OnPacketReceived;
-            var aAssocTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            aAssoc.OnAssociationStateChanged += (state) =>
+            if (aAssoc.State == SctpAssociationState.Established &&
+                bAssoc.State == SctpAssociationState.Established)
             {
-                if (state == SctpAssociationState.Established)
-                {
-                    aAssocTcs.TrySetResult(true);
-                }
-            };
-            _ = Task.Run(aTransport.Listen);
-
-            var bTransport = new MockB2BSctpTransport(_bOut, _aOut);
-            var bAssoc = new SctpAssociation(bTransport, null, 5000, 5000, dummyMTU);
-            bTransport.OnSctpPacket += bAssoc.OnPacketReceived;
-            bTransport.OnCookieEcho += bAssoc.GotCookie;
-            var bAssocTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            bAssoc.OnAssociationStateChanged += (state) =>
+                return (aAssoc, bAssoc);
+            }
+            else
             {
-                if (state == SctpAssociationState.Established)
-                {
-                    bAssocTcs.TrySetResult(true);
-                }
-            };
-            _ = Task.Run(bTransport.Listen);
-
-            aAssoc.Init();
-
-            Task.WaitAll(new Task[] { aAssocTcs.Task, bAssocTcs.Task }, 5000);
-
-            Assert.Equal(SctpAssociationState.Established, aAssoc.State);
-            Assert.Equal(SctpAssociationState.Established, bAssoc.State);
-
-            string message = "hello world";
-            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
-            aAssoc.SendData(0, 0, 0, Encoding.UTF8.GetBytes(message));
-
-            tcs.Task.Wait(99999);
-
-            Assert.True(tcs.Task.IsCompleted);
-            Assert.Equal(message, tcs.Task.Result);
-
-            aTransport.Close();
-            bTransport.Close();
+                throw new ApplicationException("GetConnectedAssociations failed to connect associations.");
+            }
         }
     }
 
