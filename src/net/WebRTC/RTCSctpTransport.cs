@@ -208,7 +208,8 @@ namespace SIPSorcery.Net
             uint remoteTag,
             uint remoteTSN,
             uint remoteARwnd,
-            string remoteEndPoint)
+            string remoteEndPoint,
+            int lifeTimeExtension = 0)
         {
             var cookie = new SctpTransportCookie
             {
@@ -222,7 +223,7 @@ namespace SIPSorcery.Net
                 TSN = RTCSctpAssociation.TSN,
                 ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
                 CreatedAt = DateTime.Now.ToString("o"),
-                Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS,
+                Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS + lifeTimeExtension,
                 HMAC = string.Empty
             };
 

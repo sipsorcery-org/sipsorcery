@@ -58,15 +58,15 @@ namespace SIPSorcery.Net.UnitTests
             var initAckChunk = initAck.Chunks.Single() as SctpInitChunk;
 
             Assert.NotNull(initAckChunk);
+            Assert.NotNull(initAckChunk.StateCookie);
 
-            var cookieParameter = initAckChunk.VariableParameters.Single(x => x.KnownType == SctpChunkParameterType.StateCookie);
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(cookieParameter.ParameterValue));
+            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(initAckChunk.StateCookie));
 
             logger.LogDebug($"Cookie: {cookie.ToJson()}");
 
             Assert.NotNull(cookie.CreatedAt);
             Assert.NotNull(cookie.HMAC);
-            Assert.Equal(cookie.HMAC, sctpTransport.GetCookieHMAC(cookieParameter.ParameterValue));
+            Assert.Equal(cookie.HMAC, sctpTransport.GetCookieHMAC(initAckChunk.StateCookie));
         }
     }
 

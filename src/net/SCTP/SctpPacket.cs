@@ -203,6 +203,15 @@ namespace SIPSorcery.Net
 
             posn += SctpHeader.SCTP_HEADER_LENGTH;
 
+            // TODO: Handle unrecognised chunks.
+            // For the highest order two bits of any unrecognised chunks the actions are:
+            // - 00 - Stop processing this SCTP packet and discard it, do not process any further chunks within it.
+            // - 01 - Stop processing this SCTP packet and discard it, do not process any further chunks within it, and report the
+            //        unrecognized chunk in an 'Unrecognized Chunk Type'.
+            // - 10 - Skip this chunk and continue processing.
+            // - 11 - Skip this chunk and continue processing, but report in an ERROR chunk using the 'Unrecognized Chunk Type' cause of
+            //        error.
+
             while (posn < length)
             {
                 var chunk = SctpChunk.Parse(buffer, posn);
