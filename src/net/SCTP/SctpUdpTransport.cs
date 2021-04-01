@@ -69,43 +69,59 @@ namespace SIPSorcery.Net
         {
             try
             {
-                //logger.LogTrace($"SCTP packet received {packet.Length} bytes.");
-                //logger.LogTrace(packet.HexStr());
-
-                var pkt = SctpPacket.Parse(packet);
-
-                // Diagnostics.
-                //logger.LogTrace($"SCTP with {pkt.Chunks.Count} received.");
-                //foreach (var chunk in pkt.Chunks)
-                //{
-                //    logger.LogTrace($" chunk {chunk.KnownType}.");
-                //    if (chunk.VariableParameters != null)
-                //    {
-                //        foreach (var chunkParam in chunk.VariableParameters)
-                //        {
-                //            logger.LogTrace($"  chunk Parameter {chunkParam.KnownType}.");
-                //        }
-                //    }
-                //}
-
-                // Process packet.
-                if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                if (!SctpPacket.VerifyChecksum(packet, 0, packet.Length))
                 {
-                    // INIT packets have specific processing rules in order to prevent resource exhaustion.
-                    // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
-                    var initAckPacket = base.GetInitAck(pkt, remoteEndPoint);
-                    var buffer = initAckPacket.GetBytes();
-                    Send(null, buffer, 0, buffer.Length);
+                    logger.LogWarning($"SCTP packet from UDP {remoteEndPoint} dropped due to invalid checksum.");
                 }
-                else if(pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
-                {
-                    // TODO:
-                }
-
                 else
                 {
-                    // TODO: Lookup the existing association for the packet.
-                    _associations.Values.First().OnPacketReceived(pkt);
+                    var pkt = SctpPacket.Parse(packet);
+
+                    // Process packet.
+                    if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                    {
+                        // INIT packets have specific processing rules in order to prevent resource exhaustion.
+                        // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
+                        var initAckPacket = base.GetInitAck(pkt, remoteEndPoint);
+                        var buffer = initAckPacket.GetBytes();
+                        Send(null, buffer, 0, buffer.Length);
+                    }
+                    else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                    {
+                        // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
+                        // requested a new association be created.
+                        var cookieEcho = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
+                        var cookie = base.GetCookie(cookieEcho, out var errorPacket);
+
+                        if (cookie.IsEmpty() || errorPacket != null)
+                        {
+                            logger.LogWarning($"SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
+                        }
+                        else
+                        {
+                            logger.LogDebug($"SCTP creating new association for {remoteEndPoint}.");
+                                
+                            var association = new SctpAssociation(this, cookie);
+
+                            if (_associations.TryAdd(association.ID, association))
+                            {
+                                if (pkt.Chunks.Count > 1)
+                                {
+                                    // There could be DATA chunks after the COOKIE ECHO chunk.
+                                    association.OnPacketReceived(pkt);
+                                }
+                            }
+                            else
+                            {
+                                logger.LogError($"SCTP failed to add new association to dictionary.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // TODO: Lookup the existing association for the packet.
+                        _associations.Values.First().OnPacketReceived(pkt);
+                    }
                 }
             }
             catch (Exception excp)

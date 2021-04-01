@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using Xunit;
@@ -38,12 +39,12 @@ namespace SIPSorcery.Net.UnitTests
                         
             SctpDataChunk chunk = new SctpDataChunk(false, true, true, 0, 0, 0, 0, new byte[] { 0x00 });
 
-            var frame = framer.OnDataChunk(chunk);
+            var sortedFrames = framer.OnDataChunk(chunk);
 
-            Assert.False(frame.IsEmpty());
-            Assert.Equal("00", frame.UserData.HexStr());
-            Assert.Equal(0U, framer.latestTSN);
-            Assert.Equal(1U, framer.earliestTSN);
+            Assert.Single(sortedFrames);
+            Assert.Equal("00", sortedFrames.Single().UserData.HexStr());
+            Assert.Equal(0U, framer.LatestTSN);
+            Assert.Equal(1U, framer.EarliestTSN);
         }
 
         /// <summary>
@@ -58,15 +59,15 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk2 = new SctpDataChunk(false, false, false, 1, 0, 0, 0, new byte[] { 0x01 });
             SctpDataChunk chunk3 = new SctpDataChunk(false, false, true, 2, 0, 0, 0, new byte[] { 0x02 });
 
-            var frame1 = framer.OnDataChunk(chunk1);
-            var frame2 = framer.OnDataChunk(chunk2);
-            var frame3 = framer.OnDataChunk(chunk3);
+            var sortFrames1 = framer.OnDataChunk(chunk1);
+            var sortFrames2 = framer.OnDataChunk(chunk2);
+            var sortFrames3 = framer.OnDataChunk(chunk3);
 
-            Assert.True(frame1.IsEmpty());
-            Assert.True(frame2.IsEmpty());
-            Assert.False(frame3.IsEmpty());
-            Assert.Equal("000102", frame3.UserData.HexStr());
-            Assert.Equal(2U, framer.latestTSN);
+            Assert.Empty(sortFrames1);
+            Assert.Empty(sortFrames2);
+            Assert.Single(sortFrames3);
+            Assert.Equal("000102", sortFrames3.Single().UserData.HexStr());
+            Assert.Equal(2U, framer.LatestTSN);
         }
 
         /// <summary>
@@ -82,15 +83,15 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk2 = new SctpDataChunk(false, false, false, 1, 0, 0, 0, new byte[] { 0x01 });
             SctpDataChunk chunk3 = new SctpDataChunk(false, false, true, 2, 0, 0, 0, new byte[] { 0x02 });
 
-            var frame1 = framer.OnDataChunk(chunk1);
-            var frame2 = framer.OnDataChunk(chunk3);
-            var frame3 = framer.OnDataChunk(chunk2);
+            var sortFrames1 = framer.OnDataChunk(chunk1);
+            var sortFrames2 = framer.OnDataChunk(chunk3);
+            var sortFrames3 = framer.OnDataChunk(chunk2);
 
-            Assert.True(frame1.IsEmpty());
-            Assert.True(frame2.IsEmpty());
-            Assert.False(frame3.IsEmpty());
-            Assert.Equal("000102", frame3.UserData.HexStr());
-            Assert.Equal(2U, framer.latestTSN);
+            Assert.Empty(sortFrames1);
+            Assert.Empty(sortFrames2);
+            Assert.Single(sortFrames3);
+            Assert.Equal("000102", sortFrames3.Single().UserData.HexStr());
+            Assert.Equal(2U, framer.LatestTSN);
         }
 
         /// <summary>
@@ -106,16 +107,16 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk2 = new SctpDataChunk(false, false, false, 1, 0, 0, 0, new byte[] { 0x01 });
             SctpDataChunk chunk3 = new SctpDataChunk(false, false, true, 2, 0, 0, 0, new byte[] { 0x02 });
 
-            var frame1 = framer.OnDataChunk(chunk3);
-            var frame2 = framer.OnDataChunk(chunk2);
-            var frame3 = framer.OnDataChunk(chunk1);
+            var sortFrames1 = framer.OnDataChunk(chunk3);
+            var sortFrames2 = framer.OnDataChunk(chunk2);
+            var sortFrames3 = framer.OnDataChunk(chunk1);
 
-            Assert.True(frame1.IsEmpty());
-            Assert.True(frame2.IsEmpty());
-            Assert.False(frame3.IsEmpty());
-            Assert.Equal("000102", frame3.UserData.HexStr());
-            Assert.Equal(2U, framer.latestTSN);
-            Assert.Equal(3U, framer.earliestTSN);
+            Assert.Empty(sortFrames1);
+            Assert.Empty(sortFrames2);
+            Assert.Single(sortFrames3);
+            Assert.Equal("000102", sortFrames3.Single().UserData.HexStr());
+            Assert.Equal(2U, framer.LatestTSN);
+            Assert.Equal(3U, framer.EarliestTSN);
         }
 
         /// <summary>
@@ -132,20 +133,20 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk4 = new SctpDataChunk(false, false, false, 0, 0, 0, 0, new byte[] { 0x03 });
             SctpDataChunk chunk5 = new SctpDataChunk(false, false, true, 1, 0, 0, 0, new byte[] { 0x04 });
 
-            var frame1 = framer.OnDataChunk(chunk1);
-            var frame2 = framer.OnDataChunk(chunk2);
-            var frame3 = framer.OnDataChunk(chunk3);
-            var frame4 = framer.OnDataChunk(chunk4);
-            var frame5 = framer.OnDataChunk(chunk5);
+            var sFrames1 = framer.OnDataChunk(chunk1);
+            var sFrames2 = framer.OnDataChunk(chunk2);
+            var sFrames3 = framer.OnDataChunk(chunk3);
+            var sFrames4 = framer.OnDataChunk(chunk4);
+            var sFrames5 = framer.OnDataChunk(chunk5);
 
-            Assert.True(frame1.IsEmpty());
-            Assert.True(frame2.IsEmpty());
-            Assert.True(frame3.IsEmpty());
-            Assert.True(frame4.IsEmpty());
-            Assert.False(frame5.IsEmpty());
-            Assert.Equal("0001020304", frame5.UserData.HexStr());
-            Assert.Equal(1U, framer.latestTSN);
-            Assert.Equal(2U, framer.earliestTSN);
+            Assert.Empty(sFrames1);
+            Assert.Empty(sFrames2);
+            Assert.Empty(sFrames3);
+            Assert.Empty(sFrames4);
+            Assert.Single(sFrames5);
+            Assert.Equal("0001020304", sFrames5.Single().UserData.HexStr());
+            Assert.Equal(1U, framer.LatestTSN);
+            Assert.Equal(2U, framer.EarliestTSN);
         }
 
         /// <summary>
@@ -157,34 +158,34 @@ namespace SIPSorcery.Net.UnitTests
         {
             SctpDataFramer framer = new SctpDataFramer(0, 0, uint.MaxValue - 2);
 
-            SctpDataChunk chunk1 = new SctpDataChunk(false, true, false, uint.MaxValue - 2, 0, 0, 0, new byte[] { 0x00 });
-            SctpDataChunk chunk2 = new SctpDataChunk(false, false, false, uint.MaxValue - 1, 0, 0, 0, new byte[] { 0x01 });
-            SctpDataChunk chunk3 = new SctpDataChunk(false, false, false, uint.MaxValue, 0, 0, 0, new byte[] { 0x02 });
-            SctpDataChunk chunk4 = new SctpDataChunk(false, false, false, 0, 0, 0, 0, new byte[] { 0x03 });
-            SctpDataChunk chunk5 = new SctpDataChunk(false, false, true, 1, 0, 0, 0, new byte[] { 0x04 });
+            SctpDataChunk chunk1 = new SctpDataChunk(true, true, false, uint.MaxValue - 2, 0, 0, 0, new byte[] { 0x00 });
+            SctpDataChunk chunk2 = new SctpDataChunk(true, false, false, uint.MaxValue - 1, 0, 0, 0, new byte[] { 0x01 });
+            SctpDataChunk chunk3 = new SctpDataChunk(true, false, false, uint.MaxValue, 0, 0, 0, new byte[] { 0x02 });
+            SctpDataChunk chunk4 = new SctpDataChunk(true, false, false, 0, 0, 0, 0, new byte[] { 0x03 });
+            SctpDataChunk chunk5 = new SctpDataChunk(true, false, true, 1, 0, 0, 0, new byte[] { 0x04 });
 
             // Intersperse a couple of full chunks in the middle of the fragmented chunk.
-            SctpDataChunk chunk6 = new SctpDataChunk(false, true, true, 6, 0, 0, 0, new byte[] { 0x06 });
-            SctpDataChunk chunk9 = new SctpDataChunk(false, true, true, 9, 0, 0, 0, new byte[] { 0x09 });
+            SctpDataChunk chunk6 = new SctpDataChunk(true, true, true, 6, 0, 0, 0, new byte[] { 0x06 });
+            SctpDataChunk chunk9 = new SctpDataChunk(true, true, true, 9, 0, 0, 0, new byte[] { 0x09 });
 
-            var frame9 = framer.OnDataChunk(chunk9);
-            var frame1 = framer.OnDataChunk(chunk1);
-            var frame2 = framer.OnDataChunk(chunk2);
-            var frame3 = framer.OnDataChunk(chunk3);
-            var frame6 = framer.OnDataChunk(chunk6);
-            var frame4 = framer.OnDataChunk(chunk4);
-            var frame5 = framer.OnDataChunk(chunk5);
+            var sframes9 = framer.OnDataChunk(chunk9);
+            var sframes1 = framer.OnDataChunk(chunk1);
+            var sframes2 = framer.OnDataChunk(chunk2);
+            var sframes3 = framer.OnDataChunk(chunk3);
+            var sframes6 = framer.OnDataChunk(chunk6);
+            var sframes4 = framer.OnDataChunk(chunk4);
+            var sframes5 = framer.OnDataChunk(chunk5);
 
-            Assert.True(frame1.IsEmpty());
-            Assert.True(frame2.IsEmpty());
-            Assert.True(frame3.IsEmpty());
-            Assert.True(frame4.IsEmpty());
-            Assert.False(frame6.IsEmpty());
-            Assert.False(frame9.IsEmpty());
-            Assert.False(frame5.IsEmpty());
-            Assert.Equal("0001020304", frame5.UserData.HexStr());
-            Assert.Equal(9U, framer.latestTSN);
-            Assert.Equal(2U, framer.earliestTSN);
+            Assert.Empty(sframes1);
+            Assert.Empty(sframes2);
+            Assert.Empty(sframes3);
+            Assert.Empty(sframes4);
+            Assert.Single(sframes6);
+            Assert.Single(sframes9);
+            Assert.Single(sframes5);
+            Assert.Equal("0001020304", sframes5.Single().UserData.HexStr());
+            Assert.Equal(9U, framer.LatestTSN);
+            Assert.Equal(2U, framer.EarliestTSN);
         }
 
         /// <summary>
@@ -202,20 +203,20 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk4 = new SctpDataChunk(false, false, false, 0, 0, 0, 0, new byte[] { 0x03 });
             SctpDataChunk chunk5 = new SctpDataChunk(false, false, true, 1, 0, 0, 0, new byte[] { 0x04 });
 
-            var frame1 = framer.OnDataChunk(chunk1);
-            var frame2 = framer.OnDataChunk(chunk2);
-            var frame3 = framer.OnDataChunk(chunk3);
-            var frame4 = framer.OnDataChunk(chunk4);
-            var frame5 = framer.OnDataChunk(chunk5);
+            var sframes1 = framer.OnDataChunk(chunk1);
+            var sframes2 = framer.OnDataChunk(chunk2);
+            var sframes3 = framer.OnDataChunk(chunk3);
+            var sframes4 = framer.OnDataChunk(chunk4);
+            var sframes5 = framer.OnDataChunk(chunk5);
 
-            Assert.True(frame1.IsEmpty());
-            Assert.True(frame2.IsEmpty());
-            Assert.True(frame3.IsEmpty());
-            Assert.True(frame4.IsEmpty());
-            Assert.False(frame5.IsEmpty());
-            Assert.Equal("0001020304", frame5.UserData.HexStr());
-            Assert.Equal(1U, framer.latestTSN);
-            Assert.Equal(2U, framer.earliestTSN);
+            Assert.Empty(sframes1);
+            Assert.Empty(sframes2);
+            Assert.Empty(sframes3);
+            Assert.Empty(sframes4);
+            Assert.Single(sframes5);
+            Assert.Equal("0001020304", sframes5.Single().UserData.HexStr());
+            Assert.Equal(1U, framer.LatestTSN);
+            Assert.Equal(2U, framer.EarliestTSN);
         }
 
         /// <summary>
@@ -258,10 +259,10 @@ namespace SIPSorcery.Net.UnitTests
 
         /// <summary>
         /// Checks that the expiry mechanism, removing old chunks, works correctly
-        /// when single packet chunks are being received in the correct order.
+        /// when single packet unordered chunks are being received in the correct order.
         /// </summary>
         [Fact]
-        public void CheckExpiryWithSinglePacketChunks()
+        public void CheckExpiryWithSinglePacketChunksUnordered()
         {
             uint tsn = uint.MaxValue - 3;
             uint receiveWindow = 8;
@@ -270,16 +271,101 @@ namespace SIPSorcery.Net.UnitTests
 
             for (int i = 0; i < 50; i++)
             {
-                SctpDataChunk chunk = new SctpDataChunk(false, true, true, tsn++, 0, 0, 0, new byte[] { 0x55 });
+                SctpDataChunk chunk = new SctpDataChunk(true, true, true, tsn++, 0, 0, 0, new byte[] { 0x55 });
 
-                var frame = framer.OnDataChunk(chunk);
+                var sortedFrames = framer.OnDataChunk(chunk);
 
-                Assert.False(frame.IsEmpty());
-                Assert.Equal("55", frame.UserData.HexStr());
-                Assert.Equal(tsn - 1, framer.latestTSN);
-                Assert.Equal(0, framer.receivedChunksCount);
-                Assert.Equal(tsn, framer.earliestTSN);
+                Assert.Single(sortedFrames);
+                Assert.Equal("55", sortedFrames.Single().UserData.HexStr());
+                Assert.Equal(tsn - 1, framer.LatestTSN);
+                Assert.Equal(0, framer.ReceivedChunksCount);
+                Assert.Equal(tsn, framer.EarliestTSN);
             }
+        }
+
+        /// <summary>
+        /// Checks that the expiry mechanism, removing old chunks, works correctly
+        /// when single packet ordered chunks are being received in the correct order.
+        /// </summary>
+        [Fact]
+        public void CheckExpiryWithSinglePacketChunksOrdered()
+        {
+            uint tsn = uint.MaxValue - 3;
+            uint receiveWindow = 8;
+            uint mtu = 1;
+            ushort streamSeqnum = 0;
+            SctpDataFramer framer = new SctpDataFramer(receiveWindow, mtu, tsn);
+
+            for (int i = 0; i < 50; i++)
+            {
+                SctpDataChunk chunk = new SctpDataChunk(false, true, true, tsn++, 0, streamSeqnum++, 0, new byte[] { 0x55 });
+
+                var sortedFrames = framer.OnDataChunk(chunk);
+
+                Assert.Single(sortedFrames);
+                Assert.Equal("55", sortedFrames.Single().UserData.HexStr());
+                Assert.Equal(tsn - 1, framer.LatestTSN);
+                Assert.Equal(0, framer.ReceivedChunksCount);
+                Assert.Equal(tsn, framer.EarliestTSN);
+            }
+        }
+
+        /// <summary>
+        /// Tests that single packet ordered chunks get delivered correctly when received in order.
+        /// </summary>
+        [Fact]
+        public void ThreeStreamPackets()
+        {
+            SctpDataFramer framer = new SctpDataFramer(0, 0, 0);
+
+            SctpDataChunk chunk1 = new SctpDataChunk(false, true, true, 0, 0, 0, 0, new byte[] { 0x00 });
+            SctpDataChunk chunk2 = new SctpDataChunk(false, true, true, 1, 0, 1, 0, new byte[] { 0x01 });
+            SctpDataChunk chunk3 = new SctpDataChunk(false, true, true, 2, 0, 2, 0, new byte[] { 0x02 });
+
+            var sortFrames1 = framer.OnDataChunk(chunk1);
+            var sortFrames2 = framer.OnDataChunk(chunk2);
+            var sortFrames3 = framer.OnDataChunk(chunk3);
+
+            Assert.Single(sortFrames1);
+            Assert.Equal(0, sortFrames1.Single().StreamSeqNum);
+            Assert.Equal("00", sortFrames1.Single().UserData.HexStr());
+            Assert.Single(sortFrames2);
+            Assert.Equal(1, sortFrames2.Single().StreamSeqNum);
+            Assert.Equal("01", sortFrames2.Single().UserData.HexStr());
+            Assert.Single(sortFrames3);
+            Assert.Equal(2, sortFrames3.Single().StreamSeqNum);
+            Assert.Equal("02", sortFrames3.Single().UserData.HexStr());
+            Assert.Equal(2U, framer.LatestTSN);
+        }
+
+        /// <summary>
+        /// Tests that single packet ordered chunks get delivered correctly when received out
+        /// of order.
+        /// </summary>
+        [Fact]
+        public void StreamPacketsReceviedOutOfOrder()
+        {
+            SctpDataFramer framer = new SctpDataFramer(0, 0, uint.MaxValue);
+
+            SctpDataChunk chunk0 = new SctpDataChunk(false, true, true, uint.MaxValue, 0, ushort.MaxValue, 0, new byte[] { 0x00 });
+            SctpDataChunk chunk1 = new SctpDataChunk(false, true, true, 0, 0, 0, 0, new byte[] { 0x00 });
+            SctpDataChunk chunk2 = new SctpDataChunk(false, true, true, 1, 0, 1, 0, new byte[] { 0x01 });
+            SctpDataChunk chunk3 = new SctpDataChunk(false, true, true, 2, 0, 2, 0, new byte[] { 0x02 });
+
+            var sortFrames0 = framer.OnDataChunk(chunk0);
+            var sortFrames1 = framer.OnDataChunk(chunk3);
+            var sortFrames2 = framer.OnDataChunk(chunk2);
+            var sortFrames3 = framer.OnDataChunk(chunk1);
+
+            Assert.Single(sortFrames0);
+            Assert.Empty(sortFrames1);
+            Assert.Empty(sortFrames2);
+            Assert.Equal(3, sortFrames3.Count);
+            Assert.Equal(0, sortFrames3.First().StreamSeqNum);
+            Assert.Equal("00", sortFrames3.First().UserData.HexStr());
+            Assert.Equal(2, sortFrames3.Last().StreamSeqNum);
+            Assert.Equal("02", sortFrames3.Last().UserData.HexStr());
+            Assert.Equal(2U, framer.LatestTSN);
         }
     }
 }

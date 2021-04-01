@@ -27,13 +27,15 @@ namespace SIPSorcery.Net
     {
         public static SctpDataFrame Empty = new SctpDataFrame();
 
+        public bool Unordered;
         public ushort StreamID;
         public ushort StreamSeqNum;
         public uint PPID;
         public byte[] UserData;
 
-        public SctpDataFrame(ushort streamID, ushort streamSeqNum, uint ppid, byte[] userData)
+        public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid, byte[] userData)
         {
+            Unordered = unordered;
             StreamID = streamID;
             StreamSeqNum = streamSeqNum;
             PPID = ppid;
@@ -55,10 +57,15 @@ namespace SIPSorcery.Net
     public class SctpDataFramer
     {
         /// <summary>
-        /// The windows size is the maximum number of entries that can be recorded in the 
-        /// <see cref="_receivedChunks"/> dictionary. 
+        /// The window size is the maximum number of entries that can be recorded in the 
+        /// <see cref="_receivedChunks"/> dictionary.
         /// </summary>
         private const ushort WINDOW_SIZE_MINIMUM = 100;
+
+        /// <summary>
+        /// The maximum number of out of order frames that will be queued per stream ID.
+        /// </summary>
+        private const int MAXIMUM_OUTOFORDER_FRAMES = 25;
 
         private static ILogger logger = LogFactory.CreateLogger<SctpDataFramer>();
 
@@ -66,6 +73,18 @@ namespace SIPSorcery.Net
         /// This dictionary holds data chunks that have been received within.
         /// </summary>
         private SortedDictionary<uint, SctpDataChunk> _receivedChunks = new SortedDictionary<uint, SctpDataChunk>();
+
+        /// <summary>
+        /// Keeps track of the latest sequence number for each stream. Used to ensure
+        /// stream chunks are delivered in order.
+        /// </summary>
+        private SortedDictionary<ushort, ushort> _streamLatestSeqNums = new SortedDictionary<ushort, ushort>();
+
+        /// <summary>
+        /// A dictionary of dictionaries used to hold out of order stream chunks.
+        /// </summary>
+        private SortedDictionary<ushort, SortedDictionary<ushort, SctpDataFrame>> _streamOutOfOrderFrames =
+            new SortedDictionary<ushort, SortedDictionary<ushort, SctpDataFrame>>();
 
         /// <summary>
         /// The maximum amount of received data that will be stored at any one time.
@@ -96,9 +115,25 @@ namespace SIPSorcery.Net
         /// </summary>
         private uint _duplicateTSNCount;
 
-        internal int receivedChunksCount => _receivedChunks.Count;
-        internal uint earliestTSN => _earliestTSN;
-        internal uint latestTSN => _latestTSN;
+        /// <summary>
+        /// The earliest Transaction Sequence Number for an SCTP packet in
+        /// the receive dictionary that is still waiting to be processed.
+        /// </summary>
+        public uint EarliestTSN => _earliestTSN;
+
+        /// <summary>
+        /// The latest Transaction Sequence Number of an SCTP packet that has been 
+        /// received.
+        /// </summary>
+        public uint LatestTSN => _latestTSN;
+
+        /// <summary>
+        /// A count of the total entries in the receive dictionary. Note that if chunks
+        /// have been received out of order this count could include chunks that have
+        /// already been processed. They are kept in the dictionary as empty chunks to
+        /// track which TSN's have been received.
+        /// </summary>
+        public int ReceivedChunksCount => _receivedChunks.Count;
 
         /// <summary>
         /// Creates a new SCTP framer instance.
@@ -137,10 +172,13 @@ namespace SIPSorcery.Net
         /// Handler for processing new data chunks.
         /// </summary>
         /// <param name="dataChunk">The newly received data chunk.</param>
-        /// <returns>If the received chunk resulted in a full chunk becoming available a
-        /// new frame will be returned otherwise an empty frame is returned.</returns>
-        public SctpDataFrame OnDataChunk(SctpDataChunk dataChunk)
+        /// <returns>If the received chunk resulted in a full chunk becoming available one 
+        /// or more new frames will be returned otherwise an empty frame is returned. Multiple
+        /// frames may be returned if this chunk is part of a stream and was received out
+        /// or order. For unordered chunks the list will always have a single entry.</returns>
+        public List<SctpDataFrame> OnDataChunk(SctpDataChunk dataChunk)
         {
+            var sortedFrames = new List<SctpDataFrame>();
             var frame = SctpDataFrame.Empty;
 
             if (GetDistance(_earliestTSN, dataChunk.TSN) > _windowSize &&
@@ -159,8 +197,9 @@ namespace SIPSorcery.Net
             {
                 if (dataChunk.Begining && dataChunk.Ending)
                 {
-                    // This chunk can be provided to the ULP immediately.
+                    // Single packet chunk.
                     frame = new SctpDataFrame(
+                        dataChunk.Unordered,
                         dataChunk.StreamID,
                         dataChunk.StreamSeqNum,
                         dataChunk.PPID,
@@ -193,7 +232,86 @@ namespace SIPSorcery.Net
                 _duplicateTSNCount++;
             }
 
-            return frame;
+            if (!frame.IsEmpty() && !dataChunk.Unordered)
+            {
+                return ProcessStreamFrame(frame);
+            }
+            else
+            {
+                if (!frame.IsEmpty())
+                {
+                    sortedFrames.Add(frame);
+                }
+
+                return sortedFrames;
+            }
+        }
+
+        /// <summary>
+        /// Processes a data frame that is now ready and that is part of an SCTP stream.
+        /// Stream frames must be delivered in order.
+        /// </summary>
+        /// <param name="frame">The data frame that became ready from the latest DATA chunk receive.</param>
+        /// <returns>A sorted list of frames for the matching stream ID. Will be empty
+        /// if the supplied frame is out of order for its stream.</returns>
+        private List<SctpDataFrame> ProcessStreamFrame(SctpDataFrame frame)
+        {
+            // Relying on ushort wrapping.
+            unchecked
+            {
+                // This is a stream chunk. Need to ensure in order delivery.
+                var sortedFrames = new List<SctpDataFrame>();
+
+                if (!_streamLatestSeqNums.ContainsKey(frame.StreamID))
+                {
+                    // First frame for this stream.
+                    _streamLatestSeqNums.Add(frame.StreamID, frame.StreamSeqNum);
+                    sortedFrames.Add(frame);
+                }
+                else if ((ushort)(_streamLatestSeqNums[frame.StreamID] + 1) == frame.StreamSeqNum)
+                {
+                    // Expected seqnum for stream.
+                    _streamLatestSeqNums[frame.StreamID] = frame.StreamSeqNum;
+                    sortedFrames.Add(frame);
+
+                    // There could also be out of order frames that can now be delivered.
+                    if (_streamOutOfOrderFrames.ContainsKey(frame.StreamID) &&
+                        _streamOutOfOrderFrames[frame.StreamID].Count > 0)
+                    {
+                        var outOfOrder = _streamOutOfOrderFrames[frame.StreamID];
+
+                        ushort nextSeqnum = (ushort)(_streamLatestSeqNums[frame.StreamID] + 1);
+                        while (outOfOrder.ContainsKey(nextSeqnum) &&
+                            outOfOrder.TryGetValue(nextSeqnum, out var nextFrame))
+                        {
+                            sortedFrames.Add(nextFrame);
+                            _streamLatestSeqNums[frame.StreamID] = nextSeqnum;
+                            outOfOrder.Remove(nextSeqnum);
+                            nextSeqnum++;
+                        }
+                    }
+                }
+                else
+                {
+                    // Stream seqnum is out of order.
+                    if (!_streamOutOfOrderFrames.ContainsKey(frame.StreamID))
+                    {
+                        _streamOutOfOrderFrames[frame.StreamID] = new SortedDictionary<ushort, SctpDataFrame>();
+                    }
+
+                    if (_streamOutOfOrderFrames[frame.StreamID].Count > MAXIMUM_OUTOFORDER_FRAMES)
+                    {
+                        logger.LogWarning($"SCTP framer exceeded the maximum queue size for out of order frames for stream ID {frame.StreamID}.");
+                        // TODO take more drastic action? Abort the association?
+                    }
+                    else
+                    {
+                        _streamOutOfOrderFrames[frame.StreamID].Add(frame.StreamSeqNum, frame);
+                    }
+                }
+
+                return sortedFrames;
+            }
         }
 
         /// <summary>
@@ -251,7 +369,7 @@ namespace SIPSorcery.Net
             byte[] full = new byte[_receiveWindow];
             int posn = 0;
             var beginChunk = _receivedChunks[beginTSN];
-            var frame = new SctpDataFrame(beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
+            var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
 
             uint afterEndTSN;
             unchecked { afterEndTSN = endTSN + 1; }
