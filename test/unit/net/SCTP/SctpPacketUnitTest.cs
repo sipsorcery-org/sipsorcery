@@ -49,6 +49,8 @@ namespace SIPSorcery.Net.UnitTests
                 0x69, 0x81, 0x78, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x05, 0x00, 0x08,
                 0xc0, 0xa8, 0x0b, 0x32, 0x00, 0x05, 0x00, 0x08, 0xc0, 0xa8, 0x00, 0x32 };
 
+            Assert.True(SctpPacket.IsValid(buffer, 0, buffer.Length, 0U));
+
             var sctpPkt = SctpPacket.Parse(buffer);
 
             Assert.NotNull(sctpPkt);
@@ -76,13 +78,6 @@ namespace SIPSorcery.Net.UnitTests
                     logger.LogDebug($" Address: {(chunkParam as SctpAddressParameter).Address}.");
                 }
             }
-
-            // Verify checksum.
-            uint origChecksum = sctpPkt.Header.Checksum;
-            NetConvert.ToBuffer(0U, buffer, 8); // Zero the checksum bytes.
-            var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-
-            Assert.Equal(origChecksum, NetConvert.EndianFlip(checksum));
         }
 
         /// <summary>
@@ -132,6 +127,8 @@ namespace SIPSorcery.Net.UnitTests
                 0x00, 0x05, 0x00, 0x08, 0xc0, 0xa8, 0x00, 0x32, 0xc5, 0x35, 0x15, 0xc8, 0x35, 0x57, 0x0a, 0xd5,
                 0x96, 0x29, 0xc8, 0xbf, 0x38, 0x7b, 0xc2, 0x16, 0xe9, 0x4c, 0x81, 0xbe };
 
+            Assert.True(SctpPacket.IsValid(buffer, 0, buffer.Length, 0xe31c5536U));
+
             var sctpPkt = SctpPacket.Parse(buffer);
 
             Assert.NotNull(sctpPkt);
@@ -149,13 +146,6 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(10, initChunk.NumberOutboundStreams);
             Assert.Equal(2048, initChunk.NumberInboundStreams);
             Assert.Equal(1605634754U, initChunk.InitialTSN);
-
-            // Verify checksum.
-            uint origChecksum = sctpPkt.Header.Checksum;
-            NetConvert.ToBuffer(0U, buffer, 8); // Zero the checksum bytes.
-            var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-
-            Assert.Equal(origChecksum, NetConvert.EndianFlip(checksum));
         }
 
         /// <summary>
@@ -168,6 +158,10 @@ namespace SIPSorcery.Net.UnitTests
             byte[] buffer = {
                 0xdf, 0x90, 0x00, 0x07, 0xcd, 0x6e, 0x61, 0x50, 0xce, 0x44, 0xba, 0xac, 0x0a, 0x00, 0x00, 0x14,
                 0x4b, 0x41, 0x4d, 0x45, 0x2d, 0x42, 0x53, 0x44, 0x20, 0x31, 0x2e, 0x31, 0x00, 0x00, 0x00, 0x00 };
+
+            // Checksum does not match because the original cookie was too long and was truncated for testing purposes.
+            Assert.False(SctpPacket.VerifyChecksum(buffer, 0, buffer.Length));
+            Assert.Equal(0xcd6e6150U, SctpPacket.GetVerificationTag(buffer, 0, buffer.Length));
 
             var sctpPkt = SctpPacket.Parse(buffer);
 
@@ -183,14 +177,6 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(0x14, cookieEchoChunk.GetChunkPaddedLength());
             Assert.Equal(0x10, cookieEchoChunk.ChunkValue.Length);
-
-            // Checksum does not match because the original cookie was too long and was truncated for testing purposes.
-            // Verify checksum.
-            //uint origChecksum = sctpPkt.Header.Checksum;
-            //NetConvert.ToBuffer(0U, buffer, 8); // Zero the checksum bytes.
-            //var checksum = Crc32.CRC32C.Calculate(buffer, 0, buffer.Length);
-
-            //Assert.Equal(origChecksum, NetConvert.EndianFlip(checksum));
         }
 
         /// <summary>
@@ -202,6 +188,8 @@ namespace SIPSorcery.Net.UnitTests
         {
             byte[] buffer = {
                 0x00, 0x07, 0xdf, 0x90, 0xe3, 0x1c, 0x55, 0x36, 0xb2, 0x04, 0xdf, 0x21, 0x0b, 0x00, 0x00, 0x04 };
+
+            Assert.True(SctpPacket.IsValid(buffer, 0, buffer.Length, 0xe31c5536U));
 
             var sctpPkt = SctpPacket.Parse(buffer);
 
@@ -216,13 +204,6 @@ namespace SIPSorcery.Net.UnitTests
             var cookieAckChunk = sctpPkt.Chunks.First();
 
             Assert.Equal(4, cookieAckChunk.GetChunkPaddedLength());
-
-            // Verify checksum.
-            uint origChecksum = sctpPkt.Header.Checksum;
-            NetConvert.ToBuffer(0U, buffer, 8); // Zero the checksum bytes.
-            var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-
-            Assert.Equal(origChecksum, NetConvert.EndianFlip(checksum));
         }
 
         /// <summary>
@@ -244,12 +225,16 @@ namespace SIPSorcery.Net.UnitTests
                 0x69, 0x81, 0x78, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x05, 0x00, 0x08,
                 0xc0, 0xa8, 0x0b, 0x32, 0x00, 0x05, 0x00, 0x08, 0xc0, 0xa8, 0x00, 0x32 };
 
+            Assert.True(SctpPacket.IsValid(buffer, 0, buffer.Length, 0x0U));
+
             var sctpStartPkt = SctpPacket.Parse(buffer);
             
             var rndTripBuffer = sctpStartPkt.GetBytes();
 
             logger.LogDebug($"Before: {buffer.HexStr()}");
             logger.LogDebug($"After : {rndTripBuffer.HexStr()}");
+
+            Assert.True(SctpPacket.IsValid(rndTripBuffer, 0, rndTripBuffer.Length, 0x0U));
 
             var sctpPkt = SctpPacket.Parse(rndTripBuffer);
 
@@ -283,6 +268,8 @@ namespace SIPSorcery.Net.UnitTests
                 0x00, 0x00, 0x00, 0x00, 0x02, 0x10, 0x00, 0x00, 0xc0, 0xa8, 0x00, 0x32, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
+            Assert.True(SctpPacket.IsValid(buffer, 0, buffer.Length, 0x054a3af0U));
+
             var sctpPkt = SctpPacket.Parse(buffer);
 
             Assert.NotNull(sctpPkt);
@@ -296,13 +283,6 @@ namespace SIPSorcery.Net.UnitTests
             var heartbeatChunk = sctpPkt.Chunks.First();
 
             Assert.Equal(44, heartbeatChunk.GetChunkPaddedLength());
-
-            // Verify checksum.
-            uint origChecksum = sctpPkt.Header.Checksum;
-            NetConvert.ToBuffer(0U, buffer, 8); // Zero the checksum bytes.
-            var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-
-            Assert.Equal(origChecksum, NetConvert.EndianFlip(checksum));
         }
 
         /// <summary>
@@ -317,12 +297,16 @@ namespace SIPSorcery.Net.UnitTests
                 0x00, 0x00, 0x00, 0x00, 0x02, 0x10, 0x00, 0x00, 0xc0, 0xa8, 0x00, 0x32, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
+            Assert.True(SctpPacket.IsValid(buffer, 0, buffer.Length, 0x054a3af0U));
+
             var sctpStartPkt = SctpPacket.Parse(buffer);
 
             var rndTripBuffer = sctpStartPkt.GetBytes();
 
             logger.LogDebug($"Before: {buffer.HexStr()}");
             logger.LogDebug($"After : {rndTripBuffer.HexStr()}");
+
+            Assert.True(SctpPacket.IsValid(rndTripBuffer, 0, rndTripBuffer.Length, 0x054a3af0U));
 
             var sctpPkt = SctpPacket.Parse(rndTripBuffer);
 
@@ -337,13 +321,6 @@ namespace SIPSorcery.Net.UnitTests
             var heartbeatChunk = sctpPkt.Chunks.First();
 
             Assert.Equal(44, heartbeatChunk.GetChunkPaddedLength());
-
-            // Verify checksum.
-            uint origChecksum = sctpPkt.Header.Checksum;
-            NetConvert.ToBuffer(0U, buffer, 8); // Zero the checksum bytes.
-            var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-
-            Assert.Equal(origChecksum, NetConvert.EndianFlip(checksum));
         }
 
         /// <summary>
@@ -356,6 +333,8 @@ namespace SIPSorcery.Net.UnitTests
             byte[] buffer = {
                 0x00, 0x07, 0x11, 0x5c, 0x2e, 0x0b, 0x82, 0xc7, 0x5d, 0x2c, 0xeb, 0xa7, 0x00, 0x07, 0x00, 0x13,
                 0xdf, 0x08, 0xc1, 0xb7, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68, 0x69, 0x0a, 0x00};
+
+            Assert.True(SctpPacket.IsValid(buffer, 0, buffer.Length, 0x2e0b82c7U));
 
             var sctpPkt = SctpPacket.Parse(buffer);
 
@@ -372,13 +351,6 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(20, dataChunk.GetChunkPaddedLength());
             Assert.Equal("68690A", dataChunk.UserData.HexStr());
             Assert.Equal(3741893047, dataChunk.TSN);
-
-            // Verify checksum.
-            uint origChecksum = sctpPkt.Header.Checksum;
-            NetConvert.ToBuffer(0U, buffer, 8); // Zero the checksum bytes.
-            var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-
-            Assert.Equal(origChecksum, NetConvert.EndianFlip(checksum));
         }
 
         /// <summary>
@@ -391,12 +363,16 @@ namespace SIPSorcery.Net.UnitTests
                 0x00, 0x07, 0x11, 0x5c, 0x2e, 0x0b, 0x82, 0xc7, 0x5d, 0x2c, 0xeb, 0xa7, 0x00, 0x07, 0x00, 0x13,
                 0xdf, 0x08, 0xc1, 0xb7, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68, 0x69, 0x0a, 0x00};
 
+            Assert.True(SctpPacket.IsValid(buffer, 0, buffer.Length, 0x2e0b82c7U));
+
             var sctpStartPkt = SctpPacket.Parse(buffer);
 
             var rndTripBuffer = sctpStartPkt.GetBytes();
 
             logger.LogDebug($"Before: {buffer.HexStr()}");
             logger.LogDebug($"After : {rndTripBuffer.HexStr()}");
+
+            Assert.True(SctpPacket.IsValid(rndTripBuffer, 0, rndTripBuffer.Length, 0x2e0b82c7U));
 
             var sctpPkt = SctpPacket.Parse(rndTripBuffer);
 
@@ -413,13 +389,6 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(20, dataChunk.GetChunkPaddedLength());
             Assert.Equal("68690A", dataChunk.UserData.HexStr());
             Assert.Equal(3741893047, dataChunk.TSN);
-
-            // Verify checksum.
-            uint origChecksum = sctpPkt.Header.Checksum;
-            NetConvert.ToBuffer(0U, buffer, 8); // Zero the checksum bytes.
-            var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-
-            Assert.Equal(origChecksum, NetConvert.EndianFlip(checksum));
         }
     }
 }

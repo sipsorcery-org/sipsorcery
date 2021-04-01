@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
         /// <param name="port">The updated source port.</param>
         public void UpdateSourcePort(ushort port)
         {
-            if(state != RTCSctpTransportState.Closed)
+            if (state != RTCSctpTransportState.Closed)
             {
                 logger.LogWarning($"SCTP source port cannot be updated when the transport is in state {state}.");
             }
@@ -176,11 +176,11 @@ namespace SIPSorcery.Net
         /// <param name="associationState">The state of the SCTP association.</param>
         private void OnAssociationStateChanged(SctpAssociationState associationState)
         {
-            if(associationState == SctpAssociationState.Established)
+            if (associationState == SctpAssociationState.Established)
             {
                 SetState(RTCSctpTransportState.Connected);
             }
-            else if(associationState == SctpAssociationState.Closed)
+            else if (associationState == SctpAssociationState.Closed)
             {
                 SetState(RTCSctpTransportState.Closed);
             }
@@ -245,55 +245,58 @@ namespace SIPSorcery.Net
 
                     if (bytesRead == DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE)
                     {
-                        // Timed out waiting for a packet.
+                        // Timed out waiting for a packet, this is by design and the receive attempt should
+                        // be retired.
                         continue;
                     }
                     else if (bytesRead > 0)
                     {
-                        var pkt = SctpPacket.Parse(recvBuffer, 0, bytesRead);
-                        
-                        //logger.LogTrace($"SCTP Packet received {pkt.Header.DestinationPort}<-{pkt.Header.SourcePort}.");
-                        //logger.LogTrace(recvBuffer.HexStr(bytesRead));
-
-                        //foreach (var chunk in pkt.Chunks)
-                        //{
-                        //    logger.LogTrace($" chunk {chunk.KnownType}.");
-                        //}
-
-                        if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                        if (!SctpPacket.VerifyChecksum(recvBuffer, 0, bytesRead))
                         {
-                            // INIT packets have specific processing rules in order to prevent resource exhaustion.
-                            // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
-                            var initAckPacket = base.GetInitAck(pkt, null);
-                            var buffer = initAckPacket.GetBytes();
-
-                            //logger.LogTrace($"SCTP sending INIT ACK chunk {initAckPacket.Header.DestinationPort}->{initAckPacket.Header.SourcePort}.");
-
-                            Send(null, buffer, 0, buffer.Length);
-                        }
-                        else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
-                        {
-                            var cookieEcho = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
-                            var cookie = base.GetCookie(cookieEcho, out var errorPacket);
-
-                            if (cookie.IsEmpty() || errorPacket != null)
-                            {
-                                logger.LogWarning($"SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
-                            }
-                            else
-                            {
-                                RTCSctpAssociation.GotCookie(cookie);
-
-                                if (pkt.Chunks.Count > 1)
-                                {
-                                    // There could be DATA chunks after the COOKIE ECHO chunk.
-                                    RTCSctpAssociation.OnPacketReceived(pkt);
-                                }
-                            }
+                            logger.LogWarning($"SCTP packet received on DTLS transport dropped due to invalid checksum.");
                         }
                         else
                         {
-                            RTCSctpAssociation.OnPacketReceived(pkt);
+                            var pkt = SctpPacket.Parse(recvBuffer, 0, bytesRead);
+
+                            if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                            {
+                                var initChunk = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+                                logger.LogDebug($"SCTP INIT packet received, initial tag {initChunk.InitiateTag}, initial TSN {initChunk.InitialTSN}.");
+
+                                // INIT packets have specific processing rules in order to prevent resource exhaustion.
+                                // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
+                                var initAckPacket = base.GetInitAck(pkt, null);
+                                var buffer = initAckPacket.GetBytes();
+
+                                Send(null, buffer, 0, buffer.Length);
+                            }
+                            else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                            {
+                                // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
+                                // requested a new association be created.
+                                var cookieEcho = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
+                                var cookie = base.GetCookie(cookieEcho, out var errorPacket);
+
+                                if (cookie.IsEmpty() || errorPacket != null)
+                                {
+                                    logger.LogWarning($"SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
+                                }
+                                else
+                                {
+                                    RTCSctpAssociation.GotCookie(cookie);
+
+                                    if (pkt.Chunks.Count > 1)
+                                    {
+                                        // There could be DATA chunks after the COOKIE ECHO chunk.
+                                        RTCSctpAssociation.OnPacketReceived(pkt);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                RTCSctpAssociation.OnPacketReceived(pkt);
+                            }
                         }
                     }
                     else if (bytesRead == DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE)

@@ -438,7 +438,9 @@ a=rtpmap:100 VP8/90000";
 
             await Task.WhenAny(Task.WhenAll(aliceDataConnected.Task, bobDataOpened.Task), Task.Delay(2000));
 
+            Assert.True(aliceDataConnected.Task.IsCompleted);
             Assert.True(aliceDataConnected.Task.Result);
+            Assert.True(bobDataOpened.Task.IsCompleted);
             Assert.True(bobDataOpened.Task.Result);
             Assert.True(dc.IsOpened);
             Assert.True(bobData.IsOpened);
