@@ -69,14 +69,9 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(2048, initChunk.NumberInboundStreams);
             Assert.Equal(1826049498U, initChunk.InitialTSN);
 
-            foreach(var chunkParam in initChunk.VariableParameters)
+            foreach(var unrecognisedParam in initChunk.UnrecognizedPeerParameters)
             {
-                logger.LogDebug($"Chunk Parameter {chunkParam.KnownType}.");
-                if(chunkParam.KnownType == SctpChunkParameterType.IPv4Address ||
-                    chunkParam.KnownType == SctpChunkParameterType.IPv6Address)
-                {
-                    logger.LogDebug($" Address: {(chunkParam as SctpAddressParameter).Address}.");
-                }
+                logger.LogDebug($"Chunk Unrecognised Parameter {unrecognisedParam.ParameterType}.");
             }
         }
 

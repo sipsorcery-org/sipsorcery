@@ -33,6 +33,12 @@ namespace SIPSorcery.Net
         }
     }
 
+    /// <summary>
+    /// The values of the Chunk Types.
+    /// </summary>
+    /// <remarks>
+    /// https://tools.ietf.org/html/rfc4960#section-3.2
+    /// </remarks>
     public enum SctpChunkType : byte
     {
         DATA = 0,
@@ -50,12 +56,46 @@ namespace SIPSorcery.Net
         ECNE = 12,
         CWR = 13,
         SHUTDOWN_COMPLETE = 14,
+        
+        // Not defined in RFC4960.
         AUTH = 15,
         PKTDROP = 129,
         RE_CONFIG = 130,
         FORWARDTSN = 192,
         ASCONF = 193,
         ASCONF_ACK = 128,
+    }
+
+    /// <summary>
+    /// The actions required for unrecognised chunks. The byte value corresponds to the highest 
+    /// order two bits of the chunk type value.
+    /// </summary>
+    /// <remarks>
+    /// https://tools.ietf.org/html/rfc4960#section-3.2
+    /// </remarks>
+    public enum SctpUnrecognisedChunkActions : byte
+    {
+        /// <summary>
+        /// Stop processing this SCTP packet and discard it, do not process any further chunks within it.
+        /// </summary>
+        Stop = 0x00,
+
+        /// <summary>
+        /// Stop processing this SCTP packet and discard it, do not process any further chunks within it, and report the
+        /// unrecognized chunk in an 'Unrecognized Chunk Type'.
+        /// </summary>
+        StopAndReport = 0x01,
+
+        /// <summary>
+        /// Skip this chunk and continue processing.
+        /// </summary>
+        Skip = 0x02,
+
+        /// <summary>
+        /// Skip this chunk and continue processing, but report in an ERROR chunk using the 'Unrecognized Chunk Type' cause of
+        /// error.
+        /// </summary>
+        SkipAndReport = 0x03
     }
 
     public class SctpChunk
@@ -85,6 +125,13 @@ namespace SIPSorcery.Net
         public byte[] ChunkValue;
 
         /// <summary>
+        /// If this chunk is unrecognised then this field dictates how the remainder of the 
+        /// SCTP packet should be handled.
+        /// </summary>
+        public SctpUnrecognisedChunkActions UnrecognisedAction =>
+            (SctpUnrecognisedChunkActions)(ChunkType >> 14 & 0x03);
+
+        /// <summary>
         /// If recognised returns the known chunk type. If not recognised returns null.
         /// </summary>
         public SctpChunkType? KnownType
@@ -102,7 +149,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public List<SctpChunkParameter> VariableParameters = new List<SctpChunkParameter>();
+        public List<SctpTlvChunkParameter> VariableParameters = new List<SctpTlvChunkParameter>();
 
         public SctpChunk(SctpChunkType chunkType)
         {
@@ -123,10 +170,19 @@ namespace SIPSorcery.Net
         /// as "variable length" parameters.
         /// </summary>
         /// <param name="chunkParameter">The chunk parameter to add to this chunk.</param>
-        public void AddChunkParamter(SctpChunkParameter chunkParameter)
+        public void AddChunkParameter(SctpTlvChunkParameter chunkParameter)
         {
             VariableParameters.Add(chunkParameter);
         }
+
+        /// <summary>
+        /// Adds an error cause to the chunk by serialising it as a variable chunk parameter.
+        /// </summary>
+        /// <param name="errorCause">The error cause to add to the chunk.</param>
+        //public void AddErrorParameter(ISctpErrorCause errorCause)
+        //{
+
+        //}
 
         /// <summary>
         /// Calculates the length for the chunk. Chunks are required
@@ -234,23 +290,23 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Chunks can optionally contain variable length parameters. This method
+        /// Chunks can optionally contain Type-Length-Value (TLV) parameters. This method
         /// parses any variable length parameters from a chunk's value.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position in the buffer to start parsing variable length
         /// parameters from.</param>
-        /// <param name="length">The length of the variable chunk parameters in the buffer.</param>
+        /// <param name="length">The length of the TLV chunk parameters in the buffer.</param>
         /// <returns>A list of chunk parameters. Can be empty.</returns>
-        public static List<SctpChunkParameter> ParseVariableParameters(byte[] buffer, int posn, int length)
+        public static List<SctpTlvChunkParameter> ParseTlvParameters(byte[] buffer, int posn, int length)
         {
-            List<SctpChunkParameter> chunkParams = new List<SctpChunkParameter>();
+            List<SctpTlvChunkParameter> chunkParams = new List<SctpTlvChunkParameter>();
 
             int paramPosn = posn;
 
             while (paramPosn < posn + length)
             {
-                var chunkParam = SctpChunkParameter.Parse(buffer, paramPosn);
+                var chunkParam = SctpTlvChunkParameter.ParseTlvParameter(buffer, paramPosn);
                 chunkParams.Add(chunkParam);
                 paramPosn += chunkParam.GetParameterPaddedLength();
             }
@@ -281,6 +337,7 @@ namespace SIPSorcery.Net
                         return SctpDataChunk.ParseChunk(buffer, posn);
                     case SctpChunkType.SACK:
                         return SctpSackChunk.ParseChunk(buffer, posn);
+                    case SctpChunkType.ABORT:
                     case SctpChunkType.COOKIE_ACK:
                     case SctpChunkType.COOKIE_ECHO:
                     case SctpChunkType.HEARTBEAT:

@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
@@ -66,6 +67,9 @@ namespace SIPSorcery.Net
     {
         private const int HMAC_KEY_SIZE = 64;
 
+        /// <summary>
+        /// As per https://tools.ietf.org/html/rfc4960#section-15.
+        /// </summary>
         public const int DEFAULT_COOKIE_LIFETIME_SECONDS = 60;
 
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SctpTransport>();
@@ -96,7 +100,8 @@ namespace SIPSorcery.Net
             uint remoteTag,
             uint remoteTSN,
             uint remoteARwnd,
-            string remoteEndPoint)
+            string remoteEndPoint,
+            int lifeTimeExtension = 0)
         {
             var cookie = new SctpTransportCookie
             {
@@ -110,7 +115,7 @@ namespace SIPSorcery.Net
                 TSN = Crypto.GetRandomUInt(),
                 ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
                 CreatedAt = DateTime.Now.ToString("o"),
-                Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS,
+                Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS + lifeTimeExtension,
                 HMAC = string.Empty
             };
 
@@ -141,7 +146,8 @@ namespace SIPSorcery.Net
                 initChunk.InitiateTag,
                 initChunk.InitialTSN,
                 initChunk.ARwnd,
-                remoteEP != null ? remoteEP.ToString() : string.Empty);
+                remoteEP != null ? remoteEP.ToString() : string.Empty,
+                (int)(initChunk.CookiePreservative / 1000));
 
             var json = cookie.ToJson();
             var jsonBuffer = Encoding.UTF8.GetBytes(json);
@@ -156,8 +162,9 @@ namespace SIPSorcery.Net
             var jsonBufferWithHMAC = Encoding.UTF8.GetBytes(jsonWithHMAC);
 
             SctpInitChunk initAckChunk = new SctpInitChunk(SctpChunkType.INIT_ACK, cookie.Tag, cookie.TSN, cookie.ARwnd);
-            var cookieParameter = new SctpChunkParameter(SctpChunkParameterType.StateCookie, jsonBufferWithHMAC);
-            initAckChunk.AddChunkParamter(cookieParameter);
+            initAckChunk.StateCookie = jsonBufferWithHMAC;
+            initAckChunk.UnrecognizedPeerParameters = initChunk.UnrecognizedPeerParameters;
+
             initAckPacket.Chunks.Add(initAckChunk);
 
             return initAckPacket;
