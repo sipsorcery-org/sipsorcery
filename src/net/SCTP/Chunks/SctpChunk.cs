@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
     {
         public const int SCTP_CHUNK_HEADER_LENGTH = 4;
 
-        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SctpChunk>();
+        protected static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SctpChunk>();
 
         /// <summary>
         /// This field identifies the type of information contained in the
@@ -143,9 +143,16 @@ namespace SIPSorcery.Net
             }
         }
 
-        public SctpChunk(SctpChunkType chunkType)
+        /// <summary>
+        /// Records any unrecognised parameters received from the remote peer and are classified
+        /// as needing to be reported. These can be sent back to the remote peer if needed.
+        /// </summary>
+        public List<SctpTlvChunkParameter> UnrecognizedPeerParameters = new List<SctpTlvChunkParameter>();
+
+        public SctpChunk(SctpChunkType chunkType, byte chunkFlags = 0x00)
         {
             ChunkType = (byte)chunkType;
+            ChunkFlags = chunkFlags;
         }
 
         /// <summary>
@@ -228,6 +235,36 @@ namespace SIPSorcery.Net
             }
 
             return GetChunkLength(true);
+        }
+
+        /// <summary>
+        /// Handler for processing an unrecognised chunk parameter.
+        /// </summary>
+        /// <param name="chunkParameter">The Type-Length-Value (TLV) formatted chunk that was
+        /// not recognised.</param>
+        /// <returns>True if further parameter parsing for this chunk should be stopped. 
+        /// False to continue.</returns>
+        public bool GotUnrecognisedParameter(SctpTlvChunkParameter chunkParameter)
+        {
+            bool stop = false;
+
+            switch (chunkParameter.UnrecognisedAction)
+            {
+                case SctpUnrecognisedParameterActions.Stop:
+                    stop = true;
+                    break;
+                case SctpUnrecognisedParameterActions.StopAndReport:
+                    stop = true;
+                    UnrecognizedPeerParameters.Add(chunkParameter);
+                    break;
+                case SctpUnrecognisedParameterActions.Skip:
+                    break;
+                case SctpUnrecognisedParameterActions.SkipAndReport:
+                    UnrecognizedPeerParameters.Add(chunkParameter);
+                    break;
+            }
+
+            return stop;
         }
 
         /// <summary>

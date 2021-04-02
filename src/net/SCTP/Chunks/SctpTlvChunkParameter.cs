@@ -92,10 +92,16 @@ namespace SIPSorcery.Net
     /// <summary>
     /// Represents the a variable length parameter field for use within
     /// a Chunk. All chunk parameters use the same underlying Type-Length-Value (TLV)
-    /// format but then specialise how the fields are used. Note also that the 
-    /// <see cref="ParameterType"/> field is not universal and means different
-    /// things depending on the parent chunk type.
+    /// format but then specialise how the fields are used.
     /// </summary>
+    /// <remarks>
+    /// From https://tools.ietf.org/html/rfc4960#section-3.2.1 (final section):
+    /// Note that a parameter type MUST be unique
+    /// across all chunks.For example, the parameter type '5' is used to
+    /// represent an IPv4 address. The value '5' then
+    /// is reserved across all chunks to represent an IPv4 address and MUST
+    /// NOT be reused with a different meaning in any other chunk.
+    /// </remarks>
     public class SctpTlvChunkParameter
     {
         public const int SCTP_PARAMETER_HEADER_LENGTH = 4;

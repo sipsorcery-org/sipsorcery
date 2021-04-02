@@ -23,6 +23,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -49,13 +50,11 @@ namespace SIPSorcery.Net
     /// the Cookie variable parameter to be set.
     /// The INIT chunk is used to initiate an SCTP association between two
     /// endpoints. The INIT ACK chunk is used to respond to an incoming
-    /// INIT chunk from a remote party.
+    /// INIT chunk from a remote peer.
     /// </summary>
     public class SctpInitChunk : SctpChunk
     {
         public const int FIXED_PARAMETERS_LENGTH = 16;
-        public const int DEFAULT_NUMBER_OUTBOUND_STREAMS = 65535;
-        public const int DEFAULT_NUMBER_INBOUND_STREAMS = 65535;
 
         // Lengths for the optional parameter values.
         private const ushort PARAMVAL_LENGTH_IPV4 = 4;
@@ -134,13 +133,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public List<byte[]> UnrecognizedParameters = new List<byte[]>();
 
-        /// <summary>
-        /// Records any unrecognised parameters received from the remote peer and are classified
-        /// as needing to be reported. These need to be sent back to the remote peer in either the
-        /// INIT ACK or, if they were received in an INIT ACK, the COOKIE ECHO.
-        /// </summary>
-        public List<SctpTlvChunkParameter> UnrecognizedPeerParameters = new List<SctpTlvChunkParameter>();
-
         private SctpInitChunk()
         { }
 
@@ -152,8 +144,8 @@ namespace SIPSorcery.Net
             uint initiateTag,
             uint initialTSN,
             uint arwnd,
-            ushort numberOutboundStreams = DEFAULT_NUMBER_OUTBOUND_STREAMS,
-            ushort numberInboundStreams = DEFAULT_NUMBER_INBOUND_STREAMS) : base(initChunkType)
+            ushort numberOutboundStreams,
+            ushort numberInboundStreams) : base(initChunkType)
         {
             InitiateTag = initiateTag;
             NumberOutboundStreams = numberOutboundStreams;
@@ -398,27 +390,15 @@ namespace SIPSorcery.Net
                             break;
 
                         default:
-                            // Parameters we do not recognise in an INIT or INIT ACK.
-                            switch (varParam.UnrecognisedAction)
-                            {
-                                case SctpUnrecognisedParameterActions.Stop:
-                                    stopProcessing = true;
-                                    break;
-                                case SctpUnrecognisedParameterActions.StopAndReport:
-                                    stopProcessing = true;
-                                    initChunk.UnrecognizedPeerParameters.Add(varParam);
-                                    break;
-                                case SctpUnrecognisedParameterActions.Skip:
-                                    break;
-                                case SctpUnrecognisedParameterActions.SkipAndReport:
-                                    initChunk.UnrecognizedPeerParameters.Add(varParam);
-                                    break;
-                            }
+                            // Parameters are not recognised in an INIT or INIT ACK.
+                            initChunk.GotUnrecognisedParameter(varParam);
                             break;
                     }
 
                     if (stopProcessing)
                     {
+                        logger.LogWarning($"SCTP unrecognised parameter {varParam.ParameterType} for chunk type {initChunk.KnownType} "
+                            + "indicated no further chunks should be processed.");
                         break;
                     }
                 }

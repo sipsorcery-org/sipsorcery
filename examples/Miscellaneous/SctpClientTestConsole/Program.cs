@@ -48,6 +48,7 @@ namespace SctpClientTestConsole
 
             association.OnAssociationStateChanged += (state) =>
             {
+                Console.WriteLine($"SCTP client association state changed to {state}.");
                 if (state == SctpAssociationState.Established)
                 {
                     association.SendData(0, 0, 0, "hi\n");
@@ -66,14 +67,20 @@ namespace SctpClientTestConsole
                 }
             };
 
+            association.OnAbortReceived += (reason) =>
+            {
+                Console.WriteLine($"ABORT received from peer, reason {reason}.");
+            };
+
             Console.WriteLine("press any key to exit...");
             Console.ReadLine();
 
-            Console.WriteLine("Sending shutdown...");
-
-            association.Shutdown();
-
-            await Task.Delay(1000);
+            if (association.State == SctpAssociationState.Established)
+            {
+                Console.WriteLine("Sending shutdown...");
+                association.Shutdown();
+                await Task.Delay(1000);
+            }
 
             Console.WriteLine("Exiting.");
         }
