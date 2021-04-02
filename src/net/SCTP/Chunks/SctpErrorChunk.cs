@@ -68,8 +68,9 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Calculates the padded length for the chunk.
         /// </summary>
+        /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
         /// <returns>The padded length of the chunk.</returns>
-        public override ushort GetChunkLength()
+        public override ushort GetChunkLength(bool padded)
         {
             // TODO.
             return SCTP_CHUNK_HEADER_LENGTH;
@@ -86,7 +87,7 @@ namespace SIPSorcery.Net
         {
             WriteChunkHeader(buffer, posn);
             // TODO.
-            return GetChunkPaddedLength();
+            return GetChunkLength(true);
         }
 
         /// <summary>

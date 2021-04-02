@@ -57,6 +57,11 @@ namespace SIPSorcery.Net
         public const int DEFAULT_NUMBER_OUTBOUND_STREAMS = 65535;
         public const int DEFAULT_NUMBER_INBOUND_STREAMS = 65535;
 
+        // Lengths for the optional parameter values.
+        private const ushort PARAMVAL_LENGTH_IPV4 = 4;
+        private const ushort PARAMVAL_LENGTH_IPV6 = 16;
+        private const ushort PARAMVAL_LENGTH_COOKIE_PRESERVATIVE = 4;
+
         /// <summary>
         /// The receiver of the INIT (the responding end) records the value of
         /// the Initiate Tag parameter.This value MUST be placed into the
@@ -158,17 +163,128 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Gets the length of the optional and variable length parameters for this
+        /// INIT or INIT ACK chunk.
+        /// </summary>
+        /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
+        /// <returns>The length of the optional and variable length parameters.</returns>
+        private ushort GetVariableParametersLength(bool padded)
+        {
+            int len = 0;
+
+            len += Addresses.Count(x => x.AddressFamily == AddressFamily.InterNetwork) *
+                (SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH + PARAMVAL_LENGTH_IPV4);
+
+            len += Addresses.Count(x => x.AddressFamily == AddressFamily.InterNetworkV6) *
+                (SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH + PARAMVAL_LENGTH_IPV6);
+
+            if (CookiePreservative > 0)
+            {
+                len += SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH +
+                    PARAMVAL_LENGTH_COOKIE_PRESERVATIVE;
+            }
+
+            if (!string.IsNullOrEmpty(HostnameAddress))
+            {
+                len += SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH +
+                    SctpPadding.PadTo4ByteBoundary(Encoding.UTF8.GetByteCount(HostnameAddress));
+            }
+
+            if (SupportedAddressTypes.Count > 0)
+            {
+                len += SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH +
+                    SctpPadding.PadTo4ByteBoundary(SupportedAddressTypes.Count * 2);
+            }
+
+            if (StateCookie != null)
+            {
+                len += SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH +
+                    SctpPadding.PadTo4ByteBoundary(StateCookie.Length);
+            }
+
+            foreach (var unrecognised in UnrecognizedPeerParameters)
+            {
+                len += SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH +
+                    unrecognised.GetParameterLength(true);
+            }
+
+            return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : (ushort)len;
+        }
+
+        /// <summary>
+        /// Writes the optional and variable length parameters to a Type-Length-Value (TLV)
+        /// parameter list.
+        /// </summary>
+        /// <returns>A TLV parameter list holding the optional and variable length parameters.</returns>
+        private List<SctpTlvChunkParameter> GetVariableParameters()
+        {
+            List<SctpTlvChunkParameter> varParams = new List<SctpTlvChunkParameter>();
+
+            // Add the optional and variable length parameters as Type-Length-Value (TLV) formatted.
+            foreach (var address in Addresses)
+            {
+                ushort addrParamType = (ushort)(address.AddressFamily == AddressFamily.InterNetwork ?
+                    SctpInitChunkParameterType.IPv4Address : SctpInitChunkParameterType.IPv6Address);
+                var addrParam = new SctpTlvChunkParameter(addrParamType, address.GetAddressBytes());
+                varParams.Add(addrParam);
+            }
+
+            if (CookiePreservative > 0)
+            {
+                varParams.Add(
+                    new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.CookiePreservative,
+                    NetConvert.GetBytes(CookiePreservative)
+                    ));
+            }
+
+            if (!string.IsNullOrEmpty(HostnameAddress))
+            {
+                varParams.Add(
+                    new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.HostNameAddress,
+                    Encoding.UTF8.GetBytes(HostnameAddress)
+                    ));
+            }
+
+            if (SupportedAddressTypes.Count > 0)
+            {
+                byte[] paramVal = new byte[SupportedAddressTypes.Count * 2];
+                int paramValPosn = 0;
+                foreach (var supAddr in SupportedAddressTypes)
+                {
+                    NetConvert.ToBuffer((ushort)supAddr, paramVal, paramValPosn);
+                    paramValPosn += 2;
+                }
+                varParams.Add(
+                    new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.SupportedAddressTypes, paramVal));
+            }
+
+            if (StateCookie != null)
+            {
+                varParams.Add(
+                    new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.StateCookie, StateCookie));
+            }
+
+            foreach (var unrecognised in UnrecognizedPeerParameters)
+            {
+                varParams.Add(
+                   new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.UnrecognizedParameter, unrecognised.GetBytes()));
+            }
+
+            return varParams;
+        }
+
+        /// <summary>
         /// Calculates the length for INIT and INIT ACK chunks.
         /// </summary>
+        /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
         /// <returns>The length of the chunk.</returns>
-        public override ushort GetChunkLength()
+        public override ushort GetChunkLength(bool padded)
         {
-            ushort len = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
-            if (VariableParameters != null)
-            {
-                len += (ushort)(VariableParameters.Sum(x => x.GetParameterPaddedLength()));
-            }
-            return len;
+            var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH +
+                FIXED_PARAMETERS_LENGTH +
+                GetVariableParametersLength(false));
+
+            return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
         /// <summary>
@@ -191,67 +307,19 @@ namespace SIPSorcery.Net
             NetConvert.ToBuffer(NumberInboundStreams, buffer, startPosn + 10);
             NetConvert.ToBuffer(InitialTSN, buffer, startPosn + 12);
 
-            // Add the optional and variable length parameters as Type-Length-Value (TLV) formatted.
-            foreach (var address in Addresses)
-            {
-                ushort addrParamType = (ushort)(address.AddressFamily == AddressFamily.InterNetwork ?
-                    SctpInitChunkParameterType.IPv4Address : SctpInitChunkParameterType.IPv6Address);
-                var addrParam = new SctpTlvChunkParameter(addrParamType, address.GetAddressBytes());
-                VariableParameters.Add(addrParam);
-            }
-
-            if(CookiePreservative > 0)
-            {
-                VariableParameters.Add(
-                    new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.CookiePreservative,
-                    NetConvert.GetBytes(CookiePreservative)
-                    ));
-            }
-
-            if(!string.IsNullOrEmpty(HostnameAddress))
-            {
-                VariableParameters.Add(
-                    new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.HostNameAddress,
-                    Encoding.UTF8.GetBytes(HostnameAddress)
-                    ));
-            }
-
-            if (SupportedAddressTypes.Count > 0)
-            {
-                byte[] paramVal = new byte[SupportedAddressTypes.Count * 2];
-                int paramValPosn = 0;
-                foreach (var supAddr in SupportedAddressTypes)
-                {
-                    NetConvert.ToBuffer((ushort)supAddr, paramVal, paramValPosn);
-                    paramValPosn += 2;
-                }
-                VariableParameters.Add(
-                    new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.SupportedAddressTypes, paramVal));
-            }
-
-            if(StateCookie != null)
-            {
-                VariableParameters.Add(
-                    new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.StateCookie, StateCookie));
-            }
-
-            foreach(var unrecognised in UnrecognizedPeerParameters)
-            {
-                VariableParameters.Add(
-                   new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.UnrecognizedParameter, unrecognised.GetBytes()));
-            }
+            var varParameters = GetVariableParameters();
 
             // Write optional parameters.
-            if (VariableParameters?.Count > 0)
+            if (varParameters.Count > 0)
             {
                 int paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-                foreach (var optParam in VariableParameters)
+                foreach (var optParam in varParameters)
                 {
                     paramPosn += optParam.WriteTo(buffer, paramPosn);
                 }
             }
 
-            return GetChunkPaddedLength();
+            return GetChunkLength(true);
         }
 
         /// <summary>
@@ -277,84 +345,82 @@ namespace SIPSorcery.Net
 
             if (paramPosn < paramsBufferLength)
             {
-                initChunk.VariableParameters = ParseTlvParameters(buffer, paramPosn, paramsBufferLength);
-            }
+                bool stopProcessing = false;
 
-            bool stopProcessing = false;
-
-            foreach (var varParam in initChunk.VariableParameters)
-            {
-                switch (varParam.ParameterType)
+                foreach (var varParam in ParseTlvParameters(buffer, paramPosn, paramsBufferLength))
                 {
-                    case (ushort)SctpInitChunkParameterType.IPv4Address:
-                    case (ushort)SctpInitChunkParameterType.IPv6Address:
-                        var address = new IPAddress(varParam.ParameterValue);
-                        initChunk.Addresses.Add(address);
-                        break;
+                    switch (varParam.ParameterType)
+                    {
+                        case (ushort)SctpInitChunkParameterType.IPv4Address:
+                        case (ushort)SctpInitChunkParameterType.IPv6Address:
+                            var address = new IPAddress(varParam.ParameterValue);
+                            initChunk.Addresses.Add(address);
+                            break;
 
-                    case (ushort)SctpInitChunkParameterType.CookiePreservative:
-                        initChunk.CookiePreservative = NetConvert.ParseUInt32(varParam.ParameterValue, 0);
-                        break;
+                        case (ushort)SctpInitChunkParameterType.CookiePreservative:
+                            initChunk.CookiePreservative = NetConvert.ParseUInt32(varParam.ParameterValue, 0);
+                            break;
 
-                    case (ushort)SctpInitChunkParameterType.HostNameAddress:
-                        initChunk.HostnameAddress = Encoding.UTF8.GetString(varParam.ParameterValue);
-                        break;
+                        case (ushort)SctpInitChunkParameterType.HostNameAddress:
+                            initChunk.HostnameAddress = Encoding.UTF8.GetString(varParam.ParameterValue);
+                            break;
 
-                    case (ushort)SctpInitChunkParameterType.SupportedAddressTypes:
-                        for(int valPosn=0; valPosn < varParam.ParameterValue.Length; valPosn += 2)
-                        {
-                            switch(NetConvert.ParseUInt16(varParam.ParameterValue, valPosn))
+                        case (ushort)SctpInitChunkParameterType.SupportedAddressTypes:
+                            for (int valPosn = 0; valPosn < varParam.ParameterValue.Length; valPosn += 2)
                             {
-                                case (ushort)SctpInitChunkParameterType.IPv4Address:
-                                    initChunk.SupportedAddressTypes.Add(SctpInitChunkParameterType.IPv4Address);
+                                switch (NetConvert.ParseUInt16(varParam.ParameterValue, valPosn))
+                                {
+                                    case (ushort)SctpInitChunkParameterType.IPv4Address:
+                                        initChunk.SupportedAddressTypes.Add(SctpInitChunkParameterType.IPv4Address);
+                                        break;
+                                    case (ushort)SctpInitChunkParameterType.IPv6Address:
+                                        initChunk.SupportedAddressTypes.Add(SctpInitChunkParameterType.IPv6Address);
+                                        break;
+                                    case (ushort)SctpInitChunkParameterType.HostNameAddress:
+                                        initChunk.SupportedAddressTypes.Add(SctpInitChunkParameterType.HostNameAddress);
+                                        break;
+                                }
+                            }
+                            break;
+
+                        case (ushort)SctpInitChunkParameterType.EcnCapable:
+                            break;
+
+                        case (ushort)SctpInitChunkParameterType.StateCookie:
+                            // Used with INIT ACK chunks only.
+                            initChunk.StateCookie = varParam.ParameterValue;
+                            break;
+
+                        case (ushort)SctpInitChunkParameterType.UnrecognizedParameter:
+                            // Used with INIT ACK chunks only. This parameter is the remote peer returning
+                            // a list of parameters it did not understand in the INIT chunk.
+                            initChunk.UnrecognizedParameters.Add(varParam.ParameterValue);
+                            break;
+
+                        default:
+                            // Parameters we do not recognise in an INIT or INIT ACK.
+                            switch (varParam.UnrecognisedAction)
+                            {
+                                case SctpUnrecognisedParameterActions.Stop:
+                                    stopProcessing = true;
                                     break;
-                                case (ushort)SctpInitChunkParameterType.IPv6Address:
-                                    initChunk.SupportedAddressTypes.Add(SctpInitChunkParameterType.IPv6Address);
+                                case SctpUnrecognisedParameterActions.StopAndReport:
+                                    stopProcessing = true;
+                                    initChunk.UnrecognizedPeerParameters.Add(varParam);
                                     break;
-                                case (ushort)SctpInitChunkParameterType.HostNameAddress:
-                                    initChunk.SupportedAddressTypes.Add(SctpInitChunkParameterType.HostNameAddress);
+                                case SctpUnrecognisedParameterActions.Skip:
+                                    break;
+                                case SctpUnrecognisedParameterActions.SkipAndReport:
+                                    initChunk.UnrecognizedPeerParameters.Add(varParam);
                                     break;
                             }
-                        }
-                        break;
+                            break;
+                    }
 
-                    case (ushort)SctpInitChunkParameterType.EcnCapable:
+                    if (stopProcessing)
+                    {
                         break;
-
-                    case (ushort)SctpInitChunkParameterType.StateCookie:
-                        // Used with INIT ACK chunks only.
-                        initChunk.StateCookie = varParam.ParameterValue;
-                        break;
-
-                    case (ushort)SctpInitChunkParameterType.UnrecognizedParameter:
-                        // Used with INIT ACK chunks only. This parameter is the remote peer returning
-                        // a list of parameters it did not understand in the INIT chunk.
-                        initChunk.UnrecognizedParameters.Add(varParam.ParameterValue);
-                        break;
-
-                    default:
-                        // Parameters we do not recognise in an INIT or INIT ACK.
-                        switch(varParam.UnrecognisedAction)
-                        {
-                            case SctpUnrecognisedParameterActions.Stop:
-                                stopProcessing = true;
-                                break;
-                            case SctpUnrecognisedParameterActions.StopAndReport:
-                                stopProcessing = true;
-                                initChunk.UnrecognizedPeerParameters.Add(varParam);
-                                break;
-                            case SctpUnrecognisedParameterActions.Skip:
-                                break;
-                            case SctpUnrecognisedParameterActions.SkipAndReport:
-                                initChunk.UnrecognizedPeerParameters.Add(varParam);
-                                break;
-                        }
-                        break;
-                }
-
-                if(stopProcessing)
-                {
-                    break;
+                    }
                 }
             }
 

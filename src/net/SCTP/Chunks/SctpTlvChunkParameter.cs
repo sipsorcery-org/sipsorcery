@@ -134,23 +134,15 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Calculates the length for the chunk parameter.
         /// </summary>
+        /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
         /// <returns>The length of the chunk. This method gets overridden by specialised SCTP parameters 
         /// that each have their own fields that determine the length.</returns>
-        public virtual ushort GetParameterLength()
+        public virtual ushort GetParameterLength(bool padded)
         {
-            return (ushort)(SCTP_PARAMETER_HEADER_LENGTH
+            ushort len = (ushort)(SCTP_PARAMETER_HEADER_LENGTH
                 + (ParameterValue == null ? 0 : ParameterValue.Length));
-        }
 
-        /// <summary>
-        /// Calculates the padded length for the chunk parameter.
-        /// Parameters are required to be padded out to 4 byte boundaries.
-        /// </summary>
-        /// <returns>The length of the chunk. This method gets overridden by specialised SCTP parameters 
-        /// that each have their own fields that determine the length.</returns>
-        public ushort GetParameterPaddedLength()
-        {
-            return SctpPadding.PadTo4ByteBoundary(GetParameterLength());
+            return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
         /// <summary>
@@ -162,7 +154,7 @@ namespace SIPSorcery.Net
         protected void WriteParameterHeader(byte[] buffer, int posn)
         {
             NetConvert.ToBuffer(ParameterType, buffer, posn);
-            NetConvert.ToBuffer(GetParameterLength(), buffer, posn + 2);
+            NetConvert.ToBuffer(GetParameterLength(false), buffer, posn + 2);
         }
 
         /// <summary>
@@ -183,7 +175,7 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(ParameterValue, 0, buffer, posn + SCTP_PARAMETER_HEADER_LENGTH, ParameterValue.Length);
             }
 
-            return GetParameterPaddedLength();
+            return GetParameterLength(true);
         }
 
         /// <summary>
@@ -192,7 +184,7 @@ namespace SIPSorcery.Net
         /// <returns>The byte array containing the serialised chunk parameter.</returns>
         public byte[] GetBytes()
         {
-            byte[] buffer = new byte[SCTP_PARAMETER_HEADER_LENGTH + (ParameterValue != null ? ParameterValue.Length : 0)];
+            byte[] buffer = new byte[GetParameterLength(true)];
             WriteTo(buffer, 0);
             return buffer;
         }

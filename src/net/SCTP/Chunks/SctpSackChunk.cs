@@ -74,10 +74,12 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Calculates the padded length for the chunk.
         /// </summary>
-        /// <returns>The padded length of the chunk.</returns>
-        public override ushort GetChunkLength()
+        /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
+        /// <returns>The length of the chunk.</returns>
+        public override ushort GetChunkLength(bool padded)
         {
-            return (ushort)(SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH + ReportsLength);
+            var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH + ReportsLength);
+            return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
         /// <summary>
@@ -98,7 +100,7 @@ namespace SIPSorcery.Net
             NetConvert.ToBuffer(NumberGapAckBlocks, buffer, startPosn + 8);
             NetConvert.ToBuffer(NumberDuplicateTSNs, buffer, startPosn + 10);
 
-            return GetChunkPaddedLength();
+            return GetChunkLength(true);
         }
 
         /// <summary>

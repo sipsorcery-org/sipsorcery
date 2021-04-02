@@ -43,7 +43,7 @@ namespace SIPSorcery.Net.UnitTests
                 ChunkValue = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 }
             };
 
-            byte[] buffer = new byte[heartbeatChunk.GetChunkPaddedLength()];
+            byte[] buffer = new byte[heartbeatChunk.GetChunkLength(true)];
 
             heartbeatChunk.WriteTo(buffer, 0);
 

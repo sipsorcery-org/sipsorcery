@@ -112,7 +112,7 @@ namespace SIPSorcery.Net
         /// <returns>The byte array containing the serialised SCTP packet.</returns>
         public byte[] GetBytes()
         {
-            int chunksLength = Chunks.Sum(x => x.GetChunkPaddedLength());
+            int chunksLength = Chunks.Sum(x => x.GetChunkLength(true));
             byte[] buffer = new byte[SctpHeader.SCTP_HEADER_LENGTH + chunksLength];
 
             Header.WriteToBuffer(buffer, 0);
@@ -216,7 +216,7 @@ namespace SIPSorcery.Net
             {
                 var chunk = SctpChunk.Parse(buffer, posn);
                 sctpPacket.Chunks.Add(chunk);
-                posn += chunk.GetChunkPaddedLength();
+                posn += (int)SctpChunk.GetChunkLengthFromHeader(buffer, posn, true);
             }
 
             return sctpPacket;
