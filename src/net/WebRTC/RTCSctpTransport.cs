@@ -258,11 +258,11 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            var pkt = SctpPacket.Parse(recvBuffer, 0, bytesRead);
+                            var pkt = new SctpPacket(recvBuffer, 0, bytesRead);
 
-                            if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                            if (pkt.GetChunks().Any(x => x.KnownType == SctpChunkType.INIT))
                             {
-                                var initChunk = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+                                var initChunk = pkt.GetChunks().Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
                                 logger.LogDebug($"SCTP INIT packet received, initial tag {initChunk.InitiateTag}, initial TSN {initChunk.InitialTSN}.");
 
                                 // INIT packets have specific processing rules in order to prevent resource exhaustion.
@@ -272,11 +272,11 @@ namespace SIPSorcery.Net
 
                                 Send(null, buffer, 0, buffer.Length);
                             }
-                            else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                            else if (pkt.GetChunks().Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                             {
                                 // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
                                 // requested a new association be created.
-                                var cookieEcho = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
+                                var cookieEcho = pkt.GetChunks().Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
                                 var cookie = base.GetCookie(cookieEcho, out var errorPacket);
 
                                 if (cookie.IsEmpty() || errorPacket != null)
@@ -287,7 +287,7 @@ namespace SIPSorcery.Net
                                 {
                                     RTCSctpAssociation.GotCookie(cookie);
 
-                                    if (pkt.Chunks.Count > 1)
+                                    if (pkt.GetChunks().Count() > 1)
                                     {
                                         // There could be DATA chunks after the COOKIE ECHO chunk.
                                         RTCSctpAssociation.OnPacketReceived(pkt);
@@ -319,7 +319,7 @@ namespace SIPSorcery.Net
                 catch (ApplicationException appExcp)
                 {
                     // Treat application exceptions as recoverable, things like SCTP packet parse failures.
-                    logger.LogWarning($"SCTP error processing association receive. {appExcp.Message}");
+                    logger.LogWarning($"SCTP error processing RTCSctpTransport receive. {appExcp.Message}");
                 }
             }
 

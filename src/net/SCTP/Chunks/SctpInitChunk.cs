@@ -347,7 +347,7 @@ namespace SIPSorcery.Net
             {
                 bool stopProcessing = false;
 
-                foreach (var varParam in ParseTlvParameters(buffer, paramPosn, paramsBufferLength))
+                foreach (var varParam in GetParameters(buffer, paramPosn, paramsBufferLength))
                 {
                     switch (varParam.ParameterType)
                     {

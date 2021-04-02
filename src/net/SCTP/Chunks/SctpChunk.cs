@@ -126,13 +126,6 @@ namespace SIPSorcery.Net
         public byte[] ChunkValue;
 
         /// <summary>
-        /// If this chunk is unrecognised then this field dictates how the remainder of the 
-        /// SCTP packet should be handled.
-        /// </summary>
-        public SctpUnrecognisedChunkActions UnrecognisedAction =>
-            (SctpUnrecognisedChunkActions)(ChunkType >> 14 & 0x03);
-
-        /// <summary>
         /// If recognised returns the known chunk type. If not recognised returns null.
         /// </summary>
         public SctpChunkType? KnownType
@@ -162,26 +155,6 @@ namespace SIPSorcery.Net
         /// </summary>
         protected SctpChunk()
         { }
-
-        /// <summary>
-        /// Adds a variable parameter to a chunk. Variable parameters are those that do not
-        /// occupy a fixed position in the chunk parameter list. Instead they are appended 
-        /// as "variable length" parameters.
-        /// </summary>
-        /// <param name="chunkParameter">The chunk parameter to add to this chunk.</param>
-        //public void AddChunkParameter(SctpTlvChunkParameter chunkParameter)
-        //{
-        //    VariableParameters.Add(chunkParameter);
-        //}
-
-        /// <summary>
-        /// Adds an error cause to the chunk by serialising it as a variable chunk parameter.
-        /// </summary>
-        /// <param name="errorCause">The error cause to add to the chunk.</param>
-        //public void AddErrorParameter(ISctpErrorCause errorCause)
-        //{
-
-        //}
 
         /// <summary>
         /// Calculates the length for the chunk. Chunks are required
@@ -260,24 +233,23 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Parses a simple chunk and does not attempt to process any chunk value.
         /// This method is suitable when:
-        ///  - the chunk type is not recognised.
         ///  - the chunk type consists only of the 4 byte header and has 
         ///    no fixed or variable parameters set.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
         /// <returns>An SCTP chunk instance.</returns>
-        public static SctpChunk ParseSimpleChunk(byte[] buffer, int posn)
+        public static SctpChunk ParseBaseChunk(byte[] buffer, int posn)
         {
-            var simpleChunk = new SctpChunk();
-            ushort chunkLength = simpleChunk.ParseFirstWord(buffer, posn);
+            var chunk = new SctpChunk();
+            ushort chunkLength = chunk.ParseFirstWord(buffer, posn);
             if (chunkLength > SCTP_CHUNK_HEADER_LENGTH)
             {
-                simpleChunk.ChunkValue = new byte[chunkLength - SCTP_CHUNK_HEADER_LENGTH];
-                Buffer.BlockCopy(buffer, posn + SCTP_CHUNK_HEADER_LENGTH, simpleChunk.ChunkValue, 0, simpleChunk.ChunkValue.Length);
+                chunk.ChunkValue = new byte[chunkLength - SCTP_CHUNK_HEADER_LENGTH];
+                Buffer.BlockCopy(buffer, posn + SCTP_CHUNK_HEADER_LENGTH, chunk.ChunkValue, 0, chunk.ChunkValue.Length);
             }
 
-            return simpleChunk;
+            return chunk;
         }
 
         /// <summary>
@@ -289,7 +261,7 @@ namespace SIPSorcery.Net
         /// parameters from.</param>
         /// <param name="length">The length of the TLV chunk parameters in the buffer.</param>
         /// <returns>A list of chunk parameters. Can be empty.</returns>
-        public static IEnumerable<SctpTlvChunkParameter> ParseTlvParameters(byte[] buffer, int posn, int length)
+        public static IEnumerable<SctpTlvChunkParameter> GetParameters(byte[] buffer, int posn, int length)
         {
             int paramPosn = posn;
 
@@ -331,7 +303,7 @@ namespace SIPSorcery.Net
                     case SctpChunkType.COOKIE_ECHO:
                     case SctpChunkType.HEARTBEAT:
                     case SctpChunkType.HEARTBEAT_ACK:
-                        return ParseSimpleChunk(buffer, posn);
+                        return ParseBaseChunk(buffer, posn);
                     case SctpChunkType.INIT:
                     case SctpChunkType.INIT_ACK:
                         return SctpInitChunk.ParseChunk(buffer, posn);
@@ -339,16 +311,13 @@ namespace SIPSorcery.Net
                         return SctpShutdownChunk.ParseChunk(buffer, posn);
                     default:
                         logger.LogDebug($"TODO: Implement parsing logic for well known chunk type {(SctpChunkType)chunkType}.");
-                        return ParseSimpleChunk(buffer, posn);
+                        return ParseBaseChunk(buffer, posn);
                 }
             }
 
-            // Didn't recognised the buffer as a well known chunk.
-            // Return a simple chunk and leave it up to the application.
-            logger.LogWarning($"SCTP chunk type of {chunkType} was not recognised.");
-            //logger.LogTrace(buffer.Skip(SctpHeader.SCTP_HEADER_LENGTH).ToArray().HexStr(SCTP_CHUNK_HEADER_LENGTH));
-
-            return ParseSimpleChunk(buffer, posn);
+            // Shouldn't reach this point. The SCTP packet parsing logic checks if the chunk is
+            // recognised before attempting to parse it.
+            throw new ApplicationException($"SCTP chunk type of {chunkType} was not recognised.");
         }
 
         /// <summary>
@@ -362,6 +331,27 @@ namespace SIPSorcery.Net
         {
             ushort len = NetConvert.ParseUInt16(buffer, posn + 2);
             return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        }
+
+        /// <summary>
+        /// If this chunk is unrecognised then this field dictates how the remainder of the 
+        /// SCTP packet should be handled.
+        /// </summary>
+        public static SctpUnrecognisedChunkActions GetUnrecognisedChunkAction(ushort chunkType) =>
+            (SctpUnrecognisedChunkActions)(chunkType >> 14 & 0x03);
+
+        /// <summary>
+        /// Copies an unrecognised chunk to a byte buffer and returns it. This method is
+        /// used to assist in reporting unrecognised chunk types.
+        /// </summary>
+        /// <param name="buffer">The buffer containing the chunk.</param>
+        /// <param name="posn">The position in the buffer that the unrecognised chunk starts.</param>
+        /// <returns>A new buffer containing a copy of the chunk.</returns>
+        public static byte[] CopyUnrecognisedChunk(byte[] buffer, int posn)
+        {
+            byte[] unrecognised = new byte[SctpChunk.GetChunkLengthFromHeader(buffer, posn, true)];
+            Buffer.BlockCopy(buffer, posn, unrecognised, 0, unrecognised.Length);
+            return unrecognised;
         }
     }
 }

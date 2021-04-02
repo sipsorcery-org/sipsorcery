@@ -107,7 +107,7 @@ namespace SIPSorcery.Net
         /// Event to notify application that the association state has changed.
         /// </summary>
         public event Action<SctpAssociationState> OnAssociationStateChanged;
-        
+
         /// <summary>
         /// Event to notify application that user data is available.
         /// </summary>
@@ -275,7 +275,7 @@ namespace SIPSorcery.Net
         /// <param name="packet">An SCTP packet received from the remote party.</param>
         internal void OnPacketReceived(SctpPacket packet)
         {
-            if(_wasAborted)
+            if (_wasAborted)
             {
                 logger.LogWarning($"SCTP packet received but association has been aborted, ignoring.");
             }
@@ -284,24 +284,47 @@ namespace SIPSorcery.Net
                 logger.LogWarning($"SCTP packet dropped due to wrong verification tag, expected " +
                     $"{VerificationTag} got {packet.Header.VerificationTag}.");
             }
-            else if(packet.Chunks.Any(x => x.KnownType == SctpChunkType.ABORT))
-            {
-                logger.LogWarning($"SCTP packet ABORT chunk received from remote party.");
-                _wasAborted = true;
-
-                var abortChunk = packet.Chunks.Where(x => x.KnownType == SctpChunkType.ABORT).First();
-                string abortReason = (abortChunk.ChunkValue != null) ? Encoding.UTF8.GetString(abortChunk.ChunkValue) : string.Empty;
-                OnAbortReceived?.Invoke(abortReason);
-            }
             else
             {
-                switch (State)
+                foreach (var chunk in packet.GetChunks())
                 {
-                    case SctpAssociationState.CookieWait:
-                        if (packet.Chunks.Any(x => x.KnownType == SctpChunkType.INIT_ACK))
-                        {
-                            var initAckChunk = packet.Chunks.Where(x => x.KnownType == SctpChunkType.INIT_ACK).Single() as SctpInitChunk;
+                    var chunkType = (SctpChunkType)chunk.ChunkType;
 
+                    switch (chunkType)
+                    {
+                        case SctpChunkType.ABORT:
+                            logger.LogWarning($"SCTP packet ABORT chunk received from remote party.");
+                            _wasAborted = true;
+                            string abortReason = (chunk.ChunkValue != null) ? Encoding.UTF8.GetString(chunk.ChunkValue) : string.Empty;
+                            OnAbortReceived?.Invoke(abortReason);
+                            break;
+
+                        case var ct when ct == SctpChunkType.COOKIE_ACK && State == SctpAssociationState.CookieEchoed:
+                            SetState(SctpAssociationState.Established);
+                            break;
+
+                        case SctpChunkType.DATA:
+                            var dataChunk = chunk as SctpDataChunk;
+
+                            var sackChunk = new SctpSackChunk(dataChunk.TSN, ARwnd);
+                            SendChunk(sackChunk);
+
+                            var sortedFrames = _framer.OnDataChunk(dataChunk);
+                            foreach (var frame in sortedFrames)
+                            {
+                                OnData?.Invoke(frame);
+                            }
+
+                            break;
+
+                        case SctpChunkType.HEARTBEAT:
+                            // The HEARTBEAT ACK sends back the same chunk but with the type changed.
+                            chunk.ChunkType = (byte)SctpChunkType.HEARTBEAT_ACK;
+                            SendChunk(chunk);
+                            break;
+
+                        case var ct when ct == SctpChunkType.INIT_ACK && State == SctpAssociationState.CookieWait:
+                            var initAckChunk = chunk as SctpInitChunk;
                             if (initAckChunk.InitiateTag == 0)
                             {
                                 // Terminal condition (see https://tools.ietf.org/html/rfc4960#section-3.3.3).
@@ -319,78 +342,28 @@ namespace SIPSorcery.Net
                                 SendChunk(cookieEchoChunk);
                                 SetState(SctpAssociationState.CookieEchoed);
                             }
-                        }
-                        else
-                        {
-                            logger.LogWarning($"SCTP association in COOKIE WAIT state received packet without INIT ACK chunk, ignoring.");
-                        }
-                        break;
+                            break;
 
-                    case SctpAssociationState.CookieEchoed:
-                        if (packet.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ACK))
-                        {
-                            // Got the ACK for the COOKIE ECHO chunk we sent.
-                            SetState(SctpAssociationState.Established);
-                        }
+                        case var ct when ct == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
+                            logger.LogWarning($"SCTP association received INIT_ACK chunk in wrong state of {State}, ignoring.");
+                            break;
 
-                        break;
+                        case SctpChunkType.SACK:
+                            var sackRecvChunk = chunk as SctpSackChunk;
+                            //logger.LogDebug($"SCTP SACK TSN ACK={sackRecvChunk.CumulativeTsnAck}, # gap ack blocks {sackRecvChunk.NumberGapAckBlocks}" +
+                            //    $", # duplicate tsn {sackRecvChunk.NumberDuplicateTSNs}.");
+                            break;
 
-                    case SctpAssociationState.Established:
-                        foreach (var chunk in packet.Chunks)
-                        {
-                            switch (chunk.KnownType)
-                            {
-                                case SctpChunkType.DATA:
-                                    var dataChunk = chunk as SctpDataChunk;
-
-                                    var sackChunk = new SctpSackChunk(dataChunk.TSN, ARwnd);
-                                    SendChunk(sackChunk);
-
-                                    var sortedFrames = _framer.OnDataChunk(dataChunk);
-                                    foreach(var frame in sortedFrames)
-                                    {
-                                        OnData?.Invoke(frame);
-                                    }
-
-                                    break;
-
-                                case SctpChunkType.HEARTBEAT:
-                                    // The HEARTBEAT ACK sends back the same chunk but with the type changed.
-                                    chunk.ChunkType = (byte)SctpChunkType.HEARTBEAT_ACK;
-                                    SendChunk(chunk);
-                                    break;
-
-                                case SctpChunkType.SACK:
-                                    var sackRecvChunk = chunk as SctpSackChunk;
-                                    //logger.LogDebug($"SCTP SACK TSN ACK={sackRecvChunk.CumulativeTsnAck}, # gap ack blocks {sackRecvChunk.NumberGapAckBlocks}" +
-                                    //    $", # duplicate tsn {sackRecvChunk.NumberDuplicateTSNs}.");
-                                    break;
-
-                                case SctpChunkType.COOKIE_ACK:
-                                case SctpChunkType.COOKIE_ECHO:
-                                    // No action required. Will occur if a data chunk is included in same packet
-                                    // as the COOKIE_ACK or COOKIE_ECHO.
-                                    break;
-
-                                default:
-                                    logger.LogWarning($"TODO: Add processing to SctpAssociation for chunk type {chunk.KnownType}.");
-                                    break;
-                            }
-                        }
-                        break;
-
-                    case SctpAssociationState.ShutdownSent:
-                        if (packet.Chunks.Any(x => x.KnownType == SctpChunkType.SHUTDOWN_ACK))
-                        {
-                            SetState(SctpAssociationState.Closed);
+                        case var ct when ct == SctpChunkType.SHUTDOWN_ACK && State == SctpAssociationState.ShutdownSent:
+                            SetState(SctpAssociationState.ShutdownReceived);
                             var shutCompleteChunk = new SctpChunk(SctpChunkType.SHUTDOWN_COMPLETE);
                             SendChunk(shutCompleteChunk);
-                        }
-                        break;
+                            break;
 
-                    default:
-                        logger.LogWarning($"SCTP association received packet when in unexpected state of {State}.");
-                        break;
+                        default:
+                            logger.LogWarning($"SCTP association no rule for {chunkType} in state of {State}.");
+                            break;
+                    }
                 }
             }
         }
@@ -447,7 +420,7 @@ namespace SIPSorcery.Net
            _sctpDestinationPort,
            _remoteVerificationTag);
 
-            pkt.Chunks.Add(chunk);
+            pkt.AddChunk(chunk);
 
             return pkt;
         }
@@ -481,18 +454,18 @@ namespace SIPSorcery.Net
                 _wasAborted = true;
 
                 var abortChunk = new SctpChunk(SctpChunkType.ABORT);
-                
-                if(_remoteVerificationTag != 0)
+
+                if (_remoteVerificationTag != 0)
                 {
                     abortChunk.ChunkFlags = 0x01;
                 }
-                
-                if(!string.IsNullOrWhiteSpace(reason))
+
+                if (!string.IsNullOrWhiteSpace(reason))
                 {
                     // TODO: Once TLV chunk parameters are sorted out.
                     //abortChunk.AddChunkParamter
                 }
-                
+
                 SendChunk(abortChunk);
 
                 OnAborted.Invoke(reason);
@@ -520,7 +493,7 @@ namespace SIPSorcery.Net
             SctpPacket init = new SctpPacket(_sctpSourcePort, _sctpDestinationPort, 0);
 
             SctpInitChunk initChunk = new SctpInitChunk(SctpChunkType.INIT, VerificationTag, TSN, ARwnd);
-            init.Chunks.Add(initChunk);
+            init.AddChunk(initChunk);
 
             SetState(SctpAssociationState.CookieWait);
 
@@ -539,7 +512,7 @@ namespace SIPSorcery.Net
             _sctpDestinationPort,
             _remoteVerificationTag);
 
-            pkt.Chunks.Add(chunk);
+            pkt.AddChunk(chunk);
 
             byte[] buffer = pkt.GetBytes();
 

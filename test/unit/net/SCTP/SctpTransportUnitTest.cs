@@ -49,13 +49,13 @@ namespace SIPSorcery.Net.UnitTests
 
             SctpPacket init = new SctpPacket(5000, 5000, 0);
             SctpInitChunk initChunk = new SctpInitChunk(SctpChunkType.INIT, remoteTag, remoteTSN, remoteARwnd);
-            init.Chunks.Add(initChunk);
+            init.AddChunk(initChunk);
 
             var initAck = sctpTransport.GetInitAck(init);
 
             Assert.NotNull(initAck);
 
-            var initAckChunk = initAck.Chunks.Single() as SctpInitChunk;
+            var initAckChunk = initAck.GetChunks().Single() as SctpInitChunk;
 
             Assert.NotNull(initAckChunk);
             Assert.NotNull(initAckChunk.StateCookie);

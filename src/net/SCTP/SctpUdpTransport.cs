@@ -75,22 +75,22 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    var pkt = SctpPacket.Parse(packet);
+                    var sctpPacket = new SctpPacket(packet, 0, packet.Length);
 
                     // Process packet.
-                    if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                    if (sctpPacket.Header.VerificationTag == 0)
                     {
                         // INIT packets have specific processing rules in order to prevent resource exhaustion.
                         // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
-                        var initAckPacket = base.GetInitAck(pkt, remoteEndPoint);
+                        var initAckPacket = base.GetInitAck(sctpPacket, remoteEndPoint);
                         var buffer = initAckPacket.GetBytes();
                         Send(null, buffer, 0, buffer.Length);
                     }
-                    else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                    else if (sctpPacket.GetChunks().Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                     {
                         // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
                         // requested a new association be created.
-                        var cookieEcho = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
+                        var cookieEcho = sctpPacket.GetChunks().Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
                         var cookie = base.GetCookie(cookieEcho, out var errorPacket);
 
                         if (cookie.IsEmpty() || errorPacket != null)
@@ -105,10 +105,10 @@ namespace SIPSorcery.Net
 
                             if (_associations.TryAdd(association.ID, association))
                             {
-                                if (pkt.Chunks.Count > 1)
+                                if (sctpPacket.GetChunks().Count() > 1)
                                 {
                                     // There could be DATA chunks after the COOKIE ECHO chunk.
-                                    association.OnPacketReceived(pkt);
+                                    association.OnPacketReceived(sctpPacket);
                                 }
                             }
                             else
@@ -120,7 +120,7 @@ namespace SIPSorcery.Net
                     else
                     {
                         // TODO: Lookup the existing association for the packet.
-                        _associations.Values.First().OnPacketReceived(pkt);
+                        _associations.Values.First().OnPacketReceived(sctpPacket);
                     }
                 }
             }
