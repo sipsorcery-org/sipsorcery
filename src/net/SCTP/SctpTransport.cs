@@ -133,7 +133,7 @@ namespace SIPSorcery.Net
         /// <returns>An SCTP packet with a single INIT ACK chunk.</returns>
         protected SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint remoteEP)
         {
-            SctpInitChunk initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+            SctpInitChunk initChunk = initPacket.GetChunks().Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
 
             SctpPacket initAckPacket = new SctpPacket(
                 initPacket.Header.DestinationPort,
@@ -165,7 +165,7 @@ namespace SIPSorcery.Net
             initAckChunk.StateCookie = jsonBufferWithHMAC;
             initAckChunk.UnrecognizedPeerParameters = initChunk.UnrecognizedPeerParameters;
 
-            initAckPacket.Chunks.Add(initAckChunk);
+            initAckPacket.AddChunk(initAckChunk);
 
             return initAckPacket;
         }

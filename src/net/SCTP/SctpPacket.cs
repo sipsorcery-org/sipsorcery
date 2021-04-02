@@ -17,8 +17,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -72,17 +74,23 @@ namespace SIPSorcery.Net
         /// </summary>
         public const int CHECKSUM_BUFFER_POSITION = 8;
 
+        private static ILogger logger = LogFactory.CreateLogger<SctpPacket>();
+
         /// <summary>
         /// The common header for the SCTP packet.
         /// </summary>
         public SctpHeader Header;
 
         /// <summary>
-        /// A list of one or more chunks for the SCTP packet.
+        /// The list of one or recognised chunks after parsing with <see cref="GetChunks"/> 
+        /// or chunks that have been manually added for an outgoing SCTP packet.
         /// </summary>
-        public List<SctpChunk> Chunks = new List<SctpChunk>();
+        private List<SctpChunk> _chunks = new List<SctpChunk>();
 
-        public bool IsChecksumValid { get; private set; }
+        private byte[] _buffer;
+        private int _offset;
+        private int _length;
+        private List<byte[]> _unrecognisedChunks = new List<byte[]>();
 
         private SctpPacket()
         { }
@@ -107,18 +115,32 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Creates a new SCTP packet from a serialised buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer holding the serialised packet.</param>
+        /// <param name="offset">The position in the buffer of the packet.</param>
+        public SctpPacket(byte[] buffer, int offset, int length)
+        {
+            _buffer = buffer;
+            _offset = offset;
+            _length = length;
+
+           Header = SctpHeader.Parse(buffer, offset);
+        }
+
+        /// <summary>
         /// Serialises an SCTP packet to a byte array.
         /// </summary>
         /// <returns>The byte array containing the serialised SCTP packet.</returns>
         public byte[] GetBytes()
         {
-            int chunksLength = Chunks.Sum(x => x.GetChunkLength(true));
+            int chunksLength = _chunks.Sum(x => x.GetChunkLength(true));
             byte[] buffer = new byte[SctpHeader.SCTP_HEADER_LENGTH + chunksLength];
 
             Header.WriteToBuffer(buffer, 0);
 
             int writePosn = SctpHeader.SCTP_HEADER_LENGTH;
-            foreach (var chunk in Chunks)
+            foreach (var chunk in _chunks)
             {
                 writePosn += chunk.WriteTo(buffer, writePosn);
             }
@@ -128,6 +150,78 @@ namespace SIPSorcery.Net
             NetConvert.ToBuffer(NetConvert.EndianFlip(checksum), buffer, CHECKSUM_BUFFER_POSITION);
 
             return buffer;
+        }
+
+        /// <summary>
+        /// Adds a new chunk to send with an outgoing packet.
+        /// </summary>
+        /// <param name="chunk">The chunk to add.</param>
+        public void AddChunk(SctpChunk chunk)
+        {
+            _chunks.Add(chunk);
+        }
+
+        /// <summary>
+        /// Parses an SCTP packet from a byte buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer holding the serialised SCTP packet.</param>
+        /// <param name="offset">The position in the buffer to start parsing from.</param>
+        /// <param name="length">The length of the available bytes in the buffer.</param>
+        /// <returns>An SCTP packet.</returns>
+        public IEnumerable<SctpChunk> GetChunks()
+        {
+            if (_chunks.Count > 0)
+            {
+                foreach(var chunk in _chunks)
+                {
+                    yield return chunk;
+                }
+            }
+            else
+            {
+                int posn = _offset + SctpHeader.SCTP_HEADER_LENGTH;
+
+                bool stop = false;
+
+                while (posn < _length)
+                {
+                    byte chunkType = _buffer[posn];
+
+                    if (Enum.IsDefined(typeof(SctpChunkType), chunkType))
+                    {
+                        var chunk = SctpChunk.Parse(_buffer, posn);
+                        _chunks.Add(chunk);
+
+                        yield return chunk;
+                    }
+                    else
+                    {
+                        switch (SctpChunk.GetUnrecognisedChunkAction(chunkType))
+                        {
+                            case SctpUnrecognisedChunkActions.Stop:
+                                stop = true;
+                                break;
+                            case SctpUnrecognisedChunkActions.StopAndReport:
+                                stop = true;
+                                _unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(_buffer, posn));
+                                break;
+                            case SctpUnrecognisedChunkActions.Skip:
+                                break;
+                            case SctpUnrecognisedChunkActions.SkipAndReport:
+                                _unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(_buffer, posn));
+                                break;
+                        }
+                    }
+
+                    if (stop)
+                    {
+                        logger.LogWarning($"SCTP unrecognised chunk type {chunkType} indicated no further chunks should be processed.");
+                        break;
+                    }
+
+                    posn += (int)SctpChunk.GetChunkLengthFromHeader(_buffer, posn, true);
+                }
+            }
         }
 
         /// <summary>
@@ -175,51 +269,6 @@ namespace SIPSorcery.Net
         {
             return GetVerificationTag(buffer, posn, length) == requiredTag &&
                 VerifyChecksum(buffer, posn, length);
-        }
-
-        /// <summary>
-        /// Parses an SCTP packet from a byte buffer.
-        /// </summary>
-        /// <param name="buffer">The buffer holding the serialised SCTP packet.</param>
-        /// <returns>An SCTP packet.</returns>
-        public static SctpPacket Parse(byte[] buffer)
-        {
-            return Parse(buffer, 0, buffer.Length);
-        }
-
-        /// <summary>
-        /// Parses an SCTP packet from a byte buffer.
-        /// </summary>
-        /// <param name="buffer">The buffer holding the serialised SCTP packet.</param>
-        /// <param name="offset">The position in the buffer to start parsing from.</param>
-        /// <param name="length">The length of the available bytes in the buffer.</param>
-        /// <returns>An SCTP packet.</returns>
-        public static SctpPacket Parse(byte[] buffer, int offset, int length)
-        {
-            int posn = offset;
-
-            SctpPacket sctpPacket = new SctpPacket();
-            sctpPacket.Header = SctpHeader.Parse(buffer, posn);
-
-            posn += SctpHeader.SCTP_HEADER_LENGTH;
-
-            // TODO: Handle unrecognised chunks.
-            // For the highest order two bits of any unrecognised chunks the actions are:
-            // - 00 - Stop processing this SCTP packet and discard it, do not process any further chunks within it.
-            // - 01 - Stop processing this SCTP packet and discard it, do not process any further chunks within it, and report the
-            //        unrecognized chunk in an 'Unrecognized Chunk Type'.
-            // - 10 - Skip this chunk and continue processing.
-            // - 11 - Skip this chunk and continue processing, but report in an ERROR chunk using the 'Unrecognized Chunk Type' cause of
-            //        error.
-
-            while (posn < length)
-            {
-                var chunk = SctpChunk.Parse(buffer, posn);
-                sctpPacket.Chunks.Add(chunk);
-                posn += (int)SctpChunk.GetChunkLengthFromHeader(buffer, posn, true);
-            }
-
-            return sctpPacket;
         }
     }
 }
