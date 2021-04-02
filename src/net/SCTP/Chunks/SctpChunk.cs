@@ -19,6 +19,7 @@
 
 using System;
 using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -56,7 +57,7 @@ namespace SIPSorcery.Net
         ECNE = 12,
         CWR = 13,
         SHUTDOWN_COMPLETE = 14,
-        
+
         // Not defined in RFC4960.
         AUTH = 15,
         PKTDROP = 129,
@@ -149,8 +150,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        public List<SctpTlvChunkParameter> VariableParameters = new List<SctpTlvChunkParameter>();
-
         public SctpChunk(SctpChunkType chunkType)
         {
             ChunkType = (byte)chunkType;
@@ -170,10 +169,10 @@ namespace SIPSorcery.Net
         /// as "variable length" parameters.
         /// </summary>
         /// <param name="chunkParameter">The chunk parameter to add to this chunk.</param>
-        public void AddChunkParameter(SctpTlvChunkParameter chunkParameter)
-        {
-            VariableParameters.Add(chunkParameter);
-        }
+        //public void AddChunkParameter(SctpTlvChunkParameter chunkParameter)
+        //{
+        //    VariableParameters.Add(chunkParameter);
+        //}
 
         /// <summary>
         /// Adds an error cause to the chunk by serialising it as a variable chunk parameter.
@@ -189,22 +188,14 @@ namespace SIPSorcery.Net
         /// to be padded out to 4 byte boundaries. This method gets overridden 
         /// by specialised SCTP chunks that have their own fields that determine the length.
         /// </summary>
+        /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
         /// <returns>The length of the chunk.</returns>
-        public virtual ushort GetChunkLength()
+        public virtual ushort GetChunkLength(bool padded)
         {
-            return (ushort)(SCTP_CHUNK_HEADER_LENGTH 
+            var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH
                 + (ChunkValue == null ? 0 : ChunkValue.Length));
-        }
 
-        /// <summary>
-        /// Calculates the padded length for the chunk. Chunks are required
-        /// to be padded out to 4 byte boundaries. This method gets overridden 
-        /// by specialised SCTP chunks that have their own fields that determine the length.
-        /// </summary>
-        /// <returns>The length of the chunk.</returns>
-        public ushort GetChunkPaddedLength()
-        {
-            return SctpPadding.PadTo4ByteBoundary(GetChunkLength());
+            return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
         /// <summary>
@@ -242,7 +233,7 @@ namespace SIPSorcery.Net
         {
             buffer[posn] = ChunkType;
             buffer[posn + 1] = ChunkFlags;
-            NetConvert.ToBuffer(GetChunkLength(), buffer, posn + 2);
+            NetConvert.ToBuffer(GetChunkLength(false), buffer, posn + 2);
         }
 
         /// <summary>
@@ -263,7 +254,7 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(ChunkValue, 0, buffer, posn + SCTP_CHUNK_HEADER_LENGTH, ChunkValue.Length);
             }
 
-            return GetChunkPaddedLength();
+            return GetChunkLength(true);
         }
 
         /// <summary>
@@ -298,20 +289,18 @@ namespace SIPSorcery.Net
         /// parameters from.</param>
         /// <param name="length">The length of the TLV chunk parameters in the buffer.</param>
         /// <returns>A list of chunk parameters. Can be empty.</returns>
-        public static List<SctpTlvChunkParameter> ParseTlvParameters(byte[] buffer, int posn, int length)
+        public static IEnumerable<SctpTlvChunkParameter> ParseTlvParameters(byte[] buffer, int posn, int length)
         {
-            List<SctpTlvChunkParameter> chunkParams = new List<SctpTlvChunkParameter>();
-
             int paramPosn = posn;
 
             while (paramPosn < posn + length)
             {
                 var chunkParam = SctpTlvChunkParameter.ParseTlvParameter(buffer, paramPosn);
-                chunkParams.Add(chunkParam);
-                paramPosn += chunkParam.GetParameterPaddedLength();
-            }
 
-            return chunkParams;
+                yield return chunkParam;
+
+                paramPosn += chunkParam.GetParameterLength(true);
+            }
         }
 
         /// <summary>
@@ -360,6 +349,19 @@ namespace SIPSorcery.Net
             //logger.LogTrace(buffer.Skip(SctpHeader.SCTP_HEADER_LENGTH).ToArray().HexStr(SCTP_CHUNK_HEADER_LENGTH));
 
             return ParseSimpleChunk(buffer, posn);
+        }
+
+        /// <summary>
+        /// Extracts the padded length field from a serialised chunk buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer holding the serialised chunk.</param>
+        /// <param name="posn">The start position of the serialised chunk.</param>
+        /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
+        /// <returns>The padded length of the serialised chunk.</returns>
+        public static uint GetChunkLengthFromHeader(byte[] buffer, int posn, bool padded)
+        {
+            ushort len = NetConvert.ParseUInt16(buffer, posn + 2);
+            return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
     }
 }

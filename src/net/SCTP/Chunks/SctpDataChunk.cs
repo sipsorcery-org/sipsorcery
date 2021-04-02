@@ -132,14 +132,15 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Calculates the un-padded length for DATA chunk.
+        /// Calculates the length for DATA chunk.
         /// </summary>
-        /// <returns>The un-padded length of the chunk.</returns>
-        public override ushort GetChunkLength()
+        /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
+        /// <returns>The length of the chunk.</returns>
+        public override ushort GetChunkLength(bool padded)
         {
             ushort len = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
             len += (ushort)(UserData != null ? UserData.Length : 0);
-            return len;
+            return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
         /// <summary>
@@ -168,7 +169,7 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(UserData, 0, buffer, userDataPosn, UserData.Length);
             }
 
-            return GetChunkPaddedLength();
+            return GetChunkLength(true);
         }
 
         public bool IsEmpty()

@@ -170,7 +170,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var cookieEchoChunk = sctpPkt.Chunks.First();
 
-            Assert.Equal(0x14, cookieEchoChunk.GetChunkPaddedLength());
+            Assert.Equal(0x14, cookieEchoChunk.GetChunkLength(true));
             Assert.Equal(0x10, cookieEchoChunk.ChunkValue.Length);
         }
 
@@ -198,7 +198,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var cookieAckChunk = sctpPkt.Chunks.First();
 
-            Assert.Equal(4, cookieAckChunk.GetChunkPaddedLength());
+            Assert.Equal(4, cookieAckChunk.GetChunkLength(true));
         }
 
         /// <summary>
@@ -237,7 +237,8 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(57232, sctpPkt.Header.SourcePort);
             Assert.Equal(7, sctpPkt.Header.DestinationPort);
             Assert.Equal(0U, sctpPkt.Header.VerificationTag);
-            Assert.Equal(0x6ab80e99U, sctpPkt.Header.Checksum);
+            // Note the checksum can differ if there are any unrecognised parameters.
+            Assert.Equal(0xBE4AE6F5U, sctpPkt.Header.Checksum);
             Assert.Single(sctpPkt.Chunks);
             Assert.Contains(sctpPkt.Chunks, (chunk) => { return chunk.KnownType == SctpChunkType.INIT; });
 
@@ -277,7 +278,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var heartbeatChunk = sctpPkt.Chunks.First();
 
-            Assert.Equal(44, heartbeatChunk.GetChunkPaddedLength());
+            Assert.Equal(44, heartbeatChunk.GetChunkLength(true));
         }
 
         /// <summary>
@@ -315,7 +316,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var heartbeatChunk = sctpPkt.Chunks.First();
 
-            Assert.Equal(44, heartbeatChunk.GetChunkPaddedLength());
+            Assert.Equal(44, heartbeatChunk.GetChunkLength(true));
         }
 
         /// <summary>
@@ -343,7 +344,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var dataChunk = sctpPkt.Chunks.First() as SctpDataChunk;
 
-            Assert.Equal(20, dataChunk.GetChunkPaddedLength());
+            Assert.Equal(20, dataChunk.GetChunkLength(true));
             Assert.Equal("68690A", dataChunk.UserData.HexStr());
             Assert.Equal(3741893047, dataChunk.TSN);
         }
@@ -381,7 +382,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var dataChunk = sctpPkt.Chunks.First() as SctpDataChunk;
 
-            Assert.Equal(20, dataChunk.GetChunkPaddedLength());
+            Assert.Equal(20, dataChunk.GetChunkLength(true));
             Assert.Equal("68690A", dataChunk.UserData.HexStr());
             Assert.Equal(3741893047, dataChunk.TSN);
         }
