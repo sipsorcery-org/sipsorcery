@@ -48,14 +48,15 @@ namespace SIPSorcery.Net.UnitTests
             uint remoteARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW;
 
             SctpPacket init = new SctpPacket(5000, 5000, 0);
-            SctpInitChunk initChunk = new SctpInitChunk(SctpChunkType.INIT, remoteTag, remoteTSN, remoteARwnd);
+            SctpInitChunk initChunk = new SctpInitChunk(SctpChunkType.INIT, remoteTag, remoteTSN, remoteARwnd, 
+                SctpAssociation.DEFAULT_NUMBER_OUTBOUND_STREAMS, SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS);
             init.AddChunk(initChunk);
 
             var initAck = sctpTransport.GetInitAck(init);
 
             Assert.NotNull(initAck);
 
-            var initAckChunk = initAck.GetChunks().Single() as SctpInitChunk;
+            var initAckChunk = initAck.Chunks.Single() as SctpInitChunk;
 
             Assert.NotNull(initAckChunk);
             Assert.NotNull(initAckChunk.StateCookie);

@@ -19,10 +19,36 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
+    /// <summary>
+    /// The ABORT chunk is sent to the peer of an association to close the
+    /// association.The ABORT chunk may contain Cause Parameters to inform
+    /// the receiver about the reason of the abort.DATA chunks MUST NOT be
+    /// bundled with ABORT.Control chunks (except for INIT, INIT ACK, and
+    /// SHUTDOWN COMPLETE) MAY be bundled with an ABORT, but they MUST be
+    /// placed before the ABORT in the SCTP packet or they will be ignored by
+    /// the receiver.
+    /// </summary>
+    /// <remarks>
+    /// https://tools.ietf.org/html/rfc4960#section-3.3.7
+    /// </remarks>
+    public class SctpAbortChunk : SctpErrorChunk
+    {
+        /// <summary>
+        /// Creates a new ABORT chunk.
+        /// </summary>
+        /// <param name="verificationTagBit">If set to true sets a bit in the chunk header to indicate
+        /// the sender filled in the Verification Tag expected by the peer.</param>
+        public SctpAbortChunk(bool verificationTagBit) :
+            base(SctpChunkType.ABORT, verificationTagBit)
+        { }
+    }
+
     /// <summary>
     /// An endpoint sends this chunk to its peer endpoint to notify it of
     /// certain error conditions. It contains one or more error causes. An
@@ -31,9 +57,26 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SctpErrorChunk : SctpChunk
     {
+        private const byte ABORT_CHUNK_TBIT_FLAG = 0x01;
+
         public List<ISctpErrorCause> ErrorCauses { get; private set; }
 
-        private SctpErrorChunk() : base(SctpChunkType.ERROR)
+        /// <summary>
+        /// This constructor is for the ABORT chunk type which is identical to the 
+        /// ERROR chunk except for the optional verification tag bit.
+        /// </summary>
+        /// <param name="chunkType">The chunk type, typically ABORT.</param>
+        /// <param name="verificationTagBit"></param>
+        protected SctpErrorChunk(SctpChunkType chunkType, bool verificationTagBit)
+            : base(chunkType)
+        {
+            if(verificationTagBit)
+            {
+                ChunkFlags = ABORT_CHUNK_TBIT_FLAG;
+            }
+        }
+
+        public SctpErrorChunk() : base(SctpChunkType.ERROR)
         {
             ErrorCauses = new List<ISctpErrorCause>();
         }
@@ -42,7 +85,7 @@ namespace SIPSorcery.Net
         /// Creates a new ERROR chunk.
         /// </summary>
         /// <param name="errorCauseCode">The initial error cause code to set on this chunk.</param>
-        public SctpErrorChunk(SctpErrorCauseCode errorCauseCode) : 
+        public SctpErrorChunk(SctpErrorCauseCode errorCauseCode) :
             this(new SctpError(errorCauseCode))
         { }
 
@@ -98,7 +141,102 @@ namespace SIPSorcery.Net
         public static SctpErrorChunk ParseChunk(byte[] buffer, int posn)
         {
             var errorChunk = new SctpErrorChunk();
-            // TODO.
+            ushort chunkLen = errorChunk.ParseFirstWord(buffer, posn);
+
+            int paramPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
+            int paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH;
+
+            if (paramPosn < paramsBufferLength)
+            {
+                bool stopProcessing = false;
+
+                foreach (var varParam in GetParameters(buffer, paramPosn, paramsBufferLength))
+                {
+                    switch (varParam.ParameterType)
+                    {
+                        case (ushort)SctpErrorCauseCode.InvalidStreamIdentifier:
+                            ushort streamID = (ushort)((varParam.ParameterValue != null) ?
+                                NetConvert.ParseUInt16(varParam.ParameterValue, 0) : 0);
+                            var invalidStreamID = new SctpErrorInvalidStreamIdentifier { StreamID = streamID };
+                            errorChunk.AddErrorCause(invalidStreamID);
+                            break;
+                        case (ushort)SctpErrorCauseCode.MissingMandatoryParameter:
+                            List<ushort> missingIDs = new List<ushort>();
+                            if (varParam.ParameterValue != null)
+                            {
+                                for (int i = 0; i < varParam.ParameterValue.Length; i += 2)
+                                {
+                                    missingIDs.Add(NetConvert.ParseUInt16(varParam.ParameterValue, i));
+                                }
+                            }
+                            var missingMandatory = new SctpErrorMissingMandatoryParameter { MissingParameters = missingIDs };
+                            errorChunk.AddErrorCause(missingMandatory);
+                            break;
+                        case (ushort)SctpErrorCauseCode.StaleCookieError:
+                            uint staleness = (uint)((varParam.ParameterValue != null) ?
+                                NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0);
+                            var staleCookie = new SctpErrorStaleCookieError { MeasureOfStaleness = staleness };
+                            errorChunk.AddErrorCause(staleCookie);
+                            break;
+                        case (ushort)SctpErrorCauseCode.OutOfResource:
+                            errorChunk.AddErrorCause(new SctpError(SctpErrorCauseCode.OutOfResource));
+                            break;
+                        case (ushort)SctpErrorCauseCode.UnresolvableAddress:
+                            var unresolvable = new SctpErrorUnresolvableAddress { UnresolvableAddress = varParam.ParameterValue };
+                            errorChunk.AddErrorCause(unresolvable);
+                            break;
+                        case (ushort)SctpErrorCauseCode.UnrecognizedChunkType:
+                            var unrecognised = new SctpErrorUnrecognizedChunkType { UnrecognizedChunk = varParam.ParameterValue };
+                            errorChunk.AddErrorCause(unrecognised);
+                            break;
+                        case (ushort)SctpErrorCauseCode.InvalidMandatoryParameter:
+                            errorChunk.AddErrorCause(new SctpError(SctpErrorCauseCode.InvalidMandatoryParameter));
+                            break;
+                        case (ushort)SctpErrorCauseCode.UnrecognizedParameters:
+                            var unrecognisedParams = new SctpErrorUnrecognizedParameters { UnrecognizedParameters = varParam.ParameterValue };
+                            errorChunk.AddErrorCause(unrecognisedParams);
+                            break;
+                        case (ushort)SctpErrorCauseCode.NoUserData:
+                            uint tsn = (uint)((varParam.ParameterValue != null) ?
+                                NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0);
+                            var noData = new SctpErrorNoUserData { TSN = tsn };
+                            errorChunk.AddErrorCause(noData);
+                            break;
+                        case (ushort)SctpErrorCauseCode.CookieReceivedWhileShuttingDown:
+                            errorChunk.AddErrorCause(new SctpError(SctpErrorCauseCode.CookieReceivedWhileShuttingDown));
+                            break;
+                        case (ushort)SctpErrorCauseCode.RestartAssociationWithNewAddress:
+                            var restartAddress = new SctpErrorRestartAssociationWithNewAddress
+                            { NewAddressTLVs = varParam.ParameterValue };
+                            errorChunk.AddErrorCause(restartAddress);
+                            break;
+                        case (ushort)SctpErrorCauseCode.UserInitiatedAbort:
+                            string reason = (varParam.ParameterValue != null) ?
+                                Encoding.UTF8.GetString(varParam.ParameterValue) : null;
+                            var userAbort = new SctpErrorUserInitiatedAbort { AbortReason = reason };
+                            errorChunk.AddErrorCause(userAbort);
+                            break;
+                        case (ushort)SctpErrorCauseCode.ProtocolViolation:
+                            string info = (varParam.ParameterValue != null) ?
+                                Encoding.UTF8.GetString(varParam.ParameterValue) : null;
+                            var protocolViolation = new SctpErrorProtocolViolation { AdditionalInformation = info };
+                            errorChunk.AddErrorCause(protocolViolation);
+                            break;
+                        default:
+                            // Parameter was not recognised.
+                            errorChunk.GotUnrecognisedParameter(varParam);
+                            break;
+                    }
+
+                    if (stopProcessing)
+                    {
+                        logger.LogWarning($"SCTP unrecognised parameter {varParam.ParameterType} for chunk type {SctpChunkType.ERROR} "
+                            + "indicated no further chunks should be processed.");
+                        break;
+                    }
+                }
+            }
+
             return errorChunk;
         }
     }

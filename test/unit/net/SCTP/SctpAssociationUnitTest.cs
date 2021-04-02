@@ -242,18 +242,18 @@ namespace SIPSorcery.Net.UnitTests
             {
                 if (_input.TryTake(out var buffer, 1000))
                 {
-                    SctpPacket pkt = new SctpPacket(buffer, 0, buffer.Length);
+                    SctpPacket pkt = SctpPacket.Parse(buffer, 0, buffer.Length);
 
                     // Process packet.
-                    if (pkt.GetChunks().Any(x => x.KnownType == SctpChunkType.INIT))
+                    if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
                     {
                         var initAckPacket = base.GetInitAck(pkt, null);
                         var initAckBuffer = initAckPacket.GetBytes();
                         Send(null, initAckBuffer, 0, initAckBuffer.Length);
                     }
-                    else if (pkt.GetChunks().Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                    else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                     {
-                        var cookieEcho = pkt.GetChunks().Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
+                        var cookieEcho = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
                         var cookie = base.GetCookie(cookieEcho, out var errorPacket);
                         OnCookieEcho?.Invoke(cookie);
                     }

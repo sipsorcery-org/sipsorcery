@@ -25,6 +25,9 @@ namespace SIPSorcery.Net
     /// An endpoint in an association MUST use this chunk to initiate a
     /// graceful close of the association with its peer.
     /// </summary>
+    /// <remarks>
+    /// https://tools.ietf.org/html/rfc4960#section-3.3.8
+    /// </remarks>
     public class SctpShutdownChunk : SctpChunk
     {
         public const int FIXED_PARAMETERS_LENGTH = 4;

@@ -111,7 +111,7 @@ namespace SIPSorcery.Net
             uint ppid, 
             byte[] data) : base(SctpChunkType.DATA)
         {
-            if(data == null || data.Length == 0)
+            if (data == null || data.Length == 0)
             {
                 throw new ArgumentNullException("data", "The SctpDataChunk data parameter cannot be empty.");
             }

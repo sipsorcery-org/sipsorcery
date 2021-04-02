@@ -46,7 +46,6 @@ namespace SIPSorcery.Net
     public interface ISctpErrorCause
     {
         SctpErrorCauseCode CauseCode { get; }
-
     }
 
     /// <summary>
@@ -105,7 +104,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.2
     /// </remarks>
-    public struct SctpErrorMissingMandatoryParameter
+    public struct SctpErrorMissingMandatoryParameter : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.MissingMandatoryParameter;
 
@@ -118,7 +117,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.3
     /// </remarks>
-    public struct SctpErrorStaleCookieError
+    public struct SctpErrorStaleCookieError : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.StaleCookieError;
 
@@ -136,7 +135,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.5
     /// </remarks>
-    public struct SctpErrorUnresolvableAddress
+    public struct SctpErrorUnresolvableAddress : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.UnresolvableAddress;
 
@@ -155,7 +154,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.6
     /// </remarks>
-    public struct SctpErrorUnrecognizedChunkType
+    public struct SctpErrorUnrecognizedChunkType : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.UnrecognizedChunkType;
 
@@ -175,7 +174,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.8
     /// </remarks>
-    public struct SctpErrorUnrecognizedParameters
+    public struct SctpErrorUnrecognizedParameters : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.UnrecognizedParameters;
 
@@ -197,7 +196,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.9
     /// </remarks>
-    public struct SctpErrorNoUserData
+    public struct SctpErrorNoUserData : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.NoUserData;
 
@@ -216,7 +215,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.11
     /// </remarks>
-    public struct SctpErrorRestartAssociationWithNewAddress
+    public struct SctpErrorRestartAssociationWithNewAddress : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.RestartAssociationWithNewAddress;
 
@@ -235,7 +234,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.12
     /// </remarks>
-    public struct SctpErrorUserInitiatedAbort
+    public struct SctpErrorUserInitiatedAbort : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.UserInitiatedAbort;
 
@@ -253,7 +252,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.13
     /// </remarks>
-    public struct SctpErrorProtocolViolation
+    public struct SctpErrorProtocolViolation : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.ProtocolViolation;
 

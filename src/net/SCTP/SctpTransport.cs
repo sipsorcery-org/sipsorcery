@@ -87,6 +87,47 @@ namespace SIPSorcery.Net
             Crypto.GetRandomBytes(_hmacKey);
         }
 
+        protected void GotInit(SctpPacket initPacket, IPEndPoint remoteEndPoint)
+        {
+            // INIT packets have specific processing rules in order to prevent resource exhaustion.
+            // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
+
+            SctpInitChunk initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+
+            if (initChunk.InitiateTag == 0 ||
+                initChunk.NumberInboundStreams == 0 ||
+                initChunk.NumberOutboundStreams == 0)
+            {
+                // If the value of the Initiate Tag in a received INIT chunk is found
+                // to be 0, the receiver MUST treat it as an error and close the
+                // association by transmitting an ABORT. (RFC4960 pg. 25)
+
+                // Note: A receiver of an INIT with the OS value set to 0 SHOULD
+                // abort the association. (RFC4960 pg. 25)
+
+                // Note: A receiver of an INIT with the MIS value of 0 SHOULD abort
+                // the association. (RFC4960 pg. 26)
+
+                SctpPacket errorPacket = new SctpPacket(
+                  initPacket.Header.DestinationPort,
+                  initPacket.Header.SourcePort,
+                  initChunk.InitiateTag);
+
+                SctpAbortChunk abortChunk = new SctpAbortChunk(true);
+                abortChunk.AddErrorCause(new SctpError(SctpErrorCauseCode.InvalidMandatoryParameter));
+                errorPacket.AddChunk(abortChunk);
+
+                var buffer = errorPacket.GetBytes();
+                Send(null, buffer, 0, buffer.Length);
+            }
+            else
+            {
+                var initAckPacket = GetInitAck(initPacket, remoteEndPoint);
+                var buffer = initAckPacket.GetBytes();
+                Send(null, buffer, 0, buffer.Length);
+            }
+        }
+
         /// <summary>
         /// Gets a cookie to send in an INIT ACK chunk. This method
         /// is overloadable so that different transports can tailor how the cookie
@@ -133,7 +174,7 @@ namespace SIPSorcery.Net
         /// <returns>An SCTP packet with a single INIT ACK chunk.</returns>
         protected SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint remoteEP)
         {
-            SctpInitChunk initChunk = initPacket.GetChunks().Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+            SctpInitChunk initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
 
             SctpPacket initAckPacket = new SctpPacket(
                 initPacket.Header.DestinationPort,
@@ -161,7 +202,13 @@ namespace SIPSorcery.Net
             var jsonWithHMAC = cookie.ToJson();
             var jsonBufferWithHMAC = Encoding.UTF8.GetBytes(jsonWithHMAC);
 
-            SctpInitChunk initAckChunk = new SctpInitChunk(SctpChunkType.INIT_ACK, cookie.Tag, cookie.TSN, cookie.ARwnd);
+            SctpInitChunk initAckChunk = new SctpInitChunk(
+                SctpChunkType.INIT_ACK,
+                cookie.Tag,
+                cookie.TSN,
+                cookie.ARwnd,
+                SctpAssociation.DEFAULT_NUMBER_OUTBOUND_STREAMS,
+                SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS);
             initAckChunk.StateCookie = jsonBufferWithHMAC;
             initAckChunk.UnrecognizedPeerParameters = initChunk.UnrecognizedPeerParameters;
 
@@ -197,7 +244,7 @@ namespace SIPSorcery.Net
                 //error = new SctpPacket();
                 return SctpTransportCookie.Empty;
             }
-            else if(DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt)).TotalSeconds > cookie.Lifetime)
+            else if (DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt)).TotalSeconds > cookie.Lifetime)
             {
                 logger.LogWarning($"SCTP COOKIE ECHO chunk was stale, created at {cookie.CreatedAt}, now {DateTime.Now.ToString("o")}, lifetime {cookie.Lifetime}s.");
                 // TODO.
