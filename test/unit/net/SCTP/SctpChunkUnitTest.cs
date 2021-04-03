@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using Xunit;
@@ -66,6 +67,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(sackPkt);
             Assert.Single(sackPkt.Chunks);
+            Assert.Equal(2806612857U, (sackPkt.Chunks.Single() as SctpSackChunk).DuplicateTSN.Single());
         }
     }
 }

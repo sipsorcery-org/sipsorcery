@@ -17,6 +17,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Collections.Generic;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -30,6 +31,8 @@ namespace SIPSorcery.Net
     public class SctpSackChunk : SctpChunk
     {
         public const int FIXED_PARAMETERS_LENGTH = 12;
+        private const int GAP_REPORT_LENGTH = 4;
+        private const int DUPLICATE_TSN_LENGTH = 4;
 
         /// <summary>
         /// This parameter contains the TSN of the last chunk received in
@@ -44,18 +47,16 @@ namespace SIPSorcery.Net
         public uint ARwnd;
 
         /// <summary>
-        /// Indicates the number of Gap Ack Blocks included in this SACK.
+        /// The gap ACK blocks. Each entry represents a gap in the forward out of order
+        /// TSNs received.
         /// </summary>
-        public ushort NumberGapAckBlocks;
+        public List<SctpTsnGapBlock> GapAckBlocks = new List<SctpTsnGapBlock>();
 
         /// <summary>
-        /// This field contains the number of duplicate TSNs the endpoint has
-        /// received.Each duplicate TSN is listed following the Gap Ack
-        /// Block list.
+        /// Indicates the number of times a TSN was received in duplicate
+        /// since the last SACK was sent.
         /// </summary>
-        public ushort NumberDuplicateTSNs;
-
-        public ushort ReportsLength;
+        public List<uint> DuplicateTSN = new List<uint>();
 
         private SctpSackChunk() : base(SctpChunkType.SACK)
         { }
@@ -78,8 +79,13 @@ namespace SIPSorcery.Net
         /// <returns>The length of the chunk.</returns>
         public override ushort GetChunkLength(bool padded)
         {
-            var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH + ReportsLength);
-            return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
+            var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH + 
+                FIXED_PARAMETERS_LENGTH +
+                GapAckBlocks.Count * GAP_REPORT_LENGTH +
+                DuplicateTSN.Count * DUPLICATE_TSN_LENGTH);
+
+            // Guaranteed to be in a 4 byte boundary so no need to pad.
+            return len;
         }
 
         /// <summary>
@@ -97,8 +103,23 @@ namespace SIPSorcery.Net
 
             NetConvert.ToBuffer(CumulativeTsnAck, buffer, startPosn);
             NetConvert.ToBuffer(ARwnd, buffer, startPosn + 4);
-            NetConvert.ToBuffer(NumberGapAckBlocks, buffer, startPosn + 8);
-            NetConvert.ToBuffer(NumberDuplicateTSNs, buffer, startPosn + 10);
+            NetConvert.ToBuffer((ushort)GapAckBlocks.Count, buffer, startPosn + 8);
+            NetConvert.ToBuffer((ushort)DuplicateTSN.Count, buffer, startPosn + 10);
+
+            int reportPosn = startPosn + FIXED_PARAMETERS_LENGTH;
+
+            foreach (var gapBlock in GapAckBlocks)
+            {
+                NetConvert.ToBuffer(gapBlock.Start, buffer, reportPosn);
+                NetConvert.ToBuffer(gapBlock.End, buffer, reportPosn + 2);
+                reportPosn += GAP_REPORT_LENGTH;
+            }
+
+            foreach(var dupTSN in DuplicateTSN)
+            {
+                NetConvert.ToBuffer(dupTSN, buffer, reportPosn);
+                reportPosn += DUPLICATE_TSN_LENGTH;
+            }
 
             return GetChunkLength(true);
         }
@@ -117,12 +138,24 @@ namespace SIPSorcery.Net
 
             sackChunk.CumulativeTsnAck = NetConvert.ParseUInt32(buffer, startPosn);
             sackChunk.ARwnd = NetConvert.ParseUInt32(buffer, startPosn + 4);
-            sackChunk.NumberGapAckBlocks = NetConvert.ParseUInt16(buffer, startPosn + 8);
-            sackChunk.NumberDuplicateTSNs = NetConvert.ParseUInt16(buffer, startPosn + 10);
+            ushort numGapAckBlocks = NetConvert.ParseUInt16(buffer, startPosn + 8);
+            ushort numDuplicateTSNs = NetConvert.ParseUInt16(buffer, startPosn + 10);
 
-            sackChunk.ReportsLength = (ushort)(chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH);
+            int reportPosn = startPosn + FIXED_PARAMETERS_LENGTH;
 
-            // TODO: Parse reports.
+            for (int i=0; i < numGapAckBlocks; i++)
+            {
+                ushort start = NetConvert.ParseUInt16(buffer, reportPosn);
+                ushort end = NetConvert.ParseUInt16(buffer, reportPosn + 2);
+                sackChunk.GapAckBlocks.Add(new SctpTsnGapBlock { Start = start, End = end });
+                reportPosn += GAP_REPORT_LENGTH;
+            }
+
+            for(int j=0; j < numDuplicateTSNs; j++)
+            {
+                sackChunk.DuplicateTSN.Add(NetConvert.ParseUInt32(buffer, reportPosn));
+                reportPosn += DUPLICATE_TSN_LENGTH;
+            }
 
             return sackChunk;
         }

@@ -48,7 +48,7 @@ namespace SIPSorcery.Net
         }
     }
 
-    public struct SctpForwardTsnGap
+    public struct SctpTsnGapBlock
     {
         /// <summary>
         /// Indicates the Start offset TSN for this Gap Ack Block.  To
@@ -305,9 +305,9 @@ namespace SIPSorcery.Net
         /// TSNs have not yet been received.
         /// </summary>
         /// <returns>A list of TSN gap blocks. An empty list means there are no gaps.</returns>
-        public List<SctpForwardTsnGap> GetForwardTSNGaps()
+        public List<SctpTsnGapBlock> GetForwardTSNGaps()
         {
-            List<SctpForwardTsnGap> gaps = new List<SctpForwardTsnGap>();
+            List<SctpTsnGapBlock> gaps = new List<SctpTsnGapBlock>();
 
             uint tsnAck = _inOrderReceiveCount > 0 ? _lastInOrderTSN : _initialTSN;
 
@@ -326,7 +326,7 @@ namespace SIPSorcery.Net
                     else if (tsn != prev + 1)
                     {
                         ushort end = (ushort)(prev - tsnAck);
-                        gaps.Add(new SctpForwardTsnGap { Start = start.Value, End = end });
+                        gaps.Add(new SctpTsnGapBlock { Start = start.Value, End = end });
                         start = (ushort)(tsn - tsnAck);
                         prev = tsn;
                     }
@@ -336,7 +336,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                gaps.Add(new SctpForwardTsnGap { Start = start.Value, End = (ushort)(prev - tsnAck) });
+                gaps.Add(new SctpTsnGapBlock { Start = start.Value, End = (ushort)(prev - tsnAck) });
             }
 
             return gaps;
