@@ -36,7 +36,7 @@ namespace SIPSorcery.Net
         /// This parameter contains the TSN of the last chunk received in
         /// sequence before any gaps.
         /// </summary>
-        public uint CumulativeTsnAck;
+        public uint? CumulativeTsnAck;
 
         private SctpShutdownChunk() : base(SctpChunkType.SHUTDOWN)
         { }
@@ -45,7 +45,7 @@ namespace SIPSorcery.Net
         /// Creates a new SHUTDOWN chunk.
         /// </summary>
         /// <param name="cumulativeTsnAck">The last TSN that was received from the remote party.</param>
-        public SctpShutdownChunk(uint cumulativeTsnAck) : base(SctpChunkType.SHUTDOWN)
+        public SctpShutdownChunk(uint? cumulativeTsnAck) : base(SctpChunkType.SHUTDOWN)
         {
             CumulativeTsnAck = cumulativeTsnAck;
         }
@@ -70,7 +70,7 @@ namespace SIPSorcery.Net
         public override ushort WriteTo(byte[] buffer, int posn)
         {
             WriteChunkHeader(buffer, posn);
-            NetConvert.ToBuffer(CumulativeTsnAck, buffer, posn + SCTP_CHUNK_HEADER_LENGTH);
+            NetConvert.ToBuffer(CumulativeTsnAck.GetValueOrDefault(), buffer, posn + SCTP_CHUNK_HEADER_LENGTH);
             return GetChunkLength(true);
         }
 

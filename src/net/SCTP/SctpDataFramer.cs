@@ -48,6 +48,25 @@ namespace SIPSorcery.Net
         }
     }
 
+    public struct SctpForwardTsnGap
+    {
+        /// <summary>
+        /// Indicates the Start offset TSN for this Gap Ack Block.  To
+        /// calculate the actual TSN number the Cumulative TSN Ack is added to
+        /// this offset number.This calculated TSN identifies the first TSN
+        /// in this Gap Ack Block that has been received.
+        /// </summary>
+        public ushort Start;
+
+        /// <summary>
+        /// Indicates the End offset TSN for this Gap Ack Block.  To calculate
+        /// the actual TSN number, the Cumulative TSN Ack is added to this
+        /// offset number.This calculated TSN identifies the TSN of the last
+        /// DATA chunk received in this Gap Ack Block.
+        /// </summary>
+        public ushort End;
+    }
+
     /// <summary>
     /// Processes incoming data chunks and handles fragmentation and congestion control. This
     /// class does NOT handle in order delivery. Different streams on the same association
@@ -70,21 +89,27 @@ namespace SIPSorcery.Net
         private static ILogger logger = LogFactory.CreateLogger<SctpDataFramer>();
 
         /// <summary>
-        /// This dictionary holds data chunks that have been received within.
+        /// This dictionary holds data chunk Transaction Sequence Numbers (TSN) that have
+        /// been received out of order and are in advance of the expected TSN.
         /// </summary>
-        private SortedDictionary<uint, SctpDataChunk> _receivedChunks = new SortedDictionary<uint, SctpDataChunk>();
+        private SortedDictionary<uint, int> _forwardTSN = new SortedDictionary<uint, int>();
+
+        /// <summary>
+        /// Storage for fragmented chunks.
+        /// </summary>
+        private Dictionary<uint, SctpDataChunk> _fragmentedChunks = new Dictionary<uint, SctpDataChunk>();
 
         /// <summary>
         /// Keeps track of the latest sequence number for each stream. Used to ensure
         /// stream chunks are delivered in order.
         /// </summary>
-        private SortedDictionary<ushort, ushort> _streamLatestSeqNums = new SortedDictionary<ushort, ushort>();
+        private Dictionary<ushort, ushort> _streamLatestSeqNums = new Dictionary<ushort, ushort>();
 
         /// <summary>
         /// A dictionary of dictionaries used to hold out of order stream chunks.
         /// </summary>
-        private SortedDictionary<ushort, SortedDictionary<ushort, SctpDataFrame>> _streamOutOfOrderFrames =
-            new SortedDictionary<ushort, SortedDictionary<ushort, SctpDataFrame>>();
+        private Dictionary<ushort, Dictionary<ushort, SctpDataFrame>> _streamOutOfOrderFrames =
+            new Dictionary<ushort, Dictionary<ushort, SctpDataFrame>>();
 
         /// <summary>
         /// The maximum amount of received data that will be stored at any one time.
@@ -95,14 +120,10 @@ namespace SIPSorcery.Net
         private uint _receiveWindow;
 
         /// <summary>
-        /// The earliest TSN received.
+        /// The most recent in order TSN received. This is the value that gets used
+        /// in the "Cumulative TSN Ack" field to SACK chunks. 
         /// </summary>
-        private uint _earliestTSN;
-
-        /// <summary>
-        /// The latest TSN received.
-        /// </summary>
-        private uint _latestTSN;
+        private uint _lastInOrderTSN;
 
         /// <summary>
         /// The window size is the maximum number of chunks we're prepared to hold in the 
@@ -111,21 +132,17 @@ namespace SIPSorcery.Net
         private ushort _windowSize;
 
         /// <summary>
-        /// Count of the duplicate chunks received.
+        /// Record of the duplicate Transaction Sequence Number (TSN) chunks received since
+        /// the last SACK chunk was generated.
         /// </summary>
-        private uint _duplicateTSNCount;
+        private Dictionary<uint, int> _duplicateTSN = new Dictionary<uint, int>();
 
         /// <summary>
-        /// The earliest Transaction Sequence Number for an SCTP packet in
-        /// the receive dictionary that is still waiting to be processed.
+        /// Gets the Transaction Sequence Number (TSN) that can be acknowledged to the remote peer.
+        /// It represents the most recent in order TSN that has been received. If no in order
+        /// TSN's have been received then null will be returned.
         /// </summary>
-        public uint EarliestTSN => _earliestTSN;
-
-        /// <summary>
-        /// The latest Transaction Sequence Number of an SCTP packet that has been 
-        /// received.
-        /// </summary>
-        public uint LatestTSN => _latestTSN;
+        public uint? CumulativeAckTSN => (_inOrderReceiveCount > 0) ? _lastInOrderTSN : (uint?)null;
 
         /// <summary>
         /// A count of the total entries in the receive dictionary. Note that if chunks
@@ -133,7 +150,10 @@ namespace SIPSorcery.Net
         /// already been processed. They are kept in the dictionary as empty chunks to
         /// track which TSN's have been received.
         /// </summary>
-        public int ReceivedChunksCount => _receivedChunks.Count;
+        public int ForwardTSNCount => _forwardTSN.Count;
+
+        private uint _initialTSN;
+        private uint _inOrderReceiveCount;
 
         /// <summary>
         /// Creates a new SCTP framer instance.
@@ -147,8 +167,7 @@ namespace SIPSorcery.Net
         public SctpDataFramer(uint receiveWindow, uint mtu, uint initialTSN)
         {
             _receiveWindow = receiveWindow != 0 ? receiveWindow : SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW;
-            _earliestTSN = initialTSN;
-            _latestTSN = initialTSN;
+            _initialTSN = initialTSN;
 
             mtu = mtu != 0 ? mtu : SctpUdpTransport.DEFAULT_UDP_MTU;
             _windowSize = (ushort)(_receiveWindow / mtu);
@@ -164,8 +183,7 @@ namespace SIPSorcery.Net
         /// remote party.</param>
         public void SetInitialTSN(uint tsn)
         {
-            _earliestTSN = tsn;
-            _latestTSN = tsn;
+            _initialTSN = tsn;
         }
 
         /// <summary>
@@ -181,20 +199,56 @@ namespace SIPSorcery.Net
             var sortedFrames = new List<SctpDataFrame>();
             var frame = SctpDataFrame.Empty;
 
-            if (GetDistance(_earliestTSN, dataChunk.TSN) > _windowSize &&
-                GetDistance(_latestTSN, dataChunk.TSN) > _windowSize)
+            if (_inOrderReceiveCount == 0 &&
+                GetDistance(_initialTSN, dataChunk.TSN) > _windowSize)
             {
                 logger.LogWarning($"SCTP framer received a data chunk with a {dataChunk.TSN} " +
-                    $"TSN when the current TSN range was {_earliestTSN} to {_latestTSN} and a " +
+                    $"TSN when the initial TSN was {_initialTSN} and a " +
                     $"window size of {_windowSize}, ignoring.");
             }
-            else if (!IsNewer(_earliestTSN, dataChunk.TSN))
+            else if (_inOrderReceiveCount > 0 &&
+                GetDistance(_lastInOrderTSN, dataChunk.TSN) > _windowSize)
+            {
+                logger.LogWarning($"SCTP framer received a data chunk with a {dataChunk.TSN} " +
+                    $"TSN when the expected TSN was {_lastInOrderTSN + 1} and a " +
+                    $"window size of {_windowSize}, ignoring.");
+            }
+            else if (_inOrderReceiveCount > 0 &&
+                !IsNewer(_lastInOrderTSN, dataChunk.TSN))
             {
                 logger.LogWarning($"SCTP framer received an old data chunk with {dataChunk.TSN} " +
-                    $"TSN when the expected TSN was {_earliestTSN}, ignoring.");
+                    $"TSN when the expected TSN was {_lastInOrderTSN + 1}, ignoring.");
             }
-            else if (!_receivedChunks.ContainsKey(dataChunk.TSN))
+            else if (!_forwardTSN.ContainsKey(dataChunk.TSN))
             {
+                // Relying on unsigned integer wrapping.
+                unchecked
+                {
+                    if ((_inOrderReceiveCount > 0 && _lastInOrderTSN + 1 == dataChunk.TSN) ||
+                        (_inOrderReceiveCount == 0 && dataChunk.TSN == _initialTSN))
+                    {
+                        _inOrderReceiveCount++;
+                        _lastInOrderTSN = dataChunk.TSN;
+
+                        // See if the in order TSN can be bumped using any out of order chunks 
+                        // already received.
+                        if (_inOrderReceiveCount > 0 && _forwardTSN.Count > 0)
+                        {
+                            while (_forwardTSN.ContainsKey(_lastInOrderTSN + 1))
+                            {
+                                _lastInOrderTSN++;
+                                _inOrderReceiveCount++;
+                                _forwardTSN.Remove(_lastInOrderTSN);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _forwardTSN.Add(dataChunk.TSN, 1);
+                    }
+                }
+
+                // Now go about processing the data chunk.
                 if (dataChunk.Begining && dataChunk.Ending)
                 {
                     // Single packet chunk.
@@ -204,32 +258,30 @@ namespace SIPSorcery.Net
                         dataChunk.StreamSeqNum,
                         dataChunk.PPID,
                         dataChunk.UserData);
-
-                    // Record the fact that the TSN was received.
-                    _receivedChunks.Add(dataChunk.TSN, SctpDataChunk.EmptyDataChunk);
                 }
                 else
                 {
                     // This is a data chunk fragment.
-                    _receivedChunks.Add(dataChunk.TSN, dataChunk);
-                    (var begin, var end) = GetChunkBeginAndEnd(dataChunk.TSN);
+                    _fragmentedChunks.Add(dataChunk.TSN, dataChunk);
+                    (var begin, var end) = GetChunkBeginAndEnd(_fragmentedChunks, dataChunk.TSN);
 
                     if (begin != null && end != null)
                     {
-                        frame = FragmentedChunkReady(begin.Value, end.Value);
+                        frame = GetFragmentedChunk(_fragmentedChunks, begin.Value, end.Value);
                     }
                 }
-
-                if (IsNewer(_latestTSN, dataChunk.TSN))
-                {
-                    _latestTSN = dataChunk.TSN;
-                }
-
-                _earliestTSN = RemoveEmpty(_earliestTSN);
             }
             else
             {
-                _duplicateTSNCount++;
+                logger.LogTrace($"SCTP duplicate TSN received for {dataChunk.TSN}.");
+                if (!_duplicateTSN.ContainsKey(dataChunk.TSN))
+                {
+                    _duplicateTSN.Add(dataChunk.TSN, 1);
+                }
+                else
+                {
+                    _duplicateTSN[dataChunk.TSN] = _duplicateTSN[dataChunk.TSN] + 1;
+                }
             }
 
             if (!frame.IsEmpty() && !dataChunk.Unordered)
@@ -248,6 +300,49 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Gets a list of the gaps in the forward TSN records. Typically the TSN gap
+        /// reports are used in SACK chunks to inform the remote peer which DATA chunk
+        /// TSNs have not yet been received.
+        /// </summary>
+        /// <returns>A list of TSN gap blocks. An empty list means there are no gaps.</returns>
+        public List<SctpForwardTsnGap> GetForwardTSNGaps()
+        {
+            List<SctpForwardTsnGap> gaps = new List<SctpForwardTsnGap>();
+
+            uint tsnAck = _inOrderReceiveCount > 0 ? _lastInOrderTSN : _initialTSN;
+
+            if (_forwardTSN.Count > 0)
+            {
+                ushort? start = null;
+                uint prev = 0;
+
+                foreach (var tsn in _forwardTSN.Keys)
+                {
+                    if (start == null)
+                    {
+                        start = (ushort)(tsn - tsnAck);
+                        prev = tsn;
+                    }
+                    else if (tsn != prev + 1)
+                    {
+                        ushort end = (ushort)(prev - tsnAck);
+                        gaps.Add(new SctpForwardTsnGap { Start = start.Value, End = end });
+                        start = (ushort)(tsn - tsnAck);
+                        prev = tsn;
+                    }
+                    else
+                    {
+                        prev++;
+                    }
+                }
+
+                gaps.Add(new SctpForwardTsnGap { Start = start.Value, End = (ushort)(prev - tsnAck) });
+            }
+
+            return gaps;
+        }
+
+        /// <summary>
         /// Processes a data frame that is now ready and that is part of an SCTP stream.
         /// Stream frames must be delivered in order.
         /// </summary>
@@ -256,7 +351,7 @@ namespace SIPSorcery.Net
         /// if the supplied frame is out of order for its stream.</returns>
         private List<SctpDataFrame> ProcessStreamFrame(SctpDataFrame frame)
         {
-            // Relying on ushort wrapping.
+            // Relying on unsigned short wrapping.
             unchecked
             {
                 // This is a stream chunk. Need to ensure in order delivery.
@@ -296,7 +391,7 @@ namespace SIPSorcery.Net
                     // Stream seqnum is out of order.
                     if (!_streamOutOfOrderFrames.ContainsKey(frame.StreamID))
                     {
-                        _streamOutOfOrderFrames[frame.StreamID] = new SortedDictionary<ushort, SctpDataFrame>();
+                        _streamOutOfOrderFrames[frame.StreamID] = new Dictionary<ushort, SctpDataFrame>();
                     }
 
                     if (_streamOutOfOrderFrames[frame.StreamID].Count > MAXIMUM_OUTOFORDER_FRAMES)
@@ -319,89 +414,81 @@ namespace SIPSorcery.Net
         /// returns its begin and end TSNs.
         /// </summary>
         /// <param name="tsn">The TSN of the fragmented chunk to check for completeness.</param>
+        /// <param name="fragments">The dictionary containing the chunk fragments.</param>
         /// <returns>If the chunk is complete the begin and end TSNs will be returned. If
-        /// the fragmented chunk is incomplete one of both of the begin and/or end TSNs will be null.</returns>
-        private (uint?, uint?) GetChunkBeginAndEnd(uint tsn)
+        /// the fragmented chunk is incomplete one or both of the begin and/or end TSNs will be null.</returns>
+        private (uint?, uint?) GetChunkBeginAndEnd(Dictionary<uint, SctpDataChunk> fragments, uint tsn)
         {
-            uint? beginTSN = _receivedChunks[tsn].Begining ? (uint?)tsn : null;
-            uint? endTSN = _receivedChunks[tsn].Ending ? (uint?)tsn : null;
-
-            uint revTSN = tsn - 1;
-            while (beginTSN == null && _receivedChunks.ContainsKey(revTSN))
+            unchecked
             {
-                if (_receivedChunks[revTSN].Begining)
-                {
-                    beginTSN = revTSN;
-                }
-                else
-                {
-                    revTSN--;
-                }
-            }
+                uint? beginTSN = fragments[tsn].Begining ? (uint?)tsn : null;
+                uint? endTSN = fragments[tsn].Ending ? (uint?)tsn : null;
 
-            if (beginTSN != null)
-            {
-                uint fwdTSN = tsn + 1;
-                while (endTSN == null && _receivedChunks.ContainsKey(fwdTSN))
+                uint revTSN = tsn - 1;
+                while (beginTSN == null && fragments.ContainsKey(revTSN))
                 {
-                    if (_receivedChunks[fwdTSN].Ending)
+                    if (fragments[revTSN].Begining)
                     {
-                        endTSN = fwdTSN;
+                        beginTSN = revTSN;
                     }
                     else
                     {
-                        fwdTSN++;
+                        revTSN--;
                     }
                 }
-            }
 
-            return (beginTSN, endTSN);
+                if (beginTSN != null)
+                {
+                    uint fwdTSN = tsn + 1;
+                    while (endTSN == null && fragments.ContainsKey(fwdTSN))
+                    {
+                        if (fragments[fwdTSN].Ending)
+                        {
+                            endTSN = fwdTSN;
+                        }
+                        else
+                        {
+                            fwdTSN++;
+                        }
+                    }
+                }
+
+                return (beginTSN, endTSN);
+            }
         }
 
         /// <summary>
         /// Extracts a fragmented chunk from the receive dictionary and passes it to the
         /// ULP.
         /// </summary>
+        /// <param name="fragments">The dictionary containing the chunk fragments.</param>
         /// <param name="beginTSN">The beginning TSN for the fragment.</param>
         /// <param name="endTSN">The end TSN for the fragment.</param>
-        private SctpDataFrame FragmentedChunkReady(uint beginTSN, uint endTSN)
+        private SctpDataFrame GetFragmentedChunk(Dictionary<uint, SctpDataChunk> fragments, uint beginTSN, uint endTSN)
         {
-            byte[] full = new byte[_receiveWindow];
-            int posn = 0;
-            var beginChunk = _receivedChunks[beginTSN];
-            var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
-
-            uint afterEndTSN;
-            unchecked { afterEndTSN = endTSN + 1; }
-            uint tsn = beginTSN;
-
-            while (tsn != afterEndTSN)
+            unchecked
             {
-                var fragment = _receivedChunks[tsn].UserData;
-                Buffer.BlockCopy(fragment, 0, full, posn, fragment.Length);
-                posn += fragment.Length;
-                _receivedChunks[tsn] = SctpDataChunk.EmptyDataChunk;
-                unchecked { tsn++; }
+                byte[] full = new byte[_receiveWindow];
+                int posn = 0;
+                var beginChunk = fragments[beginTSN];
+                var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
+
+                uint afterEndTSN = endTSN + 1;
+                uint tsn = beginTSN;
+
+                while (tsn != afterEndTSN)
+                {
+                    var fragment = fragments[tsn].UserData;
+                    Buffer.BlockCopy(fragment, 0, full, posn, fragment.Length);
+                    posn += fragment.Length;
+                    fragments.Remove(tsn);
+                    tsn++;
+                }
+
+                frame.UserData = frame.UserData.Take(posn).ToArray();
+
+                return frame;
             }
-
-            frame.UserData = frame.UserData.Take(posn).ToArray();
-
-            return frame;
-        }
-
-        /// <summary>
-        /// Removes empty data chunks, which are chunks that have already been passed
-        /// to the ULP as part of a full frame, from the receive dictionary.
-        /// </summary>
-        private uint RemoveEmpty(uint from)
-        {
-            while (_receivedChunks.ContainsKey(from) && _receivedChunks[from].IsEmpty())
-            {
-                _receivedChunks.Remove(from);
-                from++;
-            }
-
-            return from;
         }
 
         /// <summary>
