@@ -20,6 +20,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -46,6 +48,8 @@ namespace SIPSorcery.Net
     public interface ISctpErrorCause
     {
         SctpErrorCauseCode CauseCode { get; }
+        ushort GetErrorCauseLength(bool padded);
+        int WriteTo(byte[] buffer, int posn);
     }
 
     /// <summary>
@@ -57,8 +61,10 @@ namespace SIPSorcery.Net
     /// Invalid Mandatory Parameter: https://tools.ietf.org/html/rfc4960#section-3.3.10.7
     /// Cookie Received While Shutting Down: https://tools.ietf.org/html/rfc4960#section-3.3.10.10
     /// </remarks>
-    public struct SctpError : ISctpErrorCause
+    public struct SctpCauseOnlyError : ISctpErrorCause
     {
+        private const ushort ERROR_CAUSE_LENGTH = 4;
+
         public static readonly List<SctpErrorCauseCode> SupportedErrorCauses =
             new List<SctpErrorCauseCode>
             {
@@ -69,7 +75,7 @@ namespace SIPSorcery.Net
 
         public SctpErrorCauseCode CauseCode { get; private set; }
 
-        public SctpError(SctpErrorCauseCode causeCode)
+        public SctpCauseOnlyError(SctpErrorCauseCode causeCode)
         {
             if (!SupportedErrorCauses.Contains(causeCode))
             {
@@ -77,6 +83,15 @@ namespace SIPSorcery.Net
             }
 
             CauseCode = causeCode;
+        }
+
+        public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
+            return ERROR_CAUSE_LENGTH;
         }
     }
 
@@ -89,12 +104,24 @@ namespace SIPSorcery.Net
     /// </remarks>
     public struct SctpErrorInvalidStreamIdentifier : ISctpErrorCause
     {
+        private const ushort ERROR_CAUSE_LENGTH = 8;
+
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.InvalidStreamIdentifier;
 
         /// <summary>
         /// The invalid stream identifier.
         /// </summary>
         public ushort StreamID;
+
+        public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
+            NetConvert.ToBuffer(StreamID, buffer, posn + 4);
+            return ERROR_CAUSE_LENGTH;
+        }
     }
 
     /// <summary>
@@ -109,6 +136,29 @@ namespace SIPSorcery.Net
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.MissingMandatoryParameter;
 
         public List<ushort> MissingParameters;
+
+        public ushort GetErrorCauseLength(bool padded)
+        {
+            ushort len = (ushort)(4 + ((MissingParameters != null) ? MissingParameters.Count * 2 : 0));
+            return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        }
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            var len = GetErrorCauseLength(true);
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(len, buffer, posn + 2);
+            if (MissingParameters != null)
+            {
+                int valPosn = posn + 4;
+                foreach (var missing in MissingParameters)
+                {
+                    NetConvert.ToBuffer(missing, buffer, valPosn);
+                    valPosn += 2;
+                }
+            }
+            return len;
+        }
     }
 
     /// <summary>
@@ -119,12 +169,24 @@ namespace SIPSorcery.Net
     /// </remarks>
     public struct SctpErrorStaleCookieError : ISctpErrorCause
     {
+        private const ushort ERROR_CAUSE_LENGTH = 8;
+
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.StaleCookieError;
 
         /// <summary>
         /// The difference, in microseconds, between the current time and the time the State Cookie expired.
         /// </summary>
         public uint MeasureOfStaleness;
+
+        public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
+            NetConvert.ToBuffer(MeasureOfStaleness, buffer, posn + 4);
+            return ERROR_CAUSE_LENGTH;
+        }
     }
 
     /// <summary>
@@ -145,6 +207,24 @@ namespace SIPSorcery.Net
         /// contains the unresolvable address or host name.
         /// </summary>
         public byte[] UnresolvableAddress;
+
+        public ushort GetErrorCauseLength(bool padded)
+        {
+            ushort len = (ushort)(4 + ((UnresolvableAddress != null) ? UnresolvableAddress.Length : 0));
+            return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        }
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            var len = GetErrorCauseLength(true);
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(len, buffer, posn + 2);
+            if (UnresolvableAddress != null)
+            {
+                Buffer.BlockCopy(UnresolvableAddress, 0, buffer, posn + 4, UnresolvableAddress.Length);
+            }
+            return len;
+        }
     }
 
     /// <summary>
@@ -164,6 +244,24 @@ namespace SIPSorcery.Net
         /// Length.
         /// </summary>
         public byte[] UnrecognizedChunk;
+
+        public ushort GetErrorCauseLength(bool padded)
+        {
+            ushort len = (ushort)(4 + ((UnrecognizedChunk != null) ? UnrecognizedChunk.Length : 0));
+            return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        }
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            var len = GetErrorCauseLength(true);
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(len, buffer, posn + 2);
+            if (UnrecognizedChunk != null)
+            {
+                Buffer.BlockCopy(UnrecognizedChunk, 0, buffer, posn + 4, UnrecognizedChunk.Length);
+            }
+            return len;
+        }
     }
 
     /// <summary>
@@ -187,6 +285,24 @@ namespace SIPSorcery.Net
         /// parameters.
         /// </summary>
         public byte[] UnrecognizedParameters;
+
+        public ushort GetErrorCauseLength(bool padded)
+        {
+            ushort len = (ushort)(4 + ((UnrecognizedParameters != null) ? UnrecognizedParameters.Length : 0));
+            return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        }
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            var len = GetErrorCauseLength(true);
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(len, buffer, posn + 2);
+            if (UnrecognizedParameters != null)
+            {
+                Buffer.BlockCopy(UnrecognizedParameters, 0, buffer, posn + 4, UnrecognizedParameters.Length);
+            }
+            return len;
+        }
     }
 
     /// <summary>
@@ -198,6 +314,8 @@ namespace SIPSorcery.Net
     /// </remarks>
     public struct SctpErrorNoUserData : ISctpErrorCause
     {
+        private const ushort ERROR_CAUSE_LENGTH = 8;
+
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.NoUserData;
 
         /// <summary>
@@ -205,6 +323,16 @@ namespace SIPSorcery.Net
         /// with no user data field.
         /// </summary>
         public uint TSN;
+
+        public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
+            NetConvert.ToBuffer(TSN, buffer, posn + 4);
+            return ERROR_CAUSE_LENGTH;
+        }
     }
 
     /// <summary>
@@ -225,6 +353,24 @@ namespace SIPSorcery.Net
         /// Parameter Length.
         /// </summary>
         public byte[] NewAddressTLVs;
+
+        public ushort GetErrorCauseLength(bool padded)
+        {
+            ushort len = (ushort)(4 + ((NewAddressTLVs != null) ? NewAddressTLVs.Length : 0));
+            return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        }
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            var len = GetErrorCauseLength(true);
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(len, buffer, posn + 2);
+            if (NewAddressTLVs != null)
+            {
+                Buffer.BlockCopy(NewAddressTLVs, 0, buffer, posn + 4, NewAddressTLVs.Length);
+            }
+            return len;
+        }
     }
 
     /// <summary>
@@ -242,6 +388,25 @@ namespace SIPSorcery.Net
         /// Optional descriptive abort reason from Upper Layer Protocol (ULP).
         /// </summary>
         public string AbortReason;
+
+        public ushort GetErrorCauseLength(bool padded)
+        {
+            ushort len = (ushort)(4 + ((!string.IsNullOrEmpty(AbortReason)) ? Encoding.UTF8.GetByteCount(AbortReason) : 0));
+            return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        }
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            var len = GetErrorCauseLength(true);
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(len, buffer, posn + 2);
+            if (!string.IsNullOrEmpty(AbortReason))
+            {
+                var reasonBuffer = Encoding.UTF8.GetBytes(AbortReason);
+                Buffer.BlockCopy(reasonBuffer, 0, buffer, posn + 4, reasonBuffer.Length);
+            }
+            return len;
+        }
     }
 
     /// <summary>
@@ -260,5 +425,24 @@ namespace SIPSorcery.Net
         /// Optional description of the violation.
         /// </summary>
         public string AdditionalInformation;
+
+        public ushort GetErrorCauseLength(bool padded)
+        {
+            ushort len = (ushort)(4 + ((!string.IsNullOrEmpty(AdditionalInformation)) ? Encoding.UTF8.GetByteCount(AdditionalInformation) : 0));
+            return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        }
+
+        public int WriteTo(byte[] buffer, int posn)
+        {
+            var len = GetErrorCauseLength(true);
+            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+            NetConvert.ToBuffer(len, buffer, posn + 2);
+            if (!string.IsNullOrEmpty(AdditionalInformation))
+            {
+                var reasonBuffer = Encoding.UTF8.GetBytes(AdditionalInformation);
+                Buffer.BlockCopy(reasonBuffer, 0, buffer, posn + 4, reasonBuffer.Length);
+            }
+            return len;
+        }
     }
 }

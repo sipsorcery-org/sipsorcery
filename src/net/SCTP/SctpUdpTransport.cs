@@ -86,10 +86,9 @@ namespace SIPSorcery.Net
                     {
                         // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
                         // requested a new association be created.
-                        var cookieEcho = sctpPacket.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
-                        var cookie = base.GetCookie(cookieEcho, out var errorPacket);
+                        var cookie = base.GetCookie(sctpPacket);
 
-                        if (cookie.IsEmpty() || errorPacket != null)
+                        if (cookie.IsEmpty())
                         {
                             logger.LogWarning($"SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
                         }
