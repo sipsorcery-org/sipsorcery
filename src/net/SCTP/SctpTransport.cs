@@ -108,17 +108,12 @@ namespace SIPSorcery.Net
                 // Note: A receiver of an INIT with the MIS value of 0 SHOULD abort
                 // the association. (RFC4960 pg. 26)
 
-                SctpPacket errorPacket = new SctpPacket(
+                SendError(
+                  true,
                   initPacket.Header.DestinationPort,
                   initPacket.Header.SourcePort,
-                  initChunk.InitiateTag);
-
-                SctpAbortChunk abortChunk = new SctpAbortChunk(true);
-                abortChunk.AddErrorCause(new SctpError(SctpErrorCauseCode.InvalidMandatoryParameter));
-                errorPacket.AddChunk(abortChunk);
-
-                var buffer = errorPacket.GetBytes();
-                Send(null, buffer, 0, buffer.Length);
+                  initChunk.InitiateTag,
+                  new SctpCauseOnlyError(SctpErrorCauseCode.InvalidMandatoryParameter));
             }
             else
             {
@@ -218,19 +213,16 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// A COOKIE ECHO chunk is the step in the handshake that a new SCTP association will be created
-        /// for a remote party. Providing the state cookie is valid create a new association and return it to the
-        /// parent transport.
+        /// Attempts to retrieve the cookie that should have been set by this peer from a COOKIE ECHO
+        /// chunk. This is the step in the handshake that a new SCTP association will be created
+        /// for a remote party. Providing the state cookie is valid create a new association.
         /// </summary>
-        /// <param name="cookieEcho">A COOKIE ECHO chunk received from the remote party.</param>
-        /// <param name="error">If there is a problem with the COOKIE ECHO chunk then the error output
-        /// parameter will be set with a packet to send back to the remote party.</param>
+        /// <param name="sctpPacket">The packet containing the COOKIE ECHO chunk received from the remote party.</param>
         /// <returns>If the state cookie in the chunk is valid a new SCTP association will be returned. IF
-        /// it's not valid null will be returned.</returns>
-        protected SctpTransportCookie GetCookie(SctpChunk cookieEcho, out SctpPacket error)
+        /// it's not valid an empty cookie will be returned and an error response gets sent to the peer.</returns>
+        protected SctpTransportCookie GetCookie(SctpPacket sctpPacket)
         {
-            error = null;
-
+            var cookieEcho = sctpPacket.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
             var cookieBuffer = cookieEcho.ChunkValue;
             var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(cookieBuffer));
 
@@ -240,15 +232,24 @@ namespace SIPSorcery.Net
             if (calculatedHMAC != cookie.HMAC)
             {
                 logger.LogWarning($"SCTP COOKIE ECHO chunk had an invalid HMAC, calculated {calculatedHMAC}, cookie {cookie.HMAC}.");
-                // TODO.
-                //error = new SctpPacket();
+                SendError(
+                  true,
+                  sctpPacket.Header.DestinationPort,
+                  sctpPacket.Header.SourcePort,
+                  0,
+                  new SctpCauseOnlyError(SctpErrorCauseCode.InvalidMandatoryParameter));
                 return SctpTransportCookie.Empty;
             }
             else if (DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt)).TotalSeconds > cookie.Lifetime)
             {
                 logger.LogWarning($"SCTP COOKIE ECHO chunk was stale, created at {cookie.CreatedAt}, now {DateTime.Now.ToString("o")}, lifetime {cookie.Lifetime}s.");
-                // TODO.
-                //error = new SctpPacket();
+                var diff = DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt).AddSeconds(cookie.Lifetime));
+                SendError(
+                  true,
+                  sctpPacket.Header.DestinationPort,
+                  sctpPacket.Header.SourcePort,
+                  0,
+                  new SctpErrorStaleCookieError { MeasureOfStaleness = (uint)(diff.TotalMilliseconds * 1000) });
                 return SctpTransportCookie.Empty;
             }
             else
@@ -278,6 +279,34 @@ namespace SIPSorcery.Net
             }
 
             return hmacCalculated;
+        }
+
+        /// <summary>
+        /// Send an SCTP packet with one of the error type chunks (ABORT or ERROR) to the remote peer.
+        /// </summary>
+        /// <param name=isAbort">Set to true to use an ABORT chunk otherwise an ERROR chunk will be used.</param>
+        /// <param name="desintationPort">The SCTP destination port.</param>
+        /// <param name="sourcePort">The SCTP source port.</param>
+        /// <param name="initiateTag">If available the initial tag for the remote peer.</param>
+        /// <param name="error">The error to send.</param>
+        private void SendError(
+            bool isAbort,
+            ushort destinationPort,
+            ushort sourcePort,
+            uint initiateTag,
+            ISctpErrorCause error)
+        {
+            SctpPacket errorPacket = new SctpPacket(
+                destinationPort,
+                sourcePort,
+                initiateTag);
+
+            SctpErrorChunk errorChunk = isAbort ? new SctpAbortChunk(true) : new SctpErrorChunk();
+            errorChunk.AddErrorCause(error);
+            errorPacket.AddChunk(errorChunk);
+
+            var buffer = errorPacket.GetBytes();
+            Send(null, buffer, 0, buffer.Length);
         }
 
         /// <summary>

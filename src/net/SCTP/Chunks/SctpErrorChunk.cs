@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -47,6 +48,24 @@ namespace SIPSorcery.Net
         public SctpAbortChunk(bool verificationTagBit) :
             base(SctpChunkType.ABORT, verificationTagBit)
         { }
+
+        /// <summary>
+        /// Gets the user supplied abort reason if available.
+        /// </summary>
+        /// <returns>The abort reason or null if not present.</returns>
+        public string GetAbortReason()
+        {
+            if (ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort))
+            {
+                var userAbort = (SctpErrorUserInitiatedAbort)(ErrorCauses
+                    .First(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort));
+                return userAbort.AbortReason;
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 
     /// <summary>
@@ -86,7 +105,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="errorCauseCode">The initial error cause code to set on this chunk.</param>
         public SctpErrorChunk(SctpErrorCauseCode errorCauseCode) :
-            this(new SctpError(errorCauseCode))
+            this(new SctpCauseOnlyError(errorCauseCode))
         { }
 
         /// <summary>
@@ -109,18 +128,25 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Calculates the padded length for the chunk.
+        /// Calculates the length for the chunk.
         /// </summary>
         /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
         /// <returns>The padded length of the chunk.</returns>
         public override ushort GetChunkLength(bool padded)
         {
-            // TODO.
-            return SCTP_CHUNK_HEADER_LENGTH;
+            ushort len = SCTP_CHUNK_HEADER_LENGTH;
+            if(ErrorCauses != null && ErrorCauses.Count > 0)
+            {
+                foreach(var cause in ErrorCauses)
+                {
+                    len += cause.GetErrorCauseLength(padded);
+                }
+            }
+            return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
         /// <summary>
-        /// Serialises the SHUTDOWN chunk to a pre-allocated buffer.
+        /// Serialises the ERROR chunk to a pre-allocated buffer.
         /// </summary>
         /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
         /// must have the required space already allocated.</param>
@@ -129,7 +155,14 @@ namespace SIPSorcery.Net
         public override ushort WriteTo(byte[] buffer, int posn)
         {
             WriteChunkHeader(buffer, posn);
-            // TODO.
+            if (ErrorCauses != null && ErrorCauses.Count > 0)
+            {
+                int causePosn = posn + 4;
+                foreach (var cause in ErrorCauses)
+                {
+                    causePosn += cause.WriteTo(buffer, causePosn);
+                }
+            }
             return GetChunkLength(true);
         }
 
@@ -179,7 +212,7 @@ namespace SIPSorcery.Net
                             errorChunk.AddErrorCause(staleCookie);
                             break;
                         case (ushort)SctpErrorCauseCode.OutOfResource:
-                            errorChunk.AddErrorCause(new SctpError(SctpErrorCauseCode.OutOfResource));
+                            errorChunk.AddErrorCause(new SctpCauseOnlyError(SctpErrorCauseCode.OutOfResource));
                             break;
                         case (ushort)SctpErrorCauseCode.UnresolvableAddress:
                             var unresolvable = new SctpErrorUnresolvableAddress { UnresolvableAddress = varParam.ParameterValue };
@@ -190,7 +223,7 @@ namespace SIPSorcery.Net
                             errorChunk.AddErrorCause(unrecognised);
                             break;
                         case (ushort)SctpErrorCauseCode.InvalidMandatoryParameter:
-                            errorChunk.AddErrorCause(new SctpError(SctpErrorCauseCode.InvalidMandatoryParameter));
+                            errorChunk.AddErrorCause(new SctpCauseOnlyError(SctpErrorCauseCode.InvalidMandatoryParameter));
                             break;
                         case (ushort)SctpErrorCauseCode.UnrecognizedParameters:
                             var unrecognisedParams = new SctpErrorUnrecognizedParameters { UnrecognizedParameters = varParam.ParameterValue };
@@ -203,7 +236,7 @@ namespace SIPSorcery.Net
                             errorChunk.AddErrorCause(noData);
                             break;
                         case (ushort)SctpErrorCauseCode.CookieReceivedWhileShuttingDown:
-                            errorChunk.AddErrorCause(new SctpError(SctpErrorCauseCode.CookieReceivedWhileShuttingDown));
+                            errorChunk.AddErrorCause(new SctpCauseOnlyError(SctpErrorCauseCode.CookieReceivedWhileShuttingDown));
                             break;
                         case (ushort)SctpErrorCauseCode.RestartAssociationWithNewAddress:
                             var restartAddress = new SctpErrorRestartAssociationWithNewAddress

@@ -73,6 +73,7 @@ namespace SIPSorcery.Net
         private ushort _numberInboundStreams;
         private SctpDataFramer _framer;
         private bool _wasAborted;
+        private bool _wasShutdown;
 
         public uint VerificationTag { get; private set; }
 
@@ -215,9 +216,16 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Attempts to initialise the association by sending an INIT chunk to the remote peer.
+        /// </summary>
         public void Init()
         {
-            if (State == SctpAssociationState.Closed)
+            if (_wasAborted || _wasShutdown)
+            {
+                logger.LogWarning($"SCTP association cannot be initialised after an abort or shutdown.");
+            }
+            else if (State == SctpAssociationState.Closed)
             {
                 SendInit();
             }
@@ -239,9 +247,13 @@ namespace SIPSorcery.Net
             // new association rather than one that has already sent an INIT, in order to deal with
             // a race condition where both SCTP end points attempt to establish the association at
             // the same time using the same ports.
-            if (!(State == SctpAssociationState.Closed || State == SctpAssociationState.CookieEchoed))
+            if (_wasAborted || _wasShutdown)
             {
-                throw new ApplicationException($"SCTP cannot initialise an SctpAssocation with a cookie in state {State}.");
+                logger.LogWarning($"SCTP association cannot initialise with a cookie after an abort or shutdown.");
+            }
+            else if (!(State == SctpAssociationState.Closed || State == SctpAssociationState.CookieEchoed))
+            {
+                throw new ApplicationException($"SCTP association cannot initialise with a cookie in state {State}.");
             }
             else
             {
@@ -282,6 +294,10 @@ namespace SIPSorcery.Net
         /// Implements the SCTP association state machine.
         /// </summary>
         /// <param name="packet">An SCTP packet received from the remote party.</param>
+        /// <remarks>
+        /// SCTP Association State Diagram:
+        /// https://tools.ietf.org/html/rfc4960#section-4
+        /// </remarks>
         internal void OnPacketReceived(SctpPacket packet)
         {
             if (_wasAborted)
@@ -302,10 +318,10 @@ namespace SIPSorcery.Net
                     switch (chunkType)
                     {
                         case SctpChunkType.ABORT:
-                            logger.LogWarning($"SCTP packet ABORT chunk received from remote party.");
+                            string abortReason = (chunk as SctpAbortChunk).GetAbortReason();
+                            logger.LogWarning($"SCTP packet ABORT chunk received from remote party, reason {abortReason}.");
                             _wasAborted = true;
-                            //string abortReason = (chunk.ChunkValue != null) ? Encoding.UTF8.GetString(chunk.ChunkValue) : string.Empty;
-                            OnAbortReceived?.Invoke(null);
+                            OnAbortReceived?.Invoke(abortReason);
                             break;
 
                         case SctpChunkType.COOKIE_ACK:
@@ -364,7 +380,7 @@ namespace SIPSorcery.Net
                                 // Note: A receiver of an INIT ACK with the MIS value set to 0 SHOULD
                                 // destroy the association discarding its TCB. (RFC4960 pg 31).
 
-                                Abort(new SctpError(SctpErrorCauseCode.InvalidMandatoryParameter));
+                                Abort(new SctpCauseOnlyError(SctpErrorCauseCode.InvalidMandatoryParameter));
                             }
                             else
                             {
@@ -405,13 +421,26 @@ namespace SIPSorcery.Net
                             //    $", # duplicate tsn {sackRecvChunk.NumberDuplicateTSNs}.");
                             break;
 
+                        case var ct when ct == SctpChunkType.SHUTDOWN && State == SctpAssociationState.Established:
+                            // TODO: Check outstanding data chunks.
+                            var shutdownAck = new SctpChunk(SctpChunkType.SHUTDOWN_ACK);
+                            SendChunk(shutdownAck);
+                            SetState(SctpAssociationState.ShutdownAckSent);
+                            break;
+
                         case var ct when ct == SctpChunkType.SHUTDOWN_ACK && State == SctpAssociationState.ShutdownSent:
-                            SetState(SctpAssociationState.ShutdownReceived);
+                            SetState(SctpAssociationState.Closed);
                             var shutCompleteChunk = new SctpChunk(SctpChunkType.SHUTDOWN_COMPLETE,
                                 (byte)(_remoteVerificationTag != 0 ? SHUTDOWN_CHUNK_TBIT_FLAG : 0x00));
                             var shutCompletePkt = GetControlPacket(shutCompleteChunk);
                             shutCompletePkt.Header.VerificationTag = packet.Header.VerificationTag;
                             SendPacket(shutCompletePkt);
+                            break;
+
+                        case var ct when ct == SctpChunkType.SHUTDOWN_COMPLETE &&
+                                (State == SctpAssociationState.ShutdownAckSent || State == SctpAssociationState.ShutdownSent):
+                            _wasShutdown = true;
+                            SetState(SctpAssociationState.Closed);
                             break;
 
                         default:
@@ -424,20 +453,27 @@ namespace SIPSorcery.Net
 
         public void SendData(ushort streamID, ushort seqnum, uint ppid, string message)
         {
-            if (!_wasAborted)
+            if (string.IsNullOrEmpty(message))
             {
-                if (string.IsNullOrEmpty(message))
-                {
-                    throw new ArgumentNullException("The message cannot be empty when sending a data chunk on an SCTP association.");
-                }
-
-                SendData(streamID, seqnum, ppid, Encoding.UTF8.GetBytes(message));
+                throw new ArgumentNullException("The message cannot be empty when sending a data chunk on an SCTP association.");
             }
+
+            SendData(streamID, seqnum, ppid, Encoding.UTF8.GetBytes(message));
         }
 
         public void SendData(ushort streamID, ushort seqnum, uint ppid, byte[] data)
         {
-            if (!_wasAborted)
+            if (_wasAborted)
+            {
+                logger.LogWarning($"SCTP send data is not allowed on an aborted association.");
+            }
+            else if (!(State == SctpAssociationState.Established ||
+                      State == SctpAssociationState.ShutdownPending ||
+                      State == SctpAssociationState.ShutdownReceived))
+            {
+                logger.LogWarning($"SCTP send data is not allowed for an association in state {State}.");
+            }
+            else
             {
                 for (int index = 0; index * _defaultMTU < data.Length; index++)
                 {
@@ -493,6 +529,10 @@ namespace SIPSorcery.Net
         {
             if (!_wasAborted)
             {
+                SetState(SctpAssociationState.ShutdownPending);
+
+                // TODO: Check outstanding data chunks.
+
                 uint? ackTSN = _framer.CumulativeAckTSN;
 
                 logger.LogDebug($"SCTP sending shutdown for association {ID}, ACK TSN {ackTSN}.");
@@ -509,7 +549,7 @@ namespace SIPSorcery.Net
         /// the association.
         /// </summary>
         /// <param name="errorCause">The cause of the abort.</param>
-        public void Abort(SctpError errorCause)
+        public void Abort(SctpCauseOnlyError errorCause)
         {
             if (!_wasAborted)
             {

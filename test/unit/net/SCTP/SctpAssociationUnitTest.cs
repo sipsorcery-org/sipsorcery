@@ -254,8 +254,15 @@ namespace SIPSorcery.Net.UnitTests
                     else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                     {
                         var cookieEcho = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
-                        var cookie = base.GetCookie(cookieEcho, out var errorPacket);
-                        OnCookieEcho?.Invoke(cookie);
+                        var cookie = base.GetCookie(pkt);
+                        if (cookie.IsEmpty())
+                        {
+                            throw new ApplicationException($"MockB2BSctpTransport gave itself an invalid INIT cookie.");
+                        }
+                        else
+                        {
+                            OnCookieEcho?.Invoke(cookie);
+                        }
                     }
                     else
                     {
