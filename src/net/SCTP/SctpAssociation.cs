@@ -493,7 +493,7 @@ namespace SIPSorcery.Net
         {
             if (!_wasAborted)
             {
-                uint ackTSN = _framer.LatestTSN;
+                uint? ackTSN = _framer.CumulativeAckTSN;
 
                 logger.LogDebug($"SCTP sending shutdown for association {ID}, ACK TSN {ackTSN}.");
 
