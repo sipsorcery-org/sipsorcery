@@ -27,7 +27,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// An empty data chunk. The main use is to indicate a DATA chunk has
         /// already been delivered to the Upper Layer Protocol (ULP) in 
-        /// <see cref="SctpDataFramer"/>.
+        /// <see cref="SctpDataReceiver"/>.
         /// </summary>
         public static SctpDataChunk EmptyDataChunk = new SctpDataChunk();
 

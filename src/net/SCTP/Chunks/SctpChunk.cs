@@ -340,6 +340,7 @@ namespace SIPSorcery.Net
                     case SctpChunkType.COOKIE_ECHO:
                     case SctpChunkType.HEARTBEAT:
                     case SctpChunkType.HEARTBEAT_ACK:
+                    case SctpChunkType.SHUTDOWN_ACK:
                         return ParseBaseChunk(buffer, posn);
                     case SctpChunkType.INIT:
                     case SctpChunkType.INIT_ACK:

@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SctpDataFramer.cs
+// Filename: SctpDataReceiver.cs
 //
 // Description: This class is used to collate incoming DATA chunks into full
 // frames.
@@ -73,7 +73,7 @@ namespace SIPSorcery.Net
     /// can have different ordering requirements so it's left up to each stream handler to
     /// deal with full frames as they see fit.
     /// </summary>
-    public class SctpDataFramer
+    public class SctpDataReceiver
     {
         /// <summary>
         /// The window size is the maximum number of entries that can be recorded in the 
@@ -86,7 +86,7 @@ namespace SIPSorcery.Net
         /// </summary>
         private const int MAXIMUM_OUTOFORDER_FRAMES = 25;
 
-        private static ILogger logger = LogFactory.CreateLogger<SctpDataFramer>();
+        private static ILogger logger = LogFactory.CreateLogger<SctpDataReceiver>();
 
         /// <summary>
         /// This dictionary holds data chunk Transaction Sequence Numbers (TSN) that have
@@ -156,7 +156,7 @@ namespace SIPSorcery.Net
         private uint _inOrderReceiveCount;
 
         /// <summary>
-        /// Creates a new SCTP framer instance.
+        /// Creates a new SCTP data receiver instance.
         /// </summary>
         /// <param name="receiveWindow">The size of the receive window. This is the window around the 
         /// expected Transaction Sequence Number (TSN). If a data chunk is received with a TSN outside
@@ -164,7 +164,7 @@ namespace SIPSorcery.Net
         /// <param name="mtu">The Maximum Transmission Unit for the network layer that the SCTP
         /// association is being used with.</param>
         /// <param name="initialTSN">The initial TSN for the association from the INIT handshake.</param>
-        public SctpDataFramer(uint receiveWindow, uint mtu, uint initialTSN)
+        public SctpDataReceiver(uint receiveWindow, uint mtu, uint initialTSN)
         {
             _receiveWindow = receiveWindow != 0 ? receiveWindow : SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW;
             _initialTSN = initialTSN;
@@ -173,7 +173,7 @@ namespace SIPSorcery.Net
             _windowSize = (ushort)(_receiveWindow / mtu);
             _windowSize = (_windowSize < WINDOW_SIZE_MINIMUM) ? WINDOW_SIZE_MINIMUM : _windowSize;
 
-            logger.LogDebug($"SCTP windows size for framer set at {_windowSize}.");
+            logger.LogDebug($"SCTP windows size for data receiver set at {_windowSize}.");
         }
 
         /// <summary>
@@ -202,21 +202,21 @@ namespace SIPSorcery.Net
             if (_inOrderReceiveCount == 0 &&
                 GetDistance(_initialTSN, dataChunk.TSN) > _windowSize)
             {
-                logger.LogWarning($"SCTP framer received a data chunk with a {dataChunk.TSN} " +
+                logger.LogWarning($"SCTP data receiver received a data chunk with a {dataChunk.TSN} " +
                     $"TSN when the initial TSN was {_initialTSN} and a " +
                     $"window size of {_windowSize}, ignoring.");
             }
             else if (_inOrderReceiveCount > 0 &&
                 GetDistance(_lastInOrderTSN, dataChunk.TSN) > _windowSize)
             {
-                logger.LogWarning($"SCTP framer received a data chunk with a {dataChunk.TSN} " +
+                logger.LogWarning($"SCTP data receiver received a data chunk with a {dataChunk.TSN} " +
                     $"TSN when the expected TSN was {_lastInOrderTSN + 1} and a " +
                     $"window size of {_windowSize}, ignoring.");
             }
             else if (_inOrderReceiveCount > 0 &&
                 !IsNewer(_lastInOrderTSN, dataChunk.TSN))
             {
-                logger.LogWarning($"SCTP framer received an old data chunk with {dataChunk.TSN} " +
+                logger.LogWarning($"SCTP data receiver received an old data chunk with {dataChunk.TSN} " +
                     $"TSN when the expected TSN was {_lastInOrderTSN + 1}, ignoring.");
             }
             else if (!_forwardTSN.ContainsKey(dataChunk.TSN))
@@ -396,7 +396,7 @@ namespace SIPSorcery.Net
 
                     if (_streamOutOfOrderFrames[frame.StreamID].Count > MAXIMUM_OUTOFORDER_FRAMES)
                     {
-                        logger.LogWarning($"SCTP framer exceeded the maximum queue size for out of order frames for stream ID {frame.StreamID}.");
+                        logger.LogWarning($"SCTP data receiver exceeded the maximum queue size for out of order frames for stream ID {frame.StreamID}.");
                         // TODO take more drastic action? Abort the association?
                     }
                     else

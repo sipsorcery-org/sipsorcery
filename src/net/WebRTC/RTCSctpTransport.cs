@@ -52,6 +52,12 @@ namespace SIPSorcery.Net
         private static readonly ILogger logger = Log.Logger;
 
         /// <summary>
+        /// The SCTP ports are redundant for a DTLS transport. There will only ever be one
+        /// SCTP association so the SCTP ports do not need to be used for end point matching.
+        /// </summary>
+        public override bool IsPortAgnostic => true;
+
+        /// <summary>
         /// The transport over which all SCTP packets for data channels 
         /// will be sent and received.
         /// </summary>

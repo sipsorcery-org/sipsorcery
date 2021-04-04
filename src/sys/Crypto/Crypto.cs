@@ -253,11 +253,19 @@ namespace SIPSorcery.Sys
             return BitConverter.ToUInt16(uint16Buffer, 0);
         }
 
-        public static UInt32 GetRandomUInt()
+        public static UInt32 GetRandomUInt(bool noZero = false)
         {
             byte[] uint32Buffer = new byte[4];
             m_randomProvider.GetBytes(uint32Buffer);
-            return BitConverter.ToUInt32(uint32Buffer, 0);
+            var randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
+
+            if(noZero && randomUint == 0)
+            {
+                m_randomProvider.GetBytes(uint32Buffer);
+                randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
+            }
+
+            return randomUint;
         }
 
         public static UInt64 GetRandomULong()

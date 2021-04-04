@@ -78,7 +78,7 @@ namespace SIPSorcery.Net
     {
         private const byte ABORT_CHUNK_TBIT_FLAG = 0x01;
 
-        public List<ISctpErrorCause> ErrorCauses { get; private set; }
+        public List<ISctpErrorCause> ErrorCauses { get; private set; } = new List<ISctpErrorCause>();
 
         /// <summary>
         /// This constructor is for the ABORT chunk type which is identical to the 
@@ -96,9 +96,7 @@ namespace SIPSorcery.Net
         }
 
         public SctpErrorChunk() : base(SctpChunkType.ERROR)
-        {
-            ErrorCauses = new List<ISctpErrorCause>();
-        }
+        { }
 
         /// <summary>
         /// Creates a new ERROR chunk.
@@ -114,7 +112,6 @@ namespace SIPSorcery.Net
         /// <param name="errorCause">The initial error cause to set on this chunk.</param>
         public SctpErrorChunk(ISctpErrorCause errorCause) : base(SctpChunkType.ERROR)
         {
-            ErrorCauses = new List<ISctpErrorCause>();
             ErrorCauses.Add(errorCause);
         }
 

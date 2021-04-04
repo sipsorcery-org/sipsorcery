@@ -32,7 +32,6 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SctpUdpTransport : SctpTransport
     {
-        // TODO: Add MTU path discovery.
         public const ushort DEFAULT_UDP_MTU = 1300;
 
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SctpUdpTransport>();

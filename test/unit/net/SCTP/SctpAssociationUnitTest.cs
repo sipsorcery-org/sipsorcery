@@ -99,7 +99,7 @@ namespace SIPSorcery.Net.UnitTests
             string message = "hello world";
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
-            aAssoc.SendData(0, 0, 0, Encoding.UTF8.GetBytes(message));
+            aAssoc.SendData(0, 0, Encoding.UTF8.GetBytes(message));
 
             tcs.Task.Wait(3000);
 
@@ -127,7 +127,7 @@ namespace SIPSorcery.Net.UnitTests
             string message = "hello world";
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
-            aAssoc.SendData(0, 0, 0, Encoding.UTF8.GetBytes(message));
+            aAssoc.SendData(0, 0, Encoding.UTF8.GetBytes(message));
 
             tcs.Task.Wait(3000);
 
@@ -155,7 +155,7 @@ namespace SIPSorcery.Net.UnitTests
             string sha256Hash = Crypto.GetSHA256Hash(dummyData);
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             bAssoc.OnData += (frame) => tcs.TrySetResult(Crypto.GetSHA256Hash(frame.UserData));
-            aAssoc.SendData(0, 0, 0, dummyData);
+            aAssoc.SendData(0, 0, dummyData);
 
             tcs.Task.Wait(3000);
 
@@ -176,8 +176,10 @@ namespace SIPSorcery.Net.UnitTests
             var aAssoc = new SctpAssociation(aTransport, null, 5000, 5000, 1400);
             aTransport.OnSctpPacket += aAssoc.OnPacketReceived;
             var aAssocTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            aAssoc.OnAborted += (reason) => logger.LogError($"Association A aborted with {reason}.");
             aAssoc.OnAssociationStateChanged += (state) =>
             {
+                logger.LogDebug($"Association A changed to state {state}.");
                 if (state == SctpAssociationState.Established)
                 {
                     aAssocTcs.TrySetResult(true);
@@ -190,8 +192,10 @@ namespace SIPSorcery.Net.UnitTests
             bTransport.OnSctpPacket += bAssoc.OnPacketReceived;
             bTransport.OnCookieEcho += bAssoc.GotCookie;
             var bAssocTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            bAssoc.OnAborted += (reason) => logger.LogError($"Association B aborted with {reason}.");
             bAssoc.OnAssociationStateChanged += (state) =>
             {
+                logger.LogDebug($"Association B changed to state {state}.");
                 if (state == SctpAssociationState.Established)
                 {
                     bAssocTcs.TrySetResult(true);

@@ -80,6 +80,19 @@ namespace SIPSorcery.Net
         /// </summary>
         private static byte[] _hmacKey = new byte[HMAC_KEY_SIZE];
 
+        /// <summary>
+        /// This property can be used to indicate whether an SCTP transport layer is port agnostic.
+        /// For example a DTLS transport is likely to only ever create a single SCTP association 
+        /// and the SCTP ports are redundant for matching end points. This allows the checks done
+        /// on received SCTP packets to be more accepting about the ports used in the SCTP packet
+        /// header.
+        /// </summary>
+        /// <returns>
+        /// True if the transport implementation does not rely on the SCTP source and
+        /// destination port for end point matching. False if it does.
+        /// </returns>
+        public virtual bool IsPortAgnostic => false;
+
         public abstract void Send(string associationID, byte[] buffer, int offset, int length);
 
         static SctpTransport()
