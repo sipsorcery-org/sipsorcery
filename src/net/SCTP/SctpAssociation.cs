@@ -17,6 +17,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -60,9 +61,23 @@ namespace SIPSorcery.Net
     {
         public const uint DEFAULT_ADVERTISED_RECEIVE_WINDOW = 131072U;
         public const int DEFAULT_NUMBER_OUTBOUND_STREAMS = 65535;
-        public const int DEFAULT_NUMBER_INBOUND_STREAMS = 65535;
+        public const int DEFAULT_NUMBER_INBOUND_STREAMS = 65535; 
         private const byte SHUTDOWN_CHUNK_TBIT_FLAG = 0x01;
 
+        /// <summary>
+        /// Length of time to wait for the INIT ACK response after sending an INIT.
+        /// </summary>
+        private const int T1_INIT_TIMER_MILLISECONDS = 10000; // ?
+
+        private const int MAX_INIT_RETRANSMITS = 3; // ?
+
+        /// <summary>
+        /// Length of time to wait for the COOKIE ACK response after sending a COOKIE ECHO.
+        /// </summary>
+        private const int T1_COOKIE_TIMER_MILLISECONDS = 10000; // ?
+
+        private const int MAX_COOKIE_ECHO_RETRANSMITS = 3; // ?
+         
         private static ILogger logger = LogFactory.CreateLogger<SctpAssociation>();
 
         SctpTransport _sctpTransport;
@@ -71,13 +86,45 @@ namespace SIPSorcery.Net
         private ushort _defaultMTU;
         private ushort _numberOutboundStreams;
         private ushort _numberInboundStreams;
-        private SctpDataFramer _framer;
         private bool _wasAborted;
         private bool _wasShutdown;
+        private bool _initialisationFailed;
+        private int _initRetransmits;
+        private int _cookieEchoRetransmits;
+
+        /// <summary>
+        /// Handles logic for DATA chunk receives (fragmentation, in order delivery etc).
+        /// </summary>
+        private SctpDataReceiver _dataReceiver;
+
+        /// <summary>
+        /// Handles logic for sending DATA chunks (retransmits, windows management etc).
+        /// </summary>
+        private SctpDataSender _dataSender;
+
+        /// <summary>
+        /// T1 init timer to monitor an INIT request sent to a remote peer.
+        /// </summary>
+        /// <remarks>
+        /// https://tools.ietf.org/html/rfc4960#section-5.1 (section A)
+        /// </remarks>
+        private Timer _t1Init;
+
+        /// <summary>
+        /// T1 init timer to monitor an COOKIE ECHO request sent to a remote peer.
+        /// </summary>
+        /// <remarks>
+        /// https://tools.ietf.org/html/rfc4960#section-5.1 (section C)
+        /// </remarks>
+        private Timer _t1Cookie;
 
         public uint VerificationTag { get; private set; }
 
-        public uint TSN { get; private set; }
+        /// <summary>
+        /// Transaction Sequence Number (TSN). A monotonically increasing number that must be
+        /// included in every DATA chunk.
+        /// </summary>
+        public uint TSN => _dataSender.TSN;
 
         /// <summary>
         /// A unique ID for this association. The ID is not part of the SCTP protocol. It
@@ -160,9 +207,10 @@ namespace SIPSorcery.Net
             _defaultMTU = defaultMTU;
             _numberOutboundStreams = numberOutboundStreams;
             _numberInboundStreams = numberInboundStreams;
-            VerificationTag = Crypto.GetRandomUInt();
-            TSN = Crypto.GetRandomUInt();
-            _framer = new SctpDataFramer(ARwnd, _defaultMTU, 0);
+            VerificationTag = Crypto.GetRandomUInt(true);
+
+            _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, 0);
+            _dataSender = new SctpDataSender(this, defaultMTU, Crypto.GetRandomUInt(true));
 
             ID = Guid.NewGuid().ToString();
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
@@ -221,7 +269,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Init()
         {
-            if (_wasAborted || _wasShutdown)
+            if (_wasAborted || _wasShutdown || _initialisationFailed)
             {
                 logger.LogWarning($"SCTP association cannot be initialised after an abort or shutdown.");
             }
@@ -260,11 +308,19 @@ namespace SIPSorcery.Net
                 _sctpSourcePort = cookie.SourcePort;
                 _sctpDestinationPort = cookie.DestinationPort;
                 VerificationTag = cookie.Tag;
-                TSN = cookie.TSN;
                 ARwnd = cookie.ARwnd;
                 Destination = !string.IsNullOrEmpty(cookie.RemoteEndPoint) ?
                     IPSocket.Parse(cookie.RemoteEndPoint) : null;
-                _framer = new SctpDataFramer(ARwnd, _defaultMTU, 0);
+
+                if (_dataReceiver == null)
+                {
+                    _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, cookie.RemoteTSN);
+                }
+
+                if (_dataSender == null)
+                {
+                    _dataSender = new SctpDataSender(this, _defaultMTU, cookie.TSN);
+                }
 
                 InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
 
@@ -287,7 +343,7 @@ namespace SIPSorcery.Net
             _remoteInitialTSN = remoteInitialTSN;
             _remoteARwnd = remoteARwnd;
 
-            _framer.SetInitialTSN(_remoteInitialTSN);
+            _dataReceiver.SetInitialTSN(remoteInitialTSN);
         }
 
         /// <summary>
@@ -309,6 +365,16 @@ namespace SIPSorcery.Net
                 logger.LogWarning($"SCTP packet dropped due to wrong verification tag, expected " +
                     $"{VerificationTag} got {packet.Header.VerificationTag}.");
             }
+            else if (!_sctpTransport.IsPortAgnostic && packet.Header.DestinationPort != _sctpSourcePort)
+            {
+                logger.LogWarning($"SCTP packet dropped due to wrong SCTP destination port, expected " +
+                                    $"{_sctpSourcePort} got {packet.Header.DestinationPort}.");
+            }
+            else if (!_sctpTransport.IsPortAgnostic && packet.Header.SourcePort != _sctpDestinationPort)
+            {
+                logger.LogWarning($"SCTP packet dropped due to wrong SCTP source port, expected " +
+                                    $"{_sctpDestinationPort} got {packet.Header.SourcePort}.");
+            }
             else
             {
                 foreach (var chunk in packet.Chunks)
@@ -324,29 +390,49 @@ namespace SIPSorcery.Net
                             OnAbortReceived?.Invoke(abortReason);
                             break;
 
-                        case SctpChunkType.COOKIE_ACK:
-                            if (State == SctpAssociationState.CookieEchoed)
-                            {
-                                SetState(SctpAssociationState.Established);
-                            }
+                        case var ct when ct == SctpChunkType.COOKIE_ACK && State != SctpAssociationState.CookieEchoed:
+                            // https://tools.ietf.org/html/rfc4960#section-5.2.5
+                            // At any state other than COOKIE-ECHOED, an endpoint should silently
+                            // discard a received COOKIE ACK chunk.
+                            break;
+
+                        case var ct when ct == SctpChunkType.COOKIE_ACK && State == SctpAssociationState.CookieEchoed:
+                            SetState(SctpAssociationState.Established);
+                            CancelTimers();
                             break;
 
                         case SctpChunkType.COOKIE_ECHO:
-                            // This can happen if both ends of the SCTP connection send INIT's that cross over.
-                            // Should not occur with a UDP transport but is common with a WebRTC DTLS transport where
-                            // both peers attempt to create the SCTP association as soon as the DTLS handshake completes.
+                            // In standard operation an SCTP association gets created when the parent transport 
+                            // receives a COOKIE ECHO chunk. The association gets initialised from the chunk and 
+                            // does not need to process it.
+                            // The scenarios in https://tools.ietf.org/html/rfc4960#section-5.2 describe where
+                            // an association could receive a COOKIE ECHO.
                             break;
 
                         case SctpChunkType.DATA:
                             var dataChunk = chunk as SctpDataChunk;
 
-                            var sackChunk = new SctpSackChunk(dataChunk.TSN, ARwnd);
-                            SendChunk(sackChunk);
-
-                            var sortedFrames = _framer.OnDataChunk(dataChunk);
-                            foreach (var frame in sortedFrames)
+                            if (dataChunk.UserData == null || dataChunk.UserData.Length == 0)
                             {
-                                OnData?.Invoke(frame);
+                                // Fatal condition:
+                                // - If an endpoint receives a DATA chunk with no user data (i.e., the
+                                //   Length field is set to 16), it MUST send an ABORT with error cause
+                                //   set to "No User Data". (RFC4960 pg. 80)
+                                Abort(new SctpErrorNoUserData { TSN = (chunk as SctpDataChunk).TSN });
+                            }
+                            else
+                            {
+                                var sackChunk = new SctpSackChunk(dataChunk.TSN, ARwnd);
+                                SendChunk(sackChunk);
+
+                                // A received data chunk can result in multiple data frames becoming available.
+                                // For example if a stream has out of order frames already received and the next
+                                // in order frame arrives then all the in order ones will be supplied.
+                                var sortedFrames = _dataReceiver.OnDataChunk(dataChunk);
+                                foreach (var frame in sortedFrames)
+                                {
+                                    OnData?.Invoke(frame);
+                                }
                             }
 
                             break;
@@ -365,21 +451,32 @@ namespace SIPSorcery.Net
                             SendChunk(chunk);
                             break;
 
+                        case var ct when ct == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
+                            // https://tools.ietf.org/html/rfc4960#section-5.2.3
+                            // If an INIT ACK is received by an endpoint in any state other than the
+                            // COOKIE - WAIT state, the endpoint should discard the INIT ACK chunk.
+                            break;
+
                         case var ct when ct == SctpChunkType.INIT_ACK && State == SctpAssociationState.CookieWait:
+
+                            if (_t1Init != null)
+                            {
+                                _t1Init.Dispose();
+                                _t1Init = null;
+                            }
+
                             var initAckChunk = chunk as SctpInitChunk;
 
                             if (initAckChunk.InitiateTag == 0 ||
                                 initAckChunk.NumberInboundStreams == 0 ||
                                 initAckChunk.NumberOutboundStreams == 0)
                             {
-                                // The Initiate Tag MUST NOT take the value 0. (RFC4960 pg 30).
-
-                                // Note: A receiver of an INIT ACK with the OS value set to 0 SHOULD
-                                // destroy the association discarding its TCB. (RFC4960 pg 31).
-
-                                // Note: A receiver of an INIT ACK with the MIS value set to 0 SHOULD
-                                // destroy the association discarding its TCB. (RFC4960 pg 31).
-
+                                // Fatal conditions:
+                                //  - The Initiate Tag MUST NOT take the value 0. (RFC4960 pg 30).
+                                //  - Note: A receiver of an INIT ACK with the OS value set to 0 SHOULD
+                                //    destroy the association discarding its TCB. (RFC4960 pg 31).
+                                //  - Note: A receiver of an INIT ACK with the MIS value set to 0 SHOULD
+                                //    destroy the association discarding its TCB. (RFC4960 pg 31).
                                 Abort(new SctpCauseOnlyError(SctpErrorCauseCode.InvalidMandatoryParameter));
                             }
                             else
@@ -408,6 +505,8 @@ namespace SIPSorcery.Net
 
                                 SendPacket(cookieEchoPkt);
                                 SetState(SctpAssociationState.CookieEchoed);
+
+                                _t1Cookie = new Timer(T1CookieTimerExpired, cookieEchoPkt, T1_COOKIE_TIMER_MILLISECONDS, T1_COOKIE_TIMER_MILLISECONDS);
                             }
                             break;
 
@@ -451,6 +550,12 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Sends a DATA chunk to the remote peer.
+        /// </summary>
+        /// <param name="streamID">The stream ID to sent the data on.</param>
+        /// <param name="ppid">The payload protocol ID for the data.</param>
+        /// <param name="message">The string data to send.</param>
         public void SendData(ushort streamID, ushort seqnum, uint ppid, string message)
         {
             if (string.IsNullOrEmpty(message))
@@ -458,10 +563,16 @@ namespace SIPSorcery.Net
                 throw new ArgumentNullException("The message cannot be empty when sending a data chunk on an SCTP association.");
             }
 
-            SendData(streamID, seqnum, ppid, Encoding.UTF8.GetBytes(message));
+            SendData(streamID, ppid, Encoding.UTF8.GetBytes(message));
         }
 
-        public void SendData(ushort streamID, ushort seqnum, uint ppid, byte[] data)
+        /// <summary>
+        /// Sends a DATA chunk to the remote peer.
+        /// </summary>
+        /// <param name="streamID">The stream ID to sent the data on.</param>
+        /// <param name="ppid">The payload protocol ID for the data.</param>
+        /// <param name="message">The byte data to send.</param>
+        public void SendData(ushort streamID, uint ppid, byte[] data)
         {
             if (_wasAborted)
             {
@@ -475,32 +586,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                for (int index = 0; index * _defaultMTU < data.Length; index++)
-                {
-                    int offset = (index == 0) ? 0 : (index * _defaultMTU);
-                    int payloadLength = (offset + _defaultMTU < data.Length) ? _defaultMTU : data.Length - offset;
-
-                    // Future TODO: Replace with slice when System.Memory is introduced as a dependency.
-                    byte[] payload = new byte[payloadLength];
-                    Buffer.BlockCopy(data, offset, payload, 0, payloadLength);
-
-                    bool isBegining = index == 0;
-                    bool isEnd = ((offset + payloadLength) >= data.Length) ? true : false;
-
-                    SctpDataChunk dataChunk = new SctpDataChunk(
-                    false,
-                    isBegining,
-                    isEnd,
-                    TSN,
-                    streamID,
-                    seqnum,
-                    ppid,
-                    payload);
-
-                    SendChunk(dataChunk);
-
-                    TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
-                }
+                _dataSender.SendData(streamID, ppid, data);
             }
         }
 
@@ -533,7 +619,7 @@ namespace SIPSorcery.Net
 
                 // TODO: Check outstanding data chunks.
 
-                uint? ackTSN = _framer.CumulativeAckTSN;
+                uint? ackTSN = _dataReceiver.CumulativeAckTSN;
 
                 logger.LogDebug($"SCTP sending shutdown for association {ID}, ACK TSN {ackTSN}.");
 
@@ -549,7 +635,7 @@ namespace SIPSorcery.Net
         /// the association.
         /// </summary>
         /// <param name="errorCause">The cause of the abort.</param>
-        public void Abort(SctpCauseOnlyError errorCause)
+        public void Abort(ISctpErrorCause errorCause)
         {
             if (!_wasAborted)
             {
@@ -560,7 +646,7 @@ namespace SIPSorcery.Net
 
                 SendChunk(abortChunk);
 
-                OnAborted.Invoke(errorCause.CauseCode.ToString());
+                OnAborted?.Invoke(errorCause.CauseCode.ToString());
             }
         }
 
@@ -570,7 +656,7 @@ namespace SIPSorcery.Net
         /// <param name="state">The new association state.</param>
         internal void SetState(SctpAssociationState state)
         {
-            logger.LogDebug($"SCTP state for association {ID} changed to {state}.");
+            logger.LogTrace($"SCTP state for association {ID} changed to {state}.");
             State = state;
             OnAssociationStateChanged?.Invoke(state);
         }
@@ -583,7 +669,7 @@ namespace SIPSorcery.Net
         {
             if (!_wasAborted)
             {
-                // A packet containing an INIT chunk MUST have a zero Verification Tag (Pg 15).
+                // A packet containing an INIT chunk MUST have a zero Verification Tag (RFC4960 Pg 15).
                 SctpPacket init = new SctpPacket(_sctpSourcePort, _sctpDestinationPort, 0);
 
                 SctpInitChunk initChunk = new SctpInitChunk(
@@ -599,6 +685,8 @@ namespace SIPSorcery.Net
 
                 byte[] buffer = init.GetBytes();
                 _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+
+                _t1Init = new Timer(T1InitTimerExpired, init, T1_INIT_TIMER_MILLISECONDS, T1_INIT_TIMER_MILLISECONDS);
             }
         }
 
@@ -606,7 +694,7 @@ namespace SIPSorcery.Net
         /// Sends a SCTP chunk to the remote party.
         /// </summary>
         /// <param name="chunk">The chunk to send.</param>
-        private void SendChunk(SctpChunk chunk)
+        internal void SendChunk(SctpChunk chunk)
         {
             if (!_wasAborted)
             {
@@ -633,6 +721,57 @@ namespace SIPSorcery.Net
             {
                 byte[] buffer = pkt.GetBytes();
                 _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+            }
+        }
+
+        private void CancelTimers()
+        {
+            if (_t1Init != null)
+            {
+                _t1Init.Dispose();
+                _t1Init = null;
+            }
+
+            if (_t1Cookie != null)
+            {
+                _t1Cookie.Dispose();
+                _t1Cookie = null;
+            }
+        }
+
+        private void T1InitTimerExpired(object state)
+        {
+            if (_initRetransmits >= MAX_INIT_RETRANSMITS)
+            {
+                _t1Init.Dispose();
+                _t1Init = null;
+                _initialisationFailed = true;
+
+                SetState(SctpAssociationState.Closed);
+            }
+            else
+            {
+                var init = state as SctpPacket;
+                SendPacket(init);
+                _initRetransmits++;
+            }
+        }
+
+        private void T1CookieTimerExpired(object state)
+        {
+            if (_cookieEchoRetransmits >= MAX_COOKIE_ECHO_RETRANSMITS)
+            {
+                _t1Cookie.Dispose();
+                _t1Cookie = null;
+                _initialisationFailed = true;
+
+                SetState(SctpAssociationState.Closed);
+            }
+            else
+            {
+                var cookieEchoPkt = state as SctpPacket;
+                SendPacket(cookieEchoPkt);
+                _cookieEchoRetransmits++;
             }
         }
     }

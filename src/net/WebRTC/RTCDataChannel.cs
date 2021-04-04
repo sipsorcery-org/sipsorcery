@@ -78,13 +78,6 @@ namespace SIPSorcery.Net
 
         private RTCSctpTransport _transport;
 
-        /// <summary>
-        /// For ordered data channel streams this is the sequence number that
-        /// will be set on the SCTP DATA chunk.
-        /// The DCEP ACK uses the 0 sequence number.
-        /// </summary>
-        private ushort _seqnum = 0;
-
         public event Action onopen;
         //public event Action onbufferedamountlow;
         public event Action<string> onerror;
@@ -124,15 +117,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Trivial function to increment and roll the data channel sequence 
-        /// number.
-        /// </summary>
-        private ushort IncrementSeqnum(ushort seqnum)
-        {
-            return (ushort)((seqnum == UInt16.MaxValue) ? 0 : seqnum + 1);
-        }
-
-        /// <summary>
         /// Sends a string data payload on the data channel.
         /// </summary>
         /// <param name="message">The string message to send.</param>
@@ -149,19 +133,15 @@ namespace SIPSorcery.Net
                     if (string.IsNullOrEmpty(message))
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                            _seqnum,
                             (uint)DataChannelPayloadProtocols.WebRTC_String_Empty,
                             new byte[] { 0x00 });
                     }
                     else
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                            _seqnum,
                             (uint)DataChannelPayloadProtocols.WebRTC_String,
                             Encoding.UTF8.GetBytes(message));
                     }
-
-                    _seqnum = IncrementSeqnum(_seqnum);
                 }
             }
         }
@@ -183,19 +163,15 @@ namespace SIPSorcery.Net
                     if (data?.Length == 0)
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                            _seqnum,
                             (uint)DataChannelPayloadProtocols.WebRTC_Binary_Empty,
                             new byte[] { 0x00 });
                     }
                     else
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                            _seqnum,
                             (uint)DataChannelPayloadProtocols.WebRTC_Binary,
                            data);
                     }
-
-                    _seqnum = IncrementSeqnum(_seqnum);
                 }
             }
         }
@@ -216,11 +192,8 @@ namespace SIPSorcery.Net
             lock (this)
             {
                 _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                       _seqnum,
                        (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
                        dcepOpen.GetBytes());
-
-                _seqnum = IncrementSeqnum(_seqnum);
             }
         }
 
@@ -233,11 +206,8 @@ namespace SIPSorcery.Net
             lock (this)
             {
                 _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                       _seqnum,
                        (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
                        new byte[] { (byte)DataChannelMessageTypes.ACK });
-
-                _seqnum = IncrementSeqnum(_seqnum);
             }
         }
 
