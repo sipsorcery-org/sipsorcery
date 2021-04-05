@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using SIPSorcery.Sys;
@@ -30,18 +31,48 @@ namespace SIPSorcery.Net
 
         SctpAssociation _sctpAssociation;
         private ushort _defaultMTU;
+
+        /// <summary>
+        /// Keeps track of the sequence numbers for each of the streams being
+        /// used by the association.
+        /// </summary>
         private Dictionary<ushort, ushort> _streamSeqnums = new Dictionary<ushort, ushort>();
 
-        public uint TSN { get; private set; }
+        /// <summary>
+        /// Queue to hold SCTP frames that are waiting to be sent to the remote peer.
+        /// </summary>
+        private Queue<SctpDataFrame> _pendingSends = new Queue<SctpDataFrame>();
+
+        /// <summary>
+        /// Frames that have been sent to the remote peer but have yet to be acknowledged.
+        /// </summary>
+        private ConcurrentDictionary<uint, SctpDataChunk> _pendingAcks = new ConcurrentDictionary<uint, SctpDataChunk>();
+
+        /// <summary>
+        /// The number of bytes that have been sent to the remote peer and that
+        /// have not yet been acknowledged with a SACK chunk.
+        /// </summary>
+        private uint _outstandingByteCount;
+
+        public uint TSN { get; internal set; }
+
+        /// <summary>
+        /// Advertised Receiver Window Credit. This value represents the dedicated 
+        /// buffer space on the remote peer, in number of bytes, that will be used 
+        /// for the receive buffer for DATA chunks sent by this association.
+        /// </summary>
+        public uint RemoteARwnd { get; internal set; }
 
         public SctpDataSender(
             SctpAssociation sctpAssociation, 
             ushort defaultMTU,
-            uint initialTSN)
+            uint initialTSN,
+            uint remoteARwnd)
         {
             _sctpAssociation = sctpAssociation;
             _defaultMTU = defaultMTU > 0 ? defaultMTU : DEFAULT_SCTP_MTU;
             TSN = initialTSN;
+            RemoteARwnd = remoteARwnd;
         }
 
         /// <summary>
@@ -67,6 +98,8 @@ namespace SIPSorcery.Net
                 _streamSeqnums.Add(streamID, 0);
             }
 
+            // If the remote peer's receive window has space available do an immediate send otherwise queue.
+
             for (int index = 0; index * _defaultMTU < data.Length; index++)
             {
                 int offset = (index == 0) ? 0 : (index * _defaultMTU);
@@ -88,6 +121,8 @@ namespace SIPSorcery.Net
                     seqnum,
                     ppid,
                     payload);
+
+                _pendingAcks.TryAdd(TSN, dataChunk);
 
                 _sctpAssociation.SendChunk(dataChunk);
 
