@@ -67,16 +67,16 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Length of time to wait for the INIT ACK response after sending an INIT.
         /// </summary>
-        private const int T1_INIT_TIMER_MILLISECONDS = 10000; // ?
+        private const int T1_INIT_TIMER_MILLISECONDS = 1000;
 
-        private const int MAX_INIT_RETRANSMITS = 3; // ?
+        private const int MAX_INIT_RETRANSMITS = 3;
 
         /// <summary>
         /// Length of time to wait for the COOKIE ACK response after sending a COOKIE ECHO.
         /// </summary>
-        private const int T1_COOKIE_TIMER_MILLISECONDS = 10000; // ?
+        private const int T1_COOKIE_TIMER_MILLISECONDS = 1000;
 
-        private const int MAX_COOKIE_ECHO_RETRANSMITS = 3; // ?
+        private const int MAX_COOKIE_ECHO_RETRANSMITS = 3;
          
         private static ILogger logger = LogFactory.CreateLogger<SctpAssociation>();
 
@@ -209,7 +209,7 @@ namespace SIPSorcery.Net
             VerificationTag = Crypto.GetRandomUInt(true);
 
             _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, 0);
-            _dataSender = new SctpDataSender(this, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+            _dataSender = new SctpDataSender(this.SendChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
 
             ID = Guid.NewGuid().ToString();
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
@@ -318,7 +318,7 @@ namespace SIPSorcery.Net
 
                 if (_dataSender == null)
                 {
-                    _dataSender = new SctpDataSender(this, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
+                    _dataSender = new SctpDataSender(this.SendChunk, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
                 }
 
                 InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
@@ -421,13 +421,13 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                var sackChunk = new SctpSackChunk(dataChunk.TSN, ARwnd);
-                                SendChunk(sackChunk);
-
                                 // A received data chunk can result in multiple data frames becoming available.
                                 // For example if a stream has out of order frames already received and the next
                                 // in order frame arrives then all the in order ones will be supplied.
                                 var sortedFrames = _dataReceiver.OnDataChunk(dataChunk);
+
+                                SendChunk(_dataReceiver.GetSackChunk());
+
                                 foreach (var frame in sortedFrames)
                                 {
                                     OnData?.Invoke(frame);
@@ -514,9 +514,7 @@ namespace SIPSorcery.Net
                             break;
 
                         case SctpChunkType.SACK:
-                            var sackRecvChunk = chunk as SctpSackChunk;
-                            //logger.LogDebug($"SCTP SACK TSN ACK={sackRecvChunk.CumulativeTsnAck}, # gap ack blocks {sackRecvChunk.NumberGapAckBlocks}" +
-                            //    $", # duplicate tsn {sackRecvChunk.NumberDuplicateTSNs}.");
+                            _dataSender.GotSack(chunk as SctpSackChunk);
                             break;
 
                         case var ct when ct == SctpChunkType.SHUTDOWN && State == SctpAssociationState.Established:
@@ -555,7 +553,7 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="message">The string data to send.</param>
-        public void SendData(ushort streamID, ushort seqnum, uint ppid, string message)
+        public void SendData(ushort streamID, uint ppid, string message)
         {
             if (string.IsNullOrEmpty(message))
             {
@@ -618,7 +616,10 @@ namespace SIPSorcery.Net
 
                 // TODO: Check outstanding data chunks.
 
-                uint? ackTSN = _dataReceiver.CumulativeAckTSN;
+                // If no DATA chunks have been received use the initial TSN - 1 from 
+                // the remote party. Seems weird to use the - 1, and couldn't find anything
+                // in the RFC that says to do it, but that's what usrsctp accepts.
+                uint? ackTSN = _dataReceiver.CumulativeAckTSN ?? _remoteInitialTSN - 1;
 
                 logger.LogDebug($"SCTP sending shutdown for association {ID}, ACK TSN {ackTSN}.");
 
@@ -746,6 +747,8 @@ namespace SIPSorcery.Net
                 _t1Init = null;
                 _initialisationFailed = true;
 
+                logger.LogWarning($"SCTP timed out waiting for INIT ACK chunk from remote peer.");
+
                 SetState(SctpAssociationState.Closed);
             }
             else
@@ -763,6 +766,8 @@ namespace SIPSorcery.Net
                 _t1Cookie.Dispose();
                 _t1Cookie = null;
                 _initialisationFailed = true;
+
+                logger.LogWarning($"SCTP timed out waiting for COOKIE ACK chunk from remote peer.");
 
                 SetState(SctpAssociationState.Closed);
             }

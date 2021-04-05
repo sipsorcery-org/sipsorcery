@@ -300,12 +300,25 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Gets a SACK chunk that represents the current state of the receiver.
+        /// </summary>
+        /// <returns>A SACK chunk that can be sent to the remote peer to update the ACK TSN and
+        /// request a retransmit of any missing DATA chunks.</returns>
+        public SctpSackChunk GetSackChunk()
+        {
+            SctpSackChunk sack = new SctpSackChunk(_lastInOrderTSN, _receiveWindow);
+            sack.GapAckBlocks = GetForwardTSNGaps();
+            sack.DuplicateTSN = _duplicateTSN.Keys.ToList();
+            return sack;
+        }
+
+        /// <summary>
         /// Gets a list of the gaps in the forward TSN records. Typically the TSN gap
         /// reports are used in SACK chunks to inform the remote peer which DATA chunk
         /// TSNs have not yet been received.
         /// </summary>
         /// <returns>A list of TSN gap blocks. An empty list means there are no gaps.</returns>
-        public List<SctpTsnGapBlock> GetForwardTSNGaps()
+        internal List<SctpTsnGapBlock> GetForwardTSNGaps()
         {
             List<SctpTsnGapBlock> gaps = new List<SctpTsnGapBlock>();
 

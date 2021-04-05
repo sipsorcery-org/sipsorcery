@@ -461,5 +461,31 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(gapReports[1].Start == 8 && gapReports[1].End == 9);
             Assert.True(gapReports[2].Start == 11 && gapReports[2].End == 11);
         }
+
+        /// <summary>
+        /// Checks that the receiver generates the correct SACK chunk for a single missing DATA chunk.
+        /// </summary>
+        [Fact]
+        public void GetSackForSingleMissingChunk()
+        {
+            uint arwnd = 131072;
+            ushort mtu = 1400;
+            uint initialTSN = Crypto.GetRandomUInt(true);
+
+            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
+
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x44 }));
+            Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
+
+            // Simulate a missing chunk by incrementing the TSN by 2.
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 2, 0, 0, 0, new byte[] { 0x44 }));
+            Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
+
+            var sack = receiver.GetSackChunk();
+            Assert.Equal(initialTSN, sack.CumulativeTsnAck);
+            Assert.Single(sack.GapAckBlocks);
+            Assert.Equal(2, sack.GapAckBlocks[0].Start);
+            Assert.Equal(2, sack.GapAckBlocks[0].End);
+        }
     }
 }
