@@ -300,9 +300,9 @@ Content-Type: application/sdp" + m_CRLF + m_CRLF;
             var uas = userAgent.AcceptCall(inviteReq);
             var mediaSession = CreateMediaSession();
 
-            _ = Task.Run(() =>
+            _ = Task.Run(async () =>
             {
-                Task.Delay(2000).Wait();
+                await Task.Delay(2000);
 
                 string ackReqStr = @"ACK sip:127.0.0.1:5060 SIP/2.0
 Via: SIP/2.0/UDP 127.0.0.1:51200;branch=z9hG4bK76dfb1480ea14f778bd24afed1c8ded0;rport
@@ -322,7 +322,6 @@ m=audio 16976 RTP/AVP 8 101
 a=rtpmap:101 telephone-event/8000
 a=fmtp:101 0-16
 a=sendrecv" + m_CRLF + m_CRLF;
-
 
                 uas.ClientTransaction.ACKReceived(dummySep, dummySep, SIPRequest.ParseSIPRequest(ackReqStr));
             });

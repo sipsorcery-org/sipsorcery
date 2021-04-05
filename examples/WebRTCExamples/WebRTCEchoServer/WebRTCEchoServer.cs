@@ -98,9 +98,6 @@ namespace demo
             var setResult = pc.setRemoteDescription(offer);
             if (setResult == SetDescriptionResultEnum.OK)
             {
-                var offerSdp = pc.createOffer(null);
-                await pc.setLocalDescription(offerSdp);
-
                 var answer = pc.createAnswer(null);
                 await pc.setLocalDescription(answer);
 

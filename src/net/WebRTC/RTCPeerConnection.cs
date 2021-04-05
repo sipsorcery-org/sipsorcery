@@ -434,7 +434,10 @@ namespace SIPSorcery.Net
             onnegotiationneeded?.Invoke();
 
             // This is the point the ICE session potentially starts contacting STUN and TURN servers.
-            _rtpIceChannel.StartGathering();
+            // This job was moved to a background thread as it was observed that interacting with the OS network
+            // calls and/or initialising DNS was taking up to 600ms, see
+            // https://github.com/sipsorcery-org/sipsorcery/issues/456.
+            _ = Task.Run(_rtpIceChannel.StartGathering);
         }
 
         /// <summary>

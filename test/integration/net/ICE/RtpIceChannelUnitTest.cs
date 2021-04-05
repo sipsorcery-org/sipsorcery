@@ -610,6 +610,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, iceServers);
             logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannel.RTPLocalEndPoint}.");
+            rtpIceChannel.StartGathering();
 
             foreach(var pair in rtpIceChannel._iceServerConnections)
             {
