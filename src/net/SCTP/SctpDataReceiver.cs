@@ -397,7 +397,8 @@ namespace SIPSorcery.Net
                     if (_streamOutOfOrderFrames[frame.StreamID].Count > MAXIMUM_OUTOFORDER_FRAMES)
                     {
                         logger.LogWarning($"SCTP data receiver exceeded the maximum queue size for out of order frames for stream ID {frame.StreamID}.");
-                        // TODO take more drastic action? Abort the association?
+                        // TODO https://tools.ietf.org/html/rfc4960#section-6.2 says to drop the chunk with the highest TSN that's ahead of the 
+                        // ack'ed TSN.
                     }
                     else
                     {

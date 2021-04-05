@@ -142,7 +142,6 @@ namespace SIPSorcery.Net
 
         private uint _remoteVerificationTag;
         private uint _remoteInitialTSN;
-        private uint _remoteARwnd;
 
         /// <summary>
         /// The remote destination end point for this association. The underlying transport
@@ -210,7 +209,7 @@ namespace SIPSorcery.Net
             VerificationTag = Crypto.GetRandomUInt(true);
 
             _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, 0);
-            _dataSender = new SctpDataSender(this, defaultMTU, Crypto.GetRandomUInt(true));
+            _dataSender = new SctpDataSender(this, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
 
             ID = Guid.NewGuid().ToString();
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
@@ -319,7 +318,7 @@ namespace SIPSorcery.Net
 
                 if (_dataSender == null)
                 {
-                    _dataSender = new SctpDataSender(this, _defaultMTU, cookie.TSN);
+                    _dataSender = new SctpDataSender(this, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
                 }
 
                 InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
@@ -341,9 +340,9 @@ namespace SIPSorcery.Net
         {
             _remoteVerificationTag = remoteVerificationTag;
             _remoteInitialTSN = remoteInitialTSN;
-            _remoteARwnd = remoteARwnd;
 
             _dataReceiver.SetInitialTSN(remoteInitialTSN);
+            _dataSender.RemoteARwnd = remoteARwnd;
         }
 
         /// <summary>
