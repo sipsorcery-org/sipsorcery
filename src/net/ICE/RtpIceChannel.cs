@@ -348,24 +348,6 @@ namespace SIPSorcery.Net
                 RTCIceCandidateType.host,
                 null,
                 0);
-
-            if (iceServers != null)
-            {
-                InitialiseIceServers(_iceServers);
-
-                // DNS is only needed if there are ICE server hostnames to lookup.
-                if (_dnsLookupClient == null && _iceServerConnections.Any(x => !IPAddress.TryParse(x.Key.Host, out _)))
-                {
-                    if (DefaultNameServers != null)
-                    {
-                        _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers.ToArray());
-                    }
-                    else
-                    {
-                        _dnsLookupClient = new DnsClient.LookupClient();
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -378,6 +360,24 @@ namespace SIPSorcery.Net
         {
             if (IceGatheringState == RTCIceGatheringState.@new)
             {
+                if (_iceServers != null)
+                {
+                    InitialiseIceServers(_iceServers);
+
+                    // DNS is only needed if there are ICE server hostnames to lookup.
+                    if (_dnsLookupClient == null && _iceServerConnections.Any(x => !IPAddress.TryParse(x.Key.Host, out _)))
+                    {
+                        if (DefaultNameServers != null)
+                        {
+                            _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers.ToArray());
+                        }
+                        else
+                        {
+                            _dnsLookupClient = new DnsClient.LookupClient();
+                        }
+                    }
+                }
+
                 _startedGatheringAt = DateTime.Now;
 
                 // Start listening on the UDP socket.
@@ -1114,7 +1114,7 @@ namespace SIPSorcery.Net
                         {
                             // The reason not to wait for this operation is that the ICE candidate can
                             // contain a hostname and require a DNS lookup. There's nothing that can be done
-                            // if the DNS lookup fails so the initiate the task and then keep going with the
+                            // if the DNS lookup fails so initiate the task and then keep going with
                             // adding any other pending candidates and move on with processing the check list.
                             _ = UpdateChecklist(_localChecklistCandidate, candidate);
                         }
