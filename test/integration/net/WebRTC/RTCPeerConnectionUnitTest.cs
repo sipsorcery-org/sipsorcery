@@ -304,7 +304,7 @@ a=rtpmap:100 VP8/90000";
                 }
             };
             alice.addTrack(new MediaStreamTrack(SDPWellKnownMediaFormatsEnum.PCMU));
-            var aliceOffer = alice.createOffer(null);
+            var aliceOffer = alice.createOffer();
             await alice.setLocalDescription(aliceOffer);
 
             logger.LogDebug($"alice offer: {aliceOffer.sdp}");
@@ -323,7 +323,7 @@ a=rtpmap:100 VP8/90000";
             var setOfferResult = bob.setRemoteDescription(aliceOffer);
             Assert.Equal(SetDescriptionResultEnum.OK, setOfferResult);
 
-            var bobAnswer = bob.createAnswer(null);
+            var bobAnswer = bob.createAnswer();
             await bob.setLocalDescription(bobAnswer);
             var setAnswerResult = alice.setRemoteDescription(bobAnswer);
             Assert.Equal(SetDescriptionResultEnum.OK, setAnswerResult);
@@ -335,63 +335,6 @@ a=rtpmap:100 VP8/90000";
             Assert.True(aliceConnected.Task.IsCompleted);
             Assert.True(aliceConnected.Task.Result);
             Assert.True(bobConnected.Task.IsCompleted);
-            Assert.True(bobConnected.Task.Result);
-
-            bob.close();
-            alice.close();
-        }
-
-        /// <summary>
-        /// Tests that two peer connection instances can reach the connected state.
-        /// </summary>
-        [Fact]
-        public async void CheckPeerConnectionEstablishment()
-        {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            var aliceConnected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var bobConnected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-            var alice = new RTCPeerConnection();
-            alice.onconnectionstatechange += (state) =>
-            {
-                if (state == RTCPeerConnectionState.connected)
-                {
-                    logger.LogDebug("Alice connected.");
-                    aliceConnected.SetResult(true);
-                }
-            };
-            alice.addTrack(new MediaStreamTrack(SDPWellKnownMediaFormatsEnum.PCMU));
-            var aliceOffer = alice.createOffer(null);
-            await alice.setLocalDescription(aliceOffer);
-
-            logger.LogDebug($"alice offer: {aliceOffer.sdp}");
-
-            var bob = new RTCPeerConnection();
-            bob.onconnectionstatechange += (state) =>
-            {
-                if (state == RTCPeerConnectionState.connected)
-                {
-                    logger.LogDebug("Bob connected.");
-                    bobConnected.SetResult(true);
-                }
-            };
-            bob.addTrack(new MediaStreamTrack(SDPWellKnownMediaFormatsEnum.PCMU));
-
-            var setOfferResult = bob.setRemoteDescription(aliceOffer);
-            Assert.Equal(SetDescriptionResultEnum.OK, setOfferResult);
-
-            var bobAnswer = bob.createAnswer(null);
-            await bob.setLocalDescription(bobAnswer);
-            var setAnswerResult = alice.setRemoteDescription(bobAnswer);
-            Assert.Equal(SetDescriptionResultEnum.OK, setAnswerResult);
-
-            logger.LogDebug($"answer: {bobAnswer.sdp}");
-
-            await Task.WhenAny(Task.WhenAll(aliceConnected.Task, bobConnected.Task), Task.Delay(2000));
-
-            Assert.True(aliceConnected.Task.Result);
             Assert.True(bobConnected.Task.Result);
 
             bob.close();
@@ -413,7 +356,7 @@ a=rtpmap:100 VP8/90000";
             var alice = new RTCPeerConnection();
             var dc = await alice.createDataChannel("dc1", null);
             dc.onopen += () => aliceDataConnected.TrySetResult(true);
-            var aliceOffer = alice.createOffer(null);
+            var aliceOffer = alice.createOffer();
             await alice.setLocalDescription(aliceOffer);
 
             logger.LogDebug($"alice offer: {aliceOffer.sdp}");
@@ -429,7 +372,7 @@ a=rtpmap:100 VP8/90000";
             var setOfferResult = bob.setRemoteDescription(aliceOffer);
             Assert.Equal(SetDescriptionResultEnum.OK, setOfferResult);
 
-            var bobAnswer = bob.createAnswer(null);
+            var bobAnswer = bob.createAnswer();
             await bob.setLocalDescription(bobAnswer);
             var setAnswerResult = alice.setRemoteDescription(bobAnswer);
             Assert.Equal(SetDescriptionResultEnum.OK, setAnswerResult);

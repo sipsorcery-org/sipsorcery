@@ -198,8 +198,6 @@ namespace SIPSorcery.Net
         private Org.BouncyCastle.Crypto.AsymmetricKeyParameter _dtlsPrivateKey;
         private DtlsSrtpTransport _dtlsHandle;
         private Task _iceGatheringTask;
-        private RTCSctpTransport _rtcSctpTransport;
-        public RTCPeerSctpAssociation _peerSctpAssociation;
 
         /// <summary>
         /// Local ICE candidates that have been supplied directly by the application.
