@@ -14,6 +14,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
@@ -279,6 +280,65 @@ a=rtpmap:100 VP8/90000";
             Assert.Equal(100, pc.VideoLocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
 
             pc.Close("normal");
+        }
+
+        /// <summary>
+        /// Tests that two peer connection instances can reach the connected state.
+        /// </summary>
+        [Fact]
+        public async void CheckPeerConnectionEstablishment()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var aliceConnected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var bobConnected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var alice = new RTCPeerConnection();
+            alice.onconnectionstatechange += (state) =>
+            {
+                if (state == RTCPeerConnectionState.connected)
+                {
+                    logger.LogDebug("Alice connected.");
+                    aliceConnected.SetResult(true);
+                }
+            };
+            alice.addTrack(new MediaStreamTrack(SDPWellKnownMediaFormatsEnum.PCMU));
+            var aliceOffer = alice.createOffer(null);
+            await alice.setLocalDescription(aliceOffer);
+
+            logger.LogDebug($"alice offer: {aliceOffer.sdp}");
+
+            var bob = new RTCPeerConnection();
+            bob.onconnectionstatechange += (state) =>
+            {
+                if (state == RTCPeerConnectionState.connected)
+                {
+                    logger.LogDebug("Bob connected.");
+                    bobConnected.SetResult(true);
+                }
+            };
+            bob.addTrack(new MediaStreamTrack(SDPWellKnownMediaFormatsEnum.PCMU));
+
+            var setOfferResult = bob.setRemoteDescription(aliceOffer);
+            Assert.Equal(SetDescriptionResultEnum.OK, setOfferResult);
+
+            var bobAnswer = bob.createAnswer(null);
+            await bob.setLocalDescription(bobAnswer);
+            var setAnswerResult = alice.setRemoteDescription(bobAnswer);
+            Assert.Equal(SetDescriptionResultEnum.OK, setAnswerResult);
+
+            logger.LogDebug($"answer: {bobAnswer.sdp}");
+
+            await Task.WhenAny(Task.WhenAll(aliceConnected.Task, bobConnected.Task), Task.Delay(2000));
+
+            Assert.True(aliceConnected.Task.IsCompleted);
+            Assert.True(aliceConnected.Task.Result);
+            Assert.True(bobConnected.Task.IsCompleted);
+            Assert.True(bobConnected.Task.Result);
+
+            bob.close();
+            alice.close();
         }
     }
 }
