@@ -54,17 +54,17 @@ namespace SIPSorcery.Net
         ERROR = 9,
         COOKIE_ECHO = 10,
         COOKIE_ACK = 11,
-        ECNE = 12,
-        CWR = 13,
+        ECNE = 12,          // Not used (specified in the RFC for future use).
+        CWR = 13,           // Not used (specified in the RFC for future use).
         SHUTDOWN_COMPLETE = 14,
 
         // Not defined in RFC4960.
-        AUTH = 15,
-        PKTDROP = 129,
-        RE_CONFIG = 130,
-        FORWARDTSN = 192,
-        ASCONF = 193,
-        ASCONF_ACK = 128,
+        //AUTH = 15,
+        //PKTDROP = 129,
+        //RE_CONFIG = 130,
+        //FORWARDTSN = 192,
+        //ASCONF = 193,
+        //ASCONF_ACK = 128,
     }
 
     /// <summary>
@@ -331,11 +331,14 @@ namespace SIPSorcery.Net
             {
                 switch ((SctpChunkType)chunkType)
                 {
+                    case SctpChunkType.ABORT:
+                        return SctpAbortChunk.ParseChunk(buffer, posn, true);
                     case SctpChunkType.DATA:
                         return SctpDataChunk.ParseChunk(buffer, posn);
+                    case SctpChunkType.ERROR:
+                        return SctpErrorChunk.ParseChunk(buffer, posn, false);
                     case SctpChunkType.SACK:
                         return SctpSackChunk.ParseChunk(buffer, posn);
-                    case SctpChunkType.ABORT:
                     case SctpChunkType.COOKIE_ACK:
                     case SctpChunkType.COOKIE_ECHO:
                     case SctpChunkType.HEARTBEAT:

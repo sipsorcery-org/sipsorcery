@@ -26,6 +26,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
+using SIPSorcery.Sys;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
@@ -51,7 +52,10 @@ namespace SctpClientTestConsole
                 Console.WriteLine($"SCTP client association state changed to {state}.");
                 if (state == SctpAssociationState.Established)
                 {
-                    association.SendData(0, 0, 0, "hi\n");
+                    byte[] buffer = new byte[200000];
+                    Crypto.GetRandomBytes(buffer);
+                    association.SendData(0, 0, buffer);
+                    //association.SendData(0, 0, "hi\n");
                 }
             };
 
@@ -59,7 +63,8 @@ namespace SctpClientTestConsole
             {
                 if (frame.UserData?.Length > 0)
                 {
-                    Console.WriteLine($"Data received: {Encoding.UTF8.GetString(frame.UserData)}");
+                    //Console.WriteLine($"Data received: {Encoding.UTF8.GetString(frame.UserData)}");
+                    Console.WriteLine($"Data received {frame.UserData.Length}.");
                 }
                 else
                 {

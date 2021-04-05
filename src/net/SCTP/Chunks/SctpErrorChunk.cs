@@ -27,48 +27,6 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.Net
 {
     /// <summary>
-    /// The ABORT chunk is sent to the peer of an association to close the
-    /// association.The ABORT chunk may contain Cause Parameters to inform
-    /// the receiver about the reason of the abort.DATA chunks MUST NOT be
-    /// bundled with ABORT.Control chunks (except for INIT, INIT ACK, and
-    /// SHUTDOWN COMPLETE) MAY be bundled with an ABORT, but they MUST be
-    /// placed before the ABORT in the SCTP packet or they will be ignored by
-    /// the receiver.
-    /// </summary>
-    /// <remarks>
-    /// https://tools.ietf.org/html/rfc4960#section-3.3.7
-    /// </remarks>
-    public class SctpAbortChunk : SctpErrorChunk
-    {
-        /// <summary>
-        /// Creates a new ABORT chunk.
-        /// </summary>
-        /// <param name="verificationTagBit">If set to true sets a bit in the chunk header to indicate
-        /// the sender filled in the Verification Tag expected by the peer.</param>
-        public SctpAbortChunk(bool verificationTagBit) :
-            base(SctpChunkType.ABORT, verificationTagBit)
-        { }
-
-        /// <summary>
-        /// Gets the user supplied abort reason if available.
-        /// </summary>
-        /// <returns>The abort reason or null if not present.</returns>
-        public string GetAbortReason()
-        {
-            if (ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort))
-            {
-                var userAbort = (SctpErrorUserInitiatedAbort)(ErrorCauses
-                    .First(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort));
-                return userAbort.AbortReason;
-            }
-            else
-            {
-                return null;
-            }
-        }
-    }
-
-    /// <summary>
     /// An endpoint sends this chunk to its peer endpoint to notify it of
     /// certain error conditions. It contains one or more error causes. An
     /// Operation Error is not considered fatal in and of itself, but may be
@@ -168,9 +126,9 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
-        public static SctpErrorChunk ParseChunk(byte[] buffer, int posn)
+        public static SctpErrorChunk ParseChunk(byte[] buffer, int posn, bool isAbort)
         {
-            var errorChunk = new SctpErrorChunk();
+            var errorChunk = (isAbort) ? new SctpAbortChunk(false) : new SctpErrorChunk();
             ushort chunkLen = errorChunk.ParseFirstWord(buffer, posn);
 
             int paramPosn = posn + SCTP_CHUNK_HEADER_LENGTH;

@@ -94,7 +94,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            (var aAssoc, var bAssoc) = GetConnectedAssociations(1400);
+            (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
             
             string message = "hello world";
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -122,7 +122,7 @@ namespace SIPSorcery.Net.UnitTests
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
             ushort dummyMTU = 4;
 
-            (var aAssoc, var bAssoc) = GetConnectedAssociations(dummyMTU);
+            (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, dummyMTU);
 
             string message = "hello world";
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -148,7 +148,7 @@ namespace SIPSorcery.Net.UnitTests
             BlockingCollection<byte[]> _bOut = new BlockingCollection<byte[]>();
 
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
-            (var aAssoc, var bAssoc) = GetConnectedAssociations(1400);
+            (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
 
             byte[] dummyData = new byte[SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW];
             Crypto.GetRandomBytes(dummyData);
@@ -162,12 +162,15 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(tcs.Task.IsCompleted);
             Assert.Equal(sha256Hash, tcs.Task.Result);
         }
+    }
 
+    internal static class AssociationTestHelper
+    {
         /// <summary>
         /// Helper method to create two SCTP associations and do the 4 way handshake to connect them.
         /// </summary>
         /// <returns>A task that will complete once the two associations are connected.</returns>
-        private (SctpAssociation a, SctpAssociation b) GetConnectedAssociations(ushort mtu)
+        internal static (SctpAssociation a, SctpAssociation b) GetConnectedAssociations(ILogger logger, ushort mtu)
         {
             BlockingCollection<byte[]> _aOut = new BlockingCollection<byte[]>();
             BlockingCollection<byte[]> _bOut = new BlockingCollection<byte[]>();
