@@ -187,6 +187,7 @@ namespace SIPSorcery.Net
         private Org.BouncyCastle.Crypto.Tls.Certificate _dtlsCertificate;
         private Org.BouncyCastle.Crypto.AsymmetricKeyParameter _dtlsPrivateKey;
         private DtlsSrtpTransport _dtlsHandle;
+        private Task _iceGatheringTask;
         public RTCPeerSctpAssociation _peerSctpAssociation;
 
         /// <summary>
@@ -437,7 +438,7 @@ namespace SIPSorcery.Net
             // This job was moved to a background thread as it was observed that interacting with the OS network
             // calls and/or initialising DNS was taking up to 600ms, see
             // https://github.com/sipsorcery-org/sipsorcery/issues/456.
-            _ = Task.Run(_rtpIceChannel.StartGathering);
+            _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
         }
 
         /// <summary>
@@ -828,7 +829,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be sued to apply additional
         /// controls over the generated offer SDP.</param>
-        public RTCSessionDescriptionInit createOffer(RTCOfferOptions options)
+        public RTCSessionDescriptionInit createOffer(RTCOfferOptions options = null)
         {
             var audioCapabilities = AudioLocalTrack?.Capabilities;
             var videoCapabilities = VideoLocalTrack?.Capabilities;
@@ -896,7 +897,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be used to apply additional
         /// controls over the generated answer SDP.</param>
-        public RTCSessionDescriptionInit createAnswer(RTCAnswerOptions options)
+        public RTCSessionDescriptionInit createAnswer(RTCAnswerOptions options = null)
         {
             if (remoteDescription == null)
             {
@@ -982,6 +983,14 @@ namespace SIPSorcery.Net
             List<SDPAudioVideoMediaFormat> videoCapabilities,
             bool excludeIceCandidates = false)
         {
+            // Make sure the ICE gathering of local IP addresses is complete.
+            // This task should complete very quickly (<1s) but it is deemed very useful to wait
+            // for it to complete as it allows local ICE candidates to be included in the SDP.
+            // In theory it would be better to an async/await but that would result in a breaking
+            // change to the API and for a one off (once per class instance not once per method call)
+            // delay of a few hundred milliseconds it was decided not to break the API.
+            _iceGatheringTask.Wait();
+
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
 
