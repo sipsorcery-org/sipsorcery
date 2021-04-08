@@ -17,7 +17,7 @@
 
 using System.Collections.Generic;
 
-namespace SIPSorcery.net.SDP
+namespace SIPSorcery.Net
 {
     public class SDPMessageMediaFormat
     {

@@ -1249,5 +1249,36 @@ a=ssrc-group:FID 3366495178 777490417";
             Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3366495178U);
             Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 777490417U);
         }
+
+        /// <summary>
+        /// Tests that the media stream status for an announcement is set correctly when there
+        /// is MSRP attribute
+        /// </summary>
+        [Fact]
+        public void AnnoucementMediaCheckTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=message 57102 TCP/MSRP *" + m_CRLF +
+                "a=accept-types:text/plain text/x-msrp-heartbeat" + m_CRLF +
+                "a=path:msrp://192.168.0.105:57102/10vMB2Ee;tcp";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Assert.Null(sdp.SessionMediaStreamStatus);
+            Assert.Equal(SDPMediaTypesEnum.message, sdp.Media.First().Media);
+            Assert.Equal("192.168.0.105", sdp.Media.First().MessageMediaFormat.IP);
+            Assert.Equal("57102", sdp.Media.First().MessageMediaFormat.Port);
+            Assert.Equal("10vMB2Ee;tcp", sdp.Media.First().MessageMediaFormat.Endpoint);
+            Assert.Equal("text/plain", sdp.Media.First().MessageMediaFormat.AcceptTypes[0]);
+            Assert.Equal("text/x-msrp-heartbeat", sdp.Media.First().MessageMediaFormat.AcceptTypes[1]);
+        }
     }
 }
