@@ -32,7 +32,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.SDP;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
@@ -76,6 +75,8 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
         public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
         public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
+        public const string MEDIA_FORMAT_PATH_MSRP_PREFIX = "a=path:msrp:";
+        public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX = "a=accept-types:";
         public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
         public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
@@ -95,7 +96,6 @@ namespace SIPSorcery.Net
         public bool IceEndOfCandidates;         // If ICE candidate trickling is being used this needs to be set if all candidates have been gathered.
         public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
         public int MLineIndex = 0;
-        public string IP;
 
         /// <summary>
         /// If being used in a bundle this the ID for the announcement.
@@ -211,11 +211,11 @@ namespace SIPSorcery.Net
             }
         }
 
-        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, string iP, int port, SDPMessageMediaFormat messageMediaFormat)
+        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, SDPConnectionInformation connection, int port, SDPMessageMediaFormat messageMediaFormat)
         {
             Media = mediaType;
             Port = port;
-            IP = iP;
+            Connection = connection;
 
             MessageMediaFormat =  messageMediaFormat;
         }
@@ -430,7 +430,7 @@ namespace SIPSorcery.Net
                 var acceptTypes = mediaFormat.AcceptTypes;
                 if (acceptTypes != null && acceptTypes.Count >0)
                 {
-                    sb.Append($"a=accept-types:");
+                    sb.Append(MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX);
                     foreach (var type in acceptTypes)
                     {
                         sb.Append($"{type} ");
@@ -439,16 +439,9 @@ namespace SIPSorcery.Net
                     sb.Append($"{m_CRLF}");
                 }
 
-                if (mediaFormat.IP != null && mediaFormat.Port != null)
+                if (mediaFormat.Endpoint != null )
                 {
-                    sb.Append($"a=path:msrp://{mediaFormat.IP}:{mediaFormat.Port}");
-
-                    if (mediaFormat.Endpoint != null)
-                    {
-                        sb.Append($"/{mediaFormat.Endpoint}");
-                    }
-
-                    sb.Append($"{m_CRLF}");
+                    sb.Append($"{MEDIA_FORMAT_PATH_MSRP_PREFIX}//{Connection.ConnectionAddress}:{Port}/{mediaFormat.Endpoint}{m_CRLF}");
                 }
                 
                 return sb.ToString();

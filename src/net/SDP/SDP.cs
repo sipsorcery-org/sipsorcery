@@ -667,7 +667,7 @@ namespace SIPSorcery.Net
                                 }
                                 break;
 
-                            case var l when l.StartsWith("a=accept-types"):
+                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
                                     string acceptTypesStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
@@ -680,26 +680,19 @@ namespace SIPSorcery.Net
                                 }
                                 break;
 
-                            case var l when l.StartsWith("a=path"):
+                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_MSRP_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
                                     string pathStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                    if (pathStr.StartsWith("msrp:"))
-                                    {
-                                        string pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
-
-                                        activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf(':'));
-                                        pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf(':') + 1);
-
-                                        activeAnnouncement.MessageMediaFormat.Port = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf('/'));
-                                        pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf('/') + 1);
-
-                                        activeAnnouncement.MessageMediaFormat.Endpoint = pathTrimmedStr;
-                                    }
-                                    else
-                                    {
-                                        logger.LogWarning($"A path attribute is not valid");
-                                    }
+                                    string pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
+                                    activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf(':'));
+                                    
+                                    pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf(':') + 1);
+                                    activeAnnouncement.MessageMediaFormat.Port = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf('/'));
+                                    
+                                    pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf('/') + 1);
+                                    activeAnnouncement.MessageMediaFormat.Endpoint = pathTrimmedStr;
+                                    
                                 }
                                 else
                                 {
