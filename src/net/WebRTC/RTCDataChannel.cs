@@ -122,7 +122,12 @@ namespace SIPSorcery.Net
         /// <param name="message">The string message to send.</param>
         public void send(string message)
         {
-            if (_transport.state != RTCSctpTransportState.Connected)
+            if (message != null & Encoding.UTF8.GetByteCount(message) > _transport.maxMessageSize)
+            {
+                throw new ApplicationException($"Data channel {label} was requested to send data of length {Encoding.UTF8.GetByteCount(message)} " +
+                    $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
+            }
+            else if (_transport.state != RTCSctpTransportState.Connected)
             {
                 logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
             }
@@ -152,7 +157,12 @@ namespace SIPSorcery.Net
         /// <param name="data">The data to send.</param>
         public void send(byte[] data)
         {
-            if (_transport.state != RTCSctpTransportState.Connected)
+            if (data.Length > _transport.maxMessageSize)
+            {
+                throw new ApplicationException($"Data channel {label} was requested to send data of length {data.Length} " +
+                    $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
+            }
+            else if (_transport.state != RTCSctpTransportState.Connected)
             {
                 logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
             }

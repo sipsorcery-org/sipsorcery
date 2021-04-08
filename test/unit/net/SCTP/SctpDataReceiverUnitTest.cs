@@ -257,10 +257,10 @@ namespace SIPSorcery.Net.UnitTests
         public void CheckIsCurrent()
         {
             Assert.True(SctpDataReceiver.IsNewer(0, 1));
-            Assert.True(SctpDataReceiver.IsNewer(0, 0));
-            Assert.True(SctpDataReceiver.IsNewer(1, 1));
-            Assert.True(SctpDataReceiver.IsNewer(uint.MaxValue, uint.MaxValue));
-            Assert.True(SctpDataReceiver.IsNewer(uint.MaxValue - 1, uint.MaxValue - 1));
+            Assert.True(SctpDataReceiver.IsNewerOrEqual(0, 0));
+            Assert.True(SctpDataReceiver.IsNewerOrEqual(1, 1));
+            Assert.True(SctpDataReceiver.IsNewerOrEqual(uint.MaxValue, uint.MaxValue));
+            Assert.True(SctpDataReceiver.IsNewerOrEqual(uint.MaxValue - 1, uint.MaxValue - 1));
             Assert.True(SctpDataReceiver.IsNewer(uint.MaxValue, 0));
             Assert.True(SctpDataReceiver.IsNewer(uint.MaxValue, 1));
             Assert.True(SctpDataReceiver.IsNewer(uint.MaxValue - 1, uint.MaxValue));
@@ -390,6 +390,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetSingleGapReport()
         {
             SctpDataReceiver receiver = new SctpDataReceiver(0, 0, 25);
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 25, 0, 0, 0, new byte[] { 0x33 }));
             receiver.OnDataChunk(new SctpDataChunk(true, true, true, 30, 0, 0, 0, new byte[] { 0x33 }));
 
             var gapReports = receiver.GetForwardTSNGaps();
@@ -409,7 +410,9 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetSingleGapReportWithWrap()
         {
-            SctpDataReceiver receiver = new SctpDataReceiver(0, 0, uint.MaxValue - 2);
+            uint initialTSN = uint.MaxValue - 2;
+            SctpDataReceiver receiver = new SctpDataReceiver(0, 0, initialTSN);
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x33 }));
             receiver.OnDataChunk(new SctpDataChunk(true, true, true, 2, 0, 0, 0, new byte[] { 0x33 }));
 
             var gapReports = receiver.GetForwardTSNGaps();
@@ -429,6 +432,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetTwoGapReports()
         {
             SctpDataReceiver receiver = new SctpDataReceiver(0, 0, 15005);
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15005, 0, 0, 0, new byte[] { 0x33 }));
             receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15007, 0, 0, 0, new byte[] { 0x33 }));
             receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15008, 0, 0, 0, new byte[] { 0x33 }));
             receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15010, 0, 0, 0, new byte[] { 0x33 }));
@@ -447,6 +451,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetThreeGapReports()
         {
             SctpDataReceiver receiver = new SctpDataReceiver(0, 0, 3);
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 3, 0, 0, 0, new byte[] { 0x33 }));
             receiver.OnDataChunk(new SctpDataChunk(true, true, true, 7, 0, 0, 0, new byte[] { 0x33 }));
             receiver.OnDataChunk(new SctpDataChunk(true, true, true, 8, 0, 0, 0, new byte[] { 0x33 }));
             receiver.OnDataChunk(new SctpDataChunk(true, true, true, 9, 0, 0, 0, new byte[] { 0x33 }));
@@ -460,6 +465,28 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(gapReports[0].Start == 4 && gapReports[0].End == 6);
             Assert.True(gapReports[1].Start == 8 && gapReports[1].End == 9);
             Assert.True(gapReports[2].Start == 11 && gapReports[2].End == 11);
+        }
+
+        /// <summary>
+        /// Tests that a forward TSN list that has a duplicate TSN that's already been 
+        /// received does not generate a gap report.
+        /// </summary>
+        [Fact]
+        public void GeGapReportWithDuplicateForwardTSN()
+        {
+            uint initialTSN = Crypto.GetRandomUInt(true);
+            SctpDataReceiver receiver = new SctpDataReceiver(0, 0, initialTSN);
+
+            // Forward TSN.
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x33 }));
+            // Initial expected TSN.
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x33 }));
+            // Duplicate of first received TSN.
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x33 }));
+
+            var gapReports = receiver.GetForwardTSNGaps();
+
+            Assert.Empty(gapReports);
         }
 
         /// <summary>
@@ -486,6 +513,81 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Single(sack.GapAckBlocks);
             Assert.Equal(2, sack.GapAckBlocks[0].Start);
             Assert.Equal(2, sack.GapAckBlocks[0].End);
+        }
+
+        /// <summary>
+        /// Checks that the receiver generates a null SACK if the first DATA chunk has not been received.
+        /// </summary>
+        [Fact]
+        public void GetSackForInitialChunkMissing()
+        {
+            uint arwnd = 131072;
+            ushort mtu = 1400;
+            uint initialTSN = Crypto.GetRandomUInt(true);
+
+            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
+
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x44 }));
+            Assert.Null(receiver.CumulativeAckTSN);
+            Assert.Null(receiver.GetSackChunk());
+        }
+
+        /// <summary>
+        /// Checks that the receiver handles the initial chunk being delivered out of order.
+        /// </summary>
+        [Fact]
+        public void InitialChunkOutOfOrder()
+        {
+            uint arwnd = 131072;
+            ushort mtu = 1400;
+            uint initialTSN = Crypto.GetRandomUInt(true);
+
+            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
+
+            // Skip initial DATA chunk.
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x44 }));
+            Assert.Null(receiver.CumulativeAckTSN);
+            Assert.Null(receiver.GetSackChunk());
+
+            // Give the receiver the initial DATA chunk.
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x44 }));
+            Assert.Equal(initialTSN + 1, receiver.CumulativeAckTSN);
+
+            var sack = receiver.GetSackChunk();
+
+            Assert.NotNull(sack);
+            Assert.Empty(sack.GapAckBlocks);
+        }
+
+        /// <summary>
+        /// Checks that the receiver handles the initial chunk being delivered two chunks out of order.
+        /// </summary>
+        [Fact]
+        public void InitialChunkTwoChunkDelay()
+        {
+            uint arwnd = 131072;
+            ushort mtu = 1400;
+            uint initialTSN = Crypto.GetRandomUInt(true);
+
+            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
+
+            // Skip initial DATA chunk.
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x44 }));
+            Assert.Null(receiver.CumulativeAckTSN);
+            Assert.Null(receiver.GetSackChunk());
+
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 2, 0, 0, 0, new byte[] { 0x44 }));
+            Assert.Null(receiver.CumulativeAckTSN);
+            Assert.Null(receiver.GetSackChunk());
+
+            // Give the receiver the initial DATA chunk.
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x44 }));
+            Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
+
+            var sack = receiver.GetSackChunk();
+
+            Assert.NotNull(sack);
+            Assert.Empty(sack.GapAckBlocks);
         }
     }
 }

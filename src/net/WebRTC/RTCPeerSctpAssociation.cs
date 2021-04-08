@@ -24,6 +24,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -71,11 +73,13 @@ namespace SIPSorcery.Net
         /// dictates whether streams created use odd or even ID's.</param>
         /// <param name="srcPort">The source port to use when forming the association.</param>
         /// <param name="dstPort">The destination port to use when forming the association.</param>
-        public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, ushort srcPort, ushort dstPort)
-            : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU)
+        /// <param name="dtlsPort">Optional. The local UDP port being used for the DTLS connection. This
+        /// will be set on the SCTP association to aid in diagnostics.</param>
+        public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, ushort srcPort, ushort dstPort, int dtlsPort)
+            : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
         {
             _rtcSctpTransport = rtcSctpTransport;
-            logger.LogDebug($"SCTP creating association is client {_rtcSctpTransport.IsDtlsClient} {srcPort}:{dstPort}.");
+            logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {_rtcSctpTransport.IsDtlsClient}, ID {ID}.");
 
             OnData += OnDataFrameReceived;
         }

@@ -86,6 +86,11 @@ namespace SIPSorcery.Net
         /// </summary>
         private const int MAXIMUM_OUTOFORDER_FRAMES = 25;
 
+        /// <summary>
+        /// The maximum size of an SCTP fragmented message.
+        /// </summary>
+        private const int MAX_FRAME_SIZE = 262144;
+
         private static ILogger logger = LogFactory.CreateLogger<SctpDataReceiver>();
 
         /// <summary>
@@ -221,6 +226,9 @@ namespace SIPSorcery.Net
             }
             else if (!_forwardTSN.ContainsKey(dataChunk.TSN))
             {
+                logger.LogTrace($"SCTP receiver got data chunk with TSN {dataChunk.TSN}, " +
+                    $"last in order TSN {_lastInOrderTSN}, in order receive count {_inOrderReceiveCount}.");
+
                 // Relying on unsigned integer wrapping.
                 unchecked
                 {
@@ -306,10 +314,18 @@ namespace SIPSorcery.Net
         /// request a retransmit of any missing DATA chunks.</returns>
         public SctpSackChunk GetSackChunk()
         {
-            SctpSackChunk sack = new SctpSackChunk(_lastInOrderTSN, _receiveWindow);
-            sack.GapAckBlocks = GetForwardTSNGaps();
-            sack.DuplicateTSN = _duplicateTSN.Keys.ToList();
-            return sack;
+            // Can't create a SACK until the initial DATA chunk has been received.
+            if (_inOrderReceiveCount > 0)
+            {
+                SctpSackChunk sack = new SctpSackChunk(_lastInOrderTSN, _receiveWindow);
+                sack.GapAckBlocks = GetForwardTSNGaps();
+                sack.DuplicateTSN = _duplicateTSN.Keys.ToList();
+                return sack;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -322,34 +338,38 @@ namespace SIPSorcery.Net
         {
             List<SctpTsnGapBlock> gaps = new List<SctpTsnGapBlock>();
 
-            uint tsnAck = _inOrderReceiveCount > 0 ? _lastInOrderTSN : _initialTSN;
-
-            if (_forwardTSN.Count > 0)
+            // Can't create gap reports until the initial DATA chunk has been received.
+            if (_inOrderReceiveCount > 0)
             {
-                ushort? start = null;
-                uint prev = 0;
+                uint tsnAck = _lastInOrderTSN;
 
-                foreach (var tsn in _forwardTSN.Keys)
+                if (_forwardTSN.Count > 0)
                 {
-                    if (start == null)
-                    {
-                        start = (ushort)(tsn - tsnAck);
-                        prev = tsn;
-                    }
-                    else if (tsn != prev + 1)
-                    {
-                        ushort end = (ushort)(prev - tsnAck);
-                        gaps.Add(new SctpTsnGapBlock { Start = start.Value, End = end });
-                        start = (ushort)(tsn - tsnAck);
-                        prev = tsn;
-                    }
-                    else
-                    {
-                        prev++;
-                    }
-                }
+                    ushort? start = null;
+                    uint prev = 0;
 
-                gaps.Add(new SctpTsnGapBlock { Start = start.Value, End = (ushort)(prev - tsnAck) });
+                    foreach (var tsn in _forwardTSN.Keys)
+                    {
+                        if (start == null)
+                        {
+                            start = (ushort)(tsn - tsnAck);
+                            prev = tsn;
+                        }
+                        else if (tsn != prev + 1)
+                        {
+                            ushort end = (ushort)(prev - tsnAck);
+                            gaps.Add(new SctpTsnGapBlock { Start = start.Value, End = end });
+                            start = (ushort)(tsn - tsnAck);
+                            prev = tsn;
+                        }
+                        else
+                        {
+                            prev++;
+                        }
+                    }
+
+                    gaps.Add(new SctpTsnGapBlock { Start = start.Value, End = (ushort)(prev - tsnAck) });
+                }
             }
 
             return gaps;
@@ -472,8 +492,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Extracts a fragmented chunk from the receive dictionary and passes it to the
-        /// ULP.
+        /// Extracts a fragmented chunk from the receive dictionary and passes it to the ULP.
         /// </summary>
         /// <param name="fragments">The dictionary containing the chunk fragments.</param>
         /// <param name="beginTSN">The beginning TSN for the fragment.</param>
@@ -482,7 +501,7 @@ namespace SIPSorcery.Net
         {
             unchecked
             {
-                byte[] full = new byte[_receiveWindow];
+                byte[] full = new byte[MAX_FRAME_SIZE];
                 int posn = 0;
                 var beginChunk = fragments[beginTSN];
                 var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
@@ -527,8 +546,13 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return receivedTSN >= tsn;
+                return receivedTSN > tsn;
             }
+        }
+
+        public static bool IsNewerOrEqual(uint tsn, uint receivedTSN)
+        {
+            return tsn == receivedTSN || IsNewer(tsn, receivedTSN);
         }
 
         /// <summary>

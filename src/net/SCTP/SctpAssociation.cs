@@ -190,12 +190,16 @@ namespace SIPSorcery.Net
         /// <param name="defaultMTU">The default Maximum Transmission Unit (MTU) for the underlying
         /// transport. This determines the maximum size of an SCTP packet that will be used with
         /// the transport.</param>
+        /// <param name="localTransportPort">Optional. The local transport (e.g. UDP or DTLS) port being 
+        /// used for the underlying SCTP transport. This be set on the SCTP association's ID to aid in 
+        /// diagnostics.</param>
         public SctpAssociation(
             SctpTransport sctpTransport,
             IPEndPoint destination,
             ushort sctpSourcePort,
             ushort sctpDestinationPort,
             ushort defaultMTU,
+            int localTransportPort,
             ushort numberOutboundStreams = DEFAULT_NUMBER_OUTBOUND_STREAMS,
             ushort numberInboundStreams = DEFAULT_NUMBER_INBOUND_STREAMS)
         {
@@ -208,11 +212,12 @@ namespace SIPSorcery.Net
             _numberInboundStreams = numberInboundStreams;
             VerificationTag = Crypto.GetRandomUInt(true);
 
-            _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, 0);
-            _dataSender = new SctpDataSender(this.SendChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
-
-            ID = Guid.NewGuid().ToString();
+            ID = $"{sctpSourcePort}:{sctpDestinationPort}:{localTransportPort}";
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
+
+            _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, 0);
+            _dataSender = new SctpDataSender(ID, this.SendChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+
             State = SctpAssociationState.Closed;
         }
 
@@ -222,10 +227,11 @@ namespace SIPSorcery.Net
         /// </summary>
         public SctpAssociation(
             SctpTransport sctpTransport,
-            SctpTransportCookie cookie)
+            SctpTransportCookie cookie,
+            int localTransportPort)
         {
             _sctpTransport = sctpTransport;
-            ID = Guid.NewGuid().ToString();
+            ID = $"{cookie.SourcePort}:{cookie.DestinationPort}:{localTransportPort}";
             State = SctpAssociationState.Closed;
 
             GotCookie(cookie);
@@ -318,7 +324,7 @@ namespace SIPSorcery.Net
 
                 if (_dataSender == null)
                 {
-                    _dataSender = new SctpDataSender(this.SendChunk, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
+                    _dataSender = new SctpDataSender(ID, this.SendChunk, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
                 }
 
                 InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
@@ -327,6 +333,8 @@ namespace SIPSorcery.Net
                 SendChunk(cookieAckChunk);
 
                 SetState(SctpAssociationState.Established);
+                _dataSender.StartSending();
+                CancelTimers();
             }
         }
 
@@ -342,7 +350,7 @@ namespace SIPSorcery.Net
             _remoteInitialTSN = remoteInitialTSN;
 
             _dataReceiver.SetInitialTSN(remoteInitialTSN);
-            _dataSender.RemoteARwnd = remoteARwnd;
+            _dataSender.SetReceiverWindow(remoteARwnd);
         }
 
         /// <summary>
@@ -398,6 +406,7 @@ namespace SIPSorcery.Net
                         case var ct when ct == SctpChunkType.COOKIE_ACK && State == SctpAssociationState.CookieEchoed:
                             SetState(SctpAssociationState.Established);
                             CancelTimers();
+                            _dataSender.StartSending();
                             break;
 
                         case SctpChunkType.COOKIE_ECHO:
@@ -421,12 +430,18 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
+                                logger.LogTrace($"SCTP data chunk received with TSN {dataChunk.TSN}, payload length {dataChunk.UserData.Length}, flags {dataChunk.ChunkFlags:X2}.");
+
                                 // A received data chunk can result in multiple data frames becoming available.
                                 // For example if a stream has out of order frames already received and the next
                                 // in order frame arrives then all the in order ones will be supplied.
                                 var sortedFrames = _dataReceiver.OnDataChunk(dataChunk);
 
-                                SendChunk(_dataReceiver.GetSackChunk());
+                                var sack = _dataReceiver.GetSackChunk();
+                                if (sack != null)
+                                {
+                                    SendChunk(sack);
+                                }
 
                                 foreach (var frame in sortedFrames)
                                 {
@@ -621,12 +636,14 @@ namespace SIPSorcery.Net
                 // in the RFC that says to do it, but that's what usrsctp accepts.
                 uint? ackTSN = _dataReceiver.CumulativeAckTSN ?? _remoteInitialTSN - 1;
 
-                logger.LogDebug($"SCTP sending shutdown for association {ID}, ACK TSN {ackTSN}.");
+                logger.LogTrace($"SCTP sending shutdown for association {ID}, ACK TSN {ackTSN}.");
 
                 SetState(SctpAssociationState.ShutdownSent);
 
                 SctpShutdownChunk shutdownChunk = new SctpShutdownChunk(ackTSN);
                 SendChunk(shutdownChunk);
+
+                _dataSender.Close();
             }
         }
 
@@ -647,6 +664,8 @@ namespace SIPSorcery.Net
                 SendChunk(abortChunk);
 
                 OnAborted?.Invoke(errorCause.CauseCode.ToString());
+
+                _dataSender.Close();
             }
         }
 

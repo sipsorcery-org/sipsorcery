@@ -152,8 +152,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// Interface is defined in https://www.w3.org/TR/webrtc/#interface-definition.
     /// The Session Description offer/answer mechanisms are detailed in
-    /// https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-26 (or later if the
-    /// draft has been updated).
+    /// https://tools.ietf.org/html/rfc8829 "JavaScript Session Establishment Protocol (JSEP)".
     /// </remarks>
     public class RTCPeerConnection : RTPSession, IRTCPeerConnection
     {
@@ -170,7 +169,6 @@ namespace SIPSorcery.Net
         private const string ICE_OPTIONS = "ice2,trickle";          // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
         private const ushort SCTP_DEFAULT_PORT = 5000;
-        private const long SCTP_DEFAULT_MAX_MESSAGE_SIZE = 262144;
         private const string UNKNOWN_DATACHANNEL_ERROR = "unknown";
 
         /// <summary>
@@ -450,7 +448,7 @@ namespace SIPSorcery.Net
             OnRtpClosed += Close;
             OnRtcpBye += Close;
 
-            sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT);
+            sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
 
             onnegotiationneeded?.Invoke();
 
@@ -1081,7 +1079,7 @@ namespace SIPSorcery.Net
                     dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
 
                     dataChannelAnnouncement.SctpPort = SCTP_DEFAULT_PORT;
-                    dataChannelAnnouncement.MaxMessageSize = SCTP_DEFAULT_MAX_MESSAGE_SIZE;
+                    dataChannelAnnouncement.MaxMessageSize = sctp.maxMessageSize;
                     dataChannelAnnouncement.MLineIndex = mindex;
                     dataChannelAnnouncement.MediaID = mindex.ToString();
                     dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
