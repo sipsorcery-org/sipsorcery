@@ -49,6 +49,14 @@ namespace SIPSorcery.Net
         /// </summary>
         private const int RECEIVE_TIMEOUT_MILLISECONDS = 1000;
 
+        /// <summary>
+        /// The default maximum size of payload that can be sent on a data channel.
+        /// </summary>
+        /// <remarks>
+        /// https://www.w3.org/TR/webrtc/#sctp-transport-update-mms
+        /// </remarks>
+        internal const uint SCTP_DEFAULT_MAX_MESSAGE_SIZE = 262144;
+
         private static readonly ILogger logger = Log.Logger;
 
         /// <summary>
@@ -77,7 +85,10 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The maximum size of data that can be passed to RTCDataChannel's send() method.
         /// </summary>
-        public readonly double maxMessageSize;
+        /// <remarks>
+        /// See https://www.w3.org/TR/webrtc/#sctp-transport-update-mms.
+        /// </remarks>
+        public uint maxMessageSize => SCTP_DEFAULT_MAX_MESSAGE_SIZE;
 
         /// <summary>
         /// The maximum number of data channel's that can be used simultaneously (where each
@@ -95,11 +106,18 @@ namespace SIPSorcery.Net
         private bool _isStarted;
         private bool _isClosed;
 
-        public RTCSctpTransport(ushort sourcePort, ushort destinationPort)
+        /// <summary>
+        /// Creates a new SCTP transport that runs on top of an established DTLS connection.
+        /// </summary>
+        /// <param name="sourcePort">The SCTP source port.</param>
+        /// <param name="destinationPort">The SCTP destination port.</param>
+        /// <param name="dtlsPort">Optional. The local UDP port being used for the DTLS connection. This
+        /// will be set on the SCTP association to aid in diagnostics.</param>
+        public RTCSctpTransport(ushort sourcePort, ushort destinationPort, int dtlsPort)
         {
             SetState(RTCSctpTransportState.Closed);
 
-            RTCSctpAssociation = new RTCPeerSctpAssociation(this, sourcePort, destinationPort);
+            RTCSctpAssociation = new RTCPeerSctpAssociation(this, sourcePort, destinationPort, dtlsPort);
             RTCSctpAssociation.OnAssociationStateChanged += OnAssociationStateChanged;
         }
 
@@ -148,6 +166,7 @@ namespace SIPSorcery.Net
                 IsDtlsClient = isDtlsClient;
 
                 var receiveThread = new Thread(DoReceive);
+                receiveThread.IsBackground = true;
                 receiveThread.Start();
             }
         }
@@ -323,7 +342,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            logger.LogInformation("SCTP association receive thread stopped.");
+            logger.LogDebug("SCTP association receive thread stopped.");
 
             SetState(RTCSctpTransportState.Closed);
         }
@@ -338,6 +357,12 @@ namespace SIPSorcery.Net
         /// <param name="length">The number of bytes to send.</param>
         public override void Send(string associationID, byte[] buffer, int offset, int length)
         {
+            if(length > maxMessageSize)
+            {
+                throw new ApplicationException($"RTCSctpTransport was requested to send data of length {length} " +
+                    $" that exceeded the maximum allowed message size of {maxMessageSize}.");
+            }
+
             if (!_isClosed)
             {
                 transport.Send(buffer, offset, length);

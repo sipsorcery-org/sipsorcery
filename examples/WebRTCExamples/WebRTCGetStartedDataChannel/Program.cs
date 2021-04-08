@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
+using SIPSorcery.Sys;
 using WebSocketSharp.Server;
 
 namespace demo
@@ -33,6 +35,8 @@ namespace demo
     {
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
+        private const int JAVASCRIPT_SHA256_MAX_IN_SIZE = 65535;
+        private const int SHA256_OUTPUT_SIZE = 32;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
@@ -45,7 +49,8 @@ namespace demo
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
             var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => {
+            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) =>
+            {
                 peer.CreatePeerConnection = CreatePeerConnection;
             });
             webSocketServer.Start();
@@ -78,9 +83,43 @@ namespace demo
                 rdc.onclose += () => logger.LogDebug($"Data channel {rdc.label} closed.");
                 rdc.onmessage += (datachan, type, data) =>
                 {
-                    var msg = Encoding.UTF8.GetString(data);
-                    logger.LogInformation($"Data channel {datachan.label} message {type} received: {msg}.");
-                    rdc.send($"echo: {msg}");
+                    switch (type)
+                    {
+                        case DataChannelPayloadProtocols.WebRTC_Binary_Empty:
+                        case DataChannelPayloadProtocols.WebRTC_String_Empty:
+                            logger.LogInformation($"Data channel {datachan.label} empty message type {type}.");
+                            break;
+
+                        case DataChannelPayloadProtocols.WebRTC_Binary:
+                            //string sha256 = Crypto.GetSHA256Hash(data);
+                            string jsSha256 = DoJavscriptSHA256(data);
+                            logger.LogInformation($"Data channel {datachan.label} received {data.Length} bytes, js mirror sha256 {jsSha256}.");
+                            rdc.send(jsSha256);
+                            break;
+
+                        case DataChannelPayloadProtocols.WebRTC_String:
+                            var msg = Encoding.UTF8.GetString(data);
+                            logger.LogInformation($"Data channel {datachan.label} message {type} received: {msg}.");
+
+                            if (uint.TryParse(msg, out var sendSize))
+                            {
+                                sendSize = (sendSize > pc.sctp.maxMessageSize) ? pc.sctp.maxMessageSize : sendSize;
+
+                                // Send random bytes of the requested size.
+                                var rndBuffer = new byte[sendSize];
+                                Crypto.GetRandomBytes(rndBuffer);
+
+                                logger.LogInformation($"Data channel sending {sendSize} random bytes, hash {Crypto.GetSHA256Hash(rndBuffer)}.");
+
+                                rdc.send(rndBuffer);
+                            }
+                            else
+                            {
+                                // Do a string echo.
+                                rdc.send($"echo: {msg}");
+                            }
+                            break;
+                    }
                 };
             };
 
@@ -104,6 +143,40 @@ namespace demo
             pc.onsignalingstatechange += () => logger.LogDebug($"Signalling state changed to {pc.signalingState}.");
 
             return pc;
+        }
+
+        /// <summary>
+        /// The Javascript hash function only allows a maximum input of 65535 bytes. In order to hash
+        /// larger buffers for testing purposes the buffer is split into 65535 slices and then the hashes
+        /// of each of the slices hashed.
+        /// </summary>
+        /// <param name="buffer">The buffer to perform the Javascript SHA256 hash of hashes on.</param>
+        /// <returns>A hex string of the resultant hash.</returns>
+        private static string DoJavscriptSHA256(byte[] buffer)
+        {
+            int iters = (buffer.Length <= JAVASCRIPT_SHA256_MAX_IN_SIZE) ? 1 : buffer.Length / JAVASCRIPT_SHA256_MAX_IN_SIZE;
+            iters += (buffer.Length > iters * JAVASCRIPT_SHA256_MAX_IN_SIZE) ? 1 : 0;
+
+            byte[] hashOfHashes = new byte[iters * SHA256_OUTPUT_SIZE];
+
+            for (int i = 0; i < iters; i++)
+            {
+                int startPosn = i * JAVASCRIPT_SHA256_MAX_IN_SIZE;
+                int length = JAVASCRIPT_SHA256_MAX_IN_SIZE;
+                length = (startPosn + length > buffer.Length) ? buffer.Length - startPosn : length;
+
+                var slice = new ArraySegment<byte>(buffer, startPosn, length);
+
+                using (SHA256Managed sha256 = new SHA256Managed())
+                {
+                    Buffer.BlockCopy(sha256.ComputeHash(slice.ToArray()), 0, hashOfHashes, i * SHA256_OUTPUT_SIZE, SHA256_OUTPUT_SIZE);
+                }
+            }
+
+            using (SHA256Managed sha256 = new SHA256Managed())
+            {
+                return sha256.ComputeHash(hashOfHashes).HexStr();
+            }
         }
 
         /// <summary>

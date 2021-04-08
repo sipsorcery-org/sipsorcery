@@ -45,16 +45,16 @@ namespace SctpClientTestConsole
 
             _sctpTransport = new SctpUdpTransport();
             var association = _sctpTransport.Associate(
-                new IPEndPoint(IPAddress.Parse("192.168.0.50"), 11111), 4444, 7);
+                new IPEndPoint(IPAddress.Parse("192.168.0.50"), 11111), 4444, 13);
 
             association.OnAssociationStateChanged += (state) =>
             {
                 Console.WriteLine($"SCTP client association state changed to {state}.");
                 if (state == SctpAssociationState.Established)
                 {
-                    byte[] buffer = new byte[200000];
-                    Crypto.GetRandomBytes(buffer);
-                    association.SendData(0, 0, buffer);
+                    //byte[] buffer = new byte[66301];
+                    //Crypto.GetRandomBytes(buffer);
+                    //association.SendData(0, 0, buffer);
                     //association.SendData(0, 0, "hi\n");
                 }
             };
@@ -63,8 +63,8 @@ namespace SctpClientTestConsole
             {
                 if (frame.UserData?.Length > 0)
                 {
-                    //Console.WriteLine($"Data received: {Encoding.UTF8.GetString(frame.UserData)}");
-                    Console.WriteLine($"Data received {frame.UserData.Length}.");
+                    Console.WriteLine($"Data received: {Encoding.UTF8.GetString(frame.UserData)}");
+                    //Console.WriteLine($"Data received {frame.UserData.Length}.");
                 }
                 else
                 {

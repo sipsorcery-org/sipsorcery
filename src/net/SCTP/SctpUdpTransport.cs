@@ -95,7 +95,7 @@ namespace SIPSorcery.Net
                         {
                             logger.LogDebug($"SCTP creating new association for {remoteEndPoint}.");
                                 
-                            var association = new SctpAssociation(this, cookie);
+                            var association = new SctpAssociation(this, cookie, localPort);
 
                             if (_associations.TryAdd(association.ID, association))
                             {

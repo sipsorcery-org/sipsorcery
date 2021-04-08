@@ -83,6 +83,10 @@ namespace SIPSorcery.Net
         /// </summary>
         public byte[] UserData;
 
+        // These properties are used by the data sender.
+        internal DateTime LastSentAt;
+        internal int SendCount;
+
         private SctpDataChunk()
             : base(SctpChunkType.DATA)
         { }

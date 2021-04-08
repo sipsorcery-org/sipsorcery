@@ -358,7 +358,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void StartGathering()
         {
-            if (IceGatheringState == RTCIceGatheringState.@new)
+            if (!_closed && IceGatheringState == RTCIceGatheringState.@new)
             {
                 if (_iceServers != null)
                 {
@@ -714,7 +714,7 @@ namespace SIPSorcery.Net
         /// </summary>
         private void CheckIceServers(Object state)
         {
-            if (IceGatheringState == RTCIceGatheringState.complete ||
+            if (_closed || IceGatheringState == RTCIceGatheringState.complete ||
                 !(IceConnectionState == RTCIceConnectionState.@new || IceConnectionState == RTCIceConnectionState.checking))
             {
                 logger.LogDebug($"ICE RTP channel stopping ICE server checks in gathering state {IceGatheringState} and connection state {IceConnectionState}.");
@@ -1103,8 +1103,8 @@ namespace SIPSorcery.Net
         /// </remarks>
         private async void ProcessChecklist()
         {
-            if (IceConnectionState == RTCIceConnectionState.@new ||
-                IceConnectionState == RTCIceConnectionState.checking)
+            if (!_closed && (IceConnectionState == RTCIceConnectionState.@new ||
+                IceConnectionState == RTCIceConnectionState.checking))
             {
                 while (_pendingRemoteCandidates.Count() > 0)
                 {
@@ -1254,6 +1254,11 @@ namespace SIPSorcery.Net
         /// </remarks>
         private void SendConnectivityCheck(ChecklistEntry candidatePair, bool setUseCandidate)
         {
+            if(_closed)
+            {
+                return;
+            }
+
             if (candidatePair.FirstCheckSentAt == DateTime.MinValue)
             {
                 candidatePair.FirstCheckSentAt = DateTime.Now;
