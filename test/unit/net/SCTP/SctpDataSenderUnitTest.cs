@@ -61,5 +61,75 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal("000102", datachunk.UserData.HexStr());
         }
+
+        /// <summary>
+        /// Tests that the congestion window gets filled up.
+        /// </summary>
+        [Fact]
+        public async Task FillCongestionWindow()
+        {
+            uint arwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW;
+            ushort mtu = 1400;
+
+            Action<SctpDataChunk> blackholeSender = (chunk) => { };
+
+            SctpDataSender sender = new SctpDataSender("dummy", blackholeSender, mtu, 0, arwnd);
+            sender.StartSending();
+
+            Assert.Equal(SctpDataSender.CONGESTION_WINDOW_FACTOR, sender._congestionWindow);
+
+            var buffer = new byte[mtu];
+            
+            sender.SendData(0, 0, buffer);
+            sender.SendData(0, 0, buffer);
+            sender.SendData(0, 0, buffer);
+            sender.SendData(0, 0, buffer);
+
+            await Task.Delay(100);
+
+            Assert.True(sender._congestionWindow < sender._outstandingBytes);
+        }
+
+        /// <summary>
+        /// Tests that the congestion window increases in slow start mode.
+        /// </summary>
+        [Fact]
+        public async Task IncreaseCongestionWindowSlowStart()
+        {
+            uint arwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW;
+            ushort mtu = 1400;
+            uint initialTSN = 0;
+
+            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
+            SctpDataSender sender = new SctpDataSender("dummy", null, mtu, initialTSN, arwnd);
+            sender._burstPeriodMilliseconds = 1;
+            sender._rtoInitialMilliseconds = 1;
+            sender._rtoMinimumMilliseconds = 1;
+
+            Action<SctpDataChunk> reluctantSender = (chunk) =>
+            {
+                if (chunk.TSN % 10 == 0)
+                {
+                    receiver.OnDataChunk(chunk);
+                    sender.GotSack(receiver.GetSackChunk());
+                }
+            };
+
+            sender._sendDataChunk = reluctantSender;
+            sender.StartSending();
+
+            Assert.Equal(SctpDataSender.CONGESTION_WINDOW_FACTOR, sender._congestionWindow);
+
+            var buffer = new byte[mtu];
+
+            for (int i = 0; i <= 10; i++)
+            {
+                sender.SendData(0, 0, buffer);
+            }
+
+            await Task.Delay(500);
+
+            Assert.Equal(SctpDataSender.CONGESTION_WINDOW_FACTOR + mtu, sender._congestionWindow);
+        }
     }
 }

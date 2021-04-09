@@ -32,11 +32,20 @@ namespace SIPSorcery.Net
     {
         public const ushort DEFAULT_SCTP_MTU = 1300;
 
+        public const uint CONGESTION_WINDOW_FACTOR = 4380;
+
         /// <summary>
         /// Used to limit the number of packets that are sent at any one time, i.e. when 
         /// the transmit timer fires do not send more than this many packets.
         /// </summary>
         public const int MAX_BURST = 4;
+
+        /// <summary>
+        /// Milliseconds to wait between bursts if no SACK chunks are received in the interim.
+        /// Eventually if no SACK chunks are received the congestion or receiver windows
+        /// will reach zero and enforce a longer period.
+        /// </summary>
+        public const int BURST_PERIOD_MILLISECONDS = 50;
 
         /// <summary>
         /// Retransmission timeout initial value.
@@ -53,10 +62,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public const int RTO_MAX_SECONDS = 60;
 
-        public const decimal RTO_ALPHA = 0.125M;
-
-        public const decimal RTO_BETA = 0.25M;
-
         private static ILogger logger = LogFactory.CreateLogger<SctpDataSender>();
 
         /// <summary>
@@ -70,13 +75,23 @@ namespace SIPSorcery.Net
         private bool _gotFirstSACK;
         private bool _isStarted;
         private bool _isClosed;
+        private int _lastAckedDataChunkSize;
+        private bool _inRetransmitMode;
         private ManualResetEventSlim _senderMre = new ManualResetEventSlim();
 
         /// <summary>
         /// Congestion control window (cwnd, in bytes), which is adjusted by
         /// the sender based on observed network conditions.
         /// </summary>
-        private uint _congestionWindow;
+        internal uint _congestionWindow;
+
+        /// <summary>
+        /// The current Advertised Receiver Window Credit for the remote peer.
+        /// This value represents the dedicated  buffer space on the remote peer, 
+        /// in number of bytes, that will be used for the receive buffer for DATA 
+        /// chunks sent to it.
+        /// </summary>
+        internal uint _receiverWindow;
 
         /// <summary>
         /// Slow-start threshold (ssthresh, in bytes), which is used by the
@@ -91,6 +106,16 @@ namespace SIPSorcery.Net
         /// chunks sent to it.
         /// </summary>
         private uint _initialRemoteARwnd;
+
+        internal int _burstPeriodMilliseconds = BURST_PERIOD_MILLISECONDS;
+        internal int _rtoInitialMilliseconds = RTO_INITIAL_SECONDS * 1000;
+        internal int _rtoMinimumMilliseconds = RTO_MIN_SECONDS * 1000;
+        
+        /// <summary>
+        /// A count of the bytes currently in-flight to the remote peer.
+        /// </summary>
+        internal uint _outstandingBytes =>
+            (uint)(_unconfirmedChunks.Sum(x => x.Value.UserData.Length));
 
         /// <summary>
         /// The TSN that the remote peer has acknowledged.
@@ -114,10 +139,10 @@ namespace SIPSorcery.Net
         private ConcurrentDictionary<uint, SctpDataChunk> _unconfirmedChunks = new ConcurrentDictionary<uint, SctpDataChunk>();
 
         /// <summary>
-        /// Chunks that have been flagged by a gap report from the remote peer as requiring
-        /// a retransmit.
+        /// Chunks that have been flagged by a gap report from the remote peer as missing
+        /// and that need to be re-sent.
         /// </summary>
-        internal ConcurrentDictionary<uint, int> _retransmitChunks = new ConcurrentDictionary<uint, int>();
+        internal ConcurrentDictionary<uint, int> _missingChunks = new ConcurrentDictionary<uint, int>();
 
         /// <summary>
         /// The Transaction Sequence Number (TSN) that will be used in the next DATA chunk sent.
@@ -137,9 +162,10 @@ namespace SIPSorcery.Net
             _initialTSN = initialTSN;
             TSN = initialTSN;
             _initialRemoteARwnd = remoteARwnd;
+            _receiverWindow = remoteARwnd;
 
             // RFC4960 7.2.1 (point 1)
-            _congestionWindow = (uint)(Math.Min(4 * _defaultMTU, Math.Max(2 * _defaultMTU, 4380)));
+            _congestionWindow = (uint)(Math.Min(4 * _defaultMTU, Math.Max(2 * _defaultMTU, CONGESTION_WINDOW_FACTOR)));
 
             // RFC4960 7.2.1 (point 3)
             _slowStartThreshold = _initialRemoteARwnd;
@@ -158,10 +184,17 @@ namespace SIPSorcery.Net
         {
             if (sack != null)
             {
+                _inRetransmitMode = false;
+
                 unchecked
                 {
                     uint maxTSNDistance = SctpDataReceiver.GetDistance(_cumulativeAckTSN, TSN);
                     bool processGapReports = true;
+
+                    if (_unconfirmedChunks.ContainsKey(sack.CumulativeTsnAck))
+                    {
+                        _lastAckedDataChunkSize = _unconfirmedChunks[sack.CumulativeTsnAck].UserData.Length;
+                    }
 
                     if (!_gotFirstSACK)
                     {
@@ -197,6 +230,7 @@ namespace SIPSorcery.Net
                         else
                         {
                             logger.LogTrace($"SCTP SACK remote peer TSN ACK no change {_cumulativeAckTSN}, next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.GapAckBlocks.Count}).");
+                            RemoveAckedUnconfirmedChunks(sack.CumulativeTsnAck);
                         }
                     }
 
@@ -206,6 +240,12 @@ namespace SIPSorcery.Net
                         ProcessGapReports(sack.GapAckBlocks, maxTSNDistance);
                     }
                 }
+
+                _receiverWindow = CalculateReceiverWindow(sack.ARwnd);
+                _congestionWindow = CalculateCongestionWindow(_lastAckedDataChunkSize);
+
+                // SACK's will normally allow more data to be sent.
+                _senderMre.Set();
             }
         }
 
@@ -260,6 +300,8 @@ namespace SIPSorcery.Net
 
                     TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
                 }
+
+                _senderMre.Set();
             }
         }
 
@@ -321,7 +363,7 @@ namespace SIPSorcery.Net
 
                     while (missingTSN != goodTSNStart)
                     {
-                        if (!_retransmitChunks.ContainsKey(missingTSN))
+                        if (!_missingChunks.ContainsKey(missingTSN))
                         {
                             if (!_unconfirmedChunks.ContainsKey(missingTSN))
                             {
@@ -335,7 +377,7 @@ namespace SIPSorcery.Net
                             else
                             {
                                 logger.LogTrace($"SCTP SACK gap adding retransmit entry for TSN {missingTSN}.");
-                                _retransmitChunks.TryAdd(missingTSN, 0);
+                                _missingChunks.TryAdd(missingTSN, 0);
                             }
                         }
 
@@ -359,6 +401,7 @@ namespace SIPSorcery.Net
             {
                 // This is normal for the first SACK received.
                 _unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _);
+                _missingChunks.TryRemove(_cumulativeAckTSN, out _);
             }
             else
             {
@@ -373,7 +416,12 @@ namespace SIPSorcery.Net
                     {
                         logger.LogWarning($"SCTP data sender could not remove unconfirmed chunk for {_cumulativeAckTSN}.");
                     }
-                } while (_cumulativeAckTSN != sackTSN && safety > 0);
+
+                    if (_missingChunks.ContainsKey(_cumulativeAckTSN))
+                    {
+                        _missingChunks.TryRemove(_cumulativeAckTSN, out _);
+                    }
+                } while (_cumulativeAckTSN != sackTSN && safety >= 0);
             }
         }
 
@@ -390,40 +438,43 @@ namespace SIPSorcery.Net
                 // calling once per loop.
                 DateTime now = DateTime.Now;
 
+                int burstSize = (_inRetransmitMode || _congestionWindow < _outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
                 int chunksSent = 0;
 
-                // Retransmits take priority.
-                if (_retransmitChunks.Count > 0)
+                logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
+
+                // Missing chunks from a SACK gap report take priority.
+                if (_missingChunks.Count > 0)
                 {
-                    var retransmits = _retransmitChunks.GetEnumerator();
-                    bool haveRetransmit = retransmits.MoveNext();
+                    var misses = _missingChunks.GetEnumerator();
+                    bool haveMissing = misses.MoveNext();
 
-                    while (chunksSent < MAX_BURST && haveRetransmit)
+                    while (chunksSent < burstSize && haveMissing)
                     {
-                        if (_unconfirmedChunks.ContainsKey(retransmits.Current.Key))
+                        if (_unconfirmedChunks.ContainsKey(misses.Current.Key))
                         {
-                            var retransmitChunk = _unconfirmedChunks[retransmits.Current.Key];
+                            var missingChunk = _unconfirmedChunks[misses.Current.Key];
 
-                            retransmitChunk.LastSentAt = now;
-                            retransmitChunk.SendCount += 1;
+                            missingChunk.LastSentAt = now;
+                            missingChunk.SendCount += 1;
 
-                            logger.LogTrace($"SCTP retransmitting data chunk for TSN {retransmitChunk.TSN}, data length {retransmitChunk.UserData.Length}, " +
-                                $"flags {retransmitChunk.ChunkFlags:X2}, send count {retransmitChunk.SendCount}.");
+                            logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserData.Length}, " +
+                                $"flags {missingChunk.ChunkFlags:X2}, send count {missingChunk.SendCount}.");
 
-                            _sendDataChunk(retransmitChunk);
+                            _sendDataChunk(missingChunk);
                             chunksSent++;
                         }
 
-                        haveRetransmit = retransmits.MoveNext();
+                        haveMissing = misses.MoveNext();
                     }
                 }
 
                 // Check if there are any unconfirmed transactions that are due for a retransmit.
-                if (chunksSent < MAX_BURST && _unconfirmedChunks.Count > 0)
+                if (chunksSent < burstSize && _unconfirmedChunks.Count > 0)
                 {
                     foreach (var chunk in _unconfirmedChunks.Values
                         .Where(x => now.Subtract(x.LastSentAt).TotalSeconds > RTO_MIN_SECONDS)
-                        .Take(MAX_BURST - chunksSent))
+                        .Take(burstSize - chunksSent))
                     {
                         chunk.LastSentAt = DateTime.Now;
                         chunk.SendCount += 1;
@@ -433,13 +484,23 @@ namespace SIPSorcery.Net
 
                         _sendDataChunk(chunk);
                         chunksSent++;
+                        
+                        if (!_inRetransmitMode)
+                        {
+                            _inRetransmitMode = true;
+
+                            // When the T3-rtx timer expires on an address, SCTP should perform slow start.
+                            // RFC4960 7.2.3
+                            _slowStartThreshold = (uint)Math.Max(_congestionWindow / 2, 4 * _defaultMTU);
+                            _congestionWindow = _defaultMTU;
+                        }
                     }
                 }
 
                 // Finally send any new data chunks that have not yet been sent.
-                if (chunksSent < MAX_BURST && _sendQueue.Count > 0)
+                if (chunksSent < burstSize && _sendQueue.Count > 0)
                 {
-                    while (chunksSent < MAX_BURST && _sendQueue.TryDequeue(out var dataChunk))
+                    while (chunksSent < burstSize && _sendQueue.TryDequeue(out var dataChunk))
                     {
                         dataChunk.LastSentAt = DateTime.Now;
                         dataChunk.SendCount = 1;
@@ -454,11 +515,44 @@ namespace SIPSorcery.Net
                 }
 
                 _senderMre.Reset();
-                // TODO. Fix this timeout.
-                _senderMre.Wait(50);
+
+                int wait = GetSendWaitMilliseconds();
+                logger.LogTrace($"SCTP sender wait period {wait}ms, arwnd {_receiverWindow}, cwnd {_congestionWindow} " +
+                    $"outstanding bytes {_outstandingBytes}, send queue {_sendQueue.Count}, missing {_missingChunks.Count} "
+                    + $"unconfirmed {_unconfirmedChunks.Count}.");
+
+                _senderMre.Wait(wait);
             }
 
             logger.LogDebug($"SCTP association data send thread stopped for association {_associationID}.");
+        }
+
+        /// <summary>
+        /// Determines how many milliseconds the send thread should wait before the next send attempt.
+        /// </summary>
+        private int GetSendWaitMilliseconds()
+        {
+            if (_sendQueue.Count > 0 || _missingChunks.Count > 0)
+            {
+                if (_receiverWindow > 0 && _congestionWindow > _outstandingBytes)
+                {
+                    return _burstPeriodMilliseconds;
+                }
+                else
+                {
+                    return _rtoMinimumMilliseconds;
+                }
+            }
+            else if (_unconfirmedChunks.Count > 0)
+            {
+                // TODO use Round Trip Time (RTT) measurements to adjust the Retransmission Timeout (RTO) value.
+                // https://tools.ietf.org/html/rfc4960#section-6.3.1
+                return _rtoMinimumMilliseconds;
+            }
+            else
+            {
+                return _rtoInitialMilliseconds;
+            }
         }
 
         /// <summary>
@@ -474,8 +568,7 @@ namespace SIPSorcery.Net
         /// <returns>The new value to use for the receiver window.</returns>
         private uint CalculateReceiverWindow(uint advertisedReceiveWindow)
         {
-            uint outstandingBytes = (uint)(_unconfirmedChunks.Sum(x => x.Value.UserData.Length));
-            return (outstandingBytes > advertisedReceiveWindow) ? outstandingBytes - advertisedReceiveWindow : 0;
+            return (advertisedReceiveWindow > _outstandingBytes) ? advertisedReceiveWindow - _outstandingBytes : 0;
         }
 
         /// <summary>
@@ -483,22 +576,20 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="lastAckDataChunkSize">The size of last ACK'ed DATA chunk.</param>
         /// <returns>A congestion window value.</returns>
-        private uint CalculateCongestionWindow(uint lastAckDataChunkSize)
+        private uint CalculateCongestionWindow(int lastAckDataChunkSize)
         {
-            uint outstandingBytes = (uint)(_unconfirmedChunks.Sum(x => x.Value.UserData.Length));
-
             if (_congestionWindow < _slowStartThreshold)
             {
                 // In Slow-Start mode, see RFC4960 7.2.1.
 
-                if (_congestionWindow < outstandingBytes)
+                if (_congestionWindow < _outstandingBytes)
                 {
                     // When cwnd is less than or equal to ssthresh, an SCTP endpoint MUST
                     // use the slow - start algorithm to increase cwnd only if the current
                     // congestion window is being fully utilized.
-                    uint increasedCwnd = _congestionWindow + Math.Min(lastAckDataChunkSize, _defaultMTU);
+                    uint increasedCwnd = (uint)(_congestionWindow + Math.Min(lastAckDataChunkSize, _defaultMTU));
 
-                    logger.LogDebug($"SCTP sender congestion window can be increased from {_congestionWindow} to {increasedCwnd}.");
+                    logger.LogTrace($"SCTP sender congestion window in slow-start increased from {_congestionWindow} to {increasedCwnd}.");
 
                     return increasedCwnd;
                 }
@@ -511,8 +602,10 @@ namespace SIPSorcery.Net
             {
                 // In Congestion Avoidance mode, see RFC4960 7.2.2.
 
-                if (outstandingBytes >= _congestionWindow)
+                if (_congestionWindow < _outstandingBytes)
                 {
+                    logger.LogTrace($"SCTP sender congestion window in congestion avoidance increased from {_congestionWindow} to {_congestionWindow + _defaultMTU}.");
+
                     return _congestionWindow + _defaultMTU;
                 }
                 else

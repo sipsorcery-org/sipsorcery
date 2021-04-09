@@ -59,7 +59,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SctpAssociation
     {
-        public const uint DEFAULT_ADVERTISED_RECEIVE_WINDOW = 131072U;
+        public const uint DEFAULT_ADVERTISED_RECEIVE_WINDOW = 262144U;
         public const int DEFAULT_NUMBER_OUTBOUND_STREAMS = 65535;
         public const int DEFAULT_NUMBER_INBOUND_STREAMS = 65535; 
         private const byte SHUTDOWN_CHUNK_TBIT_FLAG = 0x01;
