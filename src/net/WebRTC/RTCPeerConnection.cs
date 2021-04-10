@@ -1295,7 +1295,7 @@ namespace SIPSorcery.Net
                 $"priority {priority}, reliability {reliability}, label {label}, protocol {protocol}.");
 
             // TODO: Set reliability, priority etc. properties on the data channel.
-            var dc = new RTCDataChannel(sctp) { id = streamID, label = label, IsOpened = true };
+            var dc = new RTCDataChannel(sctp) { id = streamID, label = label, IsOpened = true, readyState = RTCDataChannelState.open };
 
             dc.SendDcepAck();
 
@@ -1318,12 +1318,13 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The ID of the stream corresponding to the acknowledged data channel.</param>
         private void OnSctpAssociationDataChannelOpened(ushort streamID)
         {
-            logger.LogInformation($"WebRTC data channel successfully opened stream ID {streamID}.");
+            var dc = DataChannels.FirstOrDefault(x => x.id == streamID);
 
-            var dc = DataChannels.SingleOrDefault(x => x.id == streamID);
+            string label = dc != null ? dc.label : "<none>";
+            logger.LogInformation($"WebRTC data channel opened label {label} and stream ID {streamID}.");
 
             if (dc != null)
-            {
+            { 
                 dc.GotAck();
             }
             else
@@ -1341,7 +1342,9 @@ namespace SIPSorcery.Net
         /// <param name="data">The chunk data.</param>
         private void OnSctpAssociationDataChunk(SctpDataFrame frame)
         {
-            var dc = DataChannels.SingleOrDefault(x => x.id == frame.StreamID);
+            // Should only be one channel per stream ID but no point blowing up if a duplicate
+            // was created by the remote peer or it snuck in some other way.
+            var dc = DataChannels.FirstOrDefault(x => x.id == frame.StreamID);
 
             if (dc != null)
             {
@@ -1349,7 +1352,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning($"WebRTC data channel got data but data channel not found for stream ID {frame.StreamID}.");
+                logger.LogWarning($"WebRTC data channel got data but no channel found for stream ID {frame.StreamID}.");
             }
         }
 
@@ -1406,7 +1409,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="label">The label used to identify the data channel.</param>
         /// <returns>The data channel created.</returns>
-        public async Task<RTCDataChannel> createDataChannel(string label, RTCDataChannelInit init)
+        public async Task<RTCDataChannel> createDataChannel(string label, RTCDataChannelInit init = null)
         {
             logger.LogDebug($"Data channel create request for label {label}.");
 
@@ -1436,7 +1439,21 @@ namespace SIPSorcery.Net
                     }
 
                     OpenDataChannel(channel);
-                    return channel;
+
+                    // Wait for the DCEP ACK from the remote peer.
+                    TaskCompletionSource<string> isopen = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    channel.onopen += () => isopen.TrySetResult(string.Empty);
+                    channel.onerror += (err) => isopen.TrySetResult(err);
+                    var error = await isopen.Task.ConfigureAwait(false);
+
+                    if (error != string.Empty)
+                    {
+                        throw new ApplicationException($"Data channel creation failed with: {error}");
+                    }
+                    else
+                    {
+                        return channel;
+                    }
                 }
             }
             else
@@ -1458,17 +1475,34 @@ namespace SIPSorcery.Net
             logger.LogDebug($"WebRTC attempting to open data channel with label {dataChannel.label}.");
 
             // Get next available stream ID.
-            ushort nextID = (ushort)((_dtlsHandle.IsClient) ? 0 : 1);
-            var lastAssignedDC = DataChannels.Where(x => x.id != null).OrderByDescending(x => x.id.GetValueOrDefault()).FirstOrDefault();
+            bool eventStreamID = _dtlsHandle.IsClient;
+            var lastAssignedDC = DataChannels.Where(x => x.id != null && x.id % 2 == (eventStreamID ? 0 : 1))
+                .OrderByDescending(x => x.id.GetValueOrDefault()).FirstOrDefault();
+            bool canCreateStream = true;
+            ushort nextID = (ushort)(eventStreamID ? 0 : 1);
             if(lastAssignedDC != null)
             {
-                nextID = (ushort)(lastAssignedDC.id.Value + 2);
+                //  The SCTP stream identifier 65535 is reserved due to SCTP INIT and
+                // INIT - ACK chunks only allowing a maximum of 65535 streams to be
+                // negotiated(0 - 65534) - https://tools.ietf.org/html/rfc8832
+                if (lastAssignedDC.id.Value == ushort.MaxValue - 1 || lastAssignedDC.id.Value == ushort.MaxValue - 2)
+                {
+                    logger.LogError("Data channel stream IDs have been exhausted. No more streams can be created on this data channel.");
+                    canCreateStream = false;
+                }
+                else
+                {
+                    nextID = (ushort)(lastAssignedDC.id.Value + 2);
+                }
             }
 
-            logger.LogDebug($"WebRTC setting stream ID to {nextID} for data channel {dataChannel.label}.");
+            if (canCreateStream)
+            {
+                logger.LogDebug($"WebRTC setting stream ID to {nextID} for data channel {dataChannel.label}.");
 
-            dataChannel.id = nextID;
-            dataChannel.SendDcepOpen();
+                dataChannel.id = nextID;
+                dataChannel.SendDcepOpen();
+            }
         }
 
         /// <summary>
