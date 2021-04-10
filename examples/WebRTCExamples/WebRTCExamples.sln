@@ -41,10 +41,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCEchoClient", "WebRTCE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCTestPatternRest", "WebRTCTestPatternRest\WebRTCTestPatternRest.csproj", "{431E3469-5D5A-4221-A3DE-9F02075B093B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCGetStartedDataChannel", "WebRTCGetStartedDataChannel\WebRTCGetStartedDataChannel.csproj", "{552390C8-EF01-41FC-8E7A-56EF345FF335}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -283,30 +279,6 @@ Global
 		{431E3469-5D5A-4221-A3DE-9F02075B093B}.Release|x64.Build.0 = Release|Any CPU
 		{431E3469-5D5A-4221-A3DE-9F02075B093B}.Release|x86.ActiveCfg = Release|Any CPU
 		{431E3469-5D5A-4221-A3DE-9F02075B093B}.Release|x86.Build.0 = Release|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Debug|x64.Build.0 = Debug|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Debug|x86.Build.0 = Debug|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Release|Any CPU.Build.0 = Release|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Release|x64.ActiveCfg = Release|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Release|x64.Build.0 = Release|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Release|x86.ActiveCfg = Release|Any CPU
-		{552390C8-EF01-41FC-8E7A-56EF345FF335}.Release|x86.Build.0 = Release|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Debug|x64.Build.0 = Debug|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Debug|x86.Build.0 = Debug|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Release|x64.ActiveCfg = Release|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Release|x64.Build.0 = Release|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Release|x86.ActiveCfg = Release|Any CPU
-		{C51DEFA0-8623-4723-B9B4-F7C51E7F763A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
