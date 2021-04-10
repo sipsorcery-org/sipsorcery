@@ -384,6 +384,7 @@ namespace SIPSorcery.Net
         public int UnprotectRTP(byte[] payload, int length, out int outLength)
         {
             var result = UnprotectRTP(payload, 0, length);
+
             if (result == null)
             {
                 outLength = 0;
@@ -407,6 +408,7 @@ namespace SIPSorcery.Net
         public int ProtectRTP(byte[] payload, int length, out int outLength)
         {
             var result = ProtectRTP(payload, 0, length);
+
             if (result == null)
             {
                 outLength = 0;

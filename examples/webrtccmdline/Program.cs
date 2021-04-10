@@ -326,7 +326,7 @@ namespace SIPSorcery.Examples
         /// This application spits out a lot of log messages. In an attempt to make command entry slightly more usable
         /// this method attempts to always write the current command input as the bottom line on the console output.
         /// </summary>
-        private static void ProcessInput(CancellationTokenSource cts)
+        private async static Task ProcessInput(CancellationTokenSource cts)
         {
             // Local function to write the current command in the process of being entered.
             Action<int, string> writeCommandPrompt = (lastPromptRow, cmd) =>
@@ -386,8 +386,8 @@ namespace SIPSorcery.Examples
                                     {
                                         Console.WriteLine();
                                         Console.WriteLine($"Creating data channel for label {label}.");
-                                        var dc = _peerConnection.createDataChannel(label, null);
-                                        dc.onmessage += (msg) => logger.LogDebug($" data channel message received on {label}: {msg}");
+                                        var dc = await _peerConnection.createDataChannel(label, null);
+                                        dc.onmessage += (dc, protocol, data) => logger.LogDebug($" data channel message received on {label}: {Encoding.UTF8.GetString(data)}");
                                     }
                                     else
                                     {
@@ -582,9 +582,9 @@ namespace SIPSorcery.Examples
             _peerConnection.ondatachannel += (dc) =>
             {
                 logger.LogDebug($"Data channel opened by remote peer, label {dc.label}, stream ID {dc.id}.");
-                dc.onmessage += (msg) =>
+                dc.onmessage += (dc, protocol, data) =>
                 {
-                    logger.LogDebug($"data channel ({dc.label}:{dc.id}): {msg}.");
+                    logger.LogDebug($"data channel ({dc.label}:{dc.id}): {Encoding.UTF8.GetString(data)}.");
                 };
             };
 
