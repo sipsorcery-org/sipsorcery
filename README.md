@@ -21,7 +21,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
  - Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550),
  - Web Real-time Communications [(WebRTC)](https://www.w3.org/TR/webrtc/), **as of 26 Jan 2021 now an official IETF and W3C specification**,
  - Interactive Connectivity Establishment [(ICE)](https://tools.ietf.org/html/rfc8445),
- - And more.
+ - SCTP, SDP, STUN and more.
 
 **Media End Points - Audio/Video Sinks and Sources:**
 
@@ -35,10 +35,10 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
  ## Road Map
 
- As of March 2021 the road map for this project is:
+ As of Apr 2021 the road map for this project is:
 
- - Rewrite the WebRTC SCTP implementation to improve the data channel support. In progress.
- - Complete the VP8 .NET port to determine if a .NET video codec is feasible. In progress at [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
+ - ~~Rewrite the WebRTC SCTP implementation to improve the data channel support. In progress.~~ Done
+ - Complete the VP8 .NET port to determine if a .NET video codec is feasible. In progress (could take a long time...) at [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
  - Write cool WebRTC apps on [Xamarin](https://dotnet.microsoft.com/apps/xamarin), [MAUI](https://github.com/dotnet/maui), [Unity](https://unity.com/) etc. without any native library hassles!
 
 ## Installation
