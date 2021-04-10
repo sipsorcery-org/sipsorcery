@@ -6,18 +6,27 @@
 // date with:
 // https://www.w3.org/TR/webrtc/#rtcdatachannel
 //
-// Specification Soup (as of 11 Jul 2020):
+// Remarks:
+// Specification Soup (as of 23 Mar @021):
+//
 // - Stream Control Transmission Protocol:
 // https://tools.ietf.org/html/rfc4960
+//
 // - WebRTC Data Channels:
-// https://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-13
+// https://tools.ietf.org/html/rfc8831
+//
 // - WebRTC Data Channel Establishment Protocol:
-// https://tools.ietf.org/html/draft-ietf-rtcweb-data-protocol-09
+// https://tools.ietf.org/html/rfc8832
+//
 // - Datagram Transport Layer Security (DTLS) Encapsulation of SCTP Packets:
 // https://tools.ietf.org/html/rfc8261
 //
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 11 Jul 2020	Aaron Clauson	Created.
+// 11 Jul 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 23 Mar 2021  Aaron Clauson   Refactored for new SCTP implementation.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -27,6 +36,8 @@ using System;
 
 namespace SIPSorcery.Net
 {
+    public delegate void OnDataChannelMessageDelegate(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data);
+
     public enum RTCDataChannelState
     {
         /// <summary>
@@ -55,6 +66,9 @@ namespace SIPSorcery.Net
     /// <summary>
     /// The RTCDataChannel interface represents a bi-directional data channel between two peers.
     /// </summary>
+    /// <remarks>
+    /// Specification https://www.w3.org/TR/webrtc/#webidl-1143016005
+    /// </remarks>
     interface IRTCDataChannel
     {
         /// <summary>
@@ -134,7 +148,6 @@ namespace SIPSorcery.Net
         /// </summary>
         event Action onopen;
 
-
         //event Action onbufferedamountlow;
         event Action<string> onerror;
         //event Action onclosing;
@@ -144,12 +157,11 @@ namespace SIPSorcery.Net
         /// <summary>
         /// A message was successfully received.
         /// </summary>
-        event Action<string> onmessage;
+        event OnDataChannelMessageDelegate onmessage;
+
         string binaryType { get; set; }
         void send(string data);
-        //void send(Blob data);
         void send(byte[] data);
-        //void send(ArrayBufferView data);
     };
 
     public class RTCDataChannelInit

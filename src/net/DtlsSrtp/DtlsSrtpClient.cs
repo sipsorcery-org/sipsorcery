@@ -398,13 +398,16 @@ namespace SIPSorcery.Net
                 description += cause;
             }
 
+            string alertMessage = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
+            alertMessage += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
+
             if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
             {
-                logger.LogDebug($"DTLS client raised close notify: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
+                logger.LogDebug($"DTLS client raised close notification: {alertMessage}");
             }
             else
             {
-                logger.LogWarning($"DTLS client raised unexpected alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");
+                logger.LogWarning($"DTLS client raised unexpected alert: {alertMessage}");
             }
         }
 

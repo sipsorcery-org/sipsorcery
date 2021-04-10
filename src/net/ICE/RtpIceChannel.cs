@@ -358,7 +358,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void StartGathering()
         {
-            if (IceGatheringState == RTCIceGatheringState.@new)
+            if (!_closed && IceGatheringState == RTCIceGatheringState.@new)
             {
                 if (_iceServers != null)
                 {
@@ -714,7 +714,7 @@ namespace SIPSorcery.Net
         /// </summary>
         private void CheckIceServers(Object state)
         {
-            if (IceGatheringState == RTCIceGatheringState.complete ||
+            if (_closed || IceGatheringState == RTCIceGatheringState.complete ||
                 !(IceConnectionState == RTCIceConnectionState.@new || IceConnectionState == RTCIceConnectionState.checking))
             {
                 logger.LogDebug($"ICE RTP channel stopping ICE server checks in gathering state {IceGatheringState} and connection state {IceConnectionState}.");
@@ -1103,8 +1103,8 @@ namespace SIPSorcery.Net
         /// </remarks>
         private async void ProcessChecklist()
         {
-            if (IceConnectionState == RTCIceConnectionState.@new ||
-                IceConnectionState == RTCIceConnectionState.checking)
+            if (!_closed && (IceConnectionState == RTCIceConnectionState.@new ||
+                IceConnectionState == RTCIceConnectionState.checking))
             {
                 while (_pendingRemoteCandidates.Count() > 0)
                 {
@@ -1254,6 +1254,11 @@ namespace SIPSorcery.Net
         /// </remarks>
         private void SendConnectivityCheck(ChecklistEntry candidatePair, bool setUseCandidate)
         {
+            if(_closed)
+            {
+                return;
+            }
+
             if (candidatePair.FirstCheckSentAt == DateTime.MinValue)
             {
                 candidatePair.FirstCheckSentAt = DateTime.Now;
@@ -1420,6 +1425,11 @@ namespace SIPSorcery.Net
         /// <param name="remoteEndPoint">The remote end point the STUN packet was received from.</param>
         public async Task ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)
         {
+            if(_closed)
+            {
+                return;
+            }
+
             remoteEndPoint = (!remoteEndPoint.Address.IsIPv4MappedToIPv6) ? remoteEndPoint : new IPEndPoint(remoteEndPoint.Address.MapToIPv4(), remoteEndPoint.Port);
 
             OnStunMessageReceived?.Invoke(stunMessage, remoteEndPoint, wasRelayed);
@@ -1501,6 +1511,11 @@ namespace SIPSorcery.Net
         /// by this ICE channel (i.e. the ICE server that this channel is acting as the client with).</param>
         private void GotStunBindingRequest(STUNMessage bindingRequest, IPEndPoint remoteEndPoint, bool wasRelayed)
         {
+            if (_closed)
+            {
+                return;
+            }
+
             if (_policy == RTCIceTransportPolicy.relay && !wasRelayed)
             {
                 // If the policy is "relay only" then direct binding requests are not accepted.

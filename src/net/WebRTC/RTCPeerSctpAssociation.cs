@@ -6,142 +6,135 @@
 // association. Multiple data channels can be created on top
 // of the association.
 //
+// Remarks:
+//
+// - RFC8831 "WebRTC Data Channels" https://tools.ietf.org/html/rfc8831
+//   Provides overview of WebRTC data channels and describes the DTLS +
+//   SCTP infrastructure required.
+//
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 20 Jul 2020	Aaron Clauson	Created.
+// 22 Mar 2021  Aaron Clauson   Refactored for new SCTP implementation.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Threading.Tasks;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Tls;
-using SIPSorcery.Net.Sctp;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class RTCPeerSctpAssociation : AssociationListener
+    public delegate void OnRTCDataChannelOpened(ushort streamID);
+
+    public delegate void OnNewRTCDataChannel(ushort streamID, DataChannelTypes type, ushort priority, uint reliability, string label, string protocol);
+
+    public class RTCPeerSctpAssociation : SctpAssociation
     {
+        // TODO: Add MTU path discovery.
+        public const ushort DEFAULT_DTLS_MTU = 1200;
+
         private static readonly ILogger logger = Log.Logger;
 
         /// <summary>
-        /// The underlying SCTP association.
+        /// The DTLS transport to send and receive SCTP packets on.
         /// </summary>
-        private ThreadedAssociation _sctpAssociation;
-        private bool _isClient;
+        private RTCSctpTransport _rtcSctpTransport;
 
         /// <summary>
-        /// Indicates whether the SCTP association is ready for communications.
+        /// Event notifications for user data on an SCTP stream representing a data channel.
         /// </summary>
-        public bool IsAssociated { get; private set; } = false;
+        public event Action<SctpDataFrame> OnDataChannelData;
 
         /// <summary>
-        /// Event to indicate the SCTP association is ready.
+        /// Event notifications for the request to open a data channel being confirmed. This
+        /// event corresponds to the DCEP ACK message for a DCEP OPEN message by this peer.
         /// </summary>
-        public Action OnAssociated;
+        public event OnRTCDataChannelOpened OnDataChannelOpened;
 
         /// <summary>
-        /// Event to indicate an SCTP stream has been opened. The stream open
-        /// could have been initiated by a new data channel request on the local
-        /// or remote peer.
+        /// Event notification for a new data channel open request from the remote peer.
         /// </summary>
-        /// <remarks>
-        /// Parameters:
-        ///  - The newly opened stream,
-        ///  - A boolean indicating whether the stream ID is from a local create stream request or not.
-        /// </remarks>
-        public Action<SCTPStream, bool> OnSCTPStreamOpen;
+        public event OnNewRTCDataChannel OnNewDataChannel;
 
         /// <summary>
         /// Creates a new SCTP association with the remote peer.
         /// </summary>
-        /// <param name="dtlsTransport">The DTLS transport to create the association on top of.</param>
+        /// <param name="rtcSctpTransport">The DTLS transport that will be used to encapsulate the
+        /// SCTP packets.</param>
         /// <param name="isClient">True if this peer will be the client within the association. This
         /// dictates whether streams created use odd or even ID's.</param>
         /// <param name="srcPort">The source port to use when forming the association.</param>
         /// <param name="dstPort">The destination port to use when forming the association.</param>
-        public RTCPeerSctpAssociation(DatagramTransport dtlsTransport, bool isClient, int srcPort, int dstPort)
+        /// <param name="dtlsPort">Optional. The local UDP port being used for the DTLS connection. This
+        /// will be set on the SCTP association to aid in diagnostics.</param>
+        public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, ushort srcPort, ushort dstPort, int dtlsPort)
+            : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
         {
-            logger.LogDebug($"SCTP creating association is client {isClient} {srcPort}:{dstPort}.");
-            _isClient = isClient;
-            _sctpAssociation = new ThreadedAssociation(dtlsTransport, this, isClient, srcPort, dstPort);
+            _rtcSctpTransport = rtcSctpTransport;
+            logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {_rtcSctpTransport.IsDtlsClient}, ID {ID}.");
+
+            OnData += OnDataFrameReceived;
         }
 
         /// <summary>
-        /// Initiates the association with the remote peer.
+        /// Event handler for a DATA chunk being received. The chunk can be either a DCEP message or data channel data
+        /// payload.
         /// </summary>
-        public void Associate()
+        /// <param name="dataFrame">The received data frame which could represent one or more chunks depending
+        /// on fragmentation..</param>
+        private void OnDataFrameReceived(SctpDataFrame dataFrame)
         {
-            _sctpAssociation.associate();
-        }
-
-        /// <summary>
-        /// Closes all the streams for this SCTP association.
-        /// </summary>
-        public void Close()
-        {
-            if (_sctpAssociation != null)
+            switch (dataFrame)
             {
-                logger.LogDebug($"SCTP closing all streams for association.");
+                case var frame when frame.PPID == (uint)DataChannelPayloadProtocols.WebRTC_DCEP:
+                    switch (frame.UserData[0])
+                    {
+                        case (byte)DataChannelMessageTypes.ACK:
+                            OnDataChannelOpened?.Invoke(frame.StreamID);
+                            break;
+                        case (byte)DataChannelMessageTypes.OPEN:
+                            var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData, 0);
 
-                foreach (int streamID in _sctpAssociation.allStreams())
-                {
-                    _sctpAssociation.getStream(streamID)?.close();
-                    _sctpAssociation.delStream(streamID);
-                }
+                            logger.LogDebug($"DCEP OPEN channel type {dcepOpen.ChannelType}, priority {dcepOpen.Priority}, " +
+                                $"reliability {dcepOpen.Reliability}, label {dcepOpen.Label}, protocol {dcepOpen.Protocol}.");
+
+                            DataChannelTypes channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
+                            if(Enum.IsDefined(typeof(DataChannelTypes), dcepOpen.ChannelType))
+                            {
+                                channelType = (DataChannelTypes)dcepOpen.ChannelType;
+                            }
+                            else
+                            {
+                                logger.LogWarning($"DECP OPEN channel type of {dcepOpen.ChannelType} not recognised, defaulting to {channelType}.");
+                            }
+
+                            OnNewDataChannel?.Invoke(
+                                frame.StreamID,
+                                channelType,
+                                dcepOpen.Priority,
+                                dcepOpen.Reliability,
+                                dcepOpen.Label,
+                                dcepOpen.Protocol);
+
+                            break;
+                        default:
+                            logger.LogWarning($"DCEP message type {frame.UserData[0]} not recognised, ignoring.");
+                            break;
+                    }
+                    break;
+
+                default:
+                    OnDataChannelData?.Invoke(dataFrame);
+                    break;
             }
-        }
-
-        /// <summary>
-        /// Creates a new SCTP stream to act as a WebRTC data channel.
-        /// </summary>
-        /// <param name="label">Optional. The label to attach to the stream.</param>
-        public Task<SCTPStream> CreateStream(string label)
-        {
-            logger.LogDebug($"SCTP creating stream for label {label}.");
-            return Task.FromResult(_sctpAssociation.mkStream(label));
-        }
-
-        /// <summary>
-        /// Event handler for the SCTP association successfully initialising.
-        /// </summary>
-        public void onAssociated(Association a)
-        {
-            IsAssociated = true;
-            OnAssociated?.Invoke();
-        }
-
-        /// <summary>
-        /// Event handler for a new data channel being created by the remote peer.
-        /// </summary>
-        /// <param name="s">The SCTP stream that was created.</param>
-        /// <param name="label">The label for the stream. Can be empty and can also be a duplicate.</param>
-        /// <param name="payloadProtocolID">The payload protocol ID of the new stream.</param>
-        public void onDCEPStream(SCTPStream s, string label, int payloadProtocolID)
-        {
-            logger.LogDebug($"SCTP data channel stream opened for label {label}, ppid {payloadProtocolID}, stream id {s.getNum()}.");
-
-            bool isLocalStreamID = (_isClient) ? s.getNum() % 2 == 0 : s.getNum() % 2 != 0;
-
-            OnSCTPStreamOpen?.Invoke(s, isLocalStreamID);
-        }
-
-        public void onDisAssociated(Association a)
-        {
-            logger.LogDebug($"SCTP disassociated.");
-        }
-
-        /// <summary>
-        /// Event handler that gets fired as part of creating a new data channel.
-        /// </summary>
-        public void onRawStream(SCTPStream s)
-        {
-            // Do nothing.
         }
     }
 }

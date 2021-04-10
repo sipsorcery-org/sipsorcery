@@ -274,7 +274,7 @@ namespace SIPSorcery.Net
                     else
                     {
                         handshakeError = "unknown";
-                        if(excp is Org.BouncyCastle.Crypto.Tls.TlsFatalAlert)
+                        if (excp is Org.BouncyCastle.Crypto.Tls.TlsFatalAlert)
                         {
                             handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
                         }
@@ -384,6 +384,7 @@ namespace SIPSorcery.Net
         public int UnprotectRTP(byte[] payload, int length, out int outLength)
         {
             var result = UnprotectRTP(payload, 0, length);
+
             if (result == null)
             {
                 outLength = 0;
@@ -407,6 +408,7 @@ namespace SIPSorcery.Net
         public int ProtectRTP(byte[] payload, int length, out int outLength)
         {
             var result = ProtectRTP(payload, 0, length);
+
             if (result == null)
             {
                 outLength = 0;
@@ -485,14 +487,17 @@ namespace SIPSorcery.Net
 
         public void WriteToRecvStream(byte[] buf)
         {
-            _chunks.Add(buf);
+            if (!_isClosed)
+            {
+                _chunks.Add(buf);
+            }
         }
 
         public int Read(byte[] buffer, int offset, int count, int timeout)
         {
             try
             {
-                if (_chunks.TryTake(out var item, timeout))
+                if (!_isClosed && _chunks.TryTake(out var item, timeout))
                 {
                     Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
                     return item.Length;
@@ -525,7 +530,7 @@ namespace SIPSorcery.Net
                 }
                 else if (!_isClosed)
                 {
-                    waitMillis = (int)Math.Min(waitMillis, millisecondsRemaining);
+                    waitMillis = Math.Min(waitMillis, millisecondsRemaining);
                     var receiveLen = Read(buf, off, len, waitMillis);
 
                     //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)
@@ -565,6 +570,7 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(buf, off, tempBuf, 0, len);
                 buf = tempBuf;
             }
+
             OnDataReady?.Invoke(buf);
         }
 

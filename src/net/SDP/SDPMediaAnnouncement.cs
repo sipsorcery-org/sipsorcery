@@ -3,6 +3,15 @@
 //
 // Description: 
 //
+// Remarks:
+// 
+// An example of an "application" type media announcement use is negotiating
+// SCTP-over-DTLS which acts as the transport for WebRTC data channels.
+// https://tools.ietf.org/html/rfc8841
+// "Session Description Protocol (SDP) Offer/Answer Procedures for Stream
+// Control Transmission Protocol (SCTP) over Datagram Transport Layer
+// Security (DTLS) Transport"
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //

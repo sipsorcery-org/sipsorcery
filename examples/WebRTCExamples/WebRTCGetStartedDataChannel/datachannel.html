@@ -1,0 +1,185 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        /* Description: 
+         * A minimal WebRTC peer that tests data channel connectivity.
+         * If the "make offer" URL is used this peer will act in the SDP "offerer"
+         * role. Otherwise it acts in the SDP "receiver" role and accepts
+         * an SDP offer from the remote party and sends an SDP answer in return.
+         * These roles are relevant as they dictate the DTLS and SCTP behaviour.
+         */
+
+        const STUN_URL = "stun:stun.sipsorcery.com";
+        const WEBSOCKET_URL = "ws://127.0.0.1:8081/";
+        const WEBSOCKET_MAKEOFFER_URL = "ws://127.0.0.1:8081/?role=offer";
+        const DATA_CHANNEL_LABEL = "dc1";
+        const RANDOM_BYTE_LENGTH = 10000;
+        const HASH_INPUT_MAX_LEN = 65535;
+
+        var dc, pc, ws;
+        var isClosed = true;
+        var makeOffer = false;
+
+        async function start() {
+
+            if (!isClosed) {
+                await closePeer();
+            }
+            isClosed = false;
+
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+
+            pc.onconnectionstatechange = () => {
+                console.log("onconnectionstatechange: " + pc.connectionState);
+                //if (pc.connectionState == "connected") {
+                //    console.log(`creating data channel ${DATA_CHANNEL_LABEL}.`);
+                //    dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
+                //    dc.onopen = (event) => console.log(`data channel onopen: id=${dc.id}, label ${dc.label}.`);
+                //    dc.onclose = (event) => console.log(`data channel onclose: id=${dc.id}, label ${dc.label}.`);
+                //    dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
+                //}
+            }
+
+            pc.ondatachannel = (evt) => {
+                console.log(`ondatachannel new data channel created: id ${evt.channel.id}, label ${evt.channel.label}.`);
+                //dc = evt.channel;
+                //dc.onopen = (event) => console.log(`data channel onopen: ${event}.`);
+                //dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
+                //dc.onmessage = onDataChannelMessage;
+            }
+
+            dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
+            dc.onopen = (event) => console.log(`data channel onopen: id=${dc.id}, label ${dc.label}.`);
+            dc.onclose = (event) => console.log(`data channel onclose: id=${dc.id}, label ${dc.label}.`);
+            dc.onmessage = onDataChannelMessage;
+
+            ws = new WebSocket(document.querySelector('#websockurl').value, []);
+            ws.onopen = async function () {
+                if (makeOffer) {
+                    pc.setLocalDescription()
+                        .then(() => ws.send(JSON.stringify(pc.localDescription)));
+                }
+            }
+            ws.onmessage = async function (evt) {
+                var obj = JSON.parse(evt.data);
+                if (obj?.candidate) {
+                    if (pc.remoteDescription !== null) {
+                        pc.addIceCandidate(obj);
+                    }
+                    else {
+                        console.log("no remote sdp, ignoring remote ice candidate: " + evt.data);
+                    }
+                }
+                else if (obj?.sdp) {
+                    await pc.setRemoteDescription(new RTCSessionDescription(obj));
+                    if (!makeOffer) {
+                        pc.createAnswer()
+                            .then((answer) => pc.setLocalDescription(answer))
+                            .then(() => ws.send(JSON.stringify(pc.localDescription)));
+                    }
+                }
+            };
+        };
+
+        function onDataChannelMessage(evt) {
+            //console.log(evt);
+            console.log(`data channel onmessage: message type ${evt.type}, label ${evt.target.label}, data ${evt.data}.`);
+            if (evt.data instanceof ArrayBuffer) {
+                console.log(`binary data of length ${evt.data.byteLength}.`);
+                evt.target.send(evt.data);
+            }
+        }
+
+        async function sendRandomEcho() {
+            if (dc === undefined || dc.readyState != 'open') {
+                console.error("Data channel is not available.");
+            }
+            else {
+                let rndByteLength = document.querySelector('#rndByteLength').value;
+                if (rndByteLength > pc.sctp.maxMessageSize) {
+                    console.log(`${rndByteLength} exceeds max SCTP message size of ${pc.sctp.maxMessageSize}, reducing to ${pc.sctp.maxMessageSize}.`);
+                    rndByteLength = pc.sctp.maxMessageSize;
+                }
+
+                let bufAndHash = await getRndBytesAndHash(rndByteLength);
+                console.log(`sending random buffer ${bufAndHash.RandomBuffer.byteLength} bytes, hash ${bufAndHash.SHA256}.`);
+                dc.send(bufAndHash.RandomBuffer);
+            }
+        }
+
+        async function getRndBytesAndHash(byteLength) {
+            let iters = ~~(byteLength / HASH_INPUT_MAX_LEN)
+            iters += (byteLength > iters * HASH_INPUT_MAX_LEN) ? 1 : 0;
+            let rndBuf = new Uint8Array(byteLength);
+            let rndBufSHA256 = new Uint8Array(iters * 32);
+            for (i = 0; i < iters; i++) {
+                let startPosn = i * HASH_INPUT_MAX_LEN;
+                let endPosn = startPosn + HASH_INPUT_MAX_LEN;
+                endPosn = (endPosn > byteLength) ? byteLength : endPosn;
+                let rndSlice = new Uint8Array(endPosn - startPosn);
+                crypto.getRandomValues(rndSlice);
+                let sliceSHA256 = await crypto.subtle.digest("SHA-256", rndSlice);
+                rndBuf.set(rndSlice, startPosn, rndSlice.length);
+                rndBufSHA256.set(new Uint8Array(sliceSHA256), i * 32, 32);
+                //console.log(`rnd byte hash ${startPosn}..${endPosn} is ${buf2hex(sliceSHA256)}.`);
+            }
+            let hashOfHashes = await crypto.subtle.digest("SHA-256", rndBufSHA256);
+            return { RandomBuffer: rndBuf, SHA256: buf2hex(hashOfHashes) };
+        }
+
+        function sendMessage(message) {
+            console.log(`send message: ${message}.`);
+            dc?.send(message);
+        }
+
+        async function closePeer() {
+            isClosed = true;
+            await dc?.close();
+            await pc?.close();
+            await ws?.close();
+        };
+
+        function seturl() {
+            if (document.querySelector('#makeoffer').checked) {
+                document.querySelector('#websockurl').value = WEBSOCKET_MAKEOFFER_URL;
+                makeOffer = true;
+            }
+            else {
+                document.querySelector('#websockurl').value = WEBSOCKET_URL;
+                makeOffer = false;
+            }
+        }
+
+        function buf2hex(buffer) { // buffer is an ArrayBuffer
+            return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+        }
+
+    </script>
+</head>
+<body>
+    <div>
+        <input type="checkbox" id="makeoffer" name="makfeoffer" value="makeoffer" onchange="seturl();"> Make Offer 
+        <input type="text" id="websockurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Open</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+    <div>
+        <input type="text" id="message" value="hello world" />
+        <button type="button" class="btn btn-success" onclick="sendMessage(document.querySelector('#message').value);">Send Message</button>
+    </div>
+
+    <div>
+        <input type="text" id="rndByteLength" /><button type="button" class="btn btn-success" onclick="sendRandomEcho();">Send Random Echo</button>
+    </div>
+</body>
+
+<script>
+    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+    document.querySelector('#rndByteLength').value = RANDOM_BYTE_LENGTH;
+</script>

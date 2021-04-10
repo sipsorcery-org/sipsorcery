@@ -9,15 +9,20 @@
 // 
 // History:
 // 06 Aug 2020	Aaron Clauson	Created based on example from @Terricide.
+// 10 Apr 2021  Aaron Clauson   Adjusted for new SCTP stack.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -25,18 +30,65 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Demo
 {
+    /// <summary>
+    /// The test mechanism is:
+    ///  - Create a series of WebRTC peer connection peers. Each pair has one data channel created by default.
+    ///  - Create any additional data channels required.
+    ///  - Do N number of sends on each data channel. Each send involves:
+    ///    - Create a random byte buffer, take a sha256 hash of it and send. Wait X seconds for a response.
+    ///    - On the receiving data channel hash the random buffer and ensure it matches the supplied sha256.
+    ///      Send string response back to sender with the send number.
+    ///    - Upon receiving response on the original sending channel commence the next send.
+    /// </summary>
     class Program
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
-        private const int dataSize = 64000;
-        private static int lastNum;
-        private const int totalItems = 1000;
-        private const int totalPairs = 10;
+        /// <summary>
+        /// The number of WebRTC peer connection pairs to use for the test. Each pair creates two
+        /// peer connections and establishes a DTLS connection. A single data channel is created at
+        /// connection time. If the TEST_DATACHANNELS_PER_PEER_CONNECTION is larger than 1 then
+        /// additional data channels will be created after the peer connection is established.
+        /// Recommended values are between 1 and 10.
+        /// </summary>
+        const int TEST_PEER_CONNECTIONS_COUNT = 10;
 
-        static void Main(string[] args)
+        /// <summary>
+        /// The number of data channels to establish between each WebRTC peer connection pair. At
+        /// least one connection is always created.
+        /// Recommended values are between 1 and 10.
+        /// </summary>
+        const int TEST_DATACHANNELS_PER_PEER_CONNECTION = 3;
+
+        /// <summary>
+        /// The maximum data payload to set on the messages sent for each data channel test. The message
+        /// size for a data channel send is limited by RTCSctpTransport.SCTP_DEFAULT_MAX_MESSAGE_SIZE of 262144.
+        /// 68 bytes are required for the SCTP fields and 69 byes are required for an integer and string field 
+        /// so the maximum this can be set at is 262007.
+        /// Recommended values are between 1 and 262007.
+        /// </summary>
+        const int TEST_MAX_DATA_PAYLOAD = 262007;
+
+        /// <summary>
+        /// The number of test sends to do on each data channel. The total number of sends carried out is:
+        ///  peer connection pairs x data channels per pair x data channel sends
+        /// Recommended values are between 1 and 1000.
+        /// </summary>
+        const int TEST_DATACHANNEL_SENDS = 100;
+
+        /// <summary>
+        /// The amount of time to wait for a data channel send to finish before timing
+        /// out and assuming it failed.
+        /// </summary>
+        const int TEST_DATACHANNEL_SEND_TIMEOUT_SEONDS = 2;
+
+        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
+
+        private static List<PeerConnectionPair> connectionPairs = new List<PeerConnectionPair>();
+
+        static void Main()
         {
             Console.WriteLine("WebRTC Data Channel Load Test Program");
             Console.WriteLine("Press ctrl-c to exit.");
@@ -46,193 +98,133 @@ namespace SIPSorcery.Demo
 
         private static async Task RunCommand()
         {
-            Stopwatch sw = Stopwatch.StartNew();
-            CancellationTokenSource exitCts = new CancellationTokenSource();
-
             AddConsoleLogger();
 
-            var peersA = new List<WebRTCPeer>();
-            for (int i = 0; i < totalPairs; i++)
+            // Connect the peer connection pairs.
+            Stopwatch connectSW = Stopwatch.StartNew();
+
+            List<Task> connectPairsTasks = new List<Task>();
+
+            for (int i = 0; i < TEST_PEER_CONNECTIONS_COUNT; i++)
             {
-                var peerA = new WebRTCPeer("PeerA" + i, "dcx");
-                peerA.OnData = OnData;
-                peersA.Add(peerA);
+                int id = i;
+
+                var t = Task.Run(async () =>
+                {
+                    var pair = new PeerConnectionPair(id);
+                    connectionPairs.Add(pair);
+                    await pair.Connect();
+                });
+                connectPairsTasks.Add(t);
             }
-            var peersB = new List<WebRTCPeer>();
-            for (int i = 0; i < totalPairs; i++)
+
+            await Task.WhenAll(connectPairsTasks);
+
+            connectSW.Stop();
+            Console.WriteLine($"Data channel open tasks completed in {connectSW.ElapsedMilliseconds:0.##}ms.");
+            foreach (var pair in connectionPairs)
             {
-                var peerB = new WebRTCPeer("PeerB" + i, "dcy");
-                peerB.OnData = OnData;
-                peersB.Add(peerB);
-            }
+                Console.WriteLine($"PC pair {pair.Name} src datachannel {pair.DC.readyState} streamid {pair.DC.id}, " +
+                    $"dst datachannel {pair.PCDst.DataChannels.Single().readyState} streamid {pair.PCDst.DataChannels.Single().id}.");
 
-            for (int i = 0; i < totalPairs; i++)
-            {
-                var peerA = peersA[i];
-                var peerB = peersB[i];
-
-                // Exchange the SDP offer/answers. ICE Host candidates are included in the SDP.
-                var offer = peerA.PeerConnection.createOffer(null);
-                await peerA.PeerConnection.setLocalDescription(offer);
-
-                if (peerB.PeerConnection.setRemoteDescription(offer) != SetDescriptionResultEnum.OK)
+                char a = 'a';
+                for (int j = 1; j < TEST_DATACHANNELS_PER_PEER_CONNECTION; j++)
                 {
-                    throw new ApplicationException("Couldn't set remote description.");
-                }
-                var answer = peerB.PeerConnection.createAnswer(null);
-                await peerB.PeerConnection.setLocalDescription(answer);
-
-                if (peerA.PeerConnection.setRemoteDescription(answer) != SetDescriptionResultEnum.OK)
-                {
-                    throw new ApplicationException("Couldn't set remote description.");
-                }
-
-                // Wait for the peers to connect. Should take <1s if the peers are on the same host.
-                while (peerA.PeerConnection.connectionState != RTCPeerConnectionState.connected &&
-                    peerB.PeerConnection.connectionState != RTCPeerConnectionState.connected)
-                {
-                    Console.WriteLine("Waiting for WebRTC peers to connect...");
-                    await Task.Delay(1000);
+                    char dcid = (char)((int)a + j);
+                    var dstdcB = await pair.PCDst.createDataChannel($"{PeerConnectionPair.DATACHANNEL_LABEL_PREFIX}-{pair.ID}-{dcid}");
                 }
             }
+
+            foreach (var pair in connectionPairs)
+            {
+                Console.WriteLine($"Data channels for peer connection pair {pair.Name}:");
+
+                foreach (var srcdc in pair.PCSrc.DataChannels)
+                {
+                    var dstdc = pair.PCDst.DataChannels.SingleOrDefault(x => x.id == srcdc.id);
+
+                    Console.WriteLine($" {srcdc.label}: src status {srcdc.readyState} streamid {srcdc.id} <-> " +
+                        $"dst status {dstdc.readyState} streamid {dstdc.id}.");
+
+                    srcdc.onmessage += OnData;
+                    dstdc.onmessage += OnData;
+                }
+            }
+
+            // Do the data channel sends on each peer connection pair.
+            Stopwatch sendSW = Stopwatch.StartNew();
 
             var taskList = new List<Task>();
 
-            //taskList.Add(Task.Run(async () =>
-            //{
-            //    string sendLabel = "dcx";
-
-            //    while (!peerA.IsDataChannelReady(sendLabel))
-            //    {
-            //        Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
-            //        await Task.Delay(1000);
-            //    }
-
-            //    //for (int i = 0; i < 100; i++)
-            //    //{
-            //    //    try
-            //    //    {
-            //    //        Console.WriteLine($"Data channel send {i} on {sendLabel}.");
-
-            //    //        var num = BitConverter.GetBytes(i);
-            //    //        await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
-            //    //    }
-            //    //    catch (Exception ex)
-            //    //    {
-            //    //        Console.WriteLine("ClientA:" + ex.ToString());
-            //    //    }
-            //    //}
-
-            //    Console.WriteLine($"ClientA: {sendLabel} Finished");
-            //}));
-
-            string[] queueNames = new string[] { "ThreadA" };//, "ThreadB", "ThreadC" };
-
-            foreach (var queueName in queueNames)
+            foreach (var pair in connectionPairs)
             {
-                var name = queueName;
-                taskList.Add(Task.Run(async () =>
+                foreach (var dc in pair.PCSrc.DataChannels)
                 {
-                    for (int x = 0; x < totalPairs; x++)
+                    taskList.Add(Task.Run(() =>
                     {
-                        var peerA = peersA[x];
-                        var peerB = peersB[x];
-                        string sendLabel = "dcx";
+                        var sw = Stopwatch.StartNew();
 
-                        while (!peerA.IsDataChannelReady(sendLabel))
+                        for (int i = 0; i < TEST_DATACHANNEL_SENDS; i++)
                         {
-                            Console.WriteLine($"{peerA._peerName} Waiting 1s for data channel {sendLabel} {name} to open.");
-                            await Task.Delay(250);
-                        }
+                            var sendConfirmedSig = pair.StreamSendConfirmed[dc.id.Value];
+                            sendConfirmedSig.Reset();
 
-                        while (!peerB.IsDataChannelReady(sendLabel))
-                        {
-                            Console.WriteLine($"{peerB._peerName} Waiting 1s for data channel {sendLabel} {name} to open.");
-                            await Task.Delay(250);
-                        }
+                            var packetNum = new Message();
+                            packetNum.Num = i;
+                            packetNum.Data = new byte[TEST_MAX_DATA_PAYLOAD];
+                            Crypto.GetRandomBytes(packetNum.Data);
+                            packetNum.SHA256 = Crypto.GetSHA256Hash(packetNum.Data);
 
-                        for (int i = 0; i < totalItems; i++)
-                        {
-                            try
+                            Console.WriteLine($"{dc.label}: stream id {dc.id}, send {i}.");
+                            //Console.WriteLine($"Send {i} from dc {dc.label}, sha256 {packetNum.SHA256}.");
+
+                            dc.send(packetNum.ToData());
+
+                            if (!sendConfirmedSig.Wait(TEST_DATACHANNEL_SEND_TIMEOUT_SEONDS * 1000))
                             {
-                                Console.WriteLine($"{peerA._peerName} Data channel send {i} on {sendLabel} {name}.");
-
-                                var packetNum = new Message();
-                                packetNum.Num = i;
-                                packetNum.QueueName = $"{peerA._peerName} {sendLabel} {name}";
-                                packetNum.Data = new byte[dataSize];
-                                peerA.SendAsync(sendLabel, packetNum.ToData());
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"{peerA._peerName} {name} {ex}");
+                                throw new ApplicationException($"Data channel send on {dc.label} timed out waiting for confirmation on send {i}.");
                             }
                         }
-
-                        Console.WriteLine($"{peerA._peerName} {name}: Finished");
-                    }
-                }));
+                        
+                        Console.WriteLine($"{dc.label} data channel sends finished in {sw.ElapsedMilliseconds/1000:0.##}s.");
+                    }));
+                }
             }
-
-            //taskList.Add(Task.Run(async () =>
-            //{
-            //    string sendLabel = "dcx";
-
-            //    while (!peerA.IsDataChannelReady(sendLabel))
-            //    {
-            //        Console.WriteLine($"Waiting 1s for data channel {sendLabel} to open.");
-            //        await Task.Delay(1000);
-            //    }
-
-            //    for (int i = 100; i < 200; i++)
-            //    {
-            //        try
-            //        {
-            //            Console.WriteLine($"Data channel send {i} on {sendLabel}.");
-
-            //            var num = BitConverter.GetBytes(i);
-            //            await peerA.SendAsync(sendLabel, num).ConfigureAwait(false);
-            //        }
-            //        catch (Exception ex)
-            //        {
-            //            Console.WriteLine("ClientA:" + ex.ToString());
-            //        }
-            //    }
-
-            //    Console.WriteLine($"ClientA: {sendLabel} Finished");
-            //}));
 
             await Task.WhenAll(taskList.ToArray());
-            while (lastNum < totalItems - 1)
-            {
-                Thread.Sleep(1);
-            }
-            for (int x = 0; x < totalPairs; x++)
-            {
-                var peerA = peersA[x];
-                peerA.PeerConnection?.Dispose();
-                var peerB = peersB[x];
-                peerB.PeerConnection?.Dispose();
-            }
-            Console.WriteLine($"Done in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"Done in {sendSW.ElapsedMilliseconds}ms");
+
+            Console.WriteLine("Press any key to exit.");
             Console.ReadLine();
+
+            foreach (var pair in connectionPairs)
+            {
+                pair.PCSrc.Close("normal");
+                pair.PCDst.Close("normal");
+            }
         }
 
-        private static void OnData(WebRTCPeer peer, byte[] obj)
+        private static void OnData(RTCDataChannel dc, DataChannelPayloadProtocols proto, byte[] data)
         {
-            if (obj.Length < IntPtr.Size)
+            if (proto == DataChannelPayloadProtocols.WebRTC_String)
             {
-                var pieceNum = BitConverter.ToInt32(obj, 0);
-                //logger.LogDebug($"{Name}: data channel ({_dataChannel.label}:{_dataChannel.id}): {pieceNum}.");
-                //logger.LogDebug($"{peer._peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
-                Console.WriteLine($"{peer._peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
+                Console.WriteLine($"{dc.label}: return recv stream id {dc.id}, send# {Encoding.UTF8.GetString(data)}");
+                int pairID = int.Parse(Regex.Match(dc.label, @".*-(?<id>\d+)-.*").Result("${id}"));
+                connectionPairs.Single(x => x.ID == pairID).StreamSendConfirmed[dc.id.Value].Set();
             }
-            else
+            else if (proto == DataChannelPayloadProtocols.WebRTC_Binary)
             {
-                var packet = BytesToStructure<Message>(obj);
-                //logger.LogDebug($"{peer._peerName}: Data channel receive: {packet.QueueName} Num: {packet.Num}.");
-                Console.WriteLine($"{peer._peerName}: Data channel receive: {packet.QueueName} Num: {packet.Num}.");
-                lastNum = packet.Num;
+                var packet = BytesToStructure<Message>(data);
+                var sha256 = Crypto.GetSHA256Hash(packet.Data);
+                Console.WriteLine($"{dc.label}: recv stream id {dc.id}, send# {packet.Num}.");
+                //Console.WriteLine($"{dc.label}: recv {packet.Num}, sha256 {sha256}.");
+
+                if (sha256 != packet.SHA256)
+                {
+                    throw new ApplicationException($"Data channel message sha256 hash {sha256} did not match expected hash {packet.SHA256}.");
+                }
+
+                dc.send(packet.Num.ToString());
             }
         }
 
@@ -257,7 +249,7 @@ namespace SIPSorcery.Demo
         }
 
         /// <summary>
-        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// Adds a console logger.
         /// </summary>
         private static void AddConsoleLogger()
         {
@@ -275,9 +267,9 @@ namespace SIPSorcery.Demo
         struct Message
         {
             public int Num;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-            public string QueueName;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = dataSize)]
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 65)]
+            public string SHA256;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = TEST_MAX_DATA_PAYLOAD)]
             public byte[] Data;
             public byte[] ToData()
             {
@@ -291,4 +283,63 @@ namespace SIPSorcery.Demo
             }
         }
     }
+
+    class PeerConnectionPair
+    {
+        public const string DATACHANNEL_LABEL_PREFIX = "dc";
+
+        public string Name;
+        public RTCPeerConnection PCSrc;
+        public RTCPeerConnection PCDst;
+        public RTCDataChannel DC;
+        public int ID { get; private set; }
+        public ConcurrentDictionary<ushort, ManualResetEventSlim> StreamSendConfirmed =
+            new ConcurrentDictionary<ushort, ManualResetEventSlim>();
+
+        public PeerConnectionPair(int id)
+        {
+            ID = id;
+
+            Name = $"PC{ID}";
+            PCSrc = new RTCPeerConnection();
+            PCDst = new RTCPeerConnection();
+
+            PCSrc.onconnectionstatechange += (state) => Console.WriteLine($"Peer connection pair {Name} state changed to {state}.");
+
+            PCSrc.ondatachannel += (dc) => StreamSendConfirmed.TryAdd(dc.id.Value, new ManualResetEventSlim());
+        }
+
+        public async Task Connect()
+        {
+            TaskCompletionSource<bool> dcAOpened = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            DC = await PCSrc.createDataChannel($"{DATACHANNEL_LABEL_PREFIX}-{ID}-a");
+
+            DC.onopen += () =>
+            {
+                Console.WriteLine($"Peer connection pair {Name} A data channel opened.");
+                StreamSendConfirmed.TryAdd(DC.id.Value, new ManualResetEventSlim());
+                dcAOpened.TrySetResult(true);
+            };
+
+            var offer = PCSrc.createOffer();
+            await PCSrc.setLocalDescription(offer);
+
+            if (PCDst.setRemoteDescription(offer) != SetDescriptionResultEnum.OK)
+            {
+                throw new ApplicationException($"SDP negotiation failed for peer connection pair {Name}.");
+            }
+
+            var answer = PCDst.createAnswer();
+            await PCDst.setLocalDescription(answer);
+
+            if (PCSrc.setRemoteDescription(answer) != SetDescriptionResultEnum.OK)
+            {
+                throw new ApplicationException($"SDP negotiation failed for peer connection pair {Name}.");
+            }
+
+            await Task.WhenAll(dcAOpened.Task);
+        }
+    }
+
 }
