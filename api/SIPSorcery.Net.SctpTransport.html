@@ -1,0 +1,1342 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class SctpTransport
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class SctpTransport
+   ">
+    <meta name="generator" content="docfx 2.57.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.SctpTransport">
+  
+  
+  <h1 id="SIPSorcery_Net_SctpTransport" data-uid="SIPSorcery.Net.SctpTransport" class="text-break">Class SctpTransport
+  </h1>
+  <div class="markdown level0 summary"><p>Contains the common methods that an SCTP transport layer needs to implement.
+As well as being able to be carried directly in IP packets, SCTP packets can
+also be wrapped in higher level protocols.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">SctpTransport</span></div>
+      <div class="level2"><a class="xref" href="SIPSorcery.Net.RTCSctpTransport.html">RTCSctpTransport</a></div>
+      <div class="level2"><a class="xref" href="SIPSorcery.Net.SctpUdpTransport.html">SctpUdpTransport</a></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_SctpTransport_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract class SctpTransport</code></pre>
+  </div>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_DEFAULT_COOKIE_LIFETIME_SECONDS.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.DEFAULT_COOKIE_LIFETIME_SECONDS%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L73">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_SctpTransport_DEFAULT_COOKIE_LIFETIME_SECONDS" data-uid="SIPSorcery.Net.SctpTransport.DEFAULT_COOKIE_LIFETIME_SECONDS">DEFAULT_COOKIE_LIFETIME_SECONDS</h4>
+  <div class="markdown level1 summary"><p>As per <a href="https://tools.ietf.org/html/rfc4960#section-15">https://tools.ietf.org/html/rfc4960#section-15</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int DEFAULT_COOKIE_LIFETIME_SECONDS = 60</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_IsPortAgnostic.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.IsPortAgnostic%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L94">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_IsPortAgnostic_" data-uid="SIPSorcery.Net.SctpTransport.IsPortAgnostic*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_IsPortAgnostic" data-uid="SIPSorcery.Net.SctpTransport.IsPortAgnostic">IsPortAgnostic</h4>
+  <div class="markdown level1 summary"><p>This property can be used to indicate whether an SCTP transport layer is port agnostic.
+For example a DTLS transport is likely to only ever create a single SCTP association
+and the SCTP ports are redundant for matching end points. This allows the checks done
+on received SCTP packets to be more accepting about the ports used in the SCTP packet
+header.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual bool IsPortAgnostic { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><p>True if the transport implementation does not rely on the SCTP source and
+destination port for end point matching. False if it does.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_Abort_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.Abort(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L364">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_Abort_" data-uid="SIPSorcery.Net.SctpTransport.Abort*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_Abort_System_String_" data-uid="SIPSorcery.Net.SctpTransport.Abort(System.String)">Abort(String)</h4>
+  <div class="markdown level1 summary"><p>Ungracefully closes an association. Any locally queued user data
+will be discarded, and an ABORT chunk is sent to the peer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Abort(string associationID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td><p>Local handle to the SCTP association.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_Associate_System_Net_IPAddress_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.Associate(System.Net.IPAddress%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L343">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_Associate_" data-uid="SIPSorcery.Net.SctpTransport.Associate*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_Associate_System_Net_IPAddress_System_Int32_" data-uid="SIPSorcery.Net.SctpTransport.Associate(System.Net.IPAddress,System.Int32)">Associate(IPAddress, Int32)</h4>
+  <div class="markdown level1 summary"><p>Initiates an association to a specific peer end point</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Associate(IPAddress destination, int streamCount)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="parametername">destination</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">streamCount</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>An association ID, which is a local handle to the SCTP association.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_ChangeHeartbeat_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.ChangeHeartbeat(System.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L438">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_ChangeHeartbeat_" data-uid="SIPSorcery.Net.SctpTransport.ChangeHeartbeat*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_ChangeHeartbeat_System_String_System_Int32_" data-uid="SIPSorcery.Net.SctpTransport.ChangeHeartbeat(System.String,System.Int32)">ChangeHeartbeat(String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Instructs the local endpoint to enable or disable heartbeat on the
+specified destination transport address.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ChangeHeartbeat(string associationID, int interval)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td><p>Local handle to the SCTP association.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">interval</span></td>
+        <td><p>Indicates the frequency of the heartbeat if
+this is to enable heartbeat on a destination transport address.
+This value is added to the RTO of the destination transport
+address.This value, if present, affects all destinations.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_Destroy_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.Destroy(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L511">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_Destroy_" data-uid="SIPSorcery.Net.SctpTransport.Destroy*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_Destroy_System_String_" data-uid="SIPSorcery.Net.SctpTransport.Destroy(System.String)">Destroy(String)</h4>
+  <div class="markdown level1 summary"><p>Release the resources for the specified SCTP instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Destroy(string instanceName)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">instanceName</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_GetCookie_SIPSorcery_Net_SctpPacket_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.GetCookie(SIPSorcery.Net.SctpPacket)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L236">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_GetCookie_" data-uid="SIPSorcery.Net.SctpTransport.GetCookie*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_GetCookie_SIPSorcery_Net_SctpPacket_" data-uid="SIPSorcery.Net.SctpTransport.GetCookie(SIPSorcery.Net.SctpPacket)">GetCookie(SctpPacket)</h4>
+  <div class="markdown level1 summary"><p>Attempts to retrieve the cookie that should have been set by this peer from a COOKIE ECHO
+chunk. This is the step in the handshake that a new SCTP association will be created
+for a remote party. Providing the state cookie is valid create a new association.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected SctpTransportCookie GetCookie(SctpPacket sctpPacket)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpPacket.html">SctpPacket</a></td>
+        <td><span class="parametername">sctpPacket</span></td>
+        <td><p>The packet containing the COOKIE ECHO chunk received from the remote party.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpTransportCookie.html">SctpTransportCookie</a></td>
+        <td><p>If the state cookie in the chunk is valid a new SCTP association will be returned. IF
+it's not valid an empty cookie will be returned and an error response gets sent to the peer.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_GetCookieHMAC_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.GetCookieHMAC(System.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L280">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_GetCookieHMAC_" data-uid="SIPSorcery.Net.SctpTransport.GetCookieHMAC*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_GetCookieHMAC_System_Byte___" data-uid="SIPSorcery.Net.SctpTransport.GetCookieHMAC(System.Byte[])">GetCookieHMAC(Byte[])</h4>
+  <div class="markdown level1 summary"><p>Checks whether the state cookie that is supplied in a COOKIE ECHO chunk is valid for
+this SCTP transport.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected string GetCookieHMAC(byte[] buffer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer holding the state cookie.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>True if the cookie is determined as valid, false if not.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_GetInitAck_SIPSorcery_Net_SctpPacket_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.GetInitAck(SIPSorcery.Net.SctpPacket%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L183">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_GetInitAck_" data-uid="SIPSorcery.Net.SctpTransport.GetInitAck*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_GetInitAck_SIPSorcery_Net_SctpPacket_System_Net_IPEndPoint_" data-uid="SIPSorcery.Net.SctpTransport.GetInitAck(SIPSorcery.Net.SctpPacket,System.Net.IPEndPoint)">GetInitAck(SctpPacket, IPEndPoint)</h4>
+  <div class="markdown level1 summary"><p>Creates the INIT ACK chunk and packet to send as a response to an SCTP
+packet containing an INIT chunk.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint remoteEP)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpPacket.html">SctpPacket</a></td>
+        <td><span class="parametername">initPacket</span></td>
+        <td><p>The received packet containing the INIT chunk.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">remoteEP</span></td>
+        <td><p>Optional. The remote IP end point the INIT packet was
+received on. For transports that don't use an IP transport directly this parameter
+can be set to null and it will not form part of the COOKIE ECHO checks.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpPacket.html">SctpPacket</a></td>
+        <td><p>An SCTP packet with a single INIT ACK chunk.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_GetInitAckCookie_System_UInt16_System_UInt16_System_UInt32_System_UInt32_System_UInt32_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.GetInitAckCookie(System.UInt16%2CSystem.UInt16%2CSystem.UInt32%2CSystem.UInt32%2CSystem.UInt32%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L146">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_GetInitAckCookie_" data-uid="SIPSorcery.Net.SctpTransport.GetInitAckCookie*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_GetInitAckCookie_System_UInt16_System_UInt16_System_UInt32_System_UInt32_System_UInt32_System_String_System_Int32_" data-uid="SIPSorcery.Net.SctpTransport.GetInitAckCookie(System.UInt16,System.UInt16,System.UInt32,System.UInt32,System.UInt32,System.String,System.Int32)">GetInitAckCookie(UInt16, UInt16, UInt32, UInt32, UInt32, String, Int32)</h4>
+  <div class="markdown level1 summary"><p>Gets a cookie to send in an INIT ACK chunk. This method
+is overloadable so that different transports can tailor how the cookie
+is created. For example the WebRTC SCTP transport only ever uses a
+single association so the local Tag and TSN properties must be
+the same rather than random.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected virtual SctpTransportCookie GetInitAckCookie(ushort sourcePort, ushort destinationPort, uint remoteTag, uint remoteTSN, uint remoteARwnd, string remoteEndPoint, int lifeTimeExtension = 0)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt16</span></td>
+        <td><span class="parametername">sourcePort</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt16</span></td>
+        <td><span class="parametername">destinationPort</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">remoteTag</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">remoteTSN</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">remoteARwnd</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">remoteEndPoint</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">lifeTimeExtension</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpTransportCookie.html">SctpTransportCookie</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_GetSrttReport_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.GetSrttReport(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L462">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_GetSrttReport_" data-uid="SIPSorcery.Net.SctpTransport.GetSrttReport*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_GetSrttReport_System_String_" data-uid="SIPSorcery.Net.SctpTransport.GetSrttReport(System.String)">GetSrttReport(String)</h4>
+  <div class="markdown level1 summary"><p>Instructs the local SCTP to report the current Smoothed Round Trip Time (SRTT)
+measurement on the specified destination transport address of the given
+association.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int GetSrttReport(string associationID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td><p>Local handle to the SCTP association.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><p>An integer containing the most recent SRTT in milliseconds.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_GotInit_SIPSorcery_Net_SctpPacket_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.GotInit(SIPSorcery.Net.SctpPacket%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L103">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_GotInit_" data-uid="SIPSorcery.Net.SctpTransport.GotInit*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_GotInit_SIPSorcery_Net_SctpPacket_System_Net_IPEndPoint_" data-uid="SIPSorcery.Net.SctpTransport.GotInit(SIPSorcery.Net.SctpPacket,System.Net.IPEndPoint)">GotInit(SctpPacket, IPEndPoint)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void GotInit(SctpPacket initPacket, IPEndPoint remoteEndPoint)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpPacket.html">SctpPacket</a></td>
+        <td><span class="parametername">initPacket</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">remoteEndPoint</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_Initialize_System_UInt16_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.Initialize(System.UInt16)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L332">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_Initialize_" data-uid="SIPSorcery.Net.SctpTransport.Initialize*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_Initialize_System_UInt16_" data-uid="SIPSorcery.Net.SctpTransport.Initialize(System.UInt16)">Initialize(UInt16)</h4>
+  <div class="markdown level1 summary"><p>This method allows SCTP to initialise its internal data structures
+and allocate necessary resources for setting up its operation
+environment.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Initialize(ushort localPort)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt16</span></td>
+        <td><span class="parametername">localPort</span></td>
+        <td><p>SCTP port number, if the application wants it to be specified.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>The local SCTP instance name.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_Receive_System_String_System_Byte___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.Receive(System.String%2CSystem.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L413">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_Receive_" data-uid="SIPSorcery.Net.SctpTransport.Receive*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_Receive_System_String_System_Byte___System_Int32_System_Int32_" data-uid="SIPSorcery.Net.SctpTransport.Receive(System.String,System.Byte[],System.Int32,System.Int32)">Receive(String, Byte[], Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>This method shall read the first user message in the SCTP in-queue
+into the buffer specified by the application, if there is one available.The
+size of the message read, in bytes, will be returned.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int Receive(string associationID, byte[] buffer, int length, int streamID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td><p>Local handle to the SCTP association.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer to place the received data into.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">length</span></td>
+        <td><p>The maximum size of the data to receive.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">streamID</span></td>
+        <td><p>Optional. If specified indicates which stream to
+receive the data on.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_ReceiveUnacknowledged_System_String_System_Byte___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.ReceiveUnacknowledged(System.String%2CSystem.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L502">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_ReceiveUnacknowledged_" data-uid="SIPSorcery.Net.SctpTransport.ReceiveUnacknowledged*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_ReceiveUnacknowledged_System_String_System_Byte___System_Int32_System_Int32_" data-uid="SIPSorcery.Net.SctpTransport.ReceiveUnacknowledged(System.String,System.Byte[],System.Int32,System.Int32)">ReceiveUnacknowledged(String, Byte[], Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>??</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void ReceiveUnacknowledged(string dataRetrievalID, byte[] buffer, int length, int streamID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">dataRetrievalID</span></td>
+        <td><p>The identification passed to the application in the
+failure notification.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer to store the received message.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">length</span></td>
+        <td><p>The maximum size of the data to receive.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">streamID</span></td>
+        <td><p>This is a return value that is set to indicate which
+stream the data was sent to.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_ReceiveUnsent_System_String_System_Byte___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.ReceiveUnsent(System.String%2CSystem.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L488">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_ReceiveUnsent_" data-uid="SIPSorcery.Net.SctpTransport.ReceiveUnsent*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_ReceiveUnsent_System_String_System_Byte___System_Int32_System_Int32_" data-uid="SIPSorcery.Net.SctpTransport.ReceiveUnsent(System.String,System.Byte[],System.Int32,System.Int32)">ReceiveUnsent(String, Byte[], Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>??</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void ReceiveUnsent(string dataRetrievalID, byte[] buffer, int length, int streamID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">dataRetrievalID</span></td>
+        <td><p>The identification passed to the application in the
+failure notification.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer to store the received message.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">length</span></td>
+        <td><p>The maximum size of the data to receive.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">streamID</span></td>
+        <td><p>This is a return value that is set to indicate which
+stream the data was sent to.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_RequestHeartbeat_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.RequestHeartbeat(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L450">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_RequestHeartbeat_" data-uid="SIPSorcery.Net.SctpTransport.RequestHeartbeat*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_RequestHeartbeat_System_String_" data-uid="SIPSorcery.Net.SctpTransport.RequestHeartbeat(System.String)">RequestHeartbeat(String)</h4>
+  <div class="markdown level1 summary"><p>Instructs the local endpoint to perform a HeartBeat on the specified
+destination transport address of the given association.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string RequestHeartbeat(string associationID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td><p>Local handle to the SCTP association.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>Indicates whether the transmission of the HEARTBEAT
+chunk to the destination address is successful.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_Send_System_String_System_Byte___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.Send(System.String%2CSystem.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L96">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_Send_" data-uid="SIPSorcery.Net.SctpTransport.Send*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_Send_System_String_System_Byte___System_Int32_System_Int32_" data-uid="SIPSorcery.Net.SctpTransport.Send(System.String,System.Byte[],System.Int32,System.Int32)">Send(String, Byte[], Int32, Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract void Send(string associationID, byte[] buffer, int offset, int length)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">offset</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">length</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_Send_System_String_System_Byte___System_Int32_System_Int32_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.Send(System.String%2CSystem.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L385">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_Send_" data-uid="SIPSorcery.Net.SctpTransport.Send*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_Send_System_String_System_Byte___System_Int32_System_Int32_System_Int32_System_Int32_" data-uid="SIPSorcery.Net.SctpTransport.Send(System.String,System.Byte[],System.Int32,System.Int32,System.Int32,System.Int32)">Send(String, Byte[], Int32, Int32, Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>This is the main method to send user data via SCTP.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Send(string associationID, byte[] buffer, int length, int contextID, int streamID, int lifeTime)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td><p>Local handle to the SCTP association.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer holding the data to send.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">length</span></td>
+        <td><p>The number of bytes from the buffer to send.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">contextID</span></td>
+        <td><p>Optional. A 32-bit integer that will be carried in the
+sending failure notification to the application if the transportation of
+this user message fails.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">streamID</span></td>
+        <td><p>Optional. To indicate which stream to send the data on. If not
+specified, stream 0 will be used.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">lifeTime</span></td>
+        <td><p>Optional. specifies the life time of the user data. The user
+data will not be sent by SCTP after the life time expires.This
+parameter can be used to avoid efforts to transmit stale user
+messages.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_SetPrimary_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.SetPrimary(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L396">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_SetPrimary_" data-uid="SIPSorcery.Net.SctpTransport.SetPrimary*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_SetPrimary_System_String_" data-uid="SIPSorcery.Net.SctpTransport.SetPrimary(System.String)">SetPrimary(String)</h4>
+  <div class="markdown level1 summary"><p>Instructs the local SCTP to use the specified destination transport
+address as the primary path for sending packets.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string SetPrimary(string associationID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_SetProtocolParameters_System_String_System_Object_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.SetProtocolParameters(System.String%2CSystem.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L474">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_SetProtocolParameters_" data-uid="SIPSorcery.Net.SctpTransport.SetProtocolParameters*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_SetProtocolParameters_System_String_System_Object_" data-uid="SIPSorcery.Net.SctpTransport.SetProtocolParameters(System.String,System.Object)">SetProtocolParameters(String, Object)</h4>
+  <div class="markdown level1 summary"><p>This method allows the local SCTP to customise the protocol
+parameters.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetProtocolParameters(string associationID, object protocolParameters)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td><p>Local handle to the SCTP association.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">protocolParameters</span></td>
+        <td><p>The specific names and values of the
+protocol parameters that the SCTP user wishes to customise.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_Shutdown_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.Shutdown(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L354">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_Shutdown_" data-uid="SIPSorcery.Net.SctpTransport.Shutdown*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_Shutdown_System_String_" data-uid="SIPSorcery.Net.SctpTransport.Shutdown(System.String)">Shutdown(String)</h4>
+  <div class="markdown level1 summary"><p>Gracefully closes an association. Any locally queued user data will
+be delivered to the peer.The association will be terminated only
+after the peer acknowledges all the SCTP packets sent.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Shutdown(string associationID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td><p>Local handle to the SCTP association.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport_Status_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport.Status(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L423">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTransport_Status_" data-uid="SIPSorcery.Net.SctpTransport.Status*"></a>
+  <h4 id="SIPSorcery_Net_SctpTransport_Status_System_String_" data-uid="SIPSorcery.Net.SctpTransport.Status(System.String)">Status(String)</h4>
+  <div class="markdown level1 summary"><p>Returns the current status of the association.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SctpStatus Status(string associationID)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">associationID</span></td>
+        <td><p>Local handle to the SCTP association.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpStatus.html">SctpStatus</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_System_Object_">JSONWriter.ToJson(Object)</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTransport.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTransport%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpTransport.cs/#L66" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

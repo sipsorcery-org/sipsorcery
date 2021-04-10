@@ -1,0 +1,572 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class SctpDataReceiver
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class SctpDataReceiver
+   ">
+    <meta name="generator" content="docfx 2.57.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.SctpDataReceiver">
+  
+  
+  <h1 id="SIPSorcery_Net_SctpDataReceiver" data-uid="SIPSorcery.Net.SctpDataReceiver" class="text-break">Class SctpDataReceiver
+  </h1>
+  <div class="markdown level0 summary"><p>Processes incoming data chunks and handles fragmentation and congestion control. This
+class does NOT handle in order delivery. Different streams on the same association
+can have different ordering requirements so it's left up to each stream handler to
+deal with full frames as they see fit.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">SctpDataReceiver</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_SctpDataReceiver_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class SctpDataReceiver</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver__ctor_System_UInt32_System_UInt32_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver.%23ctor(System.UInt32%2CSystem.UInt32%2CSystem.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L172">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataReceiver__ctor_" data-uid="SIPSorcery.Net.SctpDataReceiver.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataReceiver__ctor_System_UInt32_System_UInt32_System_UInt32_" data-uid="SIPSorcery.Net.SctpDataReceiver.#ctor(System.UInt32,System.UInt32,System.UInt32)">SctpDataReceiver(UInt32, UInt32, UInt32)</h4>
+  <div class="markdown level1 summary"><p>Creates a new SCTP data receiver instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SctpDataReceiver(uint receiveWindow, uint mtu, uint initialTSN)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">receiveWindow</span></td>
+        <td><p>The size of the receive window. This is the window around the
+expected Transaction Sequence Number (TSN). If a data chunk is received with a TSN outside
+the window it is ignored.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">mtu</span></td>
+        <td><p>The Maximum Transmission Unit for the network layer that the SCTP
+association is being used with.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">initialTSN</span></td>
+        <td><p>The initial TSN for the association from the INIT handshake.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver_CumulativeAckTSN.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver.CumulativeAckTSN%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L150">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataReceiver_CumulativeAckTSN_" data-uid="SIPSorcery.Net.SctpDataReceiver.CumulativeAckTSN*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataReceiver_CumulativeAckTSN" data-uid="SIPSorcery.Net.SctpDataReceiver.CumulativeAckTSN">CumulativeAckTSN</h4>
+  <div class="markdown level1 summary"><p>Gets the Transaction Sequence Number (TSN) that can be acknowledged to the remote peer.
+It represents the most recent in order TSN that has been received. If no in order
+TSN's have been received then null will be returned.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public uint? CumulativeAckTSN { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.UInt32</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver_ForwardTSNCount.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver.ForwardTSNCount%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L158">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataReceiver_ForwardTSNCount_" data-uid="SIPSorcery.Net.SctpDataReceiver.ForwardTSNCount*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataReceiver_ForwardTSNCount" data-uid="SIPSorcery.Net.SctpDataReceiver.ForwardTSNCount">ForwardTSNCount</h4>
+  <div class="markdown level1 summary"><p>A count of the total entries in the receive dictionary. Note that if chunks
+have been received out of order this count could include chunks that have
+already been processed. They are kept in the dictionary as empty chunks to
+track which TSN's have been received.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int ForwardTSNCount { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver_GetDistance_System_UInt32_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver.GetDistance(System.UInt32%2CSystem.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L564">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataReceiver_GetDistance_" data-uid="SIPSorcery.Net.SctpDataReceiver.GetDistance*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataReceiver_GetDistance_System_UInt32_System_UInt32_" data-uid="SIPSorcery.Net.SctpDataReceiver.GetDistance(System.UInt32,System.UInt32)">GetDistance(UInt32, UInt32)</h4>
+  <div class="markdown level1 summary"><p>Gets the distance between two unsigned integers. The &quot;distance&quot; means how many
+points are there between the two unsigned integers and allows wrapping from
+the unsigned integer maximum to zero.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static uint GetDistance(uint start, uint end)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">start</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">end</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><p>The shortest distance between the two unsigned integers.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver_GetSackChunk.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver.GetSackChunk%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L315">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataReceiver_GetSackChunk_" data-uid="SIPSorcery.Net.SctpDataReceiver.GetSackChunk*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataReceiver_GetSackChunk" data-uid="SIPSorcery.Net.SctpDataReceiver.GetSackChunk">GetSackChunk()</h4>
+  <div class="markdown level1 summary"><p>Gets a SACK chunk that represents the current state of the receiver.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SctpSackChunk GetSackChunk()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpSackChunk.html">SctpSackChunk</a></td>
+        <td><p>A SACK chunk that can be sent to the remote peer to update the ACK TSN and
+request a retransmit of any missing DATA chunks.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver_IsNewer_System_UInt32_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver.IsNewer(System.UInt32%2CSystem.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L535">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataReceiver_IsNewer_" data-uid="SIPSorcery.Net.SctpDataReceiver.IsNewer*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataReceiver_IsNewer_System_UInt32_System_UInt32_" data-uid="SIPSorcery.Net.SctpDataReceiver.IsNewer(System.UInt32,System.UInt32)">IsNewer(UInt32, UInt32)</h4>
+  <div class="markdown level1 summary"><p>Determines if a received TSN is newer than the expected TSN taking
+into account if TSN wrap around has occurred.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool IsNewer(uint tsn, uint receivedTSN)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">tsn</span></td>
+        <td><p>The TSN to compare against.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">receivedTSN</span></td>
+        <td><p>The received TSN.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><p>True if the received TSN is newer than the reference TSN
+or false if not.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver_IsNewerOrEqual_System_UInt32_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver.IsNewerOrEqual(System.UInt32%2CSystem.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L553">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataReceiver_IsNewerOrEqual_" data-uid="SIPSorcery.Net.SctpDataReceiver.IsNewerOrEqual*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataReceiver_IsNewerOrEqual_System_UInt32_System_UInt32_" data-uid="SIPSorcery.Net.SctpDataReceiver.IsNewerOrEqual(System.UInt32,System.UInt32)">IsNewerOrEqual(UInt32, UInt32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool IsNewerOrEqual(uint tsn, uint receivedTSN)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">tsn</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">receivedTSN</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver_OnDataChunk_SIPSorcery_Net_SctpDataChunk_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver.OnDataChunk(SIPSorcery.Net.SctpDataChunk)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L202">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataReceiver_OnDataChunk_" data-uid="SIPSorcery.Net.SctpDataReceiver.OnDataChunk*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataReceiver_OnDataChunk_SIPSorcery_Net_SctpDataChunk_" data-uid="SIPSorcery.Net.SctpDataReceiver.OnDataChunk(SIPSorcery.Net.SctpDataChunk)">OnDataChunk(SctpDataChunk)</h4>
+  <div class="markdown level1 summary"><p>Handler for processing new data chunks.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;SctpDataFrame&gt; OnDataChunk(SctpDataChunk dataChunk)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpDataChunk.html">SctpDataChunk</a></td>
+        <td><span class="parametername">dataChunk</span></td>
+        <td><p>The newly received data chunk.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.SctpDataFrame.html">SctpDataFrame</a>&gt;</td>
+        <td><p>If the received chunk resulted in a full chunk becoming available one
+or more new frames will be returned otherwise an empty frame is returned. Multiple
+frames may be returned if this chunk is part of a stream and was received out
+or order. For unordered chunks the list will always have a single entry.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver_SetInitialTSN_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver.SetInitialTSN(System.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L189">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataReceiver_SetInitialTSN_" data-uid="SIPSorcery.Net.SctpDataReceiver.SetInitialTSN*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataReceiver_SetInitialTSN_System_UInt32_" data-uid="SIPSorcery.Net.SctpDataReceiver.SetInitialTSN(System.UInt32)">SetInitialTSN(UInt32)</h4>
+  <div class="markdown level1 summary"><p>Used to set the initial TSN for the remote party when it's not known at creation time.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetInitialTSN(uint tsn)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">tsn</span></td>
+        <td><p>The initial Transaction Sequence Number (TSN) for the
+remote party.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_System_Object_">JSONWriter.ToJson(Object)</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataReceiver.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataReceiver%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataReceiver.cs/#L76" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

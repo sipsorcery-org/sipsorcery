@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace SIPSorcery.Net
    ">
-    <meta name="generator" content="docfx 2.56.7.0">
+    <meta name="generator" content="docfx 2.57.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -82,6 +82,8 @@
 that is being checked for connectivity. If the overall ICE session does succeed it will
 be due to one of these checklist entries successfully completing the ICE checks.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.CRC32C.html">CRC32C</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.DtlsSrtpClient.html">DtlsSrtpClient</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.DtlsSrtpServer.html">DtlsSrtpServer</a></h4>
@@ -131,7 +133,10 @@ the connection state for each server that gets used.</p>
       <section><p>Defines the parameters to configure how a new RTCPeerConnection is created.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCDataChannel.html">RTCDataChannel</a></h4>
-      <section></section>
+      <section><p>A WebRTC data channel is generic transport service
+that allows peers to exchange generic data in a peer
+to peer manner.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCDataChannelInit.html">RTCDataChannelInit</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCDtlsFingerprint.html">RTCDtlsFingerprint</a></h4>
@@ -183,6 +188,9 @@ Only the mandatory CNAME item is supported.</p>
       <section><p>Represents an RTCP session intended to be used in conjunction with an
 RTP session. This class needs to get notified of all RTP sends and receives
 and will take care of RTCP reporting.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCSctpTransport.html">RTCSctpTransport</a></h4>
+      <section><p>Represents an SCTP transport that uses a DTLS transport.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></h4>
       <section></section>
@@ -254,6 +262,74 @@ abs_path is defined in RFC2616 (HTTP 1.1) 3.2.1 which refers to RFC2396 (URI Gen
            segment       = *pchar *( &quot;;&quot; param )
            param         = *pchar
            pchar         = unreserved | escaped | &quot;:&quot; | &quot;@&quot; | &quot;&amp;&quot; | &quot;=&quot; | &quot;+&quot; | &quot;$&quot; | &quot;,&quot;</code></pre>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpAbortChunk.html">SctpAbortChunk</a></h4>
+      <section><p>The ABORT chunk is sent to the peer of an association to close the
+association.The ABORT chunk may contain Cause Parameters to inform
+the receiver about the reason of the abort.DATA chunks MUST NOT be
+bundled with ABORT.Control chunks (except for INIT, INIT ACK, and
+SHUTDOWN COMPLETE) MAY be bundled with an ABORT, but they MUST be
+placed before the ABORT in the SCTP packet or they will be ignored by
+the receiver.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpAssociation.html">SctpAssociation</a></h4>
+      <section><p>An SCTP association represents an established connection between two SCTP endpoints.
+This class also represents the Transmission Control Block (TCB) referred to in RFC4960.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpChunk.html">SctpChunk</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpDataChunk.html">SctpDataChunk</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpDataReceiver.html">SctpDataReceiver</a></h4>
+      <section><p>Processes incoming data chunks and handles fragmentation and congestion control. This
+class does NOT handle in order delivery. Different streams on the same association
+can have different ordering requirements so it's left up to each stream handler to
+deal with full frames as they see fit.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpDataSender.html">SctpDataSender</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorChunk.html">SctpErrorChunk</a></h4>
+      <section><p>An endpoint sends this chunk to its peer endpoint to notify it of
+certain error conditions. It contains one or more error causes. An
+Operation Error is not considered fatal in and of itself, but may be
+used with an ABORT chunk to report a fatal condition.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpInitChunk.html">SctpInitChunk</a></h4>
+      <section><p>This class is used to represent both an INIT and INIT ACK chunk.
+The only structural difference between them is the INIT ACK requires
+the Cookie variable parameter to be set.
+The INIT chunk is used to initiate an SCTP association between two
+endpoints. The INIT ACK chunk is used to respond to an incoming
+INIT chunk from a remote peer.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpPacket.html">SctpPacket</a></h4>
+      <section><p>An SCTP packet is composed of a common header and chunks. A chunk
+contains either control information or user data.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpPadding.html">SctpPadding</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpSackChunk.html">SctpSackChunk</a></h4>
+      <section><p>This chunk is sent to the peer endpoint to acknowledge received DATA
+chunks and to inform the peer endpoint of gaps in the received
+sub-sequences of DATA chunks as represented by their Transmission
+Sequence Numbers (TSN).</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpShutdownChunk.html">SctpShutdownChunk</a></h4>
+      <section><p>An endpoint in an association MUST use this chunk to initiate a
+graceful close of the association with its peer.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpTlvChunkParameter.html">SctpTlvChunkParameter</a></h4>
+      <section><p>Represents the a variable length parameter field for use within
+a Chunk. All chunk parameters use the same underlying Type-Length-Value (TLV)
+format but then specialise how the fields are used.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpTransport.html">SctpTransport</a></h4>
+      <section><p>Contains the common methods that an SCTP transport layer needs to implement.
+As well as being able to be carried directly in IP packets, SCTP packets can
+also be wrapped in higher level protocols.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpUdpTransport.html">SctpUdpTransport</a></h4>
+      <section><p>Represents an SCTP transport that encapsulates SCTP packet in UDP.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></h4>
       <section></section>
@@ -370,7 +446,72 @@ signalling.</p>
 </section>
     <h3 id="structs">Structs
   </h3>
+      <h4><a class="xref" href="SIPSorcery.Net.DataChannelOpenMessage.html">DataChannelOpenMessage</a></h4>
+      <section><p>Represents a Data Channel Establishment Protocol (DECP) OPEN message.
+This message is initially sent using the data channel on the stream
+used for user messages.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.H264Packetiser.H264Nal.html">H264Packetiser.H264Nal</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpCauseOnlyError.html">SctpCauseOnlyError</a></h4>
+      <section><p>This structure captures all SCTP errors that don't have an additional
+parameter.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpDataFrame.html">SctpDataFrame</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorInvalidStreamIdentifier.html">SctpErrorInvalidStreamIdentifier</a></h4>
+      <section><p>Invalid Stream Identifier: Indicates endpoint received a DATA chunk
+sent to a nonexistent stream.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorMissingMandatoryParameter.html">SctpErrorMissingMandatoryParameter</a></h4>
+      <section><p>Indicates that one or more mandatory Type-Length-Value (TLV) format
+parameters are missing in a received INIT or INIT ACK.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorNoUserData.html">SctpErrorNoUserData</a></h4>
+      <section><p>This error cause is returned to the originator of a
+DATA chunk if a received DATA chunk has no user data.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorProtocolViolation.html">SctpErrorProtocolViolation</a></h4>
+      <section><p>This error cause MAY be included in ABORT chunks that are sent
+because an SCTP endpoint detects a protocol violation of the peer
+that is not covered by any of the more specific error causes</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorRestartAssociationWithNewAddress.html">SctpErrorRestartAssociationWithNewAddress</a></h4>
+      <section><p>An INIT was received on an existing association.But the INIT added addresses to the
+association that were previously NOT part of the association. The new addresses are
+listed in the error code.This ERROR is normally sent as part of an ABORT refusing the INIT.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorStaleCookieError.html">SctpErrorStaleCookieError</a></h4>
+      <section><p>Indicates the receipt of a valid State Cookie that has expired.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorUnrecognizedChunkType.html">SctpErrorUnrecognizedChunkType</a></h4>
+      <section><p>Indicates that the sender is out of resource.  This
+is usually sent in combination with or within an ABORT.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorUnrecognizedParameters.html">SctpErrorUnrecognizedParameters</a></h4>
+      <section><p>This error cause is returned to the originator of the INIT ACK chunk
+if the receiver does not recognize one or more optional variable parameters in
+the INIT ACK chunk.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorUnresolvableAddress.html">SctpErrorUnresolvableAddress</a></h4>
+      <section><p>Indicates that the sender is not able to resolve the specified address parameter
+(e.g., type of address is not supported by the sender).  This is usually sent in
+combination with or within an ABORT.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorUserInitiatedAbort.html">SctpErrorUserInitiatedAbort</a></h4>
+      <section><p>This error cause MAY be included in ABORT chunks that are sent
+because of an upper-layer request.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpHeader.html">SctpHeader</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpStatus.html">SctpStatus</a></h4>
+      <section><p>Represents the current status of an SCTP association.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpTransportCookie.html">SctpTransportCookie</a></h4>
+      <section><p>The opaque cookie structure that will be sent in response to an SCTP INIT
+packet.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpTsnGapBlock.html">SctpTsnGapBlock</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPApplicationMediaFormat.html">SDPApplicationMediaFormat</a></h4>
       <section></section>
@@ -398,6 +539,8 @@ additional attributes can be provided.</p>
 is encoded and transmitted to a remote peer. When setParameters is called on an
 RTCRtpSender object, the encoding is changed appropriately.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.ISctpErrorCause.html">ISctpErrorCause</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ITransformEngine.html">ITransformEngine</a></h4>
       <section></section>
     <h3 id="enums">Enums
@@ -413,6 +556,14 @@ RTCRtpSender object, the encoding is changed appropriately.</p>
 carried out.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.ChunkTypeEnum.html">ChunkTypeEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.DataChannelMessageTypes.html">DataChannelMessageTypes</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.DataChannelPayloadProtocols.html">DataChannelPayloadProtocols</a></h4>
+      <section><p>The assignments for SCTP payload protocol IDs used with
+WebRTC data channels.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.DataChannelTypes.html">DataChannelTypes</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.FeedbackProtocol.html">FeedbackProtocol</a></h4>
       <section></section>
@@ -482,6 +633,8 @@ handshake and actions at the application layer such as a request to close the pe
 since the single option means RTCP multiplexing MUST be available or the SDP negotiation
 will fail.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCSctpTransportState.html">RTCSctpTransportState</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCSdpType.html">RTCSdpType</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCSignalingState.html">RTCSignalingState</a></h4>
@@ -503,6 +656,25 @@ will fail.</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPResponseStatusCodesEnum.html">RTSPResponseStatusCodesEnum</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpAssociationState.html">SctpAssociationState</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpChunkType.html">SctpChunkType</a></h4>
+      <section><p>The values of the Chunk Types.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpErrorCauseCode.html">SctpErrorCauseCode</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpInitChunkParameterType.html">SctpInitChunkParameterType</a></h4>
+      <section><p>The optional or variable length Type-Length-Value (TLV) parameters
+that can be used with INIT and INIT ACK chunks.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpUnrecognisedChunkActions.html">SctpUnrecognisedChunkActions</a></h4>
+      <section><p>The actions required for unrecognised chunks. The byte value corresponds to the highest
+order two bits of the chunk type value.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SctpUnrecognisedParameterActions.html">SctpUnrecognisedParameterActions</a></h4>
+      <section><p>The actions required for unrecognised parameters. The byte value corresponds to the highest
+order two bits of the parameter type value.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.CryptoSuites.html">SDPSecurityDescription.CryptoSuites</a></h4>
@@ -531,6 +703,12 @@ supported are IPv4 mad IPv6).</p>
       <section></section>
     <h3 id="delegates">Delegates
   </h3>
+      <h4><a class="xref" href="SIPSorcery.Net.OnDataChannelMessageDelegate.html">OnDataChannelMessageDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.OnNewRTCDataChannel.html">OnNewRTCDataChannel</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.OnRTCDataChannelOpened.html">OnRTCDataChannelOpened</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.PacketReceivedDelegate.html">PacketReceivedDelegate</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></h4>

@@ -1,0 +1,577 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class SctpErrorChunk
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class SctpErrorChunk
+   ">
+    <meta name="generator" content="docfx 2.57.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.SctpErrorChunk">
+  
+  
+  <h1 id="SIPSorcery_Net_SctpErrorChunk" data-uid="SIPSorcery.Net.SctpErrorChunk" class="text-break">Class SctpErrorChunk
+  </h1>
+  <div class="markdown level0 summary"><p>An endpoint sends this chunk to its peer endpoint to notify it of
+certain error conditions. It contains one or more error causes. An
+Operation Error is not considered fatal in and of itself, but may be
+used with an ABORT chunk to report a fatal condition.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.Net.SctpChunk.html">SctpChunk</a></div>
+    <div class="level2"><span class="xref">SctpErrorChunk</span></div>
+      <div class="level3"><a class="xref" href="SIPSorcery.Net.SctpAbortChunk.html">SctpAbortChunk</a></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_SCTP_CHUNK_HEADER_LENGTH">SctpChunk.SCTP_CHUNK_HEADER_LENGTH</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_logger">SctpChunk.logger</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_ChunkType">SctpChunk.ChunkType</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_ChunkFlags">SctpChunk.ChunkFlags</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_ChunkValue">SctpChunk.ChunkValue</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_KnownType">SctpChunk.KnownType</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_UnrecognizedPeerParameters">SctpChunk.UnrecognizedPeerParameters</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_ParseFirstWord_System_Byte___System_Int32_">SctpChunk.ParseFirstWord(Byte[], Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_WriteChunkHeader_System_Byte___System_Int32_">SctpChunk.WriteChunkHeader(Byte[], Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_GotUnrecognisedParameter_SIPSorcery_Net_SctpTlvChunkParameter_">SctpChunk.GotUnrecognisedParameter(SctpTlvChunkParameter)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_ParseBaseChunk_System_Byte___System_Int32_">SctpChunk.ParseBaseChunk(Byte[], Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_GetParameters_System_Byte___System_Int32_System_Int32_">SctpChunk.GetParameters(Byte[], Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_Parse_System_Byte___System_Int32_">SctpChunk.Parse(Byte[], Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_GetChunkLengthFromHeader_System_Byte___System_Int32_System_Boolean_">SctpChunk.GetChunkLengthFromHeader(Byte[], Int32, Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_GetUnrecognisedChunkAction_System_UInt16_">SctpChunk.GetUnrecognisedChunkAction(UInt16)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_CopyUnrecognisedChunk_System_Byte___System_Int32_">SctpChunk.CopyUnrecognisedChunk(Byte[], Int32)</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_SctpErrorChunk_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class SctpErrorChunk : SctpChunk</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L56">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpErrorChunk__ctor_" data-uid="SIPSorcery.Net.SctpErrorChunk.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_SctpErrorChunk__ctor" data-uid="SIPSorcery.Net.SctpErrorChunk.#ctor">SctpErrorChunk()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SctpErrorChunk()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk__ctor_SIPSorcery_Net_ISctpErrorCause_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk.%23ctor(SIPSorcery.Net.ISctpErrorCause)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L71">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpErrorChunk__ctor_" data-uid="SIPSorcery.Net.SctpErrorChunk.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_SctpErrorChunk__ctor_SIPSorcery_Net_ISctpErrorCause_" data-uid="SIPSorcery.Net.SctpErrorChunk.#ctor(SIPSorcery.Net.ISctpErrorCause)">SctpErrorChunk(ISctpErrorCause)</h4>
+  <div class="markdown level1 summary"><p>Creates a new ERROR chunk.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SctpErrorChunk(ISctpErrorCause errorCause)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.ISctpErrorCause.html">ISctpErrorCause</a></td>
+        <td><span class="parametername">errorCause</span></td>
+        <td><p>The initial error cause to set on this chunk.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk__ctor_SIPSorcery_Net_SctpChunkType_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk.%23ctor(SIPSorcery.Net.SctpChunkType%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L47">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpErrorChunk__ctor_" data-uid="SIPSorcery.Net.SctpErrorChunk.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_SctpErrorChunk__ctor_SIPSorcery_Net_SctpChunkType_System_Boolean_" data-uid="SIPSorcery.Net.SctpErrorChunk.#ctor(SIPSorcery.Net.SctpChunkType,System.Boolean)">SctpErrorChunk(SctpChunkType, Boolean)</h4>
+  <div class="markdown level1 summary"><p>This constructor is for the ABORT chunk type which is identical to the
+ERROR chunk except for the optional verification tag bit.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected SctpErrorChunk(SctpChunkType chunkType, bool verificationTagBit)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpChunkType.html">SctpChunkType</a></td>
+        <td><span class="parametername">chunkType</span></td>
+        <td><p>The chunk type, typically ABORT.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">verificationTagBit</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk__ctor_SIPSorcery_Net_SctpErrorCauseCode_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk.%23ctor(SIPSorcery.Net.SctpErrorCauseCode)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L63">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpErrorChunk__ctor_" data-uid="SIPSorcery.Net.SctpErrorChunk.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_SctpErrorChunk__ctor_SIPSorcery_Net_SctpErrorCauseCode_" data-uid="SIPSorcery.Net.SctpErrorChunk.#ctor(SIPSorcery.Net.SctpErrorCauseCode)">SctpErrorChunk(SctpErrorCauseCode)</h4>
+  <div class="markdown level1 summary"><p>Creates a new ERROR chunk.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SctpErrorChunk(SctpErrorCauseCode errorCauseCode)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpErrorCauseCode.html">SctpErrorCauseCode</a></td>
+        <td><span class="parametername">errorCauseCode</span></td>
+        <td><p>The initial error cause code to set on this chunk.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk_ErrorCauses.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk.ErrorCauses%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L39">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpErrorChunk_ErrorCauses_" data-uid="SIPSorcery.Net.SctpErrorChunk.ErrorCauses*"></a>
+  <h4 id="SIPSorcery_Net_SctpErrorChunk_ErrorCauses" data-uid="SIPSorcery.Net.SctpErrorChunk.ErrorCauses">ErrorCauses</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;ISctpErrorCause&gt; ErrorCauses { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.ISctpErrorCause.html">ISctpErrorCause</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk_AddErrorCause_SIPSorcery_Net_ISctpErrorCause_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk.AddErrorCause(SIPSorcery.Net.ISctpErrorCause)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L80">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpErrorChunk_AddErrorCause_" data-uid="SIPSorcery.Net.SctpErrorChunk.AddErrorCause*"></a>
+  <h4 id="SIPSorcery_Net_SctpErrorChunk_AddErrorCause_SIPSorcery_Net_ISctpErrorCause_" data-uid="SIPSorcery.Net.SctpErrorChunk.AddErrorCause(SIPSorcery.Net.ISctpErrorCause)">AddErrorCause(ISctpErrorCause)</h4>
+  <div class="markdown level1 summary"><p>Adds an additional error cause parameter to the chunk.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void AddErrorCause(ISctpErrorCause errorCause)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.ISctpErrorCause.html">ISctpErrorCause</a></td>
+        <td><span class="parametername">errorCause</span></td>
+        <td><p>The additional error cause to add to the chunk.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk_GetChunkLength_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk.GetChunkLength(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L90">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpErrorChunk_GetChunkLength_" data-uid="SIPSorcery.Net.SctpErrorChunk.GetChunkLength*"></a>
+  <h4 id="SIPSorcery_Net_SctpErrorChunk_GetChunkLength_System_Boolean_" data-uid="SIPSorcery.Net.SctpErrorChunk.GetChunkLength(System.Boolean)">GetChunkLength(Boolean)</h4>
+  <div class="markdown level1 summary"><p>Calculates the length for the chunk.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override ushort GetChunkLength(bool padded)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">padded</span></td>
+        <td><p>If true the length field will be padded to a 4 byte boundary.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt16</span></td>
+        <td><p>The padded length of the chunk.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_GetChunkLength_System_Boolean_">SctpChunk.GetChunkLength(Boolean)</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk_ParseChunk_System_Byte___System_Int32_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk.ParseChunk(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L129">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpErrorChunk_ParseChunk_" data-uid="SIPSorcery.Net.SctpErrorChunk.ParseChunk*"></a>
+  <h4 id="SIPSorcery_Net_SctpErrorChunk_ParseChunk_System_Byte___System_Int32_System_Boolean_" data-uid="SIPSorcery.Net.SctpErrorChunk.ParseChunk(System.Byte[],System.Int32,System.Boolean)">ParseChunk(Byte[], Int32, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Parses the ERROR chunk fields.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SctpErrorChunk ParseChunk(byte[] buffer, int posn, bool isAbort)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer holding the serialised chunk.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">posn</span></td>
+        <td><p>The position to start parsing at.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">isAbort</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpErrorChunk.html">SctpErrorChunk</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk_WriteTo_System_Byte___System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk.WriteTo(System.Byte%5B%5D%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L110">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpErrorChunk_WriteTo_" data-uid="SIPSorcery.Net.SctpErrorChunk.WriteTo*"></a>
+  <h4 id="SIPSorcery_Net_SctpErrorChunk_WriteTo_System_Byte___System_Int32_" data-uid="SIPSorcery.Net.SctpErrorChunk.WriteTo(System.Byte[],System.Int32)">WriteTo(Byte[], Int32)</h4>
+  <div class="markdown level1 summary"><p>Serialises the ERROR chunk to a pre-allocated buffer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override ushort WriteTo(byte[] buffer, int posn)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer to write the serialised chunk bytes to. It
+must have the required space already allocated.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">posn</span></td>
+        <td><p>The position in the buffer to write to.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt16</span></td>
+        <td><p>The number of bytes, including padding, written to the buffer.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.SctpChunk.html#SIPSorcery_Net_SctpChunk_WriteTo_System_Byte___System_Int32_">SctpChunk.WriteTo(Byte[], Int32)</a></div>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_System_Object_">JSONWriter.ToJson(Object)</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpErrorChunk.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpErrorChunk%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpErrorChunk.cs/#L35" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

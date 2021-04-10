@@ -1,0 +1,648 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class SctpTlvChunkParameter
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class SctpTlvChunkParameter
+   ">
+    <meta name="generator" content="docfx 2.57.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.SctpTlvChunkParameter">
+  
+  
+  <h1 id="SIPSorcery_Net_SctpTlvChunkParameter" data-uid="SIPSorcery.Net.SctpTlvChunkParameter" class="text-break">Class SctpTlvChunkParameter
+  </h1>
+  <div class="markdown level0 summary"><p>Represents the a variable length parameter field for use within
+a Chunk. All chunk parameters use the same underlying Type-Length-Value (TLV)
+format but then specialise how the fields are used.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">SctpTlvChunkParameter</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_SctpTlvChunkParameter_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class SctpTlvChunkParameter</code></pre>
+  </div>
+  <h5 id="SIPSorcery_Net_SctpTlvChunkParameter_remarks"><strong>Remarks</strong></h5>
+  <div class="markdown level0 remarks"><p>From <a href="https://tools.ietf.org/html/rfc4960#section-3.2.1">https://tools.ietf.org/html/rfc4960#section-3.2.1</a> (final section):
+Note that a parameter type MUST be unique
+across all chunks.For example, the parameter type '5' is used to
+represent an IPv4 address. The value '5' then
+is reserved across all chunks to represent an IPv4 address and MUST
+NOT be reused with a different meaning in any other chunk.</p>
+</div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L128">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter__ctor_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter__ctor" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.#ctor">SctpTlvChunkParameter()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected SctpTlvChunkParameter()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter__ctor_System_UInt16_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.%23ctor(System.UInt16%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L134">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter__ctor_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter__ctor_System_UInt16_System_Byte___" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.#ctor(System.UInt16,System.Byte[])">SctpTlvChunkParameter(UInt16, Byte[])</h4>
+  <div class="markdown level1 summary"><p>Creates a new chunk parameter instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SctpTlvChunkParameter(ushort parameterType, byte[] parameterValue)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt16</span></td>
+        <td><span class="parametername">parameterType</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">parameterValue</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_ParameterValue.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.ParameterValue%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L119">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_ParameterValue" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.ParameterValue">ParameterValue</h4>
+  <div class="markdown level1 summary"><p>The information contained in the parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] ParameterValue</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_SCTP_PARAMETER_HEADER_LENGTH.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L107">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_SCTP_PARAMETER_HEADER_LENGTH" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH">SCTP_PARAMETER_HEADER_LENGTH</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int SCTP_PARAMETER_HEADER_LENGTH = 4</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_ParameterType.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.ParameterType%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L114">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter_ParameterType_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.ParameterType*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_ParameterType" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.ParameterType">ParameterType</h4>
+  <div class="markdown level1 summary"><p>The type of the chunk parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort ParameterType { get; protected set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt16</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_UnrecognisedAction.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.UnrecognisedAction%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L125">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter_UnrecognisedAction_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.UnrecognisedAction*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_UnrecognisedAction" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.UnrecognisedAction">UnrecognisedAction</h4>
+  <div class="markdown level1 summary"><p>If this parameter is unrecognised by the parent chunk then this field dictates
+how it should handle it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SctpUnrecognisedParameterActions UnrecognisedAction { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpUnrecognisedParameterActions.html">SctpUnrecognisedParameterActions</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_GetBytes.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.GetBytes%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L191">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter_GetBytes_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.GetBytes*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_GetBytes" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.GetBytes">GetBytes()</h4>
+  <div class="markdown level1 summary"><p>Serialises an SCTP chunk parameter to a byte array.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] GetBytes()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><p>The byte array containing the serialised chunk parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_GetParameterLength_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.GetParameterLength(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L146">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter_GetParameterLength_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.GetParameterLength*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_GetParameterLength_System_Boolean_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.GetParameterLength(System.Boolean)">GetParameterLength(Boolean)</h4>
+  <div class="markdown level1 summary"><p>Calculates the length for the chunk parameter.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual ushort GetParameterLength(bool padded)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">padded</span></td>
+        <td><p>If true the length field will be padded to a 4 byte boundary.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt16</span></td>
+        <td><p>The length of the chunk. This method gets overridden by specialised SCTP parameters
+that each have their own fields that determine the length.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_ParseFirstWord_System_Byte___System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.ParseFirstWord(System.Byte%5B%5D%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L204">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter_ParseFirstWord_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.ParseFirstWord*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_ParseFirstWord_System_Byte___System_Int32_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.ParseFirstWord(System.Byte[],System.Int32)">ParseFirstWord(Byte[], Int32)</h4>
+  <div class="markdown level1 summary"><p>The first 32 bits of all chunk parameters represent the type and length. This method
+parses those fields and sets them on the current instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ushort ParseFirstWord(byte[] buffer, int posn)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer holding the serialised chunk parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">posn</span></td>
+        <td><p>The position in the buffer that indicates the start of the chunk parameter.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt16</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_ParseTlvParameter_System_Byte___System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.ParseTlvParameter(System.Byte%5B%5D%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L227">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter_ParseTlvParameter_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.ParseTlvParameter*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_ParseTlvParameter_System_Byte___System_Int32_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.ParseTlvParameter(System.Byte[],System.Int32)">ParseTlvParameter(Byte[], Int32)</h4>
+  <div class="markdown level1 summary"><p>Parses an SCTP Type-Length-Value (TLV) chunk parameter from a buffer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SctpTlvChunkParameter ParseTlvParameter(byte[] buffer, int posn)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer holding the serialised TLV chunk parameter.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">posn</span></td>
+        <td><p>The position to start parsing at.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SctpTlvChunkParameter.html">SctpTlvChunkParameter</a></td>
+        <td><p>An SCTP TLV chunk parameter instance.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_WriteParameterHeader_System_Byte___System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.WriteParameterHeader(System.Byte%5B%5D%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L160">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter_WriteParameterHeader_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.WriteParameterHeader*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_WriteParameterHeader_System_Byte___System_Int32_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.WriteParameterHeader(System.Byte[],System.Int32)">WriteParameterHeader(Byte[], Int32)</h4>
+  <div class="markdown level1 summary"><p>Writes the parameter header to the buffer. All chunk parameters use the same two
+header fields.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected void WriteParameterHeader(byte[] buffer, int posn)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer to write the chunk parameter header to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">posn</span></td>
+        <td><p>The position in the buffer to write at.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter_WriteTo_System_Byte___System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter.WriteTo(System.Byte%5B%5D%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L175">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpTlvChunkParameter_WriteTo_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.WriteTo*"></a>
+  <h4 id="SIPSorcery_Net_SctpTlvChunkParameter_WriteTo_System_Byte___System_Int32_" data-uid="SIPSorcery.Net.SctpTlvChunkParameter.WriteTo(System.Byte[],System.Int32)">WriteTo(Byte[], Int32)</h4>
+  <div class="markdown level1 summary"><p>Serialises the chunk parameter to a pre-allocated buffer. This method gets overridden
+by specialised SCTP chunk parameters that have their own data and need to be serialised
+differently.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual int WriteTo(byte[] buffer, int posn)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The buffer to write the serialised chunk parameter bytes to. It
+must have the required space already allocated.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">posn</span></td>
+        <td><p>The position in the buffer to write to.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><p>The number of bytes, including padding, written to the buffer.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_System_Object_">JSONWriter.ToJson(Object)</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpTlvChunkParameter.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpTlvChunkParameter%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/Chunks/SctpTlvChunkParameter.cs/#L105" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
