@@ -63,7 +63,7 @@ namespace SIPSorcery.Net
 
         public ushort? id { get; set; }
 
-        public RTCDataChannelState readyState { get; private set; } = RTCDataChannelState.connecting;
+        public RTCDataChannelState readyState { get; internal set; } = RTCDataChannelState.connecting;
 
         public ulong bufferedAmount { get; set; }
 
@@ -83,7 +83,7 @@ namespace SIPSorcery.Net
         public event Action<string> onerror;
         //public event Action onclosing;
         public event Action onclose;
-        public event Action<RTCDataChannel, DataChannelPayloadProtocols, byte[]> onmessage;
+        public event OnDataChannelMessageDelegate onmessage;
 
         public RTCDataChannel(RTCSctpTransport transport, RTCDataChannelInit init = null)
         {

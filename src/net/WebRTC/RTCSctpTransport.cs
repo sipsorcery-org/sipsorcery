@@ -43,6 +43,8 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCSctpTransport : SctpTransport
     {
+        private const string THREAD_NAME_PREFIX = "rtcsctprecv-";
+
         /// <summary>
         /// The DTLS transport has no mechanism to cancel a pending receive. The workaround is
         /// to set a timeout on each receive call.
@@ -105,6 +107,7 @@ namespace SIPSorcery.Net
 
         private bool _isStarted;
         private bool _isClosed;
+        private Thread _receiveThread;
 
         /// <summary>
         /// Creates a new SCTP transport that runs on top of an established DTLS connection.
@@ -165,9 +168,10 @@ namespace SIPSorcery.Net
                 transport = dtlsTransport;
                 IsDtlsClient = isDtlsClient;
 
-                var receiveThread = new Thread(DoReceive);
-                receiveThread.IsBackground = true;
-                receiveThread.Start();
+                _receiveThread = new Thread(DoReceive);
+                _receiveThread.Name = $"{THREAD_NAME_PREFIX}{RTCSctpAssociation.ID}";
+                _receiveThread.IsBackground = true;
+                _receiveThread.Start();
             }
         }
 
@@ -340,9 +344,17 @@ namespace SIPSorcery.Net
                     // Treat application exceptions as recoverable, things like SCTP packet parse failures.
                     logger.LogWarning($"SCTP error processing RTCSctpTransport receive. {appExcp.Message}");
                 }
+                catch(Exception excp)
+                {
+                    logger.LogError($"SCTP fatal error processing RTCSctpTransport receive. {excp}");
+                    break;
+                }
             }
 
-            logger.LogDebug("SCTP association receive thread stopped.");
+            if (!_isClosed)
+            {
+                logger.LogWarning($"SCTP association {RTCSctpAssociation.ID} receive thread stopped.");
+            }
 
             SetState(RTCSctpTransportState.Closed);
         }
@@ -365,7 +377,10 @@ namespace SIPSorcery.Net
 
             if (!_isClosed)
             {
-                transport.Send(buffer, offset, length);
+                lock (transport)
+                {
+                    transport.Send(buffer, offset, length);
+                }
             }
         }
     }

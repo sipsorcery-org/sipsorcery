@@ -36,6 +36,8 @@ using System;
 
 namespace SIPSorcery.Net
 {
+    public delegate void OnDataChannelMessageDelegate(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data);
+
     public enum RTCDataChannelState
     {
         /// <summary>
@@ -155,7 +157,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// A message was successfully received.
         /// </summary>
-        event Action<RTCDataChannel, DataChannelPayloadProtocols, byte[]> onmessage;
+        event OnDataChannelMessageDelegate onmessage;
 
         string binaryType { get; set; }
         void send(string data);

@@ -441,7 +441,7 @@ namespace SIPSorcery.Net
                 int burstSize = (_inRetransmitMode || _congestionWindow < _outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
                 int chunksSent = 0;
 
-                logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
+                //logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
 
                 // Missing chunks from a SACK gap report take priority.
                 if (_missingChunks.Count > 0)
@@ -517,9 +517,9 @@ namespace SIPSorcery.Net
                 _senderMre.Reset();
 
                 int wait = GetSendWaitMilliseconds();
-                logger.LogTrace($"SCTP sender wait period {wait}ms, arwnd {_receiverWindow}, cwnd {_congestionWindow} " +
-                    $"outstanding bytes {_outstandingBytes}, send queue {_sendQueue.Count}, missing {_missingChunks.Count} "
-                    + $"unconfirmed {_unconfirmedChunks.Count}.");
+                //logger.LogTrace($"SCTP sender wait period {wait}ms, arwnd {_receiverWindow}, cwnd {_congestionWindow} " +
+                //    $"outstanding bytes {_outstandingBytes}, send queue {_sendQueue.Count}, missing {_missingChunks.Count} "
+                //    + $"unconfirmed {_unconfirmedChunks.Count}.");
 
                 _senderMre.Wait(wait);
             }

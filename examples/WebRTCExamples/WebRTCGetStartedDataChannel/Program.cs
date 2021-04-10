@@ -9,6 +9,8 @@
 // 
 // History:
 // 12 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 09 Apr 2021  Aaron Clauson   Updated for new SCTP stack and added crude load
+//                              test capability.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -19,6 +21,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -37,8 +40,12 @@ namespace demo
         private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const int JAVASCRIPT_SHA256_MAX_IN_SIZE = 65535;
         private const int SHA256_OUTPUT_SIZE = 32;
+        private const int MAX_LOADTEST_COUNT = 100;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
+
+        private static uint _loadTestPayloadSize = 0;
+        private static int _loadTestCount = 0;
 
         static void Main()
         {
@@ -91,27 +98,34 @@ namespace demo
                             break;
 
                         case DataChannelPayloadProtocols.WebRTC_Binary:
-                            //string sha256 = Crypto.GetSHA256Hash(data);
                             string jsSha256 = DoJavscriptSHA256(data);
                             logger.LogInformation($"Data channel {datachan.label} received {data.Length} bytes, js mirror sha256 {jsSha256}.");
                             rdc.send(jsSha256);
+
+                            if (_loadTestCount > 0)
+                            {
+                                DoLoadTestIteration(rdc, _loadTestPayloadSize);
+                                _loadTestCount--;
+                            }
+
                             break;
 
                         case DataChannelPayloadProtocols.WebRTC_String:
                             var msg = Encoding.UTF8.GetString(data);
                             logger.LogInformation($"Data channel {datachan.label} message {type} received: {msg}.");
 
-                            if (uint.TryParse(msg, out var sendSize))
+                            var loadTestMatch = Regex.Match(msg, @"^\s*(?<sendSize>\d+)\s*x\s*(?<testCount>\d+)");
+
+                            if (loadTestMatch.Success)
                             {
-                                sendSize = (sendSize > pc.sctp.maxMessageSize) ? pc.sctp.maxMessageSize : sendSize;
+                                uint sendSize = uint.Parse(loadTestMatch.Result("${sendSize}"));
+                                _loadTestCount = int.Parse(loadTestMatch.Result("${testCount}"));
+                                _loadTestCount = (_loadTestCount <= 0 || _loadTestCount > MAX_LOADTEST_COUNT) ? MAX_LOADTEST_COUNT : _loadTestCount;
+                                _loadTestPayloadSize = (sendSize > pc.sctp.maxMessageSize) ? pc.sctp.maxMessageSize : sendSize;
 
-                                // Send random bytes of the requested size.
-                                var rndBuffer = new byte[sendSize];
-                                Crypto.GetRandomBytes(rndBuffer);
-
-                                logger.LogInformation($"Data channel sending {sendSize} random bytes, hash {Crypto.GetSHA256Hash(rndBuffer)}.");
-
-                                rdc.send(rndBuffer);
+                                logger.LogInformation($"Starting data channel binary load test, payload size {sendSize}, test count {_loadTestCount}.");
+                                DoLoadTestIteration(rdc, _loadTestPayloadSize);
+                                _loadTestCount--;
                             }
                             else
                             {
@@ -143,6 +157,14 @@ namespace demo
             pc.onsignalingstatechange += () => logger.LogDebug($"Signalling state changed to {pc.signalingState}.");
 
             return pc;
+        }
+
+        private static void DoLoadTestIteration(RTCDataChannel dc, uint payloadSize)
+        {
+            var rndBuffer = new byte[payloadSize];
+            Crypto.GetRandomBytes(rndBuffer);
+            logger.LogInformation($"Data channel sending {payloadSize} random bytes, hash {DoJavscriptSHA256(rndBuffer)}.");
+            dc.send(rndBuffer);
         }
 
         /// <summary>
@@ -186,7 +208,7 @@ namespace demo
         {
             var seriLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Verbose)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(seriLogger);
