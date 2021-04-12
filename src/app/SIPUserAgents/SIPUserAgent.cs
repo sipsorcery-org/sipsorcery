@@ -8,8 +8,6 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// Jacek Dzija
-// Mateusz Greczek
 //
 // History:
 // 26 Nov 2019	Aaron Clauson   Created, Dublin, Ireland.
@@ -19,8 +17,6 @@
 //                              and https://tools.ietf.org/html/rfc5589.
 // 17 May 2020  Aaron Clauson   Added exclusive transport option to simplify
 //                              incoming call handling.
-// 30 Mar 2021  Jacek Dzija
-//              Mateusz Greczek Added MSRP
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -33,7 +29,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.app.Media;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -128,7 +123,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// The media (RTP) session in use for the current call.
         /// </summary>
-        public IBaseMediaSession MediaSession { get; private set; }
+        public IMediaSession MediaSession { get; private set; }
 
         /// <summary>
         /// Indicates whether there is an active call or not.
@@ -406,7 +401,7 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Attempts to place a new outgoing call AND waits for the call to be answered or fail.
-        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IBaseMediaSession)"/> to start a call without
+        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession)"/> to start a call without
         /// waiting for it to complete and monitor <see cref="ClientCallAnsweredHandler"/> and
         /// <see cref="ClientCallFailedHandler"/> to detect an answer or failure.
         /// </summary>
@@ -414,7 +409,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="username">Optional Username if authentication is required.</param>
         /// <param name="password">Optional. Password if authentication is required.</param>
         /// <param name="mediaSession">The RTP session for the call.</param>
-        public Task<bool> Call(string dst, string username, string password, IBaseMediaSession mediaSession)
+        public Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession)
         {
             if (mediaSession == null)
             {
@@ -459,7 +454,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="callDescriptor">The full descriptor for the call destination. Allows customising
         /// of additional options above the standard username, password and destination URI.</param>
         /// <param name="mediaSession">The RTP session for the call.</param>
-        public async Task<bool> Call(SIPCallDescriptor callDescriptor, IBaseMediaSession mediaSession)
+        public async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession)
         {
             TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -477,7 +472,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipCallDescriptor">A call descriptor containing the information about how 
         /// and where to place the call.</param>
         /// <param name="mediaSession">The media session used for this call</param>
-        public async Task InitiateCallAsync(SIPCallDescriptor sipCallDescriptor, IBaseMediaSession mediaSession)
+        public async Task InitiateCallAsync(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
         {
             m_cts = new CancellationTokenSource();
 
@@ -495,12 +490,9 @@ namespace SIPSorcery.SIP.App
             if (serverEndPoint != null)
             {
                 MediaSession = mediaSession;
-                if (MediaSession is IMediaSession media)
-                {
-                    media.OnRtpEvent += OnRemoteRtpEvent;
-                }
+                MediaSession.OnRtpEvent += OnRemoteRtpEvent;
 
-                var sdpAnnounceAddress = (mediaSession as IMediaSession)?.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
+                var sdpAnnounceAddress = mediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
                 var sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
                 if (sdp == null)
@@ -610,7 +602,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
-        public Task<bool> Answer(SIPServerUserAgent uas, IBaseMediaSession mediaSession)
+        public Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
         {
             return Answer(uas, mediaSession, null);
         }
@@ -625,7 +617,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="customHeaders">Custom SIP-Headers to use in Answer.</param>
         /// <returns>True if the call was successfully answered or false if there was a problem
         /// such as incompatible codecs.</returns>
-        public async Task<bool> Answer(SIPServerUserAgent uas, IBaseMediaSession mediaSession, string[] customHeaders)
+        public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
         {
             if (uas.IsCancelled)
             {
@@ -639,17 +631,14 @@ namespace SIPSorcery.SIP.App
                 var sipRequest = uas.ClientTransaction.TransactionRequest;
 
                 MediaSession = mediaSession;
-                if (MediaSession is IMediaSession media)
+                MediaSession.OnRtpEvent += OnRemoteRtpEvent;
+                MediaSession.OnRtpClosed += (reason) =>
                 {
-                    media.OnRtpEvent += OnRemoteRtpEvent;
-                    media.OnRtpClosed += (reason) =>
+                    if (MediaSession?.IsClosed == false)
                     {
-                        if (MediaSession?.IsClosed == false)
-                        {
-                            logger.LogWarning($"RTP channel was closed with reason {reason}.");
-                        }
-                    };
-                }
+                        logger.LogWarning($"RTP channel was closed with reason {reason}.");
+                    }
+                };
 
                 string sdp = null;
 
@@ -677,7 +666,7 @@ namespace SIPSorcery.SIP.App
                 else
                 {
                     // No SDP offer was included in the INVITE request need to wait for the ACK.
-                    var sdpAnnounceAddress = (MediaSession as IMediaSession)?.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address);
+                    var sdpAnnounceAddress = MediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address);
                     var sdpOffer = MediaSession.CreateOffer(sdpAnnounceAddress);
                     sdp = sdpOffer.ToString();
                 }
@@ -799,7 +788,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="tone">The DTMF tone to transmit.</param>
         public Task SendDtmf(byte tone)
         {
-            return (MediaSession as IMediaSession)?.SendDtmf(tone, m_cts.Token);
+            return MediaSession.SendDtmf(tone, m_cts.Token);
         }
 
         /// <summary>
@@ -830,17 +819,15 @@ namespace SIPSorcery.SIP.App
         private void ApplyHoldAndReinvite()
         {
             var streamStatus = GetStreamStatusForOnHoldState();
-            if (MediaSession is IMediaSession media)
-            {
-                if (media.HasAudio)
-                {
-                    media.SetMediaStreamStatus(SDPMediaTypesEnum.audio, streamStatus);
-                }
 
-                if (media.HasVideo)
-                {
-                    media.SetMediaStreamStatus(SDPMediaTypesEnum.video, streamStatus);
-                }
+            if (MediaSession.HasAudio)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, streamStatus);
+            }
+
+            if (MediaSession.HasVideo)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, streamStatus);
             }
 
             var sdp = MediaSession.CreateOffer(null);
@@ -954,19 +941,15 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             CheckRemotePartyHoldCondition(MediaSession.RemoteDescription);
-                            if (MediaSession is IMediaSession media)
-                            {
-                                if (media.HasAudio)
-                                {
-                                    media.SetMediaStreamStatus(SDPMediaTypesEnum.audio,
-                                        GetStreamStatusForOnHoldState());
-                                }
 
-                                if (media.HasVideo)
-                                {
-                                    media.SetMediaStreamStatus(SDPMediaTypesEnum.video,
-                                        GetStreamStatusForOnHoldState());
-                                }
+                            if (MediaSession.HasAudio)
+                            {
+                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, GetStreamStatusForOnHoldState());
+                            }
+
+                            if (MediaSession.HasVideo)
+                            {
+                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, GetStreamStatusForOnHoldState());
                             }
 
                             var answerSdp = MediaSession.CreateAnswer(null);
@@ -1101,17 +1084,14 @@ namespace SIPSorcery.SIP.App
                         PutOnHold();
                     }
 
-                    if (MediaSession is IMediaSession media)
+                    if (MediaSession.HasAudio)
                     {
-                        if (media.HasAudio)
-                        {
-                            media.SetMediaStreamStatus(SDPMediaTypesEnum.audio, MediaStreamStatusEnum.SendRecv);
-                        }
+                        MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, MediaStreamStatusEnum.SendRecv);
+                    }
 
-                        if (media.HasVideo)
-                        {
-                            media.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.SendRecv);
-                        }
+                    if (MediaSession.HasVideo)
+                    {
+                        MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.SendRecv);
                     }
 
                     // The norefersub supported header means am event subscription is not expected.
@@ -1346,17 +1326,14 @@ namespace SIPSorcery.SIP.App
                 await Task.Delay(WAIT_ONHOLD_TIMEOUT).ConfigureAwait(false);
             }
 
-            if (MediaSession is IMediaSession media)
+            if (MediaSession.HasAudio)
             {
-                if (media.HasAudio)
-                {
-                    media.SetMediaStreamStatus(SDPMediaTypesEnum.audio, MediaStreamStatusEnum.SendRecv);
-                }
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, MediaStreamStatusEnum.SendRecv);
+            }
 
-                if (media.HasVideo)
-                {
-                    media.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.SendRecv);
-                }
+            if (MediaSession.HasVideo)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.SendRecv);
             }
 
             // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
