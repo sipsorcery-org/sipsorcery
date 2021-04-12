@@ -1,8 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SDPMessageMediaFormat.cs
+// Filename: MSRPSession.cs
 //
-// Description: Contains enums and helper classes for common definitions
-// and attributes used in SDP payloads.
+// Description: An example of MSRP Session class which handle MSRP stack
 //
 // Author(s):
 // Jacek Dzija
@@ -23,7 +22,6 @@ using SIPSorcery.SIP.App;
 
 namespace SIPSorcery.Net
 {
-    //An example of MSRP Session class which handle MSRP stack 
     public class MSRPSession : IBaseMediaSession, IDisposable
     {
         public bool IsClosed { get; }

@@ -1,8 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SDPMessageMediaFormat.cs
+// Filename: IBaseMediaSession.cs
 //
-// Description: Contains enums and helper classes for common definitions
-// and attributes used in SDP payloads.
+// Description: An interface for managing the base Media in a SIP session
 //
 // Author(s):
 // Jacek Dzija
