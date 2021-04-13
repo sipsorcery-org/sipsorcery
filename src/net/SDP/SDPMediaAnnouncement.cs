@@ -14,10 +14,13 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
+// Jacek Dzija
+// Mateusz Greczek
 //
 // History:
 // ??	Aaron Clauson	Created, Hobart, Australia.
 // rj2: add SDPSecurityDescription parser
+// 30 Mar 2021 Jacek Dzija,Mateusz Greczek Added MSRP
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -72,6 +75,8 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
         public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
         public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
+        public const string MEDIA_FORMAT_PATH_MSRP_PREFIX = "a=path:msrp:";
+        public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX = "a=accept-types:";
         public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
         public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
@@ -145,6 +150,11 @@ namespace SIPSorcery.Net
         public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
 
         /// <summary>
+        ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
+        /// </summary>
+        public SDPMessageMediaFormat MessageMediaFormat = new SDPMessageMediaFormat();
+
+        /// <summary>
         /// List of media formats for "application media announcements. Application media announcements have different
         /// semantics to audio/video announcements. They can also use aribtrary strings as the format ID.
         /// </summary>
@@ -201,6 +211,15 @@ namespace SIPSorcery.Net
             }
         }
 
+        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, SDPConnectionInformation connection, int port, SDPMessageMediaFormat messageMediaFormat)
+        {
+            Media = mediaType;
+            Port = port;
+            Connection = connection;
+
+            MessageMediaFormat =  messageMediaFormat;
+        }
+
         public void ParseMediaFormats(string formatList)
         {
             if (!String.IsNullOrWhiteSpace(formatList))
@@ -213,6 +232,10 @@ namespace SIPSorcery.Net
                         if (Media == SDPMediaTypesEnum.application)
                         {
                             ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
+                        }
+                        else if (Media == SDPMediaTypesEnum.message)
+                        {
+                            //TODO
                         }
                         else
                         {
@@ -356,6 +379,10 @@ namespace SIPSorcery.Net
 
                 return sb.ToString().Trim();
             }
+            else if (Media == SDPMediaTypesEnum.message)
+            {
+                return "*";
+            }
             else
             {
                 string mediaFormatList = null;
@@ -394,6 +421,30 @@ namespace SIPSorcery.Net
                 {
                     return null;
                 }
+            }
+            else if (Media == SDPMediaTypesEnum.message)
+            {
+                StringBuilder sb = new StringBuilder();
+
+                var mediaFormat = MessageMediaFormat;
+                var acceptTypes = mediaFormat.AcceptTypes;
+                if (acceptTypes != null && acceptTypes.Count >0)
+                {
+                    sb.Append(MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX);
+                    foreach (var type in acceptTypes)
+                    {
+                        sb.Append($"{type} ");
+                    }
+
+                    sb.Append($"{m_CRLF}");
+                }
+
+                if (mediaFormat.Endpoint != null )
+                {
+                    sb.Append($"{MEDIA_FORMAT_PATH_MSRP_PREFIX}//{Connection.ConnectionAddress}:{Port}/{mediaFormat.Endpoint}{m_CRLF}");
+                }
+                
+                return sb.ToString();
             }
             else
             {

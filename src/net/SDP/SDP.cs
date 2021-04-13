@@ -5,10 +5,13 @@
 //
 // Author(s):
 // Aaron Clauson
+// Jacek Dzija
+// Mateusz Greczek
 //
 // History:
 // 20 Oct 2005	Aaron Clauson	Created.
 // rj2: save raw string of SDP, in case there is something in it, that can't be parsed
+// 30 Mar 2021 Jacek Dzija,Mateusz Greczek Added MSRP
 //
 // Notes:
 //
@@ -661,6 +664,39 @@ namespace SIPSorcery.Net
                                 else
                                 {
                                     logger.LogWarning("A max-message-size attribute can only be set on a media announcement.");
+                                }
+                                break;
+
+                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX):
+                                if (activeAnnouncement != null)
+                                {
+                                    string acceptTypesStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                                    var acceptTypesList = acceptTypesStr.Trim().Split(' ').ToList();
+                                    activeAnnouncement.MessageMediaFormat.AcceptTypes = acceptTypesList;
+                                }
+                                else
+                                {
+                                    logger.LogWarning("A accept-types attribute can only be set on a media announcement.");
+                                }
+                                break;
+
+                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_MSRP_PREFIX):
+                                if (activeAnnouncement != null)
+                                {
+                                    string pathStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                                    string pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
+                                    activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf(':'));
+                                    
+                                    pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf(':') + 1);
+                                    activeAnnouncement.MessageMediaFormat.Port = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf('/'));
+                                    
+                                    pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf('/') + 1);
+                                    activeAnnouncement.MessageMediaFormat.Endpoint = pathTrimmedStr;
+                                    
+                                }
+                                else
+                                {
+                                    logger.LogWarning("A path attribute can only be set on a media announcement.");
                                 }
                                 break;
 
