@@ -17193,6 +17193,12 @@ references:
   commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPConnectionInformation)
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPConnectionInformation)
   nameWithType: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPConnectionInformation)
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.SDPConnectionInformation,System.Int32,SIPSorcery.Net.SDPMessageMediaFormat)
+  name: SDPMediaAnnouncement(SDPMediaTypesEnum, SDPConnectionInformation, Int32, SDPMessageMediaFormat)
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement__ctor_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_SDPConnectionInformation_System_Int32_SIPSorcery_Net_SDPMessageMediaFormat_
+  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.SDPConnectionInformation,System.Int32,SIPSorcery.Net.SDPMessageMediaFormat)
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, SIPSorcery.Net.SDPConnectionInformation, System.Int32, SIPSorcery.Net.SDPMessageMediaFormat)
+  nameWithType: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPMediaTypesEnum, SDPConnectionInformation, Int32, SDPMessageMediaFormat)
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{SIPSorcery.Net.SDPApplicationMediaFormat})
   name: SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List<SDPApplicationMediaFormat>)
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_System_Collections_Generic_List_SIPSorcery_Net_SDPApplicationMediaFormat__
@@ -17417,6 +17423,18 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX
   nameWithType: SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX
+  name: MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX
+  nameWithType: SDPMediaAnnouncement.MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_PATH_MSRP_PREFIX
+  name: MEDIA_FORMAT_PATH_MSRP_PREFIX
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MEDIA_FORMAT_PATH_MSRP_PREFIX
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_PATH_MSRP_PREFIX
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_PATH_MSRP_PREFIX
+  nameWithType: SDPMediaAnnouncement.MEDIA_FORMAT_PATH_MSRP_PREFIX
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX
   name: MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX
@@ -17472,6 +17490,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.MediaStreamStatus
   nameWithType: SDPMediaAnnouncement.MediaStreamStatus
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.MessageMediaFormat
+  name: MessageMediaFormat
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MessageMediaFormat
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MessageMediaFormat
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MessageMediaFormat
+  nameWithType: SDPMediaAnnouncement.MessageMediaFormat
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.MLineIndex
   name: MLineIndex
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MLineIndex
@@ -17619,12 +17643,48 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaTypesEnum.image
   fullName: SIPSorcery.Net.SDPMediaTypesEnum.image
   nameWithType: SDPMediaTypesEnum.image
+- uid: SIPSorcery.Net.SDPMediaTypesEnum.message
+  name: message
+  href: api/SIPSorcery.Net.SDPMediaTypesEnum.html#SIPSorcery_Net_SDPMediaTypesEnum_message
+  commentId: F:SIPSorcery.Net.SDPMediaTypesEnum.message
+  fullName: SIPSorcery.Net.SDPMediaTypesEnum.message
+  nameWithType: SDPMediaTypesEnum.message
 - uid: SIPSorcery.Net.SDPMediaTypesEnum.video
   name: video
   href: api/SIPSorcery.Net.SDPMediaTypesEnum.html#SIPSorcery_Net_SDPMediaTypesEnum_video
   commentId: F:SIPSorcery.Net.SDPMediaTypesEnum.video
   fullName: SIPSorcery.Net.SDPMediaTypesEnum.video
   nameWithType: SDPMediaTypesEnum.video
+- uid: SIPSorcery.Net.SDPMessageMediaFormat
+  name: SDPMessageMediaFormat
+  href: api/SIPSorcery.Net.SDPMessageMediaFormat.html
+  commentId: T:SIPSorcery.Net.SDPMessageMediaFormat
+  fullName: SIPSorcery.Net.SDPMessageMediaFormat
+  nameWithType: SDPMessageMediaFormat
+- uid: SIPSorcery.Net.SDPMessageMediaFormat.AcceptTypes
+  name: AcceptTypes
+  href: api/SIPSorcery.Net.SDPMessageMediaFormat.html#SIPSorcery_Net_SDPMessageMediaFormat_AcceptTypes
+  commentId: F:SIPSorcery.Net.SDPMessageMediaFormat.AcceptTypes
+  fullName: SIPSorcery.Net.SDPMessageMediaFormat.AcceptTypes
+  nameWithType: SDPMessageMediaFormat.AcceptTypes
+- uid: SIPSorcery.Net.SDPMessageMediaFormat.Endpoint
+  name: Endpoint
+  href: api/SIPSorcery.Net.SDPMessageMediaFormat.html#SIPSorcery_Net_SDPMessageMediaFormat_Endpoint
+  commentId: F:SIPSorcery.Net.SDPMessageMediaFormat.Endpoint
+  fullName: SIPSorcery.Net.SDPMessageMediaFormat.Endpoint
+  nameWithType: SDPMessageMediaFormat.Endpoint
+- uid: SIPSorcery.Net.SDPMessageMediaFormat.IP
+  name: IP
+  href: api/SIPSorcery.Net.SDPMessageMediaFormat.html#SIPSorcery_Net_SDPMessageMediaFormat_IP
+  commentId: F:SIPSorcery.Net.SDPMessageMediaFormat.IP
+  fullName: SIPSorcery.Net.SDPMessageMediaFormat.IP
+  nameWithType: SDPMessageMediaFormat.IP
+- uid: SIPSorcery.Net.SDPMessageMediaFormat.Port
+  name: Port
+  href: api/SIPSorcery.Net.SDPMessageMediaFormat.html#SIPSorcery_Net_SDPMessageMediaFormat_Port
+  commentId: F:SIPSorcery.Net.SDPMessageMediaFormat.Port
+  fullName: SIPSorcery.Net.SDPMessageMediaFormat.Port
+  nameWithType: SDPMessageMediaFormat.Port
 - uid: SIPSorcery.Net.SDPSecurityDescription
   name: SDPSecurityDescription
   href: api/SIPSorcery.Net.SDPSecurityDescription.html
