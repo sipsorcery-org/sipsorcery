@@ -17,6 +17,7 @@
 
 using System;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
@@ -323,19 +324,10 @@ namespace SIPSorcery.Net
                             }
                         }
                     }
-                    else if (bytesRead == DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE)
+                    else if (_isClosed)
                     {
                         // The DTLS transport has been closed or is no longer available.
-                        if (!_isClosed)
-                        {
-                            logger.LogWarning($"SCTP the RTCSctpTransport DTLS transport returned an error.");
-                        }
-                        break;
-                    }
-                    else
-                    {
-                        // Assume something has gone wrong with the DTLS transport.
-                        logger.LogError($"SCTP unexpected result on RTCSctpTransport DoReceive {bytesRead}.");
+                        logger.LogWarning($"SCTP the RTCSctpTransport DTLS transport returned an error.");
                         break;
                     }
                 }
@@ -344,7 +336,13 @@ namespace SIPSorcery.Net
                     // Treat application exceptions as recoverable, things like SCTP packet parse failures.
                     logger.LogWarning($"SCTP error processing RTCSctpTransport receive. {appExcp.Message}");
                 }
-                catch(Exception excp)
+                catch(TlsFatalAlert alert)  when (alert.InnerException is SocketException)
+                {
+                    var sockExcp = alert.InnerException as SocketException;
+                    logger.LogWarning($"SCTP RTCSctpTransport receive socket failure {sockExcp.SocketErrorCode}.");
+                    break;
+                }
+                catch (Exception excp)
                 {
                     logger.LogError($"SCTP fatal error processing RTCSctpTransport receive. {excp}");
                     break;
@@ -369,7 +367,7 @@ namespace SIPSorcery.Net
         /// <param name="length">The number of bytes to send.</param>
         public override void Send(string associationID, byte[] buffer, int offset, int length)
         {
-            if(length > maxMessageSize)
+            if (length > maxMessageSize)
             {
                 throw new ApplicationException($"RTCSctpTransport was requested to send data of length {length} " +
                     $" that exceeded the maximum allowed message size of {maxMessageSize}.");
