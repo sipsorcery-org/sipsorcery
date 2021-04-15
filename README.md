@@ -63,7 +63,7 @@ Class reference documentation and articles explaining common usage are available
 
 ## Additional Resources
 
-A free SIP account for GitHub users that can be used for SIP and WebRTC testing is available at [sipsorcery.cloud](https://sipsorcery.cloud). **NOTE: As of 11 Apr 2021 sipsorcery.cloud is temporarily disabled while an investigation into a quadrupling of the Azure costs is carried out. Most likely will require a switch from SQL Azure to Sqlite.**
+A free SIP account for GitHub users that can be used for SIP and WebRTC testing is available at [sipsorcery.cloud](https://sipsorcery.cloud).
 
 For WebRTC testing the [webrtc-echoes](https://github.com/sipsorcery/webrtc-echoes) project has a number of basic WebRTC implementations in different libraries. It includes a set of [docker images](https://github.com/sipsorcery?tab=packages) which can be useful for testing during WebRTC application development.
 
