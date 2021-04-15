@@ -34,7 +34,7 @@ namespace SIPSorcery.Net
         public const int UDP_OVERHEAD = 8;
         public const int DEFAULT_TIMEOUT_MILLISECONDS = 20000;
         public const int DTLS_RETRANSMISSION_CODE = -1;
-        public const int DTLS_RECEIVE_ERROR_CODE = -2;
+        //public const int DTLS_RECEIVE_ERROR_CODE = -2;
 
         private static readonly ILogger logger = Log.Logger;
 
@@ -493,11 +493,16 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int Read(byte[] buffer, int offset, int count, int timeout)
+        private int Read(byte[] buffer, int offset, int count, int timeout)
         {
             try
             {
-                if (!_isClosed && _chunks.TryTake(out var item, timeout))
+                if(_isClosed)
+                {
+                    throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
+                    //return DTLS_RECEIVE_ERROR_CODE;
+                }
+                else if (_chunks.TryTake(out var item, timeout))
                 {
                     Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
                     return item.Length;
@@ -548,7 +553,8 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    return DTLS_RECEIVE_ERROR_CODE;
+                    throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
+                    //return DTLS_RECEIVE_ERROR_CODE;
                 }
             }
             else if (!_isClosed)
@@ -557,7 +563,8 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return DTLS_RECEIVE_ERROR_CODE;
+                throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
+                //return DTLS_RECEIVE_ERROR_CODE;
             }
         }
 

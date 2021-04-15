@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v5.1.6-pre: SCTP rewrite and data channel improvements.
+    <PackageReleaseNotes>-v5.1.7-pre: Added MSRP SDP parsing, thanks to @jacekdzija.
+-v5.1.6-pre: SCTP rewrite and data channel improvements.
 -v5.1.5-pre: Add missing ICE-CONTROL* STUN attributes to ICE binding requests.
 -v5.1.4-pre: Add option to disable extended master keys in RTCPeerConnection config, thanks to @rafcsoares.
 -v5.1.2: Bug fix for cancellation of SIP UAS transactions.
@@ -79,9 +80,9 @@
 -v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>5.1.6-pre</Version>
-    <AssemblyVersion>5.1.6.0</AssemblyVersion>
-    <FileVersion>5.1.6.0</FileVersion>
+    <Version>5.1.7-pre</Version>
+    <AssemblyVersion>5.1.7.0</AssemblyVersion>
+    <FileVersion>5.1.7.0</FileVersion>
   </PropertyGroup>
 
 </Project>
