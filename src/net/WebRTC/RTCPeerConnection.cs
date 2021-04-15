@@ -499,10 +499,13 @@ namespace SIPSorcery.Net
 
                     logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
 
+                    bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
                                 new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) :
-                                (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey));
+                                (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
+                                    { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
+                                );
 
                     _dtlsHandle.OnAlert += OnDtlsAlert;
 
