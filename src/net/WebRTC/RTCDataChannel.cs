@@ -65,7 +65,7 @@ namespace SIPSorcery.Net
 
         public RTCDataChannelState readyState { get; internal set; } = RTCDataChannelState.connecting;
 
-        public ulong bufferedAmount { get; set; }
+        public ulong bufferedAmount => _transport?.RTCSctpAssociation?.SendBufferedAmount ?? 0;
 
         public ulong bufferedAmountLowThreshold { get; set; }
         public string binaryType { get; set; }
