@@ -118,6 +118,11 @@ namespace SIPSorcery.Net
         /// </remarks>
         private Timer _t1Cookie;
 
+        /// <summary>
+        /// The total size (in bytes) of outgoing user data queued in the <see cref="SctpDataSender"/>.
+        /// </summary>
+        public ulong SendBufferedAmount => _dataSender?.BufferedAmount ?? 0;
+
         public uint VerificationTag { get; private set; }
 
         /// <summary>
