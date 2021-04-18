@@ -13105,6 +13105,19 @@ references:
   commentId: E:SIPSorcery.Net.SctpAssociation.OnData
   fullName: SIPSorcery.Net.SctpAssociation.OnData
   nameWithType: SctpAssociation.OnData
+- uid: SIPSorcery.Net.SctpAssociation.SendBufferedAmount
+  name: SendBufferedAmount
+  href: api/SIPSorcery.Net.SctpAssociation.html#SIPSorcery_Net_SctpAssociation_SendBufferedAmount
+  commentId: P:SIPSorcery.Net.SctpAssociation.SendBufferedAmount
+  fullName: SIPSorcery.Net.SctpAssociation.SendBufferedAmount
+  nameWithType: SctpAssociation.SendBufferedAmount
+- uid: SIPSorcery.Net.SctpAssociation.SendBufferedAmount*
+  name: SendBufferedAmount
+  href: api/SIPSorcery.Net.SctpAssociation.html#SIPSorcery_Net_SctpAssociation_SendBufferedAmount_
+  commentId: Overload:SIPSorcery.Net.SctpAssociation.SendBufferedAmount
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SctpAssociation.SendBufferedAmount
+  nameWithType: SctpAssociation.SendBufferedAmount
 - uid: SIPSorcery.Net.SctpAssociation.SendData(System.UInt16,System.UInt32,System.Byte[])
   name: SendData(UInt16, UInt32, Byte[])
   href: api/SIPSorcery.Net.SctpAssociation.html#SIPSorcery_Net_SctpAssociation_SendData_System_UInt16_System_UInt32_System_Byte___
@@ -14040,6 +14053,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SctpDataSender.SctpDataSender
   nameWithType: SctpDataSender.SctpDataSender
+- uid: SIPSorcery.Net.SctpDataSender.BufferedAmount
+  name: BufferedAmount
+  href: api/SIPSorcery.Net.SctpDataSender.html#SIPSorcery_Net_SctpDataSender_BufferedAmount
+  commentId: P:SIPSorcery.Net.SctpDataSender.BufferedAmount
+  fullName: SIPSorcery.Net.SctpDataSender.BufferedAmount
+  nameWithType: SctpDataSender.BufferedAmount
+- uid: SIPSorcery.Net.SctpDataSender.BufferedAmount*
+  name: BufferedAmount
+  href: api/SIPSorcery.Net.SctpDataSender.html#SIPSorcery_Net_SctpDataSender_BufferedAmount_
+  commentId: Overload:SIPSorcery.Net.SctpDataSender.BufferedAmount
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SctpDataSender.BufferedAmount
+  nameWithType: SctpDataSender.BufferedAmount
 - uid: SIPSorcery.Net.SctpDataSender.BURST_PERIOD_MILLISECONDS
   name: BURST_PERIOD_MILLISECONDS
   href: api/SIPSorcery.Net.SctpDataSender.html#SIPSorcery_Net_SctpDataSender_BURST_PERIOD_MILLISECONDS

@@ -117,7 +117,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataSender__ctor_System_String_System_Action_SIPSorcery_Net_SctpDataChunk__System_UInt16_System_UInt32_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataSender.%23ctor(System.String%2CSystem.Action%7BSIPSorcery.Net.SctpDataChunk%7D%2CSystem.UInt16%2CSystem.UInt32%2CSystem.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L152">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L157">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SctpDataSender__ctor_" data-uid="SIPSorcery.Net.SctpDataSender.#ctor*"></a>
   <h4 id="SIPSorcery_Net_SctpDataSender__ctor_System_String_System_Action_SIPSorcery_Net_SctpDataChunk__System_UInt16_System_UInt32_System_UInt32_" data-uid="SIPSorcery.Net.SctpDataSender.#ctor(System.String,System.Action{SIPSorcery.Net.SctpDataChunk},System.UInt16,System.UInt32,System.UInt32)">SctpDataSender(String, Action&lt;SctpDataChunk&gt;, UInt16, UInt32, UInt32)</h4>
@@ -381,10 +381,41 @@ the transmit timer fires do not send more than this many packets.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataSender_TSN.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataSender.TSN%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataSender_BufferedAmount.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataSender.BufferedAmount%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L150">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SctpDataSender_BufferedAmount_" data-uid="SIPSorcery.Net.SctpDataSender.BufferedAmount*"></a>
+  <h4 id="SIPSorcery_Net_SctpDataSender_BufferedAmount" data-uid="SIPSorcery.Net.SctpDataSender.BufferedAmount">BufferedAmount</h4>
+  <div class="markdown level1 summary"><p>The total size (in bytes) of queued user data that will be sent to the peer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ulong BufferedAmount { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt64</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataSender_TSN.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataSender.TSN%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L155">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SctpDataSender_TSN_" data-uid="SIPSorcery.Net.SctpDataSender.TSN*"></a>
   <h4 id="SIPSorcery_Net_SctpDataSender_TSN" data-uid="SIPSorcery.Net.SctpDataSender.TSN">TSN</h4>
@@ -417,7 +448,7 @@ the transmit timer fires do not send more than this many packets.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataSender_Close.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataSender.Close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L326">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L331">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SctpDataSender_Close_" data-uid="SIPSorcery.Net.SctpDataSender.Close*"></a>
   <h4 id="SIPSorcery_Net_SctpDataSender_Close" data-uid="SIPSorcery.Net.SctpDataSender.Close">Close()</h4>
@@ -433,7 +464,7 @@ the transmit timer fires do not send more than this many packets.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataSender_GotSack_SIPSorcery_Net_SctpSackChunk_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataSender.GotSack(SIPSorcery.Net.SctpSackChunk)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L183">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L188">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SctpDataSender_GotSack_" data-uid="SIPSorcery.Net.SctpDataSender.GotSack*"></a>
   <h4 id="SIPSorcery_Net_SctpDataSender_GotSack_SIPSorcery_Net_SctpSackChunk_" data-uid="SIPSorcery.Net.SctpDataSender.GotSack(SIPSorcery.Net.SctpSackChunk)">GotSack(SctpSackChunk)</h4>
@@ -467,7 +498,7 @@ the transmit timer fires do not send more than this many packets.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataSender_SendData_System_UInt16_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataSender.SendData(System.UInt16%2CSystem.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L258">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L263">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SctpDataSender_SendData_" data-uid="SIPSorcery.Net.SctpDataSender.SendData*"></a>
   <h4 id="SIPSorcery_Net_SctpDataSender_SendData_System_UInt16_System_UInt32_System_Byte___" data-uid="SIPSorcery.Net.SctpDataSender.SendData(System.UInt16,System.UInt32,System.Byte[])">SendData(UInt16, UInt32, Byte[])</h4>
@@ -512,7 +543,7 @@ the transmit timer fires do not send more than this many packets.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataSender_SetReceiverWindow_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataSender.SetReceiverWindow(System.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L174">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L179">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SctpDataSender_SetReceiverWindow_" data-uid="SIPSorcery.Net.SctpDataSender.SetReceiverWindow*"></a>
   <h4 id="SIPSorcery_Net_SctpDataSender_SetReceiverWindow_System_UInt32_" data-uid="SIPSorcery.Net.SctpDataSender.SetReceiverWindow(System.UInt32)">SetReceiverWindow(UInt32)</h4>
@@ -544,7 +575,7 @@ the transmit timer fires do not send more than this many packets.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SctpDataSender_StartSending.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SctpDataSender.StartSending%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L312">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SCTP/SctpDataSender.cs/#L317">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SctpDataSender_StartSending_" data-uid="SIPSorcery.Net.SctpDataSender.StartSending*"></a>
   <h4 id="SIPSorcery_Net_SctpDataSender_StartSending" data-uid="SIPSorcery.Net.SctpDataSender.StartSending">StartSending()</h4>
