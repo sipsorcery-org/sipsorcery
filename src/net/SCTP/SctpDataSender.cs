@@ -196,9 +196,9 @@ namespace SIPSorcery.Net
                     uint maxTSNDistance = SctpDataReceiver.GetDistance(_cumulativeAckTSN, TSN);
                     bool processGapReports = true;
 
-                    if (_unconfirmedChunks.ContainsKey(sack.CumulativeTsnAck))
+                    if (_unconfirmedChunks.TryGetValue(sack.CumulativeTsnAck, out var result))
                     {
-                        _lastAckedDataChunkSize = _unconfirmedChunks[sack.CumulativeTsnAck].UserData.Length;
+                        _lastAckedDataChunkSize = result.UserData.Length;
                     }
 
                     if (!_gotFirstSACK)
@@ -456,10 +456,8 @@ namespace SIPSorcery.Net
 
                     while (chunksSent < burstSize && haveMissing)
                     {
-                        if (_unconfirmedChunks.ContainsKey(misses.Current.Key))
+                        if (_unconfirmedChunks.TryGetValue(misses.Current.Key, out var missingChunk))
                         {
-                            var missingChunk = _unconfirmedChunks[misses.Current.Key];
-
                             missingChunk.LastSentAt = now;
                             missingChunk.SendCount += 1;
 
