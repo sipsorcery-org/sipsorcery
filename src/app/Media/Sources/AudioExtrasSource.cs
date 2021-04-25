@@ -536,10 +536,13 @@ namespace SIPSorcery.Media
         /// </summary>
         private void StopSendFromAudioStream()
         {
-            _streamSourceTimer?.Dispose();
-            _streamSendInProgress = false;
+            if (_streamSendInProgress)
+            {
+                _streamSourceTimer?.Dispose();
+                _streamSendInProgress = false;
 
-            OnSendFromAudioStreamComplete?.Invoke();
+                OnSendFromAudioStreamComplete?.Invoke();
+            }
         }
     }
 }
