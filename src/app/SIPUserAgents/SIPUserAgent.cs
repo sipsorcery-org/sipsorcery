@@ -121,6 +121,12 @@ namespace SIPSorcery.SIP.App
         private bool _isClosed;
 
         /// <summary>
+        /// This timer is used when an outgoing call is made with a ring timeout specified.
+        /// If the call is not answered within the timeout it will be cancelled by this agent.
+        /// </summary>
+        private Timer _ringTimeout;
+
+        /// <summary>
         /// The media (RTP) session in use for the current call.
         /// </summary>
         public IMediaSession MediaSession { get; private set; }
@@ -409,7 +415,9 @@ namespace SIPSorcery.SIP.App
         /// <param name="username">Optional Username if authentication is required.</param>
         /// <param name="password">Optional. Password if authentication is required.</param>
         /// <param name="mediaSession">The RTP session for the call.</param>
-        public Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession)
+        /// <param name="ringTimeout">Optional. If non-zero will be treated as the number of seconds to let the call
+        /// ring for before giving up and cancelling.</param>
+        public Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession, int ringTimeout = 0)
         {
             if (mediaSession == null)
             {
@@ -442,7 +450,7 @@ namespace SIPSorcery.SIP.App
                null,
                null);
 
-            return Call(callDescriptor, mediaSession);
+            return Call(callDescriptor, mediaSession, ringTimeout);
         }
 
         /// <summary>
@@ -454,14 +462,16 @@ namespace SIPSorcery.SIP.App
         /// <param name="callDescriptor">The full descriptor for the call destination. Allows customising
         /// of additional options above the standard username, password and destination URI.</param>
         /// <param name="mediaSession">The RTP session for the call.</param>
-        public async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession)
+        /// <param name="ringTimeout">Optional. If non-zero will be treated as the number of seconds to let the call
+        /// ring for before giving up and cancelling.</param>
+        public async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession, int ringTimeout = 0)
         {
             TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             ClientCallAnswered += (uac, resp) => callResult.TrySetResult(true);
             ClientCallFailed += (uac, errorMessage, result) => callResult.TrySetResult(false);
 
-            await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
+            await InitiateCallAsync(callDescriptor, mediaSession, ringTimeout).ConfigureAwait(false);
 
             return await callResult.Task.ConfigureAwait(false);
         }
@@ -472,7 +482,9 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipCallDescriptor">A call descriptor containing the information about how 
         /// and where to place the call.</param>
         /// <param name="mediaSession">The media session used for this call</param>
-        public async Task InitiateCallAsync(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
+        /// <param name="ringTimeout">Optional. If non-zero will be treated as the number of seconds to let the call
+        /// ring for before giving up and cancelling.</param>
+        public async Task InitiateCallAsync(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession, int ringTimeout = 0)
         {
             m_cts = new CancellationTokenSource();
 
@@ -503,6 +515,13 @@ namespace SIPSorcery.SIP.App
                 else
                 {
                     sipCallDescriptor.Content = sdp.ToString();
+
+                    if(ringTimeout > 0)
+                    {
+                        logger.LogDebug($"Setting ring timeout of {ringTimeout}s.");
+                        _ringTimeout = new Timer((state) => m_uac?.Cancel(), null, ringTimeout * 1000, Timeout.Infinite);
+                    }
+
                     // This initiates the call but does not wait for an answer.
                     m_uac.Call(sipCallDescriptor, serverEndPoint);
                 }
@@ -1462,6 +1481,8 @@ namespace SIPSorcery.SIP.App
         {
             logger.LogWarning($"Call attempt to {m_uac.CallDescriptor?.Uri} failed with {errorMessage}.");
 
+            _ringTimeout?.Dispose();
+
             ClientCallFailed?.Invoke(uac, errorMessage, sipResponse);
         }
 
@@ -1472,6 +1493,8 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipResponse">The INVITE success response.</param>
         private async void ClientCallAnsweredHandler(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
+            _ringTimeout?.Dispose();
+
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 if (sipResponse.Body == null && ((MediaSession as RTPSession)?.IsStarted ?? false))
