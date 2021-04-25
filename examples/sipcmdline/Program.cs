@@ -83,6 +83,12 @@ namespace SIPSorcery
     {
         private const int DEFAULT_RESPONSE_TIMEOUT_SECONDS = 5;
 
+        /// <summary>
+        /// If a task times out give it this many milliseconds to clean up. A clean up could
+        /// include sending a SIP request or repsonse.
+        /// </summary>
+        private const int TIMEOUT_CLEANUP_MILLISECONDS = 500;
+
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         public enum Scenarios
@@ -140,15 +146,6 @@ namespace SIPSorcery
 
         static void Main(string[] args)
         {
-            var seriLogger = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
-                .CreateLogger();
-            var factory = new SerilogLoggerFactory(seriLogger);
-            SIPSorcery.LogFactory.Set(factory);
-            logger = factory.CreateLogger<Program>();
-
             var result = Parser.Default.ParseArguments<Options>(args)
                 .WithParsed<Options>(opts => RunCommand(opts).Wait());
         }
@@ -161,6 +158,17 @@ namespace SIPSorcery
         {
             try
             {
+                var seriLogger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(options.Verbose ? 
+                    Serilog.Events.LogEventLevel.Verbose : 
+                    Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
+                .CreateLogger();
+                var factory = new SerilogLoggerFactory(seriLogger);
+                SIPSorcery.LogFactory.Set(factory);
+                logger = factory.CreateLogger<Program>();
+
                 logger.LogDebug($"RunCommand scenario {options.Scenario}, destination {options.Destination}");
 
                 Stopwatch sw = new Stopwatch();
@@ -261,7 +269,7 @@ namespace SIPSorcery
                         break;
                     case Scenarios.uac:
                     case Scenarios.uacw:
-                        task = InitiateCallTaskAsync(sipTransport, dstUri, options.Scenario);
+                        task = InitiateCallTaskAsync(sipTransport, dstUri, options.Scenario, options.Timeout);
                         break;
                     case Scenarios.opt:
                     default:
@@ -269,7 +277,7 @@ namespace SIPSorcery
                         break;
                 }
 
-                var result = await Task.WhenAny(task, Task.Delay(options.Timeout * 1000));
+                var result = await Task.WhenAny(task, Task.Delay(options.Timeout * 1000 + TIMEOUT_CLEANUP_MILLISECONDS));
 
                 TimeSpan duration = DateTime.Now.Subtract(startTime);
                 bool failed = false;
@@ -392,7 +400,7 @@ namespace SIPSorcery
         /// <param name="sipTransport">The transport object to use for the send.</param>
         /// <param name="dst">The destination end point to send the request to.</param>
         /// <returns>True if the expected response was received, false otherwise.</returns>
-        private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst, Scenarios scenario)
+        private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst, Scenarios scenario, int timeout)
         {
             //UdpClient hepClient = new UdpClient(0, AddressFamily.InterNetwork);
 
@@ -427,7 +435,7 @@ namespace SIPSorcery
                 audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
                 var voipMediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
 
-                var result = await ua.Call(dst.ToString(), null, null, voipMediaSession);
+                var result = await ua.Call(dst.ToString(), null, null, voipMediaSession, timeout);
 
                 if (scenario == Scenarios.uacw)
                 {
