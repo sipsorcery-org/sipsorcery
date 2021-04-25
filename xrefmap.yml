@@ -24248,18 +24248,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.BlindTransfer
   nameWithType: SIPUserAgent.BlindTransfer
-- uid: SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession)
-  name: Call(SIPCallDescriptor, IMediaSession)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_App_IMediaSession_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor, SIPSorcery.SIP.App.IMediaSession)
-  nameWithType: SIPUserAgent.Call(SIPCallDescriptor, IMediaSession)
-- uid: SIPSorcery.SIP.App.SIPUserAgent.Call(System.String,System.String,System.String,SIPSorcery.SIP.App.IMediaSession)
-  name: Call(String, String, String, IMediaSession)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Call_System_String_System_String_System_String_SIPSorcery_SIP_App_IMediaSession_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Call(System.String,System.String,System.String,SIPSorcery.SIP.App.IMediaSession)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.Call(System.String, System.String, System.String, SIPSorcery.SIP.App.IMediaSession)
-  nameWithType: SIPUserAgent.Call(String, String, String, IMediaSession)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession,System.Int32)
+  name: Call(SIPCallDescriptor, IMediaSession, Int32)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_App_IMediaSession_System_Int32_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession,System.Int32)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor, SIPSorcery.SIP.App.IMediaSession, System.Int32)
+  nameWithType: SIPUserAgent.Call(SIPCallDescriptor, IMediaSession, Int32)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Call(System.String,System.String,System.String,SIPSorcery.SIP.App.IMediaSession,System.Int32)
+  name: Call(String, String, String, IMediaSession, Int32)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Call_System_String_System_String_System_String_SIPSorcery_SIP_App_IMediaSession_System_Int32_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Call(System.String,System.String,System.String,SIPSorcery.SIP.App.IMediaSession,System.Int32)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Call(System.String, System.String, System.String, SIPSorcery.SIP.App.IMediaSession, System.Int32)
+  nameWithType: SIPUserAgent.Call(String, String, String, IMediaSession, Int32)
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Call*
   name: Call
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Call_
@@ -24382,12 +24382,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.Hangup
   nameWithType: SIPUserAgent.Hangup
-- uid: SIPSorcery.SIP.App.SIPUserAgent.InitiateCallAsync(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession)
-  name: InitiateCallAsync(SIPCallDescriptor, IMediaSession)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InitiateCallAsync_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_App_IMediaSession_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.InitiateCallAsync(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.InitiateCallAsync(SIPSorcery.SIP.App.SIPCallDescriptor, SIPSorcery.SIP.App.IMediaSession)
-  nameWithType: SIPUserAgent.InitiateCallAsync(SIPCallDescriptor, IMediaSession)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.InitiateCallAsync(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession,System.Int32)
+  name: InitiateCallAsync(SIPCallDescriptor, IMediaSession, Int32)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InitiateCallAsync_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_App_IMediaSession_System_Int32_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.InitiateCallAsync(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession,System.Int32)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.InitiateCallAsync(SIPSorcery.SIP.App.SIPCallDescriptor, SIPSorcery.SIP.App.IMediaSession, System.Int32)
+  nameWithType: SIPUserAgent.InitiateCallAsync(SIPCallDescriptor, IMediaSession, Int32)
 - uid: SIPSorcery.SIP.App.SIPUserAgent.InitiateCallAsync*
   name: InitiateCallAsync
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InitiateCallAsync_
