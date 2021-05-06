@@ -192,11 +192,7 @@ namespace SIPSorcery.SIP.App
                 {
                     return true;
                 }
-                else if (m_uac != null && m_uac.IsHangingUp)
-                {
-                    return true;
-                }
-                else if (m_uas != null && m_uas.IsHangingUp)
+                else if ((m_uac != null && m_uac.IsHangingUp) || (m_uas != null && m_uas.IsHangingUp))
                 {
                     return true;
                 }
