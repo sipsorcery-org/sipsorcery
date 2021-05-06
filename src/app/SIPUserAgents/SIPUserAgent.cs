@@ -404,6 +404,7 @@ namespace SIPSorcery.SIP.App
         /// end point irrespective of their headers.</param>
         /// <param name="isTransportExclusive">True is the SIP transport instance is for the exclusive use of 
         /// this user agent or false if it's being shared amongst multiple agents.</param>
+        /// <param name="answerSipAccount">Optional, will ensure that any request that require auth will be able to complete</param>
         public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy, bool isTransportExclusive = false, ISIPAccount answerSipAccount = null)
         {
             m_transport = transport;
@@ -1411,22 +1412,6 @@ namespace SIPSorcery.SIP.App
                     m_sipDialogue.RemoteSDP = sipResponse.Body;
                     MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
                 }
-            }
-            if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && m_answerSipAccount != null)
-            {
-                // Resend BYE with credentials.
-                SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                SIPURI contactUri = sipResponse.Header.Contact.Any() ? sipResponse.Header.Contact[0].ContactURI : sipResponse.Header.From.FromURI;
-                authRequest.SetCredentials(m_answerSipAccount.SIPUsername, m_answerSipAccount.SIPPassword, contactUri.ToString(), SIPMethodsEnum.INVITE.ToString());
-
-                SIPRequest authByeRequest = sipTransaction.TransactionRequest;
-                authByeRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
-                authByeRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-                authByeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                authByeRequest.Header.CSeq = authByeRequest.Header.CSeq + 1;
-
-                UACInviteTransaction authByeTransaction = new UACInviteTransaction(m_transport, authByeRequest, null);
-                authByeTransaction.SendInviteRequest();
             }
             else
             {
