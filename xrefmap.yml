@@ -22930,6 +22930,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.Hangup
   nameWithType: SIPClientUserAgent.Hangup
+- uid: SIPSorcery.SIP.App.SIPClientUserAgent.IsHangingUp
+  name: IsHangingUp
+  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_IsHangingUp
+  commentId: P:SIPSorcery.SIP.App.SIPClientUserAgent.IsHangingUp
+  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.IsHangingUp
+  nameWithType: SIPClientUserAgent.IsHangingUp
+- uid: SIPSorcery.SIP.App.SIPClientUserAgent.IsHangingUp*
+  name: IsHangingUp
+  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_IsHangingUp_
+  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.IsHangingUp
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.IsHangingUp
+  nameWithType: SIPClientUserAgent.IsHangingUp
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.IsUACAnswered
   name: IsUACAnswered
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_IsUACAnswered
@@ -23939,6 +23952,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.IsCancelled
   nameWithType: SIPServerUserAgent.IsCancelled
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.IsHangingUp
+  name: IsHangingUp
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_IsHangingUp
+  commentId: P:SIPSorcery.SIP.App.SIPServerUserAgent.IsHangingUp
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.IsHangingUp
+  nameWithType: SIPServerUserAgent.IsHangingUp
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.IsHangingUp*
+  name: IsHangingUp
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_IsHangingUp_
+  commentId: Overload:SIPSorcery.SIP.App.SIPServerUserAgent.IsHangingUp
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.IsHangingUp
+  nameWithType: SIPServerUserAgent.IsHangingUp
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.IsHungup
   name: IsHungup
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_IsHungup
@@ -24168,12 +24194,12 @@ references:
   commentId: M:SIPSorcery.SIP.App.SIPUserAgent.#ctor
   fullName: SIPSorcery.SIP.App.SIPUserAgent.SIPUserAgent()
   nameWithType: SIPUserAgent.SIPUserAgent()
-- uid: SIPSorcery.SIP.App.SIPUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
-  name: SIPUserAgent(SIPTransport, SIPEndPoint, Boolean)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_Boolean_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.SIPUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, System.Boolean)
-  nameWithType: SIPUserAgent.SIPUserAgent(SIPTransport, SIPEndPoint, Boolean)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.Boolean,SIPSorcery.SIP.App.ISIPAccount)
+  name: SIPUserAgent(SIPTransport, SIPEndPoint, Boolean, ISIPAccount)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_Boolean_SIPSorcery_SIP_App_ISIPAccount_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.Boolean,SIPSorcery.SIP.App.ISIPAccount)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.SIPUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, System.Boolean, SIPSorcery.SIP.App.ISIPAccount)
+  nameWithType: SIPUserAgent.SIPUserAgent(SIPTransport, SIPEndPoint, Boolean, ISIPAccount)
 - uid: SIPSorcery.SIP.App.SIPUserAgent.#ctor*
   name: SIPUserAgent
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent__ctor_
