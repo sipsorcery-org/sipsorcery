@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -75,6 +76,12 @@ namespace SIPSorcery.SIP.App
         /// is not being shared.
         /// </summary>
         private readonly bool m_isTransportExclusive;
+
+        /// <summary>
+        /// The SIP account used by the server user agent and this user agent 
+        /// for authentication challenges
+        /// </summary>
+        private readonly ISIPAccount m_answerSipAccount;
 
         /// <summary>
         /// If set all communications are sent to this address irrespective of what the 
@@ -397,12 +404,13 @@ namespace SIPSorcery.SIP.App
         /// end point irrespective of their headers.</param>
         /// <param name="isTransportExclusive">True is the SIP transport instance is for the exclusive use of 
         /// this user agent or false if it's being shared amongst multiple agents.</param>
-        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy, bool isTransportExclusive = false)
+        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy, bool isTransportExclusive = false, ISIPAccount answerSipAccount = null)
         {
             m_transport = transport;
             m_outboundProxy = outboundProxy;
             m_isTransportExclusive = isTransportExclusive;
             m_transport.SIPTransportRequestReceived += SIPTransportRequestReceived;
+            m_answerSipAccount = answerSipAccount;
         }
 
         /// <summary>
@@ -570,10 +578,13 @@ namespace SIPSorcery.SIP.App
                     MediaSession?.Close("call hungup");
                 }
 
-                if (m_sipDialogue != null && m_sipDialogue.DialogueState != SIPDialogueStateEnum.Terminated)
+                if (m_uac != null)
                 {
-                    m_sipDialogue.Hangup(m_transport, m_outboundProxy);
-                    m_byeTransaction = m_sipDialogue.m_byeTransaction;
+                    m_uac.Hangup();
+                }
+                else if (m_uas != null)
+                {
+                    m_uas.Hangup(false);
                 }
 
                 IsOnLocalHold = false;
@@ -595,7 +606,7 @@ namespace SIPSorcery.SIP.App
         public SIPServerUserAgent AcceptCall(SIPRequest inviteRequest)
         {
             UASInviteTransaction uasTransaction = new UASInviteTransaction(m_transport, inviteRequest, m_outboundProxy);
-            SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, uasTransaction, null);
+            SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, uasTransaction, m_answerSipAccount);
             uas.ClientTransaction.TransactionStateChanged += (tx) => OnTransactionStateChange?.Invoke(tx);
             uas.ClientTransaction.TransactionTraceMessage += (tx, msg) => OnTransactionTraceMessage?.Invoke(tx, msg);
             uas.CallCancelled += (pendingUas) =>
@@ -1400,6 +1411,22 @@ namespace SIPSorcery.SIP.App
                     m_sipDialogue.RemoteSDP = sipResponse.Body;
                     MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
                 }
+            }
+            if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && m_answerSipAccount != null)
+            {
+                // Resend BYE with credentials.
+                SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
+                SIPURI contactUri = sipResponse.Header.Contact.Any() ? sipResponse.Header.Contact[0].ContactURI : sipResponse.Header.From.FromURI;
+                authRequest.SetCredentials(m_answerSipAccount.SIPUsername, m_answerSipAccount.SIPPassword, contactUri.ToString(), SIPMethodsEnum.INVITE.ToString());
+
+                SIPRequest authByeRequest = sipTransaction.TransactionRequest;
+                authByeRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
+                authByeRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
+                authByeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
+                authByeRequest.Header.CSeq = authByeRequest.Header.CSeq + 1;
+
+                UACInviteTransaction authByeTransaction = new UACInviteTransaction(m_transport, authByeRequest, null);
+                authByeTransaction.SendInviteRequest();
             }
             else
             {
