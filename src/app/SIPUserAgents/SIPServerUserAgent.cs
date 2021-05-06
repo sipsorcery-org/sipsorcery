@@ -49,6 +49,8 @@ namespace SIPSorcery.SIP.App
         public SIPDialogue SIPDialogue { get; private set; }
 
         protected ISIPAccount m_sipAccount;
+        private SIPNonInviteTransaction m_byeTransaction;
+
         public ISIPAccount SIPAccount
         {
             get { return m_sipAccount; }
@@ -61,6 +63,7 @@ namespace SIPSorcery.SIP.App
             set { m_isAuthenticated = value; }
         }
 
+        public bool IsHangingUp => m_byeTransaction?.DeliveryPending ?? false;
         public bool IsCancelled => m_isCancelled;
         public SIPRequest CallRequest => m_uasTransaction.TransactionRequest;
         public string CallDestination => m_uasTransaction.TransactionRequest.URI.User;
@@ -446,9 +449,9 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             var byeRequest = SIPDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
-                            SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
-                            byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                            byeTransaction.SendRequest();
+                            m_byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
+                            m_byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
+                            m_byeTransaction.SendRequest();
                         }
                     }
                     catch (Exception excp)

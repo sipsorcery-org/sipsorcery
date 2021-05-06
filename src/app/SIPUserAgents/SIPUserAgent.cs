@@ -96,12 +96,6 @@ namespace SIPSorcery.SIP.App
         private SIPDialogue m_sipDialogue;
 
         /// <summary>
-        /// When a call is hungup a reference is kept to the BYE transaction so it can
-        /// be monitored for delivery.
-        /// </summary>
-        private SIPNonInviteTransaction m_byeTransaction;
-
-        /// <summary>
         /// Holds the call descriptor for an in progress client (outbound) call.
         /// </summary>
         private SIPCallDescriptor m_callDescriptor;
@@ -198,7 +192,11 @@ namespace SIPSorcery.SIP.App
                 {
                     return true;
                 }
-                else if (m_byeTransaction != null && m_byeTransaction.DeliveryPending)
+                else if (m_uac != null && m_uac.IsHangingUp)
+                {
+                    return true;
+                }
+                else if (m_uas != null && m_uas.IsHangingUp)
                 {
                     return true;
                 }

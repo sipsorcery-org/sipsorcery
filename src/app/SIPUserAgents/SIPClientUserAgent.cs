@@ -42,6 +42,7 @@ namespace SIPSorcery.SIP.App
         private bool m_hungupOnCancel;                              // Set to true if a call has been cancelled AND and then an OK response was received AND a BYE has been sent to hang it up. This variable is used to stop another BYE transaction being generated.
         private int m_serverAuthAttempts;                           // Used to determine if credentials for a server leg call fail.
         internal SIPNonInviteTransaction m_cancelTransaction;       // If the server call is cancelled this transaction contains the CANCEL in case it needs to be resent.
+        internal SIPNonInviteTransaction m_byeTransaction;       // If the server call is cancelled this transaction contains the CANCEL in case it needs to be resent.
         private SIPEndPoint m_outboundProxy;                        // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
 
@@ -61,6 +62,8 @@ namespace SIPSorcery.SIP.App
         {
             get { return m_serverTransaction.TransactionFinalResponse != null; }
         }
+
+        public bool IsHangingUp => m_byeTransaction?.DeliveryPending ?? false;
 
         public SIPDialogue SIPDialogue
         {
@@ -317,10 +320,10 @@ namespace SIPSorcery.SIP.App
                 //SIPRequest byeRequest = GetByeRequest(m_serverTransaction.TransactionFinalResponse, m_sipDialogue.RemoteTarget);
                 SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
                 byeRequest.SetSendFromHints(m_serverTransaction.TransactionRequest.LocalSIPEndPoint);
-                SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
-                byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                byeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogWarning($"Bye request for {m_sipCallDescriptor.Uri} failed with {reason}.");
-                byeTransaction.SendRequest();
+                m_byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
+                m_byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
+                m_byeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogWarning($"Bye request for {m_sipCallDescriptor.Uri} failed with {reason}.");
+                m_byeTransaction.SendRequest();
             }
             catch (Exception excp)
             {
