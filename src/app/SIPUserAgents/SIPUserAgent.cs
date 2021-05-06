@@ -1227,8 +1227,8 @@ namespace SIPSorcery.SIP.App
                 }
 
                 UACInviteTransaction reinviteTransaction = new UACInviteTransaction(m_transport, reinviteRequest, m_outboundProxy);
-                reinviteTransaction.SendInviteRequest();
                 reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
+                reinviteTransaction.SendInviteRequest();
             }
         }
 
@@ -1406,6 +1406,22 @@ namespace SIPSorcery.SIP.App
                     m_sipDialogue.RemoteSDP = sipResponse.Body;
                     MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
                 }
+            }
+            else if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && m_answerSipAccount != null)
+            {
+                // Resend Invite with credentials.
+                SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
+                SIPURI contactUri = sipResponse.Header.Contact.Any() ? sipResponse.Header.Contact[0].ContactURI : sipResponse.Header.From.FromURI;
+                authRequest.SetCredentials(m_answerSipAccount.SIPUsername, m_answerSipAccount.SIPPassword, contactUri.ToString(), SIPMethodsEnum.INVITE.ToString());
+
+                SIPRequest authenticatedReInviteRequest = sipTransaction.TransactionRequest;
+                authenticatedReInviteRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
+                authenticatedReInviteRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
+                authenticatedReInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
+                authenticatedReInviteRequest.Header.CSeq = authenticatedReInviteRequest.Header.CSeq + 1;
+
+                UACInviteTransaction authenticateInviteTransaction = new UACInviteTransaction(m_transport, authenticatedReInviteRequest, null);
+                authenticateInviteTransaction.SendInviteRequest();
             }
             else
             {
