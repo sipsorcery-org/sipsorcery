@@ -24,6 +24,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -77,6 +78,12 @@ namespace SIPSorcery.SIP.App
         private readonly bool m_isTransportExclusive;
 
         /// <summary>
+        /// The SIP account used by the server user agent and this user agent 
+        /// for authentication challenges
+        /// </summary>
+        private readonly ISIPAccount m_answerSipAccount;
+
+        /// <summary>
         /// If set all communications are sent to this address irrespective of what the 
         /// request and response headers indicate.
         /// </summary>
@@ -87,12 +94,6 @@ namespace SIPSorcery.SIP.App
         /// resultant dialogue.
         /// </summary>
         private SIPDialogue m_sipDialogue;
-
-        /// <summary>
-        /// When a call is hungup a reference is kept to the BYE transaction so it can
-        /// be monitored for delivery.
-        /// </summary>
-        private SIPNonInviteTransaction m_byeTransaction;
 
         /// <summary>
         /// Holds the call descriptor for an in progress client (outbound) call.
@@ -191,7 +192,7 @@ namespace SIPSorcery.SIP.App
                 {
                     return true;
                 }
-                else if (m_byeTransaction != null && m_byeTransaction.DeliveryPending)
+                else if ((m_uac != null && m_uac.IsHangingUp) || (m_uas != null && m_uas.IsHangingUp))
                 {
                     return true;
                 }
@@ -397,12 +398,14 @@ namespace SIPSorcery.SIP.App
         /// end point irrespective of their headers.</param>
         /// <param name="isTransportExclusive">True is the SIP transport instance is for the exclusive use of 
         /// this user agent or false if it's being shared amongst multiple agents.</param>
-        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy, bool isTransportExclusive = false)
+        /// <param name="answerSipAccount">Optional, will ensure that any request that require auth will be able to complete</param>
+        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy, bool isTransportExclusive = false, ISIPAccount answerSipAccount = null)
         {
             m_transport = transport;
             m_outboundProxy = outboundProxy;
             m_isTransportExclusive = isTransportExclusive;
             m_transport.SIPTransportRequestReceived += SIPTransportRequestReceived;
+            m_answerSipAccount = answerSipAccount;
         }
 
         /// <summary>
@@ -570,10 +573,13 @@ namespace SIPSorcery.SIP.App
                     MediaSession?.Close("call hungup");
                 }
 
-                if (m_sipDialogue != null && m_sipDialogue.DialogueState != SIPDialogueStateEnum.Terminated)
+                if (m_uac != null)
                 {
-                    m_sipDialogue.Hangup(m_transport, m_outboundProxy);
-                    m_byeTransaction = m_sipDialogue.m_byeTransaction;
+                    m_uac.Hangup();
+                }
+                else if (m_uas != null)
+                {
+                    m_uas.Hangup(false);
                 }
 
                 IsOnLocalHold = false;
@@ -595,7 +601,7 @@ namespace SIPSorcery.SIP.App
         public SIPServerUserAgent AcceptCall(SIPRequest inviteRequest)
         {
             UASInviteTransaction uasTransaction = new UASInviteTransaction(m_transport, inviteRequest, m_outboundProxy);
-            SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, uasTransaction, null);
+            SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, uasTransaction, m_answerSipAccount);
             uas.ClientTransaction.TransactionStateChanged += (tx) => OnTransactionStateChange?.Invoke(tx);
             uas.ClientTransaction.TransactionTraceMessage += (tx, msg) => OnTransactionTraceMessage?.Invoke(tx, msg);
             uas.CallCancelled += (pendingUas) =>
