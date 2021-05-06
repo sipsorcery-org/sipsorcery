@@ -49,7 +49,8 @@ namespace SIPSorcery.SIP.App
         public SIPDialogue SIPDialogue { get; private set; }
 
         protected ISIPAccount m_sipAccount;
-        private SIPNonInviteTransaction m_byeTransaction;
+
+        private SIPNonInviteTransaction m_byeTransaction;       // If the server call is hungup this transaction contains the BYE in case it needs to be resent.
 
         public ISIPAccount SIPAccount
         {

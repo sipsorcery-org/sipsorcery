@@ -42,7 +42,7 @@ namespace SIPSorcery.SIP.App
         private bool m_hungupOnCancel;                              // Set to true if a call has been cancelled AND and then an OK response was received AND a BYE has been sent to hang it up. This variable is used to stop another BYE transaction being generated.
         private int m_serverAuthAttempts;                           // Used to determine if credentials for a server leg call fail.
         internal SIPNonInviteTransaction m_cancelTransaction;       // If the server call is cancelled this transaction contains the CANCEL in case it needs to be resent.
-        internal SIPNonInviteTransaction m_byeTransaction;       // If the server call is cancelled this transaction contains the CANCEL in case it needs to be resent.
+        internal SIPNonInviteTransaction m_byeTransaction;          // If the server call is hungup this transaction contains the BYE in case it needs to be resent.
         private SIPEndPoint m_outboundProxy;                        // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
         private SIPDialogue m_sipDialogue;
 
