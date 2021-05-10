@@ -30,6 +30,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.app.SIPUserAgents.Behaviours;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -1409,18 +1410,9 @@ namespace SIPSorcery.SIP.App
             }
             else if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && m_answerSipAccount != null)
             {
-                // Resend Invite with credentials.
-                SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                SIPURI contactUri = sipResponse.Header.Contact.Any() ? sipResponse.Header.Contact[0].ContactURI : sipResponse.Header.From.FromURI;
-                authRequest.SetCredentials(m_answerSipAccount.SIPUsername, m_answerSipAccount.SIPPassword, contactUri.ToString(), SIPMethodsEnum.INVITE.ToString());
+                var updatedSipRequest = SIPAuthChallenge.AddAuthenticationHeaderToRequest(sipTransaction.TransactionRequest, sipResponse, m_answerSipAccount.SIPUsername, m_answerSipAccount.SIPPassword);
 
-                SIPRequest authenticatedReInviteRequest = sipTransaction.TransactionRequest;
-                authenticatedReInviteRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
-                authenticatedReInviteRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-                authenticatedReInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                authenticatedReInviteRequest.Header.CSeq = authenticatedReInviteRequest.Header.CSeq + 1;
-
-                UACInviteTransaction authenticateInviteTransaction = new UACInviteTransaction(m_transport, authenticatedReInviteRequest, null);
+                UACInviteTransaction authenticateInviteTransaction = new UACInviteTransaction(m_transport, updatedSipRequest, null);
                 authenticateInviteTransaction.SendInviteRequest();
             }
             else
@@ -1430,6 +1422,7 @@ namespace SIPSorcery.SIP.App
 
             return Task.FromResult(SocketError.Success);
         }
+
 
         /// <summary>
         /// Takes care of sending a response based on whether the outbound proxy is set or not.
