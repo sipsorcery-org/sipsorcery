@@ -1408,12 +1408,15 @@ namespace SIPSorcery.SIP.App
                     MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
                 }
             }
-            else if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && m_answerSipAccount != null)
+            else if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && m_callDescriptor != null)
             {
-                var updatedSipRequest = SIPAuthChallenge.AddAuthenticationHeaderToRequest(sipTransaction.TransactionRequest, sipResponse, m_answerSipAccount.SIPUsername, m_answerSipAccount.SIPPassword);
-
-                UACInviteTransaction authenticateInviteTransaction = new UACInviteTransaction(m_transport, updatedSipRequest, null);
-                authenticateInviteTransaction.SendInviteRequest();
+                var (username, password) = GetUsernameAndPassword();
+                if (username != null)
+                {
+                    var updatedSipRequest = SIPAuthChallenge.AddAuthenticationHeaderToRequest(sipTransaction.TransactionRequest, sipResponse, username, password);
+                    UACInviteTransaction authenticateInviteTransaction = new UACInviteTransaction(m_transport, updatedSipRequest, null);
+                    authenticateInviteTransaction.SendInviteRequest();
+                }
             }
             else
             {
@@ -1421,6 +1424,25 @@ namespace SIPSorcery.SIP.App
             }
 
             return Task.FromResult(SocketError.Success);
+        }
+
+        private (string, string) GetUsernameAndPassword()
+        {
+            string username = null;
+            string password = null;
+            // If we created the call, use the call descriptor
+            if (m_callDescriptor != null)
+            {
+                username = string.IsNullOrWhiteSpace(m_callDescriptor.AuthUsername) ? m_callDescriptor.Username : m_callDescriptor.AuthUsername;
+                password = m_callDescriptor.Password;
+            }
+            // Otherwise, use the sip account if we answered a call
+            else if (m_answerSipAccount != null)
+            {
+                username = m_answerSipAccount.SIPUsername;
+                password = m_answerSipAccount.SIPPassword;
+            }
+            return (username, password);
         }
 
 
