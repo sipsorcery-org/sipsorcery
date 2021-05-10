@@ -22,7 +22,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.app.SIPUserAgents.Behaviours;
+using SIPSorcery.App.SIPUserAgents.Behaviours;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
