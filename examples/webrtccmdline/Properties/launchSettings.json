@@ -2,7 +2,7 @@
   "profiles": {
     "webrtccmdline": {
       "commandName": "Project",
-      "commandLineArgs": "--echo http://localhost:9696/offer"
+      "commandLineArgs": "--ws --stun=stun:stun.sipsorcery.com --relayonly"
     }
   }
 }

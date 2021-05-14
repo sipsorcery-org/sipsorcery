@@ -26,27 +26,22 @@
             isClosed = false;
 
             pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+            //pc = new RTCPeerConnection({ iceServers: [{ urls: 'turn:turn.sipsorcery.com', username: 'aaron', credential: 'password' }], iceTransportPolicy: "relay" });
 
-            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
-
-            pc.onconnectionstatechange = () => {
-                console.log("onconnectionstatechange: " + pc.connectionState);
-                //if (pc.connectionState == "connected") {
-                //    console.log(`creating data channel ${DATA_CHANNEL_LABEL}.`);
-                //    dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
-                //    dc.onopen = (event) => console.log(`data channel onopen: id=${dc.id}, label ${dc.label}.`);
-                //    dc.onclose = (event) => console.log(`data channel onclose: id=${dc.id}, label ${dc.label}.`);
-                //    dc.onmessage = (event) => console.log(`data channel onmessage: ${event.data}.`);
-                //}
+            pc.onicecandidate = evt => {
+                if (evt.candidate !== null) {
+                    console.log(`ice candidate ${evt.candidate.candidate}`);
+                    evt.candidate && ws.send(JSON.stringify(evt.candidate));
+                }
             }
 
-            pc.ondatachannel = (evt) => {
-                console.log(`ondatachannel new data channel created: id ${evt.channel.id}, label ${evt.channel.label}.`);
-                //dc = evt.channel;
-                //dc.onopen = (event) => console.log(`data channel onopen: ${event}.`);
-                //dc.onclose = (event) => console.log(`data channel onclose: ${event}.`);
-                //dc.onmessage = onDataChannelMessage;
-            }
+            // Diagnostics.
+            pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+            pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+            pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
+            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
+
+            pc.ondatachannel = (evt) => console.log(`ondatachannel new data channel created: id ${evt.channel.id}, label ${evt.channel.label}.`);
 
             dc = pc.createDataChannel(DATA_CHANNEL_LABEL);
             dc.onopen = (event) => console.log(`data channel onopen: id=${dc.id}, label ${dc.label}.`);
@@ -64,6 +59,7 @@
                 var obj = JSON.parse(evt.data);
                 if (obj?.candidate) {
                     if (pc.remoteDescription !== null) {
+                        console.log("got remote ice candidate: " + evt.data);
                         pc.addIceCandidate(obj);
                     }
                     else {
