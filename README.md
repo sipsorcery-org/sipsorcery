@@ -33,14 +33,6 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
  - This library provides only a small number of audio and video codecs (G711 and G722). Additional codecs, particularly video ones, require C or C++ libraries. An effort is underway to port the [VP8](https://www.webmproject.org/) video codec to C# see [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
 
- ## Road Map
-
- As of Apr 2021 the road map for this project is:
-
- - ~~Rewrite the WebRTC SCTP implementation to improve the data channel support. In progress.~~ Done
- - Complete the VP8 .NET port to determine if a .NET video codec is feasible. In progress (could take a long time...) at [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
- - Write cool WebRTC apps on [Xamarin](https://dotnet.microsoft.com/apps/xamarin), [MAUI](https://github.com/dotnet/maui), [Unity](https://unity.com/) etc. without any native library hassles!
-
 ## Installation
 
 The library is compliant with .NET Standard 2.0 (encompassing .NET Core 2.0+), .NET Framework 4.6.1 (theoretically also encompassed by `netstandard2.0` but set as an explicit target due to compatibility issues between the two) and .NET 5. The demo applications mainly target .NET Core 3.1 with newer ones targeting .NET 5. It is available via NuGet.
