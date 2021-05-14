@@ -508,7 +508,7 @@ namespace SIPSorcery.Examples
 
         private static Task<RTCPeerConnection> CreatePeerConnection()
         {
-            return Createpc(null, _stunServer, false);
+            return Createpc(null, _stunServer, _relayOnly);
         }
 
         private static Task<RTCPeerConnection> Createpc(WebSocketContext context, RTCIceServer stunServer, bool relayOnly)
@@ -553,6 +553,7 @@ namespace SIPSorcery.Examples
             _peerConnection.OnAudioFormatsNegotiated += (formats) =>
                 audioSource.SetAudioSourceFormat(formats.First());
 
+            _peerConnection.onicecandidate += (candidate) => logger.LogDebug($"onicecandidate {candidate}");
             _peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
             _peerConnection.onconnectionstatechange += async (state) =>
             {

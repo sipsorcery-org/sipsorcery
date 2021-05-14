@@ -121,7 +121,8 @@ namespace SIPSorcery.Net
 
             _pc.onicecandidate += (iceCandidate) =>
             {
-                if (_pc.signalingState == RTCSignalingState.have_remote_offer)
+                if (_pc.signalingState == RTCSignalingState.have_remote_offer ||
+                    _pc.signalingState == RTCSignalingState.stable)
                 {
                     Context.WebSocket.Send(iceCandidate.toJSON());
                 }
