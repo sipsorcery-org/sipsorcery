@@ -21,9 +21,8 @@ namespace SIPSorcery.App.SIPUserAgents.Behaviours
         {
             // Resend Invite with credentials.
             SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-            SIPURI contactUri = previousSipRequest.Header.Contact.Any() ? previousSipRequest.Header.Contact[0].ContactURI : previousSipRequest.Header.From.FromURI;
             
-            authRequest.SetCredentials(username, password, contactUri.ToString(), previousSipRequest.Method.ToString());
+            authRequest.SetCredentials(username, password, previousSipRequest.URI.ToString(), previousSipRequest.Method.ToString());
 
             previousSipRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
             previousSipRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
