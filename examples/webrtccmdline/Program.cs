@@ -540,8 +540,8 @@ namespace SIPSorcery.Examples
             _peerConnection.GetRtpChannel().MdnsResolve = MdnsResolve;
             //_peerConnection.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"STUN message received from {ep}, message type {msg.Header.MessageType}.");
 
-            //var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
-            //dc.onmessage += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
+            var dc = _peerConnection.createDataChannel(DATA_CHANNEL_LABEL, null);
+            //dc. += (msg) => logger.LogDebug($"data channel receive ({dc.label}-{dc.id}): {msg}");
 
             // Add a send-only audio track (this doesn't require any native libraries for encoding so is good for x-platform testing).
             AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
