@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v5.2.1: Make sure bye is retried with auth if challenged
+    <PackageReleaseNotes>-v5.2.2: Make sure hold/unhold re-invite is resent on auth challenge from server
+-v5.2.1: Make sure bye is retried with auth if challenged
 -v5.2.0: Stable release with new WebRTC Data Channel implementation.
 -v5.1.8-pre: Bug fix. Fixed RTCPeerConnection setting of DisableExtendedMasterSecretKey.
 -v5.1.7-pre: Added MSRP SDP parsing, thanks to @jacekdzija.
@@ -83,9 +84,9 @@
 -v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>5.2.1</Version>
-    <AssemblyVersion>5.2.1.0</AssemblyVersion>
-    <FileVersion>5.2.1.0</FileVersion>
+    <Version>5.2.2</Version>
+    <AssemblyVersion>5.2.2.0</AssemblyVersion>
+    <FileVersion>5.2.2.0</FileVersion>
   </PropertyGroup>
 
 </Project>
