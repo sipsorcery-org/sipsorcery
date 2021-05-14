@@ -30,6 +30,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.App.SIPUserAgents.Behaviours;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -1227,8 +1228,8 @@ namespace SIPSorcery.SIP.App
                 }
 
                 UACInviteTransaction reinviteTransaction = new UACInviteTransaction(m_transport, reinviteRequest, m_outboundProxy);
-                reinviteTransaction.SendInviteRequest();
                 reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
+                reinviteTransaction.SendInviteRequest();
             }
         }
 
@@ -1407,6 +1408,16 @@ namespace SIPSorcery.SIP.App
                     MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
                 }
             }
+            else if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && m_callDescriptor != null)
+            {
+                var (username, password) = GetUsernameAndPassword();
+                if (username != null)
+                {
+                    var updatedSipRequest = SIPAuthChallenge.AddAuthenticationHeaderToRequest(sipTransaction.TransactionRequest, sipResponse, username, password);
+                    UACInviteTransaction authenticateInviteTransaction = new UACInviteTransaction(m_transport, updatedSipRequest, null);
+                    authenticateInviteTransaction.SendInviteRequest();
+                }
+            }
             else
             {
                 logger.LogWarning($"Re-INVITE request failed with response {sipResponse.ShortDescription}.");
@@ -1414,6 +1425,26 @@ namespace SIPSorcery.SIP.App
 
             return Task.FromResult(SocketError.Success);
         }
+
+        private (string, string) GetUsernameAndPassword()
+        {
+            string username = null;
+            string password = null;
+            // If we created the call, use the call descriptor
+            if (m_callDescriptor != null)
+            {
+                username = string.IsNullOrWhiteSpace(m_callDescriptor.AuthUsername) ? m_callDescriptor.Username : m_callDescriptor.AuthUsername;
+                password = m_callDescriptor.Password;
+            }
+            // Otherwise, use the sip account if we answered a call
+            else if (m_answerSipAccount != null)
+            {
+                username = m_answerSipAccount.SIPUsername;
+                password = m_answerSipAccount.SIPPassword;
+            }
+            return (username, password);
+        }
+
 
         /// <summary>
         /// Takes care of sending a response based on whether the outbound proxy is set or not.

@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.App.SIPUserAgents.Behaviours;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -474,19 +475,9 @@ namespace SIPSorcery.SIP.App
 
                 if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && SIPAccount != null)
                 {
-                    // Resend BYE with credentials.
-                    SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                    SIPURI contactUri = sipResponse.Header.Contact.Any() ? sipResponse.Header.Contact[0].ContactURI : sipResponse.Header.From.FromURI;
+                    var updatedSipRequest = SIPAuthChallenge.AddAuthenticationHeaderToRequest(sipTransaction.TransactionRequest, sipResponse, SIPAccount.SIPUsername, SIPAccount.SIPPassword);
 
-                    authRequest.SetCredentials(SIPAccount.SIPUsername, SIPAccount.SIPPassword, contactUri.ToString(), SIPMethodsEnum.BYE.ToString());
-
-                    SIPRequest authByeRequest = byeTransaction.TransactionRequest;
-                    authByeRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
-                    authByeRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-                    authByeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                    authByeRequest.Header.CSeq = authByeRequest.Header.CSeq + 1;
-
-                    SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, authByeRequest, null);
+                    SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, updatedSipRequest, null);
                     authByeTransaction.SendRequest();
                 }
 

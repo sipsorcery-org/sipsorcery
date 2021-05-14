@@ -22,6 +22,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.App.SIPUserAgents.Behaviours;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
@@ -74,8 +75,6 @@ namespace SIPSorcery.SIP.App
         {
             get { return m_sipCallDescriptor; }
         }
-
-        public SIPCallDescriptor SipCallDescriptor { get => m_sipCallDescriptor; set => m_sipCallDescriptor = value; }
 
         /// <summary>
         /// Determines whether the agent will operate with support for reliable provisional responses as per RFC3262.
@@ -391,18 +390,11 @@ namespace SIPSorcery.SIP.App
 
                             // Resend INVITE with credentials.
                             string username = (m_sipCallDescriptor.AuthUsername != null && m_sipCallDescriptor.AuthUsername.Trim().Length > 0) ? m_sipCallDescriptor.AuthUsername : m_sipCallDescriptor.Username;
-                            SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                            authRequest.SetCredentials(username, m_sipCallDescriptor.Password, m_sipCallDescriptor.Uri, SIPMethodsEnum.INVITE.ToString());
-
-                            SIPRequest authInviteRequest = m_serverTransaction.TransactionRequest;
-                            authInviteRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
-                            authInviteRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-                            authInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                            authInviteRequest.Header.CSeq = authInviteRequest.Header.CSeq + 1;
+                            var updatedInviteRequest = SIPAuthChallenge.AddAuthenticationHeaderToRequest(m_serverTransaction.TransactionRequest, sipResponse, username, m_sipCallDescriptor.Password);
 
                             // Create a new UAC transaction to establish the authenticated server call.
                             var originalCallTransaction = m_serverTransaction;
-                            m_serverTransaction = new UACInviteTransaction(m_sipTransport, authInviteRequest, m_outboundProxy);
+                            m_serverTransaction = new UACInviteTransaction(m_sipTransport, updatedInviteRequest, m_outboundProxy);
                             if (m_serverTransaction.CDR != null)
                             {
                                 m_serverTransaction.CDR.Updated();
