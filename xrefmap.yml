@@ -1,6 +1,31 @@
 ### YamlMime:XRefMap
 sorted: true
 references:
+- uid: SIPSorcery.App.SIPUserAgents.Behaviours
+  name: SIPSorcery.App.SIPUserAgents.Behaviours
+  href: api/SIPSorcery.App.SIPUserAgents.Behaviours.html
+  commentId: N:SIPSorcery.App.SIPUserAgents.Behaviours
+  fullName: SIPSorcery.App.SIPUserAgents.Behaviours
+  nameWithType: SIPSorcery.App.SIPUserAgents.Behaviours
+- uid: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge
+  name: SIPAuthChallenge
+  href: api/SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.html
+  commentId: T:SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge
+  fullName: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge
+  nameWithType: SIPAuthChallenge
+- uid: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  name: AddAuthenticationHeaderToRequest(SIPRequest, SIPResponse, String, String)
+  href: api/SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.html#SIPSorcery_App_SIPUserAgents_Behaviours_SIPAuthChallenge_AddAuthenticationHeaderToRequest_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponse_System_String_System_String_
+  commentId: M:SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  fullName: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPResponse, System.String, System.String)
+  nameWithType: SIPAuthChallenge.AddAuthenticationHeaderToRequest(SIPRequest, SIPResponse, String, String)
+- uid: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest*
+  name: AddAuthenticationHeaderToRequest
+  href: api/SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.html#SIPSorcery_App_SIPUserAgents_Behaviours_SIPAuthChallenge_AddAuthenticationHeaderToRequest_
+  commentId: Overload:SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest
+  isSpec: "True"
+  fullName: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest
+  nameWithType: SIPAuthChallenge.AddAuthenticationHeaderToRequest
 - uid: SIPSorcery.Media
   name: SIPSorcery.Media
   href: api/SIPSorcery.Media.html
@@ -22982,19 +23007,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.ServerTransaction
   nameWithType: SIPClientUserAgent.ServerTransaction
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.SipCallDescriptor
-  name: SipCallDescriptor
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_SipCallDescriptor
-  commentId: P:SIPSorcery.SIP.App.SIPClientUserAgent.SipCallDescriptor
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SipCallDescriptor
-  nameWithType: SIPClientUserAgent.SipCallDescriptor
-- uid: SIPSorcery.SIP.App.SIPClientUserAgent.SipCallDescriptor*
-  name: SipCallDescriptor
-  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_SipCallDescriptor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.SipCallDescriptor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SipCallDescriptor
-  nameWithType: SIPClientUserAgent.SipCallDescriptor
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.SIPDialogue
   name: SIPDialogue
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_SIPDialogue

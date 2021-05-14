@@ -5,6 +5,30 @@
   "files": [
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.html",
+          "hash": "0v5IyeZVFYyAKiFsavQq6Vx/+vmPGKZnNaKasUTghjI="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.App.SIPUserAgents.Behaviours.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.App.SIPUserAgents.Behaviours.html",
+          "hash": "wMNTWFxokO/NhcBENmG/t2zKXDAQVe79D2m/7xftRNQ="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Media.ALawDecoder.yml",
       "output": {
         ".html": {
@@ -2853,7 +2877,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPClientUserAgent.html",
-          "hash": "qJrYTnXecSh3BZxERnzi4mQiRvy5tN4kH9MdXRYR9uQ="
+          "hash": "FQqIrJ4J4PWop2ggh8H+W9a0LxofbyEooBVvOhpikm4="
         }
       },
       "is_incremental": false,
@@ -2949,7 +2973,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPServerUserAgent.html",
-          "hash": "WLyWiKSk/99FABn/7PHqxDJh0WVicxnvD/kfNnvIt+U="
+          "hash": "TttQZoQ5bVmCexzy68rmyJj8nx/yB8Ehd6eYtxv6BLs="
         }
       },
       "is_incremental": false,
@@ -2973,7 +2997,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "YcF9FnteHegli2xrWC2aJQ8zr1HkDHYLqlUj5QcF5QM="
+          "hash": "iAvfQNwLjYGGdVhKfRSuMuvEZTsImigvh4BpOuNOqqM="
         }
       },
       "is_incremental": false,
@@ -4509,7 +4533,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "0a11GxGxvuAgSvpPekQamrrt2Nt/yrPzJqVBCSDRiqg="
+          "hash": "w1JZRfBI5KSHvyZcEeWK+GYqIQybV/SgrxoGH0p+SqA="
         }
       },
       "is_incremental": false,
@@ -4777,7 +4801,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 374,
+          "total_file_count": 376,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
