@@ -24,7 +24,7 @@ a=rtpmap:111 opus/48000/2
 a=fmtp:111 minptime=10;useinbandfec=1
 a=sendrecv
 m=video 5018 RTP/AVP 98
-a=rtpmap:98 VP9/90000
+a=rtpmap:98 VP8/90000
 a=sendrecv
 
 Start ffplay using the command below:
