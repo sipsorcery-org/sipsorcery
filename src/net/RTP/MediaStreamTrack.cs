@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
@@ -39,12 +40,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public uint Ssrc { get; internal set; }
 
-        /// <summary>
-        /// The value used in the RTP Sequence Number header field for media packets
-        /// sent using this media stream.
-        /// </summary>
-        public ushort SeqNum { get; internal set; }
 
+        
         /// <summary>
         /// The last seqnum received from the remote peer for this stream.
         /// </summary>
@@ -121,6 +118,10 @@ namespace SIPSorcery.Net
             }
         }
 
+        // The value used in the RTP Sequence Number header field for media packets.
+        // Although valid values are all in the range of ushort, the underlying field is of type int, because Interlocked.CompareExchange is used to increment in a fast and thread-safe manner and there is no overload for ushort.
+        private int m_seqNum;
+
         /// <summary>
         /// Creates a lightweight class to track a media stream track within an RTP session 
         /// When supporting RFC3550 (the standard RTP specification) the relationship between
@@ -156,7 +157,7 @@ namespace SIPSorcery.Net
             if (!isRemote)
             {
                 Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
-                SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+                m_seqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
             }
 
             // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
@@ -261,6 +262,29 @@ namespace SIPSorcery.Net
         public SDPAudioVideoMediaFormat? GetFormatForPayloadID(int payloadID)
         {
             return Capabilities?.FirstOrDefault(x => x.ID == payloadID);
+        }
+
+        /// <summary>
+        /// Returns the next SeqNum to be used in the RTP Sequence Number header field for media packets
+        /// sent using this media stream. 
+        /// </summary>
+        /// <returns></returns>
+        public ushort GetNextSeqNum()
+        {
+            var actualSeqNum = m_seqNum;
+            int expectedSeqNum;
+            int attempts = 0;
+            do
+            {
+                if (++attempts > 10)
+                {
+                    throw new ApplicationException("GetNextSeqNum did not return an the next SeqNum due to concurrent updates from other threads within 10 attempts.");
+                }
+                expectedSeqNum = actualSeqNum;
+                int nextSeqNum = (actualSeqNum >= UInt16.MaxValue) ? (ushort)0 : (ushort)(actualSeqNum + 1);
+                actualSeqNum = Interlocked.CompareExchange(ref m_seqNum, nextSeqNum, expectedSeqNum);
+            } while (expectedSeqNum != actualSeqNum); // Try as long as compare-exchange was not successful; in most cases, only one iteration should be needed
+            return (ushort)expectedSeqNum;
         }
     }
 }
