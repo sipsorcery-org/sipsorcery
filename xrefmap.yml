@@ -5408,6 +5408,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.MediaStreamTrack.GetFormatForPayloadID
   nameWithType: MediaStreamTrack.GetFormatForPayloadID
+- uid: SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum
+  name: GetNextSeqNum()
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_GetNextSeqNum
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum
+  fullName: SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum()
+  nameWithType: MediaStreamTrack.GetNextSeqNum()
+- uid: SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum*
+  name: GetNextSeqNum
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_GetNextSeqNum_
+  commentId: Overload:SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum
+  isSpec: "True"
+  fullName: SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum
+  nameWithType: MediaStreamTrack.GetNextSeqNum
 - uid: SIPSorcery.Net.MediaStreamTrack.IsPayloadIDMatch(System.Int32)
   name: IsPayloadIDMatch(Int32)
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_IsPayloadIDMatch_System_Int32_
@@ -5512,19 +5525,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.MediaStreamTrack.SdpSsrc
   nameWithType: MediaStreamTrack.SdpSsrc
-- uid: SIPSorcery.Net.MediaStreamTrack.SeqNum
-  name: SeqNum
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_SeqNum
-  commentId: P:SIPSorcery.Net.MediaStreamTrack.SeqNum
-  fullName: SIPSorcery.Net.MediaStreamTrack.SeqNum
-  nameWithType: MediaStreamTrack.SeqNum
-- uid: SIPSorcery.Net.MediaStreamTrack.SeqNum*
-  name: SeqNum
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_SeqNum_
-  commentId: Overload:SIPSorcery.Net.MediaStreamTrack.SeqNum
-  isSpec: "True"
-  fullName: SIPSorcery.Net.MediaStreamTrack.SeqNum
-  nameWithType: MediaStreamTrack.SeqNum
 - uid: SIPSorcery.Net.MediaStreamTrack.Ssrc
   name: Ssrc
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_Ssrc
