@@ -273,8 +273,13 @@ namespace SIPSorcery.Net
         {
             var actualSeqNum = m_seqNum;
             int expectedSeqNum;
+            int attempts = 0;
             do
             {
+                if (++attempts > 10)
+                {
+                    throw new ApplicationException("GetNextSeqNum did not return an the next SeqNum due to concurrent updates from other threads within 10 attempts.");
+                }
                 expectedSeqNum = actualSeqNum;
                 int nextSeqNum = (actualSeqNum >= UInt16.MaxValue) ? (ushort)0 : (ushort)(actualSeqNum + 1);
                 actualSeqNum = Interlocked.CompareExchange(ref m_seqNum, nextSeqNum, expectedSeqNum);
