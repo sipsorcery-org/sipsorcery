@@ -87,6 +87,7 @@ namespace SIPSorcery.SIP.App
         public event Action<SIPURI> RegistrationRemoved;
 
         public Func<SIPRequest, SIPRequest> AdjustRegister;
+        public Func<int, int> AdjustRefreshTime;
 
         /// <summary>
         /// If set all requests will be sent via the outbound SIP proxy instead of being sent to the
@@ -241,8 +242,10 @@ namespace SIPSorcery.SIP.App
                     {
                         if (m_isRegistered)
                         {
-                            logger.LogDebug("SIPRegistrationUserAgent was successful, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (m_expiry - REGISTRATION_HEAD_TIME) + "s.");
-                            m_registrationTimer.Change((m_expiry - REGISTRATION_HEAD_TIME) * 1000, Timeout.Infinite);
+                            var refreshTime = AdjustRefreshTime?.Invoke(m_expiry) ?? (m_expiry - REGISTRATION_HEAD_TIME);
+
+                            logger.LogDebug("SIPRegistrationUserAgent was successful, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (refreshTime) + "s.");
+                            m_registrationTimer.Change(refreshTime * 1000, Timeout.Infinite);
                         }
                         else
                         {
