@@ -23568,6 +23568,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent
   nameWithType: SIPRegistrationUserAgent.SIPRegistrationUserAgent
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.AdjustRefreshTime
+  name: AdjustRefreshTime
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_AdjustRefreshTime
+  commentId: F:SIPSorcery.SIP.App.SIPRegistrationUserAgent.AdjustRefreshTime
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.AdjustRefreshTime
+  nameWithType: SIPRegistrationUserAgent.AdjustRefreshTime
 - uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.AdjustRegister
   name: AdjustRegister
   href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_AdjustRegister
