@@ -35280,6 +35280,25 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.Crypto.LoadCertificate
   nameWithType: Crypto.LoadCertificate
+- uid: SIPSorcery.Sys.Crypto.Rand
+  name: Rand()
+  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_Rand
+  commentId: M:SIPSorcery.Sys.Crypto.Rand
+  fullName: SIPSorcery.Sys.Crypto.Rand()
+  nameWithType: Crypto.Rand()
+- uid: SIPSorcery.Sys.Crypto.Rand(System.Int32)
+  name: Rand(Int32)
+  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_Rand_System_Int32_
+  commentId: M:SIPSorcery.Sys.Crypto.Rand(System.Int32)
+  fullName: SIPSorcery.Sys.Crypto.Rand(System.Int32)
+  nameWithType: Crypto.Rand(Int32)
+- uid: SIPSorcery.Sys.Crypto.Rand*
+  name: Rand
+  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_Rand_
+  commentId: Overload:SIPSorcery.Sys.Crypto.Rand
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.Crypto.Rand
+  nameWithType: Crypto.Rand
 - uid: SIPSorcery.Sys.Crypto.SymmetricDecrypt(System.String,System.String,System.Byte[])
   name: SymmetricDecrypt(String, String, Byte[])
   href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_SymmetricDecrypt_System_String_System_String_System_Byte___
