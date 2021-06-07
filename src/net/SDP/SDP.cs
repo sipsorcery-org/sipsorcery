@@ -211,7 +211,8 @@ namespace SIPSorcery.Net
                     // in this dictionary. A dynamic media format type cannot be created without an rtpmap.
                     Dictionary<int, string> _pendingFmtp = new Dictionary<int, string>();
 
-                    string[] sdpLines = Regex.Split(sdpDescription, CRLF);
+                    //string[] sdpLines = Regex.Split(sdpDescription, CRLF);
+                    string[] sdpLines = sdpDescription.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
                     foreach (string sdpLine in sdpLines)
                     {
