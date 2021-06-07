@@ -20,6 +20,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys
@@ -33,7 +34,21 @@ namespace SIPSorcery.Sys
 
         private static ILogger logger = Log.Logger;
 
-        private static Random _rng = new Random();
+        static int seed = Environment.TickCount;
+
+        static readonly ThreadLocal<Random> random =
+            new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed)));
+
+        public static int Rand()
+        {
+            return random.Value.Next();
+        }
+
+        public static int Rand(int maxValue)
+        {
+            return random.Value.Next(maxValue);
+        }
+
         private static RNGCryptoServiceProvider m_randomProvider = new RNGCryptoServiceProvider();
 
         //public static string RSAEncrypt(string xmlKey, string plainText)
@@ -179,7 +194,7 @@ namespace SIPSorcery.Sys
 
             for (int i = 0; i < length; i++)
             {
-                buffer[i] = CHARS[_rng.Next(CHARS.Length)];
+                buffer[i] = CHARS[Rand(CHARS.Length)];
             }
             return new string(buffer);
         }
