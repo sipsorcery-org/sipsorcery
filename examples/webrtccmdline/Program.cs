@@ -573,8 +573,8 @@ namespace SIPSorcery.Examples
                     await audioSource.CloseAudio();
                 }
             };
-            _peerConnection.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-            _peerConnection.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+            //_peerConnection.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+            //_peerConnection.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
             _peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
 
             // Peer ICE connection state changes are for ICE events such as the STUN checks completing.
@@ -600,7 +600,8 @@ namespace SIPSorcery.Examples
 
             _peerConnection.onsignalingstatechange += () =>
             {
-                if (_peerConnection.signalingState == RTCSignalingState.have_remote_offer)
+                if (_peerConnection.signalingState == RTCSignalingState.have_remote_offer
+                    || _peerConnection.signalingState == RTCSignalingState.stable)
                 {
                     logger.LogDebug("Remote SDP:");
                     logger.LogDebug(_peerConnection.remoteDescription.sdp.ToString());
