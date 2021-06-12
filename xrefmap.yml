@@ -31131,12 +31131,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPResponseStatusCodesEnum.Ringing
   fullName: SIPSorcery.SIP.SIPResponseStatusCodesEnum.Ringing
   nameWithType: SIPResponseStatusCodesEnum.Ringing
-- uid: SIPSorcery.SIP.SIPResponseStatusCodesEnum.SecurityAgreementRequired
-  name: SecurityAgreementRequired
-  href: api/SIPSorcery.SIP.SIPResponseStatusCodesEnum.html#SIPSorcery_SIP_SIPResponseStatusCodesEnum_SecurityAgreementRequired
-  commentId: F:SIPSorcery.SIP.SIPResponseStatusCodesEnum.SecurityAgreementRequired
-  fullName: SIPSorcery.SIP.SIPResponseStatusCodesEnum.SecurityAgreementRequired
-  nameWithType: SIPResponseStatusCodesEnum.SecurityAgreementRequired
 - uid: SIPSorcery.SIP.SIPResponseStatusCodesEnum.ServerTimeout
   name: ServerTimeout
   href: api/SIPSorcery.SIP.SIPResponseStatusCodesEnum.html#SIPSorcery_SIP_SIPResponseStatusCodesEnum_ServerTimeout
