@@ -411,8 +411,8 @@ namespace SIPSorcery.SIP
         MultipleChoices = 300,
         MovedPermanently = 301,
         MovedTemporarily = 302,
-        UseProxy = 303,
         AlternativeService = 304,
+        UseProxy = 305,
 
         // Client-Error
         BadRequest = 400,
@@ -457,7 +457,6 @@ namespace SIPSorcery.SIP
         BadEvent = 489,                         // RC3265 (SIP Events).
         RequestPending = 491,
         Undecipherable = 493,
-        SecurityAgreementRequired = 580,
 
         // Server Failure.
         InternalServerError = 500,
