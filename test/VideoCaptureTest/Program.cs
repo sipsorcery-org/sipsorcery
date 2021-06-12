@@ -52,6 +52,8 @@ namespace test
         private static readonly string MF_I420_PIXEL_FORMAT = "{30323449-0000-0010-8000-00AA00389B71}";
         private static readonly string MF_RGB24_PIXEL_FORMAT = MediaEncodingSubtypes.Rgb24.ToUpper();
 
+        private static readonly string MF_SELECTED_PIXEL_FORMAT = MF_NV12_PIXEL_FORMAT;
+
         private static int FRAME_WIDTH = 640;
         private static int FRAME_HEIGHT = 480;
         private static int FRAME_RATE = 30;
@@ -211,7 +213,7 @@ namespace test
                // mode where the camera was closed and re-opened for each frame.
                // The best approach seems to try for NV12 and if not available let the system choose. In the 
                // frame reader loop then do a software bitmap conversion if NV12 wasn't chosen.
-                && format.Subtype == MF_NV12_PIXEL_FORMAT;
+                && format.Subtype == MF_SELECTED_PIXEL_FORMAT;
             }).FirstOrDefault();
 
             if (preferredFormat == null)
