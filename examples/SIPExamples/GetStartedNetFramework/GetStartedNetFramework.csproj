@@ -52,7 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging">
-      <Version>3.1.8</Version>
+      <Version>5.0.0</Version>
     </PackageReference>
     <PackageReference Include="NAudio">
       <Version>1.10.0</Version>
@@ -67,10 +67,10 @@
       <Version>3.1.1</Version>
     </PackageReference>
     <PackageReference Include="SIPSorcery">
-      <Version>4.0.74-pre</Version>
+      <Version>5.2.0</Version>
     </PackageReference>
     <PackageReference Include="SIPSorceryMedia.Windows">
-      <Version>0.0.18-pre</Version>
+      <Version>0.0.31-pre</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
