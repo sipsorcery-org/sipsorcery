@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class SIPDns
    ">
-    <meta name="generator" content="docfx 2.57.2.0">
+    <meta name="generator" content="docfx 2.58.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -291,15 +291,18 @@ an extra delay.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDns_LookupClient.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDns.LookupClient%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/DNS/SIPDns.cs/#L72">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/DNS/SIPDns.cs/#L78">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDns_LookupClient_" data-uid="SIPSorcery.SIP.SIPDns.LookupClient*"></a>
   <h4 id="SIPSorcery_SIP_SIPDns_LookupClient" data-uid="SIPSorcery.SIP.SIPDns.LookupClient">LookupClient</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>The client performing the SIP DNS lookups. In normal circumstances this property does not need to
+be set manually and care needs to be taken if it is. SIP relies heavily on DNS lookups and most
+functions will fail if the DNS client is misconfigured.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static LookupClient LookupClient { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public static ILookupClient LookupClient { get; set; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -311,7 +314,7 @@ an extra delay.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DnsClient.LookupClient</span></td>
+        <td><span class="xref">DnsClient.ILookupClient</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -323,7 +326,7 @@ an extra delay.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDns_ResolveAsync_SIPSorcery_SIP_SIPURI_System_Boolean_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDns.ResolveAsync(SIPSorcery.SIP.SIPURI%2CSystem.Boolean%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/DNS/SIPDns.cs/#L148">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/DNS/SIPDns.cs/#L154">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDns_ResolveAsync_" data-uid="SIPSorcery.SIP.SIPDns.ResolveAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPDns_ResolveAsync_SIPSorcery_SIP_SIPURI_System_Boolean_System_Threading_CancellationToken_" data-uid="SIPSorcery.SIP.SIPDns.ResolveAsync(SIPSorcery.SIP.SIPURI,System.Boolean,System.Threading.CancellationToken)">ResolveAsync(SIPURI, Boolean, CancellationToken)</h4>
@@ -386,7 +389,7 @@ returned.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDns_ResolveFromCache_SIPSorcery_SIP_SIPURI_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDns.ResolveFromCache(SIPSorcery.SIP.SIPURI%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/DNS/SIPDns.cs/#L101">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/DNS/SIPDns.cs/#L107">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDns_ResolveFromCache_" data-uid="SIPSorcery.SIP.SIPDns.ResolveFromCache*"></a>
   <h4 id="SIPSorcery_SIP_SIPDns_ResolveFromCache_SIPSorcery_SIP_SIPURI_System_Boolean_" data-uid="SIPSorcery.SIP.SIPDns.ResolveFromCache(SIPSorcery.SIP.SIPURI,System.Boolean)">ResolveFromCache(SIPURI, Boolean)</h4>

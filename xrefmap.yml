@@ -33203,6 +33203,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.ResolveSIPUriAsync
   nameWithType: SIPTransport.ResolveSIPUriAsync
+- uid: SIPSorcery.SIP.SIPTransport.ResolveSIPUriCallbackAsync
+  name: ResolveSIPUriCallbackAsync
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_ResolveSIPUriCallbackAsync
+  commentId: F:SIPSorcery.SIP.SIPTransport.ResolveSIPUriCallbackAsync
+  fullName: SIPSorcery.SIP.SIPTransport.ResolveSIPUriCallbackAsync
+  nameWithType: SIPTransport.ResolveSIPUriCallbackAsync
+- uid: SIPSorcery.SIP.SIPTransport.ResolveSIPUriFromCacheCallback
+  name: ResolveSIPUriFromCacheCallback
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_ResolveSIPUriFromCacheCallback
+  commentId: F:SIPSorcery.SIP.SIPTransport.ResolveSIPUriFromCacheCallback
+  fullName: SIPSorcery.SIP.SIPTransport.ResolveSIPUriFromCacheCallback
+  nameWithType: SIPTransport.ResolveSIPUriFromCacheCallback
 - uid: SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])
   name: SendRawAsync(SIPEndPoint, SIPEndPoint, Byte[])
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRawAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___
