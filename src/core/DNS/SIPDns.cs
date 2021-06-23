@@ -68,14 +68,20 @@ namespace SIPSorcery.SIP
         /// </summary>
         public static bool UseANYLookups = false;
 
-        private static LookupClient _lookupClient;
-        public static LookupClient LookupClient
+        private static ILookupClient _lookupClient;
+
+        /// <summary>
+        /// The client performing the SIP DNS lookups. In normal circumstances this property does not need to
+        /// be set manually and care needs to be taken if it is. SIP relies heavily on DNS lookups and most
+        /// functions will fail if the DNS client is misconfigured.
+        /// </summary>
+        public static ILookupClient LookupClient
         {
             get
             {
                 return _lookupClient;
             }
-            internal set
+            set
             {
                 // Intended to allow unit testing with client options that will cause the
                 // lookup logic to execute failure conditions.
