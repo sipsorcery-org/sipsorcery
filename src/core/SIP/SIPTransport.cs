@@ -81,12 +81,18 @@ namespace SIPSorcery.SIP
         internal SIPTransactionEngine m_transactionEngine;
 
         /// <summary>
-        /// Default call to do DNS lookups for SIP URI's. Can be replaced for custom scenarios
+        /// Default call to do DNS lookups for SIP URI's. In normal circumstances this property does not need to
+        /// be set manually and care needs to be taken if it is. Can be replaced for custom scenarios
         /// and unit testing.
         /// </summary>
-        internal ResolveSIPUriDelegateAsync ResolveSIPUriInternalAsync;
+        public ResolveSIPUriDelegateAsync ResolveSIPUriCallbackAsync;
 
-        internal ResolveSIPUriFromCacheDelegate ResolveSIPUriFromCacheInternal;
+        /// <summary>
+        /// Default call to do DNS lookups for SIP URI's from cache and avoid a time consuming full DNS lookup. 
+        /// In normal circumstances this property does not need to be set manually and care needs to be taken if 
+        /// it is. Can be replaced for custom scenarios and unit testing.
+        /// </summary>
+        public ResolveSIPUriFromCacheDelegate ResolveSIPUriFromCacheCallback;
 
         public event SIPTransportRequestAsyncDelegate SIPTransportRequestReceived;
         public event SIPTransportResponseAsyncDelegate SIPTransportResponseReceived;
@@ -189,8 +195,8 @@ namespace SIPSorcery.SIP
         /// </summary>
         public SIPTransport()
         {
-            ResolveSIPUriInternalAsync = SIPDns.ResolveAsync;
-            ResolveSIPUriFromCacheInternal = SIPDns.ResolveFromCache;
+            ResolveSIPUriCallbackAsync = SIPDns.ResolveAsync;
+            ResolveSIPUriFromCacheCallback = SIPDns.ResolveFromCache;
 
             //ResolveSIPEndPoint_External = SIPDNSManager.ResolveSIPService;
             m_transactionEngine = new SIPTransactionEngine(this);
@@ -205,8 +211,8 @@ namespace SIPSorcery.SIP
         /// and will NOT use a transaction engine.</param>
         public SIPTransport(bool stateless)
         {
-            ResolveSIPUriInternalAsync = SIPDns.ResolveAsync;
-            ResolveSIPUriFromCacheInternal = SIPDns.ResolveFromCache;
+            ResolveSIPUriCallbackAsync = SIPDns.ResolveAsync;
+            ResolveSIPUriFromCacheCallback = SIPDns.ResolveFromCache;
 
             if (stateless)
             {
@@ -464,12 +470,12 @@ namespace SIPSorcery.SIP
             SIPURI lookupURI = (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0) ?
                 sipRequest.Header.Routes.TopRoute.URI : sipRequest.URI;
 
-            var cacheResult = ResolveSIPUriFromCacheInternal(lookupURI, PreferIPv6NameResolution);
+            var cacheResult = ResolveSIPUriFromCacheCallback(lookupURI, PreferIPv6NameResolution);
 
             if (cacheResult == null)
             {
                 // No existing success or failure entry in the cache. Initiate a lookup but DON'T wait for it.
-                _ = Task.Run(() => ResolveSIPUriInternalAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token));
+                _ = Task.Run(() => ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token));
 
                 return Task.FromResult(SocketError.InProgress);
             }
@@ -509,13 +515,13 @@ namespace SIPSorcery.SIP
                 SIPURI lookupURI = (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0) ?
                     sipRequest.Header.Routes.TopRoute.URI : sipRequest.URI;
 
-                SIPEndPoint lookupResult = ResolveSIPUriFromCacheInternal(lookupURI, PreferIPv6NameResolution);
+                SIPEndPoint lookupResult = ResolveSIPUriFromCacheCallback(lookupURI, PreferIPv6NameResolution);
 
                 if (lookupResult == null)
                 {
                     //logger.LogWarning($"SendRequestAsync DNS cache miss for {lookupURI}, doing DNS lookup.");
 
-                    lookupResult = await ResolveSIPUriInternalAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
+                    lookupResult = await ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
                 }
 
                 if (lookupResult != null && lookupResult != SIPEndPoint.Empty)
@@ -653,12 +659,12 @@ namespace SIPSorcery.SIP
             var topViaHeader = sipResponse.Header.Vias.TopViaHeader;
             SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
 
-            var cacheResult = ResolveSIPUriFromCacheInternal(topViaUri, PreferIPv6NameResolution);
+            var cacheResult = ResolveSIPUriFromCacheCallback(topViaUri, PreferIPv6NameResolution);
 
             if (cacheResult == null)
             {
                 // No existing success or failure entry in the cache. Initiate a lookup but DON'T wait for it.
-                _ = Task.Run(() => ResolveSIPUriInternalAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false));
+                _ = Task.Run(() => ResolveSIPUriCallbackAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false));
 
                 return Task.FromResult(SocketError.InProgress);
             }
@@ -715,7 +721,7 @@ namespace SIPSorcery.SIP
                     var topViaHeader = sipResponse.Header.Vias.TopViaHeader;
                     SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
 
-                    var lookupResult = await ResolveSIPUriInternalAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
+                    var lookupResult = await ResolveSIPUriCallbackAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
 
                     if (lookupResult != null && lookupResult != SIPEndPoint.Empty)
                     {
@@ -1304,7 +1310,7 @@ namespace SIPSorcery.SIP
         /// <returns>If successful a SIP end point for the SIP URI. For failures SIPEndPoint.Empty.</returns>
         public Task<SIPEndPoint> ResolveSIPUriAsync(SIPURI uri)
         {
-            return ResolveSIPUriInternalAsync(uri, PreferIPv6NameResolution, m_cts.Token);
+            return ResolveSIPUriCallbackAsync(uri, PreferIPv6NameResolution, m_cts.Token);
         }
 
         public void Dispose()
