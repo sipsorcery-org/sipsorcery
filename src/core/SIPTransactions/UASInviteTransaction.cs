@@ -79,7 +79,6 @@ namespace SIPSorcery.SIP
                 CDR = new SIPCDR(SIPCallDirection.In, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, remoteEP);
             }
 
-            TransactionRequestReceived += UASInviteTransaction_TransactionRequestReceived;
             TransactionInformationResponseReceived += UASInviteTransaction_TransactionResponseReceived;
             TransactionFinalResponseReceived += UASInviteTransaction_TransactionResponseReceived;
             TransactionFailed += UASInviteTransaction_TransactionFailed;
@@ -106,48 +105,6 @@ namespace SIPSorcery.SIP
         {
             logger.LogWarning("UASInviteTransaction received unexpected response, " + sipResponse.ReasonPhrase + " from " + remoteEndPoint.ToString() + ", ignoring.");
             return Task.FromResult(SocketError.Fault);
-        }
-
-        private Task<SocketError> UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
-        {
-            try
-            {
-                if (TransactionState == SIPTransactionStatesEnum.Terminated)
-                {
-                    logger.LogDebug("Request received by UASInviteTransaction for a terminated transaction, ignoring.");
-                }
-                else if (sipRequest.Method != SIPMethodsEnum.INVITE)
-                {
-                    logger.LogWarning("Unexpected " + sipRequest.Method + " passed to UASInviteTransaction.");
-                }
-                else
-                {
-                    if (TransactionState != SIPTransactionStatesEnum.Trying)
-                    {
-                        SIPResponse tryingResponse = GetInfoResponse(m_transactionRequest, SIPResponseStatusCodesEnum.Trying);
-                        SendProvisionalResponse(tryingResponse);
-                    }
-
-                    // Notify new call subscribers.
-                    if (NewCallReceived != null)
-                    {
-                        NewCallReceived(localSIPEndPoint, remoteEndPoint, this, sipRequest);
-                    }
-                    else
-                    {
-                        // Nobody wants to answer this call so return an error response.
-                        SIPResponse declinedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
-                        SendFinalResponse(declinedResponse);
-                    }
-                }
-
-                return Task.FromResult(SocketError.Success);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception UASInviteTransaction GotRequest. " + excp.Message);
-                return Task.FromResult(SocketError.Fault);
-            }
         }
 
         public new Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)

@@ -31,7 +31,6 @@ namespace SIPSorcery.SIP
             : base(sipTransport, sipRequest, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.NonInvite;
-            TransactionRequestReceived += SIPNonInviteTransaction_TransactionRequestReceived;
             TransactionInformationResponseReceived += SIPNonInviteTransaction_TransactionInformationResponseReceived;
             TransactionFinalResponseReceived += SIPNonInviteTransaction_TransactionFinalResponseReceived;
             TransactionFailed += SIPNonInviteTransaction_TransactionFailed;
