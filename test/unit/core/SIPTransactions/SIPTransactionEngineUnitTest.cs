@@ -132,7 +132,7 @@ namespace SIPSorcery.SIP.UnitTests
                     };
                     serverTransaction.TransactionStateChanged += (tx) =>
                     {
-                        if (tx.TransactionState == SIPTransactionStatesEnum.Confirmed)
+                        if (serverTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                         {
                             if (!uasConfirmedTask.TrySetResult(true))
                             {
@@ -140,7 +140,7 @@ namespace SIPSorcery.SIP.UnitTests
                             }
                         }
                     };
-                    serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
+                    //serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
 
                     return Task.FromResult(0);
                 };

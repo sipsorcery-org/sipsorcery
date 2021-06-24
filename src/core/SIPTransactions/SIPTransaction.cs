@@ -210,7 +210,6 @@ namespace SIPSorcery.SIP
         protected bool PrackSupported = false;
 
         // These are the events that will normally be required by upper level transaction users such as registration or call agents.
-        protected event SIPTransactionRequestReceivedDelegate TransactionRequestReceived;
         protected event SIPTransactionResponseReceivedDelegate TransactionInformationResponseReceived;
         protected event SIPTransactionResponseReceivedDelegate TransactionFinalResponseReceived;
         protected event SIPTransactionFailedDelegate TransactionFailed;
@@ -282,12 +281,6 @@ namespace SIPSorcery.SIP
         public static string GetRequestTransactionId(string branchId, SIPMethodsEnum method)
         {
             return Crypto.GetSHAHashAsString(branchId + method.ToString());
-        }
-
-        public void GotRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
-        {
-            TransactionTraceMessage?.Invoke(this, $"Transaction received Request {localSIPEndPoint}<-{remoteEndPoint}: {sipRequest.StatusLine}");
-            TransactionRequestReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
         public Task<SocketError> GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
