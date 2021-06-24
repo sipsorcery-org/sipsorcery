@@ -39,7 +39,6 @@ namespace SIPSorcery.SIP
         }
 
         public event SIPTransactionCancelledDelegate UASInviteTransactionCancelled;
-        public event SIPTransactionRequestReceivedDelegate NewCallReceived;
         public event SIPTransactionFailedDelegate UASInviteTransactionFailed;
 
         /// <summary>

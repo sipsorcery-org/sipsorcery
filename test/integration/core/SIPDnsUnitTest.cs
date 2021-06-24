@@ -240,7 +240,7 @@ namespace SIPSorcery.SIP.IntegrationTests
 
             try
             {
-                LookupClientOptions clientOptions = new LookupClientOptions(IPAddress.Loopback)
+                LookupClientOptions clientOptions = new LookupClientOptions(IPAddress.Parse("127.0.0.2"))
                 {
                     Retries = 3,
                     Timeout = TimeSpan.FromSeconds(1),
