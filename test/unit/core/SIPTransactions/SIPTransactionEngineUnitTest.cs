@@ -123,13 +123,13 @@ namespace SIPSorcery.SIP.UnitTests
                     logger.LogDebug("Server Transport Request In: " + sipRequest.Method + ".");
                     serverTransaction = new UASInviteTransaction(serverTransport, sipRequest, null);
                     SetTransactionTraceEvents(serverTransaction);
-                    serverTransaction.NewCallReceived += (lep, rep, sipTransaction, newCallRequest) =>
-                    {
-                        logger.LogDebug("Server new call received.");
-                        var busyResponse = SIPResponse.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                        (sipTransaction as UASInviteTransaction).SendFinalResponse(busyResponse);
-                        return Task.FromResult(SocketError.Success);
-                    };
+                    //serverTransaction.NewCallReceived += (lep, rep, sipTransaction, newCallRequest) =>
+                    //{
+                    //    logger.LogDebug("Server new call received.");
+                    //    var busyResponse = SIPResponse.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.BusyHere, null);
+                    //    (sipTransaction as UASInviteTransaction).SendFinalResponse(busyResponse);
+                    //    return Task.FromResult(SocketError.Success);
+                    //};
                     serverTransaction.TransactionStateChanged += (tx) =>
                     {
                         if (serverTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
@@ -140,7 +140,8 @@ namespace SIPSorcery.SIP.UnitTests
                             }
                         }
                     };
-                    //serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
+                    SIPResponse busyHereResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
+                    serverTransaction.SendFinalResponse(busyHereResponse);
 
                     return Task.FromResult(0);
                 };
