@@ -65,7 +65,6 @@ namespace SIPSorcery.SIP
             TransactionFinalResponseReceived += UACInviteTransaction_TransactionFinalResponseReceived;
             TransactionInformationResponseReceived += UACInviteTransaction_TransactionInformationResponseReceived;
             TransactionFailed += UACInviteTransaction_TransactionFailed;
-            TransactionRequestReceived += UACInviteTransaction_TransactionRequestReceived;
         }
 
         public void SendInviteRequest()
