@@ -597,6 +597,7 @@ namespace SIPSorcery.SIP
         Prack = 1,          // Reliable provisional responses as per RFC3262.
         NoReferSub = 2,     // No subscription for REFERs as per RFC4488.
         Replaces = 3,
+        SipRec = 3,
     }
 
     /// <summary>
@@ -608,6 +609,7 @@ namespace SIPSorcery.SIP
         public const string PRACK = "100rel";
         public const string NO_REFER_SUB = "norefersub";
         public const string REPLACES = "replaces";
+        public const string SIPREC = "siprec";
 
         /// <summary>
         /// Parses a string containing a list of SIP extensions into a list of extensions that this library
@@ -640,6 +642,10 @@ namespace SIPSorcery.SIP
                         else if (extension.Trim().ToLower() == REPLACES)
                         {
                             knownExtensions.Add(SIPExtensions.Replaces);
+                        }
+                        else if (extension.Trim().ToLower() == SIPREC)
+                        {
+                            knownExtensions.Add(SIPExtensions.SipRec);
                         }
                         else
                         {
