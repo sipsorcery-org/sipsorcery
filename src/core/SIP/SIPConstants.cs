@@ -597,7 +597,7 @@ namespace SIPSorcery.SIP
         Prack = 1,          // Reliable provisional responses as per RFC3262.
         NoReferSub = 2,     // No subscription for REFERs as per RFC4488.
         Replaces = 3,
-        SipRec = 3,
+        SipRec = 4,
     }
 
     /// <summary>
