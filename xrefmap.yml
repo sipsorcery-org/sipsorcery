@@ -32431,19 +32431,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransaction.GetRequestTransactionId
   nameWithType: SIPTransaction.GetRequestTransactionId
-- uid: SIPSorcery.SIP.SIPTransaction.GotRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
-  name: GotRequest(SIPEndPoint, SIPEndPoint, SIPRequest)
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_GotRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.SIPTransaction.GotRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.SIPTransaction.GotRequest(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPTransaction.GotRequest(SIPEndPoint, SIPEndPoint, SIPRequest)
-- uid: SIPSorcery.SIP.SIPTransaction.GotRequest*
-  name: GotRequest
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_GotRequest_
-  commentId: Overload:SIPSorcery.SIP.SIPTransaction.GotRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransaction.GotRequest
-  nameWithType: SIPTransaction.GotRequest
 - uid: SIPSorcery.SIP.SIPTransaction.GotResponse(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPResponse)
   name: GotResponse(SIPEndPoint, SIPEndPoint, SIPResponse)
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_GotResponse_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPResponse_
@@ -32791,12 +32778,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransaction.TransactionRequestFrom
   nameWithType: SIPTransaction.TransactionRequestFrom
-- uid: SIPSorcery.SIP.SIPTransaction.TransactionRequestReceived
-  name: TransactionRequestReceived
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionRequestReceived
-  commentId: E:SIPSorcery.SIP.SIPTransaction.TransactionRequestReceived
-  fullName: SIPSorcery.SIP.SIPTransaction.TransactionRequestReceived
-  nameWithType: SIPTransaction.TransactionRequestReceived
 - uid: SIPSorcery.SIP.SIPTransaction.TransactionRequestRetransmit
   name: TransactionRequestRetransmit
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionRequestRetransmit
@@ -34798,12 +34779,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.UASInviteTransaction.LocalTag
   nameWithType: UASInviteTransaction.LocalTag
-- uid: SIPSorcery.SIP.UASInviteTransaction.NewCallReceived
-  name: NewCallReceived
-  href: api/SIPSorcery.SIP.UASInviteTransaction.html#SIPSorcery_SIP_UASInviteTransaction_NewCallReceived
-  commentId: E:SIPSorcery.SIP.UASInviteTransaction.NewCallReceived
-  fullName: SIPSorcery.SIP.UASInviteTransaction.NewCallReceived
-  nameWithType: UASInviteTransaction.NewCallReceived
 - uid: SIPSorcery.SIP.UASInviteTransaction.OnAckReceived
   name: OnAckReceived
   href: api/SIPSorcery.SIP.UASInviteTransaction.html#SIPSorcery_SIP_UASInviteTransaction_OnAckReceived
