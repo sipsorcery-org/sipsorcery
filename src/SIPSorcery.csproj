@@ -17,15 +17,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Portable.BouncyCastle" Version="1.8.9" />
-    <PackageReference Include="DnsClient" Version="1.4.0" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.10" />
+    <PackageReference Include="DnsClient" Version="1.5.0" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.1.0" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
   <PropertyGroup>
-    <IncludeSymbols>true</IncludeSymbols>
+    <IncludeSymbols>true</IncludeSymbols> 
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v5.2.2: Make sure hold/unhold re-invite is resent on auth challenge from server
+    <PackageReleaseNotes>-5.2.3: Update to latest DnsClient and BouncyCastle nuget packages. Miscellaneous bug fixes and minor improvements.
+-v5.2.2: Make sure hold/unhold re-invite is resent on auth challenge from server
 -v5.2.1: Make sure bye is retried with auth if challenged
 -v5.2.0: Stable release with new WebRTC Data Channel implementation.
 -v5.1.8-pre: Bug fix. Fixed RTCPeerConnection setting of DisableExtendedMasterSecretKey.
@@ -84,9 +85,9 @@
 -v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>5.2.2</Version>
-    <AssemblyVersion>5.2.2.0</AssemblyVersion>
-    <FileVersion>5.2.2.0</FileVersion>
+    <Version>5.2.3</Version>
+    <AssemblyVersion>5.2.3.0</AssemblyVersion>
+    <FileVersion>5.2.3.0</FileVersion>
   </PropertyGroup>
 
 </Project>
