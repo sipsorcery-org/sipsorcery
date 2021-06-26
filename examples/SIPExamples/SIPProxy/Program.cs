@@ -42,7 +42,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
-using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -50,7 +49,7 @@ namespace SIPSorcery.SIPProxy
 {
     struct SIPAccount : ISIPAccount
     {
-        public Guid ID { get; set; }
+        public string ID { get; set; }
         public string SIPUsername { get; set; }
         public string SIPPassword { get; set; }
         public string HA1Digest { get; set; }
@@ -59,7 +58,7 @@ namespace SIPSorcery.SIPProxy
 
         public SIPAccount(string username, string domain)
         {
-            ID = Guid.NewGuid();
+            ID = Guid.NewGuid().ToString();
             SIPUsername = username;
             SIPPassword = null;
             HA1Digest = null;
