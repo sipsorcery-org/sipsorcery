@@ -28258,6 +28258,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPExtensionHeaders.REPLACES
   fullName: SIPSorcery.SIP.SIPExtensionHeaders.REPLACES
   nameWithType: SIPExtensionHeaders.REPLACES
+- uid: SIPSorcery.SIP.SIPExtensionHeaders.SIPREC
+  name: SIPREC
+  href: api/SIPSorcery.SIP.SIPExtensionHeaders.html#SIPSorcery_SIP_SIPExtensionHeaders_SIPREC
+  commentId: F:SIPSorcery.SIP.SIPExtensionHeaders.SIPREC
+  fullName: SIPSorcery.SIP.SIPExtensionHeaders.SIPREC
+  nameWithType: SIPExtensionHeaders.SIPREC
 - uid: SIPSorcery.SIP.SIPExtensions
   name: SIPExtensions
   href: api/SIPSorcery.SIP.SIPExtensions.html
@@ -28288,6 +28294,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPExtensions.Replaces
   fullName: SIPSorcery.SIP.SIPExtensions.Replaces
   nameWithType: SIPExtensions.Replaces
+- uid: SIPSorcery.SIP.SIPExtensions.SipRec
+  name: SipRec
+  href: api/SIPSorcery.SIP.SIPExtensions.html#SIPSorcery_SIP_SIPExtensions_SipRec
+  commentId: F:SIPSorcery.SIP.SIPExtensions.SipRec
+  fullName: SIPSorcery.SIP.SIPExtensions.SipRec
+  nameWithType: SIPExtensions.SipRec
 - uid: SIPSorcery.SIP.SIPFromHeader
   name: SIPFromHeader
   href: api/SIPSorcery.SIP.SIPFromHeader.html
