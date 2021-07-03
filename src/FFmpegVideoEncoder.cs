@@ -24,6 +24,8 @@ namespace SIPSorceryMedia.FFmpeg
             get => _supportedFormats;
         }
 
+        private readonly Dictionary<string, string> _encoderOptions;
+
         private AVCodecContext* _encoderContext;
         private AVCodecContext* _decoderContext;
         private AVCodecID _codecID;
@@ -41,8 +43,10 @@ namespace SIPSorceryMedia.FFmpeg
 
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEncoder>();
 
-        public FFmpegVideoEncoder()
+        public FFmpegVideoEncoder(Dictionary<string, string>? encoderOptions = null)
         {
+            _encoderOptions = encoderOptions ?? new Dictionary<string, string>();
+            
             //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_VERBOSE);
             //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_TRACE);
         }
@@ -160,6 +164,11 @@ namespace SIPSorceryMedia.FFmpeg
                     //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();
                     //ffmpeg.av_opt_set(_pCodecContext->priv_data, "preset", "veryslow", 0);
                     //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
+                }
+                
+                foreach (var option in _encoderOptions)
+                {
+                    ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
                 }
 
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
@@ -409,7 +418,7 @@ namespace SIPSorceryMedia.FFmpeg
                         width = decodedFrame->width;
                         height = decodedFrame->height;
 
-                        if (_i420ToRgb == null || 
+                        if (_i420ToRgb == null ||
                             _i420ToRgb.SourceWidth != width ||
                             _i420ToRgb.SourceHeight != height)
                         {
