@@ -555,6 +555,7 @@ namespace SIPSorcery.Sys
                     {
                         // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
                     }
+                    udpClient.Close();
                 }
                 else
                 {
@@ -568,6 +569,7 @@ namespace SIPSorcery.Sys
                     {
                         // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
                     }
+                    udpClient.Close();
                 }
 
                 if (localAddress != null)
