@@ -169,7 +169,7 @@ namespace SIPSorcery.Net
         private bool m_isMediaMultiplexed = false;      // Indicates whether audio and video are multiplexed on a single RTP channel or not.
         private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
         private IPAddress m_bindAddress = null;       // If set the address to use for binding the RTP and control sockets.
-        private int m_bindPort = 0;                     // If non-zero specifies the port number to attempt to bind the first RTP socket on.
+        protected int m_bindPort = 0;                     // If non-zero specifies the port number to attempt to bind the first RTP socket on.
         private bool m_rtpEventInProgress;              // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                // The last timestamp used in an RTP packet.    
         private RtpVideoFramer _rtpVideoFramer;

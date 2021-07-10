@@ -358,8 +358,8 @@ namespace SIPSorcery.Net
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
         /// <param name="configuration">Optional.</param>
-        public RTCPeerConnection(RTCConfiguration configuration) :
-            base(true, true, true, configuration?.X_BindAddress)
+        public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0) :
+            base(true, true, true, configuration?.X_BindAddress, bindPort)
         {
             if (_configuration != null &&
                _configuration.iceTransportPolicy == RTCIceTransportPolicy.relay &&
@@ -504,7 +504,7 @@ namespace SIPSorcery.Net
                                 IceRole == IceRolesEnum.active ?
                                 new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) :
                                 (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
-                                    { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
+                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
                                 );
 
                     _dtlsHandle.OnAlert += OnDtlsAlert;
@@ -576,7 +576,8 @@ namespace SIPSorcery.Net
                 RTCIceComponent.rtp,
                 _configuration?.iceServers,
                 _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
-                _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false);
+                _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
+                m_bindPort == 0 ? 0 : m_bindPort + m_rtpChannels.Count() * 2 + 2);
 
             m_rtpChannels.Add(mediaType, rtpIceChannel);
 
@@ -1327,7 +1328,7 @@ namespace SIPSorcery.Net
             logger.LogInformation($"WebRTC data channel opened label {label} and stream ID {streamID}.");
 
             if (dc != null)
-            { 
+            {
                 dc.GotAck();
             }
             else
@@ -1483,7 +1484,7 @@ namespace SIPSorcery.Net
                 .OrderByDescending(x => x.id.GetValueOrDefault()).FirstOrDefault();
             bool canCreateStream = true;
             ushort nextID = (ushort)(eventStreamID ? 0 : 1);
-            if(lastAssignedDC != null)
+            if (lastAssignedDC != null)
             {
                 //  The SCTP stream identifier 65535 is reserved due to SCTP INIT and
                 // INIT - ACK chunks only allowing a maximum of 65535 streams to be
@@ -1524,8 +1525,8 @@ namespace SIPSorcery.Net
 
             dtlsHandle.OnDataReady += (buf) =>
             {
-                    //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
+                //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
+                rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
             };
 
             var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);
