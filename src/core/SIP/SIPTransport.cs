@@ -455,7 +455,7 @@ namespace SIPSorcery.SIP
         /// <param name="sipRequest">The SIP request to send.</param>
         /// <returns>Will return InPorgress for a DNS cache miss. HostNotFound for a cache hit on a 
         /// failure response. Otherwise the result of the send attempt.</returns>
-        public Task<SocketError> SendRequestAsync(SIPRequest sipRequest)
+        public async Task<SocketError> SendRequestAsync(SIPRequest sipRequest)
         {
             if (sipRequest == null)
             {
@@ -474,18 +474,26 @@ namespace SIPSorcery.SIP
 
             if (cacheResult == null)
             {
-                // No existing success or failure entry in the cache. Initiate a lookup but DON'T wait for it.
-                _ = Task.Run(() => ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token));
+                if (DisableRetransmitSending)
+                {
+                    cacheResult = await ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
+                }
+                else
+                {
+                    // No existing success or failure entry in the cache. Initiate a lookup but DON'T wait for it.
+                    _ = Task.Run(() => ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token));
 
-                return Task.FromResult(SocketError.InProgress);
+                    return SocketError.InProgress;
+                }
             }
-            else if (cacheResult == SIPEndPoint.Empty)
+
+            if (cacheResult == SIPEndPoint.Empty)
             {
-                return Task.FromResult(SocketError.HostNotFound);
+                return SocketError.HostNotFound;
             }
             else
             {
-                return SendRequestAsync(cacheResult, sipRequest);
+                return await SendRequestAsync(cacheResult, sipRequest);
             }
         }
 
