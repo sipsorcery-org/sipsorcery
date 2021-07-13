@@ -208,7 +208,7 @@ namespace SIPSorcery.Net
         /// Event handler for an RTP packet being received by the RTP session.
         /// Used for measuring transmission statistics.
         /// </summary>
-        internal void RecordRtpPacketReceived(RTPPacket rtpPacket)
+        public void RecordRtpPacketReceived(RTPPacket rtpPacket)
         {
             LastActivityAt = DateTime.Now;
             IsTimedOut = false;
@@ -229,7 +229,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="ssrc">The SSRC of the reception report being closed. Typically this
         /// should be the SSRC received in the RTCP BYE.</param>
-        internal void RemoveReceptionReport(uint ssrc)
+        public void RemoveReceptionReport(uint ssrc)
         {
             if (m_receptionReport != null && m_receptionReport.SSRC == ssrc)
             {
@@ -242,7 +242,7 @@ namespace SIPSorcery.Net
         /// Event handler for an RTP packet being sent by the RTP session.
         /// Used for measuring transmission statistics.
         /// </summary>
-        internal void RecordRtpPacketSend(RTPPacket rtpPacket)
+        public void RecordRtpPacketSend(RTPPacket rtpPacket)
         {
             PacketsSentCount++;
             OctetsSentCount += (uint)rtpPacket.Payload.Length;
@@ -256,7 +256,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="remoteEndPoint">The end point the packet was received from.</param>
         /// <param name="buffer">The data received.</param>
-        internal void ReportReceived(IPEndPoint remoteEndPoint, RTCPCompoundPacket rtcpCompoundPacket)
+        public void ReportReceived(IPEndPoint remoteEndPoint, RTCPCompoundPacket rtcpCompoundPacket)
         {
             try
             {
