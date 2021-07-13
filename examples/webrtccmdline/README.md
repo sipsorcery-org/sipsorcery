@@ -2,7 +2,7 @@
 
 This program is intended to allow testing of simple WebRTC connectivity from a command line.
 
-You will need `.Net Core` installed.
+You will need `.NET` installed.
 
 To see all the options available use:
 
@@ -12,7 +12,7 @@ There are 3 main ways to do connectivity tests:
 
  - From a WebRTC enabled browser using over web sockets for signalling.
  - By generating base64 encoded offers and answers and pasting between WebRTC peers.
- - Using [node-dss](https://github.com/bengreenier/node-dss) as a very simple signalling between WebRTC ppers.
+ - Using the siprocery.cloud echo server https://sipsorcery.cloud/sipsorcery/echo/offer.
 
 ## Web Sockets
 
@@ -42,50 +42,48 @@ This option was written to be able to test with the [Pion Data Channels Example]
 
  - The connection log messages should be displayed and a data channel established.
 
- ## Node-DSS
+ ## Echo Server
 
- [node-dss](https://github.com/bengreenier/node-dss) is a very rudimentary signalling server that can be used to exchange messages between two peers.
+- Start the application with: 
 
- - Install the dependencies and start `node-dss` with:
+`dotnet run -- --echo https://sipsorcery.cloud/sipsorcery/echo/offer`
 
- ````
- npm install
- npm start
- ````
+There are additional implementations of the WebRTC echo server that can also be tested:
 
-- Start the application with (adjust the URL as required): 
+- Janus:
 
-`dotnet run -- --nodedss http://127.0.0.1:3000`
+`dotnet run -- --echo https://sipsorcery.cloud/janus/echo/offer`
 
-- Do the same on a second peer so that you have two instances of `webrtccmdline` running. They can be on different machines provided both can access the `node-dss` application. In the example commands below the peer IDs used are `a` and `b` but they can be any arbitrary string as long as both peers use the same values.
+- aiortc (Python WebRTC library):
 
-- On the first peer press `enter` to get a prompt and type:
+`dotnet run -- --echo https://sipsorcery.cloud/aiortc/echo/offer`
 
-`Command => node so a b`
+## Additional Examples:
 
-````
-`so`: stands for `send offer`.
-`a` : is the peer ID of this peer.
-`b` : is the peer ID of the remote peer.
-````
+Description: Test peer connection establishment to Janus echo server. Use STUN server to include public IPv4 address candidate.
+ 
+`dotnet run -- --echo https://sipsorcery.cloud/janus/echo/offer --stun stun:sipsorcery.com`
 
- - On the second peer press `enter` to get a prompt and type (NOTE the different order of `b a`):
+Description: Test peer connection and only supply a TURN server (relay) ICE candidate. Has effect of forcing all traffic through a TURN server.
 
-  `Command => node go b a`
+`dotnet run -- --echo https://sipsorcery.cloud/janus/echo/offer --stun turn:sipsorcery.com;aaron;password --relayonly`
 
-````
-`go`: stands for `get offer`.
-`b` : is the peer ID of this peer.
-`a` : is the peer ID of the remote peer.
-````
-  - Back on the first peer:
+Description: Test peer connection establishment and data channel echo.
 
-  `Command => node ga a b`
+`dotnet run -- --echo https://sipsorcery.cloud/sipsorcery/echo/offer --noaudio --stun stun:sipsorcery.com`
 
-  ````
-`ga`: stands for `get answer`
-`a` : is the ID of this peer.
-`b` : is the ID of the remote peer.
-  ````
+once connected:
 
+`sdc dcx hello`
 
+Description: Test peer connection establishment with an audio only offer:
+
+`dotnet run -- --echo https://sipsorcery.cloud/sipsorcery/echo/offer --nodatachannel --stun stun:sipsorcery.com`
+
+Description: Test peer connection establishment and DTMF echo.
+
+`dotnet run -- --echo https://sipsorcery.cloud/sipsorcery/echo/offer --nodatachannel --stun stun:sipsorcery.com`
+
+once connected:
+
+`dtmf`
