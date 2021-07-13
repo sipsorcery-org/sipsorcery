@@ -161,13 +161,13 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event handler for sending RTCP reports.
         /// </summary>
-        internal event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnReportReadyToSend;
+        public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnReportReadyToSend;
 
         /// <summary>
         /// Fires when the connection is classified as timed out due to not
         /// receiving any RTP or RTCP packets within the given period.
         /// </summary>
-        internal event Action<SDPMediaTypesEnum> OnTimeout;
+        public event Action<SDPMediaTypesEnum> OnTimeout;
 
         /// <summary>
         /// Default constructor.
