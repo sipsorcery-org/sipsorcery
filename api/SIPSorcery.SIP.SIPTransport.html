@@ -466,7 +466,7 @@ SIP User Agent accepting SIP retransmits. The effect of setting this property is
 to only send each request and response for a transaction once, i.e. retransmits
 timers firing will not cause additional sending of the requests or responses to be
 put on the wire. SIP transaction processing will still occur as normal with the
-execption of not sending the retransmitted messages. It's also only likely to
+exception of not sending the retransmitted messages. It's also only likely to
 be useful for cases where reliable transports, such as TCP and TLS, are being used,
 since they are the ones where retransmits have been observed to be misidentified.</p>
 </div>
