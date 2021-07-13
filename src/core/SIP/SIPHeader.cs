@@ -1433,7 +1433,7 @@ namespace SIPSorcery.SIP
             Contact = contact;
             CallId = callId;
 
-            if (cseq > 0 && cseq < Int32.MaxValue)
+            if (cseq >= 0 && cseq < Int32.MaxValue)
             {
                 CSeq = cseq;
             }
@@ -2025,7 +2025,7 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append(Vias.ToString());
 
                 string cseqField = null;
-                if (this.CSeq != 0)
+                if (this.CSeq >= 0)
                 {
                     cseqField = (this.CSeqMethod != SIPMethodsEnum.NONE) ? this.CSeq + " " + this.CSeqMethod.ToString() : this.CSeq.ToString();
                 }
@@ -2033,7 +2033,7 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((To != null) ? SIPHeaders.SIP_HEADER_TO + ": " + this.To.ToString() + m_CRLF : null);
                 headersBuilder.Append((From != null) ? SIPHeaders.SIP_HEADER_FROM + ": " + this.From.ToString() + m_CRLF : null);
                 headersBuilder.Append((CallId != null) ? SIPHeaders.SIP_HEADER_CALLID + ": " + this.CallId + m_CRLF : null);
-                headersBuilder.Append((CSeq > 0) ? SIPHeaders.SIP_HEADER_CSEQ + ": " + cseqField + m_CRLF : null);
+                headersBuilder.Append((CSeq >= 0) ? SIPHeaders.SIP_HEADER_CSEQ + ": " + cseqField + m_CRLF : null);
 
                 #region Appending Contact header.
 

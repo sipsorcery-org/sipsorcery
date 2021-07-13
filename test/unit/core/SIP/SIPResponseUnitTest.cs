@@ -11,6 +11,7 @@
 
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using Xunit;
@@ -438,6 +439,26 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug($"Round Trip Body sha256: {rndTripBodyHash}.");
 
             Assert.Equal(bodyHash, rndTripBodyHash);
+        }
+
+        /// <summary>
+        /// Tests that a response is correctly generated for a request with a Cseq of 0.
+        /// </summary>
+        [Fact]
+        public void ZeroCseqGetResponseUnitTest()
+        {
+            SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            SIPRequest req = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, uri);
+            req.Header.CSeq = 0;
+
+            logger.LogDebug(req.ToString());
+
+            var resp = SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.Ok, null);
+
+            logger.LogDebug(resp.ToString());
+
+            Assert.Equal(0, resp.Header.CSeq);
+            Assert.True(Regex.Match(resp.ToString(), "CSeq: 0 OPTIONS", RegexOptions.Multiline).Success);
         }
     }
 }
