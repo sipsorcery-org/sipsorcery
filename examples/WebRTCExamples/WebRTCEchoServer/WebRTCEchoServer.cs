@@ -9,13 +9,15 @@
 // 
 // History:
 // 10 Feb 2021	Aaron Clauson	Created, Dublin, Ireland.
+// 13 Jul 2021  Aaron Clauson   Added data channel echo capability.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -70,11 +72,19 @@ namespace demo
                 pc.addLocalIceCandidate(publicIPv6Candidate);
             }
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false,
-                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendRecv);
-            pc.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack(new VideoFormat(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID), MediaStreamStatusEnum.SendRecv);
-            pc.addTrack(videoTrack);
+            SDP offerSDP = SDP.ParseSDPDescription(offer.sdp);
+
+            if (offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
+            {
+                MediaStreamTrack audioTrack = new MediaStreamTrack(SDPWellKnownMediaFormatsEnum.PCMU);
+                pc.addTrack(audioTrack);
+            }
+
+            if (offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
+            {
+                MediaStreamTrack videoTrack = new MediaStreamTrack(new VideoFormat(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID));
+                pc.addTrack(videoTrack);
+            }
 
             pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
@@ -93,6 +103,16 @@ namespace demo
                 {
                     pc.Close("ice failure");
                 }
+            };
+
+            pc.ondatachannel += (dc) =>
+            {
+                _logger.LogInformation($"Data channel opened for label {dc.label}, stream ID {dc.id}.");
+                dc.onmessage += (rdc, proto, data) =>
+                {
+                    _logger.LogInformation($"Data channel got message: {Encoding.UTF8.GetString(data)}");
+                    rdc.send(Encoding.UTF8.GetString(data));
+                };
             };
 
             var setResult = pc.setRemoteDescription(offer);
