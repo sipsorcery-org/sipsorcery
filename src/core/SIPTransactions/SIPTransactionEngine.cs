@@ -512,7 +512,12 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                return m_sipTransport.SendResponseAsync(transaction.ReliableProvisionalResponse);
+                // If retransmits are disabled we must wait for DNS when sending. By default the DNS lookup mechanism
+                // will silently do nothing if the lookup result is not in the cache and relies on the result
+                // being ready for a subsequent SIP retransmit. This mechanism won't work if SIP retransmits are disabled.
+                bool waitForDns = DisableRetransmitSending;
+
+                return m_sipTransport.SendResponseAsync(transaction.ReliableProvisionalResponse, waitForDns);
             }
         }
 
@@ -543,7 +548,12 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                return m_sipTransport.SendResponseAsync(transaction.TransactionFinalResponse);
+                // If retransmits are disabled we must wait for DNS when sending. By default the DNS lookup mechanism
+                // will silently do nothing if the lookup result is not in the cache and relies on the result
+                // being ready for a subsequent SIP retransmit. This mechanism won't work if SIP retransmits are disabled.
+                bool waitForDns = DisableRetransmitSending;
+
+                return m_sipTransport.SendResponseAsync(transaction.TransactionFinalResponse, waitForDns);
             }
         }
 
@@ -587,7 +597,12 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    result = m_sipTransport.SendRequestAsync(req);
+                    // If retransmits are disabled we must wait for DNS when sending. By default the DNS lookup mechanism
+                    // will silently do nothing if the lookup result is not in the cache and relies on the result
+                    // being ready for a subsequent SIP retransmit. This mechanism won't work if SIP retransmits are disabled.
+                    bool waitForDns = DisableRetransmitSending;
+
+                    result = m_sipTransport.SendRequestAsync(req, waitForDns);
                 }
 
                 return result;
