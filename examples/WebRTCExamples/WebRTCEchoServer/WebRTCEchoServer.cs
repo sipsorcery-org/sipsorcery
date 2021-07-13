@@ -9,7 +9,7 @@
 // 
 // History:
 // 10 Feb 2021	Aaron Clauson	Created, Dublin, Ireland.
-// 13 Jul 2021  Aaron Clauson   Added data channel echo capability.
+// 13 Jul 2021  Aaron Clauson   Added data channel and DTMF echo capability.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -18,6 +18,7 @@
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -35,6 +36,7 @@ namespace demo
         private readonly ILogger<WebRTCEchoServer> _logger;
         private readonly IPAddress _publicIPv4;
         private readonly IPAddress _publicIPv6;
+        private uint _rtpEventSsrc = 0;
 
         public WebRTCEchoServer(ILoggerFactory loggerFactory, IConfiguration config)
         {
@@ -90,6 +92,40 @@ namespace demo
             {
                 pc.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
                 //_logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, SeqNum {rtpPkt.Header.SequenceNumber}.");
+            };
+            pc.OnRtpEvent += async (ep, ev, hdr) =>
+            {
+                if (ev.EndOfEvent && hdr.MarkerBit == 1)
+                {
+                    _logger.LogDebug($"RTP event received: {ev.EventID}.");
+                    // Echo the DTMF event back.
+                    var echoEvent = new RTPEvent(ev.EventID, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                    await pc.SendDtmfEvent(echoEvent, CancellationToken.None).ConfigureAwait(false);
+                }
+
+                if (_rtpEventSsrc == 0)
+                {
+                    if (ev.EndOfEvent && hdr.MarkerBit == 1)
+                    {
+                        _logger.LogDebug($"RTP event received: {ev.EventID}.");
+                        // Echo the DTMF event back.
+                        var echoEvent = new RTPEvent(ev.EventID, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                        await pc.SendDtmfEvent(echoEvent, CancellationToken.None).ConfigureAwait(false);
+                    }
+                    else if (!ev.EndOfEvent)
+                    {
+                        _rtpEventSsrc = hdr.SyncSource;
+                        _logger.LogDebug($"RTP event received: {ev.EventID}.");
+                        // Echo the DTMF event back.
+                        var echoEvent = new RTPEvent(ev.EventID, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                        await pc.SendDtmfEvent(echoEvent, CancellationToken.None).ConfigureAwait(false);
+                    }
+                }
+
+                if (_rtpEventSsrc != 0 && ev.EndOfEvent)
+                {
+                    _rtpEventSsrc = 0;
+                }
             };
             //peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             //peerConnection.OnSendReport += RtpSession_OnSendReport;
