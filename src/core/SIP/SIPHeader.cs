@@ -2150,6 +2150,12 @@ namespace SIPSorcery.SIP
             Date = DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss ") + "GMT";
         }
 
+        public void SetDateHeader(bool useLocalTime, string timeFormat)
+        {
+            var time = useLocalTime ? DateTime.Now : DateTime.UtcNow;
+            Date = time.ToString(timeFormat) + (useLocalTime ? "" : "GMT");
+        }
+
         public SIPHeader Copy()
         {
             string headerString = this.ToString();
