@@ -9275,6 +9275,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPSession.OctetsSentCount
   nameWithType: RTCPSession.OctetsSentCount
+- uid: SIPSorcery.Net.RTCPSession.OnReportReadyToSend
+  name: OnReportReadyToSend
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_OnReportReadyToSend
+  commentId: E:SIPSorcery.Net.RTCPSession.OnReportReadyToSend
+  fullName: SIPSorcery.Net.RTCPSession.OnReportReadyToSend
+  nameWithType: RTCPSession.OnReportReadyToSend
+- uid: SIPSorcery.Net.RTCPSession.OnTimeout
+  name: OnTimeout
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_OnTimeout
+  commentId: E:SIPSorcery.Net.RTCPSession.OnTimeout
+  fullName: SIPSorcery.Net.RTCPSession.OnTimeout
+  nameWithType: RTCPSession.OnTimeout
 - uid: SIPSorcery.Net.RTCPSession.PacketsReceivedCount
   name: PacketsReceivedCount
   href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_PacketsReceivedCount
@@ -9314,6 +9326,58 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPSession.ReceptionReport
   nameWithType: RTCPSession.ReceptionReport
+- uid: SIPSorcery.Net.RTCPSession.RecordRtpPacketReceived(SIPSorcery.Net.RTPPacket)
+  name: RecordRtpPacketReceived(RTPPacket)
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_RecordRtpPacketReceived_SIPSorcery_Net_RTPPacket_
+  commentId: M:SIPSorcery.Net.RTCPSession.RecordRtpPacketReceived(SIPSorcery.Net.RTPPacket)
+  fullName: SIPSorcery.Net.RTCPSession.RecordRtpPacketReceived(SIPSorcery.Net.RTPPacket)
+  nameWithType: RTCPSession.RecordRtpPacketReceived(RTPPacket)
+- uid: SIPSorcery.Net.RTCPSession.RecordRtpPacketReceived*
+  name: RecordRtpPacketReceived
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_RecordRtpPacketReceived_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.RecordRtpPacketReceived
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.RecordRtpPacketReceived
+  nameWithType: RTCPSession.RecordRtpPacketReceived
+- uid: SIPSorcery.Net.RTCPSession.RecordRtpPacketSend(SIPSorcery.Net.RTPPacket)
+  name: RecordRtpPacketSend(RTPPacket)
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_RecordRtpPacketSend_SIPSorcery_Net_RTPPacket_
+  commentId: M:SIPSorcery.Net.RTCPSession.RecordRtpPacketSend(SIPSorcery.Net.RTPPacket)
+  fullName: SIPSorcery.Net.RTCPSession.RecordRtpPacketSend(SIPSorcery.Net.RTPPacket)
+  nameWithType: RTCPSession.RecordRtpPacketSend(RTPPacket)
+- uid: SIPSorcery.Net.RTCPSession.RecordRtpPacketSend*
+  name: RecordRtpPacketSend
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_RecordRtpPacketSend_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.RecordRtpPacketSend
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.RecordRtpPacketSend
+  nameWithType: RTCPSession.RecordRtpPacketSend
+- uid: SIPSorcery.Net.RTCPSession.RemoveReceptionReport(System.UInt32)
+  name: RemoveReceptionReport(UInt32)
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_RemoveReceptionReport_System_UInt32_
+  commentId: M:SIPSorcery.Net.RTCPSession.RemoveReceptionReport(System.UInt32)
+  fullName: SIPSorcery.Net.RTCPSession.RemoveReceptionReport(System.UInt32)
+  nameWithType: RTCPSession.RemoveReceptionReport(UInt32)
+- uid: SIPSorcery.Net.RTCPSession.RemoveReceptionReport*
+  name: RemoveReceptionReport
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_RemoveReceptionReport_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.RemoveReceptionReport
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.RemoveReceptionReport
+  nameWithType: RTCPSession.RemoveReceptionReport
+- uid: SIPSorcery.Net.RTCPSession.ReportReceived(System.Net.IPEndPoint,SIPSorcery.Net.RTCPCompoundPacket)
+  name: ReportReceived(IPEndPoint, RTCPCompoundPacket)
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_ReportReceived_System_Net_IPEndPoint_SIPSorcery_Net_RTCPCompoundPacket_
+  commentId: M:SIPSorcery.Net.RTCPSession.ReportReceived(System.Net.IPEndPoint,SIPSorcery.Net.RTCPCompoundPacket)
+  fullName: SIPSorcery.Net.RTCPSession.ReportReceived(System.Net.IPEndPoint, SIPSorcery.Net.RTCPCompoundPacket)
+  nameWithType: RTCPSession.ReportReceived(IPEndPoint, RTCPCompoundPacket)
+- uid: SIPSorcery.Net.RTCPSession.ReportReceived*
+  name: ReportReceived
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_ReportReceived_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.ReportReceived
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.ReportReceived
+  nameWithType: RTCPSession.ReportReceived
 - uid: SIPSorcery.Net.RTCPSession.Ssrc
   name: Ssrc
   href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_Ssrc
@@ -9944,6 +10008,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.RtpSocket
   nameWithType: RTPChannel.RtpSocket
+- uid: SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
+  name: Send(RTPChannelSocketsEnum, IPEndPoint, Byte[])
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Send_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
+  name.vb: Send(RTPChannelSocketsEnum, IPEndPoint, Byte())
+  fullName: SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte())
+  nameWithType: RTPChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte[])
+  nameWithType.vb: RTPChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RTPChannel.Send*
+  name: Send
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Send_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.Send
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPChannel.Send
+  nameWithType: RTPChannel.Send
 - uid: SIPSorcery.Net.RTPChannel.Start
   name: Start()
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Start
@@ -10566,6 +10646,22 @@ references:
   commentId: F:SIPSorcery.Net.RtpIceChannel.SDP_MLINE_INDEX
   fullName: SIPSorcery.Net.RtpIceChannel.SDP_MLINE_INDEX
   nameWithType: RtpIceChannel.SDP_MLINE_INDEX
+- uid: SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
+  name: Send(RTPChannelSocketsEnum, IPEndPoint, Byte[])
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Send_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
+  name.vb: Send(RTPChannelSocketsEnum, IPEndPoint, Byte())
+  fullName: SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte())
+  nameWithType: RtpIceChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte[])
+  nameWithType.vb: RtpIceChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RtpIceChannel.Send*
+  name: Send
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Send_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.Send
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.Send
+  nameWithType: RtpIceChannel.Send
 - uid: SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials(System.String,System.String)
   name: SetRemoteCredentials(String, String)
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SetRemoteCredentials_System_String_System_String_
@@ -28860,6 +28956,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPHeader.SetDateHeader
   fullName: SIPSorcery.SIP.SIPHeader.SetDateHeader()
   nameWithType: SIPHeader.SetDateHeader()
+- uid: SIPSorcery.SIP.SIPHeader.SetDateHeader(System.Boolean,System.String)
+  name: SetDateHeader(Boolean, String)
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_SetDateHeader_System_Boolean_System_String_
+  commentId: M:SIPSorcery.SIP.SIPHeader.SetDateHeader(System.Boolean,System.String)
+  fullName: SIPSorcery.SIP.SIPHeader.SetDateHeader(System.Boolean, System.String)
+  nameWithType: SIPHeader.SetDateHeader(Boolean, String)
 - uid: SIPSorcery.SIP.SIPHeader.SetDateHeader*
   name: SetDateHeader
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_SetDateHeader_
