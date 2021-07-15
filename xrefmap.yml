@@ -16655,6 +16655,12 @@ references:
   commentId: F:SIPSorcery.Net.SDP.ICE_PWD_ATTRIBUTE_PREFIX
   fullName: SIPSorcery.Net.SDP.ICE_PWD_ATTRIBUTE_PREFIX
   nameWithType: SDP.ICE_PWD_ATTRIBUTE_PREFIX
+- uid: SIPSorcery.Net.SDP.ICE_SETUP_ATTRIBUTE_PREFIX
+  name: ICE_SETUP_ATTRIBUTE_PREFIX
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_ICE_SETUP_ATTRIBUTE_PREFIX
+  commentId: F:SIPSorcery.Net.SDP.ICE_SETUP_ATTRIBUTE_PREFIX
+  fullName: SIPSorcery.Net.SDP.ICE_SETUP_ATTRIBUTE_PREFIX
+  nameWithType: SDP.ICE_SETUP_ATTRIBUTE_PREFIX
 - uid: SIPSorcery.Net.SDP.ICE_UFRAG_ATTRIBUTE_PREFIX
   name: ICE_UFRAG_ATTRIBUTE_PREFIX
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_ICE_UFRAG_ATTRIBUTE_PREFIX
@@ -16673,6 +16679,12 @@ references:
   commentId: F:SIPSorcery.Net.SDP.IcePwd
   fullName: SIPSorcery.Net.SDP.IcePwd
   nameWithType: SDP.IcePwd
+- uid: SIPSorcery.Net.SDP.IceRole
+  name: IceRole
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_IceRole
+  commentId: F:SIPSorcery.Net.SDP.IceRole
+  fullName: SIPSorcery.Net.SDP.IceRole
+  nameWithType: SDP.IceRole
 - uid: SIPSorcery.Net.SDP.IceUfrag
   name: IceUfrag
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_IceUfrag
@@ -17512,6 +17524,12 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.IcePwd
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.IcePwd
   nameWithType: SDPMediaAnnouncement.IcePwd
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.IceRole
+  name: IceRole
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_IceRole
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.IceRole
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.IceRole
+  nameWithType: SDPMediaAnnouncement.IceRole
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.IceUfrag
   name: IceUfrag
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_IceUfrag
