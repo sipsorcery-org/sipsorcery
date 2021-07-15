@@ -327,7 +327,7 @@ namespace SIPSorcery.SIP.App
                         SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, "Authentication requested on subscribe request when no credentials available.");
                         m_waitForSubscribeResponse.Set();
                     }
-                    else if (sipResponse.Header.AuthenticationHeader != null)
+                    else if (sipResponse.Header.HasAuthenticationHeader)
                     {
                         if (m_attempts >= MAX_SUBSCRIBE_ATTEMPTS)
                         {
@@ -342,16 +342,9 @@ namespace SIPSorcery.SIP.App
                             m_attempts++;
 
                             // Resend SUBSCRIBE with credentials.
-                            SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                            authRequest.SetCredentials(m_authUsername, m_authPassword, m_resourceURI.ToString(), SIPMethodsEnum.SUBSCRIBE.ToString());
-
-                            SIPRequest authSubscribeRequest = sipTransaction.TransactionRequest;
-                            authSubscribeRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
-                            authSubscribeRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-                            authSubscribeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                            m_localCSeq = sipTransaction.TransactionRequest.Header.CSeq + 1;
-                            authSubscribeRequest.Header.CSeq = m_localCSeq;
-                            authSubscribeRequest.Header.CallId = m_subscribeCallID;
+                            var authSubscribeRequest = sipTransaction.TransactionRequest.DuplicateAndAuthenticate(
+                                sipResponse.Header.AuthenticationHeaders, m_authUsername, m_authPassword);
+                            m_localCSeq = authSubscribeRequest.Header.CSeq;
 
                             if (!m_filter.IsNullOrBlank())
                             {

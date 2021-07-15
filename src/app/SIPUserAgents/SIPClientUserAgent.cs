@@ -18,11 +18,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.App.SIPUserAgents.Behaviours;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
@@ -284,15 +284,18 @@ namespace SIPSorcery.SIP.App
                     SIPRequest cancelRequest = GetCancelRequest(m_serverTransaction.TransactionRequest);
 
                     // If auth header is included inside INVITE request, we re-include them inside CANCEL request
-                    if (m_serverTransaction.TransactionRequest.Header.AuthenticationHeader != null)
+                    if (m_serverTransaction.TransactionRequest.Header.HasAuthenticationHeader)
                     {
                         string username = (m_sipCallDescriptor.AuthUsername == null || m_sipCallDescriptor.AuthUsername.Trim().Length <= 0 ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername);
-                        SIPAuthorisationDigest authDigest = m_serverTransaction.TransactionRequest.Header.AuthenticationHeader.SIPDigest;
+                        SIPAuthorisationDigest authDigest = m_serverTransaction.TransactionRequest.Header.AuthenticationHeaders.First().SIPDigest;
                         authDigest.SetCredentials(username, m_sipCallDescriptor.Password, m_sipCallDescriptor.Uri, SIPMethodsEnum.CANCEL.ToString());
 
-                        cancelRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authDigest);
-                        cancelRequest.Header.AuthenticationHeader.SIPDigest.IncrementNonceCount();
-                        cancelRequest.Header.AuthenticationHeader.SIPDigest.Response = authDigest.Digest;
+                        var authHeader = new SIPAuthenticationHeader(authDigest);
+                        authHeader.SIPDigest.IncrementNonceCount();
+                        authHeader.SIPDigest.Response = authDigest.GetDigest();
+
+                        cancelRequest.Header.AuthenticationHeaders.Clear();
+                        cancelRequest.Header.AuthenticationHeaders.Add(authHeader);
                     }
 
                     m_cancelTransaction = new SIPNonInviteTransaction(m_sipTransport, cancelRequest, m_outboundProxy);
@@ -389,12 +392,12 @@ namespace SIPSorcery.SIP.App
                             m_serverAuthAttempts = 1;
 
                             // Resend INVITE with credentials.
-                            string username = (m_sipCallDescriptor.AuthUsername != null && m_sipCallDescriptor.AuthUsername.Trim().Length > 0) ? m_sipCallDescriptor.AuthUsername : m_sipCallDescriptor.Username;
-                            var updatedInviteRequest = SIPAuthChallenge.AddAuthenticationHeaderToRequest(m_serverTransaction.TransactionRequest, sipResponse, username, m_sipCallDescriptor.Password);
+                            string username = (m_sipCallDescriptor.AuthUsername != null && m_sipCallDescriptor.AuthUsername.Trim().Length > 0) ? m_sipCallDescriptor.AuthUsername : m_sipCallDescriptor.Username;                            
+                            var authRequest = m_serverTransaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders, 
+                                username, m_sipCallDescriptor.Password);
 
                             // Create a new UAC transaction to establish the authenticated server call.
-                            var originalCallTransaction = m_serverTransaction;
-                            m_serverTransaction = new UACInviteTransaction(m_sipTransport, updatedInviteRequest, m_outboundProxy);
+                            m_serverTransaction = new UACInviteTransaction(m_sipTransport, authRequest, m_outboundProxy);
                             if (m_serverTransaction.CDR != null)
                             {
                                 m_serverTransaction.CDR.Updated();
@@ -477,14 +480,8 @@ namespace SIPSorcery.SIP.App
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     string username = (m_sipCallDescriptor.AuthUsername == null || m_sipCallDescriptor.AuthUsername.Trim().Length <= 0 ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername);
-                    SIPAuthorisationDigest authDigest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                    authDigest.SetCredentials(username, m_sipCallDescriptor.Password, m_sipCallDescriptor.Uri, SIPMethodsEnum.BYE.ToString());
-
-                    SIPRequest authRequest = transaction.TransactionRequest;
-                    authRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authDigest);
-                    authRequest.Header.AuthenticationHeader.SIPDigest.Response = authDigest.Digest;
-                    authRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                    authRequest.Header.CSeq++;
+                    var authRequest = transaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,
+                        username, m_sipCallDescriptor.Password);
 
                     SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, authRequest, m_outboundProxy);
                     authByeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogWarning($"Authenticated Bye request for {m_sipCallDescriptor.Uri} failed with {reason}.");

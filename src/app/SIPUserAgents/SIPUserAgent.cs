@@ -30,7 +30,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.App.SIPUserAgents.Behaviours;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -1413,8 +1412,9 @@ namespace SIPSorcery.SIP.App
                 var (username, password) = GetUsernameAndPassword();
                 if (username != null)
                 {
-                    var updatedSipRequest = SIPAuthChallenge.AddAuthenticationHeaderToRequest(sipTransaction.TransactionRequest, sipResponse, username, password);
-                    UACInviteTransaction authenticateInviteTransaction = new UACInviteTransaction(m_transport, updatedSipRequest, null);
+                    var authRequest = sipTransaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,
+                                username, password);
+                    UACInviteTransaction authenticateInviteTransaction = new UACInviteTransaction(m_transport, authRequest, null);
                     authenticateInviteTransaction.SendInviteRequest();
                 }
             }
