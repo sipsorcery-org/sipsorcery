@@ -819,12 +819,6 @@ namespace SIPSorcery.SIP
     {
         public SIPAuthorisationDigest SIPDigest;
 
-        //public string Realm;
-        //public string Nonce;
-        //public string Username;
-        //public string URI;
-        //public string Response;
-
         private SIPAuthenticationHeader()
         {
             SIPDigest = new SIPAuthorisationDigest();
@@ -1312,7 +1306,7 @@ namespace SIPSorcery.SIP
         public string Allow;
         public string AllowEvents;                          // RFC3265 SIP Events.
         public string AuthenticationInfo;
-        public SIPAuthenticationHeader AuthenticationHeader;
+        public List<SIPAuthenticationHeader> AuthenticationHeaders = new List<SIPAuthenticationHeader>();
         public string CallId;
         public string CallInfo;
         public List<SIPContactHeader> Contact = new List<SIPContactHeader>();
@@ -1371,6 +1365,8 @@ namespace SIPSorcery.SIP
         public List<SIPExtensions> RequiredExtensions = new List<SIPExtensions>();
         public string UnknownRequireExtension = null;
         public List<SIPExtensions> SupportedExtensions = new List<SIPExtensions>();
+
+        public bool HasAuthenticationHeader => AuthenticationHeaders.Count > 0;
 
         public SIPHeader()
         { }
@@ -1603,27 +1599,27 @@ namespace SIPSorcery.SIP
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_WWWAUTHENTICATE.ToLower())
                         {
                             //sipHeader.RawAuthentication = headerValue;
-                            sipHeader.AuthenticationHeader = SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, headerValue);
+                            sipHeader.AuthenticationHeaders.Add(SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, headerValue));
                         }
                         #endregion
                         #region Authorization
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_AUTHORIZATION.ToLower())
                         {
                             //sipHeader.RawAuthentication = headerValue;
-                            sipHeader.AuthenticationHeader = SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.Authorize, headerValue);
+                            sipHeader.AuthenticationHeaders.Add(SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.Authorize, headerValue));
                         }
                         #endregion
                         #region ProxyAuthentication
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXYAUTHENTICATION.ToLower())
                         {
                             //sipHeader.RawAuthentication = headerValue;
-                            sipHeader.AuthenticationHeader = SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.ProxyAuthenticate, headerValue);
+                            sipHeader.AuthenticationHeaders.Add(SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.ProxyAuthenticate, headerValue));
                         }
                         #endregion
                         #region ProxyAuthorization
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXYAUTHORIZATION.ToLower())
                         {
-                            sipHeader.AuthenticationHeader = SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.ProxyAuthorization, headerValue);
+                            sipHeader.AuthenticationHeaders.Add(SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.ProxyAuthorization, headerValue));
                         }
                         #endregion
                         #region UserAgent
@@ -2078,7 +2074,14 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((Allow != null) ? SIPHeaders.SIP_HEADER_ALLOW + ": " + this.Allow + m_CRLF : null);
                 headersBuilder.Append((AlertInfo != null) ? SIPHeaders.SIP_HEADER_ALERTINFO + ": " + this.AlertInfo + m_CRLF : null);
                 headersBuilder.Append((AuthenticationInfo != null) ? SIPHeaders.SIP_HEADER_AUTHENTICATIONINFO + ": " + this.AuthenticationInfo + m_CRLF : null);
-                headersBuilder.Append((AuthenticationHeader != null) ? AuthenticationHeader.ToString() + m_CRLF : null);
+
+                if (AuthenticationHeaders.Count > 0)
+                {
+                    foreach (var authHeader in AuthenticationHeaders)
+                    {
+                        headersBuilder.Append(authHeader.ToString() + m_CRLF);
+                    }
+                }
                 headersBuilder.Append((CallInfo != null) ? SIPHeaders.SIP_HEADER_CALLINFO + ": " + this.CallInfo + m_CRLF : null);
                 headersBuilder.Append((ContentDisposition != null) ? SIPHeaders.SIP_HEADER_CONTENT_DISPOSITION + ": " + this.ContentDisposition + m_CRLF : null);
                 headersBuilder.Append((ContentEncoding != null) ? SIPHeaders.SIP_HEADER_CONTENT_ENCODING + ": " + this.ContentEncoding + m_CRLF : null);

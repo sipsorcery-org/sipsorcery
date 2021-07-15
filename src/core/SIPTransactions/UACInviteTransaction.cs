@@ -243,7 +243,7 @@ namespace SIPSorcery.SIP
 
             SIPHeader header = new SIPHeader(TransactionRequest.Header.From, sipResponse.Header.To, cseq, sipResponse.Header.CallId);
             header.CSeqMethod = method;
-            header.AuthenticationHeader = TransactionRequest.Header.AuthenticationHeader;
+            header.AuthenticationHeaders = TransactionRequest.Header.AuthenticationHeaders;
             header.ProxySendFrom = TransactionRequest.Header.ProxySendFrom;
 
             // If the UAS supplies a desired Record-Route list use that first. Otherwise fall back to any Route list used in the original transaction.
@@ -305,7 +305,7 @@ namespace SIPSorcery.SIP
 
             SIPHeader header = new SIPHeader(TransactionRequest.Header.From, sipResponse.Header.To, sipResponse.Header.CSeq, sipResponse.Header.CallId);
             header.CSeqMethod = SIPMethodsEnum.ACK;
-            header.AuthenticationHeader = TransactionRequest.Header.AuthenticationHeader;
+            header.AuthenticationHeaders = TransactionRequest.Header.AuthenticationHeaders;
             header.Routes = base.TransactionRequest.Header.Routes;
             header.ProxySendFrom = base.TransactionRequest.Header.ProxySendFrom;
 
