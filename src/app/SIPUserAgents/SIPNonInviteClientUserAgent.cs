@@ -33,7 +33,6 @@ namespace SIPSorcery.SIP.App
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private SIPCallDescriptor m_callDescriptor;
-        private string m_lastServerNonce;
 
         public event Action<SIPResponse> ResponseReceived;
 
@@ -80,11 +79,14 @@ namespace SIPSorcery.SIP.App
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
-                    if (sipResponse.Header.AuthenticationHeader != null)
+                    if (sipResponse.Header.HasAuthenticationHeader)
                     {
                         if ((m_callDescriptor.Username != null || m_callDescriptor.AuthUsername != null) && m_callDescriptor.Password != null)
                         {
-                            SIPRequest authenticatedRequest = GetAuthenticatedRequest(sipTransaction.TransactionRequest, sipResponse);
+                            string username = (m_callDescriptor.AuthUsername != null) ? m_callDescriptor.AuthUsername : m_callDescriptor.Username;
+                            SIPRequest authenticatedRequest = sipTransaction.TransactionRequest.DuplicateAndAuthenticate(
+                                sipResponse.Header.AuthenticationHeaders, username, m_callDescriptor.Password);
+
                             SIPNonInviteTransaction authTransaction = new SIPNonInviteTransaction(m_sipTransport, authenticatedRequest, m_outboundProxy);
                             authTransaction.NonInviteTransactionFinalResponseReceived += AuthResponseReceived;
                             authTransaction.NonInviteTransactionFailed += TransactionFailed;
@@ -188,35 +190,6 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPNonInviteClientUserAgent GetRequest. " + excp.Message);
-                throw;
-            }
-        }
-
-        private SIPRequest GetAuthenticatedRequest(SIPRequest originalRequest, SIPResponse sipResponse)
-        {
-            try
-            {
-                SIPAuthorisationDigest digest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                m_lastServerNonce = digest.Nonce;
-                string username = (m_callDescriptor.AuthUsername != null) ? m_callDescriptor.AuthUsername : m_callDescriptor.Username;
-                digest.SetCredentials(username, m_callDescriptor.Password, originalRequest.URI.ToString(), originalRequest.Method.ToString());
-
-                SIPRequest authRequest = originalRequest.Copy();
-                authRequest.SetSendFromHints(originalRequest.LocalSIPEndPoint);
-                authRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                authRequest.Header.From.FromTag = CallProperties.CreateNewTag();
-                authRequest.Header.To.ToTag = null;
-                authRequest.Header.CallId = CallProperties.CreateNewCallId();
-                authRequest.Header.CSeq = originalRequest.Header.CSeq + 1;
-
-                authRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(digest);
-                authRequest.Header.AuthenticationHeader.SIPDigest.Response = digest.Digest;
-
-                return authRequest;
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPNonInviteClientUserAgent GetAuthenticatedRequest. " + excp.Message);
                 throw;
             }
         }

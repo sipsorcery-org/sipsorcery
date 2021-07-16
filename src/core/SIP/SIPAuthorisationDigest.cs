@@ -17,6 +17,7 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
@@ -30,11 +31,20 @@ namespace SIPSorcery.SIP
         WWWAuthenticate = 4,
     }
 
+    public enum DigestAlgorithmsEnum
+    {
+        MD5,
+        SHA256,
+        //SHA512
+    }
+
     public class SIPAuthorisationDigest
     {
-        public const string HASH_ALGORITHM = "MD5";
         public const string QOP_AUTHENTICATION_VALUE = "auth";
         private const int NONCE_DEFAULT_COUNT = 1;
+        private const string SHA256_ALGORITHM_ID = "SHA-256";
+
+        private static ILogger logger = Log.Logger;
 
         private static char[] m_headerFieldRemoveChars = new char[] { ' ', '"', '\'' };
 
@@ -44,12 +54,11 @@ namespace SIPSorcery.SIP
         public string Realm;
         public string Username;
         public string Password;
-        public string DestinationURL;
+        //public string DestinationURL;
         public string URI;
         public string Nonce;
         public string RequestType;
         public string Response;
-        public string Algorithhm;
         public string HA1;           // HTTP digest HA1. Contains the username, relam and password already hashed.
 
         public string Cnonce;        // Client nonce (used with WWW-Authenticate and qop=auth).
@@ -57,79 +66,18 @@ namespace SIPSorcery.SIP
         private int NonceCount = 0;  // Client nonce count.
         public string Opaque;
 
-        public string Digest
-        {
-            get
-            {
-                Algorithhm = HASH_ALGORITHM;
+        public DigestAlgorithmsEnum DigestAlgorithm = DigestAlgorithmsEnum.MD5;
 
-                // Just to make things difficult For some authorisation requests the header changes when the authenticated response is generated.
-                if (AuthorisationType == SIPAuthorisationHeadersEnum.ProxyAuthenticate)
-                {
-                    AuthorisationResponseType = SIPAuthorisationHeadersEnum.ProxyAuthorization;
-                }
-                else if (AuthorisationType == SIPAuthorisationHeadersEnum.WWWAuthenticate)
-                {
-                    AuthorisationResponseType = SIPAuthorisationHeadersEnum.Authorize;
-                }
-
-                // If the authorisation header has specified quality of protection equal to "auth" a client nonce needs to be supplied.
-                string nonceCountStr = null;
-                if (Qop == QOP_AUTHENTICATION_VALUE)
-                {
-                    NonceCount = (NonceCount != 0) ? NonceCount : NONCE_DEFAULT_COUNT;
-                    nonceCountStr = GetPaddedNonceCount(NonceCount);
-
-                    if (Cnonce == null || Cnonce.Trim().Length == 0)
-                    {
-                        Cnonce = Crypto.GetRandomInt().ToString();
-                    }
-                }
-
-                if (Nonce == null)
-                {
-                    Nonce = Crypto.GetRandomString(12);
-                }
-
-                if (Password != null)
-                {
-                    return HTTPDigest.DigestCalcResponse(
-                        Username,
-                        Realm,
-                        Password,
-                        URI,
-                        Nonce,
-                        nonceCountStr,
-                        Cnonce,
-                        Qop,
-                        RequestType);
-                }
-                else if (HA1 != null)
-                {
-                    return HTTPDigest.DigestCalcResponse(
-                        HA1,
-                       URI,
-                       Nonce,
-                       nonceCountStr,
-                       Cnonce,
-                       Qop,
-                       RequestType);
-                }
-                else
-                {
-                    throw new ApplicationException("SIP authorisation digest cannot be calculated. No password or HA1 available.");
-                }
-            }
-        }
-
-        public SIPAuthorisationDigest()
+        public SIPAuthorisationDigest(DigestAlgorithmsEnum hashAlgorithm = DigestAlgorithmsEnum.MD5)
         {
             AuthorisationType = SIPAuthorisationHeadersEnum.ProxyAuthorization;
+            DigestAlgorithm = hashAlgorithm;
         }
 
-        public SIPAuthorisationDigest(SIPAuthorisationHeadersEnum authorisationType)
+        public SIPAuthorisationDigest(SIPAuthorisationHeadersEnum authorisationType, DigestAlgorithmsEnum hashAlgorithm = DigestAlgorithmsEnum.MD5)
         {
             AuthorisationType = authorisationType;
+            DigestAlgorithm = hashAlgorithm;
         }
 
         public static SIPAuthorisationDigest ParseAuthorisationDigest(SIPAuthorisationHeadersEnum authorisationType, string authorisationRequest)
@@ -188,7 +136,17 @@ namespace SIPSorcery.SIP
                         }
                         else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_ALGORITHM_KEY + "$", RegexOptions.IgnoreCase).Success)
                         {
-                            authRequest.Algorithhm = headerValue;
+                            //authRequest.Algorithhm = headerValue;
+
+                            if (Enum.TryParse<DigestAlgorithmsEnum>(headerValue.Replace("-",""), true, out var alg))
+                            {
+                                authRequest.DigestAlgorithm = alg;
+                            }
+                            else
+                            {
+                                logger.LogWarning($"SIPAuthorisationDigest did not recognised digest algorithm value of {headerValue}, defaulting to {DigestAlgorithmsEnum.MD5}.");
+                                authRequest.DigestAlgorithm = DigestAlgorithmsEnum.MD5;
+                            }
                         }
                     }
                 }
@@ -197,7 +155,15 @@ namespace SIPSorcery.SIP
             return authRequest;
         }
 
-        public SIPAuthorisationDigest(SIPAuthorisationHeadersEnum authorisationType, string realm, string username, string password, string uri, string nonce, string request)
+        public SIPAuthorisationDigest(
+            SIPAuthorisationHeadersEnum authorisationType,
+            string realm,
+            string username,
+            string password,
+            string uri,
+            string nonce,
+            string request,
+            DigestAlgorithmsEnum hashAlgorithm = DigestAlgorithmsEnum.MD5)
         {
             AuthorisationType = authorisationType;
             Realm = realm;
@@ -206,6 +172,8 @@ namespace SIPSorcery.SIP
             URI = uri;
             Nonce = nonce;
             RequestType = request;
+
+            DigestAlgorithm = hashAlgorithm;
         }
 
         public void SetCredentials(string username, string password, string uri, string method)
@@ -223,6 +191,68 @@ namespace SIPSorcery.SIP
             RequestType = method;
         }
 
+        public string GetDigest()
+        {
+            // Just to make things difficult For some authorisation requests the header changes when the authenticated response is generated.
+            if (AuthorisationType == SIPAuthorisationHeadersEnum.ProxyAuthenticate)
+            {
+                AuthorisationResponseType = SIPAuthorisationHeadersEnum.ProxyAuthorization;
+            }
+            else if (AuthorisationType == SIPAuthorisationHeadersEnum.WWWAuthenticate)
+            {
+                AuthorisationResponseType = SIPAuthorisationHeadersEnum.Authorize;
+            }
+
+            // If the authorisation header has specified quality of protection equal to "auth" a client nonce needs to be supplied.
+            string nonceCountStr = null;
+            if (Qop == QOP_AUTHENTICATION_VALUE)
+            {
+                NonceCount = (NonceCount != 0) ? NonceCount : NONCE_DEFAULT_COUNT;
+                nonceCountStr = GetPaddedNonceCount(NonceCount);
+
+                if (Cnonce == null || Cnonce.Trim().Length == 0)
+                {
+                    Cnonce = Crypto.GetRandomInt().ToString();
+                }
+            }
+
+            if (Nonce == null)
+            {
+                Nonce = Crypto.GetRandomString(12);
+            }
+
+            if (Password != null)
+            {
+                return HTTPDigest.DigestCalcResponse(
+                    Username,
+                    Realm,
+                    Password,
+                    URI,
+                    Nonce,
+                    nonceCountStr,
+                    Cnonce,
+                    Qop,
+                    RequestType,
+                    DigestAlgorithm);
+            }
+            else if (HA1 != null)
+            {
+                return HTTPDigest.DigestCalcResponse(
+                    HA1,
+                   URI,
+                   Nonce,
+                   nonceCountStr,
+                   Cnonce,
+                   Qop,
+                   RequestType,
+                   DigestAlgorithm);
+            }
+            else
+            {
+                throw new ApplicationException("SIP authorisation digest cannot be calculated. No password or HA1 available.");
+            }
+        }
+
         public override string ToString()
         {
             string authHeader = AuthHeaders.AUTH_DIGEST_KEY + " ";
@@ -236,9 +266,24 @@ namespace SIPSorcery.SIP
             authHeader += (NonceCount != 0) ? "," + AuthHeaders.AUTH_NONCECOUNT_KEY + "=" + GetPaddedNonceCount(NonceCount) : null;
             authHeader += (Qop != null) ? "," + AuthHeaders.AUTH_QOP_KEY + "=" + Qop : null;
             authHeader += (Opaque != null) ? "," + AuthHeaders.AUTH_OPAQUE_KEY + "=\"" + Opaque + "\"" : null;
-            authHeader += (Algorithhm != null) ? "," + AuthHeaders.AUTH_ALGORITHM_KEY + "=" + Algorithhm : null;
+
+            string algorithmID = (DigestAlgorithm == DigestAlgorithmsEnum.SHA256) ? SHA256_ALGORITHM_ID : DigestAlgorithm.ToString();
+            authHeader += (Response != null) ? "," + AuthHeaders.AUTH_ALGORITHM_KEY + "=" + algorithmID : null;
 
             return authHeader;
+        }
+
+        public SIPAuthorisationDigest CopyOf()
+        {
+            var copy = new SIPAuthorisationDigest(AuthorisationType, Realm, Username, Password, URI, Nonce, RequestType, DigestAlgorithm);
+            copy.Response = Response;
+            copy.HA1 = HA1;
+            copy.Cnonce = Cnonce;
+            copy.Qop = Qop;
+            copy.NonceCount = NonceCount;
+            copy.Opaque = Opaque;
+
+            return copy;
         }
 
         public void IncrementNonceCount()
@@ -260,10 +305,11 @@ namespace SIPSorcery.SIP
         public static string DigestCalcHA1(
             string username,
             string realm,
-            string password)
+            string password,
+            DigestAlgorithmsEnum hashAlg = DigestAlgorithmsEnum.MD5)
         {
             string a1 = String.Format("{0}:{1}:{2}", username, realm, password);
-            return GetMD5HashBinHex(a1);
+            return GetHashHex(hashAlg, a1);
         }
 
         /// <summary>
@@ -271,11 +317,12 @@ namespace SIPSorcery.SIP
         /// </summary>
         public static string DigestCalcHA2(
             string method,
-            string uri)
+            string uri,
+            DigestAlgorithmsEnum hashAlg = DigestAlgorithmsEnum.MD5)
         {
             string A2 = String.Format("{0}:{1}", method, uri);
 
-            return GetMD5HashBinHex(A2);
+            return GetHashHex(hashAlg, A2);
         }
 
         public static string DigestCalcResponse(
@@ -287,10 +334,11 @@ namespace SIPSorcery.SIP
            string nonceCount,
            string cnonce,
            string qop,         // qop-value: "", "auth", "auth-int".
-           string method)
+           string method,
+           DigestAlgorithmsEnum hashAlg = DigestAlgorithmsEnum.MD5)
         {
-            string HA1 = DigestCalcHA1(username, realm, password);
-            return DigestCalcResponse(HA1, uri, nonce, nonceCount, cnonce, qop, method);
+            string HA1 = DigestCalcHA1(username, realm, password, hashAlg);
+            return DigestCalcResponse(HA1, uri, nonce, nonceCount, cnonce, qop, method, hashAlg);
         }
 
         public static string DigestCalcResponse(
@@ -300,10 +348,10 @@ namespace SIPSorcery.SIP
             string nonceCount,
             string cnonce,
             string qop,         // qop-value: "", "auth", "auth-int".
-            string method
-            )
+            string method,
+            DigestAlgorithmsEnum hashAlg = DigestAlgorithmsEnum.MD5)
         {
-            string HA2 = DigestCalcHA2(method, uri);
+            string HA2 = DigestCalcHA2(method, uri, hashAlg);
 
             string unhashedDigest = null;
             if (nonceCount != null && cnonce != null && qop != null)
@@ -324,19 +372,33 @@ namespace SIPSorcery.SIP
                 HA2);
             }
 
-            return GetMD5HashBinHex(unhashedDigest);
+            return GetHashHex(hashAlg, unhashedDigest);
         }
 
-        public static string GetMD5HashBinHex(string val)
+        public static string GetHashHex(DigestAlgorithmsEnum hashAlg, string val)
         {
-            MD5 md5 = new MD5CryptoServiceProvider();
-            byte[] bHA1 = md5.ComputeHash(Encoding.UTF8.GetBytes(val));
-            string HA1 = null;
-            for (int i = 0; i < 16; i++)
+            switch (hashAlg)
             {
-                HA1 += String.Format("{0:x02}", bHA1[i]);
+                case DigestAlgorithmsEnum.SHA256:
+                    using (var hash = new SHA256CryptoServiceProvider())
+                    {
+                        return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).HexStr().ToLower();
+                    }
+                // This is commented because RFC8760 does not have an SHA-512 option. Instead it's HSA-512-sess which
+                // means the SIP request body needs to be included in the digest as well. Including the body will require 
+                // some additional changes that can be done at a later date.
+                //case DigestAlgorithmsEnum.SHA512:
+                //    using (var hash = new SHA512CryptoServiceProvider())
+                //    {
+                //        return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).HexStr().ToLower();
+                //    }
+                case DigestAlgorithmsEnum.MD5:
+                default:
+                    using (var hash = new MD5CryptoServiceProvider())
+                    {
+                        return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).HexStr().ToLower();
+                    }
             }
-            return HA1;
         }
     }
 }

@@ -9,12 +9,15 @@
 // History:
 // 20 Oct 2005	Aaron Clauson   Created, Dublin, Ireland.
 // 26 Nov 2019  Aaron Clauson   Added SIPMessageBase inheritance.
+// 14 Jul 2021  Aaron Clauson   Added duplicate and authenticate convenience method.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -174,7 +177,7 @@ namespace SIPSorcery.SIP
             if (_body != null && _body.Length > 0)
             {
                 copy._body = new byte[_body.Length];
-                Buffer.BlockCopy(copy._body, 0, copy._body, 0, copy._body.Length);
+                Buffer.BlockCopy(_body, 0, copy._body, 0, _body.Length);
             }
 
             if (ReceivedRoute != null)
@@ -310,6 +313,49 @@ namespace SIPSorcery.SIP
         public byte[] GetBytes()
         {
             return base.GetBytes(StatusLine + m_CRLF);
+        }
+
+        /// <summary>
+        /// Duplicates an existing SIP request, typically one that received an unauthorised response, to an
+        /// authenticated version. The CSeq and Via branch ID are also incremented so
+        /// that the request will not be flagged as a retransmit.
+        /// </summary>
+        /// <param name="authenticationChallenges">The challenges to authenticate the request against. Typically 
+        /// the challenges come from a SIP response.</param>
+        /// <param name="username">The username to authenticate with.</param>
+        /// <param name="password">The password to authenticate with.</param>
+        /// <returns>A SIP request that is a duplicate of the original but with an authentication header added and
+        /// the state header values updated so as not to be flagged as a retransmit.</returns>
+        public SIPRequest DuplicateAndAuthenticate(List<SIPAuthenticationHeader> authenticationChallenges,
+            string username,
+            string password)
+        {
+            var dupRequest = this.Copy();
+            dupRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
+            dupRequest.Header.CSeq = dupRequest.Header.CSeq + 1;
+
+            dupRequest.Header.AuthenticationHeaders.Clear();
+
+            // RFC8760 (which introduces SHA256/512 for SIP) states that multiple authentication headers with different digest algorithms
+            // can be included in a SIP request. When testing this with the latest versions (Jul 2021) of Asterisk v18.5.0 and FreeSWITCH v1.10.6
+            // request authentication failed if the MD5 digest was not first and it's almost certain the subsequent SHA256 digest was ignored.
+            // As a consequence the logic below will only use a SHA256 digest IFF the UAS put an authentication challenge with the digest 
+            // algorithm explicitly set to SHA-256.
+            // See https://github.com/sipsorcery-org/sipsorcery/issues/525.
+
+            bool useSHA256 = authenticationChallenges.Any(x => x.SIPDigest.DigestAlgorithm == DigestAlgorithmsEnum.SHA256);
+            if (useSHA256)
+            {
+                var sha256AuthHeader = SIPAuthChallenge.GetAuthenticationHeader(authenticationChallenges, this.URI, this.Method, username, password, DigestAlgorithmsEnum.SHA256);
+                dupRequest.Header.AuthenticationHeaders.Add(sha256AuthHeader);
+            }
+            else
+            {
+                var md5AuthHeader = SIPAuthChallenge.GetAuthenticationHeader(authenticationChallenges, this.URI, this.Method, username, password);
+                dupRequest.Header.AuthenticationHeaders.Add(md5AuthHeader);
+            }
+            
+            return dupRequest;
         }
     }
 }

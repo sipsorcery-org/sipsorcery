@@ -9,6 +9,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -460,7 +461,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug(registerReq.ToString());
 
-            SIPAuthenticationHeader authHeader = registerReq.Header.AuthenticationHeader;
+            SIPAuthenticationHeader authHeader = registerReq.Header.AuthenticationHeaders[0];
 
             Assert.True(authHeader != null, "The Authorization header was not correctly extracted from the SIP Register Request.");
             Assert.True(authHeader.SIPDigest.Nonce == "1694683214", "The Authorization header nonce was not correctly extracted from the SIP Register Request, header nonce = " + authHeader.SIPDigest.Nonce + ".");
@@ -1161,6 +1162,54 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug($"Round Trip Body sha256: {rndTripBodyHash}.");
 
             Assert.Equal(bodyHash, rndTripBodyHash);
+        }
+
+        /// <summary>
+        /// Tests that an INVITE request can be successfully authenticated against known values.
+        /// </summary>
+        [Fact]
+        public void AuthenticateInviteRequestUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string inviteReq = @"INVITE sip:100@sipsorcery.cloud SIP/2.0
+Via: SIP/2.0/UDP 192.168.0.50:50508;branch=z9hG4bK990378180248496197e9b88881ea227c;rport
+To: <sip:100@sipsorcery.cloud:5060>
+From: <sip:user@sipsorcery.cloud>;tag=QPMDZPGHUJ
+Call-ID: 952036ff32494b42aeb048ad9ff95669
+CSeq: 1 INVITE
+Contact: <sip:user@192.168.0.50:50508>
+Max-Forwards: 70
+User-Agent: sipsorcery_v5.2.3.0
+Supported: replaces, norefersub, 100rel
+Content-Length: 260
+Content-Type: application/sdp
+
+v=0
+o=- 1599428913 0 IN IP4 127.0.0.1
+s=sipsorcery
+c=IN IP4 192.168.0.50
+t=0 0
+m=audio 50502 RTP/AVP 0 101
+a=rtpmap:0 PCMU/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-16
+a=sendrecv
+a=ssrc:172341600 cname:ee6f407e-d848-44b3-a451-e8cf2d0e22d9
+";
+
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(inviteReq), null, null);
+            SIPRequest req = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+
+            SIPAuthenticationHeader authHeader = SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate,
+                "Digest realm=\"sipsorcery.cloud\",nonce=\"20327927541318441556\"");
+
+            var authenticatedReq = req.DuplicateAndAuthenticate(new List<SIPAuthenticationHeader> { authHeader }, "user", "password");
+
+            logger.LogDebug(authenticatedReq.ToString());
+
+            logger.LogDebug("-----------------------------------------");
         }
     }
 }

@@ -132,13 +132,21 @@ namespace SIPSorcery
             [Option("port", Required = false, Default = 0, HelpText = "The source SIP port to use.")]
             public int SourcePort { get; set; }
 
+            [Option('u', "username", Required = false,
+                HelpText = "An optional username to use to authenticate a SIP request e.g. -u user.")]
+            public string Username { get; set; }
+
+            [Option("password", Required = false,
+                HelpText = "An optional password to use to authenticate a SIP request e.g. -password pass.")]
+            public string Password { get; set; }
+
             [Usage(ApplicationAlias = "sipcmdline")]
             public static IEnumerable<Example> Examples
             {
                 get
                 {
                     return new List<Example>() {
-                        new Example("Send an OPTIONS request to a SIP server", new Options { Destination = "udp:67.222.131.147:5060" })
+                        new Example("Send an OPTIONS request to a SIP server", new Options { Destination = "sipsorcery.cloud" })
                     };
                 }
             }
@@ -269,7 +277,7 @@ namespace SIPSorcery
                         break;
                     case Scenarios.uac:
                     case Scenarios.uacw:
-                        task = InitiateCallTaskAsync(sipTransport, dstUri, options.Scenario, options.Timeout);
+                        task = InitiateCallTaskAsync(sipTransport, dstUri, options);
                         break;
                     case Scenarios.opt:
                     default:
@@ -400,9 +408,12 @@ namespace SIPSorcery
         /// <param name="sipTransport">The transport object to use for the send.</param>
         /// <param name="dst">The destination end point to send the request to.</param>
         /// <returns>True if the expected response was received, false otherwise.</returns>
-        private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst, Scenarios scenario, int timeout)
+        private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst, Options options)
         {
             //UdpClient hepClient = new UdpClient(0, AddressFamily.InterNetwork);
+
+            Scenarios scenario = options.Scenario;
+            int timeout = options.Timeout;
 
             try
             {
@@ -435,7 +446,7 @@ namespace SIPSorcery
                 audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
                 var voipMediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
 
-                var result = await ua.Call(dst.ToString(), null, null, voipMediaSession, timeout);
+                var result = await ua.Call(dst.ToString(), options.Username, options.Password, voipMediaSession, timeout);
 
                 if (scenario == Scenarios.uacw)
                 {
