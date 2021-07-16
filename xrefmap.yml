@@ -1,31 +1,6 @@
 ### YamlMime:XRefMap
 sorted: true
 references:
-- uid: SIPSorcery.App.SIPUserAgents.Behaviours
-  name: SIPSorcery.App.SIPUserAgents.Behaviours
-  href: api/SIPSorcery.App.SIPUserAgents.Behaviours.html
-  commentId: N:SIPSorcery.App.SIPUserAgents.Behaviours
-  fullName: SIPSorcery.App.SIPUserAgents.Behaviours
-  nameWithType: SIPSorcery.App.SIPUserAgents.Behaviours
-- uid: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge
-  name: SIPAuthChallenge
-  href: api/SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.html
-  commentId: T:SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge
-  fullName: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge
-  nameWithType: SIPAuthChallenge
-- uid: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponse,System.String,System.String)
-  name: AddAuthenticationHeaderToRequest(SIPRequest, SIPResponse, String, String)
-  href: api/SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.html#SIPSorcery_App_SIPUserAgents_Behaviours_SIPAuthChallenge_AddAuthenticationHeaderToRequest_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponse_System_String_System_String_
-  commentId: M:SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponse,System.String,System.String)
-  fullName: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPResponse, System.String, System.String)
-  nameWithType: SIPAuthChallenge.AddAuthenticationHeaderToRequest(SIPRequest, SIPResponse, String, String)
-- uid: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest*
-  name: AddAuthenticationHeaderToRequest
-  href: api/SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.html#SIPSorcery_App_SIPUserAgents_Behaviours_SIPAuthChallenge_AddAuthenticationHeaderToRequest_
-  commentId: Overload:SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest
-  isSpec: "True"
-  fullName: SIPSorcery.App.SIPUserAgents.Behaviours.SIPAuthChallenge.AddAuthenticationHeaderToRequest
-  nameWithType: SIPAuthChallenge.AddAuthenticationHeaderToRequest
 - uid: SIPSorcery.Media
   name: SIPSorcery.Media
   href: api/SIPSorcery.Media.html
@@ -24908,18 +24883,36 @@ references:
   commentId: T:SIPSorcery.SIP.CDRReadyDelegate
   fullName: SIPSorcery.SIP.CDRReadyDelegate
   nameWithType: CDRReadyDelegate
+- uid: SIPSorcery.SIP.DigestAlgorithmsEnum
+  name: DigestAlgorithmsEnum
+  href: api/SIPSorcery.SIP.DigestAlgorithmsEnum.html
+  commentId: T:SIPSorcery.SIP.DigestAlgorithmsEnum
+  fullName: SIPSorcery.SIP.DigestAlgorithmsEnum
+  nameWithType: DigestAlgorithmsEnum
+- uid: SIPSorcery.SIP.DigestAlgorithmsEnum.MD5
+  name: MD5
+  href: api/SIPSorcery.SIP.DigestAlgorithmsEnum.html#SIPSorcery_SIP_DigestAlgorithmsEnum_MD5
+  commentId: F:SIPSorcery.SIP.DigestAlgorithmsEnum.MD5
+  fullName: SIPSorcery.SIP.DigestAlgorithmsEnum.MD5
+  nameWithType: DigestAlgorithmsEnum.MD5
+- uid: SIPSorcery.SIP.DigestAlgorithmsEnum.SHA256
+  name: SHA256
+  href: api/SIPSorcery.SIP.DigestAlgorithmsEnum.html#SIPSorcery_SIP_DigestAlgorithmsEnum_SHA256
+  commentId: F:SIPSorcery.SIP.DigestAlgorithmsEnum.SHA256
+  fullName: SIPSorcery.SIP.DigestAlgorithmsEnum.SHA256
+  nameWithType: DigestAlgorithmsEnum.SHA256
 - uid: SIPSorcery.SIP.HTTPDigest
   name: HTTPDigest
   href: api/SIPSorcery.SIP.HTTPDigest.html
   commentId: T:SIPSorcery.SIP.HTTPDigest
   fullName: SIPSorcery.SIP.HTTPDigest
   nameWithType: HTTPDigest
-- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcHA1(System.String,System.String,System.String)
-  name: DigestCalcHA1(String, String, String)
-  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcHA1_System_String_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcHA1(System.String,System.String,System.String)
-  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcHA1(System.String, System.String, System.String)
-  nameWithType: HTTPDigest.DigestCalcHA1(String, String, String)
+- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcHA1(System.String,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  name: DigestCalcHA1(String, String, String, DigestAlgorithmsEnum)
+  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcHA1_System_String_System_String_System_String_SIPSorcery_SIP_DigestAlgorithmsEnum_
+  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcHA1(System.String,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcHA1(System.String, System.String, System.String, SIPSorcery.SIP.DigestAlgorithmsEnum)
+  nameWithType: HTTPDigest.DigestCalcHA1(String, String, String, DigestAlgorithmsEnum)
 - uid: SIPSorcery.SIP.HTTPDigest.DigestCalcHA1*
   name: DigestCalcHA1
   href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcHA1_
@@ -24927,12 +24920,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcHA1
   nameWithType: HTTPDigest.DigestCalcHA1
-- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcHA2(System.String,System.String)
-  name: DigestCalcHA2(String, String)
-  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcHA2_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcHA2(System.String,System.String)
-  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcHA2(System.String, System.String)
-  nameWithType: HTTPDigest.DigestCalcHA2(String, String)
+- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcHA2(System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  name: DigestCalcHA2(String, String, DigestAlgorithmsEnum)
+  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcHA2_System_String_System_String_SIPSorcery_SIP_DigestAlgorithmsEnum_
+  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcHA2(System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcHA2(System.String, System.String, SIPSorcery.SIP.DigestAlgorithmsEnum)
+  nameWithType: HTTPDigest.DigestCalcHA2(String, String, DigestAlgorithmsEnum)
 - uid: SIPSorcery.SIP.HTTPDigest.DigestCalcHA2*
   name: DigestCalcHA2
   href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcHA2_
@@ -24940,18 +24933,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcHA2
   nameWithType: HTTPDigest.DigestCalcHA2
-- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String)
-  name: DigestCalcResponse(String, String, String, String, String, String, String)
-  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcResponse_System_String_System_String_System_String_System_String_System_String_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String)
-  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String, System.String, System.String, System.String, System.String, System.String, System.String)
-  nameWithType: HTTPDigest.DigestCalcResponse(String, String, String, String, String, String, String)
-- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)
-  name: DigestCalcResponse(String, String, String, String, String, String, String, String, String)
-  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcResponse_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)
-  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String)
-  nameWithType: HTTPDigest.DigestCalcResponse(String, String, String, String, String, String, String, String, String)
+- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  name: DigestCalcResponse(String, String, String, String, String, String, String, DigestAlgorithmsEnum)
+  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcResponse_System_String_System_String_System_String_System_String_System_String_System_String_System_String_SIPSorcery_SIP_DigestAlgorithmsEnum_
+  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String, System.String, System.String, System.String, System.String, System.String, System.String, SIPSorcery.SIP.DigestAlgorithmsEnum)
+  nameWithType: HTTPDigest.DigestCalcResponse(String, String, String, String, String, String, String, DigestAlgorithmsEnum)
+- uid: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  name: DigestCalcResponse(String, String, String, String, String, String, String, String, String, DigestAlgorithmsEnum)
+  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcResponse_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_System_String_SIPSorcery_SIP_DigestAlgorithmsEnum_
+  commentId: M:SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse(System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String, System.String, SIPSorcery.SIP.DigestAlgorithmsEnum)
+  nameWithType: HTTPDigest.DigestCalcResponse(String, String, String, String, String, String, String, String, String, DigestAlgorithmsEnum)
 - uid: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse*
   name: DigestCalcResponse
   href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_DigestCalcResponse_
@@ -24959,19 +24952,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.HTTPDigest.DigestCalcResponse
   nameWithType: HTTPDigest.DigestCalcResponse
-- uid: SIPSorcery.SIP.HTTPDigest.GetMD5HashBinHex(System.String)
-  name: GetMD5HashBinHex(String)
-  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_GetMD5HashBinHex_System_String_
-  commentId: M:SIPSorcery.SIP.HTTPDigest.GetMD5HashBinHex(System.String)
-  fullName: SIPSorcery.SIP.HTTPDigest.GetMD5HashBinHex(System.String)
-  nameWithType: HTTPDigest.GetMD5HashBinHex(String)
-- uid: SIPSorcery.SIP.HTTPDigest.GetMD5HashBinHex*
-  name: GetMD5HashBinHex
-  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_GetMD5HashBinHex_
-  commentId: Overload:SIPSorcery.SIP.HTTPDigest.GetMD5HashBinHex
+- uid: SIPSorcery.SIP.HTTPDigest.GetHashHex(SIPSorcery.SIP.DigestAlgorithmsEnum,System.String)
+  name: GetHashHex(DigestAlgorithmsEnum, String)
+  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_GetHashHex_SIPSorcery_SIP_DigestAlgorithmsEnum_System_String_
+  commentId: M:SIPSorcery.SIP.HTTPDigest.GetHashHex(SIPSorcery.SIP.DigestAlgorithmsEnum,System.String)
+  fullName: SIPSorcery.SIP.HTTPDigest.GetHashHex(SIPSorcery.SIP.DigestAlgorithmsEnum, System.String)
+  nameWithType: HTTPDigest.GetHashHex(DigestAlgorithmsEnum, String)
+- uid: SIPSorcery.SIP.HTTPDigest.GetHashHex*
+  name: GetHashHex
+  href: api/SIPSorcery.SIP.HTTPDigest.html#SIPSorcery_SIP_HTTPDigest_GetHashHex_
+  commentId: Overload:SIPSorcery.SIP.HTTPDigest.GetHashHex
   isSpec: "True"
-  fullName: SIPSorcery.SIP.HTTPDigest.GetMD5HashBinHex
-  nameWithType: HTTPDigest.GetMD5HashBinHex
+  fullName: SIPSorcery.SIP.HTTPDigest.GetHashHex
+  nameWithType: HTTPDigest.GetHashHex
 - uid: SIPSorcery.SIP.ResolveSIPUriDelegateAsync
   name: ResolveSIPUriDelegateAsync
   href: api/SIPSorcery.SIP.ResolveSIPUriDelegateAsync.html
@@ -24984,6 +24977,28 @@ references:
   commentId: T:SIPSorcery.SIP.ResolveSIPUriFromCacheDelegate
   fullName: SIPSorcery.SIP.ResolveSIPUriFromCacheDelegate
   nameWithType: ResolveSIPUriFromCacheDelegate
+- uid: SIPSorcery.SIP.SIPAuthChallenge
+  name: SIPAuthChallenge
+  href: api/SIPSorcery.SIP.SIPAuthChallenge.html
+  commentId: T:SIPSorcery.SIP.SIPAuthChallenge
+  fullName: SIPSorcery.SIP.SIPAuthChallenge
+  nameWithType: SIPAuthChallenge
+- uid: SIPSorcery.SIP.SIPAuthChallenge.GetAuthenticationHeader(System.Collections.Generic.List{SIPSorcery.SIP.SIPAuthenticationHeader},SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPMethodsEnum,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  name: GetAuthenticationHeader(List<SIPAuthenticationHeader>, SIPURI, SIPMethodsEnum, String, String, DigestAlgorithmsEnum)
+  href: api/SIPSorcery.SIP.SIPAuthChallenge.html#SIPSorcery_SIP_SIPAuthChallenge_GetAuthenticationHeader_System_Collections_Generic_List_SIPSorcery_SIP_SIPAuthenticationHeader__SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPMethodsEnum_System_String_System_String_SIPSorcery_SIP_DigestAlgorithmsEnum_
+  commentId: M:SIPSorcery.SIP.SIPAuthChallenge.GetAuthenticationHeader(System.Collections.Generic.List{SIPSorcery.SIP.SIPAuthenticationHeader},SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPMethodsEnum,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  name.vb: GetAuthenticationHeader(List(Of SIPAuthenticationHeader), SIPURI, SIPMethodsEnum, String, String, DigestAlgorithmsEnum)
+  fullName: SIPSorcery.SIP.SIPAuthChallenge.GetAuthenticationHeader(System.Collections.Generic.List<SIPSorcery.SIP.SIPAuthenticationHeader>, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPMethodsEnum, System.String, System.String, SIPSorcery.SIP.DigestAlgorithmsEnum)
+  fullName.vb: SIPSorcery.SIP.SIPAuthChallenge.GetAuthenticationHeader(System.Collections.Generic.List(Of SIPSorcery.SIP.SIPAuthenticationHeader), SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPMethodsEnum, System.String, System.String, SIPSorcery.SIP.DigestAlgorithmsEnum)
+  nameWithType: SIPAuthChallenge.GetAuthenticationHeader(List<SIPAuthenticationHeader>, SIPURI, SIPMethodsEnum, String, String, DigestAlgorithmsEnum)
+  nameWithType.vb: SIPAuthChallenge.GetAuthenticationHeader(List(Of SIPAuthenticationHeader), SIPURI, SIPMethodsEnum, String, String, DigestAlgorithmsEnum)
+- uid: SIPSorcery.SIP.SIPAuthChallenge.GetAuthenticationHeader*
+  name: GetAuthenticationHeader
+  href: api/SIPSorcery.SIP.SIPAuthChallenge.html#SIPSorcery_SIP_SIPAuthChallenge_GetAuthenticationHeader_
+  commentId: Overload:SIPSorcery.SIP.SIPAuthChallenge.GetAuthenticationHeader
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPAuthChallenge.GetAuthenticationHeader
+  nameWithType: SIPAuthChallenge.GetAuthenticationHeader
 - uid: SIPSorcery.SIP.SIPAuthenticationHeader
   name: SIPAuthenticationHeader
   href: api/SIPSorcery.SIP.SIPAuthenticationHeader.html
@@ -25047,24 +25062,24 @@ references:
   commentId: T:SIPSorcery.SIP.SIPAuthorisationDigest
   fullName: SIPSorcery.SIP.SIPAuthorisationDigest
   nameWithType: SIPAuthorisationDigest
-- uid: SIPSorcery.SIP.SIPAuthorisationDigest.#ctor
-  name: SIPAuthorisationDigest()
-  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest__ctor
-  commentId: M:SIPSorcery.SIP.SIPAuthorisationDigest.#ctor
-  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.SIPAuthorisationDigest()
-  nameWithType: SIPAuthorisationDigest.SIPAuthorisationDigest()
-- uid: SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.SIPAuthorisationHeadersEnum)
-  name: SIPAuthorisationDigest(SIPAuthorisationHeadersEnum)
-  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest__ctor_SIPSorcery_SIP_SIPAuthorisationHeadersEnum_
-  commentId: M:SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.SIPAuthorisationHeadersEnum)
-  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.SIPAuthorisationDigest(SIPSorcery.SIP.SIPAuthorisationHeadersEnum)
-  nameWithType: SIPAuthorisationDigest.SIPAuthorisationDigest(SIPAuthorisationHeadersEnum)
-- uid: SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.SIPAuthorisationHeadersEnum,System.String,System.String,System.String,System.String,System.String,System.String)
-  name: SIPAuthorisationDigest(SIPAuthorisationHeadersEnum, String, String, String, String, String, String)
-  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest__ctor_SIPSorcery_SIP_SIPAuthorisationHeadersEnum_System_String_System_String_System_String_System_String_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.SIPAuthorisationHeadersEnum,System.String,System.String,System.String,System.String,System.String,System.String)
-  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.SIPAuthorisationDigest(SIPSorcery.SIP.SIPAuthorisationHeadersEnum, System.String, System.String, System.String, System.String, System.String, System.String)
-  nameWithType: SIPAuthorisationDigest.SIPAuthorisationDigest(SIPAuthorisationHeadersEnum, String, String, String, String, String, String)
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.DigestAlgorithmsEnum)
+  name: SIPAuthorisationDigest(DigestAlgorithmsEnum)
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest__ctor_SIPSorcery_SIP_DigestAlgorithmsEnum_
+  commentId: M:SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.DigestAlgorithmsEnum)
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.SIPAuthorisationDigest(SIPSorcery.SIP.DigestAlgorithmsEnum)
+  nameWithType: SIPAuthorisationDigest.SIPAuthorisationDigest(DigestAlgorithmsEnum)
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.SIPAuthorisationHeadersEnum,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  name: SIPAuthorisationDigest(SIPAuthorisationHeadersEnum, DigestAlgorithmsEnum)
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest__ctor_SIPSorcery_SIP_SIPAuthorisationHeadersEnum_SIPSorcery_SIP_DigestAlgorithmsEnum_
+  commentId: M:SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.SIPAuthorisationHeadersEnum,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.SIPAuthorisationDigest(SIPSorcery.SIP.SIPAuthorisationHeadersEnum, SIPSorcery.SIP.DigestAlgorithmsEnum)
+  nameWithType: SIPAuthorisationDigest.SIPAuthorisationDigest(SIPAuthorisationHeadersEnum, DigestAlgorithmsEnum)
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.SIPAuthorisationHeadersEnum,System.String,System.String,System.String,System.String,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  name: SIPAuthorisationDigest(SIPAuthorisationHeadersEnum, String, String, String, String, String, String, DigestAlgorithmsEnum)
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest__ctor_SIPSorcery_SIP_SIPAuthorisationHeadersEnum_System_String_System_String_System_String_System_String_System_String_System_String_SIPSorcery_SIP_DigestAlgorithmsEnum_
+  commentId: M:SIPSorcery.SIP.SIPAuthorisationDigest.#ctor(SIPSorcery.SIP.SIPAuthorisationHeadersEnum,System.String,System.String,System.String,System.String,System.String,System.String,SIPSorcery.SIP.DigestAlgorithmsEnum)
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.SIPAuthorisationDigest(SIPSorcery.SIP.SIPAuthorisationHeadersEnum, System.String, System.String, System.String, System.String, System.String, System.String, SIPSorcery.SIP.DigestAlgorithmsEnum)
+  nameWithType: SIPAuthorisationDigest.SIPAuthorisationDigest(SIPAuthorisationHeadersEnum, String, String, String, String, String, String, DigestAlgorithmsEnum)
 - uid: SIPSorcery.SIP.SIPAuthorisationDigest.#ctor*
   name: SIPAuthorisationDigest
   href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest__ctor_
@@ -25072,12 +25087,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPAuthorisationDigest.SIPAuthorisationDigest
   nameWithType: SIPAuthorisationDigest.SIPAuthorisationDigest
-- uid: SIPSorcery.SIP.SIPAuthorisationDigest.Algorithhm
-  name: Algorithhm
-  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_Algorithhm
-  commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.Algorithhm
-  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.Algorithhm
-  nameWithType: SIPAuthorisationDigest.Algorithhm
 - uid: SIPSorcery.SIP.SIPAuthorisationDigest.AuthorisationResponseType
   name: AuthorisationResponseType
   href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_AuthorisationResponseType
@@ -25110,37 +25119,44 @@ references:
   commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.Cnonce
   fullName: SIPSorcery.SIP.SIPAuthorisationDigest.Cnonce
   nameWithType: SIPAuthorisationDigest.Cnonce
-- uid: SIPSorcery.SIP.SIPAuthorisationDigest.DestinationURL
-  name: DestinationURL
-  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_DestinationURL
-  commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.DestinationURL
-  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.DestinationURL
-  nameWithType: SIPAuthorisationDigest.DestinationURL
-- uid: SIPSorcery.SIP.SIPAuthorisationDigest.Digest
-  name: Digest
-  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_Digest
-  commentId: P:SIPSorcery.SIP.SIPAuthorisationDigest.Digest
-  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.Digest
-  nameWithType: SIPAuthorisationDigest.Digest
-- uid: SIPSorcery.SIP.SIPAuthorisationDigest.Digest*
-  name: Digest
-  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_Digest_
-  commentId: Overload:SIPSorcery.SIP.SIPAuthorisationDigest.Digest
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.CopyOf
+  name: CopyOf()
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_CopyOf
+  commentId: M:SIPSorcery.SIP.SIPAuthorisationDigest.CopyOf
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.CopyOf()
+  nameWithType: SIPAuthorisationDigest.CopyOf()
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.CopyOf*
+  name: CopyOf
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_CopyOf_
+  commentId: Overload:SIPSorcery.SIP.SIPAuthorisationDigest.CopyOf
   isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.Digest
-  nameWithType: SIPAuthorisationDigest.Digest
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.CopyOf
+  nameWithType: SIPAuthorisationDigest.CopyOf
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.DigestAlgorithm
+  name: DigestAlgorithm
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_DigestAlgorithm
+  commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.DigestAlgorithm
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.DigestAlgorithm
+  nameWithType: SIPAuthorisationDigest.DigestAlgorithm
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.GetDigest
+  name: GetDigest()
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_GetDigest
+  commentId: M:SIPSorcery.SIP.SIPAuthorisationDigest.GetDigest
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.GetDigest()
+  nameWithType: SIPAuthorisationDigest.GetDigest()
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.GetDigest*
+  name: GetDigest
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_GetDigest_
+  commentId: Overload:SIPSorcery.SIP.SIPAuthorisationDigest.GetDigest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.GetDigest
+  nameWithType: SIPAuthorisationDigest.GetDigest
 - uid: SIPSorcery.SIP.SIPAuthorisationDigest.HA1
   name: HA1
   href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_HA1
   commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.HA1
   fullName: SIPSorcery.SIP.SIPAuthorisationDigest.HA1
   nameWithType: SIPAuthorisationDigest.HA1
-- uid: SIPSorcery.SIP.SIPAuthorisationDigest.HASH_ALGORITHM
-  name: HASH_ALGORITHM
-  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_HASH_ALGORITHM
-  commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.HASH_ALGORITHM
-  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.HASH_ALGORITHM
-  nameWithType: SIPAuthorisationDigest.HASH_ALGORITHM
 - uid: SIPSorcery.SIP.SIPAuthorisationDigest.IncrementNonceCount
   name: IncrementNonceCount()
   href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_IncrementNonceCount
@@ -28656,12 +28672,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPHeader.AllowEvents
   fullName: SIPSorcery.SIP.SIPHeader.AllowEvents
   nameWithType: SIPHeader.AllowEvents
-- uid: SIPSorcery.SIP.SIPHeader.AuthenticationHeader
-  name: AuthenticationHeader
-  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_AuthenticationHeader
-  commentId: F:SIPSorcery.SIP.SIPHeader.AuthenticationHeader
-  fullName: SIPSorcery.SIP.SIPHeader.AuthenticationHeader
-  nameWithType: SIPHeader.AuthenticationHeader
+- uid: SIPSorcery.SIP.SIPHeader.AuthenticationHeaders
+  name: AuthenticationHeaders
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_AuthenticationHeaders
+  commentId: F:SIPSorcery.SIP.SIPHeader.AuthenticationHeaders
+  fullName: SIPSorcery.SIP.SIPHeader.AuthenticationHeaders
+  nameWithType: SIPHeader.AuthenticationHeaders
 - uid: SIPSorcery.SIP.SIPHeader.AuthenticationInfo
   name: AuthenticationInfo
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_AuthenticationInfo
@@ -28796,6 +28812,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPHeader.GetUnknownHeaderValue
   nameWithType: SIPHeader.GetUnknownHeaderValue
+- uid: SIPSorcery.SIP.SIPHeader.HasAuthenticationHeader
+  name: HasAuthenticationHeader
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_HasAuthenticationHeader
+  commentId: P:SIPSorcery.SIP.SIPHeader.HasAuthenticationHeader
+  fullName: SIPSorcery.SIP.SIPHeader.HasAuthenticationHeader
+  nameWithType: SIPHeader.HasAuthenticationHeader
+- uid: SIPSorcery.SIP.SIPHeader.HasAuthenticationHeader*
+  name: HasAuthenticationHeader
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_HasAuthenticationHeader_
+  commentId: Overload:SIPSorcery.SIP.SIPHeader.HasAuthenticationHeader
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPHeader.HasAuthenticationHeader
+  nameWithType: SIPHeader.HasAuthenticationHeader
 - uid: SIPSorcery.SIP.SIPHeader.InReplyTo
   name: InReplyTo
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_InReplyTo
@@ -30619,6 +30648,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPRequest.CreateBranchId
   nameWithType: SIPRequest.CreateBranchId
+- uid: SIPSorcery.SIP.SIPRequest.DuplicateAndAuthenticate(System.Collections.Generic.List{SIPSorcery.SIP.SIPAuthenticationHeader},System.String,System.String)
+  name: DuplicateAndAuthenticate(List<SIPAuthenticationHeader>, String, String)
+  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_DuplicateAndAuthenticate_System_Collections_Generic_List_SIPSorcery_SIP_SIPAuthenticationHeader__System_String_System_String_
+  commentId: M:SIPSorcery.SIP.SIPRequest.DuplicateAndAuthenticate(System.Collections.Generic.List{SIPSorcery.SIP.SIPAuthenticationHeader},System.String,System.String)
+  name.vb: DuplicateAndAuthenticate(List(Of SIPAuthenticationHeader), String, String)
+  fullName: SIPSorcery.SIP.SIPRequest.DuplicateAndAuthenticate(System.Collections.Generic.List<SIPSorcery.SIP.SIPAuthenticationHeader>, System.String, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPRequest.DuplicateAndAuthenticate(System.Collections.Generic.List(Of SIPSorcery.SIP.SIPAuthenticationHeader), System.String, System.String)
+  nameWithType: SIPRequest.DuplicateAndAuthenticate(List<SIPAuthenticationHeader>, String, String)
+  nameWithType.vb: SIPRequest.DuplicateAndAuthenticate(List(Of SIPAuthenticationHeader), String, String)
+- uid: SIPSorcery.SIP.SIPRequest.DuplicateAndAuthenticate*
+  name: DuplicateAndAuthenticate
+  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_DuplicateAndAuthenticate_
+  commentId: Overload:SIPSorcery.SIP.SIPRequest.DuplicateAndAuthenticate
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPRequest.DuplicateAndAuthenticate
+  nameWithType: SIPRequest.DuplicateAndAuthenticate
 - uid: SIPSorcery.SIP.SIPRequest.GetBytes
   name: GetBytes()
   href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_GetBytes
