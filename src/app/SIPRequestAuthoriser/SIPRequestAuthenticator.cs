@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -52,8 +53,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    SIPAuthenticationHeader reqAuthHeader = sipRequest.Header.AuthenticationHeader;
-                    if (reqAuthHeader == null)
+                    if (!sipRequest.Header.HasAuthenticationHeader)
                     {
                         // Check for IP address authentication.
                         //if (!sipAccount.IPAddressACL.IsNullOrBlank())
@@ -81,6 +81,8 @@ namespace SIPSorcery.SIP.App
                         //        return new SIPRequestAuthenticationResult(true, true);
                         //    }
                         //}
+
+                        SIPAuthenticationHeader reqAuthHeader = sipRequest.Header.AuthenticationHeaders.First();
 
                         string requestNonce = reqAuthHeader.SIPDigest.Nonce;
                         string uri = reqAuthHeader.SIPDigest.URI;
@@ -111,7 +113,7 @@ namespace SIPSorcery.SIP.App
                                 throw new ApplicationException("SIP authentication cannot be attempted as neither a password or HA1 digest are available.");
                             }
 
-                            string digest = checkAuthReq.Digest;
+                            string digest = checkAuthReq.GetDigest();
 
                             if (digest == response)
                             {

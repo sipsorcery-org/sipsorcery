@@ -390,7 +390,7 @@ namespace SIPSorcery.SIP.App
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
-                    if (sipResponse.Header.AuthenticationHeader != null)
+                    if (sipResponse.Header.HasAuthenticationHeader)
                     {
                         if (m_attempts >= m_maxRegisterAttempts)
                         {
@@ -402,7 +402,11 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             m_attempts++;
-                            SIPRequest authenticatedRequest = GetAuthenticatedRegistrationRequest(sipTransaction.TransactionRequest, sipResponse);
+
+                            string username = (m_authUsername != null) ? m_authUsername : m_sipAccountAOR.User;
+                            var authenticatedRequest = sipTransaction.TransactionRequest.DuplicateAndAuthenticate(
+                                sipResponse.Header.AuthenticationHeaders, username, m_password);
+
                             SIPEndPoint registrarSIPEndPoint = m_outboundProxy;
                             if (registrarSIPEndPoint == null)
                             {
@@ -664,30 +668,6 @@ namespace SIPSorcery.SIP.App
             }
 
             return AdjustRegister(registerRequest);
-        }
-
-        private SIPRequest GetAuthenticatedRegistrationRequest(SIPRequest registerRequest, SIPResponse sipResponse)
-        {
-            SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-            string username = (m_authUsername != null) ? m_authUsername : m_sipAccountAOR.User;
-            authRequest.SetCredentials(username, m_password, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
-            if (!this.m_realm.IsNullOrBlank())
-            {
-                authRequest.Realm = this.m_realm;
-            }
-
-            SIPRequest regRequest = registerRequest.Copy();
-            regRequest.SetSendFromHints(registerRequest.LocalSIPEndPoint);
-
-            regRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-            regRequest.Header.From.FromTag = CallProperties.CreateNewTag();
-            regRequest.Header.To.ToTag = null;
-            regRequest.Header.CSeq = ++m_cseq;
-
-            regRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
-            regRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
-
-            return regRequest;
         }
     }
 }

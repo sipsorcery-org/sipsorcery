@@ -19,7 +19,6 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.App.SIPUserAgents.Behaviours;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -159,14 +158,14 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        if (sipRequest.Header.AuthenticationHeader != null)
+                        if (sipRequest.Header.HasAuthenticationHeader)
                         {
                             logger.LogWarning($"Call not authenticated for {m_sipAccount.SIPUsername}@{m_sipAccount.SIPDomain}, responding with {authenticationResult.ErrorResponse}.");
                         }
 
                         // Send authorisation failure or required response
                         SIPResponse authReqdResponse = SIPResponse.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
-                        authReqdResponse.Header.AuthenticationHeader = authenticationResult.AuthenticationRequiredHeader;
+                        authReqdResponse.Header.AuthenticationHeaders.Add(authenticationResult.AuthenticationRequiredHeader);
                         m_uasTransaction.SendFinalResponse(authReqdResponse);
                     }
                 }
@@ -475,9 +474,9 @@ namespace SIPSorcery.SIP.App
 
                 if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && SIPAccount != null)
                 {
-                    var updatedSipRequest = SIPAuthChallenge.AddAuthenticationHeaderToRequest(sipTransaction.TransactionRequest, sipResponse, SIPAccount.SIPUsername, SIPAccount.SIPPassword);
-
-                    SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, updatedSipRequest, null);
+                    var authRequest = sipTransaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,
+                                SIPAccount.SIPUsername, SIPAccount.SIPPassword);
+                    SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, authRequest, null);
                     authByeTransaction.SendRequest();
                 }
 

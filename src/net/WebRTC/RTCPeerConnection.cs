@@ -47,17 +47,6 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.Net
 {
     /// <summary>
-    /// The ICE set up roles that a peer can be in. The role determines how the DTLS
-    /// handshake is performed, i.e. which peer is the client and which is the server.
-    /// </summary>
-    public enum IceRolesEnum
-    {
-        actpass = 0,
-        passive = 1,
-        active = 2
-    }
-
-    /// <summary>
     /// Options for creating the SDP offer.
     /// </summary>
     /// <remarks>
@@ -164,7 +153,6 @@ namespace SIPSorcery.Net
         private const string RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE = "UDP/DTLS/SCTP";
         private const string SDP_DATACHANNEL_FORMAT_ID = "webrtc-datachannel";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";    // Indicates the media announcement is using multiplexed RTCP.
-        private const string ICE_SETUP_ATTRIBUTE = "a=setup:";     // Indicates ICE agent can act as either the "controlling" or "controlled" peer.
         private const string BUNDLE_ATTRIBUTE = "BUNDLE";
         private const string ICE_OPTIONS = "ice2,trickle";          // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
@@ -495,6 +483,7 @@ namespace SIPSorcery.Net
                     onconnectionstatechange?.Invoke(connectionState);
 
                     var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+
                     base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
                     logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
@@ -668,14 +657,16 @@ namespace SIPSorcery.Net
                 string remoteIceUser = remoteSdp.IceUfrag;
                 string remoteIcePassword = remoteSdp.IcePwd;
                 string dtlsFingerprint = remoteSdp.DtlsFingerprint;
+                IceRolesEnum? remoteIceRole = remoteSdp.IceRole;
 
                 foreach (var ann in remoteSdp.Media)
                 {
-                    if (remoteIceUser == null || remoteIcePassword == null || dtlsFingerprint == null)
+                    if (remoteIceUser == null || remoteIcePassword == null || dtlsFingerprint == null || remoteIceRole == null)
                     {
                         remoteIceUser = remoteIceUser ?? ann.IceUfrag;
                         remoteIcePassword = remoteIcePassword ?? ann.IcePwd;
                         dtlsFingerprint = dtlsFingerprint ?? ann.DtlsFingerprint;
+                        remoteIceRole = remoteIceRole ?? ann.IceRole;
                     }
 
                     // Check for data channel announcements.
@@ -687,6 +678,7 @@ namespace SIPSorcery.Net
                             ann.Transport == RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE)
                         {
                             dtlsFingerprint = dtlsFingerprint ?? ann.DtlsFingerprint;
+                            remoteIceRole = remoteIceRole ?? remoteSdp.IceRole;
                         }
                         else
                         {
@@ -701,8 +693,7 @@ namespace SIPSorcery.Net
                 if (init.type == RTCSdpType.answer)
                 {
                     _rtpIceChannel.IsController = true;
-                    // Set DTLS role to be server.
-                    IceRole = IceRolesEnum.passive;
+                    IceRole = remoteIceRole == IceRolesEnum.passive ? IceRolesEnum.active : IceRolesEnum.passive;
                 }
                 else
                 {
@@ -832,7 +823,7 @@ namespace SIPSorcery.Net
 
             foreach (var ann in offerSdp.Media)
             {
-                ann.AddExtra($"{ICE_SETUP_ATTRIBUTE}{IceRole}");
+                ann.IceRole = IceRole;
             }
 
             RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
@@ -906,17 +897,17 @@ namespace SIPSorcery.Net
                 bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
                 var answerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities, excludeIceCandidates);
 
-                if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
-                {
-                    var audioAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single();
-                    audioAnnouncement.AddExtra($"{ICE_SETUP_ATTRIBUTE}{IceRole}");
-                }
+                //if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
+                //{
+                //    var audioAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single();
+                //    audioAnnouncement.IceRole = IceRole;
+                //}
 
-                if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
-                {
-                    var videoAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
-                    videoAnnouncement.AddExtra($"{ICE_SETUP_ATTRIBUTE}{IceRole}");
-                }
+                //if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
+                //{
+                //    var videoAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
+                //    videoAnnouncement.IceRole = IceRole;
+                //}
 
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
                 {
@@ -1042,6 +1033,7 @@ namespace SIPSorcery.Net
                     announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
                     announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
                     announcement.IceOptions = ICE_OPTIONS;
+                    announcement.IceRole = IceRole;
                     announcement.DtlsFingerprint = dtlsFingerprint;
 
                     if (iceCandidatesAdded == false && !excludeIceCandidates)
@@ -1089,6 +1081,7 @@ namespace SIPSorcery.Net
                     dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
                     dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
                     dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
+                    dataChannelAnnouncement.IceRole = IceRole;
                     dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
 
                     if (iceCandidatesAdded == false && !excludeIceCandidates)
