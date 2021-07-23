@@ -28,6 +28,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
+using static SIPSorcery.Net.SDPSecurityDescription;
 
 namespace SIPSorcery.Net
 {
@@ -98,6 +99,11 @@ namespace SIPSorcery.Net
         /// An SDP offer was received when the local agent had already entered have local offer state.
         /// </summary>
         WrongSdpTypeOfferAfterOffer,
+
+        /// <summary>
+        /// Crypto attributes invalid or not compatible.
+        /// </summary>
+        CryptoNegotiationFailed,
     }
 
     /// <summary>
@@ -153,6 +159,7 @@ namespace SIPSorcery.Net
         public const SDPMediaTypesEnum DEFAULT_MEDIA_TYPE = SDPMediaTypesEnum.audio; // If we can't match an RTP payload ID assume it's audio.
         public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101;
         public const string RTP_MEDIA_PROFILE = "RTP/AVP";
+        public const string RTP_SECUREMEDIA_PROFILE = "RTP/SAVP";
         private const int SDP_SESSIONID_LENGTH = 10;             // The length of the pseudo-random string to use for the session ID.
         public const int DTMF_EVENT_DURATION = 1200;            // Default duration for a DTMF event.
         public const int DTMF_EVENT_PAYLOAD_ID = 101;
@@ -178,6 +185,8 @@ namespace SIPSorcery.Net
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
 
         internal Dictionary<SDPMediaTypesEnum, RTPChannel> m_rtpChannels = new Dictionary<SDPMediaTypesEnum, RTPChannel>();
+
+        private SrtpHandler m_srtpHandler = null;
 
         /// <summary>
         /// The local audio stream for this session. Will be null if we are not sending audio.
@@ -245,6 +254,12 @@ namespace SIPSorcery.Net
         /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
         /// </summary>
         public bool IsSecureContextReady { get; private set; } = false;
+
+        /// <summary>
+        /// If this session is using a secure context this list MAY contain custom
+        /// Crypto Suites
+        /// </summary>
+        public List<CryptoSuites> SrtpCryptoSuites { get; set; }
 
         /// <summary>
         /// The remote RTP end point this session is sending audio to.
@@ -436,6 +451,15 @@ namespace SIPSorcery.Net
             m_bindPort = bindPort;
 
             m_sdpSessionID = Crypto.GetRandomInt(SDP_SESSIONID_LENGTH).ToString();
+
+            if (IsSecure)
+            {
+                m_srtpHandler = new SrtpHandler();
+                
+                SrtpCryptoSuites = new List<CryptoSuites>();
+                SrtpCryptoSuites.Add(CryptoSuites.AES_CM_128_HMAC_SHA1_80);
+                SrtpCryptoSuites.Add(CryptoSuites.AES_CM_128_HMAC_SHA1_32);
+            }
         }
 
         /// <summary>
@@ -486,7 +510,7 @@ namespace SIPSorcery.Net
             else
             {
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
-                var offerSdp = GetSessionDesciption(localTracks, connectionAddress);
+                var offerSdp = GetSessionDesciption(localTracks, connectionAddress, SdpType.offer);
                 return offerSdp;
             }
         }
@@ -553,7 +577,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                var answerSdp = GetSessionDesciption(tracks, connectionAddress);
+                var answerSdp = GetSessionDesciption(tracks, connectionAddress, SdpType.answer);
 
                 return answerSdp;
             }
@@ -608,6 +632,36 @@ namespace SIPSorcery.Net
                     MediaStreamStatusEnum mediaStreamStatus = announcement.MediaStreamStatus.HasValue ? announcement.MediaStreamStatus.Value : MediaStreamStatusEnum.SendRecv;
                     var remoteTrack = new MediaStreamTrack(announcement.Media, true, announcement.MediaFormats.Values.ToList(), mediaStreamStatus, announcement.SsrcAttributes);
                     addTrack(remoteTrack);
+
+                    if (IsSecure)
+                    {
+                        if (announcement.Transport != RTP_SECUREMEDIA_PROFILE)
+                        {
+                            logger.LogError($"Error negotiating secure media. Invalid Transport {announcement.Transport}.");
+                            return SetDescriptionResultEnum.CryptoNegotiationFailed;
+                        }
+                        
+                        if (announcement.SecurityDescriptions.Where(s => SrtpCryptoSuites.Contains(s.CryptoSuite)).Count() == 0)
+                        {
+                            logger.LogError("Error negotiating secure media. No compatible crypto suite.");
+                            return SetDescriptionResultEnum.CryptoNegotiationFailed;
+                        }
+
+                        if (!m_srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
+                        {
+                            logger.LogError("Error negotiating secure media. Incompatible crypto parameter.");
+                            return SetDescriptionResultEnum.CryptoNegotiationFailed;
+                        }
+
+                        if (m_srtpHandler.IsNegotiationComplete)
+                        {
+                            SetSecurityContext(
+                                m_srtpHandler.ProtectRTP,
+                                m_srtpHandler.UnprotectRTP,
+                                m_srtpHandler.ProtectRTCP,
+                                m_srtpHandler.UnprotectRTCP);
+                        }
+                    }
 
                     if (announcement.Media == SDPMediaTypesEnum.audio)
                     {
@@ -942,7 +996,7 @@ namespace SIPSorcery.Net
         /// be used. IPAddress.Any and IPAddress. Any and IPv6Any are special cases. If they are set the respective
         /// Internet facing IPv4 or IPv6 address will be used.</param>
         /// <returns>A session description payload.</returns>
-        private SDP GetSessionDesciption(List<MediaStreamTrack> tracks, IPAddress connectionAddress)
+        private SDP GetSessionDesciption(List<MediaStreamTrack> tracks, IPAddress connectionAddress, SdpType sdpType)
         {
             IPAddress localAddress = connectionAddress;
 
@@ -1013,7 +1067,7 @@ namespace SIPSorcery.Net
                    rtpPort,
                    track.Capabilities);
 
-                announcement.Transport = RTP_MEDIA_PROFILE;
+                announcement.Transport = IsSecure ? RTP_SECUREMEDIA_PROFILE : RTP_MEDIA_PROFILE;
                 announcement.MediaStreamStatus = track.StreamStatus;
                 announcement.MLineIndex = mindex;
 
@@ -1030,6 +1084,44 @@ namespace SIPSorcery.Net
                     if (trackCname != null)
                     {
                         announcement.SsrcAttributes.Add(new SDPSsrcAttribute(track.Ssrc, trackCname, null));
+                    }
+                }
+
+                if (IsSecure)
+                {
+                    if (sdpType == SdpType.offer )
+                    {
+                        uint tag = 1;
+                        foreach (CryptoSuites cryptoSuite in SrtpCryptoSuites)
+                        {
+                            announcement.SecurityDescriptions.Add(SDPSecurityDescription.CreateNew(tag, cryptoSuite));
+                            tag++;
+                        }
+                    }
+                    else
+                    {
+                        var sel = RemoteDescription?.Media.Where(a => a.MLineIndex == mindex).FirstOrDefault()?.SecurityDescriptions
+                                                          .Where(s => SrtpCryptoSuites.Contains(s.CryptoSuite)).FirstOrDefault();
+                        
+                        if (sel == null)
+                        {
+                            throw new ApplicationException("Error creating crypto attribute. No compatible offer.");
+                        }
+                        else
+                        {
+                            announcement.SecurityDescriptions.Add(SDPSecurityDescription.CreateNew(sel.Tag, sel.CryptoSuite));
+                        }
+                    }
+
+                    m_srtpHandler.SetupLocal(announcement.SecurityDescriptions, sdpType);
+
+                    if (m_srtpHandler.IsNegotiationComplete)
+                    {
+                        SetSecurityContext(
+                            m_srtpHandler.ProtectRTP,
+                            m_srtpHandler.UnprotectRTP,
+                            m_srtpHandler.ProtectRTCP,
+                            m_srtpHandler.UnprotectRTCP);
                     }
                 }
 

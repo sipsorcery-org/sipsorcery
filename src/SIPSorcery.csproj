@@ -30,7 +30,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461;net5.0</TargetFrameworks>
+    <!--<TargetFrameworks>netstandard2.0;net461;net5.0</TargetFrameworks>-->
+    <TargetFrameworks>net461</TargetFrameworks>
     <Authors>Aaron Clauson &amp; Contributors</Authors>
     <Copyright>Copyright © 2010-2021 Aaron Clauson</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -41,7 +42,7 @@
     <Company>SIP Sorcery PTY LTD</Company>
     <Product>SIPSorcery</Product>
     <PackageId>SIPSorcery</PackageId>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
     <!-- Note PackageIcon generates a build warning. Can be removed once Visual Studio supports the nuget "Icon" setting.
        Watch https://github.com/NuGet/Home/issues/8189.-->

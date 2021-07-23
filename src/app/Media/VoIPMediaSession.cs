@@ -75,8 +75,18 @@ namespace SIPSorcery.Media
             MediaEndPoints mediaEndPoint,
             IPAddress bindAddress = null,
             int bindPort = 0,
-             VideoTestPatternSource testPatternSource = null)
-            : base(false, false, false, bindAddress, bindPort)
+            VideoTestPatternSource testPatternSource = null)
+            : this(mediaEndPoint, bindAddress, bindPort, false, testPatternSource)
+        {
+        }
+
+        public VoIPMediaSession(
+            MediaEndPoints mediaEndPoint,
+            IPAddress bindAddress = null,
+            int bindPort = 0,
+            bool isSecure = false,
+            VideoTestPatternSource testPatternSource = null)
+            : base(false, false, isSecure, bindAddress, bindPort)
         {
             if (mediaEndPoint == null)
             {
