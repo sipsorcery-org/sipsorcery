@@ -39,9 +39,9 @@ namespace demo
         //private const string SIGNALING_SERVER = "https://sipsorcery.cloud/sipsorcery/echo/offer";
         //private const string SIGNALING_SERVER = "https://sipsorcery.cloud/aiortc/echo/offer";
 
-        //private const string SIGNALING_SERVER = "http://localhost:5002/offer";
+        private const string SIGNALING_SERVER = "http://localhost:5002/offer";
         //private const string SIGNALING_SERVER = "http://localhost:8080/offer";
-        private const string SIGNALING_SERVER = "http://172.18.92.116:8080/offer";
+        //private const string SIGNALING_SERVER = "http://172.18.92.116:8080/offer";
 
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
@@ -139,7 +139,7 @@ namespace demo
 
             #endregion
 
-            //await testPattern.StartVideo().ConfigureAwait(false);
+            await testPattern.StartVideo().ConfigureAwait(false);
 
             var pc = await CreatePeerConnection(testPattern, vp8VideoSink).ConfigureAwait(false);
 
@@ -175,10 +175,10 @@ namespace demo
         {
             var pc = new RTCPeerConnection(new RTCConfiguration { X_ICEIncludeAllInterfaceAddresses = true });
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(videoSink.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(videoSink.GetVideoSinkFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(videoTrack);
+            videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
 
-            //videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
             pc.OnVideoFrameReceived += videoSink.GotVideoFrame;
             pc.OnVideoFormatsNegotiated += (formats) =>
             {
