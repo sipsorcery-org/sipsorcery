@@ -11,6 +11,7 @@
 //
 // History:
 // 04 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 26 Jul 2021 Kurt Kießling  Added secure media negotiation.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

@@ -12,6 +12,7 @@
 // 12 Nov 2019  Aaron Clauson   Added send event method.
 // 07 Dec 2019  Aaron Clauson   Big refactor. Brought in a lot of functions previously
 //                              in the RTPChannel class.
+// 26 Jul 2021  Kurt Kießling   Added secure media negotiation.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
