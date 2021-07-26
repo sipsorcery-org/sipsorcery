@@ -68,17 +68,8 @@ namespace SIPSorcery.Media
         public event VideoSinkSampleDecodedDelegate OnVideoSinkSample;
 
         public VoIPMediaSession(MediaEndPoints mediaEndPoint, VideoTestPatternSource testPatternSource)
-            : this(mediaEndPoint, null, 0, testPatternSource)
+            : this(mediaEndPoint, null, 0, false, testPatternSource)
         { }
-
-        public VoIPMediaSession(
-            MediaEndPoints mediaEndPoint,
-            IPAddress bindAddress = null,
-            int bindPort = 0,
-            VideoTestPatternSource testPatternSource = null)
-            : this(mediaEndPoint, bindAddress, bindPort, false, testPatternSource)
-        {
-        }
 
         public VoIPMediaSession(
             MediaEndPoints mediaEndPoint,
