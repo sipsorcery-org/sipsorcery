@@ -7,7 +7,7 @@
 // Kurt Kießling 
 //
 // History:
-// 20 Jul 2021	Kurt Kießling   Created.
+// 20 Jul 2021	Kurt Kießling	Created.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
