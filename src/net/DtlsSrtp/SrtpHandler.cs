@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SrtpHandler.cs
 //
-// Description: This class represents the SRTP handling for VoIPMediaSession
+// Description: This class represents the SRTP handling for SIP calls
 //
 // Author(s):
 // Kurt Kießling 
@@ -62,7 +62,7 @@ namespace SIPSorcery.Net
             }
 
             var lsec = m_localSecurityDescriptions[0];
-            var rsec = m_remoteSecurityDescriptions.Where(x => x.CryptoSuite == lsec.CryptoSuite).FirstOrDefault();
+            var rsec = m_remoteSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == lsec.CryptoSuite);
 
             if (rsec != null && rsec.Tag == lsec.Tag)
             {
@@ -98,7 +98,7 @@ namespace SIPSorcery.Net
             }
 
             var rsec = m_remoteSecurityDescriptions[0];
-            var lsec = m_localSecurityDescriptions.Where(x => x.CryptoSuite == rsec.CryptoSuite).FirstOrDefault();
+            var lsec = m_localSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == rsec.CryptoSuite);
 
             if (lsec != null && lsec.Tag == rsec.Tag)
             {

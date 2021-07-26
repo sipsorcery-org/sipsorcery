@@ -642,7 +642,7 @@ namespace SIPSorcery.Net
                             return SetDescriptionResultEnum.CryptoNegotiationFailed;
                         }
                         
-                        if (announcement.SecurityDescriptions.Where(s => SrtpCryptoSuites.Contains(s.CryptoSuite)).Count() == 0)
+                        if (announcement.SecurityDescriptions.Count(s => SrtpCryptoSuites.Contains(s.CryptoSuite)) == 0)
                         {
                             logger.LogError("Error negotiating secure media. No compatible crypto suite.");
                             return SetDescriptionResultEnum.CryptoNegotiationFailed;
@@ -1101,8 +1101,8 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        var sel = RemoteDescription?.Media.Where(a => a.MLineIndex == mindex).FirstOrDefault()?.SecurityDescriptions
-                                                          .Where(s => SrtpCryptoSuites.Contains(s.CryptoSuite)).FirstOrDefault();
+                        var sel = RemoteDescription?.Media.FirstOrDefault(a => a.MLineIndex == mindex)?.SecurityDescriptions
+                                                          .FirstOrDefault(s => SrtpCryptoSuites.Contains(s.CryptoSuite));
                         
                         if (sel == null)
                         {
