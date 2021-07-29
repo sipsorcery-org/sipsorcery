@@ -29,7 +29,6 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
-using static SIPSorcery.Net.SDPSecurityDescription;
 
 namespace SIPSorcery.Net
 {
@@ -260,7 +259,7 @@ namespace SIPSorcery.Net
         /// If this session is using a secure context this list MAY contain custom
         /// Crypto Suites
         /// </summary>
-        public List<CryptoSuites> SrtpCryptoSuites { get; set; }
+        public List<SDPSecurityDescription.CryptoSuites> SrtpCryptoSuites { get; set; }
 
         /// <summary>
         /// The remote RTP end point this session is sending audio to.
@@ -457,9 +456,9 @@ namespace SIPSorcery.Net
             {
                 m_srtpHandler = new SrtpHandler();
                 
-                SrtpCryptoSuites = new List<CryptoSuites>();
-                SrtpCryptoSuites.Add(CryptoSuites.AES_CM_128_HMAC_SHA1_80);
-                SrtpCryptoSuites.Add(CryptoSuites.AES_CM_128_HMAC_SHA1_32);
+                SrtpCryptoSuites = new List<SDPSecurityDescription.CryptoSuites>();
+                SrtpCryptoSuites.Add(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_80);
+                SrtpCryptoSuites.Add(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_32);
             }
         }
 
@@ -1093,7 +1092,7 @@ namespace SIPSorcery.Net
                     if (sdpType == SdpType.offer )
                     {
                         uint tag = 1;
-                        foreach (CryptoSuites cryptoSuite in SrtpCryptoSuites)
+                        foreach (SDPSecurityDescription.CryptoSuites cryptoSuite in SrtpCryptoSuites)
                         {
                             announcement.SecurityDescriptions.Add(SDPSecurityDescription.CreateNew(tag, cryptoSuite));
                             tag++;

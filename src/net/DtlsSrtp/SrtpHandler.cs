@@ -22,7 +22,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class SrtpHandler: IDisposable
+    public sealed class SrtpHandler
     {
         private static readonly ILogger logger = Log.Logger;
 
@@ -113,27 +113,27 @@ namespace SIPSorcery.Net
             return false;
         }
 
-        protected IPacketTransformer GenerateRtpEncoder(SDPSecurityDescription securityDescription)
+        private IPacketTransformer GenerateRtpEncoder(SDPSecurityDescription securityDescription)
         {
             return GenerateTransformer(securityDescription, true);
         }
 
-        protected IPacketTransformer GenerateRtpDecoder(SDPSecurityDescription securityDescription)
+        private IPacketTransformer GenerateRtpDecoder(SDPSecurityDescription securityDescription)
         {
             return GenerateTransformer(securityDescription, true);
         }
 
-        protected IPacketTransformer GenerateRtcpEncoder(SDPSecurityDescription securityDescription)
+        private IPacketTransformer GenerateRtcpEncoder(SDPSecurityDescription securityDescription)
         {
             return GenerateTransformer(securityDescription, false);
         }
 
-        protected IPacketTransformer GenerateRtcpDecoder(SDPSecurityDescription securityDescription)
+        private IPacketTransformer GenerateRtcpDecoder(SDPSecurityDescription securityDescription)
         {
             return GenerateTransformer(securityDescription, false);
         }
 
-        protected IPacketTransformer GenerateTransformer(SDPSecurityDescription securityDescription, bool isRtp)
+        private IPacketTransformer GenerateTransformer(SDPSecurityDescription securityDescription, bool isRtp)
         {
             var srtpParams = SrtpParameters.GetSrtpParametersForProfile((int)securityDescription.CryptoSuite);
 
@@ -244,13 +244,6 @@ namespace SIPSorcery.Net
             outLength = result.Length;
 
             return 0; //No Errors
-        }
-
-        /// <summary>
-        /// Dispose.
-        /// </summary>
-        public void Dispose()
-        {
         }
     }
 }
