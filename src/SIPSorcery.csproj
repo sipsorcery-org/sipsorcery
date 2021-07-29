@@ -30,8 +30,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!--<TargetFrameworks>netstandard2.0;net461;net5.0</TargetFrameworks>-->
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net461;net5.0</TargetFrameworks>
     <Authors>Aaron Clauson &amp; Contributors</Authors>
     <Copyright>Copyright © 2010-2021 Aaron Clauson</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
