@@ -2175,7 +2175,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogWarning($"An RTP packet with SSRC {header.SyncSource} matched the {matchingTrack.Kind} track but no capabiltity exists for payload ID {header.PayloadType}.");
+                    logger.LogWarning($"An RTP packet with SSRC {header.SyncSource} matched the {matchingTrack.Kind} track but no capability exists for payload ID {header.PayloadType}.");
                     return null;
                 }
             }
