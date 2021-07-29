@@ -316,10 +316,10 @@ namespace SIPSorcery.Net
         /// </summary>
         public static bool AreMatch(SDPAudioVideoMediaFormat format1, SDPAudioVideoMediaFormat format2)
         {
-            // rtpmap takes priority as well known foramt ID's can be overruled.
+            // rtpmap takes priority as well known format ID's can be overruled.
             if (format1.Rtpmap != null
-                && format2.Rtpmap != null
-                && format1.Rtpmap == format2.Rtpmap)
+                && format2.Rtpmap != null &&
+                string.Equals(format1.Rtpmap.Trim(), format2.Rtpmap.Trim(), StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
