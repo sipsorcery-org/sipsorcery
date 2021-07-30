@@ -11,6 +11,7 @@
 //
 // History:
 // 04 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 26 Jul 2021	Kurt Kießling	Added secure media negotiation.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -75,15 +76,25 @@ namespace SIPSorcery.Media
             MediaEndPoints mediaEndPoint,
             IPAddress bindAddress = null,
             int bindPort = 0,
-             VideoTestPatternSource testPatternSource = null)
-            : base(false, false, false, bindAddress, bindPort)
+            VideoTestPatternSource testPatternSource = null)
+            : this(new VoIPMediaSessionConfig { MediaEndPoint = mediaEndPoint, BindAddress = bindAddress, BindPort = bindPort, TestPatternSource = testPatternSource })
         {
-            if (mediaEndPoint == null)
+        }
+
+        public VoIPMediaSession(VoIPMediaSessionConfig config)
+            : base(new RtpSessionConfig { 
+                IsMediaMultiplexed = false, 
+                IsRtcpMultiplexed = false, 
+                RtpSecureMediaOption = config.RtpSecureMediaOption, 
+                BindAddress = config.BindAddress,
+                BindPort = config.BindPort } )
+        {
+            if (config.MediaEndPoint == null)
             {
-                throw new ArgumentNullException("mediaEndPoint", "The media end point parameter cannot be null.");
+                throw new ArgumentNullException("MediaEndPoint", "The media end point parameter cannot be null.");
             }
 
-            Media = mediaEndPoint;
+            Media = config.MediaEndPoint;
 
             // The audio extras source is used for on-hold music.
             _audioExtrasSource = new AudioExtrasSource();
@@ -92,23 +103,23 @@ namespace SIPSorcery.Media
             // Wire up the audio and video sample event handlers.
             if (Media.AudioSource != null)
             {
-                var audioTrack = new MediaStreamTrack(mediaEndPoint.AudioSource.GetAudioSourceFormats());
+                var audioTrack = new MediaStreamTrack(config.MediaEndPoint.AudioSource.GetAudioSourceFormats());
                 base.addTrack(audioTrack);
                 Media.AudioSource.OnAudioSourceEncodedSample += base.SendAudio;
             }
 
             if (Media.VideoSource != null)
             {
-                var videoTrack = new MediaStreamTrack(mediaEndPoint.VideoSource.GetVideoSourceFormats());
+                var videoTrack = new MediaStreamTrack(config.MediaEndPoint.VideoSource.GetVideoSourceFormats());
                 base.addTrack(videoTrack);
                 Media.VideoSource.OnVideoSourceEncodedSample += base.SendVideo;
                 Media.VideoSource.OnVideoSourceError += VideoSource_OnVideoSourceError;
 
-                if (testPatternSource != null)
+                if (config.TestPatternSource != null)
                 {
                     // The test pattern source is used as failover if the webcam initialisation fails.
                     // It's also used as the video stream if the call is put on hold.
-                    _videoTestPatternSource = testPatternSource;
+                    _videoTestPatternSource = config.TestPatternSource;
                     _videoTestPatternSource.OnVideoSourceEncodedSample += base.SendVideo;
                     //_videoTestPatternSource.OnVideoSourceRawSample += Media.VideoSource.ExternalVideoSourceRawSample;
                 }
