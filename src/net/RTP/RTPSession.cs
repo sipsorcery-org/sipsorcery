@@ -532,7 +532,7 @@ namespace SIPSorcery.Net
             else
             {
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
-                var offerSdp = GetSessionDesciption(localTracks, connectionAddress, SdpType.offer);
+                var offerSdp = GetSessionDesciption(localTracks, connectionAddress);
                 return offerSdp;
             }
         }
@@ -599,7 +599,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                var answerSdp = GetSessionDesciption(tracks, connectionAddress, SdpType.answer);
+                var answerSdp = GetSessionDesciption(tracks, connectionAddress);
 
                 return answerSdp;
             }
@@ -1018,7 +1018,7 @@ namespace SIPSorcery.Net
         /// be used. IPAddress.Any and IPAddress. Any and IPv6Any are special cases. If they are set the respective
         /// Internet facing IPv4 or IPv6 address will be used.</param>
         /// <returns>A session description payload.</returns>
-        private SDP GetSessionDesciption(List<MediaStreamTrack> tracks, IPAddress connectionAddress, SdpType sdpType)
+        private SDP GetSessionDesciption(List<MediaStreamTrack> tracks, IPAddress connectionAddress)
         {
             IPAddress localAddress = connectionAddress;
 
@@ -1111,7 +1111,9 @@ namespace SIPSorcery.Net
 
                 if (UseSdpCryptoNegotiation)
                 {
-                    if (sdpType == SdpType.offer )
+                    var sdpType = RemoteDescription == null ? SdpType.offer : SdpType.answer;
+
+                    if (sdpType == SdpType.offer)
                     {
                         uint tag = 1;
                         foreach (SDPSecurityDescription.CryptoSuites cryptoSuite in SrtpCryptoSuites)

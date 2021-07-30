@@ -51,7 +51,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-5.2.3: Update to latest DnsClient and BouncyCastle nuget packages. Miscellaneous bug fixes and minor improvements.
+    <PackageReleaseNotes>-v5.3.0-pre: Adds SRTP support for SIP calls, thanks to @kukies007.
+-5.2.3: Update to latest DnsClient and BouncyCastle nuget packages. Miscellaneous bug fixes and minor improvements.
 -v5.2.2: Make sure hold/unhold re-invite is resent on auth challenge from server
 -v5.2.1: Make sure bye is retried with auth if challenged
 -v5.2.0: Stable release with new WebRTC Data Channel implementation.
@@ -85,9 +86,9 @@
 -v5.0.0: Stable release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>5.2.3</Version>
-    <AssemblyVersion>5.2.3.0</AssemblyVersion>
-    <FileVersion>5.2.3.0</FileVersion>
+    <Version>5.3.0-pre</Version>
+    <AssemblyVersion>5.3.0.0</AssemblyVersion>
+    <FileVersion>5.3.0.0</FileVersion>
   </PropertyGroup>
 
 </Project>
