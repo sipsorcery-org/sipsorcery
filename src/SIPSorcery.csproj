@@ -41,7 +41,7 @@
     <Company>SIP Sorcery PTY LTD</Company>
     <Product>SIPSorcery</Product>
     <PackageId>SIPSorcery</PackageId>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
     <!-- Note PackageIcon generates a build warning. Can be removed once Visual Studio supports the nuget "Icon" setting.
        Watch https://github.com/NuGet/Home/issues/8189.-->

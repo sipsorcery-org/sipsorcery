@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Net;
+using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Media
@@ -26,7 +27,7 @@ namespace SIPSorcery.Media
         
         public int BindPort { get; set; }
         
-        public bool IsSecure { get; set; }
+        public RtpSecureMediaOptionEnum RtpSecureMediaOption { get; set; }
 
         public VideoTestPatternSource TestPatternSource { get; set; }
     }

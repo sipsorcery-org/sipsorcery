@@ -77,12 +77,17 @@ namespace SIPSorcery.Media
             IPAddress bindAddress = null,
             int bindPort = 0,
             VideoTestPatternSource testPatternSource = null)
-            : this(new VoIPMediaSessionConfig { MediaEndPoint = mediaEndPoint, BindAddress = bindAddress, BindPort = bindPort, TestPatternSource = testPatternSource})
+            : this(new VoIPMediaSessionConfig { MediaEndPoint = mediaEndPoint, BindAddress = bindAddress, BindPort = bindPort, TestPatternSource = testPatternSource })
         {
         }
 
         public VoIPMediaSession(VoIPMediaSessionConfig config)
-            : base(false, false, config.IsSecure, config.BindAddress, config.BindPort)
+            : base(new RtpSessionConfig { 
+                IsMediaMultiplexed = false, 
+                IsRtcpMultiplexed = false, 
+                RtpSecureMediaOption = config.RtpSecureMediaOption, 
+                BindAddress = config.BindAddress,
+                BindPort = config.BindPort } )
         {
             if (config.MediaEndPoint == null)
             {

@@ -250,6 +250,12 @@ namespace SIPSorcery.Net
         public bool IsSecure { get; private set; } = false;
 
         /// <summary>
+        /// Indicates whether this session should use secure SRTP communication
+        /// negotiated by SDP offer/answer crypto attributes.
+        /// </summary>
+        public bool UseSdpCryptoNegotiation { get; private set; } = false;
+
+        /// <summary>
         /// If this session is using a secure context this flag MUST be set to indicate
         /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
         /// </summary>
@@ -437,25 +443,41 @@ namespace SIPSorcery.Net
         /// <param name="bindPort">Optional. If specified a single attempt will be made to bind the RTP socket
         /// on this port. It's recommended to leave this parameter as the default of 0 to let the Operating
         /// System select the port number.</param>
-        public RTPSession(
+        public RTPSession( 
             bool isMediaMultiplexed,
             bool isRtcpMultiplexed,
             bool isSecure,
             IPAddress bindAddress = null,
             int bindPort = 0)
+            : this(new RtpSessionConfig { 
+                IsMediaMultiplexed = isMediaMultiplexed, 
+                IsRtcpMultiplexed = isRtcpMultiplexed, 
+                RtpSecureMediaOption = isSecure ? RtpSecureMediaOptionEnum.DtlsSrtp : RtpSecureMediaOptionEnum.None, 
+                BindAddress = bindAddress, 
+                BindPort = bindPort })
         {
-            m_isMediaMultiplexed = isMediaMultiplexed;
-            m_isRtcpMultiplexed = isRtcpMultiplexed;
-            IsSecure = isSecure;
-            m_bindAddress = bindAddress;
-            m_bindPort = bindPort;
+        }
+
+        /// <summary>
+        /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
+        /// pseudo random values.
+        /// </summary>
+        /// <param name="config">Contains required settings.</param>
+        public RTPSession(RtpSessionConfig config)
+        {
+            m_isMediaMultiplexed = config.IsMediaMultiplexed;
+            m_isRtcpMultiplexed = config.IsRtcpMultiplexed;
+            IsSecure = config.RtpSecureMediaOption == RtpSecureMediaOptionEnum.DtlsSrtp;
+            UseSdpCryptoNegotiation = config.RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoNegotiation;
+            m_bindAddress = config.BindAddress;
+            m_bindPort = config.BindPort;
 
             m_sdpSessionID = Crypto.GetRandomInt(SDP_SESSIONID_LENGTH).ToString();
 
-            if (IsSecure)
+            if (UseSdpCryptoNegotiation)
             {
                 m_srtpHandler = new SrtpHandler();
-                
+
                 SrtpCryptoSuites = new List<SDPSecurityDescription.CryptoSuites>();
                 SrtpCryptoSuites.Add(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_80);
                 SrtpCryptoSuites.Add(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_32);
@@ -633,7 +655,7 @@ namespace SIPSorcery.Net
                     var remoteTrack = new MediaStreamTrack(announcement.Media, true, announcement.MediaFormats.Values.ToList(), mediaStreamStatus, announcement.SsrcAttributes);
                     addTrack(remoteTrack);
 
-                    if (IsSecure)
+                    if (UseSdpCryptoNegotiation)
                     {
                         if (announcement.Transport != RTP_SECUREMEDIA_PROFILE)
                         {
@@ -1067,7 +1089,7 @@ namespace SIPSorcery.Net
                    rtpPort,
                    track.Capabilities);
 
-                announcement.Transport = IsSecure ? RTP_SECUREMEDIA_PROFILE : RTP_MEDIA_PROFILE;
+                announcement.Transport = UseSdpCryptoNegotiation ? RTP_SECUREMEDIA_PROFILE : RTP_MEDIA_PROFILE;
                 announcement.MediaStreamStatus = track.StreamStatus;
                 announcement.MLineIndex = mindex;
 
@@ -1087,7 +1109,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                if (IsSecure)
+                if (UseSdpCryptoNegotiation)
                 {
                     if (sdpType == SdpType.offer )
                     {
@@ -1349,7 +1371,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
         public void SendAudio(uint durationRtpUnits, byte[] sample)
         {
-            if (AudioDestinationEndPoint != null && (!IsSecure || IsSecureContextReady))
+            if (AudioDestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReady))
             {
                 var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
                 SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
@@ -1364,7 +1386,8 @@ namespace SIPSorcery.Net
         /// <param name="sample">The video sample to set as the RTP packet payload.</param>
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
-            if (VideoDestinationEndPoint != null || (m_isMediaMultiplexed && AudioDestinationEndPoint != null) && (!IsSecure || IsSecureContextReady))
+            if (VideoDestinationEndPoint != null || (m_isMediaMultiplexed && AudioDestinationEndPoint != null) && 
+                ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReady))
             {
                 var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
 
@@ -1875,7 +1898,7 @@ namespace SIPSorcery.Net
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
-                if (IsSecure && !IsSecureContextReady)
+                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady)
                 {
                     logger.LogWarning("RTP or RTCP packet received before secure context ready.");
                 }
@@ -2349,7 +2372,7 @@ namespace SIPSorcery.Net
         /// <param name="payloadType">The RTP header payload type.</param>
         private void SendRtpPacket(RTPChannel rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType, uint ssrc, ushort seqNum, RTCPSession rtcpSession)
         {
-            if (IsSecure && !IsSecureContextReady)
+            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady)
             {
                 logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
             }
@@ -2397,7 +2420,7 @@ namespace SIPSorcery.Net
         /// <param name="report">RTCP report to send.</param>
         private void SendRtcpReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket report)
         {
-            if (IsSecure && !IsSecureContextReady && report.Bye != null)
+            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady && report.Bye != null)
             {
                 // Do nothing. The RTCP BYE gets generated when an RTP session is closed.
                 // If that occurs before the connection was able to set up the secure context
@@ -2427,7 +2450,7 @@ namespace SIPSorcery.Net
                 controlDstEndPoint = VideoControlDestinationEndPoint;
             }
 
-            if (IsSecure && !IsSecureContextReady)
+            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady)
             {
                 logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
             }
