@@ -1635,6 +1635,12 @@ references:
   commentId: T:SIPSorcery.Media.VoIPMediaSession
   fullName: SIPSorcery.Media.VoIPMediaSession
   nameWithType: VoIPMediaSession
+- uid: SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorcery.Media.VoIPMediaSessionConfig)
+  name: VoIPMediaSession(VoIPMediaSessionConfig)
+  href: api/SIPSorcery.Media.VoIPMediaSession.html#SIPSorcery_Media_VoIPMediaSession__ctor_SIPSorcery_Media_VoIPMediaSessionConfig_
+  commentId: M:SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorcery.Media.VoIPMediaSessionConfig)
+  fullName: SIPSorcery.Media.VoIPMediaSession.VoIPMediaSession(SIPSorcery.Media.VoIPMediaSessionConfig)
+  nameWithType: VoIPMediaSession.VoIPMediaSession(VoIPMediaSessionConfig)
 - uid: SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorceryMedia.Abstractions.MediaEndPoints,SIPSorcery.Media.VideoTestPatternSource)
   name: VoIPMediaSession(MediaEndPoints, VideoTestPatternSource)
   href: api/SIPSorcery.Media.VoIPMediaSession.html#SIPSorcery_Media_VoIPMediaSession__ctor_SIPSorceryMedia_Abstractions_MediaEndPoints_SIPSorcery_Media_VideoTestPatternSource_
@@ -1764,6 +1770,77 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VoIPMediaSession.TestPatternSource
   nameWithType: VoIPMediaSession.TestPatternSource
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig
+  name: VoIPMediaSessionConfig
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html
+  commentId: T:SIPSorcery.Media.VoIPMediaSessionConfig
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig
+  nameWithType: VoIPMediaSessionConfig
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.BindAddress
+  name: BindAddress
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_BindAddress
+  commentId: P:SIPSorcery.Media.VoIPMediaSessionConfig.BindAddress
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.BindAddress
+  nameWithType: VoIPMediaSessionConfig.BindAddress
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.BindAddress*
+  name: BindAddress
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_BindAddress_
+  commentId: Overload:SIPSorcery.Media.VoIPMediaSessionConfig.BindAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.BindAddress
+  nameWithType: VoIPMediaSessionConfig.BindAddress
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.BindPort
+  name: BindPort
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_BindPort
+  commentId: P:SIPSorcery.Media.VoIPMediaSessionConfig.BindPort
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.BindPort
+  nameWithType: VoIPMediaSessionConfig.BindPort
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.BindPort*
+  name: BindPort
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_BindPort_
+  commentId: Overload:SIPSorcery.Media.VoIPMediaSessionConfig.BindPort
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.BindPort
+  nameWithType: VoIPMediaSessionConfig.BindPort
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.MediaEndPoint
+  name: MediaEndPoint
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_MediaEndPoint
+  commentId: P:SIPSorcery.Media.VoIPMediaSessionConfig.MediaEndPoint
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.MediaEndPoint
+  nameWithType: VoIPMediaSessionConfig.MediaEndPoint
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.MediaEndPoint*
+  name: MediaEndPoint
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_MediaEndPoint_
+  commentId: Overload:SIPSorcery.Media.VoIPMediaSessionConfig.MediaEndPoint
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.MediaEndPoint
+  nameWithType: VoIPMediaSessionConfig.MediaEndPoint
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.RtpSecureMediaOption
+  name: RtpSecureMediaOption
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_RtpSecureMediaOption
+  commentId: P:SIPSorcery.Media.VoIPMediaSessionConfig.RtpSecureMediaOption
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.RtpSecureMediaOption
+  nameWithType: VoIPMediaSessionConfig.RtpSecureMediaOption
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.RtpSecureMediaOption*
+  name: RtpSecureMediaOption
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_RtpSecureMediaOption_
+  commentId: Overload:SIPSorcery.Media.VoIPMediaSessionConfig.RtpSecureMediaOption
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.RtpSecureMediaOption
+  nameWithType: VoIPMediaSessionConfig.RtpSecureMediaOption
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.TestPatternSource
+  name: TestPatternSource
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_TestPatternSource
+  commentId: P:SIPSorcery.Media.VoIPMediaSessionConfig.TestPatternSource
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.TestPatternSource
+  nameWithType: VoIPMediaSessionConfig.TestPatternSource
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.TestPatternSource*
+  name: TestPatternSource
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_TestPatternSource_
+  commentId: Overload:SIPSorcery.Media.VoIPMediaSessionConfig.TestPatternSource
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.TestPatternSource
+  nameWithType: VoIPMediaSessionConfig.TestPatternSource
 - uid: SIPSorcery.Net
   name: SIPSorcery.Net
   href: api/SIPSorcery.Net.html
@@ -10722,12 +10799,42 @@ references:
   commentId: F:SIPSorcery.Net.RTPPacket.Payload
   fullName: SIPSorcery.Net.RTPPacket.Payload
   nameWithType: RTPPacket.Payload
+- uid: SIPSorcery.Net.RtpSecureMediaOptionEnum
+  name: RtpSecureMediaOptionEnum
+  href: api/SIPSorcery.Net.RtpSecureMediaOptionEnum.html
+  commentId: T:SIPSorcery.Net.RtpSecureMediaOptionEnum
+  fullName: SIPSorcery.Net.RtpSecureMediaOptionEnum
+  nameWithType: RtpSecureMediaOptionEnum
+- uid: SIPSorcery.Net.RtpSecureMediaOptionEnum.DtlsSrtp
+  name: DtlsSrtp
+  href: api/SIPSorcery.Net.RtpSecureMediaOptionEnum.html#SIPSorcery_Net_RtpSecureMediaOptionEnum_DtlsSrtp
+  commentId: F:SIPSorcery.Net.RtpSecureMediaOptionEnum.DtlsSrtp
+  fullName: SIPSorcery.Net.RtpSecureMediaOptionEnum.DtlsSrtp
+  nameWithType: RtpSecureMediaOptionEnum.DtlsSrtp
+- uid: SIPSorcery.Net.RtpSecureMediaOptionEnum.None
+  name: None
+  href: api/SIPSorcery.Net.RtpSecureMediaOptionEnum.html#SIPSorcery_Net_RtpSecureMediaOptionEnum_None
+  commentId: F:SIPSorcery.Net.RtpSecureMediaOptionEnum.None
+  fullName: SIPSorcery.Net.RtpSecureMediaOptionEnum.None
+  nameWithType: RtpSecureMediaOptionEnum.None
+- uid: SIPSorcery.Net.RtpSecureMediaOptionEnum.SdpCryptoNegotiation
+  name: SdpCryptoNegotiation
+  href: api/SIPSorcery.Net.RtpSecureMediaOptionEnum.html#SIPSorcery_Net_RtpSecureMediaOptionEnum_SdpCryptoNegotiation
+  commentId: F:SIPSorcery.Net.RtpSecureMediaOptionEnum.SdpCryptoNegotiation
+  fullName: SIPSorcery.Net.RtpSecureMediaOptionEnum.SdpCryptoNegotiation
+  nameWithType: RtpSecureMediaOptionEnum.SdpCryptoNegotiation
 - uid: SIPSorcery.Net.RTPSession
   name: RTPSession
   href: api/SIPSorcery.Net.RTPSession.html
   commentId: T:SIPSorcery.Net.RTPSession
   fullName: SIPSorcery.Net.RTPSession
   nameWithType: RTPSession
+- uid: SIPSorcery.Net.RTPSession.#ctor(SIPSorcery.Net.RtpSessionConfig)
+  name: RTPSession(RtpSessionConfig)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_SIPSorcery_Net_RtpSessionConfig_
+  commentId: M:SIPSorcery.Net.RTPSession.#ctor(SIPSorcery.Net.RtpSessionConfig)
+  fullName: SIPSorcery.Net.RTPSession.RTPSession(SIPSorcery.Net.RtpSessionConfig)
+  nameWithType: RTPSession.RTPSession(RtpSessionConfig)
 - uid: SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress,System.Int32)
   name: RTPSession(Boolean, Boolean, Boolean, IPAddress, Int32)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_System_Net_IPAddress_System_Int32_
@@ -11195,6 +11302,12 @@ references:
   commentId: F:SIPSorcery.Net.RTPSession.RTP_MEDIA_PROFILE
   fullName: SIPSorcery.Net.RTPSession.RTP_MEDIA_PROFILE
   nameWithType: RTPSession.RTP_MEDIA_PROFILE
+- uid: SIPSorcery.Net.RTPSession.RTP_SECUREMEDIA_PROFILE
+  name: RTP_SECUREMEDIA_PROFILE
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_SECUREMEDIA_PROFILE
+  commentId: F:SIPSorcery.Net.RTPSession.RTP_SECUREMEDIA_PROFILE
+  fullName: SIPSorcery.Net.RTPSession.RTP_SECUREMEDIA_PROFILE
+  nameWithType: RTPSession.RTP_SECUREMEDIA_PROFILE
 - uid: SIPSorcery.Net.RTPSession.RtpBindAddress
   name: RtpBindAddress
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RtpBindAddress
@@ -11417,6 +11530,19 @@ references:
   commentId: F:SIPSorcery.Net.RTPSession.SRTP_MAX_PREFIX_LENGTH
   fullName: SIPSorcery.Net.RTPSession.SRTP_MAX_PREFIX_LENGTH
   nameWithType: RTPSession.SRTP_MAX_PREFIX_LENGTH
+- uid: SIPSorcery.Net.RTPSession.SrtpCryptoSuites
+  name: SrtpCryptoSuites
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SrtpCryptoSuites
+  commentId: P:SIPSorcery.Net.RTPSession.SrtpCryptoSuites
+  fullName: SIPSorcery.Net.RTPSession.SrtpCryptoSuites
+  nameWithType: RTPSession.SrtpCryptoSuites
+- uid: SIPSorcery.Net.RTPSession.SrtpCryptoSuites*
+  name: SrtpCryptoSuites
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SrtpCryptoSuites_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SrtpCryptoSuites
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SrtpCryptoSuites
+  nameWithType: RTPSession.SrtpCryptoSuites
 - uid: SIPSorcery.Net.RTPSession.Start
   name: Start()
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Start
@@ -11430,6 +11556,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.Start
   nameWithType: RTPSession.Start
+- uid: SIPSorcery.Net.RTPSession.UseSdpCryptoNegotiation
+  name: UseSdpCryptoNegotiation
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_UseSdpCryptoNegotiation
+  commentId: P:SIPSorcery.Net.RTPSession.UseSdpCryptoNegotiation
+  fullName: SIPSorcery.Net.RTPSession.UseSdpCryptoNegotiation
+  nameWithType: RTPSession.UseSdpCryptoNegotiation
+- uid: SIPSorcery.Net.RTPSession.UseSdpCryptoNegotiation*
+  name: UseSdpCryptoNegotiation
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_UseSdpCryptoNegotiation_
+  commentId: Overload:SIPSorcery.Net.RTPSession.UseSdpCryptoNegotiation
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.UseSdpCryptoNegotiation
+  nameWithType: RTPSession.UseSdpCryptoNegotiation
 - uid: SIPSorcery.Net.RTPSession.VideoControlDestinationEndPoint
   name: VideoControlDestinationEndPoint
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoControlDestinationEndPoint
@@ -11495,6 +11634,77 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.VideoRtcpSession
   nameWithType: RTPSession.VideoRtcpSession
+- uid: SIPSorcery.Net.RtpSessionConfig
+  name: RtpSessionConfig
+  href: api/SIPSorcery.Net.RtpSessionConfig.html
+  commentId: T:SIPSorcery.Net.RtpSessionConfig
+  fullName: SIPSorcery.Net.RtpSessionConfig
+  nameWithType: RtpSessionConfig
+- uid: SIPSorcery.Net.RtpSessionConfig.BindAddress
+  name: BindAddress
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_BindAddress
+  commentId: P:SIPSorcery.Net.RtpSessionConfig.BindAddress
+  fullName: SIPSorcery.Net.RtpSessionConfig.BindAddress
+  nameWithType: RtpSessionConfig.BindAddress
+- uid: SIPSorcery.Net.RtpSessionConfig.BindAddress*
+  name: BindAddress
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_BindAddress_
+  commentId: Overload:SIPSorcery.Net.RtpSessionConfig.BindAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpSessionConfig.BindAddress
+  nameWithType: RtpSessionConfig.BindAddress
+- uid: SIPSorcery.Net.RtpSessionConfig.BindPort
+  name: BindPort
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_BindPort
+  commentId: P:SIPSorcery.Net.RtpSessionConfig.BindPort
+  fullName: SIPSorcery.Net.RtpSessionConfig.BindPort
+  nameWithType: RtpSessionConfig.BindPort
+- uid: SIPSorcery.Net.RtpSessionConfig.BindPort*
+  name: BindPort
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_BindPort_
+  commentId: Overload:SIPSorcery.Net.RtpSessionConfig.BindPort
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpSessionConfig.BindPort
+  nameWithType: RtpSessionConfig.BindPort
+- uid: SIPSorcery.Net.RtpSessionConfig.IsMediaMultiplexed
+  name: IsMediaMultiplexed
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_IsMediaMultiplexed
+  commentId: P:SIPSorcery.Net.RtpSessionConfig.IsMediaMultiplexed
+  fullName: SIPSorcery.Net.RtpSessionConfig.IsMediaMultiplexed
+  nameWithType: RtpSessionConfig.IsMediaMultiplexed
+- uid: SIPSorcery.Net.RtpSessionConfig.IsMediaMultiplexed*
+  name: IsMediaMultiplexed
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_IsMediaMultiplexed_
+  commentId: Overload:SIPSorcery.Net.RtpSessionConfig.IsMediaMultiplexed
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpSessionConfig.IsMediaMultiplexed
+  nameWithType: RtpSessionConfig.IsMediaMultiplexed
+- uid: SIPSorcery.Net.RtpSessionConfig.IsRtcpMultiplexed
+  name: IsRtcpMultiplexed
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_IsRtcpMultiplexed
+  commentId: P:SIPSorcery.Net.RtpSessionConfig.IsRtcpMultiplexed
+  fullName: SIPSorcery.Net.RtpSessionConfig.IsRtcpMultiplexed
+  nameWithType: RtpSessionConfig.IsRtcpMultiplexed
+- uid: SIPSorcery.Net.RtpSessionConfig.IsRtcpMultiplexed*
+  name: IsRtcpMultiplexed
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_IsRtcpMultiplexed_
+  commentId: Overload:SIPSorcery.Net.RtpSessionConfig.IsRtcpMultiplexed
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpSessionConfig.IsRtcpMultiplexed
+  nameWithType: RtpSessionConfig.IsRtcpMultiplexed
+- uid: SIPSorcery.Net.RtpSessionConfig.RtpSecureMediaOption
+  name: RtpSecureMediaOption
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_RtpSecureMediaOption
+  commentId: P:SIPSorcery.Net.RtpSessionConfig.RtpSecureMediaOption
+  fullName: SIPSorcery.Net.RtpSessionConfig.RtpSecureMediaOption
+  nameWithType: RtpSessionConfig.RtpSecureMediaOption
+- uid: SIPSorcery.Net.RtpSessionConfig.RtpSecureMediaOption*
+  name: RtpSecureMediaOption
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_RtpSecureMediaOption_
+  commentId: Overload:SIPSorcery.Net.RtpSessionConfig.RtpSecureMediaOption
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpSessionConfig.RtpSecureMediaOption
+  nameWithType: RtpSessionConfig.RtpSecureMediaOption
 - uid: SIPSorcery.Net.RtpVideoFramer
   name: RtpVideoFramer
   href: api/SIPSorcery.Net.RtpVideoFramer.html
@@ -18517,6 +18727,12 @@ references:
   commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.AudioIncompatible
   fullName: SIPSorcery.Net.SetDescriptionResultEnum.AudioIncompatible
   nameWithType: SetDescriptionResultEnum.AudioIncompatible
+- uid: SIPSorcery.Net.SetDescriptionResultEnum.CryptoNegotiationFailed
+  name: CryptoNegotiationFailed
+  href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_CryptoNegotiationFailed
+  commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.CryptoNegotiationFailed
+  fullName: SIPSorcery.Net.SetDescriptionResultEnum.CryptoNegotiationFailed
+  nameWithType: SetDescriptionResultEnum.CryptoNegotiationFailed
 - uid: SIPSorcery.Net.SetDescriptionResultEnum.DataChannelTransportNotSupported
   name: DataChannelTransportNotSupported
   href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_DataChannelTransportNotSupported
@@ -19126,6 +19342,234 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SrtpCryptoContext.TransformPacket
   nameWithType: SrtpCryptoContext.TransformPacket
+- uid: SIPSorcery.Net.SrtpHandler
+  name: SrtpHandler
+  href: api/SIPSorcery.Net.SrtpHandler.html
+  commentId: T:SIPSorcery.Net.SrtpHandler
+  fullName: SIPSorcery.Net.SrtpHandler
+  nameWithType: SrtpHandler
+- uid: SIPSorcery.Net.SrtpHandler.#ctor
+  name: SrtpHandler()
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler__ctor
+  commentId: M:SIPSorcery.Net.SrtpHandler.#ctor
+  fullName: SIPSorcery.Net.SrtpHandler.SrtpHandler()
+  nameWithType: SrtpHandler.SrtpHandler()
+- uid: SIPSorcery.Net.SrtpHandler.#ctor*
+  name: SrtpHandler
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler__ctor_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.SrtpHandler
+  nameWithType: SrtpHandler.SrtpHandler
+- uid: SIPSorcery.Net.SrtpHandler.IsNegotiationComplete
+  name: IsNegotiationComplete
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_IsNegotiationComplete
+  commentId: P:SIPSorcery.Net.SrtpHandler.IsNegotiationComplete
+  fullName: SIPSorcery.Net.SrtpHandler.IsNegotiationComplete
+  nameWithType: SrtpHandler.IsNegotiationComplete
+- uid: SIPSorcery.Net.SrtpHandler.IsNegotiationComplete*
+  name: IsNegotiationComplete
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_IsNegotiationComplete_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.IsNegotiationComplete
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.IsNegotiationComplete
+  nameWithType: SrtpHandler.IsNegotiationComplete
+- uid: SIPSorcery.Net.SrtpHandler.m_localSecurityDescriptions
+  name: m_localSecurityDescriptions
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_m_localSecurityDescriptions
+  commentId: F:SIPSorcery.Net.SrtpHandler.m_localSecurityDescriptions
+  fullName: SIPSorcery.Net.SrtpHandler.m_localSecurityDescriptions
+  nameWithType: SrtpHandler.m_localSecurityDescriptions
+- uid: SIPSorcery.Net.SrtpHandler.m_remoteSecurityDescriptions
+  name: m_remoteSecurityDescriptions
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_m_remoteSecurityDescriptions
+  commentId: F:SIPSorcery.Net.SrtpHandler.m_remoteSecurityDescriptions
+  fullName: SIPSorcery.Net.SrtpHandler.m_remoteSecurityDescriptions
+  nameWithType: SrtpHandler.m_remoteSecurityDescriptions
+- uid: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[],System.Int32,System.Int32)
+  name: ProtectRTCP(Byte[], Int32, Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTCP_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[],System.Int32,System.Int32)
+  name.vb: ProtectRTCP(Byte(), Int32, Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte(), System.Int32, System.Int32)
+  nameWithType: SrtpHandler.ProtectRTCP(Byte[], Int32, Int32)
+  nameWithType.vb: SrtpHandler.ProtectRTCP(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[],System.Int32,System.Int32@)
+  name: ProtectRTCP(Byte[], Int32, out Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTCP_System_Byte___System_Int32_System_Int32__
+  commentId: M:SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[],System.Int32,System.Int32@)
+  name.vb: ProtectRTCP(Byte(), Int32, ByRef Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[], System.Int32, out System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte(), System.Int32, ByRef System.Int32)
+  nameWithType: SrtpHandler.ProtectRTCP(Byte[], Int32, out Int32)
+  nameWithType.vb: SrtpHandler.ProtectRTCP(Byte(), Int32, ByRef Int32)
+- uid: SIPSorcery.Net.SrtpHandler.ProtectRTCP*
+  name: ProtectRTCP
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTCP_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.ProtectRTCP
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.ProtectRTCP
+  nameWithType: SrtpHandler.ProtectRTCP
+- uid: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[],System.Int32,System.Int32)
+  name: ProtectRTP(Byte[], Int32, Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTP_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[],System.Int32,System.Int32)
+  name.vb: ProtectRTP(Byte(), Int32, Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte(), System.Int32, System.Int32)
+  nameWithType: SrtpHandler.ProtectRTP(Byte[], Int32, Int32)
+  nameWithType.vb: SrtpHandler.ProtectRTP(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[],System.Int32,System.Int32@)
+  name: ProtectRTP(Byte[], Int32, out Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTP_System_Byte___System_Int32_System_Int32__
+  commentId: M:SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[],System.Int32,System.Int32@)
+  name.vb: ProtectRTP(Byte(), Int32, ByRef Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[], System.Int32, out System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte(), System.Int32, ByRef System.Int32)
+  nameWithType: SrtpHandler.ProtectRTP(Byte[], Int32, out Int32)
+  nameWithType.vb: SrtpHandler.ProtectRTP(Byte(), Int32, ByRef Int32)
+- uid: SIPSorcery.Net.SrtpHandler.ProtectRTP*
+  name: ProtectRTP
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTP_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.ProtectRTP
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.ProtectRTP
+  nameWithType: SrtpHandler.ProtectRTP
+- uid: SIPSorcery.Net.SrtpHandler.SetupLocal(System.Collections.Generic.List{SIPSorcery.Net.SDPSecurityDescription},SIPSorcery.SIP.App.SdpType)
+  name: SetupLocal(List<SDPSecurityDescription>, SdpType)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SetupLocal_System_Collections_Generic_List_SIPSorcery_Net_SDPSecurityDescription__SIPSorcery_SIP_App_SdpType_
+  commentId: M:SIPSorcery.Net.SrtpHandler.SetupLocal(System.Collections.Generic.List{SIPSorcery.Net.SDPSecurityDescription},SIPSorcery.SIP.App.SdpType)
+  name.vb: SetupLocal(List(Of SDPSecurityDescription), SdpType)
+  fullName: SIPSorcery.Net.SrtpHandler.SetupLocal(System.Collections.Generic.List<SIPSorcery.Net.SDPSecurityDescription>, SIPSorcery.SIP.App.SdpType)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.SetupLocal(System.Collections.Generic.List(Of SIPSorcery.Net.SDPSecurityDescription), SIPSorcery.SIP.App.SdpType)
+  nameWithType: SrtpHandler.SetupLocal(List<SDPSecurityDescription>, SdpType)
+  nameWithType.vb: SrtpHandler.SetupLocal(List(Of SDPSecurityDescription), SdpType)
+- uid: SIPSorcery.Net.SrtpHandler.SetupLocal*
+  name: SetupLocal
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SetupLocal_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.SetupLocal
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.SetupLocal
+  nameWithType: SrtpHandler.SetupLocal
+- uid: SIPSorcery.Net.SrtpHandler.SetupRemote(System.Collections.Generic.List{SIPSorcery.Net.SDPSecurityDescription},SIPSorcery.SIP.App.SdpType)
+  name: SetupRemote(List<SDPSecurityDescription>, SdpType)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SetupRemote_System_Collections_Generic_List_SIPSorcery_Net_SDPSecurityDescription__SIPSorcery_SIP_App_SdpType_
+  commentId: M:SIPSorcery.Net.SrtpHandler.SetupRemote(System.Collections.Generic.List{SIPSorcery.Net.SDPSecurityDescription},SIPSorcery.SIP.App.SdpType)
+  name.vb: SetupRemote(List(Of SDPSecurityDescription), SdpType)
+  fullName: SIPSorcery.Net.SrtpHandler.SetupRemote(System.Collections.Generic.List<SIPSorcery.Net.SDPSecurityDescription>, SIPSorcery.SIP.App.SdpType)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.SetupRemote(System.Collections.Generic.List(Of SIPSorcery.Net.SDPSecurityDescription), SIPSorcery.SIP.App.SdpType)
+  nameWithType: SrtpHandler.SetupRemote(List<SDPSecurityDescription>, SdpType)
+  nameWithType.vb: SrtpHandler.SetupRemote(List(Of SDPSecurityDescription), SdpType)
+- uid: SIPSorcery.Net.SrtpHandler.SetupRemote*
+  name: SetupRemote
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SetupRemote_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.SetupRemote
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.SetupRemote
+  nameWithType: SrtpHandler.SetupRemote
+- uid: SIPSorcery.Net.SrtpHandler.SrtcpDecoder
+  name: SrtcpDecoder
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SrtcpDecoder
+  commentId: P:SIPSorcery.Net.SrtpHandler.SrtcpDecoder
+  fullName: SIPSorcery.Net.SrtpHandler.SrtcpDecoder
+  nameWithType: SrtpHandler.SrtcpDecoder
+- uid: SIPSorcery.Net.SrtpHandler.SrtcpDecoder*
+  name: SrtcpDecoder
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SrtcpDecoder_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.SrtcpDecoder
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.SrtcpDecoder
+  nameWithType: SrtpHandler.SrtcpDecoder
+- uid: SIPSorcery.Net.SrtpHandler.SrtcpEncoder
+  name: SrtcpEncoder
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SrtcpEncoder
+  commentId: P:SIPSorcery.Net.SrtpHandler.SrtcpEncoder
+  fullName: SIPSorcery.Net.SrtpHandler.SrtcpEncoder
+  nameWithType: SrtpHandler.SrtcpEncoder
+- uid: SIPSorcery.Net.SrtpHandler.SrtcpEncoder*
+  name: SrtcpEncoder
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SrtcpEncoder_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.SrtcpEncoder
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.SrtcpEncoder
+  nameWithType: SrtpHandler.SrtcpEncoder
+- uid: SIPSorcery.Net.SrtpHandler.SrtpDecoder
+  name: SrtpDecoder
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SrtpDecoder
+  commentId: P:SIPSorcery.Net.SrtpHandler.SrtpDecoder
+  fullName: SIPSorcery.Net.SrtpHandler.SrtpDecoder
+  nameWithType: SrtpHandler.SrtpDecoder
+- uid: SIPSorcery.Net.SrtpHandler.SrtpDecoder*
+  name: SrtpDecoder
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SrtpDecoder_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.SrtpDecoder
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.SrtpDecoder
+  nameWithType: SrtpHandler.SrtpDecoder
+- uid: SIPSorcery.Net.SrtpHandler.SrtpEncoder
+  name: SrtpEncoder
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SrtpEncoder
+  commentId: P:SIPSorcery.Net.SrtpHandler.SrtpEncoder
+  fullName: SIPSorcery.Net.SrtpHandler.SrtpEncoder
+  nameWithType: SrtpHandler.SrtpEncoder
+- uid: SIPSorcery.Net.SrtpHandler.SrtpEncoder*
+  name: SrtpEncoder
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SrtpEncoder_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.SrtpEncoder
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.SrtpEncoder
+  nameWithType: SrtpHandler.SrtpEncoder
+- uid: SIPSorcery.Net.SrtpHandler.UnprotectRTCP(System.Byte[],System.Int32,System.Int32)
+  name: UnprotectRTCP(Byte[], Int32, Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_UnprotectRTCP_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpHandler.UnprotectRTCP(System.Byte[],System.Int32,System.Int32)
+  name.vb: UnprotectRTCP(Byte(), Int32, Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.UnprotectRTCP(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.UnprotectRTCP(System.Byte(), System.Int32, System.Int32)
+  nameWithType: SrtpHandler.UnprotectRTCP(Byte[], Int32, Int32)
+  nameWithType.vb: SrtpHandler.UnprotectRTCP(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.SrtpHandler.UnprotectRTCP(System.Byte[],System.Int32,System.Int32@)
+  name: UnprotectRTCP(Byte[], Int32, out Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_UnprotectRTCP_System_Byte___System_Int32_System_Int32__
+  commentId: M:SIPSorcery.Net.SrtpHandler.UnprotectRTCP(System.Byte[],System.Int32,System.Int32@)
+  name.vb: UnprotectRTCP(Byte(), Int32, ByRef Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.UnprotectRTCP(System.Byte[], System.Int32, out System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.UnprotectRTCP(System.Byte(), System.Int32, ByRef System.Int32)
+  nameWithType: SrtpHandler.UnprotectRTCP(Byte[], Int32, out Int32)
+  nameWithType.vb: SrtpHandler.UnprotectRTCP(Byte(), Int32, ByRef Int32)
+- uid: SIPSorcery.Net.SrtpHandler.UnprotectRTCP*
+  name: UnprotectRTCP
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_UnprotectRTCP_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.UnprotectRTCP
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.UnprotectRTCP
+  nameWithType: SrtpHandler.UnprotectRTCP
+- uid: SIPSorcery.Net.SrtpHandler.UnprotectRTP(System.Byte[],System.Int32,System.Int32)
+  name: UnprotectRTP(Byte[], Int32, Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_UnprotectRTP_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpHandler.UnprotectRTP(System.Byte[],System.Int32,System.Int32)
+  name.vb: UnprotectRTP(Byte(), Int32, Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.UnprotectRTP(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.UnprotectRTP(System.Byte(), System.Int32, System.Int32)
+  nameWithType: SrtpHandler.UnprotectRTP(Byte[], Int32, Int32)
+  nameWithType.vb: SrtpHandler.UnprotectRTP(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.SrtpHandler.UnprotectRTP(System.Byte[],System.Int32,System.Int32@)
+  name: UnprotectRTP(Byte[], Int32, out Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_UnprotectRTP_System_Byte___System_Int32_System_Int32__
+  commentId: M:SIPSorcery.Net.SrtpHandler.UnprotectRTP(System.Byte[],System.Int32,System.Int32@)
+  name.vb: UnprotectRTP(Byte(), Int32, ByRef Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.UnprotectRTP(System.Byte[], System.Int32, out System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.UnprotectRTP(System.Byte(), System.Int32, ByRef System.Int32)
+  nameWithType: SrtpHandler.UnprotectRTP(Byte[], Int32, out Int32)
+  nameWithType.vb: SrtpHandler.UnprotectRTP(Byte(), Int32, ByRef Int32)
+- uid: SIPSorcery.Net.SrtpHandler.UnprotectRTP*
+  name: UnprotectRTP
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_UnprotectRTP_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.UnprotectRTP
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.UnprotectRTP
+  nameWithType: SrtpHandler.UnprotectRTP
 - uid: SIPSorcery.Net.SrtpParameters
   name: SrtpParameters
   href: api/SIPSorcery.Net.SrtpParameters.html
