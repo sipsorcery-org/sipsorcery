@@ -8,7 +8,7 @@ branches:
 environment:
   access_token:
     # Token for github pages publishing.
-    secure: 21m76jAVvcu7oACAHFnfCBltcwon+r5ZI3avfRmrNFAqJMn6RfLXwpBhPcJ617tD
+    secure: vhHzssxBhg0t4JAiWZZ1r/RTzsbKcGn16cxj7uBoPVVEJSaLaJ+gOdaUdsfX2ooI
 image: Visual Studio 2019
 configuration: Release
 before_build:
