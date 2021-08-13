@@ -273,7 +273,7 @@ namespace SIPSorcery
                 switch (options.Scenario)
                 {
                     case Scenarios.reg:
-                        task = InitiateRegisterTaskAsync(sipTransport, dstUri);
+                        task = InitiateRegisterTaskAsync(sipTransport, dstUri, options);
                         break;
                     case Scenarios.uac:
                     case Scenarios.uacw:
@@ -485,17 +485,15 @@ namespace SIPSorcery
         /// <param name="sipTransport">The transport object to use for the send.</param>
         /// <param name="dst">The destination end point to send the request to.</param>
         /// <returns>True if the expected response was received, false otherwise.</returns>
-        private static Task<bool> InitiateRegisterTaskAsync(SIPTransport sipTransport, SIPURI dst)
+        private static Task<bool> InitiateRegisterTaskAsync(SIPTransport sipTransport, SIPURI dst, Options options)
         {
-            if (dst.User == null)
-            {
-                dst.User = "user";
-            }
+            string user = options.Username ?? dst.User ?? "user";
+            string password = options.Password ?? "password";
 
             var ua = new SIPRegistrationUserAgent(
                 sipTransport,
-                dst.User, 
-                "password",
+                user,
+                password,
                 dst.ToString(),
                 120);
 
