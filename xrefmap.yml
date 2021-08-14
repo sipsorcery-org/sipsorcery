@@ -33845,12 +33845,6 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
   fullName: SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest)
   nameWithType: SIPTransport.SendRequestAsync(SIPEndPoint, SIPRequest)
-- uid: SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest)
-  name: SendRequestAsync(SIPRequest)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPTransport.SendRequestAsync(SIPRequest)
 - uid: SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPRequest,System.Boolean)
   name: SendRequestAsync(SIPRequest, Boolean)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPRequest_System_Boolean_
@@ -33870,12 +33864,6 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPResponse)
   fullName: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPResponse)
   nameWithType: SIPTransport.SendResponseAsync(SIPEndPoint, SIPResponse)
-- uid: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse)
-  name: SendResponseAsync(SIPResponse)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPResponse_
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse)
-  fullName: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse)
-  nameWithType: SIPTransport.SendResponseAsync(SIPResponse)
 - uid: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse,System.Boolean)
   name: SendResponseAsync(SIPResponse, Boolean)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPResponse_System_Boolean_
