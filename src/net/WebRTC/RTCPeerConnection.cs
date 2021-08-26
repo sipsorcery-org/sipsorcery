@@ -39,6 +39,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
@@ -302,6 +303,42 @@ namespace SIPSorcery.Net
             }
         }
 
+        protected CancellationTokenSource _cancellationSource = new CancellationTokenSource();
+        protected object _renegotiationLock = new object();
+        protected volatile bool _requireRenegotiation = true;
+
+        public override bool RequireRenegotiation
+        {
+            get
+            {
+                return _requireRenegotiation;
+            }
+
+            protected internal set
+            {
+                lock (_renegotiationLock)
+                {
+                    _requireRenegotiation = value;
+                    //Remove Remote Description
+                    if (_requireRenegotiation)
+                    {
+                        RemoteDescription = null;
+                    }
+                }
+
+                //Remove NegotiationTask when state not stable
+                if (!_requireRenegotiation || signalingState != RTCSignalingState.stable)
+                {
+                    CancelOnNegotiationNeededTask();
+                }
+                //Call Renegotiation Delayed (We need to wait as user can try add multiple tracks in sequence)
+                else
+                {
+                    StartOnNegotiationNeededTask();
+                }
+            }
+        }
+
         /// <summary>
         /// A failure occurred when gathering ICE candidates.
         /// </summary>
@@ -435,6 +472,9 @@ namespace SIPSorcery.Net
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
+            
+            //Cancel Negotiation Task Event to Prevent Duplicated Calls
+            onnegotiationneeded += CancelOnNegotiationNeededTask;
 
             sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
 
@@ -695,6 +735,7 @@ namespace SIPSorcery.Net
                     _rtpIceChannel.IsController = true;
                     IceRole = remoteIceRole == IceRolesEnum.passive ? IceRolesEnum.active : IceRolesEnum.passive;
                 }
+                //As Chrome does not support changing IceRole while renegotiating we need to keep same previous IceRole if we already negotiated before
                 else
                 {
                     // Set DTLS role as client.
@@ -814,10 +855,20 @@ namespace SIPSorcery.Net
         /// controls over the generated offer SDP.</param>
         public RTCSessionDescriptionInit createOffer(RTCOfferOptions options = null)
         {
-            var audioCapabilities = AudioLocalTrack?.Capabilities;
-            var videoCapabilities = VideoLocalTrack?.Capabilities;
-
             List<MediaStreamTrack> localTracks = GetLocalTracks();
+            //Revert to DefaultStreamStatus
+            foreach (var localTrack in localTracks)
+            {
+                if (localTrack != null && localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                    localTrack.StreamStatus = localTrack.DefaultStreamStatus;
+            }
+
+            var audioLocalTrack = localTracks.Find(a => a.Kind == SDPMediaTypesEnum.audio);
+            var videoLocalTrack = localTracks.Find(a => a.Kind == SDPMediaTypesEnum.video);
+
+            var audioCapabilities = audioLocalTrack?.Capabilities;
+            var videoCapabilities = videoLocalTrack?.Capabilities;
+
             bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
             var offerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities, excludeIceCandidates);
 
@@ -894,6 +945,20 @@ namespace SIPSorcery.Net
                     SDPAudioVideoMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities) : null;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
+
+                //Revert to DefaultStreamStatus
+                foreach (var localTrack in localTracks)
+                {
+                    if (localTrack != null && localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                    {
+                        if ((localTrack.Kind == SDPMediaTypesEnum.audio && AudioRemoteTrack != null && AudioRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive) ||
+                            (localTrack.Kind == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive))
+                        {
+                            localTrack.StreamStatus = localTrack.DefaultStreamStatus;
+                        }
+                    }
+                }
+
                 bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
                 var answerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities, excludeIceCandidates);
 
@@ -1009,7 +1074,7 @@ namespace SIPSorcery.Net
             // Media announcements must be in the same order in the offer and answer.
             foreach (var track in tracks)
             {
-                int mindex = RemoteDescription == null ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(track.Kind);
+                int mindex = RemoteDescription == null || RequireRenegotiation ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(track.Kind);
 
                 if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
@@ -1233,6 +1298,58 @@ namespace SIPSorcery.Net
             if (destinationPort != SCTP_DEFAULT_PORT)
             {
                 sctp.UpdateDestinationPort(destinationPort);
+            }
+        }
+
+        /// <summary>
+        /// These internal function is used to call Renegotiation Event with delay as the user should call addTrack/removeTrack in sequence so we need a small delay to prevent multiple renegotiation calls
+        /// </summary>
+        /// <returns>Current Executing Task</returns>
+        protected virtual Task StartOnNegotiationNeededTask()
+        {
+            const int RENEGOTIATION_CALL_DELAY = 100;
+
+            //We need to reset the timer every time that we call this function
+            CancelOnNegotiationNeededTask();
+
+            CancellationToken token;
+            lock (_renegotiationLock)
+            {
+                _cancellationSource = new CancellationTokenSource();
+                token = _cancellationSource.Token;
+            }
+            return Task.Run(async () =>
+            {
+                //Call Renegotiation Delayed
+                await Task.Delay(RENEGOTIATION_CALL_DELAY, token);
+
+                //Prevent continue with cancellation requested
+                if (token.IsCancellationRequested)
+                    return;
+                else
+                {
+                    if (_requireRenegotiation)
+                    {
+                        //We Already Subscribe CancelRenegotiationEventTask in Constructor so we dont need to handle with this function again here
+                        onnegotiationneeded?.Invoke();
+                    }
+                }
+            }, token);
+        }
+
+        /// <summary>
+        /// Cancel current Negotiation Event Call to prevent running thread to call OnNegotiationNeeded
+        /// </summary>
+        protected virtual void CancelOnNegotiationNeededTask()
+        {
+            lock (_renegotiationLock)
+            {
+                if (_cancellationSource != null)
+                {
+                    if (!_cancellationSource.IsCancellationRequested)
+                        _cancellationSource.Cancel();
+                    _cancellationSource = null;
+                }
             }
         }
 
