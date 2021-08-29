@@ -189,11 +189,14 @@ namespace SIPSorcery.Net
             Port = port;
             MediaStreamStatus = DEFAULT_STREAM_STATUS;
 
-            foreach (var fmt in mediaFormats)
+            if (mediaFormats != null)
             {
-                if (!MediaFormats.ContainsKey(fmt.ID))
+                foreach (var fmt in mediaFormats)
                 {
-                    MediaFormats.Add(fmt.ID, fmt);
+                    if (!MediaFormats.ContainsKey(fmt.ID))
+                    {
+                        MediaFormats.Add(fmt.ID, fmt);
+                    }
                 }
             }
         }
@@ -203,11 +206,14 @@ namespace SIPSorcery.Net
             Media = mediaType;
             Port = port;
 
-            foreach (var fmt in appMediaFormats)
+            if (appMediaFormats != null)
             {
-                if (!ApplicationMediaFormats.ContainsKey(fmt.ID))
+                foreach (var fmt in appMediaFormats)
                 {
-                    ApplicationMediaFormats.Add(fmt.ID, fmt);
+                    if (!ApplicationMediaFormats.ContainsKey(fmt.ID))
+                    {
+                        ApplicationMediaFormats.Add(fmt.ID, fmt);
+                    }
                 }
             }
         }
