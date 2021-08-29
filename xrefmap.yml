@@ -5577,6 +5577,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.MediaStreamTrack.SdpSsrc
   nameWithType: MediaStreamTrack.SdpSsrc
+- uid: SIPSorcery.Net.MediaStreamTrack.SeqNum
+  name: SeqNum
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_SeqNum
+  commentId: P:SIPSorcery.Net.MediaStreamTrack.SeqNum
+  fullName: SIPSorcery.Net.MediaStreamTrack.SeqNum
+  nameWithType: MediaStreamTrack.SeqNum
+- uid: SIPSorcery.Net.MediaStreamTrack.SeqNum*
+  name: SeqNum
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_SeqNum_
+  commentId: Overload:SIPSorcery.Net.MediaStreamTrack.SeqNum
+  isSpec: "True"
+  fullName: SIPSorcery.Net.MediaStreamTrack.SeqNum
+  nameWithType: MediaStreamTrack.SeqNum
 - uid: SIPSorcery.Net.MediaStreamTrack.Ssrc
   name: Ssrc
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_Ssrc
@@ -7770,6 +7783,24 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.RTCPeerConnection
   nameWithType: RTCPeerConnection.RTCPeerConnection
+- uid: SIPSorcery.Net.RTCPeerConnection._cancellationSource
+  name: _cancellationSource
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__cancellationSource
+  commentId: F:SIPSorcery.Net.RTCPeerConnection._cancellationSource
+  fullName: SIPSorcery.Net.RTCPeerConnection._cancellationSource
+  nameWithType: RTCPeerConnection._cancellationSource
+- uid: SIPSorcery.Net.RTCPeerConnection._renegotiationLock
+  name: _renegotiationLock
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__renegotiationLock
+  commentId: F:SIPSorcery.Net.RTCPeerConnection._renegotiationLock
+  fullName: SIPSorcery.Net.RTCPeerConnection._renegotiationLock
+  nameWithType: RTCPeerConnection._renegotiationLock
+- uid: SIPSorcery.Net.RTCPeerConnection._requireRenegotiation
+  name: _requireRenegotiation
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__requireRenegotiation
+  commentId: F:SIPSorcery.Net.RTCPeerConnection._requireRenegotiation
+  fullName: SIPSorcery.Net.RTCPeerConnection._requireRenegotiation
+  nameWithType: RTCPeerConnection._requireRenegotiation
 - uid: SIPSorcery.Net.RTCPeerConnection.addIceCandidate(SIPSorcery.Net.RTCIceCandidateInit)
   name: addIceCandidate(RTCIceCandidateInit)
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_addIceCandidate_SIPSorcery_Net_RTCIceCandidateInit_
@@ -7796,6 +7827,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.addLocalIceCandidate
   nameWithType: RTCPeerConnection.addLocalIceCandidate
+- uid: SIPSorcery.Net.RTCPeerConnection.CancelOnNegotiationNeededTask
+  name: CancelOnNegotiationNeededTask()
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_CancelOnNegotiationNeededTask
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.CancelOnNegotiationNeededTask
+  fullName: SIPSorcery.Net.RTCPeerConnection.CancelOnNegotiationNeededTask()
+  nameWithType: RTCPeerConnection.CancelOnNegotiationNeededTask()
+- uid: SIPSorcery.Net.RTCPeerConnection.CancelOnNegotiationNeededTask*
+  name: CancelOnNegotiationNeededTask
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_CancelOnNegotiationNeededTask_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.CancelOnNegotiationNeededTask
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.CancelOnNegotiationNeededTask
+  nameWithType: RTCPeerConnection.CancelOnNegotiationNeededTask
 - uid: SIPSorcery.Net.RTCPeerConnection.canTrickleIceCandidates
   name: canTrickleIceCandidates
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_canTrickleIceCandidates
@@ -8201,6 +8245,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.RemotePeerDtlsFingerprint
   nameWithType: RTCPeerConnection.RemotePeerDtlsFingerprint
+- uid: SIPSorcery.Net.RTCPeerConnection.RequireRenegotiation
+  name: RequireRenegotiation
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RequireRenegotiation
+  commentId: P:SIPSorcery.Net.RTCPeerConnection.RequireRenegotiation
+  fullName: SIPSorcery.Net.RTCPeerConnection.RequireRenegotiation
+  nameWithType: RTCPeerConnection.RequireRenegotiation
+- uid: SIPSorcery.Net.RTCPeerConnection.RequireRenegotiation*
+  name: RequireRenegotiation
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RequireRenegotiation_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.RequireRenegotiation
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.RequireRenegotiation
+  nameWithType: RTCPeerConnection.RequireRenegotiation
 - uid: SIPSorcery.Net.RTCPeerConnection.restartIce
   name: restartIce()
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_restartIce
@@ -8331,6 +8388,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.signalingState
   nameWithType: RTCPeerConnection.signalingState
+- uid: SIPSorcery.Net.RTCPeerConnection.StartOnNegotiationNeededTask
+  name: StartOnNegotiationNeededTask()
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_StartOnNegotiationNeededTask
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.StartOnNegotiationNeededTask
+  fullName: SIPSorcery.Net.RTCPeerConnection.StartOnNegotiationNeededTask()
+  nameWithType: RTCPeerConnection.StartOnNegotiationNeededTask()
+- uid: SIPSorcery.Net.RTCPeerConnection.StartOnNegotiationNeededTask*
+  name: StartOnNegotiationNeededTask
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_StartOnNegotiationNeededTask_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.StartOnNegotiationNeededTask
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.StartOnNegotiationNeededTask
+  nameWithType: RTCPeerConnection.StartOnNegotiationNeededTask
 - uid: SIPSorcery.Net.RTCPeerConnectionState
   name: RTCPeerConnectionState
   href: api/SIPSorcery.Net.RTCPeerConnectionState.html
@@ -11284,6 +11354,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RemoteRtpEventPayloadID
   nameWithType: RTPSession.RemoteRtpEventPayloadID
+- uid: SIPSorcery.Net.RTPSession.removeTrack(SIPSorcery.Net.MediaStreamTrack)
+  name: removeTrack(MediaStreamTrack)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_removeTrack_SIPSorcery_Net_MediaStreamTrack_
+  commentId: M:SIPSorcery.Net.RTPSession.removeTrack(SIPSorcery.Net.MediaStreamTrack)
+  fullName: SIPSorcery.Net.RTPSession.removeTrack(SIPSorcery.Net.MediaStreamTrack)
+  nameWithType: RTPSession.removeTrack(MediaStreamTrack)
+- uid: SIPSorcery.Net.RTPSession.removeTrack*
+  name: removeTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_removeTrack_
+  commentId: Overload:SIPSorcery.Net.RTPSession.removeTrack
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.removeTrack
+  nameWithType: RTPSession.removeTrack
+- uid: SIPSorcery.Net.RTPSession.RequireRenegotiation
+  name: RequireRenegotiation
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RequireRenegotiation
+  commentId: P:SIPSorcery.Net.RTPSession.RequireRenegotiation
+  fullName: SIPSorcery.Net.RTPSession.RequireRenegotiation
+  nameWithType: RTPSession.RequireRenegotiation
+- uid: SIPSorcery.Net.RTPSession.RequireRenegotiation*
+  name: RequireRenegotiation
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RequireRenegotiation_
+  commentId: Overload:SIPSorcery.Net.RTPSession.RequireRenegotiation
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.RequireRenegotiation
+  nameWithType: RTPSession.RequireRenegotiation
 - uid: SIPSorcery.Net.RTPSession.RTCP_RR_NOSTREAM_SSRC
   name: RTCP_RR_NOSTREAM_SSRC
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTCP_RR_NOSTREAM_SSRC
