@@ -1516,7 +1516,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="errorMessage">An error message indicating the reason for the failure.</param>
         private void ClientCallFailedHandler(ISIPClientUserAgent uac, string errorMessage, SIPResponse sipResponse)
         {
-            logger.LogWarning($"Call attempt to {m_uac.CallDescriptor?.Uri} failed with {errorMessage}.");
+            logger.LogWarning($"Call attempt to {uac.CallDescriptor?.Uri} failed with {errorMessage}.");
 
             _ringTimeout?.Dispose();
 
