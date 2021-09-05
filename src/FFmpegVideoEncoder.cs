@@ -162,6 +162,8 @@ namespace SIPSorceryMedia.FFmpeg
                     //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
                 }
 
+                ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
             }
         }
