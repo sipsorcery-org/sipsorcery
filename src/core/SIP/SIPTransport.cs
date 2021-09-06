@@ -601,7 +601,7 @@ namespace SIPSorcery.SIP
         /// If no response is received then periodic retransmits are made for up to T1 x 64 seconds (defaults to 30 seconds with 11 retransmits).
         /// </summary>
         /// <param name="sipTransaction">The SIP transaction encapsulating the SIP request or response that needs to be sent reliably.</param>
-        internal void AddTransaction(SIPTransaction sipTransaction)
+        public void AddTransaction(SIPTransaction sipTransaction)
         {
             if (sipTransaction == null)
             {
