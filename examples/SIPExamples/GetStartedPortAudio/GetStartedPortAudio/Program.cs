@@ -32,7 +32,7 @@
 // You may need to adjust your default sounds device. To list devices use:
 // pactl list short sources
 // To set a new default device use:
-// pactl list short sinks alsa_output.pci-0000_01_00.1.hdmi-stereo-extra1
+// pactl set-default-sink 1
 
 using System;
 using System.Threading.Tasks;

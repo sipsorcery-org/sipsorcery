@@ -453,9 +453,12 @@ namespace SIPSorcery.SIP
         /// SIP Proxy servers that are relying on the remote SIP agent to retransmit requests.
         /// </summary>
         /// <param name="sipRequest">The SIP request to send.</param>
+        /// <param name="waitForDns">If true the request will wait for any required DNS lookup to 
+        /// complete. This can potentially take many seconds. If false the DNS lookup will be
+        /// queued and the send will need to be called again.</param>
         /// <returns>Will return InPorgress for a DNS cache miss. HostNotFound for a cache hit on a 
         /// failure response. Otherwise the result of the send attempt.</returns>
-        public Task<SocketError> SendRequestAsync(SIPRequest sipRequest)
+        public async Task<SocketError> SendRequestAsync(SIPRequest sipRequest, bool waitForDns = false)
         {
             if (sipRequest == null)
             {
@@ -472,65 +475,45 @@ namespace SIPSorcery.SIP
 
             var cacheResult = ResolveSIPUriFromCacheCallback(lookupURI, PreferIPv6NameResolution);
 
-            if (cacheResult == null)
+            if (cacheResult == SIPEndPoint.Empty)
             {
-                // No existing success or failure entry in the cache. Initiate a lookup but DON'T wait for it.
-                _ = Task.Run(() => ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token));
-
-                return Task.FromResult(SocketError.InProgress);
+                return SocketError.HostNotFound;
             }
-            else if (cacheResult == SIPEndPoint.Empty)
+            else if(cacheResult != null)
             {
-                return Task.FromResult(SocketError.HostNotFound);
+                return await SendRequestAsync(cacheResult, sipRequest).ConfigureAwait(false);
             }
             else
             {
-                return SendRequestAsync(cacheResult, sipRequest);
-            }
-        }
-
-        /// <summary>
-        /// Sends a SIP request. This method will attempt to find the most appropriate
-        /// local SIP channel to send the request on.
-        /// </summary>
-        /// <param name="sipRequest">The SIP request to send.</param>
-        /// <param name="waitForDns">If true the request will wait for any required DNS lookup to 
-        /// complete. This can potentially take many seconds. If false the DNS lookup will be
-        /// queued and the send will need to be called again.</param>
-        public async Task<SocketError> SendRequestAsync(SIPRequest sipRequest, bool waitForDns)
-        {
-            if (sipRequest == null)
-            {
-                throw new ArgumentNullException(nameof(sipRequest), "The SIP request must be set for SendRequest.");
-            }
-
-            if (!waitForDns)
-            {
-                // This overload attempts to use the DNS cache and if no hit it will
-                // initiate the DNS query but not wait for it.
-                return await SendRequestAsync(sipRequest).ConfigureAwait(false);
-            }
-            else
-            {
-                SIPURI lookupURI = (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0) ?
-                    sipRequest.Header.Routes.TopRoute.URI : sipRequest.URI;
-
-                SIPEndPoint lookupResult = ResolveSIPUriFromCacheCallback(lookupURI, PreferIPv6NameResolution);
-
-                if (lookupResult == null)
+                if (waitForDns || DisableRetransmitSending)
                 {
-                    //logger.LogWarning($"SendRequestAsync DNS cache miss for {lookupURI}, doing DNS lookup.");
+                    // This is the UNHAPPY path.
+                    // If there was no cached DNS result then wait for a new resolution attempt to complete.
+                    // DNS lookups can take a relatively LONG time, possibly >=20s with a poor DNS server.
+                    // In ideal circumstances DON'T wait for DNS and instead use the SIP retransmit mechanism
+                    // with its regular retry attempts to wait for DNS resolution.
+                    SIPEndPoint lookupResult = ResolveSIPUriFromCacheCallback(lookupURI, PreferIPv6NameResolution);
 
-                    lookupResult = await ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
-                }
+                    if (lookupResult == null)
+                    {
+                        lookupResult = await ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
+                    }
 
-                if (lookupResult != null && lookupResult != SIPEndPoint.Empty)
-                {
-                    return await SendRequestAsync(lookupResult, sipRequest).ConfigureAwait(false);
+                    if (lookupResult != null && lookupResult != SIPEndPoint.Empty)
+                    {
+                        return await SendRequestAsync(lookupResult, sipRequest).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        return SocketError.HostNotFound;
+                    }
                 }
                 else
                 {
-                    return SocketError.HostNotFound;
+                    // This is the HAPPY path.
+                    // No existing success or failure entry in the cache. Initiate a lookup but DON'T wait for it.
+                    _ = Task.Run(() => ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false));
+                    return SocketError.InProgress;
                 }
             }
         }
@@ -636,49 +619,6 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// This is a special send method that relies on the SIP transaction retransmit logic to avoid
-        /// blocking when a DNS request is required. This type of send is suitable for responses that 
-        /// are part of a transaction or for SIP Proxy servers that are relying on the remote 
-        /// SIP agent to retransmit requests.
-        /// </summary>
-        /// <param name="sipResponse">The SIP response to send.</param>
-        /// <returns>Will return InPorgress for a DNS cache miss. HostNotFound for a cache hit on a 
-        /// failure response. Otherwise the result of the send attempt.</returns>
-        public Task<SocketError> SendResponseAsync(SIPResponse sipResponse)
-        {
-            if (sipResponse == null)
-            {
-                throw new ArgumentNullException(nameof(sipResponse), "The SIP response must be set for SendResponse.");
-            }
-
-            // The lookup logic is designed to take advantage of the SIP retransmit mechanism. Rather
-            // than initiate the lookup and then wait for it to complete, which could take up to 20s
-            // in extreme cases, the lookup is put on it's own thread and then when ready the result
-            // will be used on the next SIP retransmit.
-
-            var topViaHeader = sipResponse.Header.Vias.TopViaHeader;
-            SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
-
-            var cacheResult = ResolveSIPUriFromCacheCallback(topViaUri, PreferIPv6NameResolution);
-
-            if (cacheResult == null)
-            {
-                // No existing success or failure entry in the cache. Initiate a lookup but DON'T wait for it.
-                _ = Task.Run(() => ResolveSIPUriCallbackAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false));
-
-                return Task.FromResult(SocketError.InProgress);
-            }
-            else if (cacheResult == SIPEndPoint.Empty)
-            {
-                return Task.FromResult(SocketError.HostNotFound);
-            }
-            else
-            {
-                return SendResponseAsync(cacheResult, sipResponse);
-            }
-        }
-
-        /// <summary>
         /// Forwards a SIP response. There are two main cases for a SIP response to be forwarded:
         /// - First case is when we have processed a request and are returning a response. In this case the response
         ///   should be sent back on exactly the same socket the request came on.
@@ -692,16 +632,22 @@ namespace SIPSorcery.SIP
         ///   send the response on. If the hinted channel can't be found or it is found but is the wrong protocol then
         ///   move onto the next step,
         /// - The information in the Top Via header will be used to find the best channel to forward the response on.
+        /// This is a special send method that relies on the SIP transaction retransmit logic to avoid
+        /// blocking when a DNS request is required. This type of send is suitable for responses that 
+        /// are part of a transaction or for SIP Proxy servers that are relying on the remote 
+        /// SIP agent to retransmit requests.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
+        /// <returns>Will return InPorgress for a DNS cache miss. HostNotFound for a cache hit on a 
+        /// failure response. Otherwise the result of the send attempt.</returns>
         /// <param name="waitForDns">If true the request will wait for any required DNS lookup to 
         /// complete. This can potentially take many seconds. If false the DNS lookup will be
         /// queued and the send will need to be called again.</param>
-        public async Task<SocketError> SendResponseAsync(SIPResponse sipResponse, bool waitForDns)
+        public async Task<SocketError> SendResponseAsync(SIPResponse sipResponse, bool waitForDns = false)
         {
             if (sipResponse == null)
             {
-                throw new ArgumentNullException(nameof(sipResponse), "The SIP response must be set for SendResponseAsync.");
+                throw new ArgumentNullException(nameof(sipResponse), "The SIP response must be set for SendResponse.");
             }
             else if (sipResponse.Header.Vias?.TopViaHeader == null)
             {
@@ -710,26 +656,46 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                if (!waitForDns)
+                var topViaHeader = sipResponse.Header.Vias.TopViaHeader;
+                SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
+
+                var cacheResult = ResolveSIPUriFromCacheCallback(topViaUri, PreferIPv6NameResolution);
+
+                if (cacheResult == SIPEndPoint.Empty)
                 {
-                    // This overload attempts to use the DNS cache and if no hit it will
-                    // initiate the DNS query but not wait for it.
-                    return await SendResponseAsync(sipResponse).ConfigureAwait(false);
+                    return SocketError.HostNotFound;
+                }
+                else if (cacheResult != null)
+                {
+                    return await SendResponseAsync(cacheResult, sipResponse).ConfigureAwait(false);
                 }
                 else
                 {
-                    var topViaHeader = sipResponse.Header.Vias.TopViaHeader;
-                    SIPURI topViaUri = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
-
-                    var lookupResult = await ResolveSIPUriCallbackAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
-
-                    if (lookupResult != null && lookupResult != SIPEndPoint.Empty)
+                    if (waitForDns || DisableRetransmitSending)
                     {
-                        return await SendResponseAsync(lookupResult, sipResponse).ConfigureAwait(false);
+                        // UNHAPPY PATH.
+                        // The send will block waiting for a DNS resolution.
+                        var lookupResult = await ResolveSIPUriCallbackAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
+
+                        if (lookupResult != null && lookupResult != SIPEndPoint.Empty)
+                        {
+                            return await SendResponseAsync(lookupResult, sipResponse).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            return SocketError.HostNotFound;
+                        }
                     }
                     else
                     {
-                        return SocketError.HostNotFound;
+                        // HAPPY PATH.
+                        // The lookup logic is designed to take advantage of the SIP retransmit mechanism. Rather
+                        // than initiate the lookup and then wait for it to complete, which could take up to 20s
+                        // in extreme cases, the lookup is put on it's own thread and then when ready the result
+                        // will be used on the next SIP retransmit.
+                        // No existing success or failure entry in the cache. Initiate a lookup but DON'T wait for it.
+                        _ = Task.Run(() => ResolveSIPUriCallbackAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false));
+                        return SocketError.InProgress;
                     }
                 }
             }

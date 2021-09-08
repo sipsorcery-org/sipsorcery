@@ -538,10 +538,13 @@ namespace SIPSorcery.Media
         {
             if (_streamSendInProgress)
             {
-                _streamSourceTimer?.Dispose();
-                _streamSendInProgress = false;
+                lock (_streamSourceTimer)
+                {
+                    _streamSourceTimer?.Dispose();
+                    _streamSendInProgress = false;
 
-                OnSendFromAudioStreamComplete?.Invoke();
+                    OnSendFromAudioStreamComplete?.Invoke();
+                }
             }
         }
     }
