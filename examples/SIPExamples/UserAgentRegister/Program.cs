@@ -99,7 +99,11 @@ namespace SIPSorcery.Register
             exitMRE.WaitOne();
 
             regUserAgent.Stop();
-            sipTransport.Shutdown();
+			
+			// Allow for unregister request to be sent (REGISTER with 0 expiry)
+			Task.Delay(1500).Wait();
+            
+			sipTransport.Shutdown();
         }
 
         /// <summary>
