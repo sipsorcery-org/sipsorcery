@@ -1476,7 +1476,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} received a trying response {sipResponse.ShortDescription}.");
+                logger.LogInformation($"Call attempt to {uac.CallDescriptor.Uri} received a trying response {sipResponse.ShortDescription}.");
             }
         }
 
@@ -1505,7 +1505,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} received a ringing response {sipResponse.ShortDescription}.");
+                logger.LogInformation($"Call attempt to {uac.CallDescriptor.Uri} received a ringing response {sipResponse.ShortDescription}.");
             }
         }
 
@@ -1543,7 +1543,7 @@ namespace SIPSorcery.SIP.App
                     m_sipDialogue = uac.SIPDialogue;
                     m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 
-                    logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} was answered; no media update from early media.");
+                    logger.LogInformation($"Call attempt to {uac.CallDescriptor.Uri} was answered; no media update from early media.");
 
                     ClientCallAnswered?.Invoke(uac, sipResponse);
                 }
@@ -1558,7 +1558,7 @@ namespace SIPSorcery.SIP.App
                         m_sipDialogue = uac.SIPDialogue;
                         m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 
-                        logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} was answered.");
+                        logger.LogInformation($"Call attempt to {uac.CallDescriptor.Uri} was answered.");
 
                         ClientCallAnswered?.Invoke(uac, sipResponse);
                     }
@@ -1652,8 +1652,11 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         private void CallEnded()
         {
-            m_uac = null;
-            m_uas = null;
+            // SCB - Which call has ended?
+            // The UserAgent should be re-used for all calls. Only the sipdialogue associated with the call
+            // needs to be cleared up.
+            //m_uac = null;
+            //m_uas = null;
             m_callDescriptor = null;
 
             IsOnLocalHold = false;
