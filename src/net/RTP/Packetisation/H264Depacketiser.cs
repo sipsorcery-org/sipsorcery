@@ -86,7 +86,10 @@ namespace SIPSorcery.Net
                 //Reorder to prevent UDP incorrect package order
                 if (temporary_rtp_payloads.Count > 1)
                 {
-                    temporary_rtp_payloads.Sort((a, b) => { return a.Key.CompareTo(b.Key); });
+                    temporary_rtp_payloads.Sort((a, b) => { 
+                        // Detect wraparound of sequence to sort packets correctly (Assumption that no more then 2000 packets per frame)
+                        return (Math.Abs(b.Key - a.Key) > (0xFFFF - 2000)) ? -a.Key.CompareTo(b.Key) : a.Key.CompareTo(b.Key);                        
+                         });
                 }
 
                 // End Marker is set. Process the list of RTP Packets (forming 1 RTP frame) and save the NALs to a file
