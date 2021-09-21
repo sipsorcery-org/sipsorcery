@@ -333,7 +333,7 @@ namespace SIPSorcery.Net
         connected
     }
 
-    interface IRTCPeerConnection
+    public interface IRTCPeerConnection
     {
         //IRTCPeerConnection(RTCConfiguration configuration = null);
         RTCSessionDescriptionInit createOffer(RTCOfferOptions options = null);
