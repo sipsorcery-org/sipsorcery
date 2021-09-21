@@ -545,6 +545,18 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.IRTCPeerConnection.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.IRTCPeerConnection.html",
+          "hash": "/fqW0jRdWAahEcTS4WcEkpoMlhdAjX582eruUJlWLPo="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.IRTCRtpReceiver.yml",
       "output": {
         ".html": {
@@ -1125,7 +1137,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "zal60gc21eoE8DVpCS7tzJ8V4Bq0AcK8PAvQjzAHAyU="
+          "hash": "Q2BMt68SpLKa/Tns0rwun3J4GvfuzRcyhrxDLzaAqSA="
         }
       },
       "is_incremental": false,
@@ -2769,7 +2781,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "bYOyU0z+CiYiw0DE2mORd33dKCnReu2mvePZaLshpGI="
+          "hash": "LAtfZR0SClA33BAJXytVwu7vemxNqG1QSZPpjdmNyBo="
         }
       },
       "is_incremental": false,
@@ -4581,7 +4593,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "eS0lkWt0tl9KLIMd/4cZz4Obrm51KLULUHnJL4qZPWc="
+          "hash": "9Eja300VxHRo+jPMvbSDhpyQcddBiNXNvsrhW2ITCqc="
         }
       },
       "is_incremental": false,
@@ -4849,7 +4861,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 380,
+          "total_file_count": 381,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
