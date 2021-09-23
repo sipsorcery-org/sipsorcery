@@ -35,7 +35,11 @@ namespace SIPSorcery.SIP
         private static readonly int m_t1 = SIPTimings.T1;
         private static readonly int m_t2 = SIPTimings.T2;
         private static readonly int m_t6 = SIPTimings.T6;
-        private const int MAX_RELIABLETRANSMISSIONS_COUNT = 5000;  // The maximum number of pending transactions that can be outstanding.
+
+        /// <summary>
+        /// The maximum number of pending transactions that can be outstanding.
+        /// </summary>
+        internal static int MaxReliableTranismissionsCount = 5000;
 
         protected static ILogger logger = Log.Logger;
 
@@ -74,7 +78,7 @@ namespace SIPSorcery.SIP
 
         public void AddTransaction(SIPTransaction sipTransaction)
         {
-            if (m_pendingTransactions.Count > MAX_RELIABLETRANSMISSIONS_COUNT)
+            if (m_pendingTransactions.Count > MaxReliableTranismissionsCount)
             {
                 throw new ApplicationException("Pending transactions list is full.");
             }
