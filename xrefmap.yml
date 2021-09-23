@@ -34154,6 +34154,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.GetSIPChannels
   nameWithType: SIPTransport.GetSIPChannels
+- uid: SIPSorcery.SIP.SIPTransport.MaxPendingTransactionsCount
+  name: MaxPendingTransactionsCount
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_MaxPendingTransactionsCount
+  commentId: P:SIPSorcery.SIP.SIPTransport.MaxPendingTransactionsCount
+  fullName: SIPSorcery.SIP.SIPTransport.MaxPendingTransactionsCount
+  nameWithType: SIPTransport.MaxPendingTransactionsCount
+- uid: SIPSorcery.SIP.SIPTransport.MaxPendingTransactionsCount*
+  name: MaxPendingTransactionsCount
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_MaxPendingTransactionsCount_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.MaxPendingTransactionsCount
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransport.MaxPendingTransactionsCount
+  nameWithType: SIPTransport.MaxPendingTransactionsCount
 - uid: SIPSorcery.SIP.SIPTransport.PreferIPv6NameResolution
   name: PreferIPv6NameResolution
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_PreferIPv6NameResolution
