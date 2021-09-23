@@ -191,6 +191,17 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
+        /// Warning: Do not set this property unless you explicitly require a very high number of 
+        /// in-flight SIP transactions. The default limit is high and increasing it is likely to
+        /// have a significant impact on CPU and memory performance.
+        /// </summary>
+        public static int MaxPendingTransactionsCount
+        {
+            get => SIPTransactionEngine.MaxReliableTranismissionsCount;
+            set => SIPTransactionEngine.MaxReliableTranismissionsCount = value;
+        }
+
+        /// <summary>
         /// Creates a SIP transport class with default DNS resolver and SIP transaction engine.
         /// </summary>
         public SIPTransport()
