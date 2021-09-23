@@ -2428,7 +2428,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        VideoControlDestinationEndPoint = new IPEndPoint(VideoControlDestinationEndPoint.Address, VideoControlDestinationEndPoint.Port + 1);
+                        VideoControlDestinationEndPoint = new IPEndPoint(VideoDestinationEndPoint.Address, VideoDestinationEndPoint.Port + 1);
                     }
                 }
 
