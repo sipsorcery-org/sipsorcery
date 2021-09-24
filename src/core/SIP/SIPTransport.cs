@@ -76,7 +76,7 @@ namespace SIPSorcery.SIP
         /// List of the SIP channels that have been opened and are under management by this instance.
         /// The dictionary key is channel ID (previously was a serialised SIP end point).
         /// </summary>
-        private Dictionary<string, SIPChannel> m_sipChannels = new Dictionary<string, SIPChannel>();
+        private ConcurrentDictionary<string, SIPChannel> m_sipChannels = new ConcurrentDictionary<string, SIPChannel>();
 
         internal SIPTransactionEngine m_transactionEngine;
 
@@ -191,6 +191,17 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
+        /// Warning: Do not set this property unless you explicitly require a very high number of 
+        /// in-flight SIP transactions. The default limit is high and increasing it is likely to
+        /// have a significant impact on CPU and memory performance.
+        /// </summary>
+        public static int MaxPendingTransactionsCount
+        {
+            get => SIPTransactionEngine.MaxReliableTranismissionsCount;
+            set => SIPTransactionEngine.MaxReliableTranismissionsCount = value;
+        }
+
+        /// <summary>
         /// Creates a SIP transport class with default DNS resolver and SIP transaction engine.
         /// </summary>
         public SIPTransport()
@@ -245,16 +256,21 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                m_sipChannels.Add(sipChannel.ID, sipChannel);
-
-                // Wire up the SIP transport to the SIP channel.
-                sipChannel.SIPMessageReceived += ReceiveMessage;
-
-                if (m_queueIncoming && !m_transportThreadStarted)
+                if (m_sipChannels.TryAdd(sipChannel.ID, sipChannel))
                 {
-                    // Starts tasks to process queued SIP messages.
-                    m_transportThreadStarted = true;
-                    Task.Factory.StartNew(ProcessReceiveQueue, TaskCreationOptions.LongRunning);
+                    // Wire up the SIP transport to the SIP channel.
+                    sipChannel.SIPMessageReceived += ReceiveMessage;
+
+                    if (m_queueIncoming && !m_transportThreadStarted)
+                    {
+                        // Starts tasks to process queued SIP messages.
+                        m_transportThreadStarted = true;
+                        Task.Factory.StartNew(ProcessReceiveQueue, TaskCreationOptions.LongRunning);
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException("Failed to add SIPChannel to the SIP transport.");
                 }
             }
             catch (Exception excp)
@@ -272,7 +288,7 @@ namespace SIPSorcery.SIP
         {
             if (m_sipChannels.ContainsKey(sipChannel.ID))
             {
-                m_sipChannels.Remove(sipChannel.ID);
+                m_sipChannels.TryRemove(sipChannel.ID, out _);
                 sipChannel.SIPMessageReceived -= ReceiveMessage;
             }
         }
