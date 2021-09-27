@@ -35,15 +35,15 @@ namespace Vpx.Net
     {
         enum MB_MODES { CNT_INTRA, CNT_NEAREST, CNT_NEAR, CNT_SPLITMV };
 
-        static readonly vp8_prob[,] vp8_sub_mv_ref_prob3 = new vp8_prob[8, blockd.VP8_SUBMVREFS - 1] {
-          { 147, 136, 18 }, /* SUBMVREF_NORMAL          */
-          { 223, 1, 34 },   /* SUBMVREF_LEFT_ABOVE_SAME */
-          { 106, 145, 1 },  /* SUBMVREF_LEFT_ZED        */
-          { 208, 1, 1 },    /* SUBMVREF_LEFT_ABOVE_ZED  */
-          { 179, 121, 1 },  /* SUBMVREF_ABOVE_ZED       */
-          { 223, 1, 34 },   /* SUBMVREF_LEFT_ABOVE_SAME */
-          { 179, 121, 1 },  /* SUBMVREF_ABOVE_ZED       */
-          { 208, 1, 1 }     /* SUBMVREF_LEFT_ABOVE_ZED  */
+        static readonly vp8_prob[][] vp8_sub_mv_ref_prob3 = new vp8_prob[8][] {
+          new vp8_prob[blockd.VP8_SUBMVREFS - 1] { 147, 136, 18 }, /* SUBMVREF_NORMAL          */
+          new vp8_prob[blockd.VP8_SUBMVREFS - 1] { 223, 1, 34 },   /* SUBMVREF_LEFT_ABOVE_SAME */
+          new vp8_prob[blockd.VP8_SUBMVREFS - 1] { 106, 145, 1 },  /* SUBMVREF_LEFT_ZED        */
+          new vp8_prob[blockd.VP8_SUBMVREFS - 1] { 208, 1, 1 },    /* SUBMVREF_LEFT_ABOVE_ZED  */
+          new vp8_prob[blockd.VP8_SUBMVREFS - 1] { 179, 121, 1 },  /* SUBMVREF_ABOVE_ZED       */
+          new vp8_prob[blockd.VP8_SUBMVREFS - 1] { 223, 1, 34 },   /* SUBMVREF_LEFT_ABOVE_SAME */
+          new vp8_prob[blockd.VP8_SUBMVREFS - 1] { 179, 121, 1 },  /* SUBMVREF_ABOVE_ZED       */
+          new vp8_prob[blockd.VP8_SUBMVREFS - 1] { 208, 1, 1 }     /* SUBMVREF_LEFT_ABOVE_ZED  */
         };
 
         static readonly byte[] mbsplit_fill_count = { 8, 8, 4, 1 };
@@ -336,7 +336,7 @@ namespace Vpx.Net
                 /* Process above */
                 if (above.get().mbmi.ref_frame != (byte)MV_REFERENCE_FRAME.INTRA_FRAME)
                 {
-                    if (above.get().mbmi.mv.as_int > 0)
+                    if (above.get().mbmi.mv.as_int != 0)
                     {
                         (++nmv)->as_int = above.get().mbmi.mv.as_int;
                         findnearmv.mv_bias(ref_frame_sign_bias[above.get().mbmi.ref_frame], mbmi.ref_frame,
@@ -350,7 +350,7 @@ namespace Vpx.Net
                 /* Process left */
                 if (left.get().mbmi.ref_frame != (byte)MV_REFERENCE_FRAME.INTRA_FRAME)
                 {
-                    if (left.get().mbmi.mv.as_int > 0)
+                    if (left.get().mbmi.mv.as_int != 0)
                     {
                         int_mv this_mv = new int_mv();
 
@@ -375,7 +375,7 @@ namespace Vpx.Net
                 /* Process above left */
                 if (aboveleft.get().mbmi.ref_frame != (byte)MV_REFERENCE_FRAME.INTRA_FRAME)
                 {
-                    if (aboveleft.get().mbmi.mv.as_int > 0)
+                    if (aboveleft.get().mbmi.mv.as_int != 0)
                     {
                         int_mv this_mv = new int_mv();
 
@@ -437,14 +437,14 @@ namespace Vpx.Net
                             mb_to_left_edge -= findnearmv.LEFT_TOP_MARGIN;
 
                             /* Use near_mvs[0] to store the "best" MV */
-                            near_index = (((int)MB_MODES.CNT_INTRA + (cnt[(int)MB_MODES.CNT_NEAREST]) >= cnt[(int)MB_MODES.CNT_INTRA])) ? 1 : 0;
+                            near_index = (int)MB_MODES.CNT_INTRA + (cnt[(int)MB_MODES.CNT_NEAREST] >= cnt[(int)MB_MODES.CNT_INTRA] ? 1 : 0);
 
                             findnearmv.vp8_clamp_mv2(ref near_mvs[near_index], in pbi.mb);
 
                             cnt[(int)MB_MODES.CNT_SPLITMV] =
                                 (((above.get().mbmi.mode == (int)MB_PREDICTION_MODE.SPLITMV) ? 1 : 0)
-                                + ((left.get().mbmi.mode == (int)MB_PREDICTION_MODE.SPLITMV) ? 1 : 0) * 2
-                                + ((aboveleft.get().mbmi.mode == (int)MB_PREDICTION_MODE.SPLITMV) ? 1 : 0));
+                                + ((left.get().mbmi.mode == (int)MB_PREDICTION_MODE.SPLITMV) ? 1 : 0)) * 2
+                                + ((aboveleft.get().mbmi.mode == (int)MB_PREDICTION_MODE.SPLITMV) ? 1 : 0);
 
                             if (treereader.vp8_read(ref bc, modecont.vp8_mode_contexts[cnt[(int)MB_MODES.CNT_SPLITMV], 3]) > 0)
                             {
@@ -646,7 +646,7 @@ namespace Vpx.Net
 
                 //vp8_prob* prob = get_sub_mv_ref_prob((int)leftmv.as_int, (int)abovemv.as_int);
                 int probIndex = get_sub_mv_ref_prob((int)leftmv.as_int, (int)abovemv.as_int);
-                var prob = vp8_sub_mv_ref_prob3.Cast<vp8_prob>().Skip(probIndex).ToArray();
+                var prob = vp8_sub_mv_ref_prob3[probIndex];
 
                 if (treereader.vp8_read(ref bc, prob[0]) > 0)
                 {
@@ -685,11 +685,11 @@ namespace Vpx.Net
                     uint fill_count = mbsplit_fill_count[s];
 
                     //fill_offset = &mbsplit_fill_offset[s,(byte)j * mbsplit_fill_count[s]];
-                    int fill_offset = mbsplit_fill_offset[s, (byte)j * mbsplit_fill_count[s]];
+                    int fill_offset = (byte)j * mbsplit_fill_count[s];
 
                     do
                     {
-                        mi.get().bmi[fill_offset].mv.as_int = blockmv.as_int;
+                        mi.get().bmi[mbsplit_fill_offset[s, fill_offset]].mv.as_int = blockmv.as_int;
                         fill_offset++;
                     } while (--fill_count > 0);
                 }

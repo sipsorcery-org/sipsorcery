@@ -288,7 +288,15 @@ namespace Vpx.Net
             {
                 /* Various keyframe initializations */
                 //memcpy(pc->fc.mvc, vp8_default_mv_context, sizeof(vp8_default_mv_context));
-                Array.Copy(entropymv.vp8_default_mv_context, pc.fc.mvc, entropymv.vp8_default_mv_context.Length);
+                for (int i = 0; i < entropymv.vp8_default_mv_context.Length; i++)
+                {
+                    pc.fc.mvc[i] = new MV_CONTEXT();
+
+                    for (int j = 0; j < entropymv.vp8_default_mv_context[i].prob.Length; j++)
+                    {
+                        pc.fc.mvc[i].prob[j] = entropymv.vp8_default_mv_context[i].prob[j];
+                    }
+                }
 
                 entropymode.vp8_init_mbmode_probs(pc);
 
