@@ -547,5 +547,10 @@ namespace SIPSorcery.Media
                 }
             }
         }
+
+        public void Close()
+        {
+            _streamSourceReader?.Close();
+        }
     }
 }
