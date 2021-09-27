@@ -45,7 +45,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.AudioExtrasSource.html",
-          "hash": "Xaa1qfBHAmuw6nPALX7L1YC7RrOd48Ae3lwcIIPeHAw="
+          "hash": "47ZPiDYPZmEEbSLBUN54CuX+pqenqkrUz9pb40x959U="
         }
       },
       "is_incremental": false,
@@ -3033,7 +3033,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "eOW+zVVeKMpNUP3f0tLVAMzDU/oqWTEMy5CO9+sEEd8="
+          "hash": "K4W68dUDd78exLDrFckjB5Q+RiprWYDarTkcen5fbBc="
         }
       },
       "is_incremental": false,

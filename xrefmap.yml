@@ -200,6 +200,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.AudioExtrasSource.CancelSendAudioFromStream
   nameWithType: AudioExtrasSource.CancelSendAudioFromStream
+- uid: SIPSorcery.Media.AudioExtrasSource.Close
+  name: Close()
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_Close
+  commentId: M:SIPSorcery.Media.AudioExtrasSource.Close
+  fullName: SIPSorcery.Media.AudioExtrasSource.Close()
+  nameWithType: AudioExtrasSource.Close()
+- uid: SIPSorcery.Media.AudioExtrasSource.Close*
+  name: Close
+  href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_Close_
+  commentId: Overload:SIPSorcery.Media.AudioExtrasSource.Close
+  isSpec: "True"
+  fullName: SIPSorcery.Media.AudioExtrasSource.Close
+  nameWithType: AudioExtrasSource.Close
 - uid: SIPSorcery.Media.AudioExtrasSource.CloseAudio
   name: CloseAudio()
   href: api/SIPSorcery.Media.AudioExtrasSource.html#SIPSorcery_Media_AudioExtrasSource_CloseAudio
