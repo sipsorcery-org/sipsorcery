@@ -146,7 +146,7 @@ namespace Vpx.Net
             }
         }
 
-        static void clamp_mv_to_umv_border(MV mv, MACROBLOCKD xd)
+        static void clamp_mv_to_umv_border(ref MV mv, MACROBLOCKD xd)
         {
             /* If the MV points so far into the UMV border that no visible pixels
              * are used for reconstruction, the subpel part of the MV can be
@@ -227,7 +227,7 @@ namespace Vpx.Net
             }
         }
 
-        static void vp8_build_inter16x16_predictors_mb(MACROBLOCKD x, byte* dst_y,
+        static void vp8_build_inter16x16_predictors_mb(ref MACROBLOCKD x, byte* dst_y,
                                             byte* dst_u,
                                             byte* dst_v, int dst_ystride,
                                             int dst_uvstride)
@@ -245,7 +245,7 @@ namespace Vpx.Net
 
             if (x.mode_info_context.get().mbmi.need_to_clamp_mvs > 0)
             {
-                clamp_mv_to_umv_border(_16x16mv.as_mv, x);
+                clamp_mv_to_umv_border(ref _16x16mv.as_mv, x);
             }
 
             ptr = ptr_base + (_16x16mv.as_mv.row >> 3) * pre_stride +
@@ -298,7 +298,7 @@ namespace Vpx.Net
             }
         }
 
-        static void build_inter4x4_predictors_mb(MACROBLOCKD x)
+        static void build_inter4x4_predictors_mb(ref MACROBLOCKD x)
         {
             int i;
             byte* base_dst = x.dst.y_buffer;
@@ -315,10 +315,10 @@ namespace Vpx.Net
                 x.block[10].bmi = x.mode_info_context.get().bmi[10];
                 if (x.mode_info_context.get().mbmi.need_to_clamp_mvs > 0)
                 {
-                    clamp_mv_to_umv_border(x.block[0].bmi.mv.as_mv, x);
-                    clamp_mv_to_umv_border(x.block[2].bmi.mv.as_mv, x);
-                    clamp_mv_to_umv_border(x.block[8].bmi.mv.as_mv, x);
-                    clamp_mv_to_umv_border(x.block[10].bmi.mv.as_mv, x);
+                    clamp_mv_to_umv_border(ref x.block[0].bmi.mv.as_mv, x);
+                    clamp_mv_to_umv_border(ref x.block[2].bmi.mv.as_mv, x);
+                    clamp_mv_to_umv_border(ref x.block[8].bmi.mv.as_mv, x);
+                    clamp_mv_to_umv_border(ref x.block[10].bmi.mv.as_mv, x);
                 }
 
                 b = x.block[0];
@@ -338,16 +338,16 @@ namespace Vpx.Net
             {
                 for (i = 0; i < 16; i += 2)
                 {
-                    BLOCKD d0 = x.block[i];
-                    BLOCKD d1 = x.block[i + 1];
+                    ref BLOCKD d0 = ref x.block[i];
+                    ref BLOCKD d1 = ref x.block[i + 1];
                     int dst_stride = x.dst.y_stride;
 
                     x.block[i + 0].bmi = x.mode_info_context.get().bmi[i + 0];
                     x.block[i + 1].bmi = x.mode_info_context.get().bmi[i + 1];
                     if (x.mode_info_context.get().mbmi.need_to_clamp_mvs > 0)
                     {
-                        clamp_mv_to_umv_border(x.block[i + 0].bmi.mv.as_mv, x);
-                        clamp_mv_to_umv_border(x.block[i + 1].bmi.mv.as_mv, x);
+                        clamp_mv_to_umv_border(ref x.block[i + 0].bmi.mv.as_mv, x);
+                        clamp_mv_to_umv_border(ref x.block[i + 1].bmi.mv.as_mv, x);
                     }
 
                     if (d0.bmi.mv.as_int == d1.bmi.mv.as_int)
@@ -368,8 +368,8 @@ namespace Vpx.Net
             base_pre = x.pre.u_buffer;
             for (i = 16; i < 20; i += 2)
             {
-                BLOCKD d0 = x.block[i];
-                BLOCKD d1 = x.block[i + 1];
+                ref BLOCKD d0 = ref x .block[i];
+                ref BLOCKD d1 = ref x .block[i + 1];
                 int dst_stride = x.dst.uv_stride;
 
                 /* Note: uv mvs already clamped in build_4x4uvmvs() */
@@ -392,8 +392,8 @@ namespace Vpx.Net
             base_pre = x.pre.v_buffer;
             for (i = 20; i < 24; i += 2)
             {
-                BLOCKD d0 = x.block[i];
-                BLOCKD d1 = x.block[i + 1];
+                ref BLOCKD d0 = ref x .block[i];
+                ref BLOCKD d1 = ref x .block[i + 1];
                 int dst_stride = x.dst.uv_stride;
 
                 /* Note: uv mvs already clamped in build_4x4uvmvs() */
@@ -413,7 +413,7 @@ namespace Vpx.Net
             }
         }
 
-        static void build_4x4uvmvs(MACROBLOCKD x)
+        static void build_4x4uvmvs(ref MACROBLOCKD x)
         {
             int i, j;
 
@@ -458,18 +458,18 @@ namespace Vpx.Net
             }
         }
 
-        public static void vp8_build_inter_predictors_mb(MACROBLOCKD xd)
+        public static void vp8_build_inter_predictors_mb(ref MACROBLOCKD xd)
         {
             if (xd.mode_info_context.get().mbmi.mode != (byte)MB_PREDICTION_MODE.SPLITMV)
             {
-                vp8_build_inter16x16_predictors_mb(xd, xd.dst.y_buffer, xd.dst.u_buffer,
+                vp8_build_inter16x16_predictors_mb(ref xd, xd.dst.y_buffer, xd.dst.u_buffer,
                                                    xd.dst.v_buffer, xd.dst.y_stride,
                                                    xd.dst.uv_stride);
             }
             else
             {
-                build_4x4uvmvs(xd);
-                build_inter4x4_predictors_mb(xd);
+                build_4x4uvmvs(ref xd);
+                build_inter4x4_predictors_mb(ref xd);
             }
         }
     }

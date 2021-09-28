@@ -1286,7 +1286,8 @@ namespace Vpx.Net
                                 {
                                     vp8_rtcd.vp8_dc_only_idct_add((short)(b.qcoeff.get() * DQC[0]), dst, dst_stride, dst, dst_stride);
                                     //memset(b.qcoeff, 0, 2 * sizeof(b.qcoeff[0]));
-                                    Mem.memset<short>(b.qcoeff.src(), 0, 2);
+                                    b.qcoeff.set(0, 0);
+                                    b.qcoeff.set(1, 0);
                                 }
                             }
                         }
@@ -1295,7 +1296,7 @@ namespace Vpx.Net
             }
             else
             {
-                reconinter.vp8_build_inter_predictors_mb(xd);
+                reconinter.vp8_build_inter_predictors_mb(ref xd);
             }
 
             if (xd.mode_info_context.get().mbmi.mb_skip_coeff == 0)

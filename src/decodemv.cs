@@ -448,7 +448,7 @@ namespace Vpx.Net
 
                             if (treereader.vp8_read(ref bc, modecont.vp8_mode_contexts[cnt[(int)MB_MODES.CNT_SPLITMV], 3]) > 0)
                             {
-                                decode_split_mv(ref bc, mi, left, above, mbmi, near_mvs[near_index],
+                                decode_split_mv(ref bc, mi, left, above, ref mbmi, near_mvs[near_index],
                                                 mvc, mb_to_left_edge, mb_to_right_edge,
                                                 mb_to_top_edge, mb_to_bottom_edge);
                                 mbmi.mv.as_int = mi.get().bmi[15].mv.as_int;
@@ -574,7 +574,7 @@ namespace Vpx.Net
 
         unsafe static void decode_split_mv(ref vp8_reader bc, ArrPtr<MODE_INFO> mi,
                                 in ArrPtr<MODE_INFO> left_mb, in ArrPtr<MODE_INFO> above_mb,
-                                MB_MODE_INFO mbmi, int_mv best_mv,
+                                ref MB_MODE_INFO mbmi, int_mv best_mv,
                                 in MV_CONTEXT[] mvc, int mb_to_left_edge,
                                 int mb_to_right_edge, int mb_to_top_edge,
                                 int mb_to_bottom_edge)
