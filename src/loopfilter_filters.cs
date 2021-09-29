@@ -24,98 +24,101 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-using System;
-
+using System.Runtime.CompilerServices;
 using uc = System.Byte;
 
 namespace Vpx.Net
 {
     public unsafe static class loopfilter_filters
     {
-        static sbyte vp8_signed_char_clamp(int t)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int vp8_signed_char_clamp(int t)
         {
-            t = (t < -128 ? -128 : t);
-            t = (t > 127 ? 127 : t);
-            return (sbyte)t;
+            if ((sbyte)t == t) return t;
+            return 127 ^ (t >> 31);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int fast_abs(int x)
+        {
+            int sign = x >> 31;
+            return (x + sign) ^ sign;
         }
 
         /* should we apply any filter at all ( 11111111 yes, 00000000 no) */
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static sbyte vp8_filter_mask(uc limit, uc blimit, uc p3, uc p2, uc p1,
                                            uc p0, uc q0, uc q1, uc q2, uc q3)
         {
-            checked
-            {
-                sbyte mask = 0;
-                mask |= (sbyte)(Math.Abs(p3 - p2) > limit ? 1 : 0);
-                mask |= (sbyte)(Math.Abs(p2 - p1) > limit ? 1 : 0);
-                mask |= (sbyte)(Math.Abs(p1 - p0) > limit ? 1 : 0);
-                mask |= (sbyte)(Math.Abs(q1 - q0) > limit ? 1 : 0);
-                mask |= (sbyte)(Math.Abs(q2 - q1) > limit ? 1 : 0);
-                mask |= (sbyte)(Math.Abs(q3 - q2) > limit ? 1 : 0);
-                mask |= (sbyte)(Math.Abs(p0 - q0) * 2 + Math.Abs(p1 - q1) / 2 > blimit ? 1 : 0);
-                return (sbyte)(mask - 1);
-            }
+            if (fast_abs(p3 - p2) > limit) return 0;
+            if (fast_abs(p2 - p1) > limit) return 0;
+            if (fast_abs(p1 - p0) > limit) return 0;
+            if (fast_abs(q1 - q0) > limit) return 0;
+            if (fast_abs(q2 - q1) > limit) return 0;
+            if (fast_abs(q3 - q2) > limit) return 0;
+            if (fast_abs(p0 - q0) * 2 + fast_abs(p1 - q1) / 2 > blimit) return 0;
+            return -1;
         }
 
         /* is there high variance internal edge ( 11111111 yes, 00000000 no) */
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static sbyte vp8_hevmask(uc thresh, uc p1, uc p0, uc q0, uc q1)
         {
-            checked
+            if (fast_abs(p1 - p0) > thresh || fast_abs(q1 - q0) > thresh)
             {
-                sbyte hev = 0;
-                hev |= (sbyte)((Math.Abs(p1 - p0) > thresh ? 1 : 0) * -1);
-                hev |= (sbyte)((Math.Abs(q1 - q0) > thresh ? 1 : 0) * -1);
-                return hev;
+                return -1;
             }
+            return 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void vp8_filter(sbyte mask, uc hev, uc* op1, uc* op0, uc* oq0,
                        uc* oq1)
         {
             // Port AC: Arithemtic overflow occurs.
             //checked
             //{
-                sbyte ps0, qs0;
-                sbyte ps1, qs1;
-                sbyte filter_value, Filter1, Filter2;
-                sbyte u;
+            int ps0, qs0;
+            int ps1, qs1;
+            int filter_value, Filter1, Filter2;
+            int u;
 
-                ps1 = (sbyte)(*op1 ^ 0x80);
-                ps0 = (sbyte)(*op0 ^ 0x80);
-                qs0 = (sbyte)(*oq0 ^ 0x80);
-                qs1 = (sbyte)(*oq1 ^ 0x80);
+            ps1 = *(sbyte*)op1 ^ -128;
+            ps0 = *(sbyte*)op0 ^ -128;
+            qs0 = *(sbyte*)oq0 ^ -128;
+            qs1 = *(sbyte*)oq1 ^ -128;
 
-                /* add outer taps if we have high edge variance */
-                filter_value = vp8_signed_char_clamp(ps1 - qs1);
-                filter_value &= (sbyte)hev;
+            /* add outer taps if we have high edge variance */
+            filter_value = vp8_signed_char_clamp(ps1 - qs1);
+            filter_value &= (sbyte)hev;
 
-                /* inner taps */
-                filter_value = vp8_signed_char_clamp(filter_value + 3 * (qs0 - ps0));
-                filter_value &= mask;
+            /* inner taps */
+            filter_value = vp8_signed_char_clamp(filter_value + 3 * (qs0 - ps0));
+            filter_value &= mask;
 
-                /* save bottom 3 bits so that we round one side +4 and the other +3
-                 * if it equals 4 we'll set it to adjust by -1 to account for the fact
-                 * we'd round it by 3 the other way
-                 */
-                Filter1 = vp8_signed_char_clamp(filter_value + 4);
-                Filter2 = vp8_signed_char_clamp(filter_value + 3);
-                Filter1 >>= 3;
-                Filter2 >>= 3;
-                u = vp8_signed_char_clamp(qs0 - Filter1);
-                *oq0 = (byte)(u ^ 0x80);
-                u = vp8_signed_char_clamp(ps0 + Filter2);
-                *op0 = (byte)(u ^ 0x80);
-                filter_value = Filter1;
+            /* save bottom 3 bits so that we round one side +4 and the other +3
+             * if it equals 4 we'll set it to adjust by -1 to account for the fact
+             * we'd round it by 3 the other way
+             */
+            Filter1 = vp8_signed_char_clamp(filter_value + 4);
+            Filter2 = vp8_signed_char_clamp(filter_value + 3);
+            Filter1 >>= 3;
+            Filter2 >>= 3;
+            u = vp8_signed_char_clamp(qs0 - Filter1);
+            *oq0 = (byte)(u ^ 0x80);
+            u = vp8_signed_char_clamp(ps0 + Filter2);
+            *op0 = (byte)(u ^ 0x80);
+            filter_value = Filter1;
 
-                /* outer tap adjustments */
-                filter_value += 1;
-                filter_value >>= 1;
-                filter_value &= (sbyte)~hev;
+            /* outer tap adjustments */
+            filter_value += 1;
+            filter_value >>= 1;
+            filter_value &= (sbyte)~hev;
 
-                u = vp8_signed_char_clamp(qs1 - filter_value);
-                *oq1 = (byte)(u ^ 0x80);
-                u = vp8_signed_char_clamp(ps1 + filter_value);
-                *op1 = (byte)(u ^ 0x80);
+            u = vp8_signed_char_clamp(qs1 - filter_value);
+            *oq1 = (byte)(u ^ 0x80);
+            u = vp8_signed_char_clamp(ps1 + filter_value);
+            *op1 = (byte)(u ^ 0x80);
             //}
         }
 
@@ -171,61 +174,62 @@ namespace Vpx.Net
             } while (++i < count * 8);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void vp8_mbfilter(sbyte mask, uc hev, uc* op2, uc* op1, uc* op0,
                          uc* oq0, uc* oq1, uc* oq2)
         {
             // Port AC: Arithmetic overflow.
             //checked
             //{
-                sbyte s, u;
-                sbyte filter_value, Filter1, Filter2;
-                sbyte ps2 = (sbyte)(*op2 ^ 0x80);
-                sbyte ps1 = (sbyte)(*op1 ^ 0x80);
-                sbyte ps0 = (sbyte)(*op0 ^ 0x80);
-                sbyte qs0 = (sbyte)(*oq0 ^ 0x80);
-                sbyte qs1 = (sbyte)(*oq1 ^ 0x80);
-                sbyte qs2 = (sbyte)(*oq2 ^ 0x80);
+            int s, u;
+            int filter_value, Filter1, Filter2;
+            int ps2 = *(sbyte*)op2 ^ -128;
+            int ps1 = *(sbyte*)op1 ^ -128;
+            int ps0 = *(sbyte*)op0 ^ -128;
+            int qs0 = *(sbyte*)oq0 ^ -128;
+            int qs1 = *(sbyte*)oq1 ^ -128;
+            int qs2 = *(sbyte*)oq2 ^ -128;
 
-                /* add outer taps if we have high edge variance */
-                filter_value = vp8_signed_char_clamp(ps1 - qs1);
-                filter_value = vp8_signed_char_clamp(filter_value + 3 * (qs0 - ps0));
-                filter_value &= mask;
+            /* add outer taps if we have high edge variance */
+            filter_value = vp8_signed_char_clamp(ps1 - qs1);
+            filter_value = vp8_signed_char_clamp(filter_value + 3 * (qs0 - ps0));
+            filter_value &= mask;
 
-                Filter2 = filter_value;
-                Filter2 &= (sbyte)hev;
+            Filter2 = filter_value;
+            Filter2 &= (sbyte)hev;
 
-                /* save bottom 3 bits so that we round one side +4 and the other +3 */
-                Filter1 = vp8_signed_char_clamp(Filter2 + 4);
-                Filter2 = vp8_signed_char_clamp(Filter2 + 3);
-                Filter1 >>= 3;
-                Filter2 >>= 3;
-                qs0 = vp8_signed_char_clamp(qs0 - Filter1);
-                ps0 = vp8_signed_char_clamp(ps0 + Filter2);
+            /* save bottom 3 bits so that we round one side +4 and the other +3 */
+            Filter1 = vp8_signed_char_clamp(Filter2 + 4);
+            Filter2 = vp8_signed_char_clamp(Filter2 + 3);
+            Filter1 >>= 3;
+            Filter2 >>= 3;
+            qs0 = vp8_signed_char_clamp(qs0 - Filter1);
+            ps0 = vp8_signed_char_clamp(ps0 + Filter2);
 
-                /* only apply wider filter if not high edge variance */
-                filter_value &= (sbyte)~hev;
-                Filter2 = filter_value;
+            /* only apply wider filter if not high edge variance */
+            filter_value &= (sbyte)~hev;
+            Filter2 = filter_value;
 
-                /* roughly 3/7th difference across boundary */
-                u = vp8_signed_char_clamp((63 + Filter2 * 27) >> 7);
-                s = vp8_signed_char_clamp(qs0 - u);
-                *oq0 = (byte)(s ^ 0x80);
-                s = vp8_signed_char_clamp(ps0 + u);
-                *op0 = (byte)(s ^ 0x80);
+            /* roughly 3/7th difference across boundary */
+            u = vp8_signed_char_clamp((63 + Filter2 * 27) >> 7);
+            s = vp8_signed_char_clamp(qs0 - u);
+            *oq0 = (byte)(s ^ 0x80);
+            s = vp8_signed_char_clamp(ps0 + u);
+            *op0 = (byte)(s ^ 0x80);
 
-                /* roughly 2/7th difference across boundary */
-                u = vp8_signed_char_clamp((63 + Filter2 * 18) >> 7);
-                s = vp8_signed_char_clamp(qs1 - u);
-                *oq1 = (byte)(s ^ 0x80);
-                s = vp8_signed_char_clamp(ps1 + u);
-                *op1 = (byte)(s ^ 0x80);
+            /* roughly 2/7th difference across boundary */
+            u = vp8_signed_char_clamp((63 + Filter2 * 18) >> 7);
+            s = vp8_signed_char_clamp(qs1 - u);
+            *oq1 = (byte)(s ^ 0x80);
+            s = vp8_signed_char_clamp(ps1 + u);
+            *op1 = (byte)(s ^ 0x80);
 
-                /* roughly 1/7th difference across boundary */
-                u = vp8_signed_char_clamp((63 + Filter2 * 9) >> 7);
-                s = vp8_signed_char_clamp(qs2 - u);
-                *oq2 = (byte)(s ^ 0x80);
-                s = vp8_signed_char_clamp(ps2 + u);
-                *op2 = (byte)(s ^ 0x80);
+            /* roughly 1/7th difference across boundary */
+            u = vp8_signed_char_clamp((63 + Filter2 * 9) >> 7);
+            s = vp8_signed_char_clamp(qs2 - u);
+            *oq2 = (byte)(s ^ 0x80);
+            s = vp8_signed_char_clamp(ps2 + u);
+            *op2 = (byte)(s ^ 0x80);
             //}
         }
 
@@ -313,24 +317,29 @@ namespace Vpx.Net
         }
 
         /* should we apply any filter at all ( 11111111 yes, 00000000 no) */
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static sbyte vp8_simple_filter_mask(uc blimit, uc p1, uc p0, uc q0, uc q1)
         {
             /* Why does this cause problems for win32?
              * error C2143: syntax error : missing ';' before 'type'
              *  (void) limit;
              */
-            sbyte mask = (sbyte)((Math.Abs(p0 - q0) * 2 + Math.Abs(p1 - q1) / 2 <= blimit ? 1 : 0) * -1);
-            return mask;
+            if (fast_abs(p0 - q0) * 2 + fast_abs(p1 - q1) / 2 <= blimit)
+            {
+                return -1;
+            }
+            return 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void vp8_simple_filter(sbyte mask, uc* op1, uc* op0, uc* oq0, uc* oq1)
         {
-            sbyte filter_value, Filter1, Filter2;
-            sbyte p1 = (sbyte)(*op1 ^ 0x80);
-            sbyte p0 = (sbyte)(*op0 ^ 0x80);
-            sbyte q0 = (sbyte)(*oq0 ^ 0x80);
-            sbyte q1 = (sbyte)(*oq1 ^ 0x80);
-            sbyte u;
+            int filter_value, Filter1, Filter2;
+            int p1 = *(sbyte*)op1 ^ -128;
+            int p0 = *(sbyte*)op0 ^ -128;
+            int q0 = *(sbyte*)oq0 ^ -128;
+            int q1 = *(sbyte*)oq1 ^ -128;
+            int u;
 
             filter_value = vp8_signed_char_clamp(p1 - q1);
             filter_value = vp8_signed_char_clamp(filter_value + 3 * (q0 - p0));
