@@ -98,9 +98,9 @@ namespace XamarinDataChannelTest.Views
             }
         }
 
-        async void OnSendMessageButtonClicked(object sender, EventArgs args)
+        void OnSendMessageButtonClicked(object sender, EventArgs args)
         {
-            await _peer.Send(DATA_CHANNEL_LABEL, _sendMessage.Text);
+             _peer.Send(DATA_CHANNEL_LABEL, _sendMessage.Text);
         }
     }
 }
