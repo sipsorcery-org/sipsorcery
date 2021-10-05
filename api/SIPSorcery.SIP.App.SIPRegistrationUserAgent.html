@@ -117,7 +117,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPURI_System_String_System_String_System_String_System_String_SIPSorcery_SIP_SIPURI_System_Int32_System_String___System_Int32_System_Int32_System_Int32_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPRegistrationUserAgent.%23ctor(SIPSorcery.SIP.SIPTransport%2CSIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPURI%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.String%2CSIPSorcery.SIP.SIPURI%2CSystem.Int32%2CSystem.String%5B%5D%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L161">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L163">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPURI_System_String_System_String_System_String_System_String_SIPSorcery_SIP_SIPURI_System_Int32_System_String___System_Int32_System_Int32_System_Int32_System_Boolean_" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPURI,System.String,System.String,System.String,System.String,SIPSorcery.SIP.SIPURI,System.Int32,System.String[],System.Int32,System.Int32,System.Int32,System.Boolean)">SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, String[], Int32, Int32, Int32, Boolean)</h4>
@@ -214,7 +214,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_SIPSorcery_SIP_SIPTransport_System_String_System_String_System_String_System_Int32_System_Int32_System_Int32_System_Int32_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPRegistrationUserAgent.%23ctor(SIPSorcery.SIP.SIPTransport%2CSystem.String%2CSystem.String%2CSystem.String%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L123">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L125">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_SIPSorcery_SIP_SIPTransport_System_String_System_String_System_String_System_Int32_System_Int32_System_Int32_System_Int32_System_Boolean_" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,System.String,System.String,System.String,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">SIPRegistrationUserAgent(SIPTransport, String, String, String, Int32, Int32, Int32, Int32, Boolean)</h4>
@@ -260,7 +260,9 @@ returned by the server.</p>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">server</span></td>
         <td><p>The hostname or socket address for the registration server. Can be in a format of
-hostname:port or ipaddress:port, e.g. sipsorcery.com or 67.222.131.147:5060.</p>
+hostname:port or ipaddress:port, e.g. sipsorcery.com or 67.222.131.147:5060. The transport can also
+be specified using a SIP URI parameter, e.g. sip:sipsorcery.com;transport=tcp or sip:sipsorcery.com;transport=tls
+although in the latter case it would be better to use sips:sipsorcery.com.</p>
 </td>
       </tr>
       <tr>
@@ -521,7 +523,7 @@ SIP registrar server.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPRegistrationUserAgent_SetExpiry_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPRegistrationUserAgent.SetExpiry(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L272">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L274">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPRegistrationUserAgent_SetExpiry_" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.SetExpiry*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPRegistrationUserAgent_SetExpiry_System_Int32_" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.SetExpiry(System.Int32)">SetExpiry(Int32)</h4>
@@ -555,7 +557,7 @@ SIP registrar server.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPRegistrationUserAgent_Start.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPRegistrationUserAgent.Start%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L195">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L197">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPRegistrationUserAgent_Start_" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.Start*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPRegistrationUserAgent_Start" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.Start">Start()</h4>
@@ -570,7 +572,7 @@ SIP registrar server.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPRegistrationUserAgent_Stop_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPRegistrationUserAgent.Stop(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L292">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPRegistrationUserAgent.cs/#L294">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPRegistrationUserAgent_Stop_" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.Stop*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPRegistrationUserAgent_Stop_System_Boolean_" data-uid="SIPSorcery.SIP.App.SIPRegistrationUserAgent.Stop(System.Boolean)">Stop(Boolean)</h4>
