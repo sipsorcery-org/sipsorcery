@@ -23,6 +23,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -92,11 +93,16 @@ namespace SIPSorcery.SIP
         /// </summary>
         private bool m_isReceiveTaskRunning = false;
 
+        public SIPClientWebSocketChannel() 
+        {
+
+        }
+
         /// <summary>
         /// Creates a SIP channel to establish outbound connections and send SIP messages 
         /// over a web socket communications layer.
         /// </summary>
-        public SIPClientWebSocketChannel() : base()
+        public SIPClientWebSocketChannel(Encoding sipEncoding, Encoding sipBodyEncoding) : base(sipEncoding, sipBodyEncoding)
         {
             IsReliable = true;
             SIPProtocol = SIPProtocolsEnum.ws;
@@ -419,7 +425,7 @@ namespace SIPSorcery.SIP
             clientConn.RecvEndPosn += bytesRead;
 
             int bytesSkipped = 0;
-            byte[] sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(clientConn.PendingReceiveBuffer, clientConn.RecvStartPosn, clientConn.RecvEndPosn, out bytesSkipped);
+            byte[] sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(clientConn.PendingReceiveBuffer, clientConn.RecvStartPosn, clientConn.RecvEndPosn, SIPEncoding, out bytesSkipped);
 
             while (sipMsgBuffer != null)
             {
@@ -441,7 +447,7 @@ namespace SIPSorcery.SIP
                 else
                 {
                     // Try and extract another SIP message from the receive buffer.
-                    sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(clientConn.PendingReceiveBuffer, clientConn.RecvStartPosn, clientConn.RecvEndPosn, out bytesSkipped);
+                    sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(clientConn.PendingReceiveBuffer, clientConn.RecvStartPosn, clientConn.RecvEndPosn, SIPEncoding, out bytesSkipped);
                 }
             }
         }
