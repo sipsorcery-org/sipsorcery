@@ -32,6 +32,17 @@ namespace SIPSorcery.SIP
 
         protected byte[] _body;
 
+        public Encoding SIPEncoding { get;protected set; }
+        public Encoding SIPBodyEncoding { get; protected set; }
+
+        public SIPMessageBase():this(SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING){}
+
+        public SIPMessageBase(Encoding sipEncoding, Encoding sipBodyEncoding)
+        {
+            SIPEncoding = sipEncoding;
+            SIPBodyEncoding = sipBodyEncoding;
+        }
+
         /// <summary>
         /// The SIP request/response's headers collection.
         /// </summary>
@@ -47,7 +58,7 @@ namespace SIPSorcery.SIP
             {
                 if (_body != null)
                 {
-                    return Encoding.UTF8.GetString(_body);
+                    return SIPBodyEncoding.GetString(_body);
                 }
                 else
                 {
@@ -62,7 +73,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    _body = Encoding.UTF8.GetBytes(value);
+                    _body = SIPBodyEncoding.GetBytes(value);
                 }
             }
         }
@@ -111,7 +122,7 @@ namespace SIPSorcery.SIP
 
             if (_body != null && _body.Length > 0)
             {
-                var headerBytes = Encoding.UTF8.GetBytes(headers);
+                var headerBytes = SIPEncoding.GetBytes(headers);
                 byte[] buffer = new byte[headerBytes.Length + _body.Length];
                 Buffer.BlockCopy(headerBytes, 0, buffer, 0, headerBytes.Length);
                 Buffer.BlockCopy(_body, 0, buffer, headerBytes.Length, _body.Length);
@@ -119,7 +130,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                return Encoding.UTF8.GetBytes(headers);
+                return SIPEncoding.GetBytes(headers);
             }
         }
     }
