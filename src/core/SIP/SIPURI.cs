@@ -28,6 +28,8 @@ namespace SIPSorcery.SIP
     [DataContract]
     public class SIPURI
     {
+        public static SIPURI None = new SIPURI();
+
         public const char SCHEME_ADDR_SEPARATOR = ':';
         public const char USER_HOST_SEPARATOR = '@';
         public const char PARAM_TAG_DELIMITER = ';';
