@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
+using System.Text;
 using System.Threading;
 
 namespace XamarinDataChannelTest.Models
@@ -82,7 +83,7 @@ namespace XamarinDataChannelTest.Models
             return wsClient.Start(ct);
         }
 
-        public Task<RTCPeerConnection> CreatePeerConnection()
+        public async Task<RTCPeerConnection> CreatePeerConnection()
         {
             List<RTCCertificate> presetCertificates = null;
             byte[] dummyCertBytes = Convert.FromBase64String(DUMMY_CERTIFICATE_BASE64);
@@ -99,8 +100,7 @@ namespace XamarinDataChannelTest.Models
             var pc = new RTCPeerConnection(pcConfiguration);
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isrelay) => logger.LogDebug($"{_peerName}: STUN message received from {ep}, message class {msg.Header.MessageClass}.");
 
-            var dataChannel = pc.createDataChannel(_dataChannelLabel, null);
-            dataChannel.onDatamessage += DataChannel_onDatamessage;
+            var dataChannel = await pc.createDataChannel(_dataChannelLabel, null).ConfigureAwait(false);
             dataChannel.onmessage += DataChannel_onmessage;
             _dataChannels.Add(_dataChannelLabel, dataChannel);
 
@@ -133,7 +133,6 @@ namespace XamarinDataChannelTest.Models
             pc.ondatachannel += (dc) =>
             {
                 dc.onopen += () => logger.LogDebug($"{_peerName}: Data channel now open label {dc.label}, stream ID {dc.id}.");
-                dc.onDatamessage += DataChannel_onDatamessage;
                 dc.onmessage += DataChannel_onmessage;
                 logger.LogDebug($"{_peerName}: Data channel created by remote peer, label {dc.label}, stream ID {dc.id}.");
                 _dataChannels.Add(dc.label, dc);
@@ -141,19 +140,25 @@ namespace XamarinDataChannelTest.Models
 
             PeerConnection = pc;
 
-            return Task.FromResult(pc);
+            return pc;
         }
 
-        private void DataChannel_onmessage(string message)
+        private void DataChannel_onmessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data)
         {
-            OnDataChannelMessage?.Invoke(message);
-        }
-
-        private void DataChannel_onDatamessage(byte[] obj)
-        {
-            var pieceNum = BitConverter.ToInt32(obj, 0);
-            //logger.LogDebug($"{Name}: data channel ({_dataChannel.label}:{_dataChannel.id}): {pieceNum}.");
-            logger.LogDebug($"{_peerName}: Data channel receive: {pieceNum}, length {obj.Length}.");
+            if (protocol == DataChannelPayloadProtocols.WebRTC_String)
+            {
+                OnDataChannelMessage?.Invoke(Encoding.UTF8.GetString(data));
+            }
+            else if(protocol == DataChannelPayloadProtocols.WebRTC_Binary)
+            {
+                var pieceNum = BitConverter.ToInt32(data, 0);
+                //logger.LogDebug($"{Name}: data channel ({_dataChannel.label}:{_dataChannel.id}): {pieceNum}.");
+                logger.LogDebug($"{_peerName}: Data channel receive: {pieceNum}, length {data.Length}.");
+            }
+            else
+            {
+                logger.LogWarning($"Unexpected data channel protocol received {protocol}.");
+            }
         }
 
         public bool IsDataChannelReady(string label)
@@ -166,7 +171,7 @@ namespace XamarinDataChannelTest.Models
             return false;
         }
 
-        public async Task Send(string label, string message)
+        public void Send(string label, string message)
         {
             if (_dataChannels.ContainsKey(label))
             {
@@ -174,7 +179,7 @@ namespace XamarinDataChannelTest.Models
                 if (dc.IsOpened)
                 {
                     logger.LogDebug($"Sending data channel message on channel {label}.");
-                    await _dataChannels[label].sendasync(message);
+                    _dataChannels[label].send(message);
                 }
                 else
                 {

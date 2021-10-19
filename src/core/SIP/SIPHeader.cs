@@ -1975,6 +1975,12 @@ namespace SIPSorcery.SIP
                             }
                         }
                         #endregion
+                        #region Server
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SERVER.ToLower())
+                        {
+                            sipHeader.Server = headerValue;
+                        }
+                        #endregion
                         else
                         {
                             sipHeader.UnknownHeaders.Add(headerLine);

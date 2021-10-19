@@ -16,6 +16,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -48,9 +49,9 @@ namespace SIPSorcery.Register
             int expiry = DEFAULT_EXPIRY;
 
             int posn = 0;
-            while(posn < args?.Length && posn <= 3)
+            while (posn < args?.Length && posn <= 3)
             {
-                switch(posn)
+                switch (posn)
                 {
                     case 0:
                         server = args[posn++].Trim();
@@ -99,6 +100,10 @@ namespace SIPSorcery.Register
             exitMRE.WaitOne();
 
             regUserAgent.Stop();
+
+            // Allow for unregister request to be sent (REGISTER with 0 expiry)
+            Task.Delay(1500).Wait();
+
             sipTransport.Shutdown();
         }
 

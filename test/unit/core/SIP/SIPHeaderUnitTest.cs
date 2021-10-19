@@ -842,5 +842,30 @@ namespace SIPSorcery.SIP.UnitTests
         }
 
 
+        [Fact]
+        public void ParseServerHeaderTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            var expectedServerValue = "SomeServerValue";
+
+            string inviteWithServerHeader =
+                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
+                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
+                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
+                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
+                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
+                "CSeq: 49429 INVITE" + m_CRLF +
+                "Max-Forwards: 70" + m_CRLF +
+                "Content-Type: application/sdp" + m_CRLF +
+                "Content-Length: 271" + m_CRLF +
+                "Server: " + expectedServerValue + m_CRLF;
+
+            string[] headersCollection = Regex.Split(inviteWithServerHeader, "\r\n");
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
+            Assert.True(sipHeader.Server == expectedServerValue, "The Server value was not parsed properly");
+
+            logger.LogDebug("---------------------------------------------------");
+        }
     }
 }
