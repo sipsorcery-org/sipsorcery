@@ -83,7 +83,7 @@ namespace SIPSorcery.SIP
         /// This string is used in debug messages. It makes it possible to differentiate
         /// whether an instance in acting solely as a TCP channel or as the base class of a TLS channel.
         /// </summary>
-        virtual protected string ProtDescr { get; } = "TCP";
+        protected virtual string ProtDescr { get; } = "TCP";
 
         /// <summary>
         /// Can be set to allow TCP channels hosted in the same process to send to each other. Useful for testing.
@@ -100,14 +100,31 @@ namespace SIPSorcery.SIP
         private CancellationTokenSource m_cts = new CancellationTokenSource();
         private bool m_isDualMode;
 
+        public SIPTCPChannel(
+            IPEndPoint endPoint,
+            SIPProtocolsEnum protocol,
+            bool canListen=true,
+            bool useDualMode=false) : this(endPoint, protocol,SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING, canListen, useDualMode)
+        {
+
+        }
+
         /// <summary>
         /// Creates a SIP channel to listen for and send SIP messages over TCP.
         /// </summary>
         /// <param name="endPoint">The IP end point to send from and optionally listen on.</param>
         /// <param name="protocol">Whether the channel is being used with TCP or TLS (TLS channels get upgraded once connected).</param>
+        /// <param name="sipBodyEncoding"></param>
         /// <param name="canListen">Indicates whether the channel is capable of listening for new client connections.
         /// A TLS channel without a certificate cannot listen.</param>
-        public SIPTCPChannel(IPEndPoint endPoint, SIPProtocolsEnum protocol, bool canListen = true, bool useDualMode = false) : base()
+        /// <param name="sipEncoding"></param>
+        public SIPTCPChannel(
+            IPEndPoint endPoint, 
+            SIPProtocolsEnum protocol, 
+            Encoding sipEncoding,
+            Encoding sipBodyEncoding,
+            bool canListen, 
+            bool useDualMode) : base(sipEncoding,sipBodyEncoding)
         {
             if (endPoint == null)
             {
@@ -147,6 +164,10 @@ namespace SIPSorcery.SIP
             : this(endPoint, SIPProtocolsEnum.tcp, true, useDualMode)
         { }
 
+        public SIPTCPChannel(IPEndPoint endPoint,Encoding sipEncoding,Encoding sipBodyEncoding, bool useDualMode = false)
+            : this(endPoint, SIPProtocolsEnum.tcp, sipEncoding,sipBodyEncoding,true, useDualMode)
+        { }
+
         public SIPTCPChannel(IPAddress listenAddress, int listenPort, bool useDualMode = false)
             : this(new IPEndPoint(listenAddress, listenPort), SIPProtocolsEnum.tcp, true, useDualMode)
         { }
@@ -173,7 +194,7 @@ namespace SIPSorcery.SIP
                         clientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                         clientSocket.LingerState = new LingerOption(true, 0);
 
-                        SIPStreamConnection sipStmConn = new SIPStreamConnection(clientSocket, remoteEndPoint, SIPProtocol);
+                        SIPStreamConnection sipStmConn = new SIPStreamConnection(clientSocket,  SIPEncoding,SIPBodyEncoding,remoteEndPoint, SIPProtocol);
                         sipStmConn.SIPMessageReceived += SIPTCPMessageReceived;
 
                         m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
@@ -379,7 +400,7 @@ namespace SIPSorcery.SIP
                     logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel connect completed result for {ListeningSIPEndPoint}->{dstEndPoint} {connectTcs.Task.Result}.");
 
                     var remoteSIPEndPoint = new SIPEndPoint(SIPProtocol, clientSocket.RemoteEndPoint as IPEndPoint);
-                    SIPStreamConnection sipStmConn = new SIPStreamConnection(clientSocket, remoteSIPEndPoint, SIPProtocol);
+                    SIPStreamConnection sipStmConn = new SIPStreamConnection(clientSocket,SIPEncoding,SIPBodyEncoding,  remoteSIPEndPoint, SIPProtocol);
                     sipStmConn.SIPMessageReceived += SIPTCPMessageReceived;
 
                     var postConnectResult = await OnClientConnect(sipStmConn, serverCertificateName).ConfigureAwait(false);
@@ -462,7 +483,7 @@ namespace SIPSorcery.SIP
                 }
                 else if (!DisableLocalTCPSocketsCheck && NetServices.LocalIPAddresses.Contains(dstSIPEndPoint.Address) && Port == dstSIPEndPoint.Port)
                 {
-                    logger.LogWarning($"SIP {ProtDescr} Channel blocked Send to {dstSIPEndPoint} as it was identified as a locally hosted {ProtDescr} socket.\r\n" + Encoding.UTF8.GetString(buffer));
+                    logger.LogWarning($"SIP {ProtDescr} Channel blocked Send to {dstSIPEndPoint} as it was identified as a locally hosted {ProtDescr} socket.\r\n" + SIPConstants.DEFAULT_ENCODING.GetString(buffer));
                     throw new ApplicationException($"A Send call was blocked in SIP {ProtDescr} Channel due to the destination being another local TCP socket.");
                 }
                 else
