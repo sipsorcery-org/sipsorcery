@@ -29,7 +29,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -140,24 +139,11 @@ namespace SIPSorcery.SIP
 
         private CancellationTokenSource m_cts = new CancellationTokenSource();
 
-        public SIPWebSocketChannel(
-            IPEndPoint endPoint,
-            X509Certificate2 certificate) : this(endPoint, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING, certificate)
-        {
-
-        }
-
         /// <summary>
         /// Creates a SIP channel to listen for and send SIP messages over a web socket communications layer.
         /// </summary>
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
-        /// <param name="sipEncoding"></param>
-        /// <param name="sipBodyEncoding"></param>
-        public SIPWebSocketChannel(
-            IPEndPoint endPoint,
-            Encoding sipEncoding,
-            Encoding sipBodyEncoding, 
-            X509Certificate2 certificate) : base(sipEncoding, sipBodyEncoding)
+        public SIPWebSocketChannel(IPEndPoint endPoint, X509Certificate2 certificate) : base()
         {
             if (endPoint == null)
             {

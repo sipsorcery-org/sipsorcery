@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -51,40 +50,28 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private SIPRequest(Encoding sipEncoding, Encoding sipBodyEncoding) : this(SIPMethodsEnum.NONE, SIPURI.None,sipEncoding,sipBodyEncoding)
-        {
-        }
-
         private SIPRequest()
+        { }
+
+        public SIPRequest(SIPMethodsEnum method, string uri)
         {
+            Method = method;
+            URI = SIPURI.ParseSIPURI(uri);
+            SIPVersion = m_sipFullVersion;
         }
 
-        public SIPRequest(SIPMethodsEnum method, string uri):this(method, SIPURI.ParseSIPURI(uri))
-        {
-        }
-
-        public SIPRequest(SIPMethodsEnum method, SIPURI uri) 
+        public SIPRequest(SIPMethodsEnum method, SIPURI uri)
         {
             Method = method;
             URI = uri;
             SIPVersion = m_sipFullVersion;
         }
 
-        public SIPRequest(SIPMethodsEnum method, SIPURI uri,Encoding sipEncoding,Encoding sipBodyEncoding):base(sipEncoding,sipBodyEncoding)
-        {
-            Method = method;
-            URI = uri;
-            SIPVersion = m_sipFullVersion;
-        }
-
-        public static SIPRequest ParseSIPRequest(SIPMessageBuffer sipMessage) =>
-            ParseSIPRequest(sipMessage, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING);
-
-        public static SIPRequest ParseSIPRequest(SIPMessageBuffer sipMessage,Encoding sipEncoding,Encoding sipBodyEncoding)
+        public static SIPRequest ParseSIPRequest(SIPMessageBuffer sipMessage)
         {
             try
             {
-                SIPRequest sipRequest = new SIPRequest(sipEncoding,sipBodyEncoding);
+                SIPRequest sipRequest = new SIPRequest();
                 sipRequest.LocalSIPEndPoint = sipMessage.LocalSIPEndPoint;
                 sipRequest.RemoteSIPEndPoint = sipMessage.RemoteSIPEndPoint;
 
@@ -131,15 +118,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public static SIPRequest ParseSIPRequest(string sipMessageStr) =>
-            ParseSIPRequest(sipMessageStr, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING);
-
-        public static SIPRequest ParseSIPRequest(string sipMessageStr,Encoding sipEncoding,Encoding sipBodyEncoding)
+        public static SIPRequest ParseSIPRequest(string sipMessageStr)
         {
             try
             {
-                SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(sipMessageStr, sipEncoding,sipBodyEncoding, null, null);
-                return SIPRequest.ParseSIPRequest(sipMessageBuffer,sipEncoding,sipBodyEncoding);
+                SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(sipMessageStr, null, null);
+                return SIPRequest.ParseSIPRequest(sipMessageBuffer);
             }
             catch (SIPValidationException)
             {
@@ -189,8 +173,6 @@ namespace SIPSorcery.SIP
             copy.UnknownMethod = UnknownMethod;
             copy.URI = URI?.CopyOf();
             copy.Header = Header?.Copy();
-            copy.SIPEncoding = SIPEncoding;
-            copy.SIPBodyEncoding = SIPBodyEncoding;
 
             if (_body != null && _body.Length > 0)
             {
