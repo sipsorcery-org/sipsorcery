@@ -21,7 +21,6 @@ using System;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Text;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
@@ -41,9 +40,6 @@ namespace SIPSorcery.SIP
         /// RecvSocketArgs is used for TCP channel receives. 
         /// </summary>
         public Socket StreamSocket;
-
-        private readonly Encoding m_sipEncoding;
-        private readonly Encoding m_sipBodyEncoding;
         public SocketAsyncEventArgs RecvSocketArgs;
 
         /// <summary>
@@ -93,33 +89,14 @@ namespace SIPSorcery.SIP
         /// </summary>
         public event SIPMessageReceivedAsyncDelegate SIPMessageReceived;
 
-        public SIPStreamConnection(
-            Socket streamSocket,
-            SIPEndPoint remoteSIPEndPoint,
-            SIPProtocolsEnum connectionProtocol) : this(streamSocket, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING, remoteSIPEndPoint,
-            connectionProtocol)
-        {
-
-        }
-
         /// <summary>
         /// Records the crucial stream connection properties and initialises the required buffers.
         /// </summary>
         /// <param name="streamSocket">The local socket the stream is using.</param>
-        /// <param name="remoteSIPEndPoint">The remote network end point of this connection.</param>
+        /// <param name="remoteEndPoint">The remote network end point of this connection.</param>
         /// <param name="connectionProtocol">Whether the stream is TCP or TLS.</param>
-        /// <param name="sipEncoding"></param>
-        /// <param name="sipBodyEncoding"></param>
-        public SIPStreamConnection(
-            Socket streamSocket,
-            Encoding sipEncoding,
-            Encoding sipBodyEncoding,
-            SIPEndPoint remoteSIPEndPoint,
-            SIPProtocolsEnum connectionProtocol)
+        public SIPStreamConnection(Socket streamSocket, SIPEndPoint remoteSIPEndPoint, SIPProtocolsEnum connectionProtocol)
         {
-            m_sipEncoding = sipEncoding;
-            m_sipBodyEncoding = sipBodyEncoding;
-
             StreamSocket = streamSocket;
             LastTransmission = DateTime.Now;
             RemoteSIPEndPoint = remoteSIPEndPoint;
@@ -145,7 +122,7 @@ namespace SIPSorcery.SIP
             RecvEndPosn += bytesRead;
 
             int bytesSkipped = 0;
-            byte[] sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(buffer, RecvStartPosn, RecvEndPosn, m_sipEncoding, out bytesSkipped);
+            byte[] sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(buffer, RecvStartPosn, RecvEndPosn, out bytesSkipped);
 
             while (sipMsgBuffer != null)
             {
@@ -169,7 +146,7 @@ namespace SIPSorcery.SIP
                 else
                 {
                     // Try and extract another SIP message from the receive buffer.
-                    sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(buffer, RecvStartPosn, RecvEndPosn, m_sipEncoding, out bytesSkipped);
+                    sipMsgBuffer = SIPMessageBuffer.ParseSIPMessageFromStream(buffer, RecvStartPosn, RecvEndPosn, out bytesSkipped);
                 }
             }
         }
