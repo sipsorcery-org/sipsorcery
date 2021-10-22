@@ -93,7 +93,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         private bool m_isReceiveTaskRunning = false;
 
-        public SIPClientWebSocketChannel() 
+        public SIPClientWebSocketChannel() : this(SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING)
         {
 
         }
