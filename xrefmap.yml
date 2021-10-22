@@ -26640,6 +26640,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPChannel.#ctor
   fullName: SIPSorcery.SIP.SIPChannel.SIPChannel()
   nameWithType: SIPChannel.SIPChannel()
+- uid: SIPSorcery.SIP.SIPChannel.#ctor(System.Text.Encoding,System.Text.Encoding)
+  name: SIPChannel(Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel__ctor_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPChannel.#ctor(System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPChannel.SIPChannel(System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPChannel.SIPChannel(Encoding, Encoding)
 - uid: SIPSorcery.SIP.SIPChannel.#ctor*
   name: SIPChannel
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel__ctor_
@@ -26911,6 +26917,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.SendSecureAsync
   nameWithType: SIPChannel.SendSecureAsync
+- uid: SIPSorcery.SIP.SIPChannel.SIPBodyEncoding
+  name: SIPBodyEncoding
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPBodyEncoding
+  commentId: P:SIPSorcery.SIP.SIPChannel.SIPBodyEncoding
+  fullName: SIPSorcery.SIP.SIPChannel.SIPBodyEncoding
+  nameWithType: SIPChannel.SIPBodyEncoding
+- uid: SIPSorcery.SIP.SIPChannel.SIPBodyEncoding*
+  name: SIPBodyEncoding
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPBodyEncoding_
+  commentId: Overload:SIPSorcery.SIP.SIPChannel.SIPBodyEncoding
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPChannel.SIPBodyEncoding
+  nameWithType: SIPChannel.SIPBodyEncoding
+- uid: SIPSorcery.SIP.SIPChannel.SIPEncoding
+  name: SIPEncoding
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPEncoding
+  commentId: P:SIPSorcery.SIP.SIPChannel.SIPEncoding
+  fullName: SIPSorcery.SIP.SIPChannel.SIPEncoding
+  nameWithType: SIPChannel.SIPEncoding
+- uid: SIPSorcery.SIP.SIPChannel.SIPEncoding*
+  name: SIPEncoding
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPEncoding_
+  commentId: Overload:SIPSorcery.SIP.SIPChannel.SIPEncoding
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPChannel.SIPEncoding
+  nameWithType: SIPChannel.SIPEncoding
 - uid: SIPSorcery.SIP.SIPChannel.SIPMessageReceived
   name: SIPMessageReceived
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPMessageReceived
@@ -26942,6 +26974,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPClientWebSocketChannel.#ctor
   fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.SIPClientWebSocketChannel()
   nameWithType: SIPClientWebSocketChannel.SIPClientWebSocketChannel()
+- uid: SIPSorcery.SIP.SIPClientWebSocketChannel.#ctor(System.Text.Encoding,System.Text.Encoding)
+  name: SIPClientWebSocketChannel(Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel__ctor_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPClientWebSocketChannel.#ctor(System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.SIPClientWebSocketChannel(System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPClientWebSocketChannel.SIPClientWebSocketChannel(Encoding, Encoding)
 - uid: SIPSorcery.SIP.SIPClientWebSocketChannel.#ctor*
   name: SIPClientWebSocketChannel
   href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel__ctor_
@@ -27094,6 +27132,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPConstants.CRLF
   fullName: SIPSorcery.SIP.SIPConstants.CRLF
   nameWithType: SIPConstants.CRLF
+- uid: SIPSorcery.SIP.SIPConstants.DEFAULT_ENCODING
+  name: DEFAULT_ENCODING
+  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_DEFAULT_ENCODING
+  commentId: F:SIPSorcery.SIP.SIPConstants.DEFAULT_ENCODING
+  fullName: SIPSorcery.SIP.SIPConstants.DEFAULT_ENCODING
+  nameWithType: SIPConstants.DEFAULT_ENCODING
 - uid: SIPSorcery.SIP.SIPConstants.DEFAULT_MAX_FORWARDS
   name: DEFAULT_MAX_FORWARDS
   href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_DEFAULT_MAX_FORWARDS
@@ -30455,6 +30499,25 @@ references:
   commentId: T:SIPSorcery.SIP.SIPMessageBase
   fullName: SIPSorcery.SIP.SIPMessageBase
   nameWithType: SIPMessageBase
+- uid: SIPSorcery.SIP.SIPMessageBase.#ctor
+  name: SIPMessageBase()
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase__ctor
+  commentId: M:SIPSorcery.SIP.SIPMessageBase.#ctor
+  fullName: SIPSorcery.SIP.SIPMessageBase.SIPMessageBase()
+  nameWithType: SIPMessageBase.SIPMessageBase()
+- uid: SIPSorcery.SIP.SIPMessageBase.#ctor(System.Text.Encoding,System.Text.Encoding)
+  name: SIPMessageBase(Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase__ctor_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPMessageBase.#ctor(System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPMessageBase.SIPMessageBase(System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPMessageBase.SIPMessageBase(Encoding, Encoding)
+- uid: SIPSorcery.SIP.SIPMessageBase.#ctor*
+  name: SIPMessageBase
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase__ctor_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBase.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessageBase.SIPMessageBase
+  nameWithType: SIPMessageBase.SIPMessageBase
 - uid: SIPSorcery.SIP.SIPMessageBase._body
   name: _body
   href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase__body
@@ -30574,12 +30637,51 @@ references:
   commentId: F:SIPSorcery.SIP.SIPMessageBase.SendFromHintConnectionID
   fullName: SIPSorcery.SIP.SIPMessageBase.SendFromHintConnectionID
   nameWithType: SIPMessageBase.SendFromHintConnectionID
+- uid: SIPSorcery.SIP.SIPMessageBase.SIPBodyEncoding
+  name: SIPBodyEncoding
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SIPBodyEncoding
+  commentId: P:SIPSorcery.SIP.SIPMessageBase.SIPBodyEncoding
+  fullName: SIPSorcery.SIP.SIPMessageBase.SIPBodyEncoding
+  nameWithType: SIPMessageBase.SIPBodyEncoding
+- uid: SIPSorcery.SIP.SIPMessageBase.SIPBodyEncoding*
+  name: SIPBodyEncoding
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SIPBodyEncoding_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBase.SIPBodyEncoding
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessageBase.SIPBodyEncoding
+  nameWithType: SIPMessageBase.SIPBodyEncoding
+- uid: SIPSorcery.SIP.SIPMessageBase.SIPEncoding
+  name: SIPEncoding
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SIPEncoding
+  commentId: P:SIPSorcery.SIP.SIPMessageBase.SIPEncoding
+  fullName: SIPSorcery.SIP.SIPMessageBase.SIPEncoding
+  nameWithType: SIPMessageBase.SIPEncoding
+- uid: SIPSorcery.SIP.SIPMessageBase.SIPEncoding*
+  name: SIPEncoding
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SIPEncoding_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBase.SIPEncoding
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessageBase.SIPEncoding
+  nameWithType: SIPMessageBase.SIPEncoding
 - uid: SIPSorcery.SIP.SIPMessageBuffer
   name: SIPMessageBuffer
   href: api/SIPSorcery.SIP.SIPMessageBuffer.html
   commentId: T:SIPSorcery.SIP.SIPMessageBuffer
   fullName: SIPSorcery.SIP.SIPMessageBuffer
   nameWithType: SIPMessageBuffer
+- uid: SIPSorcery.SIP.SIPMessageBuffer.#ctor(System.Text.Encoding,System.Text.Encoding)
+  name: SIPMessageBuffer(Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer__ctor_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.#ctor(System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.SIPMessageBuffer(System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPMessageBuffer.SIPMessageBuffer(Encoding, Encoding)
+- uid: SIPSorcery.SIP.SIPMessageBuffer.#ctor*
+  name: SIPMessageBuffer
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer__ctor_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBuffer.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.SIPMessageBuffer
+  nameWithType: SIPMessageBuffer.SIPMessageBuffer
 - uid: SIPSorcery.SIP.SIPMessageBuffer.Body
   name: Body
   href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_Body
@@ -30607,6 +30709,15 @@ references:
   fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength(System.Byte(), System.Int32, System.Int32)
   nameWithType: SIPMessageBuffer.GetContentLength(Byte[], Int32, Int32)
   nameWithType.vb: SIPMessageBuffer.GetContentLength(Byte(), Int32, Int32)
+- uid: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength(System.Byte[],System.Int32,System.Int32,System.Text.Encoding)
+  name: GetContentLength(Byte[], Int32, Int32, Encoding)
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_GetContentLength_System_Byte___System_Int32_System_Int32_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.GetContentLength(System.Byte[],System.Int32,System.Int32,System.Text.Encoding)
+  name.vb: GetContentLength(Byte(), Int32, Int32, Encoding)
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength(System.Byte[], System.Int32, System.Int32, System.Text.Encoding)
+  fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength(System.Byte(), System.Int32, System.Int32, System.Text.Encoding)
+  nameWithType: SIPMessageBuffer.GetContentLength(Byte[], Int32, Int32, Encoding)
+  nameWithType.vb: SIPMessageBuffer.GetContentLength(Byte(), Int32, Int32, Encoding)
 - uid: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength*
   name: GetContentLength
   href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_GetContentLength_
@@ -30645,12 +30756,27 @@ references:
   fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.Byte(), SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
   nameWithType: SIPMessageBuffer.ParseSIPMessage(Byte[], SIPEndPoint, SIPEndPoint)
   nameWithType.vb: SIPMessageBuffer.ParseSIPMessage(Byte(), SIPEndPoint, SIPEndPoint)
+- uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.Byte[],System.Text.Encoding,System.Text.Encoding,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  name: ParseSIPMessage(Byte[], Encoding, Encoding, SIPEndPoint, SIPEndPoint)
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessage_System_Byte___System_Text_Encoding_System_Text_Encoding_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.Byte[],System.Text.Encoding,System.Text.Encoding,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  name.vb: ParseSIPMessage(Byte(), Encoding, Encoding, SIPEndPoint, SIPEndPoint)
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.Byte[], System.Text.Encoding, System.Text.Encoding, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
+  fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.Byte(), System.Text.Encoding, System.Text.Encoding, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPMessageBuffer.ParseSIPMessage(Byte[], Encoding, Encoding, SIPEndPoint, SIPEndPoint)
+  nameWithType.vb: SIPMessageBuffer.ParseSIPMessage(Byte(), Encoding, Encoding, SIPEndPoint, SIPEndPoint)
 - uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
   name: ParseSIPMessage(String, SIPEndPoint, SIPEndPoint)
   href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessage_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
   commentId: M:SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
   fullName: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.String, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
   nameWithType: SIPMessageBuffer.ParseSIPMessage(String, SIPEndPoint, SIPEndPoint)
+- uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.String,System.Text.Encoding,System.Text.Encoding,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  name: ParseSIPMessage(String, Encoding, Encoding, SIPEndPoint, SIPEndPoint)
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessage_System_String_System_Text_Encoding_System_Text_Encoding_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.String,System.Text.Encoding,System.Text.Encoding,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.String, System.Text.Encoding, System.Text.Encoding, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPMessageBuffer.ParseSIPMessage(String, Encoding, Encoding, SIPEndPoint, SIPEndPoint)
 - uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage*
   name: ParseSIPMessage
   href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessage_
@@ -30667,6 +30793,15 @@ references:
   fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream(System.Byte(), System.Int32, System.Int32, ByRef System.Int32)
   nameWithType: SIPMessageBuffer.ParseSIPMessageFromStream(Byte[], Int32, Int32, out Int32)
   nameWithType.vb: SIPMessageBuffer.ParseSIPMessageFromStream(Byte(), Int32, Int32, ByRef Int32)
+- uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream(System.Byte[],System.Int32,System.Int32,System.Text.Encoding,System.Int32@)
+  name: ParseSIPMessageFromStream(Byte[], Int32, Int32, Encoding, out Int32)
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessageFromStream_System_Byte___System_Int32_System_Int32_System_Text_Encoding_System_Int32__
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream(System.Byte[],System.Int32,System.Int32,System.Text.Encoding,System.Int32@)
+  name.vb: ParseSIPMessageFromStream(Byte(), Int32, Int32, Encoding, ByRef Int32)
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream(System.Byte[], System.Int32, System.Int32, System.Text.Encoding, out System.Int32)
+  fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream(System.Byte(), System.Int32, System.Int32, System.Text.Encoding, ByRef System.Int32)
+  nameWithType: SIPMessageBuffer.ParseSIPMessageFromStream(Byte[], Int32, Int32, Encoding, out Int32)
+  nameWithType.vb: SIPMessageBuffer.ParseSIPMessageFromStream(Byte(), Int32, Int32, Encoding, ByRef Int32)
 - uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream*
   name: ParseSIPMessageFromStream
   href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessageFromStream_
@@ -30699,6 +30834,18 @@ references:
   commentId: F:SIPSorcery.SIP.SIPMessageBuffer.RemoteSIPEndPoint
   fullName: SIPSorcery.SIP.SIPMessageBuffer.RemoteSIPEndPoint
   nameWithType: SIPMessageBuffer.RemoteSIPEndPoint
+- uid: SIPSorcery.SIP.SIPMessageBuffer.SIPBodyEncoding
+  name: SIPBodyEncoding
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_SIPBodyEncoding
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.SIPBodyEncoding
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.SIPBodyEncoding
+  nameWithType: SIPMessageBuffer.SIPBodyEncoding
+- uid: SIPSorcery.SIP.SIPMessageBuffer.SIPEncoding
+  name: SIPEncoding
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_SIPEncoding
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.SIPEncoding
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.SIPEncoding
+  nameWithType: SIPMessageBuffer.SIPEncoding
 - uid: SIPSorcery.SIP.SIPMessageBuffer.SIPHeaders
   name: SIPHeaders
   href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_SIPHeaders
@@ -31470,6 +31617,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPRequest.#ctor(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI)
   fullName: SIPSorcery.SIP.SIPRequest.SIPRequest(SIPSorcery.SIP.SIPMethodsEnum, SIPSorcery.SIP.SIPURI)
   nameWithType: SIPRequest.SIPRequest(SIPMethodsEnum, SIPURI)
+- uid: SIPSorcery.SIP.SIPRequest.#ctor(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI,System.Text.Encoding,System.Text.Encoding)
+  name: SIPRequest(SIPMethodsEnum, SIPURI, Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest__ctor_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPRequest.#ctor(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI,System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPRequest.SIPRequest(SIPSorcery.SIP.SIPMethodsEnum, SIPSorcery.SIP.SIPURI, System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPRequest.SIPRequest(SIPMethodsEnum, SIPURI, Encoding, Encoding)
 - uid: SIPSorcery.SIP.SIPRequest.#ctor(SIPSorcery.SIP.SIPMethodsEnum,System.String)
   name: SIPRequest(SIPMethodsEnum, String)
   href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest__ctor_SIPSorcery_SIP_SIPMethodsEnum_System_String_
@@ -31598,12 +31751,24 @@ references:
   commentId: M:SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer)
   fullName: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer)
   nameWithType: SIPRequest.ParseSIPRequest(SIPMessageBuffer)
+- uid: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer,System.Text.Encoding,System.Text.Encoding)
+  name: ParseSIPRequest(SIPMessageBuffer, Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_ParseSIPRequest_SIPSorcery_SIP_SIPMessageBuffer_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer,System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer, System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPRequest.ParseSIPRequest(SIPMessageBuffer, Encoding, Encoding)
 - uid: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(System.String)
   name: ParseSIPRequest(String)
   href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_ParseSIPRequest_System_String_
   commentId: M:SIPSorcery.SIP.SIPRequest.ParseSIPRequest(System.String)
   fullName: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(System.String)
   nameWithType: SIPRequest.ParseSIPRequest(String)
+- uid: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(System.String,System.Text.Encoding,System.Text.Encoding)
+  name: ParseSIPRequest(String, Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_ParseSIPRequest_System_String_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPRequest.ParseSIPRequest(System.String,System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(System.String, System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPRequest.ParseSIPRequest(String, Encoding, Encoding)
 - uid: SIPSorcery.SIP.SIPRequest.ParseSIPRequest*
   name: ParseSIPRequest
   href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_ParseSIPRequest_
@@ -31686,6 +31851,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
   fullName: SIPSorcery.SIP.SIPResponse.SIPResponse(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String)
   nameWithType: SIPResponse.SIPResponse(SIPResponseStatusCodesEnum, String)
+- uid: SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.Text.Encoding,System.Text.Encoding)
+  name: SIPResponse(SIPResponseStatusCodesEnum, String, Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse__ctor_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPResponse.SIPResponse(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPResponse.SIPResponse(SIPResponseStatusCodesEnum, String, Encoding, Encoding)
 - uid: SIPSorcery.SIP.SIPResponse.#ctor*
   name: SIPResponse
   href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse__ctor_
@@ -31744,12 +31915,24 @@ references:
   commentId: M:SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer)
   fullName: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer)
   nameWithType: SIPResponse.ParseSIPResponse(SIPMessageBuffer)
+- uid: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer,System.Text.Encoding,System.Text.Encoding)
+  name: ParseSIPResponse(SIPMessageBuffer, Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_ParseSIPResponse_SIPSorcery_SIP_SIPMessageBuffer_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer,System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer, System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPResponse.ParseSIPResponse(SIPMessageBuffer, Encoding, Encoding)
 - uid: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(System.String)
   name: ParseSIPResponse(String)
   href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_ParseSIPResponse_System_String_
   commentId: M:SIPSorcery.SIP.SIPResponse.ParseSIPResponse(System.String)
   fullName: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(System.String)
   nameWithType: SIPResponse.ParseSIPResponse(String)
+- uid: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(System.String,System.Text.Encoding,System.Text.Encoding)
+  name: ParseSIPResponse(String, Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_ParseSIPResponse_System_String_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPResponse.ParseSIPResponse(System.String,System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(System.String, System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPResponse.ParseSIPResponse(String, Encoding, Encoding)
 - uid: SIPSorcery.SIP.SIPResponse.ParseSIPResponse*
   name: ParseSIPResponse
   href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_ParseSIPResponse_
@@ -32733,6 +32916,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
   fullName: SIPSorcery.SIP.SIPStreamConnection.SIPStreamConnection(System.Net.Sockets.Socket, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum)
   nameWithType: SIPStreamConnection.SIPStreamConnection(Socket, SIPEndPoint, SIPProtocolsEnum)
+- uid: SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,System.Text.Encoding,System.Text.Encoding,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
+  name: SIPStreamConnection(Socket, Encoding, Encoding, SIPEndPoint, SIPProtocolsEnum)
+  href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_System_Text_Encoding_System_Text_Encoding_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_
+  commentId: M:SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,System.Text.Encoding,System.Text.Encoding,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
+  fullName: SIPSorcery.SIP.SIPStreamConnection.SIPStreamConnection(System.Net.Sockets.Socket, System.Text.Encoding, System.Text.Encoding, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum)
+  nameWithType: SIPStreamConnection.SIPStreamConnection(Socket, Encoding, Encoding, SIPEndPoint, SIPProtocolsEnum)
 - uid: SIPSorcery.SIP.SIPStreamConnection.#ctor*
   name: SIPStreamConnection
   href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection__ctor_
@@ -32873,12 +33062,24 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,System.Boolean,System.Boolean)
   fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum, System.Boolean, System.Boolean)
   nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, SIPProtocolsEnum, Boolean, Boolean)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,System.Text.Encoding,System.Text.Encoding,System.Boolean,System.Boolean)
+  name: SIPTCPChannel(IPEndPoint, SIPProtocolsEnum, Encoding, Encoding, Boolean, Boolean)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_System_Text_Encoding_System_Text_Encoding_System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,System.Text.Encoding,System.Text.Encoding,System.Boolean,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum, System.Text.Encoding, System.Text.Encoding, System.Boolean, System.Boolean)
+  nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, SIPProtocolsEnum, Encoding, Encoding, Boolean, Boolean)
 - uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
   name: SIPTCPChannel(IPEndPoint, Boolean)
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_System_Boolean_
   commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
   fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, System.Boolean)
   nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, Boolean)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,System.Text.Encoding,System.Text.Encoding,System.Boolean)
+  name: SIPTCPChannel(IPEndPoint, Encoding, Encoding, Boolean)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_System_Text_Encoding_System_Text_Encoding_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,System.Text.Encoding,System.Text.Encoding,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, System.Text.Encoding, System.Text.Encoding, System.Boolean)
+  nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, Encoding, Encoding, Boolean)
 - uid: SIPSorcery.SIP.SIPTCPChannel.#ctor*
   name: SIPTCPChannel
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_
@@ -34036,6 +34237,18 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean)
   fullName: SIPSorcery.SIP.SIPTransport.SIPTransport(System.Boolean)
   nameWithType: SIPTransport.SIPTransport(Boolean)
+- uid: SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean,System.Text.Encoding,System.Text.Encoding)
+  name: SIPTransport(Boolean, Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport__ctor_System_Boolean_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean,System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPTransport.SIPTransport(System.Boolean, System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPTransport.SIPTransport(Boolean, Encoding, Encoding)
+- uid: SIPSorcery.SIP.SIPTransport.#ctor(System.Text.Encoding,System.Text.Encoding)
+  name: SIPTransport(Encoding, Encoding)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport__ctor_System_Text_Encoding_System_Text_Encoding_
+  commentId: M:SIPSorcery.SIP.SIPTransport.#ctor(System.Text.Encoding,System.Text.Encoding)
+  fullName: SIPSorcery.SIP.SIPTransport.SIPTransport(System.Text.Encoding, System.Text.Encoding)
+  nameWithType: SIPTransport.SIPTransport(Encoding, Encoding)
 - uid: SIPSorcery.SIP.SIPTransport.#ctor*
   name: SIPTransport
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport__ctor_
@@ -34453,6 +34666,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
   fullName: SIPSorcery.SIP.SIPUDPChannel.SIPUDPChannel(System.Net.IPEndPoint, System.Boolean)
   nameWithType: SIPUDPChannel.SIPUDPChannel(IPEndPoint, Boolean)
+- uid: SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPEndPoint,System.Text.Encoding,System.Text.Encoding,System.Boolean)
+  name: SIPUDPChannel(IPEndPoint, Encoding, Encoding, Boolean)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel__ctor_System_Net_IPEndPoint_System_Text_Encoding_System_Text_Encoding_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPEndPoint,System.Text.Encoding,System.Text.Encoding,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.SIPUDPChannel(System.Net.IPEndPoint, System.Text.Encoding, System.Text.Encoding, System.Boolean)
+  nameWithType: SIPUDPChannel.SIPUDPChannel(IPEndPoint, Encoding, Encoding, Boolean)
 - uid: SIPSorcery.SIP.SIPUDPChannel.#ctor*
   name: SIPUDPChannel
   href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel__ctor_
@@ -34786,6 +35005,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPURI.Mangle
   nameWithType: SIPURI.Mangle
+- uid: SIPSorcery.SIP.SIPURI.None
+  name: None
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_None
+  commentId: F:SIPSorcery.SIP.SIPURI.None
+  fullName: SIPSorcery.SIP.SIPURI.None
+  nameWithType: SIPURI.None
 - uid: SIPSorcery.SIP.SIPURI.op_Equality(SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPURI)
   name: Equality(SIPURI, SIPURI)
   href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_op_Equality_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPURI_
@@ -35575,6 +35800,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPWebSocketChannel.#ctor(System.Net.IPEndPoint,System.Security.Cryptography.X509Certificates.X509Certificate2)
   fullName: SIPSorcery.SIP.SIPWebSocketChannel.SIPWebSocketChannel(System.Net.IPEndPoint, System.Security.Cryptography.X509Certificates.X509Certificate2)
   nameWithType: SIPWebSocketChannel.SIPWebSocketChannel(IPEndPoint, X509Certificate2)
+- uid: SIPSorcery.SIP.SIPWebSocketChannel.#ctor(System.Net.IPEndPoint,System.Text.Encoding,System.Text.Encoding,System.Security.Cryptography.X509Certificates.X509Certificate2)
+  name: SIPWebSocketChannel(IPEndPoint, Encoding, Encoding, X509Certificate2)
+  href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel__ctor_System_Net_IPEndPoint_System_Text_Encoding_System_Text_Encoding_System_Security_Cryptography_X509Certificates_X509Certificate2_
+  commentId: M:SIPSorcery.SIP.SIPWebSocketChannel.#ctor(System.Net.IPEndPoint,System.Text.Encoding,System.Text.Encoding,System.Security.Cryptography.X509Certificates.X509Certificate2)
+  fullName: SIPSorcery.SIP.SIPWebSocketChannel.SIPWebSocketChannel(System.Net.IPEndPoint, System.Text.Encoding, System.Text.Encoding, System.Security.Cryptography.X509Certificates.X509Certificate2)
+  nameWithType: SIPWebSocketChannel.SIPWebSocketChannel(IPEndPoint, Encoding, Encoding, X509Certificate2)
 - uid: SIPSorcery.SIP.SIPWebSocketChannel.#ctor*
   name: SIPWebSocketChannel
   href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel__ctor_

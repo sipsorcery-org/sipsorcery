@@ -130,6 +130,12 @@ server should use a single instance of this class.</p>
       <a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPMessageReceived">SIPChannel.SIPMessageReceived</a>
     </div>
     <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPEncoding">SIPChannel.SIPEncoding</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPBodyEncoding">SIPChannel.SIPBodyEncoding</a>
+    </div>
+    <div>
       <a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_GetLocalIPAddressForDestination_System_Net_IPAddress_">SIPChannel.GetLocalIPAddressForDestination(IPAddress)</a>
     </div>
     <div>
@@ -170,18 +176,55 @@ server should use a single instance of this class.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L99">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L96">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel__ctor_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel__ctor" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.#ctor">SIPClientWebSocketChannel()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPClientWebSocketChannel()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel__ctor_System_Text_Encoding_System_Text_Encoding_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.%23ctor(System.Text.Encoding%2CSystem.Text.Encoding)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L105">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPClientWebSocketChannel__ctor_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.#ctor*"></a>
+  <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel__ctor_System_Text_Encoding_System_Text_Encoding_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.#ctor(System.Text.Encoding,System.Text.Encoding)">SIPClientWebSocketChannel(Encoding, Encoding)</h4>
   <div class="markdown level1 summary"><p>Creates a SIP channel to establish outbound connections and send SIP messages
 over a web socket communications layer.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPClientWebSocketChannel()</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPClientWebSocketChannel(Encoding sipEncoding, Encoding sipBodyEncoding)</code></pre>
   </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Text.Encoding</span></td>
+        <td><span class="parametername">sipEncoding</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Text.Encoding</span></td>
+        <td><span class="parametername">sipBodyEncoding</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="fields">Fields
   </h3>
   <span class="small pull-right mobile-hide">
@@ -189,7 +232,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_SIP_Sec_WebSocket_Protocol.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.SIP_Sec_WebSocket_Protocol%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L76">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L77">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_SIP_Sec_WebSocket_Protocol" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SIP_Sec_WebSocket_Protocol">SIP_Sec_WebSocket_Protocol</h4>
   <div class="markdown level1 summary"></div>
@@ -218,7 +261,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_WEB_SOCKET_SECURE_URI_PREFIX.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.WEB_SOCKET_SECURE_URI_PREFIX%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L78">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L79">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_WEB_SOCKET_SECURE_URI_PREFIX" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.WEB_SOCKET_SECURE_URI_PREFIX">WEB_SOCKET_SECURE_URI_PREFIX</h4>
   <div class="markdown level1 summary"></div>
@@ -247,7 +290,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_WEB_SOCKET_URI_PREFIX.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.WEB_SOCKET_URI_PREFIX%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L77">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L78">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_WEB_SOCKET_URI_PREFIX" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.WEB_SOCKET_URI_PREFIX">WEB_SOCKET_URI_PREFIX</h4>
   <div class="markdown level1 summary"></div>
@@ -278,7 +321,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_Close.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.Close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L301">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L307">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_Close_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.Close*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_Close" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.Close">Close()</h4>
@@ -296,7 +339,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_Dispose.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.Dispose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L324">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L330">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_Dispose_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.Dispose*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_Dispose" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.Dispose">Dispose()</h4>
@@ -314,7 +357,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(SIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L243">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L249">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(SIPSorcery.SIP.SIPEndPoint)">HasConnection(SIPEndPoint)</h4>
@@ -364,7 +407,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L235">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L241">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_System_String_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(System.String)">HasConnection(String)</h4>
@@ -416,7 +459,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_System_Uri_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(System.Uri)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L257">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L263">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_System_Uri_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(System.Uri)">HasConnection(Uri)</h4>
@@ -468,7 +511,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_IsAddressFamilySupported_System_Net_Sockets_AddressFamily_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.IsAddressFamilySupported(System.Net.Sockets.AddressFamily)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L267">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L273">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_IsAddressFamilySupported_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.IsAddressFamilySupported*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_IsAddressFamilySupported_System_Net_Sockets_AddressFamily_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.IsAddressFamilySupported(System.Net.Sockets.AddressFamily)">IsAddressFamilySupported(AddressFamily)</h4>
@@ -520,7 +563,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_IsProtocolSupported_SIPSorcery_SIP_SIPProtocolsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.IsProtocolSupported(SIPSorcery.SIP.SIPProtocolsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L278">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L284">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_IsProtocolSupported_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.IsProtocolSupported*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_IsProtocolSupported_SIPSorcery_SIP_SIPProtocolsEnum_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.IsProtocolSupported(SIPSorcery.SIP.SIPProtocolsEnum)">IsProtocolSupported(SIPProtocolsEnum)</h4>
@@ -572,7 +615,7 @@ over a web socket communications layer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint%2CSystem.Byte%5B%5D%2CSystem.Boolean%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L119">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L125">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_Boolean_System_String_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.Boolean,System.String)">SendAsync(SIPEndPoint, Byte[], Boolean, String)</h4>
@@ -643,7 +686,7 @@ requested remote end point and use it.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint%2CSystem.Byte%5B%5D%2CSystem.String%2CSystem.Boolean%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L136">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L142">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_Boolean_System_String_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.Boolean,System.String)">SendSecureAsync(SIPEndPoint, Byte[], String, Boolean, String)</h4>
@@ -727,7 +770,7 @@ requested remote end point and use it.</p>
                     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L38" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L39" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
