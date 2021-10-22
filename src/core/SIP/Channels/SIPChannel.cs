@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -162,11 +163,22 @@ namespace SIPSorcery.SIP
             InternetDefaultAddress = NetServices.InternetDefaultAddress;
         }
 
-        public SIPChannel()
+        protected SIPChannel() : this(SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING)
         {
             int id = Interlocked.Increment(ref _lastUsedChannelID);
             ID = id.ToString();
         }
+
+        protected SIPChannel(Encoding sipEncoding, Encoding sipBodyEncoding)
+        {
+            int id = Interlocked.Increment(ref _lastUsedChannelID);
+            ID = id.ToString();
+            SIPEncoding = sipEncoding;
+            SIPBodyEncoding = sipBodyEncoding;
+        }
+
+        public Encoding SIPEncoding { get; private set; }
+        public Encoding SIPBodyEncoding { get; private set; }
 
         /// <summary>
         /// Checks whether the host string corresponds to a socket address that this SIP channel is listening on.
