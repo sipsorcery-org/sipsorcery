@@ -519,7 +519,7 @@ namespace SIPSorcery.SIP.App
                 {
                     sipCallDescriptor.Content = sdp.ToString();
 
-                    if(ringTimeout > 0)
+                    if (ringTimeout > 0)
                     {
                         logger.LogDebug($"Setting ring timeout of {ringTimeout}s.");
                         _ringTimeout = new Timer((state) => m_uac?.Cancel(), null, ringTimeout * 1000, Timeout.Infinite);
@@ -573,19 +573,23 @@ namespace SIPSorcery.SIP.App
                     MediaSession?.Close("call hungup");
                 }
 
+                string callID = null;
+
                 if (m_uac != null)
                 {
+                    callID = m_uac.SIPDialogue?.CallId;
                     m_uac.Hangup();
                 }
                 else if (m_uas != null)
                 {
+                    callID = m_uas.SIPDialogue?.CallId;
                     m_uas.Hangup(false);
                 }
 
                 IsOnLocalHold = false;
                 IsOnRemoteHold = false;
 
-                CallEnded(m_callDescriptor.CallId);
+                CallEnded(callID);
             }
         }
 
@@ -1656,7 +1660,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (m_callDescriptor.CallId.Equals(callId, StringComparison.OrdinalIgnoreCase))
                 {
-                    m_uac = null;                    
+                    m_uac = null;
                     m_callDescriptor = null;
 
                     IsOnLocalHold = false;
@@ -1668,16 +1672,14 @@ namespace SIPSorcery.SIP.App
                         MediaSession = null;
                     }
 
-                    
-
                     m_sipDialogue = null;
                 }
             }
             else
             {
-                if(m_uas != null)
+                if (m_uas != null)
                 {
-                    if(m_uas.SIPDialogue.CallId.Equals(callId, StringComparison.OrdinalIgnoreCase))
+                    if (m_uas.SIPDialogue.CallId.Equals(callId, StringComparison.OrdinalIgnoreCase))
                     {
                         m_uas = null;
 
