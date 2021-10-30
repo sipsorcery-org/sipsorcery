@@ -391,5 +391,74 @@ a=rtpmap:100 VP8/90000";
             bob.close();
             alice.close();
         }
+
+        /// <summary>
+        /// Checks that the correct answer is generated for an SDP offer from GStreamer.
+        /// </summary>
+        [Fact]
+        public void CheckAnswerForGStreamerOfferUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // Remote offer from GStreamer, see https://github.com/sipsorcery-org/sipsorcery/issues/596.
+            string remoteSdp =
+            @"v=0
+o=- 4385423089851900022 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+a=ice-options:trickle
+a=group:BUNDLE video0 application1
+m=video 9 UDP/TLS/RTP/SAVPF 96
+c=IN IP4 0.0.0.0
+a=setup:actpass
+a=ice-ufrag:lsJx+7d6hsCyL8K6m8/KbgcqMqizaZqy
+a=ice-pwd:zFUTJmx6hNnr/JRAq2b3wOtmm88XERb3
+a=rtcp-mux
+a=rtcp-rsize
+a=sendrecv
+a=rtpmap:96 H264/90000
+a=rtcp-fb:96 nack pli
+a=framerate:30
+a=fmtp:96 packetization-mode=1;profile-level-id=42E01F;sprop-parameter-sets=Z00AKeKQDwBE/LNwEBAaUABt3QAZv8wA8SIq,aO48gA==
+a=ssrc:3776670536 msid:user3344942761@host-c94b5db webrtctransceiver11
+a=ssrc:3776670536 cname:user3344942761@host-c94b5db
+a=mid:video0
+a=fingerprint:sha-256 AE:1C:59:19:00:7B:C2:1C:85:95:0C:6C:8C:14:E8:67:A4:7D:D0:AE:90:5D:8F:BB:D7:5B:95:49:03:6E:94:8F
+m=application 0 UDP/DTLS/SCTP webrtc-datachannel
+c=IN IP4 0.0.0.0
+a=setup:actpass
+a=ice-ufrag:lsJx+7d6hsCyL8K6m8/KbgcqMqizaZqy
+a=ice-pwd:zFUTJmx6hNnr/JRAq2b3wOtmm88XERb3
+a=bundle-only
+a=mid:application1
+a=sctp-port:5000
+a=fingerprint:sha-256 AE:1C:59:19:00:7B:C2:1C:85:95:0C:6C:8C:14:E8:67:A4:7D:D0:AE:90:5D:8F:BB:D7:5B:95:49:03:6E:94:8F";
+
+            // Create a local session and add the video track first.
+            RTCPeerConnection pc = new RTCPeerConnection(null);
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 100, "H264", 90000) });
+            pc.addTrack(localVideoTrack);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = pc.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = pc.CreateAnswer(null);
+
+            logger.LogDebug($"Local answer: {answer}");
+
+            Assert.NotNull(pc.VideoLocalTrack);
+            Assert.Equal(96, pc.VideoLocalTrack.Capabilities.Single(x => x.Name() == "H264").ID);
+            Assert.Equal(IceRolesEnum.active, pc.IceRole);
+
+            pc.Close("normal");
+        }
     }
 }
