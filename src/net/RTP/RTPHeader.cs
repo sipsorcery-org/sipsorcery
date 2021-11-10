@@ -39,6 +39,9 @@ namespace SIPSorcery.Net
         public UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
         public byte[] ExtensionPayload;
 
+        public int PayloadSize;
+        public byte PaddingCount;
+
         public int Length
         {
             get { return MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4)); }
@@ -78,13 +81,17 @@ namespace SIPSorcery.Net
                 SyncSource = BitConverter.ToUInt32(packet, 8);
             }
 
+
             Version = firstWord >> 14;
             PaddingFlag = (firstWord >> 13) & 0x1;
             HeaderExtensionFlag = (firstWord >> 12) & 0x1;
             CSRCCount = (firstWord >> 8) & 0xf;
+
             MarkerBit = (firstWord >> 7) & 0x1;
             PayloadType = firstWord & 0x7f;
 
+            int headerExtensionLength = 0;
+            // ReSharper disable once InconsistentNaming
             int headerAndCSRCLength = 12 + 4 * CSRCCount;
 
             if (HeaderExtensionFlag == 1 && (packet.Length >= (headerAndCSRCLength + 4)))
@@ -92,12 +99,16 @@ namespace SIPSorcery.Net
                 if (BitConverter.IsLittleEndian)
                 {
                     ExtensionProfile = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount));
+                    headerExtensionLength += 2;
                     ExtensionLength = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount));
+                    headerExtensionLength += 2 + ExtensionLength;
                 }
                 else
                 {
                     ExtensionProfile = BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount);
+                    headerExtensionLength += 2;
                     ExtensionLength = BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount);
+                    headerExtensionLength += 2 + ExtensionLength;
                 }
 
                 if (ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
@@ -105,6 +116,13 @@ namespace SIPSorcery.Net
                     ExtensionPayload = new byte[ExtensionLength * 4];
                     Buffer.BlockCopy(packet, headerAndCSRCLength + 4, ExtensionPayload, 0, ExtensionLength * 4);
                 }
+            }
+
+            PayloadSize = packet.Length - (headerAndCSRCLength+ headerExtensionLength);
+            if (PaddingFlag == 1)
+            {
+                PaddingCount = packet[packet.Length - 1];
+                PayloadSize -= PaddingCount;
             }
         }
 
