@@ -491,7 +491,7 @@ a=rtpmap:111 OPUS/48000/2";
         /// Checks that the selected audio format is chosen correctly when setting the remote description.
         /// </summary>
         [Fact]
-        public void CheckSelectedAudioForamtAttributeUnitTest()
+        public void CheckSelectedAudioFormatAttributeUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);

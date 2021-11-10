@@ -821,6 +821,104 @@ a=sendrecv";
             Assert.True(uas.IsCancelled);
         }
 
+        /// <summary>
+        /// Tests that the SIPUserAgent Hangup on an outgoing call works correctly.
+        /// </summary>
+        [Fact]
+        public async Task HangupOutgoingCallUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport serverTransport = new SIPTransport();
+            SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
+            serverTransport.AddSIPChannel(udpChannel);
+
+            // Set up two user agents: one to answer the test call and one to place it.
+            // The hangup will be done on the user agent placing the call, which is the uac.
+            SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
+            SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
+
+            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                logger.LogDebug("Request received: " + req.StatusLine);
+
+                var uas = userAgentServer.AcceptCall(req);
+                var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
+                var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
+
+                logger.LogDebug($"Server agent answer result {answerResult}.");
+
+                Assert.True(answerResult);
+            };
+
+            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+
+            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+
+            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
+            var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
+
+            logger.LogDebug($"Client agent answer result {callResult }.");
+
+            Assert.True(callResult);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
+
+            logger.LogDebug($"Hanging up client user agent call leg.");
+
+            userAgentClient.Hangup();
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent Hangup on an incoming call works correctly.
+        /// </summary>
+        [Fact]
+        public async Task HangupIncomingCallUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport serverTransport = new SIPTransport();
+            SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
+            serverTransport.AddSIPChannel(udpChannel);
+
+            // Set up two user agents: one to answer the test call and one to place it.
+            // The hangup will be done on the user agent receiving the call, which is the uas.
+            SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
+            SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
+
+            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                logger.LogDebug("Request received: " + req.StatusLine);
+
+                var uas = userAgentServer.AcceptCall(req);
+                var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
+                var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
+
+                logger.LogDebug($"Server agent answer result {answerResult}.");
+
+                Assert.True(answerResult);
+            };
+
+            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+
+            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+
+            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
+            var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
+
+            logger.LogDebug($"Client agent answer result {callResult }.");
+
+            Assert.True(callResult);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
+
+            logger.LogDebug($"Hanging up client user agent call leg.");
+
+            userAgentServer.Hangup();
+        }
+
         private IMediaSession CreateMediaSession()
         {
             return new MockMediaSession();
