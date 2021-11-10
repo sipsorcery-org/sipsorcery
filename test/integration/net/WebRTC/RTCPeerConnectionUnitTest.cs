@@ -208,6 +208,140 @@ a=rtpmap:100 VP8/90000";
         }
 
         /// <summary>
+        /// Checks that the media identifier tag are correctly reused in the generated answer
+        /// tracks.
+        /// </summary>
+        [Fact]
+        public void CheckMediaIdentifierTagAreReusedForAnswerUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // In this SDP, the audio media identifier's tag is "foo" and the video media identifier's tag is "bar"
+            string remoteSdp =
+            @"=0
+o=- 1064364449942365659 2 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE foo bar
+a=msid-semantic: WMS stream0
+m=audio 9 UDP/TLS/RTP/SAVPF 111 103 104 9 102 0 8 106 105 13 110 112 113 126
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:G5P/
+a=ice-pwd:FICf2eBzvl5r/O/uf1ktSyuc
+a=ice-options:trickle renomination
+a=fingerprint:sha-256 5D:03:7C:22:69:2E:E7:10:17:5F:31:86:E6:47:2F:6F:1D:4C:A6:BF:5B:DE:0C:FB:8A:17:15:AA:22:63:0C:FD
+a=setup:actpass
+a=mid:foo
+a=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level
+a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:3 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=sendrecv
+a=rtcp-mux
+a=rtpmap:111 opus/48000/2
+a=rtcp-fb:111 transport-cc
+a=fmtp:111 minptime=10;useinbandfec=1
+a=rtpmap:103 ISAC/16000
+a=rtpmap:104 ISAC/32000
+a=rtpmap:9 G722/8000
+a=rtpmap:102 ILBC/8000
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=rtpmap:106 CN/32000
+a=rtpmap:105 CN/16000
+a=rtpmap:13 CN/8000
+a=rtpmap:110 telephone-event/48000
+a=rtpmap:112 telephone-event/32000
+a=rtpmap:113 telephone-event/16000
+a=rtpmap:126 telephone-event/8000
+a=ssrc:3780525913 cname:FLLo3gHcblO+MbrR
+a=ssrc:3780525913 msid:stream0 audio0
+a=ssrc:3780525913 mslabel:stream0
+a=ssrc:3780525913 label:audio0
+m=video 9 UDP/TLS/RTP/SAVPF 96 97 98 99 100 101 127
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:G5P/
+a=ice-pwd:FICf2eBzvl5r/O/uf1ktSyuc
+a=ice-options:trickle renomination
+a=fingerprint:sha-256 5D:03:7C:22:69:2E:E7:10:17:5F:31:86:E6:47:2F:6F:1D:4C:A6:BF:5B:DE:0C:FB:8A:17:15:AA:22:63:0C:FD
+a=setup:actpass
+a=mid:bar
+a=extmap:14 urn:ietf:params:rtp-hdrext:toffset
+a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:13 urn:3gpp:video-orientation
+a=extmap:3 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=extmap:5 http://www.webrtc.org/experiments/rtp-hdrext/playout-delay
+a=extmap:6 http://www.webrtc.org/experiments/rtp-hdrext/video-content-type
+a=extmap:7 http://www.webrtc.org/experiments/rtp-hdrext/video-timing
+a=extmap:8 http://www.webrtc.org/experiments/rtp-hdrext/color-space
+a=sendrecv
+a=rtcp-mux
+a=rtcp-rsize
+a=rtpmap:96 VP8/90000
+a=rtcp-fb:96 goog-remb
+a=rtcp-fb:96 transport-cc
+a=rtcp-fb:96 ccm fir
+a=rtcp-fb:96 nack
+a=rtcp-fb:96 nack pli
+a=rtpmap:97 rtx/90000
+a=fmtp:97 apt=96
+a=rtpmap:98 VP9/90000
+a=rtcp-fb:98 goog-remb
+a=rtcp-fb:98 transport-cc
+a=rtcp-fb:98 ccm fir
+a=rtcp-fb:98 nack
+a=rtcp-fb:98 nack pli
+a=rtpmap:99 rtx/90000
+a=fmtp:99 apt=98
+a=rtpmap:100 red/90000
+a=rtpmap:101 rtx/90000
+a=fmtp:101 apt=100
+a=rtpmap:127 ulpfec/90000
+a=ssrc-group:FID 3851740345 4165955869
+a=ssrc:3851740345 cname:FLLo3gHcblO+MbrR
+a=ssrc:3851740345 msid:stream0 video0
+a=ssrc:3851740345 mslabel:stream0
+a=ssrc:3851740345 label:video0
+a=ssrc:4165955869 cname:FLLo3gHcblO+MbrR
+a=ssrc:4165955869 msid:stream0 video0
+a=ssrc:4165955869 mslabel:stream0
+a=ssrc:4165955869 label:video0";
+
+            RTCPeerConnection pc = new RTCPeerConnection(null);
+            var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
+            pc.addTrack(audioTrack);
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            pc.addTrack(localVideoTrack);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = pc.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = pc.CreateAnswer(null);
+            var answerString = answer.ToString();
+
+            logger.LogDebug($"Local answer: {answer}");
+
+            Assert.Equal("foo", answer.Media[0].MediaID);
+            Assert.Equal(SDPMediaTypesEnum.audio, answer.Media[0].Media);
+            Assert.Equal("bar", answer.Media[1].MediaID);
+            Assert.Equal(SDPMediaTypesEnum.video, answer.Media[1].Media);
+            Assert.Contains("a=group:BUNDLE foo bar", answerString);
+            Assert.Contains("a=mid:foo", answerString);
+            Assert.Contains("a=mid:bar", answerString);
+
+            pc.Close("normal");
+        }
+
+        /// <summary>
         /// Checks that an inactive audio track gets added if the offer contains audio and video but
         /// the local peer connection only supports video.
         /// </summary>
