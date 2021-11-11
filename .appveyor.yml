@@ -9,7 +9,7 @@ environment:
   access_token:
     # Token for github pages publishing.
     secure: vhHzssxBhg0t4JAiWZZ1r/RTzsbKcGn16cxj7uBoPVVEJSaLaJ+gOdaUdsfX2ooI
-image: Visual Studio 2019
+image: Visual Studio 2022
 configuration: Release
 before_build:
 - cmd: nuget restore -DisableParallelProcessing src\SIPSorcery.sln
