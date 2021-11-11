@@ -64,7 +64,6 @@ deploy:
   - provider: NuGet
     server: https://nuget.pkg.github.com/sipsorcery/index.json
     artifact: /.*(\.|\.s)nupkg/
-    username: sipsorcery
     api_key:
       secure: E58r+OknoQn8+bsPRT6l3U2K4kfOpDiGCo1C75LkVg+R/RBHpY//J8UCXEfVvyRB
     on:
