@@ -89,125 +89,6 @@ namespace SIPSorcery.Net.IntegrationTests
         }
 
         /// <summary>
-        /// Tests that attempting to send an RTCP feedback report for an audio stream works correctly.
-        /// </summary>
-        [Fact]
-        public void SendVideoRtcpFeedbackReportUnitTest()
-        {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            RTCConfiguration pcConfiguration = new RTCConfiguration
-            {
-                X_UseRtpFeedbackProfile = true
-            };
-
-            RTCPeerConnection pcSrc = new RTCPeerConnection(pcConfiguration);
-            var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
-            pcSrc.addTrack(videoTrackSrc);
-            var offer = pcSrc.createOffer(new RTCOfferOptions());
-
-            logger.LogDebug($"offer: {offer.sdp}");
-
-            RTCPeerConnection pcDst = new RTCPeerConnection(pcConfiguration);
-            var videoTrackDst = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
-            pcDst.addTrack(videoTrackDst);
-
-            var setOfferResult = pcDst.setRemoteDescription(offer);
-            Assert.Equal(SetDescriptionResultEnum.OK, setOfferResult);
-
-            var answer = pcDst.createAnswer(null);
-            var setAnswerResult = pcSrc.setRemoteDescription(answer);
-            Assert.Equal(SetDescriptionResultEnum.OK, setAnswerResult);
-
-            logger.LogDebug($"answer: {answer.sdp}");
-
-            RTCPFeedback pliReport = new RTCPFeedback(pcDst.VideoLocalTrack.Ssrc, pcDst.VideoRemoteTrack.Ssrc, PSFBFeedbackTypesEnum.PLI);
-            pcDst.SendRtcpFeedback(SDPMediaTypesEnum.video, pliReport);
-        }
-
-        /// <summary>
-        /// Checks that the media formats are correctly negotiated when for a remote offer and the local
-        /// tracks.
-        /// </summary>
-        [Fact]
-        public void CheckMediaFormatNegotiationUnitTest()
-        {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            // By default offers made by us always put audio first. Create a remote SDP offer 
-            // with the video first.
-            string remoteSdp =
-            @"v=0
-o=- 62533 0 IN IP4 127.0.0.1
-s=-
-t=0 0
-a=group:BUNDLE 0 1
-a=msid-semantic: WMS
-m=audio 57148 UDP/TLS/RTP/SAVP 0 101
-c=IN IP6 2a02:8084:6981:7880::76
-a=rtcp:9 IN IP4 0.0.0.0
-a=candidate:2944 1 udp 659136 192.168.11.50 57148 typ host generation 0
-a=candidate:2488 1 udp 659136 192.168.0.50 57148 typ host generation 0
-a=candidate:2507 1 udp 659136 fe80::54a9:d238:b2ee:ceb%24 57148 typ host generation 0
-a=candidate:3159 1 udp 659136 2a02:8084:6981:7880::76 57148 typ host generation 0
-a=ice-ufrag:CUTK
-a=ice-pwd:QTCZWDIEBCIBGOYAGSIXRFIL
-a=ice-options:ice2,trickle
-a=fingerprint:sha-256 06:2F:61:85:1F:83:64:88:1B:93:93:8C:E5:FF:1C:D9:82:EA:60:97:1E:0D:DA:FA:28:11:00:FA:74:69:23:DB
-a=setup:actpass
-a=mid:0
-a=sendrecv
-a=rtcp-mux
-a=rtpmap:0 PCMU/8000
-a=rtpmap:101 telephone-event/8000
-a=fmtp:101 0-16
-m=video 9 UDP/TLS/RTP/SAVP 100
-c=IN IP4 0.0.0.0
-a=rtcp:9 IN IP4 0.0.0.0
-a=ice-ufrag:CUTK
-a=ice-pwd:QTCZWDIEBCIBGOYAGSIXRFIL
-a=ice-options:ice2,trickle
-a=fingerprint:sha-256 06:2F:61:85:1F:83:64:88:1B:93:93:8C:E5:FF:1C:D9:82:EA:60:97:1E:0D:DA:FA:28:11:00:FA:74:69:23:DB
-a=setup:actpass
-a=mid:1
-a=sendrecv
-a=rtcp-mux
-a=rtpmap:100 VP8/90000";
-
-            // Create a local session and add the video track first.
-            RTCPeerConnection pc = new RTCPeerConnection(null);
-            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> {
-                new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 110, "OPUS/48000/2")
-            });
-            pc.addTrack(localAudioTrack);
-            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
-            pc.addTrack(localVideoTrack);
-
-            var offer = SDP.ParseSDPDescription(remoteSdp);
-
-            logger.LogDebug($"Remote offer: {offer}");
-
-            var result = pc.SetRemoteDescription(SIP.App.SdpType.offer, offer);
-
-            logger.LogDebug($"Set remote description on local session result {result}.");
-
-            Assert.Equal(SetDescriptionResultEnum.OK, result);
-
-            var answer = pc.CreateAnswer(null);
-
-            logger.LogDebug($"Local answer: {answer}");
-
-            Assert.Equal(2, pc.AudioLocalTrack.Capabilities.Count());
-            Assert.Equal(0, pc.AudioLocalTrack.Capabilities.Single(x => x.Name() == "PCMU").ID);
-            Assert.Equal(100, pc.VideoLocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
-
-            pc.Close("normal");
-        }
-
-        /// <summary>
         /// Checks that the media identifier tags are correctly reused in the generated answer
         /// tracks.
         /// </summary>
@@ -527,6 +408,125 @@ a=ssrc:4165955869 label:video0";
             Assert.Contains("a=group:BUNDLE zzz aaa", answerString);
             Assert.Contains("a=mid:zzz", answerString);
             Assert.Contains("a=mid:aaa", answerString);
+
+            pc.Close("normal");
+        }
+
+        /// <summary>
+        /// Tests that attempting to send an RTCP feedback report for an audio stream works correctly.
+        /// </summary>
+        [Fact]
+        public void SendVideoRtcpFeedbackReportUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            RTCConfiguration pcConfiguration = new RTCConfiguration
+            {
+                X_UseRtpFeedbackProfile = true
+            };
+
+            RTCPeerConnection pcSrc = new RTCPeerConnection(pcConfiguration);
+            var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            pcSrc.addTrack(videoTrackSrc);
+            var offer = pcSrc.createOffer(new RTCOfferOptions());
+
+            logger.LogDebug($"offer: {offer.sdp}");
+
+            RTCPeerConnection pcDst = new RTCPeerConnection(pcConfiguration);
+            var videoTrackDst = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            pcDst.addTrack(videoTrackDst);
+
+            var setOfferResult = pcDst.setRemoteDescription(offer);
+            Assert.Equal(SetDescriptionResultEnum.OK, setOfferResult);
+
+            var answer = pcDst.createAnswer(null);
+            var setAnswerResult = pcSrc.setRemoteDescription(answer);
+            Assert.Equal(SetDescriptionResultEnum.OK, setAnswerResult);
+
+            logger.LogDebug($"answer: {answer.sdp}");
+
+            RTCPFeedback pliReport = new RTCPFeedback(pcDst.VideoLocalTrack.Ssrc, pcDst.VideoRemoteTrack.Ssrc, PSFBFeedbackTypesEnum.PLI);
+            pcDst.SendRtcpFeedback(SDPMediaTypesEnum.video, pliReport);
+        }
+
+        /// <summary>
+        /// Checks that the media formats are correctly negotiated when for a remote offer and the local
+        /// tracks.
+        /// </summary>
+        [Fact]
+        public void CheckMediaFormatNegotiationUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // By default offers made by us always put audio first. Create a remote SDP offer 
+            // with the video first.
+            string remoteSdp =
+            @"v=0
+o=- 62533 0 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE 0 1
+a=msid-semantic: WMS
+m=audio 57148 UDP/TLS/RTP/SAVP 0 101
+c=IN IP6 2a02:8084:6981:7880::76
+a=rtcp:9 IN IP4 0.0.0.0
+a=candidate:2944 1 udp 659136 192.168.11.50 57148 typ host generation 0
+a=candidate:2488 1 udp 659136 192.168.0.50 57148 typ host generation 0
+a=candidate:2507 1 udp 659136 fe80::54a9:d238:b2ee:ceb%24 57148 typ host generation 0
+a=candidate:3159 1 udp 659136 2a02:8084:6981:7880::76 57148 typ host generation 0
+a=ice-ufrag:CUTK
+a=ice-pwd:QTCZWDIEBCIBGOYAGSIXRFIL
+a=ice-options:ice2,trickle
+a=fingerprint:sha-256 06:2F:61:85:1F:83:64:88:1B:93:93:8C:E5:FF:1C:D9:82:EA:60:97:1E:0D:DA:FA:28:11:00:FA:74:69:23:DB
+a=setup:actpass
+a=mid:0
+a=sendrecv
+a=rtcp-mux
+a=rtpmap:0 PCMU/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-16
+m=video 9 UDP/TLS/RTP/SAVP 100
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:CUTK
+a=ice-pwd:QTCZWDIEBCIBGOYAGSIXRFIL
+a=ice-options:ice2,trickle
+a=fingerprint:sha-256 06:2F:61:85:1F:83:64:88:1B:93:93:8C:E5:FF:1C:D9:82:EA:60:97:1E:0D:DA:FA:28:11:00:FA:74:69:23:DB
+a=setup:actpass
+a=mid:1
+a=sendrecv
+a=rtcp-mux
+a=rtpmap:100 VP8/90000";
+
+            // Create a local session and add the video track first.
+            RTCPeerConnection pc = new RTCPeerConnection(null);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> {
+                new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 110, "OPUS/48000/2")
+            });
+            pc.addTrack(localAudioTrack);
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            pc.addTrack(localVideoTrack);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = pc.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = pc.CreateAnswer(null);
+
+            logger.LogDebug($"Local answer: {answer}");
+
+            Assert.Equal(2, pc.AudioLocalTrack.Capabilities.Count());
+            Assert.Equal(0, pc.AudioLocalTrack.Capabilities.Single(x => x.Name() == "PCMU").ID);
+            Assert.Equal(100, pc.VideoLocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
 
             pc.Close("normal");
         }
