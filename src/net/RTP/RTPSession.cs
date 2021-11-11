@@ -570,7 +570,9 @@ namespace SIPSorcery.Net
                 foreach (var localTrack in localTracks)
                 {
                     if (localTrack != null && localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                    {
                         localTrack.StreamStatus = localTrack.DefaultStreamStatus;
+                    }
                 }
 
                 var offerSdp = GetSessionDesciption(localTracks, connectionAddress);
@@ -1162,7 +1164,9 @@ namespace SIPSorcery.Net
             if (localTrack != null)
             {
                 if (localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                {
                     localTrack.StreamStatus = localTrack.DefaultStreamStatus;
+                }
 
                 if (remoteTrackStatus == MediaStreamStatusEnum.Inactive)
                 {

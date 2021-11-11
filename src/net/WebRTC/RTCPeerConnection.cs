@@ -860,7 +860,9 @@ namespace SIPSorcery.Net
             foreach (var localTrack in localTracks)
             {
                 if (localTrack != null && localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                {
                     localTrack.StreamStatus = localTrack.DefaultStreamStatus;
+                }
             }
 
             var audioLocalTrack = localTracks.Find(a => a.Kind == SDPMediaTypesEnum.audio);
@@ -1325,7 +1327,9 @@ namespace SIPSorcery.Net
 
                 //Prevent continue with cancellation requested
                 if (token.IsCancellationRequested)
+                {
                     return;
+                }
                 else
                 {
                     if (_requireRenegotiation)
@@ -1347,7 +1351,10 @@ namespace SIPSorcery.Net
                 if (_cancellationSource != null)
                 {
                     if (!_cancellationSource.IsCancellationRequested)
+                    {
                         _cancellationSource.Cancel();
+                    }
+
                     _cancellationSource = null;
                 }
             }
