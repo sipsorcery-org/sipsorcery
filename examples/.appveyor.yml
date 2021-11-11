@@ -7,7 +7,7 @@ branches:
     - win-ci
     - wsl-ci
 skip_tags: true
-image: Visual Studio 2019
+image: Visual Studio 2022
 build_script:
 - dotnet nuget add source "https://aaronrc.pkgs.visualstudio.com/sipsorcery.cloud/_packaging/sipsorcery-dev/nuget/v3/index.json"
 - nuget restore -DisableParallelProcessing examples/sipexamples/sipexamples.sln
