@@ -208,18 +208,18 @@ a=rtpmap:100 VP8/90000";
         }
 
         /// <summary>
-        /// Checks that the media identifier tag are correctly reused in the generated answer
+        /// Checks that the media identifier tags are correctly reused in the generated answer
         /// tracks.
         /// </summary>
         [Fact]
-        public void CheckMediaIdentifierTagAreReusedForAnswerUnitTest()
+        public void CheckAudioVideoMediaIdentifierTagsAreReusedForAnswerUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // In this SDP, the audio media identifier's tag is "foo" and the video media identifier's tag is "bar"
             string remoteSdp =
-            @"=0
+            @"v=0
 o=- 1064364449942365659 2 IN IP4 127.0.0.1
 s=-
 t=0 0
@@ -337,6 +337,62 @@ a=ssrc:4165955869 label:video0";
             Assert.Contains("a=group:BUNDLE foo bar", answerString);
             Assert.Contains("a=mid:foo", answerString);
             Assert.Contains("a=mid:bar", answerString);
+
+            pc.Close("normal");
+        }
+
+
+        /// <summary>
+        /// Checks that the media identifier tags for datachannel (application data) are correctly reused in
+        /// the generated answer tracks.
+        /// </summary>
+        [Fact]
+        public void CheckDataChannelMediaIdentifierTagsAreReusedForAnswerUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // In this SDP, the datachannel1's media identifier's tag is "application1"
+            string remoteSdp =
+            @"v=0
+o=- 6803632431644503613 2 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE application1
+a=extmap-allow-mixed
+a=msid-semantic: WMS
+m=application 9 UDP/DTLS/SCTP webrtc-datachannel
+c=IN IP4 0.0.0.0
+a=ice-ufrag:xort
+a=ice-pwd:6/W7mcRWqCOpmKhfY4a+KK0m
+a=ice-options:trickle
+a=fingerprint:sha-256 B7:C9:01:0F:B4:BE:00:45:73:4B:F4:52:A9:E7:87:04:72:EB:1A:DC:30:AF:BD:5D:19:BF:12:DE:FF:AF:74:00
+a=setup:actpass
+a=mid:application1
+a=sctp-port:5000
+a=max-message-size:262144";
+
+            RTCPeerConnection pc = new RTCPeerConnection(null);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = pc.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = pc.CreateAnswer(null);
+            var answerString = answer.ToString();
+
+            logger.LogDebug($"Local answer: {answer}");
+
+            Assert.Equal("application1", answer.Media[0].MediaID);
+            Assert.Equal(SDPMediaTypesEnum.application, answer.Media[0].Media);
+            Assert.Contains("a=group:BUNDLE application1", answerString);
+            Assert.Contains("a=mid:application1", answerString);
 
             pc.Close("normal");
         }
