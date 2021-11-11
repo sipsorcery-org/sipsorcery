@@ -27,6 +27,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -51,12 +52,24 @@ namespace SIPSorcery.SIP
         /// </summary>
         private static ConcurrentDictionary<IPEndPoint, DateTime> m_sendFailures = new ConcurrentDictionary<IPEndPoint, DateTime>();
 
+        public SIPUDPChannel(
+            IPEndPoint endPoint,
+            bool useDualMode = false) : this(endPoint, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING, useDualMode)
+        {
+
+        }
         /// <summary>
         /// Creates a SIP channel to listen for and send SIP messages over UDP.
         /// </summary>
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
+        /// <param name="sipBodyEncoding"></param>
         /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
-        public SIPUDPChannel(IPEndPoint endPoint, bool useDualMode = false) : base()
+        /// <param name="sipEncoding"></param>
+        public SIPUDPChannel(
+            IPEndPoint endPoint,
+            Encoding sipEncoding,
+            Encoding sipBodyEncoding,
+            bool useDualMode=false) : base(sipEncoding, sipBodyEncoding)
         {
             if (endPoint == null)
             {
@@ -74,8 +87,8 @@ namespace SIPSorcery.SIP
             {
                 Port = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;
             }
-            
-            if(ListeningIPAddress.AddressFamily == AddressFamily.InterNetworkV6)
+
+            if (ListeningIPAddress.AddressFamily == AddressFamily.InterNetworkV6)
             {
                 m_isDualMode = m_udpSocket.DualMode;
             }
@@ -247,9 +260,9 @@ namespace SIPSorcery.SIP
         /// This method is not implemented for the SIP UDP channel.
         /// </summary>
         public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint,
-            byte[] buffer, 
-            string serverCertificateName, 
-            bool canInitiateConnection, 
+            byte[] buffer,
+            string serverCertificateName,
+            bool canInitiateConnection,
             string connectionIDHint)
         {
             throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");

@@ -2382,7 +2382,7 @@ namespace SIPSorcery.Net
         /// <param name="mediaType">The media type of the RTP packet received.</param>
         /// <param name="ssrc">The SSRC from the RTP packet header.</param>
         /// <param name="receivedOnEndPoint">The actual remote end point that the RTP packet came from.</param>
-        /// <returns>True if remote end point for this media type was th expected one or it was adjusted. False if
+        /// <returns>True if remote end point for this media type was the expected one or it was adjusted. False if
         /// the remote end point was deemed to be invalid for this media type.</returns>
         private bool AdjustRemoteEndPoint(SDPMediaTypesEnum mediaType, uint ssrc, IPEndPoint receivedOnEndPoint)
         {
@@ -2432,7 +2432,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        VideoControlDestinationEndPoint = new IPEndPoint(VideoControlDestinationEndPoint.Address, VideoControlDestinationEndPoint.Port + 1);
+                        VideoControlDestinationEndPoint = new IPEndPoint(VideoDestinationEndPoint.Address, VideoDestinationEndPoint.Port + 1);
                     }
                 }
 

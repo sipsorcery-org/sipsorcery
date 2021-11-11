@@ -64,6 +64,9 @@ namespace SIPSorcery.SIP
         private CancellationTokenSource m_cts = new CancellationTokenSource();
         private bool m_closed = false;
 
+        private readonly Encoding m_sipEncoding;
+        private readonly Encoding m_sipBodyEncoding;
+
         /// <summary>
         /// If true allows this class to attempt to create a new SIP channel if a required protocol
         /// is missing. Set to false to prevent new channels being created on demand.
@@ -76,7 +79,7 @@ namespace SIPSorcery.SIP
         /// List of the SIP channels that have been opened and are under management by this instance.
         /// The dictionary key is channel ID (previously was a serialised SIP end point).
         /// </summary>
-        private Dictionary<string, SIPChannel> m_sipChannels = new Dictionary<string, SIPChannel>();
+        private ConcurrentDictionary<string, SIPChannel> m_sipChannels = new ConcurrentDictionary<string, SIPChannel>();
 
         internal SIPTransactionEngine m_transactionEngine;
 
@@ -191,26 +194,40 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Creates a SIP transport class with default DNS resolver and SIP transaction engine.
+        /// Warning: Do not set this property unless you explicitly require a very high number of 
+        /// in-flight SIP transactions. The default limit is high and increasing it is likely to
+        /// have a significant impact on CPU and memory performance.
         /// </summary>
-        public SIPTransport()
+        public static int MaxPendingTransactionsCount
         {
-            ResolveSIPUriCallbackAsync = SIPDns.ResolveAsync;
-            ResolveSIPUriFromCacheCallback = SIPDns.ResolveFromCache;
-
-            //ResolveSIPEndPoint_External = SIPDNSManager.ResolveSIPService;
-            m_transactionEngine = new SIPTransactionEngine(this);
-            m_transactionEngine.SIPRequestRetransmitTraceEvent += (tx, req, count) => SIPRequestRetransmitTraceEvent?.Invoke(tx, req, count);
-            m_transactionEngine.SIPResponseRetransmitTraceEvent += (tx, resp, count) => SIPResponseRetransmitTraceEvent?.Invoke(tx, resp, count);
+            get => SIPTransactionEngine.MaxReliableTranismissionsCount;
+            set => SIPTransactionEngine.MaxReliableTranismissionsCount = value;
         }
 
         /// <summary>
-        /// Allows the transport layer to be created to operate in a stateless mode.
+        /// Creates a SIP transport class with default DNS resolver and SIP transaction engine.
         /// </summary>
-        /// <param name="stateless">If true the transport layer will NOT queue incoming messages
-        /// and will NOT use a transaction engine.</param>
-        public SIPTransport(bool stateless)
+        public SIPTransport():this(false)
         {
+        }
+        public SIPTransport(Encoding sipEncoding, Encoding sipBodyEncoding) : this(false, sipEncoding, sipBodyEncoding)
+        {
+        }
+        public SIPTransport(bool stateless):this(stateless, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING)
+        {
+        }
+
+        /// <summary>
+            /// Allows the transport layer to be created to operate in a stateless mode.
+            /// </summary>
+            /// <param name="stateless">If true the transport layer will NOT queue incoming messages
+            /// and will NOT use a transaction engine.</param>
+            /// <param name="sipEncoding"></param>
+            /// <param name="sipBodyEncoding"></param>
+            public SIPTransport(bool stateless,Encoding sipEncoding,Encoding sipBodyEncoding)
+        {
+            m_sipEncoding = sipEncoding;
+            m_sipBodyEncoding = sipBodyEncoding;
             ResolveSIPUriCallbackAsync = SIPDns.ResolveAsync;
             ResolveSIPUriFromCacheCallback = SIPDns.ResolveFromCache;
 
@@ -221,6 +238,7 @@ namespace SIPSorcery.SIP
             else
             {
                 m_queueIncoming = true;
+                //ResolveSIPEndPoint_External = SIPDNSManager.ResolveSIPService;
                 m_transactionEngine = new SIPTransactionEngine(this);
                 m_transactionEngine.SIPRequestRetransmitTraceEvent += (tx, req, count) => SIPRequestRetransmitTraceEvent?.Invoke(tx, req, count);
                 m_transactionEngine.SIPResponseRetransmitTraceEvent += (tx, resp, count) => SIPResponseRetransmitTraceEvent?.Invoke(tx, resp, count);
@@ -245,16 +263,21 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                m_sipChannels.Add(sipChannel.ID, sipChannel);
-
-                // Wire up the SIP transport to the SIP channel.
-                sipChannel.SIPMessageReceived += ReceiveMessage;
-
-                if (m_queueIncoming && !m_transportThreadStarted)
+                if (m_sipChannels.TryAdd(sipChannel.ID, sipChannel))
                 {
-                    // Starts tasks to process queued SIP messages.
-                    m_transportThreadStarted = true;
-                    Task.Factory.StartNew(ProcessReceiveQueue, TaskCreationOptions.LongRunning);
+                    // Wire up the SIP transport to the SIP channel.
+                    sipChannel.SIPMessageReceived += ReceiveMessage;
+
+                    if (m_queueIncoming && !m_transportThreadStarted)
+                    {
+                        // Starts tasks to process queued SIP messages.
+                        m_transportThreadStarted = true;
+                        Task.Factory.StartNew(ProcessReceiveQueue, TaskCreationOptions.LongRunning);
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException("Failed to add SIPChannel to the SIP transport.");
                 }
             }
             catch (Exception excp)
@@ -272,7 +295,7 @@ namespace SIPSorcery.SIP
         {
             if (m_sipChannels.ContainsKey(sipChannel.ID))
             {
-                m_sipChannels.Remove(sipChannel.ID);
+                m_sipChannels.TryRemove(sipChannel.ID, out _);
                 sipChannel.SIPMessageReceived -= ReceiveMessage;
             }
         }
@@ -870,7 +893,11 @@ namespace SIPSorcery.SIP
         /// <param name="localEndPoint">The local end point that the SIP channel received the message on.</param>
         /// <param name="remoteEndPoint">The remote end point the message came from.</param>
         /// <param name="buffer">The raw message received.</param>
-        private Task<SocketError> SIPMessageReceived(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
+        private Task<SocketError> SIPMessageReceived(
+            SIPChannel sipChannel, 
+            SIPEndPoint localEndPoint, 
+            SIPEndPoint remoteEndPoint, 
+            byte[] buffer)
         {
             string rawSIPMessage = null;
 
@@ -888,7 +915,7 @@ namespace SIPSorcery.SIP
                         // Treat all messages that don't match STUN requests as SIP.
                         if (buffer.Length > SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH)
                         {
-                            string rawErrorMessage = Encoding.UTF8.GetString(buffer, 0, 1024) + "\r\n..truncated";
+                            string rawErrorMessage = m_sipEncoding.GetString(buffer, 0, 1024) + "\r\n..truncated";
                             SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "SIP message too large, " + buffer.Length + " bytes, maximum allowed is " + SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH + " bytes.", SIPValidationFieldsEnum.Request, rawErrorMessage);
                             SIPResponse tooLargeResponse = SIPResponse.GetResponse(localEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.MessageTooLarge, null);
                             return SendResponseAsync(tooLargeResponse);
@@ -897,7 +924,7 @@ namespace SIPSorcery.SIP
                         {
                             // TODO: Future improvement (4.5.2 doesn't support) is to use a ReadOnlySpan to check for the existence 
                             // of 'S', 'I', 'P' before the first EOL.
-                            rawSIPMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+                            rawSIPMessage = m_sipEncoding.GetString(buffer, 0, buffer.Length);
                             if (rawSIPMessage.IsNullOrBlank() || SIPMessageBuffer.IsPing(buffer))
                             {
                                 // An empty transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
@@ -909,7 +936,7 @@ namespace SIPSorcery.SIP
                                 return Task.FromResult(SocketError.InvalidArgument);
                             }
 
-                            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(buffer, localEndPoint, remoteEndPoint);
+                            var sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(buffer,m_sipEncoding,m_sipBodyEncoding,  localEndPoint, remoteEndPoint);
 
                             if (sipMessageBuffer != null)
                             {
@@ -919,7 +946,7 @@ namespace SIPSorcery.SIP
 
                                     try
                                     {
-                                        SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessageBuffer);
+                                        SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessageBuffer,m_sipEncoding,m_sipBodyEncoding);
 
                                         SIPResponseInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, sipResponse);
 
@@ -946,7 +973,7 @@ namespace SIPSorcery.SIP
 
                                     try
                                     {
-                                        SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+                                        SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer,m_sipEncoding,m_sipBodyEncoding);
 
                                         SIPValidationFieldsEnum sipRequestErrorField = SIPValidationFieldsEnum.Unknown;
                                         string sipRequestValidationError = null;

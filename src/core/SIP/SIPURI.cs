@@ -28,6 +28,8 @@ namespace SIPSorcery.SIP
     [DataContract]
     public class SIPURI
     {
+        public static SIPURI None = new SIPURI();
+
         public const char SCHEME_ADDR_SEPARATOR = ':';
         public const char USER_HOST_SEPARATOR = '@';
         public const char PARAM_TAG_DELIMITER = ';';
@@ -601,7 +603,7 @@ namespace SIPSorcery.SIP
 
         /// <summary>
         /// Checks whether the specified SIP URI Host field contains a private IPv4 address
-        /// and if so and the recevied on IP address is different then "mangles" the host to
+        /// and if so and the received on IP address is different then "mangles" the host to
         /// contain the received on IP end point. The purpose of the mangling is to assist
         /// in dealing with IPv4 NAT's.
         /// If the SIP URI host is IPv6 or a host name no mangling will be done.

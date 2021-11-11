@@ -16,7 +16,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 using SIPSorcery.Sys;
+// ReSharper disable InconsistentNaming
 
 namespace SIPSorcery.SIP
 {
@@ -74,6 +76,8 @@ namespace SIPSorcery.SIP
                 return _userAgentVersion;
             }
         }
+
+        public static Encoding DEFAULT_ENCODING = Encoding.UTF8;
 
         /// <summary>
         /// Gets the default SIP port for the protocol. 
@@ -223,7 +227,7 @@ namespace SIPSorcery.SIP
         /// <returns>True if the protocol is connectionless.</returns>
         public static bool IsConnectionless(SIPProtocolsEnum protocol)
         {
-            if(protocol == SIPProtocolsEnum.udp)
+            if (protocol == SIPProtocolsEnum.udp)
             {
                 return true;
             }
