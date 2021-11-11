@@ -17317,6 +17317,12 @@ references:
   commentId: F:SIPSorcery.Net.SDP.MEDIA_INDEX_NOT_PRESENT
   fullName: SIPSorcery.Net.SDP.MEDIA_INDEX_NOT_PRESENT
   nameWithType: SDP.MEDIA_INDEX_NOT_PRESENT
+- uid: SIPSorcery.Net.SDP.MEDIA_INDEX_TAG_NOT_PRESENT
+  name: MEDIA_INDEX_TAG_NOT_PRESENT
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_MEDIA_INDEX_TAG_NOT_PRESENT
+  commentId: F:SIPSorcery.Net.SDP.MEDIA_INDEX_TAG_NOT_PRESENT
+  fullName: SIPSorcery.Net.SDP.MEDIA_INDEX_TAG_NOT_PRESENT
+  nameWithType: SDP.MEDIA_INDEX_TAG_NOT_PRESENT
 - uid: SIPSorcery.Net.SDP.NetworkType
   name: NetworkType
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_NetworkType
