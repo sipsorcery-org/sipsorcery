@@ -1163,7 +1163,7 @@ namespace SIPSorcery.Net
             if (offerSdp.Media?.Count > 0)
             {
                 offerSdp.Group = BUNDLE_ATTRIBUTE;
-                foreach (var ann in offerSdp.Media.OrderBy(x => x.MediaID))
+                foreach (var ann in offerSdp.Media.OrderBy(x => x.MLineIndex))
                 {
                     offerSdp.Group += $" {ann.MediaID}";
                 }
