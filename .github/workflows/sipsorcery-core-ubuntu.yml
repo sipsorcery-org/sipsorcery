@@ -4,14 +4,18 @@ on:
   push:
     branches:
       - master
+      - net6
 
 jobs:
   build:
     strategy:
       matrix:
-        framework: [ 'netcoreapp3.1', 'net5' ]
+        framework: [ 'net6.0' ]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.x'
     - name: Unit tests
       run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework  ${{ matrix.framework }} -c Release
