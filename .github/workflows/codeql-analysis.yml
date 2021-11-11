@@ -30,6 +30,9 @@ jobs:
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
+      uses: actions/setup-dotnet@v1
+      with:
+       dotnet-version: '6.0.x'
       # Override language selection by uncommenting this and choosing your languages
       with:
          languages: csharp
@@ -48,7 +51,7 @@ jobs:
 
     - run: |
        dotnet restore src/SIPSorcery.csproj
-       dotnet build src/SIPSorcery.csproj --framework=netstandard2.0
+       dotnet build src/SIPSorcery.csproj --framework=net6.0
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
