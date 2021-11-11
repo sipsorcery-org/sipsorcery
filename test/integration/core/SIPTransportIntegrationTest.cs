@@ -29,7 +29,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using Xunit;
 
-namespace SIPSorcery.SIP.IntegrationTest
+namespace SIPSorcery.SIP.IntegrationTests
 {
     [Trait("Category", "transport")]
     public class SIPTransportIntegrationTest

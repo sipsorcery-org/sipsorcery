@@ -860,7 +860,9 @@ namespace SIPSorcery.Net
             foreach (var localTrack in localTracks)
             {
                 if (localTrack != null && localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                {
                     localTrack.StreamStatus = localTrack.DefaultStreamStatus;
+                }
             }
 
             var audioLocalTrack = localTracks.Find(a => a.Kind == SDPMediaTypesEnum.audio);
@@ -1074,7 +1076,7 @@ namespace SIPSorcery.Net
             // Media announcements must be in the same order in the offer and answer.
             foreach (var track in tracks)
             {
-                int mindex = RemoteDescription == null || RequireRenegotiation ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(track.Kind);
+                (int mindex, string midTag) = RemoteDescription == null || RequireRenegotiation ? (mediaIndex++, mediaIndex.ToString()) : RemoteDescription.GetIndexForMediaType(track.Kind);
 
                 if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
@@ -1092,7 +1094,7 @@ namespace SIPSorcery.Net
                     announcement.AddExtra(RTCP_MUX_ATTRIBUTE);
                     announcement.AddExtra(RTCP_ATTRIBUTE);
                     announcement.MediaStreamStatus = track.StreamStatus;
-                    announcement.MediaID = mindex.ToString();
+                    announcement.MediaID = midTag;
                     announcement.MLineIndex = mindex;
 
                     announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
@@ -1124,7 +1126,7 @@ namespace SIPSorcery.Net
 
             if (DataChannels.Count > 0 || (RemoteDescription?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
             {
-                int mindex = RemoteDescription == null ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application);
+                (int mindex, string midTag) = RemoteDescription == null ? (mediaIndex++, mediaIndex.ToString()) : RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application);
 
                 if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
@@ -1142,7 +1144,7 @@ namespace SIPSorcery.Net
                     dataChannelAnnouncement.SctpPort = SCTP_DEFAULT_PORT;
                     dataChannelAnnouncement.MaxMessageSize = sctp.maxMessageSize;
                     dataChannelAnnouncement.MLineIndex = mindex;
-                    dataChannelAnnouncement.MediaID = mindex.ToString();
+                    dataChannelAnnouncement.MediaID = midTag;
                     dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
                     dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
                     dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
@@ -1163,7 +1165,7 @@ namespace SIPSorcery.Net
             if (offerSdp.Media?.Count > 0)
             {
                 offerSdp.Group = BUNDLE_ATTRIBUTE;
-                foreach (var ann in offerSdp.Media.OrderBy(x => x.MediaID))
+                foreach (var ann in offerSdp.Media.OrderBy(x => x.MLineIndex))
                 {
                     offerSdp.Group += $" {ann.MediaID}";
                 }
@@ -1325,7 +1327,9 @@ namespace SIPSorcery.Net
 
                 //Prevent continue with cancellation requested
                 if (token.IsCancellationRequested)
+                {
                     return;
+                }
                 else
                 {
                     if (_requireRenegotiation)
@@ -1347,7 +1351,10 @@ namespace SIPSorcery.Net
                 if (_cancellationSource != null)
                 {
                     if (!_cancellationSource.IsCancellationRequested)
+                    {
                         _cancellationSource.Cancel();
+                    }
+
                     _cancellationSource = null;
                 }
             }

@@ -128,6 +128,7 @@ namespace SIPSorcery.Net
         public const int IGNORE_RTP_PORT_NUMBER = 9;
         public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const int MEDIA_INDEX_NOT_PRESENT = -1;
+        public const string MEDIA_INDEX_TAG_NOT_PRESENT = "";
         public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
         // ICE attributes.
@@ -899,14 +900,14 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="mediaType">The media type to get the index for.</param>
         /// <returns></returns>
-        public int GetIndexForMediaType(SDPMediaTypesEnum mediaType)
+        public (int, string) GetIndexForMediaType(SDPMediaTypesEnum mediaType)
         {
             int index = 0;
             foreach (var ann in Media)
             {
                 if (ann.Media == mediaType)
                 {
-                    return index;
+                    return (index, ann.MediaID);
                 }
                 else
                 {
@@ -914,7 +915,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            return MEDIA_INDEX_NOT_PRESENT;
+            return (MEDIA_INDEX_NOT_PRESENT, MEDIA_INDEX_TAG_NOT_PRESENT);
         }
     }
 }
