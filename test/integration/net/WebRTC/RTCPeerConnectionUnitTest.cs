@@ -216,7 +216,7 @@ a=rtpmap:100 VP8/90000";
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            // In this SDP, the audio media identifier's tag is "foo" and the video media identifier's tag is "bar"
+            // In this SDP, the audio media identifier's tag is "bar" and the video media identifier's tag is "foo"
             string remoteSdp =
             @"v=0
 o=- 1064364449942365659 2 IN IP4 127.0.0.1
@@ -405,13 +405,14 @@ a=max-message-size:262144";
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            // In this SDP, the audio media identifier's tag is "foo" and the video media identifier's tag is "bar"
+            // In this SDP, the audio media identifier's tag is "zzz" and the video media identifier's tag is "aaa".
+            // Such tag are meant to ensure that we do not sort sdp's media tracks by alphabetical order.
             string remoteSdp =
             @"v=0
 o=- 1064364449942365659 2 IN IP4 127.0.0.1
 s=-
 t=0 0
-a=group:BUNDLE zzz aaa
+a=group:BUNDLE zzz aaa 
 a=msid-semantic: WMS stream0
 m=audio 9 UDP/TLS/RTP/SAVPF 111 103 104 9 102 0 8 106 105 13 110 112 113 126
 c=IN IP4 0.0.0.0
