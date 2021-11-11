@@ -223,7 +223,7 @@ a=rtpmap:100 VP8/90000";
 o=- 1064364449942365659 2 IN IP4 127.0.0.1
 s=-
 t=0 0
-a=group:BUNDLE foo bar
+a=group:BUNDLE bar foo
 a=msid-semantic: WMS stream0
 m=audio 9 UDP/TLS/RTP/SAVPF 111 103 104 9 102 0 8 106 105 13 110 112 113 126
 c=IN IP4 0.0.0.0
@@ -233,7 +233,7 @@ a=ice-pwd:FICf2eBzvl5r/O/uf1ktSyuc
 a=ice-options:trickle renomination
 a=fingerprint:sha-256 5D:03:7C:22:69:2E:E7:10:17:5F:31:86:E6:47:2F:6F:1D:4C:A6:BF:5B:DE:0C:FB:8A:17:15:AA:22:63:0C:FD
 a=setup:actpass
-a=mid:foo
+a=mid:bar
 a=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level
 a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
 a=extmap:3 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
@@ -267,7 +267,7 @@ a=ice-pwd:FICf2eBzvl5r/O/uf1ktSyuc
 a=ice-options:trickle renomination
 a=fingerprint:sha-256 5D:03:7C:22:69:2E:E7:10:17:5F:31:86:E6:47:2F:6F:1D:4C:A6:BF:5B:DE:0C:FB:8A:17:15:AA:22:63:0C:FD
 a=setup:actpass
-a=mid:bar
+a=mid:foo
 a=extmap:14 urn:ietf:params:rtp-hdrext:toffset
 a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
 a=extmap:13 urn:3gpp:video-orientation
@@ -330,13 +330,13 @@ a=ssrc:4165955869 label:video0";
 
             logger.LogDebug($"Local answer: {answer}");
 
-            Assert.Equal("foo", answer.Media[0].MediaID);
+            Assert.Equal("bar", answer.Media[0].MediaID);
             Assert.Equal(SDPMediaTypesEnum.audio, answer.Media[0].Media);
-            Assert.Equal("bar", answer.Media[1].MediaID);
+            Assert.Equal("foo", answer.Media[1].MediaID);
             Assert.Equal(SDPMediaTypesEnum.video, answer.Media[1].Media);
-            Assert.Contains("a=group:BUNDLE foo bar", answerString);
-            Assert.Contains("a=mid:foo", answerString);
+            Assert.Contains("a=group:BUNDLE bar foo", answerString);
             Assert.Contains("a=mid:bar", answerString);
+            Assert.Contains("a=mid:foo", answerString);
 
             pc.Close("normal");
         }

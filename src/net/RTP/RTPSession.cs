@@ -1257,7 +1257,7 @@ namespace SIPSorcery.Net
 
             foreach (var track in tracks)
             {
-                int mindex = RemoteDescription == null ? mediaIndex++ : RemoteDescription.GetIndexForMediaType(track.Kind);
+                (int mindex, string midTag) = RemoteDescription == null ? (mediaIndex++, mediaIndex.ToString()) : RemoteDescription.GetIndexForMediaType(track.Kind);
 
                 int rtpPort = 0; // A port of zero means the media type is not supported.
                 if (track.Capabilities != null && track.Capabilities.Count() > 0 && track.StreamStatus != MediaStreamStatusEnum.Inactive)
