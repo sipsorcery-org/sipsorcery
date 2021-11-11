@@ -1343,11 +1343,13 @@ namespace SIPSorcery.SIP
             SIPRequestRetransmitTraceEvent += (tx, req, count) =>
             {
                 logger.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+                logger.LogTrace(req.ToString());
             };
 
             SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
             {
                 logger.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+                logger.LogTrace(resp.ToString());
             };
         }
     }

@@ -179,6 +179,11 @@ namespace SIPSorcery
 
                 logger.LogDebug($"RunCommand scenario {options.Scenario}, destination {options.Destination}");
 
+                if(options.Verbose)
+                {
+                    logger.LogTrace("Verbose logging enabled.");
+                }
+
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
 
