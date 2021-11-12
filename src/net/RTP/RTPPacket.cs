@@ -37,7 +37,7 @@ namespace SIPSorcery.Net
         public RTPPacket(byte[] packet)
         {
             Header = new RTPHeader(packet);
-            Payload = new byte[Header.PayloadSize];
+            Payload = new byte[packet.Length - Header.Length];
             Array.Copy(packet, Header.Length, Payload, 0, Payload.Length);
         }
 
