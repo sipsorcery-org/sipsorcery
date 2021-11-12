@@ -91,7 +91,6 @@ namespace SIPSorcery.Net
             PayloadType = firstWord & 0x7f;
 
             int headerExtensionLength = 0;
-            // ReSharper disable once InconsistentNaming
             int headerAndCSRCLength = 12 + 4 * CSRCCount;
 
             if (HeaderExtensionFlag == 1 && (packet.Length >= (headerAndCSRCLength + 4)))
@@ -118,11 +117,14 @@ namespace SIPSorcery.Net
                 }
             }
 
-            PayloadSize = packet.Length - (headerAndCSRCLength+ headerExtensionLength);
+            PayloadSize = packet.Length - (headerAndCSRCLength + headerExtensionLength);
             if (PaddingFlag == 1)
             {
                 PaddingCount = packet[packet.Length - 1];
-                PayloadSize -= PaddingCount;
+                if (PaddingCount < PayloadSize)//Prevent some protocol attacks 
+                {
+                    PayloadSize -= PaddingCount;
+                }
             }
         }
 
