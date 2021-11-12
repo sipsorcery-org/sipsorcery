@@ -100,14 +100,14 @@ namespace SIPSorcery.Net
                     ExtensionProfile = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount));
                     headerExtensionLength += 2;
                     ExtensionLength = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount));
-                    headerExtensionLength += 2 + ExtensionLength;
+                    headerExtensionLength += 2 + ExtensionLength * 4;
                 }
                 else
                 {
                     ExtensionProfile = BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount);
                     headerExtensionLength += 2;
                     ExtensionLength = BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount);
-                    headerExtensionLength += 2 + ExtensionLength;
+                    headerExtensionLength += 2 + ExtensionLength * 4;
                 }
 
                 if (ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
