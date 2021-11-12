@@ -10750,12 +10750,24 @@ references:
   commentId: F:SIPSorcery.Net.RTPHeader.MIN_HEADER_LEN
   fullName: SIPSorcery.Net.RTPHeader.MIN_HEADER_LEN
   nameWithType: RTPHeader.MIN_HEADER_LEN
+- uid: SIPSorcery.Net.RTPHeader.PaddingCount
+  name: PaddingCount
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_PaddingCount
+  commentId: F:SIPSorcery.Net.RTPHeader.PaddingCount
+  fullName: SIPSorcery.Net.RTPHeader.PaddingCount
+  nameWithType: RTPHeader.PaddingCount
 - uid: SIPSorcery.Net.RTPHeader.PaddingFlag
   name: PaddingFlag
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_PaddingFlag
   commentId: F:SIPSorcery.Net.RTPHeader.PaddingFlag
   fullName: SIPSorcery.Net.RTPHeader.PaddingFlag
   nameWithType: RTPHeader.PaddingFlag
+- uid: SIPSorcery.Net.RTPHeader.PayloadSize
+  name: PayloadSize
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_PayloadSize
+  commentId: F:SIPSorcery.Net.RTPHeader.PayloadSize
+  fullName: SIPSorcery.Net.RTPHeader.PayloadSize
+  nameWithType: RTPHeader.PayloadSize
 - uid: SIPSorcery.Net.RTPHeader.PayloadType
   name: PayloadType
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_PayloadType
