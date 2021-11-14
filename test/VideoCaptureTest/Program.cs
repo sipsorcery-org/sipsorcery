@@ -30,6 +30,7 @@ using Windows.Graphics.Imaging;
 using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.MediaProperties;
+using WinRT;
 
 namespace test
 {
@@ -140,7 +141,7 @@ namespace test
                                     {
                                         byte* dataInBytes;
                                         uint capacity;
-                                        ((IMemoryBufferByteAccess)reference).GetBuffer(out dataInBytes, out capacity);
+                                        reference.As<IMemoryBufferByteAccess>().GetBuffer(out dataInBytes, out capacity);
 
                                         Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(capacity / height), PixelFormat.Format32bppArgb, (IntPtr)dataInBytes);
                                         _picBox.Image = bmpImage;
