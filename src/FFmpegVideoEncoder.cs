@@ -164,14 +164,18 @@ namespace SIPSorceryMedia.FFmpeg
                     //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();
                     //ffmpeg.av_opt_set(_pCodecContext->priv_data, "preset", "veryslow", 0);
                     //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "profile-level-id", "42e01f", 0);
+
+                    ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
                 }
-                
+                else if ((_codecID == AVCodecID.AV_CODEC_ID_VP8) || (_codecID == AVCodecID.AV_CODEC_ID_VP9))
+                {
+                    ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
+                }
+
                 foreach (var option in _encoderOptions)
                 {
                     ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
                 }
-
-                ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
 
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
             }
