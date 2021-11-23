@@ -23,10 +23,11 @@ namespace SIPSorceryMedia.FFmpeg
     public static class FFmpegInit
     {
         private static ILogger logger = NullLogger.Instance;
+        private static bool registered = false;
 
-        public static void Initialise(FfmpegLogLevelEnum? logLevel = null)
+        public static void Initialise(FfmpegLogLevelEnum? logLevel = null, String? libPath = null)
         {
-            RegisterFFmpegBinaries();
+            RegisterFFmpegBinaries(libPath);
 
             logger.LogInformation($"FFmpeg version info: {ffmpeg.av_version_info()}");
 
@@ -36,21 +37,38 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        internal static void RegisterFFmpegBinaries()
+        internal static void RegisterFFmpegBinaries(String? libPath = null)
         {
-            var current = Environment.CurrentDirectory;
-            var probe = Path.Combine("FFmpeg", "bin", Environment.Is64BitProcess ? "x64" : "x86");
-            while (current != null)
+            if (registered)
+                return;
+
+            if (libPath == null)
             {
-                var ffmpegBinaryPath = Path.Combine(current, probe);
-                if (Directory.Exists(ffmpegBinaryPath))
+                var current = Environment.CurrentDirectory;
+                var probe = Path.Combine("FFmpeg", "bin", Environment.Is64BitProcess ? "x64" : "x86");
+                while (current != null)
                 {
-                    logger.LogInformation($"FFmpeg binaries found in: {ffmpegBinaryPath}");
-                    ffmpeg.RootPath = ffmpegBinaryPath;
+                    var ffmpegBinaryPath = Path.Combine(current, probe);
+                    if (Directory.Exists(ffmpegBinaryPath))
+                    {
+                        logger.LogInformation($"FFmpeg binaries found in: {ffmpegBinaryPath}");
+                        ffmpeg.RootPath = ffmpegBinaryPath;
+                        registered = true;
+                        return;
+                    }
+
+                    current = Directory.GetParent(current)?.FullName;
+                }
+            }
+            else
+            {
+                if (Directory.Exists(libPath))
+                {
+                    logger.LogInformation($"FFmpeg binaries found in: {libPath}");
+                    ffmpeg.RootPath = libPath;
+                    registered = true;
                     return;
                 }
-
-                current = Directory.GetParent(current)?.FullName;
             }
         }
 
