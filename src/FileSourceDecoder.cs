@@ -26,7 +26,12 @@ namespace SIPSorceryMedia.FFmpeg
         unsafe private AVCodecContext* _audDecCtx;
         private int _audioStreamIndex;
         private double _audioTimebase;
+        private double _audioAvgFrameRate;
+        private int _maxAudioFrameSpace;
         unsafe private SwrContext* _swrContext;
+
+        private bool _useAudio;
+        private bool _useVideo;
 
         private string _sourcePath;
         private bool _repeat;
@@ -50,15 +55,27 @@ namespace SIPSorceryMedia.FFmpeg
             get => _videoAvgFrameRate;
         }
 
-        public FileSourceDecoder(string path, bool repeat)
+        public FileSourceDecoder(string path, bool repeat, bool useVideo = true, bool useAudio = true)
         {
             if (!File.Exists(path))
             {
                 throw new ApplicationException($"Source file for FFmpeg file source decoder could not be found {path}.");
             }
 
+            if(!(useAudio || useVideo))
+            {
+                throw new ApplicationException($"Audio or Video must be used.");
+            }
+
+            _useAudio = useAudio;
+            _useVideo = useVideo;
+
             _sourcePath = path;
             _repeat = repeat;
+
+            _videoStreamIndex = -1;
+            _audioStreamIndex = -1;
+
         }
 
         public unsafe void InitialiseSource()
@@ -76,45 +93,60 @@ namespace SIPSorceryMedia.FFmpeg
                 ffmpeg.av_dump_format(_fmtCtx, 0, _sourcePath, 0);
 
                 // Set up video decoder.
-                AVCodec* vidCodec = null;
-                _videoStreamIndex = ffmpeg.av_find_best_stream(_fmtCtx, AVMediaType.AVMEDIA_TYPE_VIDEO, -1, -1, &vidCodec, 0).ThrowExceptionIfError();
-                logger.LogDebug($"FFmpeg file source decoder {ffmpeg.avcodec_get_name(vidCodec->id)} video codec for stream {_videoStreamIndex}.");
-                //vidParser = ffmpeg.av_parser_init((int)vidCodec->id);
-                _vidDecCtx = ffmpeg.avcodec_alloc_context3(vidCodec);
-                if (_vidDecCtx == null)
+                if (_useVideo)
                 {
-                    throw new ApplicationException("Failed to allocate video decoder codec context.");
+                    AVCodec* vidCodec = null;
+                    _videoStreamIndex = ffmpeg.av_find_best_stream(_fmtCtx, AVMediaType.AVMEDIA_TYPE_VIDEO, -1, -1, &vidCodec, 0).ThrowExceptionIfError();
+                    logger.LogDebug($"FFmpeg file source decoder {ffmpeg.avcodec_get_name(vidCodec->id)} video codec for stream {_videoStreamIndex}.");
+                    //vidParser = ffmpeg.av_parser_init((int)vidCodec->id);
+                    _vidDecCtx = ffmpeg.avcodec_alloc_context3(vidCodec);
+                    if (_vidDecCtx == null)
+                    {
+                        throw new ApplicationException("Failed to allocate video decoder codec context.");
+                    }
+                    ffmpeg.avcodec_parameters_to_context(_vidDecCtx, _fmtCtx->streams[_videoStreamIndex]->codecpar).ThrowExceptionIfError();
+                    ffmpeg.avcodec_open2(_vidDecCtx, vidCodec, null).ThrowExceptionIfError();
                 }
-                ffmpeg.avcodec_parameters_to_context(_vidDecCtx, _fmtCtx->streams[_videoStreamIndex]->codecpar).ThrowExceptionIfError();
-                ffmpeg.avcodec_open2(_vidDecCtx, vidCodec, null).ThrowExceptionIfError();
 
                 // Set up audio decoder.
-                AVCodec* audCodec = null;
-                _audioStreamIndex = ffmpeg.av_find_best_stream(_fmtCtx, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, _videoStreamIndex, &audCodec, 0).ThrowExceptionIfError();
-                logger.LogDebug($"FFmpeg file source decoder {ffmpeg.avcodec_get_name(audCodec->id)} audio codec for stream {_audioStreamIndex}.");
-                _audDecCtx = ffmpeg.avcodec_alloc_context3(audCodec);
-                if (_audDecCtx == null)
+                if (_useAudio)
                 {
-                    throw new ApplicationException("Failed to allocate audio decoder codec context.");
+                    AVCodec* audCodec = null;
+                    _audioStreamIndex = ffmpeg.av_find_best_stream(_fmtCtx, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, _videoStreamIndex, &audCodec, 0).ThrowExceptionIfError();
+                    logger.LogDebug($"FFmpeg file source decoder {ffmpeg.avcodec_get_name(audCodec->id)} audio codec for stream {_audioStreamIndex}.");
+                    _audDecCtx = ffmpeg.avcodec_alloc_context3(audCodec);
+                    if (_audDecCtx == null)
+                    {
+                        throw new ApplicationException("Failed to allocate audio decoder codec context.");
+                    }
+                    ffmpeg.avcodec_parameters_to_context(_audDecCtx, _fmtCtx->streams[_audioStreamIndex]->codecpar).ThrowExceptionIfError();
+                    ffmpeg.avcodec_open2(_audDecCtx, audCodec, null).ThrowExceptionIfError();
+
+                    // Set up an audio conversion context so that the decoded samples can always be delivered as signed 16 bit mono PCM.
+                    _swrContext = ffmpeg.swr_alloc();
+                    ffmpeg.av_opt_set_sample_fmt(_swrContext, "in_sample_fmt", _audDecCtx->sample_fmt, 0);
+                    ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", (long)_audDecCtx->channel_layout, 0);
+                    ffmpeg.av_opt_set_int(_swrContext, "in_sample_rate", _audDecCtx->sample_rate, 0);
+
+                    ffmpeg.av_opt_set_sample_fmt(_swrContext, "out_sample_fmt", AVSampleFormat.AV_SAMPLE_FMT_S16, 0);
+                    ffmpeg.av_opt_set_channel_layout(_swrContext, "out_channel_layout", ffmpeg.AV_CH_LAYOUT_MONO, 0);
+                    ffmpeg.av_opt_set_int(_swrContext, "out_sample_rate", AUDIO_OUTPUT_SAMPLE_RATE, 0);
+                    ffmpeg.swr_init(_swrContext).ThrowExceptionIfError();
                 }
-                ffmpeg.avcodec_parameters_to_context(_audDecCtx, _fmtCtx->streams[_audioStreamIndex]->codecpar).ThrowExceptionIfError();
-                ffmpeg.avcodec_open2(_audDecCtx, audCodec, null).ThrowExceptionIfError();
 
-                // Set up an audio conversion context so that the decoded samples can always be delivered as signed 16 bit mono PCM.
-                _swrContext = ffmpeg.swr_alloc();
-                ffmpeg.av_opt_set_sample_fmt(_swrContext, "in_sample_fmt", _audDecCtx->sample_fmt, 0);
-                ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", (long)_audDecCtx->channel_layout, 0);
-                ffmpeg.av_opt_set_int(_swrContext, "in_sample_rate", _audDecCtx->sample_rate, 0);
+                if(_useVideo)
+                {
+                    _videoTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->time_base);
+                    _videoAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->avg_frame_rate);
+                    _maxVideoFrameSpace = (int)(_videoAvgFrameRate > 0 ? 1000 / _videoAvgFrameRate : 1000 / DEFAULT_VIDEO_FRAME_RATE);
+                }
 
-                ffmpeg.av_opt_set_sample_fmt(_swrContext, "out_sample_fmt", AVSampleFormat.AV_SAMPLE_FMT_S16, 0);
-                ffmpeg.av_opt_set_channel_layout(_swrContext, "out_channel_layout", ffmpeg.AV_CH_LAYOUT_MONO, 0);
-                ffmpeg.av_opt_set_int(_swrContext, "out_sample_rate", AUDIO_OUTPUT_SAMPLE_RATE, 0);
-                ffmpeg.swr_init(_swrContext).ThrowExceptionIfError();
-
-                _videoTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->time_base);
-                _videoAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->avg_frame_rate);
-                _audioTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->time_base);
-                _maxVideoFrameSpace = (int)(_videoAvgFrameRate > 0 ? 1000 / _videoAvgFrameRate : 1000 / DEFAULT_VIDEO_FRAME_RATE);
+                if (_useAudio)
+                {
+                    _audioTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->time_base);
+                    _audioAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->avg_frame_rate);
+                    _maxAudioFrameSpace = (int)(_audioAvgFrameRate > 0 ? 1000 / _audioAvgFrameRate : 1000 / DEFAULT_VIDEO_FRAME_RATE);
+                }
             }
         }
 
@@ -273,9 +305,27 @@ namespace SIPSorceryMedia.FFmpeg
 
                             OnAudioFrame?.Invoke(buffer.Take(dstSampleCount * 2).ToArray());
 
-                            //Console.WriteLine($"Decoded audio frame samples {frame->nb_samples}, ts {frame->best_effort_timestamp}, delta {frame->best_effort_timestamp - prevAudTs}.");
-                            //prevAudTs = frame->best_effort_timestamp;
-                            recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, frame);
+                            if (!_useVideo)
+                            {
+                                double dpts = 0;
+                                if (frame->pts != ffmpeg.AV_NOPTS_VALUE)
+                                {
+                                    dpts = _audioTimebase * frame->pts;
+                                }
+                                int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
+                                //Console.WriteLine($"sleep {sleep} {Math.Min(_maxVideoFrameSpace, sleep)}.");
+                                if (sleep > MIN_SLEEP_MILLISECONDS)
+                                {
+                                    ffmpeg.av_usleep((uint)(Math.Min(_maxAudioFrameSpace, sleep) * 1000));
+                                }
+                                recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, frame);
+                            }
+                            else
+                            {
+                                //Console.WriteLine($"Decoded audio frame samples {frame->nb_samples}, ts {frame->best_effort_timestamp}, delta {frame->best_effort_timestamp - prevAudTs}.");
+                                //prevAudTs = frame->best_effort_timestamp;
+                                recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, frame);
+                            }
                         }
 
                         if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
@@ -290,8 +340,12 @@ namespace SIPSorceryMedia.FFmpeg
                 if (_isPaused)
                 {
                     ((int)ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL)).ThrowExceptionIfError();
-                    ffmpeg.avformat_seek_file(_fmtCtx, _videoStreamIndex, 0, 0, _fmtCtx->streams[_videoStreamIndex]->duration, 0).ThrowExceptionIfError();
-                    ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, 0).ThrowExceptionIfError();
+
+                    if(_useVideo)
+                        ffmpeg.avformat_seek_file(_fmtCtx, _videoStreamIndex, 0, 0, _fmtCtx->streams[_videoStreamIndex]->duration, 0).ThrowExceptionIfError();
+
+                    if (_useAudio)
+                        ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, 0).ThrowExceptionIfError();
                 }
                 else
                 {
@@ -300,8 +354,13 @@ namespace SIPSorceryMedia.FFmpeg
                     if (!_isClosed && _repeat)
                     {
                         ((int)ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL)).ThrowExceptionIfError();
-                        ffmpeg.avformat_seek_file(_fmtCtx, _videoStreamIndex, 0, 0, _fmtCtx->streams[_videoStreamIndex]->duration, 0).ThrowExceptionIfError();
-                        ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, 0).ThrowExceptionIfError();
+
+                        if (_useVideo)
+                            ffmpeg.avformat_seek_file(_fmtCtx, _videoStreamIndex, 0, 0, _fmtCtx->streams[_videoStreamIndex]->duration, 0).ThrowExceptionIfError();
+
+                        if (_useAudio)
+                            ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, 0).ThrowExceptionIfError();
+                        
                         goto Repeat;
                     }
                     else
@@ -347,8 +406,11 @@ namespace SIPSorceryMedia.FFmpeg
 
                 logger.LogDebug("Disposing of FileSourceDecoder.");
 
-                ffmpeg.avcodec_close(_vidDecCtx);
-                ffmpeg.avcodec_close(_audDecCtx);
+                if(_useVideo)
+                    ffmpeg.avcodec_close(_vidDecCtx);
+                if(_useAudio)
+                    ffmpeg.avcodec_close(_audDecCtx);
+
                 var pFormatContext = _fmtCtx;
                 ffmpeg.avformat_close_input(&pFormatContext);
                 ffmpeg.swr_close(_swrContext);
