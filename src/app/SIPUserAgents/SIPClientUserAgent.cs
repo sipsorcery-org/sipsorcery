@@ -33,8 +33,6 @@ namespace SIPSorcery.SIP.App
 
         private static ILogger logger = Log.Logger;
 
-        private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
-
         private SIPTransport m_sipTransport;
 
         private SIPCallDescriptor m_sipCallDescriptor;              // Describes the server leg of the call from the sipswitch.
@@ -508,7 +506,7 @@ namespace SIPSorcery.SIP.App
             inviteHeader.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader(inviteRequest.URI.Scheme) };
             inviteHeader.Contact[0].ContactURI.User = sipCallDescriptor.Username;
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
-            inviteHeader.UserAgent = m_userAgent;
+            inviteHeader.UserAgent = SIPConstants.SipUserAgentVersionString;
             inviteHeader.Routes = routeSet;
             inviteHeader.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB
                 + ((PrackSupported == true) ? ", " + SIPExtensionHeaders.PRACK : "");
