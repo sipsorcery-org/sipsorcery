@@ -64,7 +64,7 @@ namespace SIPSorcery.SIP
         public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE";
 
         private static string _userAgentVersion;
-        public static string SIP_USERAGENT_STRING
+        public static string SipUserAgentVersionString
         {
             get
             {
@@ -74,6 +74,10 @@ namespace SIPSorcery.SIP
                 }
 
                 return _userAgentVersion;
+            }
+            set
+            {
+                _userAgentVersion = value;
             }
         }
 

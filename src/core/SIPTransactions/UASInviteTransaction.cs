@@ -27,8 +27,6 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class UASInviteTransaction : SIPTransaction
     {
-        private static string m_sipServerAgent = SIPConstants.SIP_USERAGENT_STRING;
-
         /// <summary>
         /// The local tag is set on the To SIP header and forms part of the information used to identify a SIP dialog.
         /// </summary>
@@ -154,7 +152,7 @@ namespace SIPSorcery.SIP
             okResponse.Header.To.ToTag = m_localTag;
             okResponse.Header.CSeqMethod = requestHeader.CSeqMethod;
             okResponse.Header.Vias = requestHeader.Vias;
-            okResponse.Header.Server = m_sipServerAgent;
+            okResponse.Header.Server = SIPConstants.SipUserAgentVersionString;
             okResponse.Header.MaxForwards = Int32.MinValue;
             okResponse.Header.RecordRoutes = requestHeader.RecordRoutes;
             okResponse.Header.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB

@@ -28,8 +28,6 @@ namespace SIPSorcery.SIP.App
     {
         private static ILogger logger = Log.Logger;
 
-        private static readonly string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
-
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private SIPCallDescriptor m_callDescriptor;
@@ -147,7 +145,7 @@ namespace SIPSorcery.SIP.App
 
                 SIPHeader header = new SIPHeader(fromHeader, toHeader, cseq, CallProperties.CreateNewCallId());
                 header.CSeqMethod = method;
-                header.UserAgent = m_userAgent;
+                header.UserAgent = SIPConstants.SipUserAgentVersionString;
                 request.Header = header;
 
                 header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
