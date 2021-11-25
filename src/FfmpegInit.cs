@@ -54,6 +54,8 @@ namespace SIPSorceryMedia.FFmpeg
                         logger.LogInformation($"FFmpeg binaries found in: {ffmpegBinaryPath}");
                         ffmpeg.RootPath = ffmpegBinaryPath;
                         registered = true;
+
+                        ffmpeg.avdevice_register_all();
                         return;
                     }
 
@@ -67,6 +69,8 @@ namespace SIPSorceryMedia.FFmpeg
                     logger.LogInformation($"FFmpeg binaries found in: {libPath}");
                     ffmpeg.RootPath = libPath;
                     registered = true;
+
+                    ffmpeg.avdevice_register_all();
                     return;
                 }
             }

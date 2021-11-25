@@ -154,7 +154,7 @@ namespace SIPSorceryMedia.FFmpeg
                 _encoderContext->time_base.den = fps;
                 _encoderContext->time_base.num = 1;
                 _encoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
-
+                
                 if (_codecID == AVCodecID.AV_CODEC_ID_H264)
                 {
                     _encoderContext->gop_size = 30; // Key frame interval.
@@ -171,12 +171,13 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
                 }
-
+                
                 foreach (var option in _encoderOptions)
                 {
                     ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
                 }
 
+                
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
             }
         }
@@ -206,8 +207,6 @@ namespace SIPSorceryMedia.FFmpeg
 
         public string GetCodecName()
         {
-            //var namePtr = _codec->name;
-            //return Marshal.PtrToStringAnsi((IntPtr)namePtr);
             return ffmpeg.avcodec_get_name(_codecID);
         }
 
@@ -435,7 +434,7 @@ namespace SIPSorceryMedia.FFmpeg
                                 AVPixelFormat.AV_PIX_FMT_BGR24);
                         }
 
-                        rgbFrames.Add(_i420ToRgb.ConvertFrame(decodedFrame));
+                        rgbFrames.Add(_i420ToRgb.ConvertFrame(ref *decodedFrame));
 
                         recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, decodedFrame);
                     }

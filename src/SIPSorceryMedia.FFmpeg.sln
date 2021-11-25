@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FFmpegCppEncodingTest", "..
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FFmpegMp4Test", "..\test\FFmpegMp4Test\FFmpegMp4Test.csproj", "{7258807E-BB24-42C9-8EC6-098D54224EA9}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FFmpegFileAndDevicesTest", "..\test\FFmpegFileAndDevicesTest\FFmpegFileAndDevicesTest.csproj", "{981BFE56-79B9-4D6D-878E-029502904E94}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,6 +72,18 @@ Global
 		{7258807E-BB24-42C9-8EC6-098D54224EA9}.Release|x64.Build.0 = Release|Any CPU
 		{7258807E-BB24-42C9-8EC6-098D54224EA9}.Release|x86.ActiveCfg = Release|Any CPU
 		{7258807E-BB24-42C9-8EC6-098D54224EA9}.Release|x86.Build.0 = Release|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Debug|x64.Build.0 = Debug|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Debug|x86.Build.0 = Debug|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Release|Any CPU.Build.0 = Release|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Release|x64.ActiveCfg = Release|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Release|x64.Build.0 = Release|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Release|x86.ActiveCfg = Release|Any CPU
+		{981BFE56-79B9-4D6D-878E-029502904E94}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -78,6 +92,7 @@ Global
 		{4F243FBC-1BC7-4A6E-99B1-950F7E0C41E4} = {C76D54C9-D8F7-4D5E-B82A-35887626EC04}
 		{5D877D45-557E-4E23-9453-85E8B88C10EB} = {C76D54C9-D8F7-4D5E-B82A-35887626EC04}
 		{7258807E-BB24-42C9-8EC6-098D54224EA9} = {C76D54C9-D8F7-4D5E-B82A-35887626EC04}
+		{981BFE56-79B9-4D6D-878E-029502904E94} = {C76D54C9-D8F7-4D5E-B82A-35887626EC04}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8476DD5B-15BB-4770-A727-42C54B0648F8}

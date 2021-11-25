@@ -144,7 +144,7 @@ namespace SIPSorceryMedia.FFmpeg
             return outputBuffer;
         }
 
-        public byte[] ConvertFrame(AVFrame * frame)
+        public byte[] ConvertFrame(ref AVFrame frame)
         {
             //int linesz0 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 0);
             //int linesz1 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 1);
@@ -158,7 +158,7 @@ namespace SIPSorceryMedia.FFmpeg
             //    ffmpeg.av_image_fill_arrays(ref src, ref srcStride, pSrcData, _srcPixelFormat, _srcWidth, _srcHeight, 1).ThrowExceptionIfError();
             //}
 
-            ffmpeg.sws_scale(_pConvertContext, frame->data, frame->linesize, 0, frame->height, _dstData, _dstLinesize).ThrowExceptionIfError();
+            ffmpeg.sws_scale(_pConvertContext, frame.data, frame.linesize, 0, frame.height, _dstData, _dstLinesize).ThrowExceptionIfError();
 
             int outputBufferSize = ffmpeg.av_image_get_buffer_size(_dstPixelFormat, _dstWidth, _dstHeight, 1);
             byte[] outputBuffer = new byte[outputBufferSize];
