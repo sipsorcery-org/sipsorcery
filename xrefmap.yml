@@ -27289,25 +27289,25 @@ references:
   commentId: F:SIPSorcery.SIP.SIPConstants.SIP_RESPONSE_REGEX
   fullName: SIPSorcery.SIP.SIPConstants.SIP_RESPONSE_REGEX
   nameWithType: SIPConstants.SIP_RESPONSE_REGEX
-- uid: SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
-  name: SIP_USERAGENT_STRING
-  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SIP_USERAGENT_STRING
-  commentId: P:SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
-  fullName: SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
-  nameWithType: SIPConstants.SIP_USERAGENT_STRING
-- uid: SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING*
-  name: SIP_USERAGENT_STRING
-  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SIP_USERAGENT_STRING_
-  commentId: Overload:SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPConstants.SIP_USERAGENT_STRING
-  nameWithType: SIPConstants.SIP_USERAGENT_STRING
 - uid: SIPSorcery.SIP.SIPConstants.SIP_VERSION_STRING
   name: SIP_VERSION_STRING
   href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SIP_VERSION_STRING
   commentId: F:SIPSorcery.SIP.SIPConstants.SIP_VERSION_STRING
   fullName: SIPSorcery.SIP.SIPConstants.SIP_VERSION_STRING
   nameWithType: SIPConstants.SIP_VERSION_STRING
+- uid: SIPSorcery.SIP.SIPConstants.SipUserAgentVersionString
+  name: SipUserAgentVersionString
+  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SipUserAgentVersionString
+  commentId: P:SIPSorcery.SIP.SIPConstants.SipUserAgentVersionString
+  fullName: SIPSorcery.SIP.SIPConstants.SipUserAgentVersionString
+  nameWithType: SIPConstants.SipUserAgentVersionString
+- uid: SIPSorcery.SIP.SIPConstants.SipUserAgentVersionString*
+  name: SipUserAgentVersionString
+  href: api/SIPSorcery.SIP.SIPConstants.html#SIPSorcery_SIP_SIPConstants_SipUserAgentVersionString_
+  commentId: Overload:SIPSorcery.SIP.SIPConstants.SipUserAgentVersionString
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPConstants.SipUserAgentVersionString
+  nameWithType: SIPConstants.SipUserAgentVersionString
 - uid: SIPSorcery.SIP.SIPContactHeader
   name: SIPContactHeader
   href: api/SIPSorcery.SIP.SIPContactHeader.html
