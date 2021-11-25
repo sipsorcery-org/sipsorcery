@@ -48,7 +48,6 @@ namespace SIPSorcery.SIP.App
     {
         private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static readonly string m_sipReferContentType = SIPMIMETypes.REFER_CONTENT_TYPE;
-        private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
         private static int WAIT_ONHOLD_TIMEOUT = SIPTimings.T1;
         private static int WAIT_DIALOG_TIMEOUT = SIPTimings.T2;
 
@@ -1210,7 +1209,7 @@ namespace SIPSorcery.SIP.App
                 m_sipDialogue.SDP = sdp.ToString();
 
                 var reinviteRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.INVITE);
-                reinviteRequest.Header.UserAgent = m_userAgent;
+                reinviteRequest.Header.UserAgent = SIPConstants.SipUserAgentVersionString;
                 reinviteRequest.Header.ContentType = m_sdpContentType;
                 reinviteRequest.Body = sdp.ToString();
                 reinviteRequest.Header.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB + ", " + SIPExtensionHeaders.PRACK;

@@ -39,8 +39,6 @@ namespace SIPSorcery.SIP.App
 
         private static ILogger logger = Log.Logger;
 
-        private static readonly string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
-
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;
         private SIPURI m_sipAccountAOR;
@@ -653,7 +651,7 @@ namespace SIPSorcery.SIP.App
             registerRequest.Header.Contact = new List<SIPContactHeader> { new SIPContactHeader(this.UserDisplayName, m_contactURI) };
             registerRequest.Header.CSeq = ++m_cseq;
             registerRequest.Header.CallId = m_callID;
-            registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : m_userAgent;
+            registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : SIPConstants.SipUserAgentVersionString;
             registerRequest.Header.Expires = m_expiry;
 
             if (m_customHeaders != null && m_customHeaders.Length > 0)
