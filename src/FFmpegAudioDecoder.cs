@@ -1,11 +1,11 @@
 ﻿// Audio resampling: https://ffmpeg.org/doxygen/2.5/resampling_audio_8c-example.html#_a21
 
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
 
 namespace SIPSorceryMedia.FFmpeg
 {
@@ -29,6 +29,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         private string _sourceUrl;
         private bool _repeat;
+        private bool _isMicrophone;
         private bool _isInitialised;
         private bool _isStarted;
         private bool _isPaused;
@@ -42,13 +43,13 @@ namespace SIPSorceryMedia.FFmpeg
         public event Action? OnEndOfFile;
 
 
-        public unsafe FFmpegAudioDecoder(string url, AVInputFormat* inputFormat = null, bool repeat = false)
+        public unsafe FFmpegAudioDecoder(string url, AVInputFormat* inputFormat = null, bool repeat = false, bool isMicrophone = false)
         {
             _sourceUrl = url;
-
             _inputFormat = inputFormat;
-
             _repeat = repeat;
+
+            _isMicrophone = isMicrophone;
         }
 
         public unsafe void InitialiseSource()
@@ -79,20 +80,30 @@ namespace SIPSorceryMedia.FFmpeg
                 ffmpeg.avcodec_open2(_audDecCtx, audCodec, null).ThrowExceptionIfError();
 
                 // Set up an audio conversion context so that the decoded samples can always be delivered as signed 16 bit mono PCM.
+
                 _swrContext = ffmpeg.swr_alloc();
                 ffmpeg.av_opt_set_sample_fmt(_swrContext, "in_sample_fmt", _audDecCtx->sample_fmt, 0);
-                ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", (long)_audDecCtx->channel_layout, 0);
-                ffmpeg.av_opt_set_int(_swrContext, "in_sample_rate", _audDecCtx->sample_rate, 0);
-
                 ffmpeg.av_opt_set_sample_fmt(_swrContext, "out_sample_fmt", AVSampleFormat.AV_SAMPLE_FMT_S16, 0);
-                ffmpeg.av_opt_set_channel_layout(_swrContext, "out_channel_layout", ffmpeg.AV_CH_LAYOUT_MONO, 0);
+
+                ffmpeg.av_opt_set_int(_swrContext, "in_sample_rate", _audDecCtx->sample_rate, 0);
                 ffmpeg.av_opt_set_int(_swrContext, "out_sample_rate", AUDIO_OUTPUT_SAMPLE_RATE, 0);
+
+                //FIX:Some Codec's Context Information is missing
+                if (_audDecCtx->channel_layout == 0)
+                {
+                    long in_channel_layout = ffmpeg.av_get_default_channel_layout(_audDecCtx->channels);
+                    ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", in_channel_layout, 0);
+                }
+                else
+                    ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", (long)_audDecCtx->channel_layout, 0);
+                ffmpeg.av_opt_set_channel_layout(_swrContext, "out_channel_layout", ffmpeg.AV_CH_LAYOUT_MONO, 0);
+
                 ffmpeg.swr_init(_swrContext).ThrowExceptionIfError();
 
-               
+
                 _audioTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->time_base);
                 _audioAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->avg_frame_rate);
-                _maxAudioFrameSpace = (int)(_audioAvgFrameRate > 0 ? 1000 / _audioAvgFrameRate : 1000 / DEFAULT_VIDEO_FRAME_RATE);
+                _maxAudioFrameSpace = (int)(_audioAvgFrameRate > 0 ? 1000 / _audioAvgFrameRate : 10000 * AUDIO_OUTPUT_SAMPLE_RATE);
             }
         }
 
@@ -146,7 +157,17 @@ namespace SIPSorceryMedia.FFmpeg
         private unsafe void RunDecodeLoop()
         {
             AVPacket* pkt = ffmpeg.av_packet_alloc();
-            AVFrame* frame = ffmpeg.av_frame_alloc();
+            AVFrame* avFrame = ffmpeg.av_frame_alloc();
+
+            int eagain = ffmpeg.AVERROR(ffmpeg.EAGAIN);
+            int error;
+            
+            bool canContinue = true;
+            bool managePacket = true;
+
+            double firts_dpts = 0;
+
+            double original_dpts = 0;
 
             try
             {
@@ -155,58 +176,78 @@ namespace SIPSorceryMedia.FFmpeg
                 pkt->data = null;
                 pkt->size = 0;
 
-            //long prevVidTs = 0;
-            //long prevAudTs = 0;
-
             Repeat:
 
                 DateTime startTime = DateTime.Now;
 
-                while (!_isClosed && !_isPaused && ffmpeg.av_read_frame(_fmtCtx, pkt) >= 0)
+                while (!_isClosed && !_isPaused && canContinue)
                 {
-                    if (pkt->stream_index == _audioStreamIndex)
+                    error = ffmpeg.av_read_frame(_fmtCtx, pkt);
+                    if (error < 0)
                     {
-                        ffmpeg.avcodec_send_packet(_audDecCtx, pkt).ThrowExceptionIfError();
-                        int recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, frame);
-                        while (recvRes >= 0)
-                        {
-                            int numDstSamples = (int)ffmpeg.av_rescale_rnd(ffmpeg.swr_get_delay(_swrContext, _audDecCtx->sample_rate) + frame->nb_samples, AUDIO_OUTPUT_SAMPLE_RATE, _audDecCtx->sample_rate, AVRounding.AV_ROUND_UP);
-                            int bufferSize = ffmpeg.av_samples_get_buffer_size(null, 1, numDstSamples, AVSampleFormat.AV_SAMPLE_FMT_S16, 1);
-
-                            //Console.WriteLine($"audio size {bufferSize}, num src samples {frame->nb_samples}, num dst samples {numDstSamples}, pts={frame->pts}, dts={(int)(_audioTimebase * frame->pts * 1000)}.");
-
-                            byte[] buffer = new byte[bufferSize];
-                            int dstSampleCount = 0;
-
-                            fixed (byte* pBuffer = buffer)
-                            {
-                                dstSampleCount = ffmpeg.swr_convert(_swrContext, &pBuffer, bufferSize, frame->extended_data, frame->nb_samples).ThrowExceptionIfError();
-                                //Console.WriteLine($"audio convert dst sample count {dstSampleCount}.");
-                            }
-
-                            OnAudioFrame?.Invoke(buffer.Take(dstSampleCount * 2).ToArray());
-
-                            double dpts = 0;
-                            if (frame->pts != ffmpeg.AV_NOPTS_VALUE)
-                            {
-                                dpts = _audioTimebase * frame->pts;
-                            }
-                            int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
-                            //Console.WriteLine($"sleep {sleep} {Math.Min(_maxVideoFrameSpace, sleep)}.");
-                            if (sleep > MIN_SLEEP_MILLISECONDS)
-                            {
-                                ffmpeg.av_usleep((uint)(Math.Min(_maxAudioFrameSpace, sleep) * 1000));
-                            }
-                            recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, frame);
-                        }
-
-                        if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
-                        {
-                            recvRes.ThrowExceptionIfError();
-                        }
+                        managePacket = false;
+                        if (error == eagain)
+                            ffmpeg.av_packet_unref(pkt);
+                        else
+                            canContinue = false;
                     }
+                    else
+                        managePacket = true;
 
-                    ffmpeg.av_packet_unref(pkt);
+                    if (managePacket)
+                    {
+                        if (pkt->stream_index == _audioStreamIndex)
+                        {
+                            ffmpeg.avcodec_send_packet(_audDecCtx, pkt).ThrowExceptionIfError();
+                            int recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, avFrame);
+                            while (recvRes >= 0)
+                            {
+                                int numDstSamples = (int)ffmpeg.av_rescale_rnd(ffmpeg.swr_get_delay(_swrContext, _audDecCtx->sample_rate) + avFrame->nb_samples, AUDIO_OUTPUT_SAMPLE_RATE, _audDecCtx->sample_rate, AVRounding.AV_ROUND_UP);
+                                int bufferSize = ffmpeg.av_samples_get_buffer_size(null, 1, numDstSamples, AVSampleFormat.AV_SAMPLE_FMT_S16, 1);
+
+                                byte[] buffer = new byte[bufferSize];
+                                int dstSampleCount = 0;
+
+                                fixed (byte* pBuffer = buffer)
+                                {
+                                    dstSampleCount = ffmpeg.swr_convert(_swrContext, &pBuffer, bufferSize, avFrame->extended_data, avFrame->nb_samples).ThrowExceptionIfError();
+                                }
+
+                                OnAudioFrame?.Invoke(buffer.Take(dstSampleCount * 2).ToArray());
+
+
+                                if (!_isMicrophone)
+                                {
+                                    double dpts = 0;
+                                    if (avFrame->pts != ffmpeg.AV_NOPTS_VALUE)
+                                    {
+                                        dpts = _audioTimebase * avFrame->pts;
+                                        original_dpts = dpts;
+
+                                        if (firts_dpts == 0)
+                                            firts_dpts = dpts;
+
+                                        dpts -= firts_dpts;
+                                    }
+                                    int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
+                                    Console.WriteLine($"sleep {sleep} {Math.Min(_maxAudioFrameSpace, sleep)} - firts_dpts:{firts_dpts} - dpts:{dpts} - original_dpts:{original_dpts}");
+
+
+                                    if (sleep > MIN_SLEEP_MILLISECONDS)
+                                        ffmpeg.av_usleep((uint)(Math.Min(_maxAudioFrameSpace, sleep) * 1000));
+                                }
+
+                                recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, avFrame);
+                            }
+
+                            if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
+                            {
+                                recvRes.ThrowExceptionIfError();
+                            }
+                        }
+
+                        ffmpeg.av_packet_unref(pkt);
+                    }
                 }
 
                 if (_isPaused)
@@ -235,8 +276,8 @@ namespace SIPSorceryMedia.FFmpeg
             }
             finally
             {
-                ffmpeg.av_frame_unref(frame);
-                ffmpeg.av_free(frame);
+                ffmpeg.av_frame_unref(avFrame);
+                ffmpeg.av_free(avFrame);
 
                 ffmpeg.av_packet_unref(pkt);
                 ffmpeg.av_free(pkt);

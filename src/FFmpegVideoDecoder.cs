@@ -1,8 +1,6 @@
 ﻿using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.FFmpeg
@@ -27,6 +25,7 @@ namespace SIPSorceryMedia.FFmpeg
         private string _sourceUrl;
         private bool _repeat;
         private bool _isInitialised;
+        private bool _isCamera;
         private bool _isStarted;
         private bool _isPaused;
         private bool _isClosed;
@@ -34,7 +33,7 @@ namespace SIPSorceryMedia.FFmpeg
         private Task? _sourceTask;
 
         //public unsafe delegate void OnFrameDelegate(ref AVFrame frame);
-        public unsafe delegate void OnFrameDelegate(ref AVFrame frame);
+        public delegate void OnFrameDelegate(ref AVFrame frame);
         public event OnFrameDelegate? OnVideoFrame;
 
         public event Action? OnEndOfFile;
@@ -44,13 +43,15 @@ namespace SIPSorceryMedia.FFmpeg
             get => _videoAvgFrameRate;
         }
 
-        public unsafe FFmpegVideoDecoder(string url, AVInputFormat* inputFormat = null, bool repeat = false)
+        public unsafe FFmpegVideoDecoder(string url, AVInputFormat* inputFormat = null, bool repeat = false, bool isCamera = false)
         {
             _sourceUrl = url;
 
             _inputFormat = inputFormat;
 
             _repeat = repeat;
+
+            _isCamera = isCamera;
         }
 
         public unsafe void InitialiseSource()
@@ -137,6 +138,15 @@ namespace SIPSorceryMedia.FFmpeg
         {
             AVPacket* pkt = ffmpeg.av_packet_alloc();
             AVFrame* avFrame = ffmpeg.av_frame_alloc();
+
+            int eagain = ffmpeg.AVERROR(ffmpeg.EAGAIN);
+            int error;
+
+            bool canContinue = true;
+            bool managePacket = true;
+
+            double firts_dpts = 0;
+
             try
             {
                 // Decode loop.
@@ -148,43 +158,65 @@ namespace SIPSorceryMedia.FFmpeg
 
                 DateTime startTime = DateTime.Now;
 
-                while (!_isClosed && !_isPaused && ffmpeg.av_read_frame(_fmtCtx, pkt) >= 0)
+                while (!_isClosed && !_isPaused && canContinue)
                 {
-                    if (pkt->stream_index == _videoStreamIndex)
+                    error = ffmpeg.av_read_frame(_fmtCtx, pkt);
+                    if (error < 0)
                     {
-                        ffmpeg.avcodec_send_packet(_vidDecCtx, pkt).ThrowExceptionIfError();
-                        
-                        int recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, avFrame);
-                        while (recvRes >= 0)
-                        {
-                            //Console.WriteLine($"video number samples {frame->nb_samples}, pts={frame->pts}, dts={(int)(_videoTimebase * frame->pts * 1000)}, width {frame->width}, height {frame->height}.");
-
-                            OnVideoFrame?.Invoke(ref *avFrame);
-
-                            double dpts = 0;
-                            if (avFrame->pts != ffmpeg.AV_NOPTS_VALUE)
-                            {
-                                dpts = _videoTimebase * avFrame->pts;
-                            }
-
-                            //Console.WriteLine($"Decoded video frame {frame->width}x{frame->height}, ts {frame->best_effort_timestamp}, delta {frame->best_effort_timestamp - prevVidTs}, dpts {dpts}.");
-
-                            int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
-                            if (sleep > MIN_SLEEP_MILLISECONDS)
-                            {
-                                ffmpeg.av_usleep((uint)(Math.Min(_maxVideoFrameSpace, sleep) * 1000));
-                            }
-
-                            recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, avFrame);
-                        }
-
-                        if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
-                        {
-                            recvRes.ThrowExceptionIfError();
-                        }
+                        managePacket = false;
+                        if (error == eagain)
+                            ffmpeg.av_packet_unref(pkt);
+                        else
+                            canContinue = false;
                     }
+                    else
+                        managePacket = true;
 
-                    ffmpeg.av_packet_unref(pkt);
+                    if (managePacket)
+                    {
+                        if (pkt->stream_index == _videoStreamIndex)
+                        {
+                            ffmpeg.avcodec_send_packet(_vidDecCtx, pkt).ThrowExceptionIfError();
+
+                            int recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, avFrame);
+                            while (recvRes >= 0)
+                            {
+                                //Console.WriteLine($"video number samples {frame->nb_samples}, pts={frame->pts}, dts={(int)(_videoTimebase * frame->pts * 1000)}, width {frame->width}, height {frame->height}.");
+
+                                OnVideoFrame?.Invoke(ref *avFrame);
+
+                                if (!_isCamera)
+                                {
+                                    double dpts = 0;
+                                    if (avFrame->pts != ffmpeg.AV_NOPTS_VALUE)
+                                    {
+                                        dpts = _videoTimebase * avFrame->pts;
+                                        if (firts_dpts == 0)
+                                            firts_dpts = dpts;
+
+                                        dpts -= firts_dpts;
+                                    }
+
+                                    //Console.WriteLine($"Decoded video frame {frame->width}x{frame->height}, ts {frame->best_effort_timestamp}, delta {frame->best_effort_timestamp - prevVidTs}, dpts {dpts}.");
+
+                                    int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
+                                    if (sleep > MIN_SLEEP_MILLISECONDS)
+                                    {
+                                        ffmpeg.av_usleep((uint)(Math.Min(_maxVideoFrameSpace, sleep) * 1000));
+                                    }
+                                }
+
+                                recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, avFrame);
+                            }
+
+                            if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
+                            {
+                                recvRes.ThrowExceptionIfError();
+                            }
+                        }
+
+                        ffmpeg.av_packet_unref(pkt);
+                    }
                 }
 
                 if (_isPaused)

@@ -39,16 +39,22 @@ namespace FFmpegFileAndDevicesTest
         private const bool USE_AUDIO = true;
         private const bool USE_VIDEO = true;
         
-        private const bool REPEAT_AUDIO = true;
-        private const bool REPEAT_VIDEO = true;
+        private const bool USE_MICROPHONE = true; // Used if USE_AUDIO == true too
+        private const string MICROPHONE_DEVICE = "audio=Microphone (HD Pro Webcam C920)";
 
-        private const bool USE_WEBCAM = true;
-        private const string WEBCAM_DEVICE = "video=HD Pro Webcam C920";
+        private const bool USE_CAMERA = true; // Used if USE_VIDEO == true too
+        private const string CAMERA_DEVICE = "video=HD Pro Webcam C920";
+
+        private const bool REPEAT_AUDIO_FILE = true; // Used if USE_AUDIO == true AND USE_MICROPHONE == false
+        private const bool REPEAT_VIDEO_FILE = true; // Used if USE_VIDEO == true AND USE_CAMERA == false
 
         private const string LIB_PATH = @"C:\ffmpeg-4.3-sipsorcery";
         //private const string LIB_PATH = @"C:\ffmpeg-4.4.1-full_build-shared\bin";
 
         private const string AUDIO_FILE_PATH = @"C:\media\simplest_ffmpeg_audio_decoder_skycity1.mp3";
+        //private const string AUDIO_FILE_PATH = @"C:\media\big_buck_bunny.mp4";
+        //private const string AUDIO_FILE_PATH = @"C:\media\file_example_WAV_5MG.wav";
+
         private const string VIDEO_FILE_PATH = @"C:\media\big_buck_bunny.mp4";
 
         private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.H264; // VideoCodecsEnum.VP8
@@ -101,7 +107,10 @@ namespace FFmpegFileAndDevicesTest
 
             if (USE_AUDIO)
             {
-                audioSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(AUDIO_FILE_PATH, REPEAT_AUDIO, new AudioEncoder(), false);
+                if(USE_MICROPHONE)
+                    audioSource = new SIPSorceryMedia.FFmpeg.FFmpegMicrophoneSource(MICROPHONE_DEVICE, new AudioEncoder());
+                else
+                    audioSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(AUDIO_FILE_PATH, REPEAT_AUDIO_FILE, new AudioEncoder(), false);
 
                 audioSource.RestrictFormats(x => x.Codec == AUDIO_CODEC);
 
@@ -115,13 +124,13 @@ namespace FFmpegFileAndDevicesTest
 
             if (USE_VIDEO)
             {
-                if (USE_WEBCAM)
+                if (USE_CAMERA)
                 {
-                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegCameraSource(WEBCAM_DEVICE);
+                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegCameraSource(CAMERA_DEVICE);
                 }
                 else
                 {
-                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VIDEO_FILE_PATH, REPEAT_VIDEO, null, USE_VIDEO);
+                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VIDEO_FILE_PATH, REPEAT_VIDEO_FILE, null, USE_VIDEO);
                 }
 
                 videoSource.RestrictFormats(x => x.Codec == VIDEO_CODEC);

@@ -59,7 +59,7 @@ namespace SIPSorceryMedia.FFmpeg
             _videoFormatManager = new MediaFormatManager<VideoFormat>(_supportedVideoFormats);
             _videoEncoder = new FFmpegVideoEncoder();
 
-            _videoDecoder = new FFmpegVideoDecoder(path, aVInputFormat);
+            _videoDecoder = new FFmpegVideoDecoder(path, aVInputFormat, false, true);
             _videoDecoder.OnVideoFrame += FileSourceDecoder_OnVideoFrame;
 
             _videoDecoder.OnEndOfFile += () =>
