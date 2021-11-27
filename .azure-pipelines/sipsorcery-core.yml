@@ -27,6 +27,16 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
+
+# Install required version of .NET.
+- task: UseDotNet@2
+  displayName: 'Use .NET6 sdk'
+  inputs:
+    packageType: sdk
+    version: 6.x
+    includePreviewVersions: true
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
 #- task: NuGetToolInstaller@1
 
 #- task: NuGetCommand@2
@@ -45,8 +55,7 @@ steps:
   inputs:
     command: test
     projects: test/unit/SIPSorcery.UnitTests.csproj
-    arguments: --framework netcoreapp3.1
-
+    arguments: --framework net6.0
 #Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/test/vstest?view=azure-devops
 #- task: VSTest@2
 #  inputs:
