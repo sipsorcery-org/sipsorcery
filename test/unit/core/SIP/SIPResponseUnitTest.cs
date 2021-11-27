@@ -427,7 +427,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug($"Body sha256: {bodyHash}.");
 
             SIPMessageBuffer msgBuffer = SIPMessageBuffer.ParseSIPMessage(resp.GetBytes(), SIPEndPoint.Empty, SIPEndPoint.Empty);
-            SIPResponse rndTripResp = SIPResponse.ParseSIPResponse(msgBuffer);
+            SIPResponse rndTripResp = SIPResponse.ParseSIPResponse(msgBuffer, Encoding.UTF8, Encoding.ASCII);
 
             string rndTripBodyHash = null;
             using (var sha256 = new SHA256Managed())
