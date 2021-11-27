@@ -35,18 +35,18 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 ## Installation
 
-The library is compliant with .NET Standard 2.0 (encompassing .NET Core 2.0+), .NET Framework 4.6.1 (theoretically also encompassed by `netstandard2.0` but set as an explicit target due to compatibility issues between the two) and .NET 5. The demo applications mainly target .NET Core 3.1 with newer ones targeting .NET 5. It is available via NuGet.
+The library is compliant with .NET Standard 2.0 (encompassing .NET Core 2.0+), .NET Framework 4.6.1 (theoretically also encompassed by `netstandard2.0` but set as an explicit target due to compatibility issues between the two), .NET 5 and .NET 6. The demo applications mainly target .NET Core 3.1 with newer ones targeting .NET 5 or 6. The library is available via NuGet.
 
-For .NET Core:
+For .NET Core and .NET 5 & 6:
 
 ````bash
-dotnet add package SIPSorcery -v 5.1.2
+dotnet add package SIPSorcery
 ````
 
 With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](https://www.nuget.org/packages/SIPSorcery/)):
 
 ````ps1
-Install-Package SIPSorcery -v 5.1.2
+Install-Package SIPSorcery
 ````
 
 ## Documentation
@@ -61,12 +61,12 @@ For WebRTC testing the [webrtc-echoes](https://github.com/sipsorcery/webrtc-echo
 
 ## Getting Started VoIP
 
-The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia.Windows` library to play the received audio and only works on Windows (due to lack of .NET Core audio device support on non-Windows platforms).
+The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia.Windows` library to play the received audio and only works on Windows (due to lack of .NET audio device support on non-Windows platforms).
 
 ````bash
-dotnet new console --name SIPGetStarted -f netcoreapp3.1
+dotnet new console --name SIPGetStarted
 cd SIPGetStarted
-dotnet add package SIPSorcery -v 5.1.2
+dotnet add package SIPSorcery
 dotnet add package SIPSorceryMedia.Windows -v 0.0.31-pre
 # Paste the code below into Program.cs.
 dotnet run
