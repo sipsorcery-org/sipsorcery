@@ -1,5 +1,5 @@
 version: 1.{build}
-image: Visual Studio 2019
+image: Visual Studio 2022
 configuration: Release
 before_build:
 - cmd: nuget restore -DisableParallelProcessing src\SIPSorceryMedia.Windows.csproj
