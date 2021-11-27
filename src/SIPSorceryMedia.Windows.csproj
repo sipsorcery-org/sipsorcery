@@ -1,17 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-    <PackageReference Include="NAudio" Version="1.10.0" />
-    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.22000.196" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.0.4-pre" />
-    <PackageReference Include="System.Drawing.Common" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+    <PackageReference Include="NAudio" Version="2.0.1" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.1.0" />
   </ItemGroup>
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>SIPSorceryMedia.Windows</PackageId>
-    <TargetFrameworks>netcoreapp3.1;net461</TargetFrameworks>
+    <TargetFrameworks>net6.0-windows10.0.22000.0</TargetFrameworks>
+	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Aaron Clauson</Authors>
     <Copyright>Copyright © 2020-2021 Aaron Clauson</Copyright>
@@ -25,12 +24,13 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorceryMedia.Windows</RepositoryUrl>
-    <Version>0.0.32-pre</Version>
-    <AssemblyVersion>0.0.32.0</AssemblyVersion>
-    <FileVersion>0.0.32.0</FileVersion>
+    <Version>6.0.0-pre</Version>
+    <AssemblyVersion>6.0.0.0</AssemblyVersion>
+    <FileVersion>6.0.0.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-    <PackageReleaseNotes>-v0.0.32-pre: Updated to the latest Windows SDK version.
+    <PackageReleaseNotes>-v6.0.0-pre: Target .net6 and lastest Windows SDK version.
+-v0.0.32-pre: Updated to the latest Windows SDK version.
 -v0.0.31-pre: Adjust audio playback rate dependent on selected audio format (fixes G722 playback).
 -v0.0.30-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
 -v0.0.29-pre: Added new method to list video formats for a Windows video capture device.
