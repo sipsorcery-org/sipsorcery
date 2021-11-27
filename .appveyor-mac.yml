@@ -19,6 +19,8 @@ build_script:
     export DOTNET_ROOT=$(pwd)/dotnet
     mkdir -p "$DOTNET_ROOT" && tar zxf "$DOTNET_FILE" -C "$DOTNET_ROOT"
     export PATH=$PATH:$DOTNET_ROOT
+    sudo rm -rf /usr/local/share/dotnet
+    sudo mv dotnet /usr/local/share
     dotnet --version
 #- dotnet build src/SIPSorcery.sln --framework netcoreapp3.1
 test_script:
