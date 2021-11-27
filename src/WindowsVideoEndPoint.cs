@@ -28,6 +28,7 @@ using Windows.Media.Devices;
 using SIPSorceryMedia.Abstractions;
 using Windows.Devices.Enumeration;
 using Windows.Media.MediaProperties;
+using WinRT;
 
 namespace SIPSorceryMedia.Windows
 {
@@ -534,7 +535,7 @@ namespace SIPSorceryMedia.Windows
                                     {
                                         byte* dataInBytes;
                                         uint capacity;
-                                        ((IMemoryBufferByteAccess)reference).GetBuffer(out dataInBytes, out capacity);
+                                        reference.As<IMemoryBufferByteAccess>().GetBuffer(out dataInBytes, out capacity);
                                         byte[] nv12Buffer = new byte[capacity];
                                         Marshal.Copy((IntPtr)dataInBytes, nv12Buffer, 0, (int)capacity);
 
