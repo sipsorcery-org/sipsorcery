@@ -14,7 +14,7 @@ init:
 build_script:
 - sh: |
       uname -a
-      wget https://download.visualstudio.microsoft.com/download/pr/62f78047-71de-460e-85ca-254f1fa848de/ecabeefdca2902f3f06819612cd9d45c/dotnet-sdk-6.0.100-osx-x64.tar.gz
+      curl https://download.visualstudio.microsoft.com/download/pr/62f78047-71de-460e-85ca-254f1fa848de/ecabeefdca2902f3f06819612cd9d45c/dotnet-sdk-6.0.100-osx-x64.tar.gz -o dotnet-sdk-6.0.100-osx-x64.tar.gz
       DOTNET_FILE=dotnet-sdk-6.0.100-osx-x64.tar.gz
       export DOTNET_ROOT=$(pwd)/dotnet
       mkdir -p "$DOTNET_ROOT" && tar zxf "$DOTNET_FILE" -C "$DOTNET_ROOT"
