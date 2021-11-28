@@ -23,4 +23,8 @@
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.31-pre" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\VP8.Net\src\VP8.Net.csproj" />
+  </ItemGroup>
+
 </Project>

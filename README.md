@@ -67,7 +67,7 @@ The simplest possible example to place an audio-only SIP call is shown below. Th
 dotnet new console --name SIPGetStarted
 cd SIPGetStarted
 dotnet add package SIPSorcery
-dotnet add package SIPSorceryMedia.Windows -v 0.0.31-pre
+dotnet add package SIPSorceryMedia.Windows --prerelease
 # Paste the code below into Program.cs.
 dotnet run
 # If successful you will hear a "Hello World" announcement.
@@ -131,9 +131,9 @@ The example relies on the Windows specific `SIPSorceryMedia.Encoders` package, w
 **Step 1:**
 
 ````bash
-dotnet new console --name WebRTCGetStarted -f net5.0
+dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
-dotnet add package SIPSorcery -v 5.1.2
+dotnet add package SIPSorcery
 dotnet add package SIPSorceryMedia.Encoders -v 0.0.10-pre
 # Paste the code below into Program.cs.
 dotnet run

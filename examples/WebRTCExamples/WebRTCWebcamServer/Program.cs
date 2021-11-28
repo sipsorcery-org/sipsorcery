@@ -26,9 +26,10 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.FFmpeg;
-using SIPSorceryMedia.Windows;
+//using SIPSorceryMedia.Windows;
 using WebSocketSharp.Server;
 
 namespace demo
@@ -48,6 +49,8 @@ namespace demo
             Console.WriteLine("Press ctrl-c to exit.");
 
             logger = AddConsoleLogger();
+
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_TRACE, null, logger);
 
             //var vidCapDevices = await WindowsVideoEndPoint.GetVideoCatpureDevices();
             //foreach (var dev in vidCapDevices)
@@ -94,26 +97,31 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VpxVideoEncoder(), WEBCAM_NAME);
+            //var ffmpegWebcam = new FFmpegCameraSource(@"@device_pnp_\\?\usb#vid_046d&pid_0892&mi_00#6&678a505&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global");
+            var ffmpegWebcam = new FFmpegCameraSource("video=HD Pro Webcam C920");
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VpxVideoEncoder(), WEBCAM_NAME);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new FFmpegVideoEncoder(), WEBCAM_NAME);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME, 1920, 1080, 30);
             //winVideoEP.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264);
-            bool initResult = await winVideoEP.InitialiseVideoSourceDevice();
-            if (!initResult)
-            {
-                throw new ApplicationException("Could not initialise video capture device.");
-            }
+            //bool initResult = await winVideoEP.InitialiseVideoSourceDevice();
+            //if (!initResult)
+            //{
+            //    throw new ApplicationException("Could not initialise video capture device.");
+            //}
+
             var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            IVideoSource webcamSource = ffmpegWebcam;
+
+            MediaStreamTrack videoTrack = new MediaStreamTrack(webcamSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(videoTrack);
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(audioTrack);
 
-            winVideoEP.OnVideoSourceEncodedSample += pc.SendVideo;
+            webcamSource.OnVideoSourceEncodedSample += pc.SendVideo;
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
             pc.OnVideoFormatsNegotiated += (videoFormats) =>
-                 winVideoEP.SetVideoSourceFormat(videoFormats.First());
+                 webcamSource.SetVideoSourceFormat(videoFormats.First());
             pc.OnAudioFormatsNegotiated += (audioFormats) =>
                 audioSource.SetAudioSourceFormat(audioFormats.First());
 
@@ -124,7 +132,7 @@ namespace demo
                 if (state == RTCPeerConnectionState.connected)
                 {
                     await audioSource.StartAudio();
-                    await winVideoEP.StartVideo();
+                    await webcamSource.StartVideo();
                 }
                 else if (state == RTCPeerConnectionState.failed)
                 {
@@ -132,7 +140,7 @@ namespace demo
                 }
                 else if (state == RTCPeerConnectionState.closed)
                 {
-                    await winVideoEP.CloseVideo();
+                    await webcamSource.CloseVideo();
                     await audioSource.CloseAudio();
                 }
             };

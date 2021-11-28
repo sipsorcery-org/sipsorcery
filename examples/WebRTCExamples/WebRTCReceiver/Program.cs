@@ -33,6 +33,7 @@ using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.FFmpeg;
 using WebSocketSharp.Server;
+using Vpx.Net;
 
 namespace demo
 {
@@ -55,8 +56,8 @@ namespace demo
     {
         private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const int WEBSOCKET_PORT = 8081;
-        private const int VIDEO_INITIAL_WIDTH = 640;
-        private const int VIDEO_INITIAL_HEIGHT = 480;
+        private const int VIDEO_INITIAL_WIDTH = 1024;//640;
+        private const int VIDEO_INITIAL_HEIGHT = 768;//480;
 
         private static Form _form;
         private static PictureBox _picBox;
@@ -106,10 +107,11 @@ namespace demo
 
         private static Task<RTCPeerConnection> CreatePeerConnection()
         {
-            //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new VpxVideoEncoder());
-            //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
-            var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new FFmpegVideoEncoder());
-            videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
+            var videoEP = new Vp8NetVideoEncoderEndPoint();
+            //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new vp8Decoder());
+            videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
+            //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new FFmpegVideoEncoder());
+            //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {

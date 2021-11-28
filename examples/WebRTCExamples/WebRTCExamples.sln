@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29409.12
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPToWebRtcBridge", "SIPToWebRtcBridge\SIPToWebRtcBridge.csproj", "{1C72B9CE-BDDB-4C7C-BDD9-D43B9CFFB2B6}"
 EndProject
@@ -42,6 +42,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCTestPatternRest", "WebRTCTestPatternRest\WebRTCTestPatternRest.csproj", "{431E3469-5D5A-4221-A3DE-9F02075B093B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCGetStartedDataChannel", "WebRTCGetStartedDataChannel\WebRTCGetStartedDataChannel.csproj", "{AFB26B0B-05CB-4F7A-89C8-ACBB62DCCAEB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VP8.Net", "..\..\..\VP8.Net\src\VP8.Net.csproj", "{CBCA60EC-B77F-4BF1-860E-47013BE6150B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.FFmpeg", "..\..\..\SIPSorceryMedia.FFmpeg\src\SIPSorceryMedia.FFmpeg.csproj", "{EE57A491-3036-4AE7-B505-3B5B792D5697}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Windows", "..\..\..\SIPSorceryMedia.Windows\src\SIPSorceryMedia.Windows.csproj", "{8EC70211-9E80-4660-BFE9-C34CA4D38B90}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -293,6 +299,42 @@ Global
 		{AFB26B0B-05CB-4F7A-89C8-ACBB62DCCAEB}.Release|x64.Build.0 = Release|Any CPU
 		{AFB26B0B-05CB-4F7A-89C8-ACBB62DCCAEB}.Release|x86.ActiveCfg = Release|Any CPU
 		{AFB26B0B-05CB-4F7A-89C8-ACBB62DCCAEB}.Release|x86.Build.0 = Release|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Debug|x64.Build.0 = Debug|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Debug|x86.Build.0 = Debug|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Release|x64.ActiveCfg = Release|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Release|x64.Build.0 = Release|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Release|x86.ActiveCfg = Release|Any CPU
+		{CBCA60EC-B77F-4BF1-860E-47013BE6150B}.Release|x86.Build.0 = Release|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Debug|x64.Build.0 = Debug|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Debug|x86.Build.0 = Debug|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Release|x64.ActiveCfg = Release|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Release|x64.Build.0 = Release|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE57A491-3036-4AE7-B505-3B5B792D5697}.Release|x86.Build.0 = Release|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Debug|x64.Build.0 = Debug|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Debug|x86.Build.0 = Debug|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Release|x64.ActiveCfg = Release|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Release|x64.Build.0 = Release|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Release|x86.ActiveCfg = Release|Any CPU
+		{8EC70211-9E80-4660-BFE9-C34CA4D38B90}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
