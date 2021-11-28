@@ -25,11 +25,6 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <IncludeSymbols>true</IncludeSymbols> 
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461;net5.0;net6.0</TargetFrameworks>
     <Authors>Aaron Clauson &amp; Contributors</Authors>
     <Copyright>Copyright © 2010-2021 Aaron Clauson</Copyright>
@@ -43,19 +38,36 @@
     <PackageId>SIPSorcery</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
-    <!-- Note PackageIcon generates a build warning. Can be removed once Visual Studio supports the nuget "Icon" setting.
-       Watch https://github.com/NuGet/Home/issues/8189.-->
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v6.0.1-pre: Added .net6 target.</PackageReleaseNotes>
+    <PackageReleaseNotes>-v6.0.3: No changes. Aligning release tag.
+-v6.0.2: Set .net6 targetted version as stable.
+-v6.0.1-pre: Added .net6 target.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>6.0.1-pre</Version>
-    <AssemblyVersion>6.0.1.0</AssemblyVersion>
-    <FileVersion>6.0.1.0</FileVersion>
+    <Version>6.0.3</Version>
+    <AssemblyVersion>6.0.3</AssemblyVersion>
+    <FileVersion>6.0.3</FileVersion>
   </PropertyGroup>
+
+  <PropertyGroup Label="SourceLink">
+    <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+    <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+    <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup Label="SourceLink">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+  </ItemGroup>
 
 </Project>
