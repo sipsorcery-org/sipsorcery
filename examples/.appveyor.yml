@@ -6,6 +6,7 @@ branches:
     - ubuntu-ci
     - win-ci
     - wsl-ci
+    - github-publish-test
 skip_tags: true
 image: Visual Studio 2022
 build_script:

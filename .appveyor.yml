@@ -68,4 +68,5 @@ deploy:
     api_key:
       secure: E58r+OknoQn8+bsPRT6l3U2K4kfOpDiGCo1C75LkVg+R/RBHpY//J8UCXEfVvyRB
     on:
-      APPVEYOR_REPO_TAG: true       # deploy on tag push only
+       branch: github-publish-test
+#      APPVEYOR_REPO_TAG: true       # deploy on tag push only

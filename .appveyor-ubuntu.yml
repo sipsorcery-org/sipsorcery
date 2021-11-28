@@ -5,6 +5,7 @@ branches:
     - mac-ci
     - win-ci
     - wsl-ci
+    - github-publish-test
 skip_tags: true
 image: ubuntu
 environment:
