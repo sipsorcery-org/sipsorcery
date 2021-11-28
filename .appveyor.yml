@@ -51,37 +51,22 @@ on_success:
             git push origin gh-pages -q
         }
 deploy:
+# Publish nuget package to nuget.org package repository.
   - provider: NuGet
-    server:                  # remove to push to NuGet.org
+    server:                  # If empty pushes to NuGet.org
     api_key:
-      secure: gmA9IpDL2cCfEbWY0UkUwgnQZwwgiqthE8wgBrybvlbbRwOzWBREoAWqmcyDnEAE
+      secure: aK5GHmF0JAaJZbd7x8g5G2b1qemnimHJMZ5rhQEexHsJJ2B0uVBh/W+KumXETBZz
     skip_symbols: false
-    symbol_server:           # remove to push symbols to SymbolSource.org
+    symbol_server:           # If empty pushes symbols to SymbolSource.org
     artifact: /.*\.nupkg/
     on:
-      # branch: master                # release from master branch only
       APPVEYOR_REPO_TAG: true       # deploy on tag push only
-  - provider: NuGet
+# Publish nuget package to GitHub package repository.
+  - provider: NuGet 
     server: https://nuget.pkg.github.com/sipsorcery/index.json
     artifact: /.*(\.|\.s)nupkg/
     api_key:
-      secure: aK5GHmF0JAaJZbd7x8g5G2b1qemnimHJMZ5rhQEexHsJJ2B0uVBh/W+KumXETBZz
+      secure: E58r+OknoQn8+bsPRT6l3U2K4kfOpDiGCo1C75LkVg+R/RBHpY//J8UCXEfVvyRB
+    skip_symbols: true    # Symbols are already being pushed in the previous task.
     on:
       APPVEYOR_REPO_TAG: true       # deploy on tag push only
-#  - provider: NuGet
-#    server: https://nuget.pkg.github.com/sipsorcery/index.json
-#    artifact: /.*(\.|\.s)nupkg/
-#    username: sipsorcery
-#    api_key:
-#      secure: E58r+OknoQn8+bsPRT6l3U2K4kfOpDiGCo1C75LkVg+R/RBHpY//J8UCXEfVvyRB
-#    on:
-#      APPVEYOR_REPO_TAG: true       # deploy on tag push only
-#  - provider: GitHub
-#    artifact: /.*\.nupkg/           # upload all NuGet packages to release assets
-#    draft: true
-#    prerelease: true
-#    auth_token:
-#      secure: E58r+OknoQn8+bsPRT6l3U2K4kfOpDiGCo1C75LkVg+R/RBHpY//J8UCXEfVvyRB
-#    on:
-#      branch: master                # release from master branch only
-#      APPVEYOR_REPO_TAG: true       # deploy on tag push only
