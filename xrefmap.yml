@@ -33364,12 +33364,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)
   fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPAddress, System.Int32)
   nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPAddress, Int32)
-- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean)
-  name: SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean)
-  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPEndPoint, System.Boolean)
-  nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean)
+- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean,System.Security.Cryptography.X509Certificates.X509Certificate2Collection)
+  name: SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean, X509Certificate2Collection)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_System_Boolean_System_Security_Cryptography_X509Certificates_X509Certificate2Collection_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean,System.Security.Cryptography.X509Certificates.X509Certificate2Collection)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPEndPoint, System.Boolean, System.Security.Cryptography.X509Certificates.X509Certificate2Collection)
+  nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean, X509Certificate2Collection)
 - uid: SIPSorcery.SIP.SIPTLSChannel.#ctor*
   name: SIPTLSChannel
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_
