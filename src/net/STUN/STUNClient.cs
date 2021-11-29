@@ -39,7 +39,7 @@ namespace SIPSorcery.Net
         /// <param name="port">The port to use for the request. Defaults to 3478.</param>
         /// <returns>The public IP address of the client.</returns>
         public static IPAddress GetPublicIPAddress(string stunServer, int port = DEFAULT_STUN_PORT) =>
-            GetPublicIPEndPoint(stunServer, port).Address;
+            GetPublicIPEndPoint(stunServer, port)?.Address;
 
         /// <summary>
         /// Used to get the public IP address and port as seen by the STUN server.
