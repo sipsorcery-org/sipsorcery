@@ -66,9 +66,8 @@ For WebRTC testing the [webrtc-echoes](https://github.com/sipsorcery/webrtc-echo
 The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia.Windows` library to play the received audio and only works on Windows (due to lack of .NET audio device support on non-Windows platforms).
 
 ````bash
-dotnet new console --name SIPGetStarted
+dotnet new console --name SIPGetStarted --framework net6.0 --target-framework-override net6.0-windows10.0.22000
 cd SIPGetStarted
-# Manually edit the SIPGetSTarted.csproj file and change the TargetFramework to net6.0-windows10.0.22000.
 dotnet add package SIPSorcery
 dotnet add package SIPSorceryMedia.Windows --prerelease
 # Paste the code below into Program.cs.
