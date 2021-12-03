@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -36,34 +37,55 @@ namespace FFmpegFileAndDevicesTest
 {
     class Program
     {
-        private const bool USE_AUDIO = true;
-        private const bool USE_VIDEO = true;
-        
-        private const bool USE_MICROPHONE = true; // Used if USE_AUDIO == true too
-        private const string MICROPHONE_DEVICE = "audio=Microphone (HD Pro Webcam C920)";
-
-        private const bool USE_CAMERA = true; // Used if USE_VIDEO == true too
-        private const string CAMERA_DEVICE = "video=HD Pro Webcam C920";
-
-        private const bool REPEAT_AUDIO_FILE = true; // Used if USE_AUDIO == true AND USE_MICROPHONE == false
-        private const bool REPEAT_VIDEO_FILE = true; // Used if USE_VIDEO == true AND USE_CAMERA == false
-
-        private const string LIB_PATH = @"C:\ffmpeg-4.3-sipsorcery";
-        //private const string LIB_PATH = @"C:\ffmpeg-4.4.1-full_build-shared\bin";
-
-        private const string AUDIO_FILE_PATH = @"C:\media\simplest_ffmpeg_audio_decoder_skycity1.mp3";
-        //private const string AUDIO_FILE_PATH = @"C:\media\big_buck_bunny.mp4";
-        //private const string AUDIO_FILE_PATH = @"C:\media\file_example_WAV_5MG.wav";
-
-        private const string VIDEO_FILE_PATH = @"C:\media\big_buck_bunny.mp4";
-
-        private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.H264; // VideoCodecsEnum.VP8
-        private const AudioCodecsEnum AUDIO_CODEC = AudioCodecsEnum.PCMU;
+        //  /!\ TO DEFINE WHERE ffmpeg librairies are stored
+        private const string LIB_PATH = @"C:\ffmpeg-4.4.1-full_build-shared\bin";
 
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
-        
+
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
+
+        enum VIDEO_SOURCE
+        {
+            NONE,
+            FILE_OR_STREAM,
+            CAMERA,
+            SCREEN
+        }
+
+        enum AUDIO_SOURCE
+        {
+            NONE,
+            FILE_OR_STREAM,
+            MICROPHONE,
+        }
+
+        //  /!\   Define some path/urls to some media files - to be set according your environment
+        static private string LOCAL_AUDIO_AND_VIDEO_FILE_MP4_BUNNY = @"C:\media\big_buck_bunny.mp4";
+        static private string LOCAL_AUDIO_AND_VIDEO_FILE_MP4_MAX = @"C:\media\max_intro.mp4";
+
+        static private string LOCAL_AUDIO_FILE_MP3 = @"C:\media\simplest_ffmpeg_audio_decoder_skycity1.mp3";
+        static private string LOCAL_AUDIO_FILE_WAV = @"C:\media\file_example_WAV_5MG.wav";
+
+        static private string DISTANT_AUDIO_AND_VIDEO_FILE_WEBM = @"https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm";
+
+        // Define variables according what you want to test
+        static private VIDEO_SOURCE VideoSourceType = VIDEO_SOURCE.FILE_OR_STREAM;
+        static private AUDIO_SOURCE AudioSourceType = AUDIO_SOURCE.FILE_OR_STREAM;
+
+        static private VideoCodecsEnum VideoCodec = VideoCodecsEnum.H264; // or VideoCodecsEnum.VP8
+        static private AudioCodecsEnum AudioCodec = AudioCodecsEnum.PCMU;
+
+        static private String VideoSourceFile = DISTANT_AUDIO_AND_VIDEO_FILE_WEBM; // Used if VideoSource = VIDEO_SOURCE.FILE_OR_STREAM
+        static private String AudioSourceFile = DISTANT_AUDIO_AND_VIDEO_FILE_WEBM; // used if AudioSource = AUDIO_SOURCE.FILE_OR_STREAM;
+
+        static private string MicrophoneDevicePath = "audio=Microphone (HD Pro Webcam C920)"; // Specific info according end-user devices
+        static private string CameraDevicePath = "video=HD Pro Webcam C920"; // Specific info according end-user devices
+        static private string ScreenDevicePath = "desktop"; // On Windows. It's different on MacOS or Linux
+        static private Rectangle ScreenRectangle = new Rectangle(100, 100, 640, 480); // Zone of the screen 
+
+        static private bool RepeatVideoFile = true; // Used if VideoSource == VIDEO_SOURCE.FILE_OR_STREAM
+        static private bool RepeatAudioFile = true; // Used if AudioSource == AUDIO_SOURCE.FILE_OR_STREAM
 
         static void Main()
         {
@@ -92,7 +114,7 @@ namespace FFmpegFileAndDevicesTest
             exitMre.WaitOne();
         }
 
-        private static Task<RTCPeerConnection> CreatePeerConnection()
+        static private Task<RTCPeerConnection> CreatePeerConnection()
         {
             IVideoSource videoSource = null;
             IAudioSource audioSource = null;
@@ -103,37 +125,59 @@ namespace FFmpegFileAndDevicesTest
             };
             var pc = new RTCPeerConnection(config);
 
+            // Initialise FFmpeg librairies
             SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_DEBUG, LIB_PATH);
 
-            if (USE_AUDIO)
+            switch(VideoSourceType)
             {
-                if(USE_MICROPHONE)
-                    audioSource = new SIPSorceryMedia.FFmpeg.FFmpegMicrophoneSource(MICROPHONE_DEVICE, new AudioEncoder());
-                else
-                    audioSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(AUDIO_FILE_PATH, REPEAT_AUDIO_FILE, new AudioEncoder(), false);
+                case VIDEO_SOURCE.FILE_OR_STREAM:
+                    // Do we use same file for Audio ?
+                    if ((AudioSourceType == AUDIO_SOURCE.FILE_OR_STREAM)  && (AudioSourceFile == VideoSourceFile))
+                    {
+                        SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), true);
+                        fileSource.OnEndOfFile += () => pc.Close("source eof");
 
-                audioSource.RestrictFormats(x => x.Codec == AUDIO_CODEC);
+                        videoSource = fileSource as IVideoSource;
+                        audioSource = fileSource as IAudioSource;
+                    }
+                    else
+                    {
+                        SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), true);
+                        fileSource.OnEndOfFile += () => pc.Close("source eof");
 
-                MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
-                pc.addTrack(audioTrack);
+                        videoSource = fileSource as IVideoSource;
+                    }
+                    break;
 
-                audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
-                pc.OnAudioFormatsNegotiated += (audioFormats) => audioSource.SetAudioSourceFormat(audioFormats.First());
+                case VIDEO_SOURCE.CAMERA:
+                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegCameraSource(CameraDevicePath);
+                    break;
+
+                case VIDEO_SOURCE.SCREEN:
+                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegScreenSource(ScreenDevicePath, ScreenRectangle);
+                    break;
             }
 
-
-            if (USE_VIDEO)
+            if(audioSource == null)
             {
-                if (USE_CAMERA)
+                switch(AudioSourceType)
                 {
-                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegCameraSource(CAMERA_DEVICE);
-                }
-                else
-                {
-                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VIDEO_FILE_PATH, REPEAT_VIDEO_FILE, null, USE_VIDEO);
-                }
+                    case AUDIO_SOURCE.FILE_OR_STREAM:
+                        SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(AudioSourceFile, RepeatAudioFile, new AudioEncoder(), false);
+                        fileSource.OnEndOfFile += () => pc.Close("source eof");
 
-                videoSource.RestrictFormats(x => x.Codec == VIDEO_CODEC);
+                        audioSource = fileSource as IAudioSource;
+                        break;
+
+                    case AUDIO_SOURCE.MICROPHONE:
+                        audioSource = new SIPSorceryMedia.FFmpeg.FFmpegMicrophoneSource(MicrophoneDevicePath, new AudioEncoder());
+                        break;
+                }
+            }
+
+            if(videoSource != null)
+            {
+                videoSource.RestrictFormats(x => x.Codec == VideoCodec);
 
                 MediaStreamTrack videoTrack = new MediaStreamTrack(videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
                 pc.addTrack(videoTrack);
@@ -142,7 +186,16 @@ namespace FFmpegFileAndDevicesTest
                 pc.OnVideoFormatsNegotiated += (videoFormats) => videoSource.SetVideoSourceFormat(videoFormats.First());
             }
 
-            //mediaFileSource.OnEndOfFile += () => pc.Close("source eof");
+            if(audioSource != null)
+            {
+                audioSource.RestrictFormats(x => x.Codec == AudioCodec);
+
+                MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+                pc.addTrack(audioTrack);
+
+                audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+                pc.OnAudioFormatsNegotiated += (audioFormats) => audioSource.SetAudioSourceFormat(audioFormats.First());
+            }
 
             pc.onconnectionstatechange += async (state) =>
             {
@@ -182,7 +235,7 @@ namespace FFmpegFileAndDevicesTest
         /// <summary>
         ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
-        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+        static private Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {
             var seriLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
