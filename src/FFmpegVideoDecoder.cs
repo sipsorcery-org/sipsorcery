@@ -1,6 +1,7 @@
 ﻿using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.FFmpeg
@@ -54,7 +55,7 @@ namespace SIPSorceryMedia.FFmpeg
             _isCamera = isCamera;
         }
 
-        public unsafe void InitialiseSource()
+        public unsafe void InitialiseSource(Dictionary<string, string>? decoderOptions = null)
         {
             if (!_isInitialised)
             {
@@ -63,8 +64,17 @@ namespace SIPSorceryMedia.FFmpeg
                 _fmtCtx = ffmpeg.avformat_alloc_context();
                 _fmtCtx->flags = ffmpeg.AVFMT_FLAG_NONBLOCK;
 
+
+                AVDictionary* options = null;
+
+                if(decoderOptions != null)
+                {
+                    foreach(String key in decoderOptions.Keys)
+                        ffmpeg.av_dict_set(&options, key, decoderOptions[key], 0);
+                }
+
                 var pFormatContext = _fmtCtx;
-                ffmpeg.avformat_open_input(&pFormatContext, _sourceUrl, _inputFormat, null).ThrowExceptionIfError();
+                ffmpeg.avformat_open_input(&pFormatContext, _sourceUrl, _inputFormat, &options).ThrowExceptionIfError();
                 ffmpeg.avformat_find_stream_info(_fmtCtx, null).ThrowExceptionIfError();
 
                 ffmpeg.av_dump_format(_fmtCtx, 0, _sourceUrl, 0);
@@ -150,9 +160,7 @@ namespace SIPSorceryMedia.FFmpeg
             try
             {
                 // Decode loop.
-                ffmpeg.av_init_packet(pkt);
-                pkt->data = null;
-                pkt->size = 0;
+                pkt = ffmpeg.av_packet_alloc();
 
             Repeat:
 

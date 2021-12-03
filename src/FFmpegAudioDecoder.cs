@@ -172,9 +172,7 @@ namespace SIPSorceryMedia.FFmpeg
             try
             {
                 // Decode loop.
-                ffmpeg.av_init_packet(pkt);
-                pkt->data = null;
-                pkt->size = 0;
+                pkt = ffmpeg.av_packet_alloc();
 
             Repeat:
 

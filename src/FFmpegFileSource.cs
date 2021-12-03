@@ -66,7 +66,8 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!File.Exists(path))
             {
-                throw new ApplicationException($"Requested path for FFmpeg file source could not be found {path}.");
+                if(!Uri.TryCreate(path, UriKind.Absolute, out Uri result))
+                    throw new ApplicationException($"Requested path is not a valid file path or not a valid Uri: {path}.");
             }
 
             _useAudio = (audioEncoder != null);
@@ -191,7 +192,6 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        //private void FileSourceDecdoer_OnVideoFrame(byte[] buffer, int width, int height)
         private void FileSourceDecoder_OnVideoFrame(ref AVFrame frame)
         {
             if (OnVideoSourceEncodedSample != null && _videoEncoder != null && _videoFormatManager != null && _videoDecoder != null)
@@ -203,11 +203,13 @@ namespace SIPSorceryMedia.FFmpeg
                 AVCodecID aVCodecID = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
 
                 byte[]? encodedSample;
-                if (frame.format == (int)AVPixelFormat.AV_PIX_FMT_YUV420P)
-                {
-                    encodedSample = _videoEncoder.Encode(aVCodecID, frame, frameRate, _forceKeyFrame);
-                }
-                else
+
+                //FOR AN UNKNOWN REASON, IT'S NOT WORKING USING FFmepg 4.4.1 binaries
+                //if (frame.format == (int)AVPixelFormat.AV_PIX_FMT_YUV420P) 
+                //{
+                //    encodedSample = _videoEncoder.Encode(aVCodecID, frame, frameRate, _forceKeyFrame);
+                //}
+                //else
                 {
                     var width = frame.width;
                     var height = frame.height;

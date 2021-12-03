@@ -102,7 +102,6 @@ namespace SIPSorceryMedia.FFmpeg
         public Task ResumeVideo() => Resume();
         public Task CloseVideo() => Close();
 
-         //private void FileSourceDecdoer_OnVideoFrame(byte[] buffer, int width, int height)
         private unsafe void FileSourceDecoder_OnVideoFrame(ref AVFrame frame)
         {
             if (OnVideoSourceEncodedSample != null)
@@ -114,11 +113,13 @@ namespace SIPSorceryMedia.FFmpeg
                 AVCodecID aVCodecId = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
 
                 byte[]? encodedSample;
-                if (frame.format == (int)AVPixelFormat.AV_PIX_FMT_YUV420P)
-                {
-                    encodedSample = _videoEncoder.Encode(aVCodecId, frame, frameRate, _forceKeyFrame);
-                }
-                else
+
+                //FOR AN UNKNOWN REASON, IT'S NOT WORKING USING FFmepg 4.4.1 binaries
+                //if (frame.format == (int)AVPixelFormat.AV_PIX_FMT_YUV420P)
+                //{
+                //    encodedSample = _videoEncoder.Encode(aVCodecId, frame, frameRate, _forceKeyFrame);
+                //}
+                //else
                 {
                     var width = frame.width;
                     var height = frame.height;
