@@ -4,8 +4,17 @@ This project is an example of developing a C# library that can use features from
 
 The classes in this project provide functions to:
 
- - VP8 and H264 video codecs.
- - Use a media file, such as `mp4`, as an audio and/or video source.
+ - Video codecs: VP8, H264
+ - Audio codecs: PCMU, PCMA, G722
+ - Video input:
+    - using local file or remote using URI (like [this](https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm))
+    - using camera (tested on Win10 only for the moment)
+    - using screen (a part or the full screen) (tested on Win10 only for the moment)
+ - Audio input
+    - using local file or remote using URI (like [this](https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm))
+    - using microphone (tested on Win10 only for the moment)
+
+You can set any Video input (or none) with any Audio input (or none)
 
 # Installing FFmpeg
 
@@ -27,6 +36,8 @@ Install [homebrew](https://brew.sh/)
 
 # Testing
 
-Test with the [WebRTC Test Pattern demo](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCTestPatternServer)
+Test 
+- with [FFmpegFileAndDevicesTest](./test/FFmpegFileAndDevicesTest) project
+- or with the [WebRTC Test Pattern demo](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCTestPatternServer)
 
 
