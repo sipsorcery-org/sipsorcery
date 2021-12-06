@@ -177,6 +177,7 @@ namespace SIPSorcery.Net
         private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
         private IPAddress m_bindAddress = null;       // If set the address to use for binding the RTP and control sockets.
         protected int m_bindPort = 0;                     // If non-zero specifies the port number to attempt to bind the first RTP socket on.
+        protected PortRange m_rtpPortRange = null;        // If non-null, overwritws m_bindPort and calls to PortRange.GetNextPort() when trying to bind an RTP socket
         private bool m_rtpEventInProgress;              // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                // The last timestamp used in an RTP packet.    
         private RtpVideoFramer _rtpVideoFramer;
@@ -478,6 +479,7 @@ namespace SIPSorcery.Net
             UseSdpCryptoNegotiation = config.RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoNegotiation;
             m_bindAddress = config.BindAddress;
             m_bindPort = config.BindPort;
+            m_rtpPortRange = config.RtpPortRange;
 
             m_sdpSessionID = Crypto.GetRandomInt(SDP_SESSIONID_LENGTH).ToString();
 
@@ -1370,7 +1372,7 @@ namespace SIPSorcery.Net
         {
             // If RTCP is multiplexed we don't need a control socket.
             int bindPort = (m_bindPort == 0) ? 0 : m_bindPort + m_rtpChannels.Count() * 2;
-            var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress, bindPort);
+            var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress, bindPort, m_rtpPortRange);
             m_rtpChannels.Add(mediaType, rtpChannel);
 
             rtpChannel.OnRTPDataReceived += OnReceive;

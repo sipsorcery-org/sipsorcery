@@ -374,9 +374,11 @@ namespace SIPSorcery.Sys
         /// will be made to bind the RTP and optionally control listeners on it.</param>
         /// <param name="bindPort">Optional. If 0 the choice of port will be left up to the Operating System. If specified
         /// a single attempt will be made to bind on the port.</param>
+        /// <param name="portRange">Optional. If non-null the choice of port will be left up to the PortRange. Multiple ports will be
+        /// tried before giving up. The parameter bindPort is ignored.</param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, int bindPort, out Socket rtpSocket, out Socket controlSocket)
+        public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, int bindPort, PortRange portRange, out Socket rtpSocket, out Socket controlSocket)
         {
             if (bindAddress == null)
             {
@@ -396,6 +398,10 @@ namespace SIPSorcery.Sys
             {
                 try
                 {
+                    if(portRange != null)
+                    {
+                        bindPort = portRange.GetNextPort();
+                    }
                     rtpSocket = CreateBoundUdpSocket(bindPort, bindAddress, createControlSocket);
                     rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
@@ -420,7 +426,7 @@ namespace SIPSorcery.Sys
                 }
                 catch (ApplicationException) { }
 
-                if ((rtpSocket != null && (!createControlSocket || controlSocket != null)) || bindPort != 0)
+                if ((rtpSocket != null && (!createControlSocket || controlSocket != null)) || (bindPort != 0 && portRange == null))
                 {
                     // If a specific bind port was specified only a single attempt to create the socket is made.
                     break;

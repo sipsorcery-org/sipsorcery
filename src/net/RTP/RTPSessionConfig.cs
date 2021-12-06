@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Net;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -70,5 +71,11 @@ namespace SIPSorcery.Net
         /// System select the port number.
         /// </summary>
         public int BindPort { get; set; }
+
+        /// <summary>
+        /// Optional. If specified, overwrites BindPort and calls the PortRange whenever an RTP-Port
+        /// should be created.
+        /// </summary>
+        public PortRange RtpPortRange { get; set; }
     }
 }
