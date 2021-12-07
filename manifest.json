@@ -57,7 +57,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.AudioSendOnlyMediaSession.html",
-          "hash": "bQMSIxa5om44iFTsvOaLSKu0i0FzG2Zx0PadczMKwjE="
+          "hash": "lFK+kIbZy0bqQazvaZRaypr760eCeOUn+2BmXAKJe0c="
         }
       },
       "is_incremental": false,
@@ -177,7 +177,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.MusicMediaSession.html",
-          "hash": "pSglcctlZp5+yX9R1CkDgVcUSSHwTb7vmbgWA4Oif9M="
+          "hash": "/bUMeeLsRXxQcZHKTzFLjZj289/+ENdyogN1noGdU94="
         }
       },
       "is_incremental": false,
@@ -225,7 +225,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.VoIPMediaSession.html",
-          "hash": "dIxyWo+8mzfhxTDQ3MwtSws/gch1yLQVCzCeuN2p6sI="
+          "hash": "sarpJXy9N121tT9bp8hddpQM0lu5X/SSOYOF4Vu4QXw="
         }
       },
       "is_incremental": false,
@@ -1137,7 +1137,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "IUdNdhhWml+wbhMik1qa2Xx9+nRUApCVPWrez4gl/po="
+          "hash": "Pq1I3ICDZk+7TlRfUdJoaP1iPOGsVlApi5w4/6xBiR4="
         }
       },
       "is_incremental": false,
@@ -1257,7 +1257,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPChannel.html",
-          "hash": "C3fMufjTaCnJc0kq/hWf1CmNTSIpPECCeADPD4+xRxQ="
+          "hash": "DtFXdDC41eo0+Im4End+CtWPCeiYO6Pzutb88XvF/3Y="
         }
       },
       "is_incremental": false,
@@ -1317,7 +1317,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPSession.html",
-          "hash": "9OliBLJLULbLAUfZH67oZ6f9MIqa9xah9cA1srEt6YY="
+          "hash": "6DPRNXCNTO/8PxjRJ4kb+QKD/q8t/fPYCRbJB0QR0gA="
         }
       },
       "is_incremental": false,
@@ -1593,7 +1593,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RtpSecureMediaOptionEnum.html",
-          "hash": "Tm06GQ9bGYDhgPmTa17HeQt/t2ytaHwdrgc2KOf/JRE="
+          "hash": "ee1r/f4LSQBn0Y4jmef3Xl/mkHBGP2ZVjwuIgEKb+Gc="
         }
       },
       "is_incremental": false,
@@ -1605,7 +1605,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RtpSessionConfig.html",
-          "hash": "UAak3vPzFstUpTlorfcf8FlY/myKFzVzRLVc58+xR58="
+          "hash": "62I75iillJqnmfg6SpebClnoRSpz2N9ZezV/MdXJFZA="
         }
       },
       "is_incremental": false,
@@ -2529,7 +2529,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SctpUdpTransport.html",
-          "hash": "q8VpKwd1d693jXCj+NgDnxF/CheF3wsMgpKJ4DoKJWs="
+          "hash": "k4/H02ckaFXyTxrkrLRbN0OTYNADLitJjSx7h/JLgs8="
         }
       },
       "is_incremental": false,
@@ -4425,7 +4425,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.NetServices.html",
-          "hash": "XI8BnFWISl1sXFnEYe/FQzCN7Lg2deUJ6xFkB2nnyzQ="
+          "hash": "wigESxHFAEmdA+jRon2hAwWYZTsGeRQp+jpQTzgfXAw="
         }
       },
       "is_incremental": false,
@@ -4450,6 +4450,18 @@
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.PasswordHash.html",
           "hash": "f00JFHJaaD4KN8tE6tPugfIu5Oz8UcfZC0x9kWQG8dk="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.PortRange.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.PortRange.html",
+          "hash": "bvTjlX2K/YAevH/9lF7STEA0tPgRevDhEYFc1q97Yok="
         }
       },
       "is_incremental": false,
@@ -4533,7 +4545,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.html",
-          "hash": "I6L0hWFda0/ZewJEOYdmt+J9rAEVwMJUdchALtL/Ptc="
+          "hash": "MrH4hGQiPPdtRvDRpOagJCrsi/4+XAcpgdSFMsyFWSE="
         }
       },
       "is_incremental": false,
@@ -4593,7 +4605,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "9Eja300VxHRo+jPMvbSDhpyQcddBiNXNvsrhW2ITCqc="
+          "hash": "OTQJuunLujKGuPUCnVvL4glmAmkQ8Hbz9gUHrrbRriI="
         }
       },
       "is_incremental": false,
@@ -4861,7 +4873,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 381,
+          "total_file_count": 382,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {

@@ -10256,12 +10256,12 @@ references:
   commentId: T:SIPSorcery.Net.RTPChannel
   fullName: SIPSorcery.Net.RTPChannel
   nameWithType: RTPChannel
-- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress,System.Int32)
-  name: RTPChannel(Boolean, IPAddress, Int32)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress,System.Int32)
-  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Boolean, System.Net.IPAddress, System.Int32)
-  nameWithType: RTPChannel.RTPChannel(Boolean, IPAddress, Int32)
+- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange)
+  name: RTPChannel(Boolean, IPAddress, Int32, PortRange)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_System_Int32_SIPSorcery_Sys_PortRange_
+  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange)
+  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Boolean, System.Net.IPAddress, System.Int32, SIPSorcery.Sys.PortRange)
+  nameWithType: RTPChannel.RTPChannel(Boolean, IPAddress, Int32, PortRange)
 - uid: SIPSorcery.Net.RTPChannel.#ctor*
   name: RTPChannel
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_
@@ -11573,6 +11573,12 @@ references:
   commentId: F:SIPSorcery.Net.RTPSession.m_bindPort
   fullName: SIPSorcery.Net.RTPSession.m_bindPort
   nameWithType: RTPSession.m_bindPort
+- uid: SIPSorcery.Net.RTPSession.m_rtpPortRange
+  name: m_rtpPortRange
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_m_rtpPortRange
+  commentId: F:SIPSorcery.Net.RTPSession.m_rtpPortRange
+  fullName: SIPSorcery.Net.RTPSession.m_rtpPortRange
+  nameWithType: RTPSession.m_rtpPortRange
 - uid: SIPSorcery.Net.RTPSession.OnAudioFormatsNegotiated
   name: OnAudioFormatsNegotiated
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnAudioFormatsNegotiated
@@ -12121,6 +12127,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RtpSessionConfig.IsRtcpMultiplexed
   nameWithType: RtpSessionConfig.IsRtcpMultiplexed
+- uid: SIPSorcery.Net.RtpSessionConfig.RtpPortRange
+  name: RtpPortRange
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_RtpPortRange
+  commentId: P:SIPSorcery.Net.RtpSessionConfig.RtpPortRange
+  fullName: SIPSorcery.Net.RtpSessionConfig.RtpPortRange
+  nameWithType: RtpSessionConfig.RtpPortRange
+- uid: SIPSorcery.Net.RtpSessionConfig.RtpPortRange*
+  name: RtpPortRange
+  href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_RtpPortRange_
+  commentId: Overload:SIPSorcery.Net.RtpSessionConfig.RtpPortRange
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpSessionConfig.RtpPortRange
+  nameWithType: RtpSessionConfig.RtpPortRange
 - uid: SIPSorcery.Net.RtpSessionConfig.RtpSecureMediaOption
   name: RtpSecureMediaOption
   href: api/SIPSorcery.Net.RtpSessionConfig.html#SIPSorcery_Net_RtpSessionConfig_RtpSecureMediaOption
@@ -16964,12 +16983,12 @@ references:
   commentId: T:SIPSorcery.Net.SctpUdpTransport
   fullName: SIPSorcery.Net.SctpUdpTransport
   nameWithType: SctpUdpTransport
-- uid: SIPSorcery.Net.SctpUdpTransport.#ctor(System.Int32)
-  name: SctpUdpTransport(Int32)
-  href: api/SIPSorcery.Net.SctpUdpTransport.html#SIPSorcery_Net_SctpUdpTransport__ctor_System_Int32_
-  commentId: M:SIPSorcery.Net.SctpUdpTransport.#ctor(System.Int32)
-  fullName: SIPSorcery.Net.SctpUdpTransport.SctpUdpTransport(System.Int32)
-  nameWithType: SctpUdpTransport.SctpUdpTransport(Int32)
+- uid: SIPSorcery.Net.SctpUdpTransport.#ctor(System.Int32,SIPSorcery.Sys.PortRange)
+  name: SctpUdpTransport(Int32, PortRange)
+  href: api/SIPSorcery.Net.SctpUdpTransport.html#SIPSorcery_Net_SctpUdpTransport__ctor_System_Int32_SIPSorcery_Sys_PortRange_
+  commentId: M:SIPSorcery.Net.SctpUdpTransport.#ctor(System.Int32,SIPSorcery.Sys.PortRange)
+  fullName: SIPSorcery.Net.SctpUdpTransport.SctpUdpTransport(System.Int32, SIPSorcery.Sys.PortRange)
+  nameWithType: SctpUdpTransport.SctpUdpTransport(Int32, PortRange)
 - uid: SIPSorcery.Net.SctpUdpTransport.#ctor*
   name: SctpUdpTransport
   href: api/SIPSorcery.Net.SctpUdpTransport.html#SIPSorcery_Net_SctpUdpTransport__ctor_
@@ -37120,15 +37139,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateBoundUdpSocket
   nameWithType: NetServices.CreateBoundUdpSocket
-- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Int32,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
-  name: CreateRtpSocket(Boolean, IPAddress, Int32, out Socket, out Socket)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Int32_System_Net_Sockets_Socket__System_Net_Sockets_Socket__
-  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Int32,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
-  name.vb: CreateRtpSocket(Boolean, IPAddress, Int32, ByRef Socket, ByRef Socket)
-  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.IPAddress, System.Int32, out System.Net.Sockets.Socket, out System.Net.Sockets.Socket)
-  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.IPAddress, System.Int32, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
-  nameWithType: NetServices.CreateRtpSocket(Boolean, IPAddress, Int32, out Socket, out Socket)
-  nameWithType.vb: NetServices.CreateRtpSocket(Boolean, IPAddress, Int32, ByRef Socket, ByRef Socket)
+- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+  name: CreateRtpSocket(Boolean, IPAddress, Int32, PortRange, out Socket, out Socket)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Int32_SIPSorcery_Sys_PortRange_System_Net_Sockets_Socket__System_Net_Sockets_Socket__
+  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+  name.vb: CreateRtpSocket(Boolean, IPAddress, Int32, PortRange, ByRef Socket, ByRef Socket)
+  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.IPAddress, System.Int32, SIPSorcery.Sys.PortRange, out System.Net.Sockets.Socket, out System.Net.Sockets.Socket)
+  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.IPAddress, System.Int32, SIPSorcery.Sys.PortRange, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
+  nameWithType: NetServices.CreateRtpSocket(Boolean, IPAddress, Int32, PortRange, out Socket, out Socket)
+  nameWithType.vb: NetServices.CreateRtpSocket(Boolean, IPAddress, Int32, PortRange, ByRef Socket, ByRef Socket)
 - uid: SIPSorcery.Sys.NetServices.CreateRtpSocket*
   name: CreateRtpSocket
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_
@@ -37320,6 +37339,41 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.PasswordHash.Hash
   nameWithType: PasswordHash.Hash
+- uid: SIPSorcery.Sys.PortRange
+  name: PortRange
+  href: api/SIPSorcery.Sys.PortRange.html
+  commentId: T:SIPSorcery.Sys.PortRange
+  fullName: SIPSorcery.Sys.PortRange
+  nameWithType: PortRange
+- uid: SIPSorcery.Sys.PortRange.#ctor(System.Int32,System.Int32,System.Boolean,System.Nullable{System.Int32})
+  name: PortRange(Int32, Int32, Boolean, Nullable<Int32>)
+  href: api/SIPSorcery.Sys.PortRange.html#SIPSorcery_Sys_PortRange__ctor_System_Int32_System_Int32_System_Boolean_System_Nullable_System_Int32__
+  commentId: M:SIPSorcery.Sys.PortRange.#ctor(System.Int32,System.Int32,System.Boolean,System.Nullable{System.Int32})
+  name.vb: PortRange(Int32, Int32, Boolean, Nullable(Of Int32))
+  fullName: SIPSorcery.Sys.PortRange.PortRange(System.Int32, System.Int32, System.Boolean, System.Nullable<System.Int32>)
+  fullName.vb: SIPSorcery.Sys.PortRange.PortRange(System.Int32, System.Int32, System.Boolean, System.Nullable(Of System.Int32))
+  nameWithType: PortRange.PortRange(Int32, Int32, Boolean, Nullable<Int32>)
+  nameWithType.vb: PortRange.PortRange(Int32, Int32, Boolean, Nullable(Of Int32))
+- uid: SIPSorcery.Sys.PortRange.#ctor*
+  name: PortRange
+  href: api/SIPSorcery.Sys.PortRange.html#SIPSorcery_Sys_PortRange__ctor_
+  commentId: Overload:SIPSorcery.Sys.PortRange.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.PortRange.PortRange
+  nameWithType: PortRange.PortRange
+- uid: SIPSorcery.Sys.PortRange.GetNextPort
+  name: GetNextPort()
+  href: api/SIPSorcery.Sys.PortRange.html#SIPSorcery_Sys_PortRange_GetNextPort
+  commentId: M:SIPSorcery.Sys.PortRange.GetNextPort
+  fullName: SIPSorcery.Sys.PortRange.GetNextPort()
+  nameWithType: PortRange.GetNextPort()
+- uid: SIPSorcery.Sys.PortRange.GetNextPort*
+  name: GetNextPort
+  href: api/SIPSorcery.Sys.PortRange.html#SIPSorcery_Sys_PortRange_GetNextPort_
+  commentId: Overload:SIPSorcery.Sys.PortRange.GetNextPort
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.PortRange.GetNextPort
+  nameWithType: PortRange.GetNextPort
 - uid: SIPSorcery.Sys.RawSocket
   name: RawSocket
   href: api/SIPSorcery.Sys.RawSocket.html

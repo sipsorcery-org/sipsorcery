@@ -113,6 +113,18 @@
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Sys.PasswordHash.html">PasswordHash</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Sys.PortRange.html">PortRange</a></h4>
+      <section><p>Class to manage port allocation for Rtp Ports. Ports are always even, because
+due Rtp data and control ports are always with data on even port and
+control (if any) on data_port + 1</p>
+<p>There are two operation modes:</p>
+<ul>
+<li>The sequential mode which hands out all ports within the assigned range and
+wraps around if the last port was assigned</li>
+<li>The shuffled mode: Ports are handed out evenly distributed within the assigned
+port range.</li>
+</ul>
+</section>
       <h4><a class="xref" href="SIPSorcery.Sys.RawSocket.html">RawSocket</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Sys.SafeXML.html">SafeXML</a></h4>
