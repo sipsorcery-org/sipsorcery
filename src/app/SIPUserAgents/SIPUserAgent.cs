@@ -1671,6 +1671,11 @@ namespace SIPSorcery.SIP.App
                         MediaSession = null;
                     }
 
+                    if (m_sipDialogue.DialogueState == SIPDialogueStateEnum.Terminated)
+                    {
+                        OnCallHungup?.Invoke(m_sipDialogue);
+                    }
+
                     m_sipDialogue = null;
                 }
             }
