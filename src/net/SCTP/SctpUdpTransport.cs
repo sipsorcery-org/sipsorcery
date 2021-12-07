@@ -48,9 +48,10 @@ namespace SIPSorcery.Net
         /// Creates a new UDP transport capable of encapsulating SCTP packets.
         /// </summary>
         /// <param name="udpEncapPort">The port to bind to for the UDP encapsulation socket.</param>
-        public SctpUdpTransport(int udpEncapPort = 0)
+        /// <param name="portRange">Optional. The portRange which should be used to get a listening port.</param>
+        public SctpUdpTransport(int udpEncapPort = 0, PortRange portRange = null)
         {
-            NetServices.CreateRtpSocket(false, IPAddress.IPv6Any, udpEncapPort, out _udpEncapSocket, out _);
+            NetServices.CreateRtpSocket(false, IPAddress.IPv6Any, udpEncapPort, portRange, out _udpEncapSocket, out _);
             UdpReceiver udpReceiver = new UdpReceiver(_udpEncapSocket);
             udpReceiver.OnPacketReceived += OnEncapsulationSocketPacketReceived;
             udpReceiver.OnClosed += OnEncapsulationSocketClosed;
