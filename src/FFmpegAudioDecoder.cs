@@ -3,7 +3,6 @@
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 
@@ -11,10 +10,6 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public class FFmpegAudioDecoder : IDisposable
     {
-        private const int DEFAULT_VIDEO_FRAME_RATE = 30;
-        private const int AUDIO_OUTPUT_SAMPLE_RATE = 8000;
-        private const int MIN_SLEEP_MILLISECONDS = 15;
-
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegAudioDecoder>();
 
         unsafe private AVInputFormat* _inputFormat = null;
@@ -25,7 +20,7 @@ namespace SIPSorceryMedia.FFmpeg
         private double _audioTimebase;
         private double _audioAvgFrameRate;
         private int _maxAudioFrameSpace;
-        unsafe private SwrContext* _swrContext;
+        unsafe internal SwrContext* _swrContext;
 
         private string _sourceUrl;
         private bool _repeat;
@@ -38,10 +33,9 @@ namespace SIPSorceryMedia.FFmpeg
         private Task? _sourceTask;
 
         public delegate void OnFrameDelegate(ref AVFrame frame);
+        public event OnFrameDelegate? OnAudioFrame;
 
-        public event Action<byte[]>? OnAudioFrame;
         public event Action? OnEndOfFile;
-
 
         public unsafe FFmpegAudioDecoder(string url, AVInputFormat* inputFormat = null, bool repeat = false, bool isMicrophone = false)
         {
@@ -86,7 +80,7 @@ namespace SIPSorceryMedia.FFmpeg
                 ffmpeg.av_opt_set_sample_fmt(_swrContext, "out_sample_fmt", AVSampleFormat.AV_SAMPLE_FMT_S16, 0);
 
                 ffmpeg.av_opt_set_int(_swrContext, "in_sample_rate", _audDecCtx->sample_rate, 0);
-                ffmpeg.av_opt_set_int(_swrContext, "out_sample_rate", AUDIO_OUTPUT_SAMPLE_RATE, 0);
+                ffmpeg.av_opt_set_int(_swrContext, "out_sample_rate", Helper.AUDIO_SAMPLING_RATE, 0);
 
                 //FIX:Some Codec's Context Information is missing
                 if (_audDecCtx->channel_layout == 0)
@@ -103,7 +97,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                 _audioTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->time_base);
                 _audioAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->avg_frame_rate);
-                _maxAudioFrameSpace = (int)(_audioAvgFrameRate > 0 ? 1000 / _audioAvgFrameRate : 10000 * AUDIO_OUTPUT_SAMPLE_RATE);
+                _maxAudioFrameSpace = (int)(_audioAvgFrameRate > 0 ? 1000 / _audioAvgFrameRate : 10000 * Helper.AUDIO_SAMPLING_RATE);
             }
         }
 
@@ -200,18 +194,8 @@ namespace SIPSorceryMedia.FFmpeg
                             int recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, avFrame);
                             while (recvRes >= 0)
                             {
-                                int numDstSamples = (int)ffmpeg.av_rescale_rnd(ffmpeg.swr_get_delay(_swrContext, _audDecCtx->sample_rate) + avFrame->nb_samples, AUDIO_OUTPUT_SAMPLE_RATE, _audDecCtx->sample_rate, AVRounding.AV_ROUND_UP);
-                                int bufferSize = ffmpeg.av_samples_get_buffer_size(null, 1, numDstSamples, AVSampleFormat.AV_SAMPLE_FMT_S16, 1);
 
-                                byte[] buffer = new byte[bufferSize];
-                                int dstSampleCount = 0;
-
-                                fixed (byte* pBuffer = buffer)
-                                {
-                                    dstSampleCount = ffmpeg.swr_convert(_swrContext, &pBuffer, bufferSize, avFrame->extended_data, avFrame->nb_samples).ThrowExceptionIfError();
-                                }
-
-                                OnAudioFrame?.Invoke(buffer.Take(dstSampleCount * 2).ToArray());
+                                OnAudioFrame?.Invoke(ref *avFrame);
 
 
                                 if (!_isMicrophone)
@@ -231,7 +215,7 @@ namespace SIPSorceryMedia.FFmpeg
                                     Console.WriteLine($"sleep {sleep} {Math.Min(_maxAudioFrameSpace, sleep)} - firts_dpts:{firts_dpts} - dpts:{dpts} - original_dpts:{original_dpts}");
 
 
-                                    if (sleep > MIN_SLEEP_MILLISECONDS)
+                                    if (sleep > Helper.MIN_SLEEP_MILLISECONDS)
                                         ffmpeg.av_usleep((uint)(Math.Min(_maxAudioFrameSpace, sleep) * 1000));
                                 }
 

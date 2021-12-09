@@ -14,18 +14,17 @@ namespace SIPSorceryMedia.FFmpeg
     {
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegAudioSource>();
 
-        internal static List<AudioFormat> _supportedAudioFormats = new List<AudioFormat>
-        {
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.G722)
-        };
+        internal static List<AudioFormat> _supportedAudioFormats = Helper.GetSupportedAudioFormats();
 
         internal bool _isStarted;
         internal bool _isPaused;
         internal bool _isClosed;
 
-        internal FFmpegAudioDecoder ? _audioDecoder;
+        internal int _currentNbSamples = 0;
+        internal int bufferSize;
+        internal byte[] buffer; // Avoid oto create buffer of same size
+
+        internal FFmpegAudioDecoder _audioDecoder;
         internal IAudioEncoder _audioEncoder;
 
         internal MediaFormatManager<AudioFormat> _audioFormatManager;
@@ -37,8 +36,13 @@ namespace SIPSorceryMedia.FFmpeg
 #pragma warning restore CS0067
         public event Action? OnEndOfFile;
 
-        public unsafe FFmpegAudioSource(IAudioEncoder audioEncoder)
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        public FFmpegAudioSource(IAudioEncoder audioEncoder)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
+            if (audioEncoder == null)
+                throw new ApplicationException("Audio encoder provided is null");
+
             _audioFormatManager = new MediaFormatManager<AudioFormat>(_supportedAudioFormats);
             _audioEncoder = audioEncoder;
         }
@@ -46,7 +50,7 @@ namespace SIPSorceryMedia.FFmpeg
         public unsafe void CreateAudioDecoder(String path, AVInputFormat* avInputFormat, bool repeat = false, bool isMicrophone = false)
         {
             _audioDecoder = new FFmpegAudioDecoder(path, avInputFormat, false, isMicrophone);
-            _audioDecoder.OnAudioFrame += FileSourceDecoder_OnAudioFrame;
+            _audioDecoder.OnAudioFrame += AudioDecoder_OnAudioFrame;
 
             _audioDecoder.OnEndOfFile += () =>
             {
@@ -95,13 +99,34 @@ namespace SIPSorceryMedia.FFmpeg
         public Task ResumeAudio() => Resume();
         public Task CloseAudio() => Close();
 
-        private void FileSourceDecoder_OnAudioFrame(byte[] buffer)
+        private unsafe void AudioDecoder_OnAudioFrame(ref AVFrame avFrame)
         {
-            if (OnAudioSourceEncodedSample != null && _audioEncoder != null && _audioFormatManager != null && buffer.Length > 0)
+            if (OnAudioSourceEncodedSample == null)
+                return;
+
+            // Avoid to create several times buffer of the same size
+            if (_currentNbSamples != avFrame.nb_samples)
+            {
+                bufferSize = ffmpeg.av_samples_get_buffer_size(null, avFrame.channels, avFrame.nb_samples, AVSampleFormat.AV_SAMPLE_FMT_S16, 1);
+                buffer = new byte[bufferSize];
+                _currentNbSamples = avFrame.nb_samples;
+            }
+
+            // Convert audio
+            int dstSampleCount;
+            fixed (byte* pBuffer = buffer)
+                dstSampleCount = ffmpeg.swr_convert(_audioDecoder._swrContext, &pBuffer, bufferSize, avFrame.extended_data, avFrame.nb_samples).ThrowExceptionIfError();
+
+            Console.WriteLine($"nb_samples:{avFrame.nb_samples} - bufferSize:{bufferSize} - dstSampleCount:{dstSampleCount}");
+
+            // Take only necessary data
+            byte[] resultBuffer = buffer.Take(dstSampleCount * 2).ToArray();
+            if(resultBuffer.Length > 0)
             {
                 // FFmpeg AV_SAMPLE_FMT_S16 will store the bytes in the correct endianess for the underlying platform.
-                short[] pcm = buffer.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(buffer, i * 2)).ToArray();
+                short[] pcm = resultBuffer.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(resultBuffer, i * 2)).ToArray();
                 var encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
+
                 OnAudioSourceEncodedSample((uint)encodedSample.Length, encodedSample);
             }
         }

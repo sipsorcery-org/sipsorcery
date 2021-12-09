@@ -13,12 +13,7 @@ namespace SIPSorceryMedia.FFmpeg
     {
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoSource>();
 
-        internal static List<VideoFormat> _supportedVideoFormats = new List<VideoFormat>
-        {
-            new VideoFormat(VideoCodecsEnum.VP8, Helper.VP8_FORMATID, Helper.VIDEO_SAMPLING_RATE),
-            new VideoFormat(VideoCodecsEnum.H264, Helper.H264_FORMATID, Helper.VIDEO_SAMPLING_RATE)
-        };
-
+        internal static List<VideoFormat> _supportedVideoFormats = Helper.GetSupportedVideoFormats();
 
         internal bool _isStarted;
         internal bool _isPaused;
@@ -49,7 +44,7 @@ namespace SIPSorceryMedia.FFmpeg
         public unsafe void CreateVideoDecoder(String path, AVInputFormat* avInputFormat, bool repeat = false, bool isCamera = false)
         {
             _videoDecoder = new FFmpegVideoDecoder(path, avInputFormat, false, isCamera);
-            _videoDecoder.OnVideoFrame += FileSourceDecoder_OnVideoFrame;
+            _videoDecoder.OnVideoFrame += VideoDecoder_OnVideoFrame;
 
             _videoDecoder.OnEndOfFile += () =>
             {
@@ -63,7 +58,6 @@ namespace SIPSorceryMedia.FFmpeg
         {
             _videoDecoder?.InitialiseSource(decoderOptions);
         }
-
 
         public bool IsPaused() => _isPaused;
 
@@ -91,12 +85,12 @@ namespace SIPSorceryMedia.FFmpeg
         public Task ResumeVideo() => Resume();
         public Task CloseVideo() => Close();
 
-        private unsafe void FileSourceDecoder_OnVideoFrame(ref AVFrame frame)
+        private unsafe void VideoDecoder_OnVideoFrame(ref AVFrame frame)
         {
             if (OnVideoSourceEncodedSample != null)
             {
                 int frameRate = (int)_videoDecoder.VideoAverageFrameRate;
-                frameRate = (frameRate <= 0) ? Helper.DEFAULT_FRAME_RATE : frameRate;
+                frameRate = (frameRate <= 0) ? Helper.DEFAULT_VIDEO_FRAME_RATE : frameRate;
                 uint timestampDuration = (uint)(Helper.VIDEO_SAMPLING_RATE / frameRate);
 
                 var width = frame.width;
@@ -113,7 +107,7 @@ namespace SIPSorceryMedia.FFmpeg
                         AVPixelFormat.AV_PIX_FMT_YUV420P);
                 }
 
-                frameRate = (frameRate <= 0) ? Helper.DEFAULT_FRAME_RATE : frameRate;
+                frameRate = (frameRate <= 0) ? Helper.DEFAULT_VIDEO_FRAME_RATE : frameRate;
                 byte[] sample = _videoFrameConverter.ConvertFrame(ref frame);
 
                 AVCodecID aVCodecId = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);

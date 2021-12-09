@@ -10,18 +10,9 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public class FFmpegVideoEndPoint : IVideoSink, IVideoSource, IDisposable
     {
-        private const int VIDEO_SAMPLING_RATE = 90000;
-        private const int DEFAULT_FRAMES_PER_SECOND = 30;
-        private const int VP8_INITIAL_FORMATID = 96;
-        private const int H264_INITIAL_FORMATID = 100;
-
         public ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
 
-        public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
-        {
-            new VideoFormat(VideoCodecsEnum.VP8, VP8_INITIAL_FORMATID, VIDEO_SAMPLING_RATE),
-            new VideoFormat(VideoCodecsEnum.H264, H264_INITIAL_FORMATID, VIDEO_SAMPLING_RATE)
-        };
+        public static readonly List<VideoFormat> SupportedFormats = Helper.GetSupportedVideoFormats();
 
         private FFmpegVideoEncoder _ffmpegEncoder;
 
@@ -126,7 +117,7 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 if (OnVideoSourceEncodedSample != null)
                 {
-                    uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : DEFAULT_FRAMES_PER_SECOND;
+                    uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : Helper.DEFAULT_VIDEO_FRAME_RATE;
                     if(fps == 0)
                     {
                         fps = 1;
@@ -139,7 +130,7 @@ namespace SIPSorceryMedia.FFmpeg
                     if (encodedBuffer != null)
                     {
                         //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
-                        uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
+                        uint durationRtpTS = Helper.VIDEO_SAMPLING_RATE / fps;
 
                         // Note the event handler can be removed while the encoding is in progress.
                         OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
