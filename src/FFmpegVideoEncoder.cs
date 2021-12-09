@@ -9,11 +9,7 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public sealed unsafe class FFmpegVideoEncoder : IVideoEncoder, IDisposable
     {
-        private static readonly List<VideoFormat> _supportedFormats = new List<VideoFormat>
-        {
-            new VideoFormat(VideoCodecsEnum.VP8, Helper.VP8_FORMATID),
-            new VideoFormat(VideoCodecsEnum.H264, Helper.H264_FORMATID)
-        };
+        private static readonly List<VideoFormat> _supportedFormats = Helper.GetSupportedVideoFormats();
 
         public List<VideoFormat> SupportedFormats
         {
@@ -63,7 +59,7 @@ namespace SIPSorceryMedia.FFmpeg
             }
 
 #pragma warning disable CS8603
-            return Encode(codecID, sample, width, height, Helper.DEFAULT_FRAME_RATE, false, avPixelFormat);
+            return Encode(codecID, sample, width, height, Helper.DEFAULT_VIDEO_FRAME_RATE, false, avPixelFormat);
 #pragma warning restore
         }
 

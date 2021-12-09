@@ -8,10 +8,6 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public class FFmpegVideoDecoder : IDisposable
     {
-        private const int DEFAULT_VIDEO_FRAME_RATE = 30;
-        private const int AUDIO_OUTPUT_SAMPLE_RATE = 8000;
-        private const int MIN_SLEEP_MILLISECONDS = 15;
-
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoDecoder>();
 
         unsafe private AVInputFormat* _inputFormat = null;
@@ -33,7 +29,6 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isDisposed;
         private Task? _sourceTask;
 
-        //public unsafe delegate void OnFrameDelegate(ref AVFrame frame);
         public delegate void OnFrameDelegate(ref AVFrame frame);
         public event OnFrameDelegate? OnVideoFrame;
 
@@ -93,7 +88,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                 _videoTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->time_base);
                 _videoAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->avg_frame_rate);
-                _maxVideoFrameSpace = (int)(_videoAvgFrameRate > 0 ? 1000 / _videoAvgFrameRate : 1000 / DEFAULT_VIDEO_FRAME_RATE);
+                _maxVideoFrameSpace = (int)(_videoAvgFrameRate > 0 ? 1000 / _videoAvgFrameRate : 1000 / Helper.DEFAULT_VIDEO_FRAME_RATE);
             }
         }
 
@@ -208,7 +203,7 @@ namespace SIPSorceryMedia.FFmpeg
                                     //Console.WriteLine($"Decoded video frame {frame->width}x{frame->height}, ts {frame->best_effort_timestamp}, delta {frame->best_effort_timestamp - prevVidTs}, dpts {dpts}.");
 
                                     int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
-                                    if (sleep > MIN_SLEEP_MILLISECONDS)
+                                    if (sleep > Helper.MIN_SLEEP_MILLISECONDS)
                                     {
                                         ffmpeg.av_usleep((uint)(Math.Min(_maxVideoFrameSpace, sleep) * 1000));
                                     }
