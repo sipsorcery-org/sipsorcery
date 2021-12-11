@@ -1822,8 +1822,11 @@ namespace SIPSorcery.Net
 
             // See https://tools.ietf.org/html/rfc5389#section-15.4
             string key = $"{username}:{Encoding.UTF8.GetString(realm)}:{password}";
+            // TODO: When .NET Standard and Framework support are deprecated this pragma can be removed.
+#pragma warning disable SYSLIB0021
             MD5 md5 = new MD5CryptoServiceProvider();
             byte[] md5Hash = md5.ComputeHash(Encoding.UTF8.GetBytes(key));
+#pragma warning restore SYSLIB0021
 
             return stunRequest.ToByteBuffer(md5Hash, true);
         }

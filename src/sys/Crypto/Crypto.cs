@@ -27,6 +27,11 @@ namespace SIPSorcery.Sys
 {
     public class Crypto
     {
+        // TODO: When .NET Standard and Framework support are deprecated these pragmas can be removed.
+#pragma warning disable SYSLIB0001
+#pragma warning disable SYSLIB0021
+#pragma warning disable SYSLIB0023
+
         public const int DEFAULT_RANDOM_LENGTH = 10;    // Number of digits to return for default random numbers.
         public const int AES_KEY_SIZE = 32;
         public const int AES_IV_SIZE = 16;
@@ -50,56 +55,6 @@ namespace SIPSorcery.Sys
         }
 
         private static RNGCryptoServiceProvider m_randomProvider = new RNGCryptoServiceProvider();
-
-        //public static string RSAEncrypt(string xmlKey, string plainText)
-        //{
-        //    return Convert.ToBase64String(RSAEncryptRaw(xmlKey, plainText));
-        //}
-
-        //public static byte[] RSAEncryptRaw(string xmlKey, string plainText)
-        //{
-        //    try
-        //    {
-        //        RSACryptoServiceProvider key = GetRSAProvider(xmlKey);
-
-        //        return key.Encrypt(Encoding.ASCII.GetBytes(plainText), true);
-        //    }
-        //    catch (Exception excp)
-        //    {
-        //        logger.LogError("Exception RSAEncrypt. " + excp.Message);
-        //        throw;
-        //    }
-        //}
-
-        //public static string RSADecrypt(string xmlKey, string cypherText)
-        //{
-        //    return Encoding.ASCII.GetString(RSADecryptRaw(xmlKey, Convert.FromBase64String((cypherText))));
-        //}
-
-        //public static byte[] RSADecryptRaw(string xmlKey, byte[] cypher)
-        //{
-        //    try
-        //    {
-        //        RSACryptoServiceProvider key = GetRSAProvider(xmlKey);
-
-        //        return key.Decrypt(cypher, true);
-        //    }
-        //    catch (Exception excp)
-        //    {
-        //        logger.LogError("Exception RSADecrypt. " + excp.Message);
-        //        throw;
-        //    }
-        //}
-
-        //public static RSACryptoServiceProvider GetRSAProvider(string xmlKey)
-        //{
-        //    CspParameters cspParam = new CspParameters();
-        //    cspParam.Flags = CspProviderFlags.UseMachineKeyStore;
-        //    RSACryptoServiceProvider key = new RSACryptoServiceProvider(cspParam);
-        //    key.FromXmlString(xmlKey);
-
-        //    return key;
-        //}
 
         public static string SymmetricEncrypt(string key, string iv, string plainText)
         {
@@ -290,12 +245,6 @@ namespace SIPSorcery.Sys
             return BitConverter.ToUInt64(uint64Buffer, 0);
         }
 
-        //public static string GetRandomString(int length)
-        //{
-        //    string randomStr = GetRandomInt(length).ToString();
-        //    return (randomStr.Length > length) ? randomStr.Substring(0, length) : randomStr;
-        //}
-
         public static byte[] createRandomSalt(int length)
         {
             byte[] randBytes = new byte[length];
@@ -450,4 +399,8 @@ namespace SIPSorcery.Sys
             }
         }
     }
+
+#pragma warning restore SYSLIB0001
+#pragma warning restore SYSLIB0021
+#pragma warning restore SYSLIB0023
 }

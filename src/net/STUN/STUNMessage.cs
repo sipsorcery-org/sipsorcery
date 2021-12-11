@@ -169,7 +169,7 @@ namespace SIPSorcery.Net
             {
                 var integrityAttibtue = new STUNAttribute(STUNAttributeTypesEnum.MessageIntegrity, new byte[MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH]);
 
-                HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey, true);
+                HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey);
                 byte[] hmac = hmacSHA.ComputeHash(buffer, 0, attributeIndex);
 
                 integrityAttibtue.Value = hmac;
@@ -247,7 +247,7 @@ namespace SIPSorcery.Net
                         Buffer.BlockCopy(BitConverter.GetBytes(length), 0, _receivedBuffer, 2, 2);
                     }
 
-                    HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey, true);
+                    HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey);
                     byte[] calculatedHmac = hmacSHA.ComputeHash(_receivedBuffer, 0, preImageLength);
 
                     //logger.LogDebug($"Received Message integrity HMAC  : {messageIntegrityAttribute.Value.HexStr()}.");

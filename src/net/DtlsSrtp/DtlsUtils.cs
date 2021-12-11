@@ -287,7 +287,10 @@ namespace SIPSorcery.Net
 
         public static AsymmetricKeyParameter LoadPrivateKeyResource(X509Certificate2 certificate)
         {
+            // TODO: When .NET Standard and Framework support are deprecated this pragma can be removed.
+#pragma warning disable SYSLIB0028
             return DotNetUtilities.GetKeyPair(certificate.PrivateKey).Private;
+#pragma warning restore SYSLIB0028
         }
 
         public static AsymmetricKeyParameter LoadPrivateKeyResource(string resource)
@@ -417,7 +420,10 @@ namespace SIPSorcery.Net
                 var rsaparams = new RsaPrivateCrtKeyParameters(
                     rsa.Modulus, rsa.PublicExponent, rsa.PrivateExponent, rsa.Prime1, rsa.Prime2, rsa.Exponent1, rsa.Exponent2, rsa.Coefficient);
 
+                // TODO: When .NET Standard and Framework support are deprecated this pragma can be removed.
+#pragma warning disable SYSLIB0028
                 x509.PrivateKey = ToRSA(rsaparams);
+#pragma warning restore SYSLIB0028
                 return x509;
             }
             catch

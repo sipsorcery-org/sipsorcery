@@ -377,6 +377,8 @@ namespace SIPSorcery.SIP
 
         public static string GetHashHex(DigestAlgorithmsEnum hashAlg, string val)
         {
+            // TODO: When .NET Standard and Framework support are deprecated this pragma can be removed.
+#pragma warning disable SYSLIB0021
             switch (hashAlg)
             {
                 case DigestAlgorithmsEnum.SHA256:
@@ -399,6 +401,7 @@ namespace SIPSorcery.SIP
                         return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).HexStr().ToLower();
                     }
             }
+#pragma warning restore SYSLIB0021
         }
     }
 }
