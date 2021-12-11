@@ -565,7 +565,7 @@ namespace SIPSorcery.SIP
             DeliveryFailed = true;
             TimedOutAt = now;
             HasTimedOut = true;
-            TransactionTraceMessage?.Invoke(this, $"Transaction failed due to a timeout {this.TransactionFinalResponse.ShortDescription}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction failed due to a timeout {this.TransactionFinalResponse?.ShortDescription}");
             TransactionFailed?.Invoke(this, SocketError.TimedOut);
             UpdateTransactionState(SIPTransactionStatesEnum.Terminated);
         }
@@ -574,7 +574,7 @@ namespace SIPSorcery.SIP
         {
             DeliveryPending = false;
             DeliveryFailed = true;
-            TransactionTraceMessage?.Invoke(this, $"Transaction failed {failureReason} {this.TransactionFinalResponse.ShortDescription}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction failed {failureReason} {this.TransactionFinalResponse?.ShortDescription}");
             TransactionFailed?.Invoke(this, failureReason);
             UpdateTransactionState(SIPTransactionStatesEnum.Terminated);
         }
@@ -615,7 +615,7 @@ namespace SIPSorcery.SIP
 
         public void OnRetransmitFinalResponse()
         {
-            TransactionTraceMessage?.Invoke(this, $"Transaction send response retransmit {Retransmits} {this.TransactionFinalResponse.ShortDescription}");
+            TransactionTraceMessage?.Invoke(this, $"Transaction send response retransmit {Retransmits} {this.TransactionFinalResponse?.ShortDescription}");
         }
 
         public void OnRetransmitProvisionalResponse()
