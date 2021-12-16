@@ -196,9 +196,18 @@ namespace SIPSorcery.SIP.App
                         if (m_subscribed)
                         {
                             // Schedule the subscription based on its expiry.
-                            logger.LogDebug($"Rescheduling next attempt for a successful subscription to {m_resourceURI} in {m_expiry - RESCHEDULE_SUBSCRIBE_MARGIN}s.");
-                            int expiry = (m_expiry > UInt32.MaxValue) ? Int32.MaxValue : (int)m_expiry;
-                            m_waitForNextSubscribe.WaitOne((expiry - RESCHEDULE_SUBSCRIBE_MARGIN) * 1000);
+                            logger.LogDebug(
+                                $"Rescheduling next attempt for a successful subscription to {m_resourceURI} in {m_expiry - RESCHEDULE_SUBSCRIBE_MARGIN}s.");
+                            int expiry = (m_expiry >= UInt32.MaxValue) ? -1 : (int)m_expiry; // In case m_expiry is set to
+
+                            if (expiry == Int32.MaxValue)
+                            {
+                                m_waitForNextSubscribe.WaitOne(Int32.MaxValue);
+                            }
+                            else
+                            {
+                                m_waitForNextSubscribe.WaitOne((expiry - RESCHEDULE_SUBSCRIBE_MARGIN) * 1000);
+                            }
                         }
                         else
                         {
