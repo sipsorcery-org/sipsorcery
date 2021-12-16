@@ -51,7 +51,7 @@ namespace SIPSorcery.SIP.App
         private string m_authDomain;
         private string m_authPassword;
         private string m_filter;
-        private int m_expiry;
+        private long m_expiry;
         private int m_localCSeq;
         private int m_remoteCSeq;
         private string m_subscribeCallID;
@@ -197,7 +197,8 @@ namespace SIPSorcery.SIP.App
                         {
                             // Schedule the subscription based on its expiry.
                             logger.LogDebug($"Rescheduling next attempt for a successful subscription to {m_resourceURI} in {m_expiry - RESCHEDULE_SUBSCRIBE_MARGIN}s.");
-                            m_waitForNextSubscribe.WaitOne((m_expiry - RESCHEDULE_SUBSCRIBE_MARGIN) * 1000);
+                            int expiry = (m_expiry > UInt32.MaxValue) ? Int32.MaxValue : (int)m_expiry;
+                            m_waitForNextSubscribe.WaitOne((expiry - RESCHEDULE_SUBSCRIBE_MARGIN) * 1000);
                         }
                         else
                         {
@@ -220,7 +221,7 @@ namespace SIPSorcery.SIP.App
         /// Initiates a SUBSCRIBE request to a notification server.
         /// </summary>
         /// <param name="subscribeURI">The SIP user that dialog notifications are being subscribed to.</param>
-        public void Subscribe(SIPURI subscribeURI, int expiry, SIPEventPackagesEnum sipEventPackage, string subscribeCallID, SIPURI contactURI)
+        public void Subscribe(SIPURI subscribeURI, long expiry, SIPEventPackagesEnum sipEventPackage, string subscribeCallID, SIPURI contactURI)
         {
             try
             {
