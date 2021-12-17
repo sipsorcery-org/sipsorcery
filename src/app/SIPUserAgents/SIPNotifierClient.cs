@@ -200,7 +200,7 @@ namespace SIPSorcery.SIP.App
                                 $"Rescheduling next attempt for a successful subscription to {m_resourceURI} in {m_expiry - RESCHEDULE_SUBSCRIBE_MARGIN}s.");
                             int expiry = (m_expiry >= UInt32.MaxValue) ? -1 : (int)m_expiry; // In case m_expiry is set to
 
-                            if (expiry == Int32.MaxValue)
+                            if (expiry == -1)
                             {
                                 m_waitForNextSubscribe.WaitOne(Int32.MaxValue);
                             }
