@@ -18,6 +18,9 @@ using Xunit;
 
 namespace SIPSorcery.Net.IntegrationTests
 {
+    // TODO: When .NET Standard and Framework support are deprecated these pragmas can be removed.
+#pragma warning disable SYSLIB0028
+
     [Trait("Category", "integration")]
     public class DtlsUtilsUnitTest
     {
@@ -127,4 +130,6 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.Equal(coreFxFingerprint, bcFingerprint);
         }
     }
+
+#pragma warning restore SYSLIB0028
 }
