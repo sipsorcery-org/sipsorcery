@@ -19,6 +19,9 @@ using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
+    // TODO: When .NET Standard and Framework support are deprecated these pragmas can be removed.
+#pragma warning disable SYSLIB0021
+
     [Trait("Category", "unit")]
     public class SIPRequestUnitTest
     {
@@ -1212,4 +1215,6 @@ a=ssrc:172341600 cname:ee6f407e-d848-44b3-a451-e8cf2d0e22d9
             logger.LogDebug("-----------------------------------------");
         }
     }
+
+#pragma warning restore SYSLIB0021
 }

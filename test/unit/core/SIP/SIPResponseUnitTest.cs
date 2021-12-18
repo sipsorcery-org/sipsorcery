@@ -18,6 +18,9 @@ using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
+    // TODO: When .NET Standard and Framework support are deprecated these pragmas can be removed.
+#pragma warning disable SYSLIB0021
+
     [Trait("Category", "unit")]
     public class SIPResponseUnitTest
     {
@@ -461,4 +464,6 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(Regex.Match(resp.ToString(), "CSeq: 0 OPTIONS", RegexOptions.Multiline).Success);
         }
     }
+
+#pragma warning restore SYSLIB0021
 }
