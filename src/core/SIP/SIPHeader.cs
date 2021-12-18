@@ -634,16 +634,20 @@ namespace SIPSorcery.SIP
         }
 
         // A value of -1 indicates the header did not contain an expires parameter setting.
-        public int Expires
+        public long Expires
         {
             get
             {
-                int expires = -1;
+                long expires = -1;
 
                 if (ContactParameters.Has(EXPIRES_PARAMETER_KEY))
                 {
                     string expiresStr = ContactParameters.Get(EXPIRES_PARAMETER_KEY);
-                    Int32.TryParse(expiresStr, out expires);
+                    Int64.TryParse(expiresStr, out expires);
+                    if (expires > UInt32.MaxValue)
+                    {
+                        expires = UInt32.MaxValue;
+                    }
                 }
 
                 return expires;
@@ -1321,10 +1325,10 @@ namespace SIPSorcery.SIP
         public string ErrorInfo;
         public string ETag;                                 // added by Tilmann: look RFC3903
         public string Event;                                // RFC3265 SIP Events.
-        public int Expires = -1;
+        public long Expires = -1;
         public SIPFromHeader From;
         public string InReplyTo;
-        public int MinExpires = -1;
+        public long MinExpires = -1;
         public int MaxForwards = SIPConstants.DEFAULT_MAX_FORWARDS;
         public string MIMEVersion;
         public string Organization;
@@ -1553,7 +1557,7 @@ namespace SIPSorcery.SIP
                         {
                             //sipHeader.RawExpires += headerValue;
 
-                            if (!Int32.TryParse(headerValue, out sipHeader.Expires))
+                            if (!Int64.TryParse(headerValue, out sipHeader.Expires))
                             {
                                 logger.LogWarning("The Expires value was not a valid integer, " + headerLine + ".");
                             }
@@ -1562,7 +1566,7 @@ namespace SIPSorcery.SIP
                         #region Min-Expires
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_MINEXPIRES.ToLower())
                         {
-                            if (!Int32.TryParse(headerValue, out sipHeader.MinExpires))
+                            if (!Int64.TryParse(headerValue, out sipHeader.MinExpires))
                             {
                                 logger.LogWarning("The Min-Expires value was not a valid integer, " + headerLine + ".");
                             }
