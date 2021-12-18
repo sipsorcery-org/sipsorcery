@@ -24447,12 +24447,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPNotifierClient.Stop
   nameWithType: SIPNotifierClient.Stop
-- uid: SIPSorcery.SIP.App.SIPNotifierClient.Subscribe(SIPSorcery.SIP.SIPURI,System.Int32,SIPSorcery.SIP.SIPEventPackagesEnum,System.String,SIPSorcery.SIP.SIPURI)
-  name: Subscribe(SIPURI, Int32, SIPEventPackagesEnum, String, SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Subscribe_SIPSorcery_SIP_SIPURI_System_Int32_SIPSorcery_SIP_SIPEventPackagesEnum_System_String_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient.Subscribe(SIPSorcery.SIP.SIPURI,System.Int32,SIPSorcery.SIP.SIPEventPackagesEnum,System.String,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Subscribe(SIPSorcery.SIP.SIPURI, System.Int32, SIPSorcery.SIP.SIPEventPackagesEnum, System.String, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPNotifierClient.Subscribe(SIPURI, Int32, SIPEventPackagesEnum, String, SIPURI)
+- uid: SIPSorcery.SIP.App.SIPNotifierClient.Subscribe(SIPSorcery.SIP.SIPURI,System.Int64,SIPSorcery.SIP.SIPEventPackagesEnum,System.String,SIPSorcery.SIP.SIPURI)
+  name: Subscribe(SIPURI, Int64, SIPEventPackagesEnum, String, SIPURI)
+  href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Subscribe_SIPSorcery_SIP_SIPURI_System_Int64_SIPSorcery_SIP_SIPEventPackagesEnum_System_String_SIPSorcery_SIP_SIPURI_
+  commentId: M:SIPSorcery.SIP.App.SIPNotifierClient.Subscribe(SIPSorcery.SIP.SIPURI,System.Int64,SIPSorcery.SIP.SIPEventPackagesEnum,System.String,SIPSorcery.SIP.SIPURI)
+  fullName: SIPSorcery.SIP.App.SIPNotifierClient.Subscribe(SIPSorcery.SIP.SIPURI, System.Int64, SIPSorcery.SIP.SIPEventPackagesEnum, System.String, SIPSorcery.SIP.SIPURI)
+  nameWithType: SIPNotifierClient.Subscribe(SIPURI, Int64, SIPEventPackagesEnum, String, SIPURI)
 - uid: SIPSorcery.SIP.App.SIPNotifierClient.Subscribe*
   name: Subscribe
   href: api/SIPSorcery.SIP.App.SIPNotifierClient.html#SIPSorcery_SIP_App_SIPNotifierClient_Subscribe_
