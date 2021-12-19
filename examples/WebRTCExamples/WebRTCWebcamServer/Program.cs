@@ -38,7 +38,9 @@ namespace demo
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
         //private const string WEBCAM_NAME = "Logitech QuickCam Pro 9000";
-        private const string WEBCAM_NAME = "HD Pro Webcam C920";
+        private const string WEBCAM_FFMPEG_NAME = "video=HD Pro Webcam C920";
+        //private const string WEBCAM_NAME = "HD Pro Webcam C920";
+        private const string MICROPHONE_FFMPEG_PATH = "audio=Microphone (HD Pro Webcam C920)"; // Specific info according end-user devices
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
@@ -64,6 +66,9 @@ namespace demo
             //    throw new ApplicationException("Could not initialise video capture device.");
             //}
             //await winVideoEP.StartVideo();
+
+            // Initialise FFmpeg librairies
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, Environment.CurrentDirectory);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -94,28 +99,30 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VpxVideoEncoder(), WEBCAM_NAME);
+            var videoEP = new FFmpegCameraSource(WEBCAM_FFMPEG_NAME);
+            var audioEP = new FFmpegMicrophoneSource(MICROPHONE_FFMPEG_PATH, new AudioEncoder());
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VpxVideoEncoder(), WEBCAM_NAME);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new FFmpegVideoEncoder(), WEBCAM_NAME);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME, 1920, 1080, 30);
             //winVideoEP.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264);
-            bool initResult = await winVideoEP.InitialiseVideoSourceDevice();
-            if (!initResult)
-            {
-                throw new ApplicationException("Could not initialise video capture device.");
-            }
-            var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+            //bool initResult = await videoEP.InitialiseVideoSourceDevice();
+            //if (!initResult)
+            //{
+            //    throw new ApplicationException("Could not initialise video capture device.");
+            //}
+            //var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(winVideoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(videoEP.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(videoTrack);
-            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(audioTrack);
 
-            winVideoEP.OnVideoSourceEncodedSample += pc.SendVideo;
-            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+            videoEP.OnVideoSourceEncodedSample += pc.SendVideo;
+            audioEP.OnAudioSourceEncodedSample += pc.SendAudio;
             pc.OnVideoFormatsNegotiated += (videoFormats) =>
-                 winVideoEP.SetVideoSourceFormat(videoFormats.First());
+                 videoEP.SetVideoSourceFormat(videoFormats.First());
             pc.OnAudioFormatsNegotiated += (audioFormats) =>
-                audioSource.SetAudioSourceFormat(audioFormats.First());
+               audioEP.SetAudioSourceFormat(audioFormats.First());
 
             pc.onconnectionstatechange += async (state) =>
             {
@@ -123,8 +130,8 @@ namespace demo
 
                 if (state == RTCPeerConnectionState.connected)
                 {
-                    await audioSource.StartAudio();
-                    await winVideoEP.StartVideo();
+                    await audioEP.StartAudio();
+                    await videoEP.StartVideo();
                 }
                 else if (state == RTCPeerConnectionState.failed)
                 {
@@ -132,8 +139,8 @@ namespace demo
                 }
                 else if (state == RTCPeerConnectionState.closed)
                 {
-                    await winVideoEP.CloseVideo();
-                    await audioSource.CloseAudio();
+                    await videoEP.CloseVideo();
+                    await audioEP.CloseAudio();
                 }
             };
 

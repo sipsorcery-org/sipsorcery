@@ -17,4 +17,8 @@
     <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.31-pre" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\SIPSorceryMedia.FFmpeg\src\SIPSorceryMedia.FFmpeg.csproj" />
+  </ItemGroup>
+
 </Project>
