@@ -505,6 +505,7 @@ namespace SIPSorcery.SIP.App
             {
                 MediaSession = mediaSession;
                 MediaSession.OnRtpEvent += OnRemoteRtpEvent;
+                MediaSession.OnTimeout += OnRtpTimeout;
 
                 var sdpAnnounceAddress = mediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
@@ -660,6 +661,7 @@ namespace SIPSorcery.SIP.App
 
                 MediaSession = mediaSession;
                 MediaSession.OnRtpEvent += OnRemoteRtpEvent;
+                MediaSession.OnTimeout += OnRtpTimeout;
                 MediaSession.OnRtpClosed += (reason) =>
                 {
                     if (MediaSession?.IsClosed == false)
@@ -1429,6 +1431,11 @@ namespace SIPSorcery.SIP.App
             return Task.FromResult(SocketError.Success);
         }
 
+        /// <summary>
+        /// Once a call is established certain requests may need to be authenticated, e.g. a BYE request may be challenged. This method
+        /// looks up the credentials that were used for the initial INVITE request.
+        /// </summary>
+        /// <returns>A username and password pair.</returns>
         private (string, string) GetUsernameAndPassword()
         {
             string username = null;
@@ -1447,7 +1454,6 @@ namespace SIPSorcery.SIP.App
             }
             return (username, password);
         }
-
 
         /// <summary>
         /// Takes care of sending a response based on whether the outbound proxy is set or not.
@@ -1791,6 +1797,17 @@ namespace SIPSorcery.SIP.App
                     _rtpEventSsrc = 0;
                 }
             }
+        }
+
+        /// <summary>
+        /// Event handler for the audio or video RTP session timing out.
+        /// </summary>
+        /// <param name="mediaType">The media type, aduio or video, that timed out.</param>
+        private void OnRtpTimeout(SDPMediaTypesEnum mediaType)
+        {
+            logger.LogWarning($"RTP has timed out for media {mediaType}, hanging up call.");
+
+            Hangup();
         }
 
         /// <summary>
