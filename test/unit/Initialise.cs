@@ -149,6 +149,7 @@ namespace SIPSorcery.UnitTests
         public event Action<string> OnRtpClosed;
         public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
         public event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;
+        public event Action<SDPMediaTypesEnum> OnTimeout;
 #pragma warning restore 67
 
         public void Close(string reason)
