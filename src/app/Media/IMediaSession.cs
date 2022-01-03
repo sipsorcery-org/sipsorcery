@@ -79,6 +79,11 @@ namespace SIPSorcery.SIP.App
         event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;
 
         /// <summary>
+        /// Fired when no RTP or RTCP packets are received for a pre-defined period (typically 30s).
+        /// </summary>
+        event Action<SDPMediaTypesEnum> OnTimeout;
+
+        /// <summary>
         /// Creates a new SDP offer based on the local media tracks in the session.
         /// Calling this method does NOT change the state of the media tracks. It is
         /// safe to call at any time if a session description of the local media state is
