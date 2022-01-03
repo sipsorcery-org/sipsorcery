@@ -22686,6 +22686,12 @@ references:
   commentId: E:SIPSorcery.SIP.App.IMediaSession.OnRtpEvent
   fullName: SIPSorcery.SIP.App.IMediaSession.OnRtpEvent
   nameWithType: IMediaSession.OnRtpEvent
+- uid: SIPSorcery.SIP.App.IMediaSession.OnTimeout
+  name: OnTimeout
+  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_OnTimeout
+  commentId: E:SIPSorcery.SIP.App.IMediaSession.OnTimeout
+  fullName: SIPSorcery.SIP.App.IMediaSession.OnTimeout
+  nameWithType: IMediaSession.OnTimeout
 - uid: SIPSorcery.SIP.App.IMediaSession.RemoteDescription
   name: RemoteDescription
   href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_RemoteDescription
