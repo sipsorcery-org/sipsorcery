@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: SrtpHandler.cs
+// Filename: SrtpHandlerCollection.cs
 //
 // Description: This class represents a collection of SRTP handlers for SIP calls
 //

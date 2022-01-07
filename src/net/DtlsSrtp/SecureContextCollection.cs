@@ -36,13 +36,13 @@ namespace SIPSorcery.Net
         }
     }
 
-    public class RtpSecureContextCollection
+    public class SecureContextCollection
     {
         private readonly ILogger _logger = Log.Logger;
 
         private readonly ConcurrentDictionary<SDPMediaTypesEnum, SecureContext> m_handlerCollection;
 
-        public RtpSecureContextCollection()
+        public SecureContextCollection()
         {
             m_handlerCollection = new ConcurrentDictionary<SDPMediaTypesEnum, SecureContext>();
         }
