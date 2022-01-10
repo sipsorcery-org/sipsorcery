@@ -204,10 +204,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; private set; }
 
-        public bool IsDtlsNegotiationComplete
-        {
-            get { return base.IsSecureContextReady; }
-        }
+        public bool IsDtlsNegotiationComplete { get; private set; } = false;
 
         public RTCSessionDescription localDescription { get; private set; }
 
@@ -1678,6 +1675,8 @@ namespace SIPSorcery.Net
                         dtlsHandle.UnprotectRTP,
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);
+                        
+                    IsDtlsNegotiationComplete = true;
 
                     return true;
                 }

@@ -244,14 +244,6 @@ namespace SIPSorcery.Net
         public bool UseSdpCryptoNegotiation { get; private set; } = false;
 
         /// <summary>
-        /// If this session is using a secure context this flag MUST be set to indicate
-        /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
-        /// </summary>        
-        public bool IsSecureContextReady => 
-                m_secureContextCollection.IsSecureContextReady(SDPMediaTypesEnum.audio) 
-                && m_secureContextCollection.IsSecureContextReady(SDPMediaTypesEnum.video);
-
-        /// <summary>
         /// If this session is using a secure context this list MAY contain custom
         /// Crypto Suites
         /// </summary>
@@ -509,6 +501,12 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// If this session is using a secure context this flag MUST be set to indicate
+        /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
+        /// </summary>        
+        public bool IsSecureContextReady(SDPMediaTypesEnum mediaType) => m_secureContextCollection.IsSecureContextReady(mediaType);
+
+        /// <summary>
         /// Removes a media track from this session. A media track represents an audio or video
         /// stream and can be a local (which means we're sending) or remote (which means
         /// we're receiving).
@@ -693,30 +691,33 @@ namespace SIPSorcery.Net
                             logger.LogError($"Error negotiating secure media. Invalid Transport {announcement.Transport}.");
                             return SetDescriptionResultEnum.CryptoNegotiationFailed;
                         }
+                        
+                        if (announcement.SecurityDescriptions.Count(s => SrtpCryptoSuites.Contains(s.CryptoSuite)) > 0)
+                        {
+                            // Setup the appropriate srtp handler
+                            var mediaType = announcement.Media;
+                            var srtpHandler = m_secureHandlerCollection.GetOrCreateSrtpHandler(mediaType);
+                            if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
+                            {
+                                logger.LogError($"Error negotiating secure media for type {mediaType}. Incompatible crypto parameter.");
+                                return SetDescriptionResultEnum.CryptoNegotiationFailed;
+                            }
 
-                        if (announcement.SecurityDescriptions.Count(s => SrtpCryptoSuites.Contains(s.CryptoSuite)) == 0)
+                            if (srtpHandler.IsNegotiationComplete)
+                            {
+                                SetSecurityContext(
+                                    mediaType,
+                                    srtpHandler.ProtectRTP,
+                                    srtpHandler.UnprotectRTP,
+                                    srtpHandler.ProtectRTCP,
+                                    srtpHandler.UnprotectRTCP);
+                            }
+                        }
+                        // If we had no crypto but we were definetely expecting something since we had a port value
+                        else if (announcement.Port != 0)
                         {
                             logger.LogError("Error negotiating secure media. No compatible crypto suite.");
                             return SetDescriptionResultEnum.CryptoNegotiationFailed;
-                        }
-
-                        // Setup the appropriate srtp handler
-                        var mediaType = announcement.Media;
-                        var srtpHandler = m_secureHandlerCollection.GetOrCreateSrtpHandler(mediaType);
-                        if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
-                        {
-                            logger.LogError($"Error negotiating secure media for type {mediaType}. Incompatible crypto parameter.");
-                            return SetDescriptionResultEnum.CryptoNegotiationFailed;
-                        }
-
-                        if (srtpHandler.IsNegotiationComplete)
-                        {
-                            SetSecurityContext(
-                                mediaType,
-                                srtpHandler.ProtectRTP,
-                                srtpHandler.UnprotectRTP,
-                                srtpHandler.ProtectRTCP,
-                                srtpHandler.UnprotectRTCP);
                         }
                     }
 
@@ -1574,7 +1575,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
         public void SendAudio(uint durationRtpUnits, byte[] sample)
         {
-            if (AudioDestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReady))
+            if (AudioDestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReady(SDPMediaTypesEnum.audio)))
             {
                 var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
                 SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
@@ -1590,7 +1591,7 @@ namespace SIPSorcery.Net
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
             if (VideoDestinationEndPoint != null || (m_isMediaMultiplexed && AudioDestinationEndPoint != null) &&
-                ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReady))
+                ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReady(SDPMediaTypesEnum.video)))
             {
                 var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
 
@@ -2123,11 +2124,8 @@ namespace SIPSorcery.Net
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
-                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady)
-                {
-                    logger.LogWarning("RTP or RTCP packet received before secure context ready.");
-                }
-                else if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
+                
+                if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
                 {
                     //logger.LogDebug($"RTCP packet received from {remoteEndPoint} {buffer.HexStr()}");
 
@@ -2150,18 +2148,25 @@ namespace SIPSorcery.Net
                         SDPMediaTypesEnum mediaType = GetMediaTypesFromSSRC(ssrc);
                         if (mediaType != SDPMediaTypesEnum.invalid)
                         {
-                            var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
-                            if (secureContext != null)
+                            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady(mediaType))
                             {
-                                int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
-                                if (res != 0)
+                                logger.LogWarning("RTP or RTCP packet received before secure context ready.");
+                            }
+                            else
+                            {
+                                var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
+                                if (secureContext != null)
                                 {
-                                    logger.LogWarning($"SRTCP unprotect failed for {mediaType} track, result {res}.");
-                                    return;
-                                }
-                                else
-                                {
-                                    buffer = buffer.Take(outBufLen).ToArray();
+                                    int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
+                                    if (res != 0)
+                                    {
+                                        logger.LogWarning($"SRTCP unprotect failed for {mediaType} track, result {res}.");
+                                        return;
+                                    }
+                                    else
+                                    {
+                                        buffer = buffer.Take(outBufLen).ToArray();
+                                    }
                                 }
                             }
                         }
@@ -2262,19 +2267,26 @@ namespace SIPSorcery.Net
                             SDPMediaTypesEnum mediaType = GetMediaTypesFromSSRC(header.SyncSource);
                             if (mediaType != SDPMediaTypesEnum.invalid)
                             {
-                                var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
-                                if (secureContext != null)
+                                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady(mediaType))
                                 {
-                                    int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
+                                    logger.LogWarning("RTP or RTCP packet received before secure context ready.");
+                                }
+                                else
+                                {
+                                    var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
+                                    if (secureContext != null)
+                                    {
+                                        int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
 
-                                    if (res != 0)
-                                    {
-                                        logger.LogWarning($"SRTP unprotect failed for {mediaType}, result {res}.");
-                                        return;
-                                    }
-                                    else
-                                    {
-                                        buffer = buffer.Take(outBufLen).ToArray();
+                                        if (res != 0)
+                                        {
+                                            logger.LogWarning($"SRTP unprotect failed for {mediaType}, result {res}.");
+                                            return;
+                                        }
+                                        else
+                                        {
+                                            buffer = buffer.Take(outBufLen).ToArray();
+                                        }
                                     }
                                 }
                             }
@@ -2634,7 +2646,7 @@ namespace SIPSorcery.Net
         /// <param name="payloadType">The RTP header payload type.</param>
         private void SendRtpPacket(RTPChannel rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType, uint ssrc, ushort seqNum, RTCPSession rtcpSession, ProtectRtpPacket protectRtpPacket)
         {
-            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady)
+            if ((IsSecure || UseSdpCryptoNegotiation) && protectRtpPacket == null)
             {
                 logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
             }
@@ -2682,7 +2694,7 @@ namespace SIPSorcery.Net
         /// <param name="report">RTCP report to send.</param>
         private void SendRtcpReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket report)
         {
-            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady && report.Bye != null)
+            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady(mediaType) && report.Bye != null)
             {
                 // Do nothing. The RTCP BYE gets generated when an RTP session is closed.
                 // If that occurs before the connection was able to set up the secure context
@@ -2712,7 +2724,7 @@ namespace SIPSorcery.Net
                 controlDstEndPoint = VideoControlDestinationEndPoint;
             }
 
-            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady)
+            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady(mediaType))
             {
                 logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
             }
