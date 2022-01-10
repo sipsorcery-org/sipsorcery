@@ -189,7 +189,7 @@ namespace SIPSorcery.Net
 
         private SrtpHandlerCollection m_secureHandlerCollection = new SrtpHandlerCollection();
 
-        private RtpSecureContextCollection m_secureContextCollection = new RtpSecureContextCollection();
+        private SecureContextCollection m_secureContextCollection = new SecureContextCollection();
 
         /// <summary>
         /// Track if current remote description is invalid (used in Renegotiation logic)
@@ -2170,7 +2170,6 @@ namespace SIPSorcery.Net
                             logger.LogWarning("Could not find appropriate remote track for SSRC for RTCP packet");
                         }
                     }
-
 
                     var rtcpPkt = new RTCPCompoundPacket(buffer);
 
