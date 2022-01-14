@@ -97,18 +97,18 @@ namespace SIPSorcery.Net
                         case (byte)RTCPReportTypesEnum.RTPFB:
                             // TODO: Interpret Generic RTP feedback reports.
                             Feedback = new RTCPFeedback(buffer);
-                            //int rtpfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
-                            //offset += rtpfbFeedbackLength;
-                            var rtpfbHeader = new RTCPHeader(buffer);
-                            offset += rtpfbHeader.Length * 4 + 4;
+                            int rtpfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
+                            offset += rtpfbFeedbackLength;
+                            //var rtpfbHeader = new RTCPHeader(buffer);
+                            //offset += rtpfbHeader.Length * 4 + 4;
                             break;
                         case (byte)RTCPReportTypesEnum.PSFB:
                             // TODO: Interpret Payload specific feedback reports.
                             Feedback = new RTCPFeedback(buffer);
-                            //int psfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
-                            //offset += psfbFeedbackLength;
-                            var psfbHeader = new RTCPHeader(buffer);
-                            offset += psfbHeader.Length * 4 + 4;
+                            int psfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
+                            offset += psfbFeedbackLength;
+                            //var psfbHeader = new RTCPHeader(buffer);
+                            //offset += psfbHeader.Length * 4 + 4;
                             break;
                         default:
                             logger.LogWarning($"RTCPCompoundPacket did not recognise packet type ID {packetTypeID}.");

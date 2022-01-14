@@ -138,18 +138,18 @@ namespace SIPSorcery.Net
         {
             Header = new RTCPHeader(packet);
 
+            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
             if (BitConverter.IsLittleEndian)
             {
-                SenderSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-                MediaSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 8));
+                SenderSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex));
+                MediaSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex + 4));
             }
             else
             {
-                SenderSSRC = BitConverter.ToUInt32(packet, 4);
-                MediaSSRC = BitConverter.ToUInt32(packet, 8);
+                SenderSSRC = BitConverter.ToUInt32(packet, payloadIndex);
+                MediaSSRC = BitConverter.ToUInt32(packet, payloadIndex + 4);
             }
 
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
             switch (Header)
             {
                 case var x when x.PacketType == RTCPReportTypesEnum.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
@@ -160,13 +160,13 @@ namespace SIPSorcery.Net
                     SENDER_PAYLOAD_SIZE = 12;
                     if (BitConverter.IsLittleEndian)
                     {
-                        PID = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 6));
-                        BLP = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 8));
+                        PID = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 8));
+                        BLP = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 10));
                     }
                     else
                     {
-                        PID = BitConverter.ToUInt16(packet, payloadIndex + 6);
-                        BLP = BitConverter.ToUInt16(packet, payloadIndex + 8);
+                        PID = BitConverter.ToUInt16(packet, payloadIndex + 8);
+                        BLP = BitConverter.ToUInt16(packet, payloadIndex + 10);
                     }
                     break;
 
@@ -179,6 +179,17 @@ namespace SIPSorcery.Net
             }
         }
 
+       //0                   1                   2                   3
+       //0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       //|V=2|P|   FMT   |       PT      |          length               |
+       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       //|                  SSRC of packet sender                        |
+       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       //|                  SSRC of media source                         |
+       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       //:            Feedback Control Information(FCI)                  :
+       //:                                                               :
         public byte[] GetBytes()
         {
             byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE];
@@ -207,13 +218,13 @@ namespace SIPSorcery.Net
                 case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
                     if (BitConverter.IsLittleEndian)
                     {
-                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PID)), 0, buffer, payloadIndex + 6, 2);
-                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(BLP)), 0, buffer, payloadIndex + 8, 2);
+                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PID)), 0, buffer, payloadIndex + 8, 2);
+                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(BLP)), 0, buffer, payloadIndex + 10, 2);
                     }
                     else
                     {
-                        Buffer.BlockCopy(BitConverter.GetBytes(PID), 0, buffer, payloadIndex + 6, 2);
-                        Buffer.BlockCopy(BitConverter.GetBytes(BLP), 0, buffer, payloadIndex + 8, 2);
+                        Buffer.BlockCopy(BitConverter.GetBytes(PID), 0, buffer, payloadIndex + 8, 2);
+                        Buffer.BlockCopy(BitConverter.GetBytes(BLP), 0, buffer, payloadIndex + 10, 2);
                     }
                     break;
 
