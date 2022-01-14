@@ -153,9 +153,11 @@ namespace SIPSorcery.Net
             switch (Header)
             {
                 case var x when x.PacketType == RTCPReportTypesEnum.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                    SENDER_PAYLOAD_SIZE = 8;
                     // PLI feedback reports do no have any additional parameters.
                     break;
                 case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
+                    SENDER_PAYLOAD_SIZE = 12;
                     if (BitConverter.IsLittleEndian)
                     {
                         PID = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 6));
@@ -169,6 +171,7 @@ namespace SIPSorcery.Net
                     break;
 
                 case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                    SENDER_PAYLOAD_SIZE = 8;
                     break;
 
                 default:
