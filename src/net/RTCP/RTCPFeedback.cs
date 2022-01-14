@@ -172,7 +172,7 @@ namespace SIPSorcery.Net
                     break;
 
                 default:
-                    throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} not yet implemented.");
+                    throw new NotImplementedException($"Deserialisation for feedback report {Header.PacketType} not yet implemented.");
             }
         }
 
