@@ -149,7 +149,31 @@ namespace SIPSorcery.Net
                 MediaSSRC = BitConverter.ToUInt32(packet, 8);
             }
 
-            // TODO: Depending on the report type additional parameters will need to be deserialised.
+            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+            switch (Header)
+            {
+                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                    // PLI feedback reports do no have any additional parameters.
+                    break;
+                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
+                    if (BitConverter.IsLittleEndian)
+                    {
+                        PID = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 6));
+                        BLP = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 8));
+                    }
+                    else
+                    {
+                        PID = BitConverter.ToUInt16(packet, payloadIndex + 6);
+                        BLP = BitConverter.ToUInt16(packet, payloadIndex + 8);
+                    }
+                    break;
+
+                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                    break;
+
+                default:
+                    throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} not yet implemented.");
+            }
         }
 
         public byte[] GetBytes()
