@@ -10493,6 +10493,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.Start
   nameWithType: RTPChannel.Start
+- uid: SIPSorcery.Net.RTPChannel.StartControlReceiver
+  name: StartControlReceiver()
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_StartControlReceiver
+  commentId: M:SIPSorcery.Net.RTPChannel.StartControlReceiver
+  fullName: SIPSorcery.Net.RTPChannel.StartControlReceiver()
+  nameWithType: RTPChannel.StartControlReceiver()
+- uid: SIPSorcery.Net.RTPChannel.StartControlReceiver*
+  name: StartControlReceiver
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_StartControlReceiver_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.StartControlReceiver
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPChannel.StartControlReceiver
+  nameWithType: RTPChannel.StartControlReceiver
+- uid: SIPSorcery.Net.RTPChannel.StartRtpReceiver
+  name: StartRtpReceiver()
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_StartRtpReceiver
+  commentId: M:SIPSorcery.Net.RTPChannel.StartRtpReceiver
+  fullName: SIPSorcery.Net.RTPChannel.StartRtpReceiver()
+  nameWithType: RTPChannel.StartRtpReceiver()
+- uid: SIPSorcery.Net.RTPChannel.StartRtpReceiver*
+  name: StartRtpReceiver
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_StartRtpReceiver_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.StartRtpReceiver
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPChannel.StartRtpReceiver
+  nameWithType: RTPChannel.StartRtpReceiver
 - uid: SIPSorcery.Net.RTPChannelSocketsEnum
   name: RTPChannelSocketsEnum
   href: api/SIPSorcery.Net.RTPChannelSocketsEnum.html
