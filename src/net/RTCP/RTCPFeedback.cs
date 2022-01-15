@@ -231,8 +231,12 @@ namespace SIPSorcery.Net
 
                 case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     break;
+                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
+                    // Application feedback reports do no have any additional parameters?
+                    break;
                 default:
-                    throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} not yet implemented.");
+                    throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} and message type "
+                    + $"{Header.FeedbackMessageType} not yet implemented.");
             }
             return buffer;
         }
