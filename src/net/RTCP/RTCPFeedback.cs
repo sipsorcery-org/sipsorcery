@@ -94,12 +94,13 @@ namespace SIPSorcery.Net
         public ushort BLP; // bitmask of following lost packets (BLP): 16 bits
         public uint FCI; // Feedback Control Information (FCI)  
 
-        public RTCPFeedback(uint ssrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
+        public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
         {
             Header = new RTCPHeader(feedbackMessageType);
             SENDER_PAYLOAD_SIZE = 12;
             MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE;
-            SenderSSRC = ssrc;
+            SenderSSRC = senderSsrc;
+            MediaSSRC = mediaSsrc;
             PID = sequenceNo;
             BLP = bitMask;
         }
@@ -174,8 +175,8 @@ namespace SIPSorcery.Net
                     SENDER_PAYLOAD_SIZE = 8;
                     break;
 
-                default:
-                    throw new NotImplementedException($"Deserialisation for feedback report {Header.PacketType} not yet implemented.");
+                //default:
+                //    throw new NotImplementedException($"Deserialisation for feedback report {Header.PacketType} not yet implemented.");
             }
         }
 
