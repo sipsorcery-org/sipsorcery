@@ -8014,6 +8014,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPCompoundPacket.Bye
   nameWithType: RTCPCompoundPacket.Bye
+- uid: SIPSorcery.Net.RTCPCompoundPacket.Feedback
+  name: Feedback
+  href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket_Feedback
+  commentId: P:SIPSorcery.Net.RTCPCompoundPacket.Feedback
+  fullName: SIPSorcery.Net.RTCPCompoundPacket.Feedback
+  nameWithType: RTCPCompoundPacket.Feedback
+- uid: SIPSorcery.Net.RTCPCompoundPacket.Feedback*
+  name: Feedback
+  href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket_Feedback_
+  commentId: Overload:SIPSorcery.Net.RTCPCompoundPacket.Feedback
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPCompoundPacket.Feedback
+  nameWithType: RTCPCompoundPacket.Feedback
 - uid: SIPSorcery.Net.RTCPCompoundPacket.GetBytes
   name: GetBytes()
   href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket_GetBytes
@@ -8822,12 +8835,6 @@ references:
   fullName.vb: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.Byte())
   nameWithType: RTCPFeedback.RTCPFeedback(Byte[])
   nameWithType.vb: RTCPFeedback.RTCPFeedback(Byte())
-- uid: SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,SIPSorcery.Net.RTCPFeedbackTypesEnum,System.UInt16,System.UInt16)
-  name: RTCPFeedback(UInt32, RTCPFeedbackTypesEnum, UInt16, UInt16)
-  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_System_UInt32_SIPSorcery_Net_RTCPFeedbackTypesEnum_System_UInt16_System_UInt16_
-  commentId: M:SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,SIPSorcery.Net.RTCPFeedbackTypesEnum,System.UInt16,System.UInt16)
-  fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.UInt32, SIPSorcery.Net.RTCPFeedbackTypesEnum, System.UInt16, System.UInt16)
-  nameWithType: RTCPFeedback.RTCPFeedback(UInt32, RTCPFeedbackTypesEnum, UInt16, UInt16)
 - uid: SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,System.UInt32,SIPSorcery.Net.PSFBFeedbackTypesEnum)
   name: RTCPFeedback(UInt32, UInt32, PSFBFeedbackTypesEnum)
   href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_System_UInt32_System_UInt32_SIPSorcery_Net_PSFBFeedbackTypesEnum_
@@ -8840,6 +8847,12 @@ references:
   commentId: M:SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,System.UInt32,SIPSorcery.Net.RTCPFeedbackTypesEnum)
   fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.UInt32, System.UInt32, SIPSorcery.Net.RTCPFeedbackTypesEnum)
   nameWithType: RTCPFeedback.RTCPFeedback(UInt32, UInt32, RTCPFeedbackTypesEnum)
+- uid: SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,System.UInt32,SIPSorcery.Net.RTCPFeedbackTypesEnum,System.UInt16,System.UInt16)
+  name: RTCPFeedback(UInt32, UInt32, RTCPFeedbackTypesEnum, UInt16, UInt16)
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_System_UInt32_System_UInt32_SIPSorcery_Net_RTCPFeedbackTypesEnum_System_UInt16_System_UInt16_
+  commentId: M:SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,System.UInt32,SIPSorcery.Net.RTCPFeedbackTypesEnum,System.UInt16,System.UInt16)
+  fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.UInt32, System.UInt32, SIPSorcery.Net.RTCPFeedbackTypesEnum, System.UInt16, System.UInt16)
+  nameWithType: RTCPFeedback.RTCPFeedback(UInt32, UInt32, RTCPFeedbackTypesEnum, UInt16, UInt16)
 - uid: SIPSorcery.Net.RTCPFeedback.#ctor*
   name: RTCPFeedback
   href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_
