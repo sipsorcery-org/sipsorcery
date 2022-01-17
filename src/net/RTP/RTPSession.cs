@@ -244,6 +244,15 @@ namespace SIPSorcery.Net
         public bool UseSdpCryptoNegotiation { get; private set; } = false;
 
         /// <summary>
+        /// If this session is using a secure context this flag MUST be set to indicate
+        /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
+        /// </summary>
+        public bool IsSecureContextReady => 
+                (HasAudio && !HasVideo && IsSecureContextReadyForMediaType(SDPMediaTypesEnum.audio)) 
+                || (!HasAudio && HasVideo && IsSecureContextReadyForMediaType(SDPMediaTypesEnum.video))
+                || (HasAudio && HasVideo && IsSecureContextReadyForMediaType(SDPMediaTypesEnum.audio) && IsSecureContextReadyForMediaType(SDPMediaTypesEnum.video));
+
+        /// <summary>
         /// If this session is using a secure context this list MAY contain custom
         /// Crypto Suites
         /// </summary>
@@ -504,7 +513,7 @@ namespace SIPSorcery.Net
         /// If this session is using a secure context this flag MUST be set to indicate
         /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
         /// </summary>        
-        public bool IsSecureContextReady(SDPMediaTypesEnum mediaType) => m_secureContextCollection.IsSecureContextReady(mediaType);
+        public bool IsSecureContextReadyForMediaType(SDPMediaTypesEnum mediaType) => m_secureContextCollection.IsSecureContextReady(mediaType);
 
         /// <summary>
         /// Removes a media track from this session. A media track represents an audio or video
@@ -1575,7 +1584,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
         public void SendAudio(uint durationRtpUnits, byte[] sample)
         {
-            if (AudioDestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReady(SDPMediaTypesEnum.audio)))
+            if (AudioDestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReadyForMediaType(SDPMediaTypesEnum.audio)))
             {
                 var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
                 SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
@@ -1591,7 +1600,7 @@ namespace SIPSorcery.Net
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
             if (VideoDestinationEndPoint != null || (m_isMediaMultiplexed && AudioDestinationEndPoint != null) &&
-                ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReady(SDPMediaTypesEnum.video)))
+                ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReadyForMediaType(SDPMediaTypesEnum.video)))
             {
                 var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
 
@@ -2148,7 +2157,7 @@ namespace SIPSorcery.Net
                         SDPMediaTypesEnum mediaType = GetMediaTypesFromSSRC(ssrc);
                         if (mediaType != SDPMediaTypesEnum.invalid)
                         {
-                            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady(mediaType))
+                            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReadyForMediaType(mediaType))
                             {
                                 logger.LogWarning("RTP or RTCP packet received before secure context ready.");
                             }
@@ -2267,7 +2276,7 @@ namespace SIPSorcery.Net
                             SDPMediaTypesEnum mediaType = GetMediaTypesFromSSRC(header.SyncSource);
                             if (mediaType != SDPMediaTypesEnum.invalid)
                             {
-                                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady(mediaType))
+                                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReadyForMediaType(mediaType))
                                 {
                                     logger.LogWarning("RTP or RTCP packet received before secure context ready.");
                                 }
@@ -2694,7 +2703,7 @@ namespace SIPSorcery.Net
         /// <param name="report">RTCP report to send.</param>
         private void SendRtcpReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket report)
         {
-            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady(mediaType) && report.Bye != null)
+            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReadyForMediaType(mediaType) && report.Bye != null)
             {
                 // Do nothing. The RTCP BYE gets generated when an RTP session is closed.
                 // If that occurs before the connection was able to set up the secure context
@@ -2724,7 +2733,7 @@ namespace SIPSorcery.Net
                 controlDstEndPoint = VideoControlDestinationEndPoint;
             }
 
-            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady(mediaType))
+            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReadyForMediaType(mediaType))
             {
                 logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
             }
