@@ -33,7 +33,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.AudioEncoder.html",
-          "hash": "FTGULlH9Ko+IDgLwfunucPvdNXqUzCqiC+xtiPFqAfo="
+          "hash": "tRolQwbyo4BnEm9dc/ikufDTG35wpjEwXNhCcSaJFhI="
         }
       },
       "is_incremental": false,
@@ -149,6 +149,78 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.G729Codec.Ld8k.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.G729Codec.Ld8k.html",
+          "hash": "YbNi/OIvd6rY+IzYa2ljgbtBLiT4ArrfYMd5EapzfJo="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.G729Codec.TabLd8k.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.G729Codec.TabLd8k.html",
+          "hash": "Y9zGW6nnMn8jJ2ANhB9daDujv7uNNLjC1AvtXhjy8U0="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.G729Codec.Util.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.G729Codec.Util.html",
+          "hash": "1FYHeRxGgNmtHbQ7eK9p8mxgRXWtruQ1cLfEu4iUFDQ="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.G729Codec.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.G729Codec.html",
+          "hash": "ZRWyMthJ3LqVkBC+89ch/n0UvlUZPzGPKqlqVqQMXo0="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.G729Decoder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.G729Decoder.html",
+          "hash": "mziYZawUg4tmmiCZu4A91hx9TNEZoGyA6ca9IU+GwR8="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.G729Encoder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.G729Encoder.html",
+          "hash": "PBy0JyLffTGH0aS4TtUHkZGJTT4soARtkadqdsaBEsU="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Media.MuLawDecoder.yml",
       "output": {
         ".html": {
@@ -249,7 +321,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.html",
-          "hash": "Nx9dLyowYjLKfO4qHFRffhmLvieki7JlQb9nq9rtdWE="
+          "hash": "2ImaXD4hDSi7gS5gauKUfP74lEFrgBDlWT1ZzsK4FKY="
         }
       },
       "is_incremental": false,
@@ -4641,7 +4713,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "tDc2FZ9BSZMSFNoWFOZhcHIFh4g9ObP7Eo2oWFWLzvE="
+          "hash": "zJzTKj7A2PKYIsCRimJB+o8PvuhU1zIWIVX3/+6f6kM="
         }
       },
       "is_incremental": false,
@@ -4909,7 +4981,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 385,
+          "total_file_count": 391,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {

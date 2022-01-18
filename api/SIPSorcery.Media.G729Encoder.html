@@ -1,0 +1,544 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class G729Encoder
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class G729Encoder
+   ">
+    <meta name="generator" content="docfx 2.58.9.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Media.G729Encoder">
+  
+  
+  <h1 id="SIPSorcery_Media_G729Encoder" data-uid="SIPSorcery.Media.G729Encoder" class="text-break">Class G729Encoder
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html">Ld8k</a></div>
+    <div class="level2"><span class="xref">G729Encoder</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_AGC_FAC">Ld8k.AGC_FAC</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_AGC_FAC1">Ld8k.AGC_FAC1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_ALPHA">Ld8k.ALPHA</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_BETA">Ld8k.BETA</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_BIT_0">Ld8k.BIT_0</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_BIT_1">Ld8k.BIT_1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_CONST12">Ld8k.CONST12</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_DIM_RR">Ld8k.DIM_RR</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_F_UP_PST">Ld8k.F_UP_PST</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_INTER4">Ld8k.L_INTER4</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_UP_SAMP">Ld8k.UP_SAMP</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_FIR_SIZE_ANA">Ld8k.FIR_SIZE_ANA</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_INTER10">Ld8k.L_INTER10</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_FIR_SIZE_SYN">Ld8k.FIR_SIZE_SYN</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_FLT_MAX_G729">Ld8k.FLT_MAX_G729</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_FLT_MIN_G729">Ld8k.FLT_MIN_G729</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAIN_PIT_MAX">Ld8k.GAIN_PIT_MAX</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA_G">Ld8k.GAMMA_G</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA1_0">Ld8k.GAMMA1_0</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA1_1">Ld8k.GAMMA1_1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA1_PST">Ld8k.GAMMA1_PST</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA2_0_H">Ld8k.GAMMA2_0_H</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA2_0_L">Ld8k.GAMMA2_0_L</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA2_1">Ld8k.GAMMA2_1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA2_PST">Ld8k.GAMMA2_PST</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA3_MINUS">Ld8k.GAMMA3_MINUS</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAMMA3_PLUS">Ld8k.GAMMA3_PLUS</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAP1">Ld8k.GAP1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAP2">Ld8k.GAP2</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GAP3">Ld8k.GAP3</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GP0999">Ld8k.GP0999</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GPCLIP">Ld8k.GPCLIP</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GPCLIP2">Ld8k.GPCLIP2</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_GRID_POINTS">Ld8k.GRID_POINTS</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_INV_COEF">Ld8k.INV_COEF</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_SUBFR">Ld8k.L_SUBFR</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_INV_L_SUBFR">Ld8k.INV_L_SUBFR</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_FRAME">Ld8k.L_FRAME</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_INTERPOL">Ld8k.L_INTERPOL</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_LIMIT">Ld8k.L_LIMIT</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_NEXT">Ld8k.L_NEXT</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_SUBFRP1">Ld8k.L_SUBFRP1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_TOTAL">Ld8k.L_TOTAL</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_L_WINDOW">Ld8k.L_WINDOW</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_LH2_L">Ld8k.LH2_L</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_LH_UP_L">Ld8k.LH_UP_L</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_LH2_S">Ld8k.LH2_S</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_LH_UP_S">Ld8k.LH_UP_S</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_LH2_L_P1">Ld8k.LH2_L_P1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_LONG_H_ST">Ld8k.LONG_H_ST</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_M">Ld8k.M</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_M_LIMIT">Ld8k.M_LIMIT</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_MA_NP">Ld8k.MA_NP</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_MAX_TIME">Ld8k.MAX_TIME</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_MEAN_ENER">Ld8k.MEAN_ENER</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_PIT_MAX">Ld8k.PIT_MAX</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_MEM_RES2">Ld8k.MEM_RES2</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_MIN_GPLT">Ld8k.MIN_GPLT</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_MODE">Ld8k.MODE</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_MP1">Ld8k.MP1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_MSIZE">Ld8k.MSIZE</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NB_POS">Ld8k.NB_POS</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NC">Ld8k.NC</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NC0_B">Ld8k.NC0_B</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NC0">Ld8k.NC0</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NC1_B">Ld8k.NC1_B</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NC1">Ld8k.NC1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NCAN1">Ld8k.NCAN1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NCAN2">Ld8k.NCAN2</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NCODE1_B">Ld8k.NCODE1_B</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NCODE1">Ld8k.NCODE1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NCODE2_B">Ld8k.NCODE2_B</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_NCODE2">Ld8k.NCODE2</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_PI">Ld8k.PI</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_PI04">Ld8k.PI04</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_PI92">Ld8k.PI92</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_PIT_MIN">Ld8k.PIT_MIN</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_PRM_SIZE">Ld8k.PRM_SIZE</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_SERIAL_SIZE">Ld8k.SERIAL_SIZE</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_SHARPMAX">Ld8k.SHARPMAX</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_SHARPMIN">Ld8k.SHARPMIN</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_SIZ_RES2">Ld8k.SIZ_RES2</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_SIZ_TAB_HUP_L">Ld8k.SIZ_TAB_HUP_L</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_SIZ_TAB_HUP_S">Ld8k.SIZ_TAB_HUP_S</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_SIZ_Y_UP">Ld8k.SIZ_Y_UP</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_SIZE_WORD">Ld8k.SIZE_WORD</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_STEP">Ld8k.STEP</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_SYNC_WORD">Ld8k.SYNC_WORD</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_THRESCRIT">Ld8k.THRESCRIT</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_THRESH_ERR">Ld8k.THRESH_ERR</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_THRESH_H1">Ld8k.THRESH_H1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_THRESH_H2">Ld8k.THRESH_H2</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_THRESH_L1">Ld8k.THRESH_L1</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_THRESH_L2">Ld8k.THRESH_L2</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_THRESHFCB">Ld8k.THRESHFCB</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Media.G729Codec.Ld8k.html#SIPSorcery_Media_G729Codec_Ld8k_THRESHPIT">Ld8k.THRESHPIT</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Media.html">SIPSorcery.Media</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Media_G729Encoder_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class G729Encoder : Ld8k</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_G729Encoder__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.G729Encoder.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/G729Encoder.cs/#L75">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_G729Encoder__ctor_" data-uid="SIPSorcery.Media.G729Encoder.#ctor*"></a>
+  <h4 id="SIPSorcery_Media_G729Encoder__ctor" data-uid="SIPSorcery.Media.G729Encoder.#ctor">G729Encoder()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public G729Encoder()</code></pre>
+  </div>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_G729Encoder_Flush.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.G729Encoder.Flush%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/G729Encoder.cs/#L186">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_G729Encoder_Flush_" data-uid="SIPSorcery.Media.G729Encoder.Flush*"></a>
+  <h4 id="SIPSorcery_Media_G729Encoder_Flush" data-uid="SIPSorcery.Media.G729Encoder.Flush">Flush()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] Flush()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_G729Encoder_Process_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.G729Encoder.Process(System.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/G729Encoder.cs/#L138">View Source</a>
+  </span>
+  <a id="SIPSorcery_Media_G729Encoder_Process_" data-uid="SIPSorcery.Media.G729Encoder.Process*"></a>
+  <h4 id="SIPSorcery_Media_G729Encoder_Process_System_Byte___" data-uid="SIPSorcery.Media.G729Encoder.Process(System.Byte[])">Process(Byte[])</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public byte[] Process(byte[] speech)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">speech</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_System_Object_">JSONWriter.ToJson(Object)</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_G729Encoder.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.G729Encoder%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Codecs/G729Encoder.cs/#L51" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
