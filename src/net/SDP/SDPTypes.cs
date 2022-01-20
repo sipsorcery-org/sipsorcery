@@ -23,7 +23,6 @@ namespace SIPSorcery.Net
 {
     public enum SDPMediaTypesEnum
     {
-        invalid = 0,
         audio = 1,
         video = 2,
         application = 3,
