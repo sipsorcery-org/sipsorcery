@@ -12542,19 +12542,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.IsSecureContextReady
   nameWithType: RTPSession.IsSecureContextReady
-- uid: SIPSorcery.Net.RTPSession.IsSecureContextReadyForMediaType(SIPSorcery.Net.SDPMediaTypesEnum)
-  name: IsSecureContextReadyForMediaType(SDPMediaTypesEnum)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecureContextReadyForMediaType_SIPSorcery_Net_SDPMediaTypesEnum_
-  commentId: M:SIPSorcery.Net.RTPSession.IsSecureContextReadyForMediaType(SIPSorcery.Net.SDPMediaTypesEnum)
-  fullName: SIPSorcery.Net.RTPSession.IsSecureContextReadyForMediaType(SIPSorcery.Net.SDPMediaTypesEnum)
-  nameWithType: RTPSession.IsSecureContextReadyForMediaType(SDPMediaTypesEnum)
-- uid: SIPSorcery.Net.RTPSession.IsSecureContextReadyForMediaType*
-  name: IsSecureContextReadyForMediaType
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecureContextReadyForMediaType_
-  commentId: Overload:SIPSorcery.Net.RTPSession.IsSecureContextReadyForMediaType
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPSession.IsSecureContextReadyForMediaType
-  nameWithType: RTPSession.IsSecureContextReadyForMediaType
 - uid: SIPSorcery.Net.RTPSession.IsStarted
   name: IsStarted
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsStarted
@@ -12947,21 +12934,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SetRemoteDescription
   nameWithType: RTPSession.SetRemoteDescription
-- uid: SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  name: SetSecurityContext(SDPMediaTypesEnum, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
-  commentId: M:SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  fullName: SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.SDPMediaTypesEnum, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
-  nameWithType: RTPSession.SetSecurityContext(SDPMediaTypesEnum, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
-- uid: SIPSorcery.Net.RTPSession.SetSecurityContext(System.Collections.Generic.IEnumerable{SIPSorcery.Net.SDPMediaTypesEnum},SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  name: SetSecurityContext(IEnumerable<SDPMediaTypesEnum>, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_System_Collections_Generic_IEnumerable_SIPSorcery_Net_SDPMediaTypesEnum__SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
-  commentId: M:SIPSorcery.Net.RTPSession.SetSecurityContext(System.Collections.Generic.IEnumerable{SIPSorcery.Net.SDPMediaTypesEnum},SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  name.vb: SetSecurityContext(IEnumerable(Of SDPMediaTypesEnum), ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
-  fullName: SIPSorcery.Net.RTPSession.SetSecurityContext(System.Collections.Generic.IEnumerable<SIPSorcery.Net.SDPMediaTypesEnum>, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
-  fullName.vb: SIPSorcery.Net.RTPSession.SetSecurityContext(System.Collections.Generic.IEnumerable(Of SIPSorcery.Net.SDPMediaTypesEnum), SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
-  nameWithType: RTPSession.SetSecurityContext(IEnumerable<SDPMediaTypesEnum>, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
-  nameWithType.vb: RTPSession.SetSecurityContext(IEnumerable(Of SDPMediaTypesEnum), ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
+- uid: SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
+  name: SetSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
+  commentId: M:SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
+  fullName: SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
+  nameWithType: RTPSession.SetSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
 - uid: SIPSorcery.Net.RTPSession.SetSecurityContext*
   name: SetSecurityContext
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_
@@ -19441,12 +19419,6 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaTypesEnum.image
   fullName: SIPSorcery.Net.SDPMediaTypesEnum.image
   nameWithType: SDPMediaTypesEnum.image
-- uid: SIPSorcery.Net.SDPMediaTypesEnum.invalid
-  name: invalid
-  href: api/SIPSorcery.Net.SDPMediaTypesEnum.html#SIPSorcery_Net_SDPMediaTypesEnum_invalid
-  commentId: F:SIPSorcery.Net.SDPMediaTypesEnum.invalid
-  fullName: SIPSorcery.Net.SDPMediaTypesEnum.invalid
-  nameWithType: SDPMediaTypesEnum.invalid
 - uid: SIPSorcery.Net.SDPMediaTypesEnum.message
   name: message
   href: api/SIPSorcery.Net.SDPMediaTypesEnum.html#SIPSorcery_Net_SDPMediaTypesEnum_message
@@ -20185,135 +20157,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPSsrcAttribute.SSRC
   nameWithType: SDPSsrcAttribute.SSRC
-- uid: SIPSorcery.Net.SecureContext
-  name: SecureContext
-  href: api/SIPSorcery.Net.SecureContext.html
-  commentId: T:SIPSorcery.Net.SecureContext
-  fullName: SIPSorcery.Net.SecureContext
-  nameWithType: SecureContext
-- uid: SIPSorcery.Net.SecureContext.#ctor(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  name: SecureContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext__ctor_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
-  commentId: M:SIPSorcery.Net.SecureContext.#ctor(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  fullName: SIPSorcery.Net.SecureContext.SecureContext(SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
-  nameWithType: SecureContext.SecureContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
-- uid: SIPSorcery.Net.SecureContext.#ctor*
-  name: SecureContext
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext__ctor_
-  commentId: Overload:SIPSorcery.Net.SecureContext.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SecureContext.SecureContext
-  nameWithType: SecureContext.SecureContext
-- uid: SIPSorcery.Net.SecureContext.ProtectRtcpPacket
-  name: ProtectRtcpPacket
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext_ProtectRtcpPacket
-  commentId: P:SIPSorcery.Net.SecureContext.ProtectRtcpPacket
-  fullName: SIPSorcery.Net.SecureContext.ProtectRtcpPacket
-  nameWithType: SecureContext.ProtectRtcpPacket
-- uid: SIPSorcery.Net.SecureContext.ProtectRtcpPacket*
-  name: ProtectRtcpPacket
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext_ProtectRtcpPacket_
-  commentId: Overload:SIPSorcery.Net.SecureContext.ProtectRtcpPacket
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SecureContext.ProtectRtcpPacket
-  nameWithType: SecureContext.ProtectRtcpPacket
-- uid: SIPSorcery.Net.SecureContext.ProtectRtpPacket
-  name: ProtectRtpPacket
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext_ProtectRtpPacket
-  commentId: P:SIPSorcery.Net.SecureContext.ProtectRtpPacket
-  fullName: SIPSorcery.Net.SecureContext.ProtectRtpPacket
-  nameWithType: SecureContext.ProtectRtpPacket
-- uid: SIPSorcery.Net.SecureContext.ProtectRtpPacket*
-  name: ProtectRtpPacket
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext_ProtectRtpPacket_
-  commentId: Overload:SIPSorcery.Net.SecureContext.ProtectRtpPacket
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SecureContext.ProtectRtpPacket
-  nameWithType: SecureContext.ProtectRtpPacket
-- uid: SIPSorcery.Net.SecureContext.UnprotectRtcpPacket
-  name: UnprotectRtcpPacket
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext_UnprotectRtcpPacket
-  commentId: P:SIPSorcery.Net.SecureContext.UnprotectRtcpPacket
-  fullName: SIPSorcery.Net.SecureContext.UnprotectRtcpPacket
-  nameWithType: SecureContext.UnprotectRtcpPacket
-- uid: SIPSorcery.Net.SecureContext.UnprotectRtcpPacket*
-  name: UnprotectRtcpPacket
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext_UnprotectRtcpPacket_
-  commentId: Overload:SIPSorcery.Net.SecureContext.UnprotectRtcpPacket
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SecureContext.UnprotectRtcpPacket
-  nameWithType: SecureContext.UnprotectRtcpPacket
-- uid: SIPSorcery.Net.SecureContext.UnprotectRtpPacket
-  name: UnprotectRtpPacket
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext_UnprotectRtpPacket
-  commentId: P:SIPSorcery.Net.SecureContext.UnprotectRtpPacket
-  fullName: SIPSorcery.Net.SecureContext.UnprotectRtpPacket
-  nameWithType: SecureContext.UnprotectRtpPacket
-- uid: SIPSorcery.Net.SecureContext.UnprotectRtpPacket*
-  name: UnprotectRtpPacket
-  href: api/SIPSorcery.Net.SecureContext.html#SIPSorcery_Net_SecureContext_UnprotectRtpPacket_
-  commentId: Overload:SIPSorcery.Net.SecureContext.UnprotectRtpPacket
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SecureContext.UnprotectRtpPacket
-  nameWithType: SecureContext.UnprotectRtpPacket
-- uid: SIPSorcery.Net.SecureContextCollection
-  name: SecureContextCollection
-  href: api/SIPSorcery.Net.SecureContextCollection.html
-  commentId: T:SIPSorcery.Net.SecureContextCollection
-  fullName: SIPSorcery.Net.SecureContextCollection
-  nameWithType: SecureContextCollection
-- uid: SIPSorcery.Net.SecureContextCollection.#ctor
-  name: SecureContextCollection()
-  href: api/SIPSorcery.Net.SecureContextCollection.html#SIPSorcery_Net_SecureContextCollection__ctor
-  commentId: M:SIPSorcery.Net.SecureContextCollection.#ctor
-  fullName: SIPSorcery.Net.SecureContextCollection.SecureContextCollection()
-  nameWithType: SecureContextCollection.SecureContextCollection()
-- uid: SIPSorcery.Net.SecureContextCollection.#ctor*
-  name: SecureContextCollection
-  href: api/SIPSorcery.Net.SecureContextCollection.html#SIPSorcery_Net_SecureContextCollection__ctor_
-  commentId: Overload:SIPSorcery.Net.SecureContextCollection.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SecureContextCollection.SecureContextCollection
-  nameWithType: SecureContextCollection.SecureContextCollection
-- uid: SIPSorcery.Net.SecureContextCollection.GetSecureContext(SIPSorcery.Net.SDPMediaTypesEnum)
-  name: GetSecureContext(SDPMediaTypesEnum)
-  href: api/SIPSorcery.Net.SecureContextCollection.html#SIPSorcery_Net_SecureContextCollection_GetSecureContext_SIPSorcery_Net_SDPMediaTypesEnum_
-  commentId: M:SIPSorcery.Net.SecureContextCollection.GetSecureContext(SIPSorcery.Net.SDPMediaTypesEnum)
-  fullName: SIPSorcery.Net.SecureContextCollection.GetSecureContext(SIPSorcery.Net.SDPMediaTypesEnum)
-  nameWithType: SecureContextCollection.GetSecureContext(SDPMediaTypesEnum)
-- uid: SIPSorcery.Net.SecureContextCollection.GetSecureContext*
-  name: GetSecureContext
-  href: api/SIPSorcery.Net.SecureContextCollection.html#SIPSorcery_Net_SecureContextCollection_GetSecureContext_
-  commentId: Overload:SIPSorcery.Net.SecureContextCollection.GetSecureContext
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SecureContextCollection.GetSecureContext
-  nameWithType: SecureContextCollection.GetSecureContext
-- uid: SIPSorcery.Net.SecureContextCollection.IsSecureContextReady(SIPSorcery.Net.SDPMediaTypesEnum)
-  name: IsSecureContextReady(SDPMediaTypesEnum)
-  href: api/SIPSorcery.Net.SecureContextCollection.html#SIPSorcery_Net_SecureContextCollection_IsSecureContextReady_SIPSorcery_Net_SDPMediaTypesEnum_
-  commentId: M:SIPSorcery.Net.SecureContextCollection.IsSecureContextReady(SIPSorcery.Net.SDPMediaTypesEnum)
-  fullName: SIPSorcery.Net.SecureContextCollection.IsSecureContextReady(SIPSorcery.Net.SDPMediaTypesEnum)
-  nameWithType: SecureContextCollection.IsSecureContextReady(SDPMediaTypesEnum)
-- uid: SIPSorcery.Net.SecureContextCollection.IsSecureContextReady*
-  name: IsSecureContextReady
-  href: api/SIPSorcery.Net.SecureContextCollection.html#SIPSorcery_Net_SecureContextCollection_IsSecureContextReady_
-  commentId: Overload:SIPSorcery.Net.SecureContextCollection.IsSecureContextReady
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SecureContextCollection.IsSecureContextReady
-  nameWithType: SecureContextCollection.IsSecureContextReady
-- uid: SIPSorcery.Net.SecureContextCollection.SetSecureContextForMediaType(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.SecureContext)
-  name: SetSecureContextForMediaType(SDPMediaTypesEnum, SecureContext)
-  href: api/SIPSorcery.Net.SecureContextCollection.html#SIPSorcery_Net_SecureContextCollection_SetSecureContextForMediaType_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_SecureContext_
-  commentId: M:SIPSorcery.Net.SecureContextCollection.SetSecureContextForMediaType(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.SecureContext)
-  fullName: SIPSorcery.Net.SecureContextCollection.SetSecureContextForMediaType(SIPSorcery.Net.SDPMediaTypesEnum, SIPSorcery.Net.SecureContext)
-  nameWithType: SecureContextCollection.SetSecureContextForMediaType(SDPMediaTypesEnum, SecureContext)
-- uid: SIPSorcery.Net.SecureContextCollection.SetSecureContextForMediaType*
-  name: SetSecureContextForMediaType
-  href: api/SIPSorcery.Net.SecureContextCollection.html#SIPSorcery_Net_SecureContextCollection_SetSecureContextForMediaType_
-  commentId: Overload:SIPSorcery.Net.SecureContextCollection.SetSecureContextForMediaType
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SecureContextCollection.SetSecureContextForMediaType
-  nameWithType: SecureContextCollection.SetSecureContextForMediaType
 - uid: SIPSorcery.Net.SetDescriptionResultEnum
   name: SetDescriptionResultEnum
   href: api/SIPSorcery.Net.SetDescriptionResultEnum.html
@@ -21169,38 +21012,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SrtpHandler.UnprotectRTP
   nameWithType: SrtpHandler.UnprotectRTP
-- uid: SIPSorcery.Net.SrtpHandlerCollection
-  name: SrtpHandlerCollection
-  href: api/SIPSorcery.Net.SrtpHandlerCollection.html
-  commentId: T:SIPSorcery.Net.SrtpHandlerCollection
-  fullName: SIPSorcery.Net.SrtpHandlerCollection
-  nameWithType: SrtpHandlerCollection
-- uid: SIPSorcery.Net.SrtpHandlerCollection.#ctor
-  name: SrtpHandlerCollection()
-  href: api/SIPSorcery.Net.SrtpHandlerCollection.html#SIPSorcery_Net_SrtpHandlerCollection__ctor
-  commentId: M:SIPSorcery.Net.SrtpHandlerCollection.#ctor
-  fullName: SIPSorcery.Net.SrtpHandlerCollection.SrtpHandlerCollection()
-  nameWithType: SrtpHandlerCollection.SrtpHandlerCollection()
-- uid: SIPSorcery.Net.SrtpHandlerCollection.#ctor*
-  name: SrtpHandlerCollection
-  href: api/SIPSorcery.Net.SrtpHandlerCollection.html#SIPSorcery_Net_SrtpHandlerCollection__ctor_
-  commentId: Overload:SIPSorcery.Net.SrtpHandlerCollection.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SrtpHandlerCollection.SrtpHandlerCollection
-  nameWithType: SrtpHandlerCollection.SrtpHandlerCollection
-- uid: SIPSorcery.Net.SrtpHandlerCollection.GetOrCreateSrtpHandler(SIPSorcery.Net.SDPMediaTypesEnum)
-  name: GetOrCreateSrtpHandler(SDPMediaTypesEnum)
-  href: api/SIPSorcery.Net.SrtpHandlerCollection.html#SIPSorcery_Net_SrtpHandlerCollection_GetOrCreateSrtpHandler_SIPSorcery_Net_SDPMediaTypesEnum_
-  commentId: M:SIPSorcery.Net.SrtpHandlerCollection.GetOrCreateSrtpHandler(SIPSorcery.Net.SDPMediaTypesEnum)
-  fullName: SIPSorcery.Net.SrtpHandlerCollection.GetOrCreateSrtpHandler(SIPSorcery.Net.SDPMediaTypesEnum)
-  nameWithType: SrtpHandlerCollection.GetOrCreateSrtpHandler(SDPMediaTypesEnum)
-- uid: SIPSorcery.Net.SrtpHandlerCollection.GetOrCreateSrtpHandler*
-  name: GetOrCreateSrtpHandler
-  href: api/SIPSorcery.Net.SrtpHandlerCollection.html#SIPSorcery_Net_SrtpHandlerCollection_GetOrCreateSrtpHandler_
-  commentId: Overload:SIPSorcery.Net.SrtpHandlerCollection.GetOrCreateSrtpHandler
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SrtpHandlerCollection.GetOrCreateSrtpHandler
-  nameWithType: SrtpHandlerCollection.GetOrCreateSrtpHandler
 - uid: SIPSorcery.Net.SrtpParameters
   name: SrtpParameters
   href: api/SIPSorcery.Net.SrtpParameters.html
