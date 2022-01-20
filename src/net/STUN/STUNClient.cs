@@ -82,8 +82,19 @@ namespace SIPSorcery.Net
                                         {
                                             STUNAddressAttribute stunAddress = (STUNAddressAttribute)stunAttribute;
                                             publicEndPoint = new IPEndPoint(stunAddress.Address, stunAddress.Port);
-                                            logger.LogDebug($"STUNClient Public IP={publicEndPoint.Address} Port={publicEndPoint.Port}.");
+                                            break;
                                         }
+                                        else if (stunAttribute.AttributeType == STUNAttributeTypesEnum.XORMappedAddress)
+                                        {
+                                            STUNXORAddressAttribute stunAddress = (STUNXORAddressAttribute)stunAttribute;
+                                            publicEndPoint = new IPEndPoint(stunAddress.Address, stunAddress.Port);
+                                            break;
+                                        }
+                                    }
+
+                                    if(publicEndPoint != null)
+                                    {
+                                        logger.LogDebug($"STUNClient Public IP={publicEndPoint.Address} Port={publicEndPoint.Port}.");
                                     }
                                 }
                             }
