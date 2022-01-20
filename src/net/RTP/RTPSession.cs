@@ -2269,9 +2269,10 @@ namespace SIPSorcery.Net
 
                     if (!IsClosed)
                     {
-
+                        var isValidContent = true;
                         if (UseSdpCryptoNegotiation)
                         {
+                            isValidContent = false;
                             RTPHeader header = new RTPHeader(buffer);
                             SDPMediaTypesEnum mediaType = GetMediaTypesFromSSRC(header.SyncSource);
                             if (mediaType != SDPMediaTypesEnum.invalid)
@@ -2294,6 +2295,7 @@ namespace SIPSorcery.Net
                                         }
                                         else
                                         {
+                                            isValidContent = true;
                                             buffer = buffer.Take(outBufLen).ToArray();
                                         }
                                     }
@@ -2313,7 +2315,7 @@ namespace SIPSorcery.Net
                         //SDPMediaTypesEnum? rtpMediaType = null;
 
                         // Check whether this is an RTP event.
-                        if (RemoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == RemoteRtpEventPayloadID)
+                        if (RemoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == RemoteRtpEventPayloadID && isValidContent)
                         {
                             RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
                             OnRtpEvent?.Invoke(remoteEndPoint, rtpEvent, rtpPacket.Header);
@@ -2378,6 +2380,11 @@ namespace SIPSorcery.Net
 
                                 // For video RTP packets an attempt will be made to collate into frames. It's up to the application
                                 // whether it wants to subscribe to frames of RTP packets.
+                                
+
+                                if (!isValidContent)
+                                    return;
+
                                 if (avFormat.Value.Kind == SDPMediaTypesEnum.video)
                                 {
                                     if (VideoRemoteTrack != null)
