@@ -1913,12 +1913,13 @@ namespace SIPSorcery.Net
         /// <param name="rtpEvent">The RTP event to send.</param>
         /// <param name="cancellationToken">CancellationToken to allow the operation to be cancelled prematurely.</param>
         /// <param name="clockRate">To send an RTP event the clock rate of the underlying stream needs to be known.</param>
-        /// <param name="streamID">For multiplexed sessions the ID of the stream to send the event on. Defaults to 0
-        /// for single stream sessions.</param>
+        /// <param name="samplePeriod">The sample period in milliseconds being used for the media stream that the event 
+        /// is being inserted into. Should be set to 50ms if main media stream is dynamic or sample period is unknown.</param>
         public async Task SendDtmfEvent(
             RTPEvent rtpEvent,
             CancellationToken cancellationToken,
-            int clockRate = DEFAULT_AUDIO_CLOCK_RATE)
+            int clockRate = DEFAULT_AUDIO_CLOCK_RATE,
+            int samplePeriod = RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS)
         {
             var dstEndPoint = AudioDestinationEndPoint;
 
@@ -1943,11 +1944,6 @@ namespace SIPSorcery.Net
                 {
                     m_rtpEventInProgress = true;
                     uint startTimestamp = m_lastRtpTimestamp;
-
-                    // The sample period in milliseconds being used for the media stream that the event 
-                    // is being inserted into. Should be set to 50ms if main media stream is dynamic or 
-                    // sample period is unknown.
-                    int samplePeriod = RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS;
 
                     // The RTP timestamp step corresponding to the sampling period. This can change depending
                     // on the codec being used. For example using PCMU with a sampling frequency of 8000Hz and a sample period of 50ms
