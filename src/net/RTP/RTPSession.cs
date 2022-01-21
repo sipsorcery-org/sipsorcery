@@ -2116,22 +2116,28 @@ namespace SIPSorcery.Net
 
         private (bool, byte[]) UnprotectBuffer(SDPMediaTypesEnum mediaType, byte[] buffer)
         {
-            var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
-            if (secureContext != null)
+            if (UseSdpCryptoNegotiation || IsSecure)
             {
-                int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
-
-                if (res != 0)
+                var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
+                if (secureContext != null)
                 {
-                    logger.LogWarning($"SRTP unprotect failed for {mediaType}, result {res}.");
-                    return (false, buffer);
+                    int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
+                    
+                    if (res == 0)
+                    {
+                        return (true, buffer.Take(outBufLen).ToArray());
+                    }
+                    else 
+                    {
+                        logger.LogWarning($"SRTP unprotect failed for {mediaType}, result {res}.");
+                    }
                 }
-                else
-                {
-                    buffer = buffer.Take(outBufLen).ToArray();
-                }
+                return (false, buffer);
             }
-            return (true, buffer);
+            else
+            {
+                return (true, buffer);
+            }
         }
 
         /// <summary>
