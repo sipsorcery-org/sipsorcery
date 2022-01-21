@@ -29,6 +29,9 @@ namespace SIPSorcery.Media
         private G722Codec _g722Decoder;
         private G722CodecState _g722DecoderState;
 
+        private G729Encoder _g729Encoder;
+        private G729Decoder _g729Decoder;
+
         private List<AudioFormat> _linearFormats = new List<AudioFormat>
         {
             new AudioFormat(AudioCodecsEnum.L16, 117, 16000),
@@ -43,6 +46,7 @@ namespace SIPSorcery.Media
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
+            new AudioFormat(SDPWellKnownMediaFormatsEnum.G729),
         };
 
         public List<AudioFormat> SupportedFormats
@@ -79,6 +83,15 @@ namespace SIPSorcery.Media
                 int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
 
                 return encodedSample;
+            }
+            else if (format.Codec == AudioCodecsEnum.G729)
+            {
+                if (_g729Encoder == null)
+                    _g729Encoder = new G729Encoder();
+
+                byte[] pcmBytes = new byte[pcm.Length * sizeof(short)];
+                Buffer.BlockCopy(pcm, 0, pcmBytes, 0, pcmBytes.Length);
+                return _g729Encoder.Process(pcmBytes);
             }
             else if (format.Codec == AudioCodecsEnum.PCMA)
             {
@@ -127,6 +140,16 @@ namespace SIPSorcery.Media
                 int decodedSampleCount = _g722Decoder.Decode(_g722DecoderState, decodedPcm, encodedSample, encodedSample.Length);
 
                 return decodedPcm.Take(decodedSampleCount).ToArray();
+            }
+            if (format.Codec == AudioCodecsEnum.G729)
+            {
+                if (_g729Decoder == null)
+                    _g729Decoder = new G729Decoder();
+
+                byte[] decodedBytes = _g729Decoder.Process(encodedSample);
+                short[] decodedPcm = new short[decodedBytes.Length / sizeof(short)];
+                Buffer.BlockCopy(decodedBytes, 0, decodedPcm, 0, decodedBytes.Length);
+                return decodedPcm;
             }
             else if (format.Codec == AudioCodecsEnum.PCMA)
             {

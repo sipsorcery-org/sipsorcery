@@ -528,7 +528,8 @@ namespace SIPSorcery.Net
                     bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
-                                new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) :
+                                new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
+                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
                                 (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
                                 );

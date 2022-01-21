@@ -714,7 +714,7 @@ namespace SIPSorcery.SIP.App
 
                 await Task.WhenAny(dialogueCreatedTcs.Task, Task.Delay(WAIT_DIALOG_TIMEOUT)).ConfigureAwait(false);
 
-                if (m_uas.SIPDialogue != null)
+                if (m_uas?.SIPDialogue != null)
                 {
                     m_sipDialogue = m_uas.SIPDialogue;
 

@@ -225,7 +225,8 @@ namespace SIPSorcery.Net
         protected UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
         protected UdpReceiver m_controlReceiver;
-        private bool m_started = false;
+        private bool m_rtpReceiverStarted = false;
+        private bool m_controlReceiverStarted = false;
         private bool m_isClosed;
 
         public Socket RtpSocket { get; private set; }
@@ -325,9 +326,18 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Start()
         {
-            if (!m_started)
+            StartRtpReceiver();
+            StartControlReceiver();
+        }
+
+        /// <summary>
+        /// Starts the UDP receiver that listens for RTP packets.
+        /// </summary>
+        public void StartRtpReceiver()
+        {
+            if(!m_rtpReceiverStarted)
             {
-                m_started = true;
+                m_rtpReceiverStarted = true;
 
                 logger.LogDebug($"RTPChannel for {RtpSocket.LocalEndPoint} started.");
 
@@ -335,14 +345,23 @@ namespace SIPSorcery.Net
                 m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
                 m_rtpReceiver.OnClosed += Close;
                 m_rtpReceiver.BeginReceiveFrom();
+            }
+        }
 
-                if (m_controlSocket != null)
-                {
-                    m_controlReceiver = new UdpReceiver(m_controlSocket);
-                    m_controlReceiver.OnPacketReceived += OnControlPacketReceived;
-                    m_controlReceiver.OnClosed += Close;
-                    m_controlReceiver.BeginReceiveFrom();
-                }
+
+        /// <summary>
+        /// Starts the UDP receiver that listens for RTCP (control) packets.
+        /// </summary>
+        public void StartControlReceiver()
+        {
+            if(!m_controlReceiverStarted && m_controlSocket != null)
+            {
+                m_controlReceiverStarted = true;
+
+                m_controlReceiver = new UdpReceiver(m_controlSocket);
+                m_controlReceiver.OnPacketReceived += OnControlPacketReceived;
+                m_controlReceiver.OnClosed += Close;
+                m_controlReceiver.BeginReceiveFrom();
             }
         }
 

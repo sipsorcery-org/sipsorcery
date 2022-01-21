@@ -94,12 +94,13 @@ namespace SIPSorcery.Net
         public ushort BLP; // bitmask of following lost packets (BLP): 16 bits
         public uint FCI; // Feedback Control Information (FCI)  
 
-        public RTCPFeedback(uint ssrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
+        public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
         {
             Header = new RTCPHeader(feedbackMessageType);
             SENDER_PAYLOAD_SIZE = 12;
             MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE;
-            SenderSSRC = ssrc;
+            SenderSSRC = senderSsrc;
+            MediaSSRC = mediaSsrc;
             PID = sequenceNo;
             BLP = bitMask;
         }
@@ -138,20 +139,58 @@ namespace SIPSorcery.Net
         {
             Header = new RTCPHeader(packet);
 
+            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
             if (BitConverter.IsLittleEndian)
             {
-                SenderSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-                MediaSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 8));
+                SenderSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex));
+                MediaSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex + 4));
             }
             else
             {
-                SenderSSRC = BitConverter.ToUInt32(packet, 4);
-                MediaSSRC = BitConverter.ToUInt32(packet, 8);
+                SenderSSRC = BitConverter.ToUInt32(packet, payloadIndex);
+                MediaSSRC = BitConverter.ToUInt32(packet, payloadIndex + 4);
             }
 
-            // TODO: Depending on the report type additional parameters will need to be deserialised.
+            switch (Header)
+            {
+                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                    SENDER_PAYLOAD_SIZE = 8;
+                    // PLI feedback reports do no have any additional parameters.
+                    break;
+                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
+                    SENDER_PAYLOAD_SIZE = 12;
+                    if (BitConverter.IsLittleEndian)
+                    {
+                        PID = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 8));
+                        BLP = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 10));
+                    }
+                    else
+                    {
+                        PID = BitConverter.ToUInt16(packet, payloadIndex + 8);
+                        BLP = BitConverter.ToUInt16(packet, payloadIndex + 10);
+                    }
+                    break;
+
+                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                    SENDER_PAYLOAD_SIZE = 8;
+                    break;
+
+                //default:
+                //    throw new NotImplementedException($"Deserialisation for feedback report {Header.PacketType} not yet implemented.");
+            }
         }
 
+       //0                   1                   2                   3
+       //0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       //|V=2|P|   FMT   |       PT      |          length               |
+       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       //|                  SSRC of packet sender                        |
+       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       //|                  SSRC of media source                         |
+       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       //:            Feedback Control Information(FCI)                  :
+       //:                                                               :
         public byte[] GetBytes()
         {
             byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE];
@@ -180,20 +219,24 @@ namespace SIPSorcery.Net
                 case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
                     if (BitConverter.IsLittleEndian)
                     {
-                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PID)), 0, buffer, payloadIndex + 6, 2);
-                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(BLP)), 0, buffer, payloadIndex + 8, 2);
+                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PID)), 0, buffer, payloadIndex + 8, 2);
+                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(BLP)), 0, buffer, payloadIndex + 10, 2);
                     }
                     else
                     {
-                        Buffer.BlockCopy(BitConverter.GetBytes(PID), 0, buffer, payloadIndex + 6, 2);
-                        Buffer.BlockCopy(BitConverter.GetBytes(BLP), 0, buffer, payloadIndex + 8, 2);
+                        Buffer.BlockCopy(BitConverter.GetBytes(PID), 0, buffer, payloadIndex + 8, 2);
+                        Buffer.BlockCopy(BitConverter.GetBytes(BLP), 0, buffer, payloadIndex + 10, 2);
                     }
                     break;
 
                 case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     break;
+                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
+                    // Application feedback reports do no have any additional parameters?
+                    break;
                 default:
-                    throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} not yet implemented.");
+                    throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} and message type "
+                    + $"{Header.FeedbackMessageType} not yet implemented.");
             }
             return buffer;
         }
