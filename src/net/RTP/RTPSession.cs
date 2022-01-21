@@ -2133,8 +2133,11 @@ namespace SIPSorcery.Net
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
-                
-                if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
+                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady)
+                {
+                    logger.LogWarning("RTP or RTCP packet received before secure context ready.");
+                }
+                else if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
                 {
                     //logger.LogDebug($"RTCP packet received from {remoteEndPoint} {buffer.HexStr()}");
 
@@ -2159,26 +2162,19 @@ namespace SIPSorcery.Net
                         SDPMediaTypesEnum mediaType = GetMediaTypesFromSSRC(ssrc);
                         if (mediaType != SDPMediaTypesEnum.invalid)
                         {
-                            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReadyForMediaType(mediaType))
+                            var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
+                            if (secureContext != null)
                             {
-                                logger.LogWarning("RTP or RTCP packet received before secure context ready.");
-                            }
-                            else
-                            {
-                                var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
-                                if (secureContext != null)
+                                int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
+                                if (res != 0)
                                 {
-                                    int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
-                                    if (res != 0)
-                                    {
-                                        logger.LogWarning($"SRTCP unprotect failed for {mediaType} track, result {res}.");
-                                        return;
-                                    }
-                                    else
-                                    {
-                                        isValidContent = true;
-                                        buffer = buffer.Take(outBufLen).ToArray();
-                                    }
+                                    logger.LogWarning($"SRTCP unprotect failed for {mediaType} track, result {res}.");
+                                    return;
+                                }
+                                else
+                                {
+                                    isValidContent = true;
+                                    buffer = buffer.Take(outBufLen).ToArray();
                                 }
                             }
                         }
@@ -2283,27 +2279,20 @@ namespace SIPSorcery.Net
                             SDPMediaTypesEnum mediaType = GetMediaTypesFromSSRC(header.SyncSource);
                             if (mediaType != SDPMediaTypesEnum.invalid)
                             {
-                                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReadyForMediaType(mediaType))
+                                var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
+                                if (secureContext != null)
                                 {
-                                    logger.LogWarning("RTP or RTCP packet received before secure context ready.");
-                                }
-                                else
-                                {
-                                    var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
-                                    if (secureContext != null)
-                                    {
-                                        int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
+                                    int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
 
-                                        if (res != 0)
-                                        {
-                                            logger.LogWarning($"SRTP unprotect failed for {mediaType}, result {res}.");
-                                            return;
-                                        }
-                                        else
-                                        {
-                                            isValidContent = true;
-                                            buffer = buffer.Take(outBufLen).ToArray();
-                                        }
+                                    if (res != 0)
+                                    {
+                                        logger.LogWarning($"SRTP unprotect failed for {mediaType}, result {res}.");
+                                        return;
+                                    }
+                                    else
+                                    {
+                                        isValidContent = true;
+                                        buffer = buffer.Take(outBufLen).ToArray();
                                     }
                                 }
                             }
@@ -2388,9 +2377,6 @@ namespace SIPSorcery.Net
                                 // whether it wants to subscribe to frames of RTP packets.
                                 
 
-                                if (!isValidContent)
-                                    return;
-
                                 if (avFormat.Value.Kind == SDPMediaTypesEnum.video)
                                 {
                                     if (VideoRemoteTrack != null)
@@ -2405,7 +2391,7 @@ namespace SIPSorcery.Net
                                         VideoRemoteTrack.LastRemoteSeqNum = rtpPacket.Header.SequenceNumber;
                                     }
 
-                                    if (OnVideoFrameReceived != null)
+                                    if (OnVideoFrameReceived != null && isValidContent)
                                     {
                                         if (_rtpVideoFramer != null)
                                         {
@@ -2451,7 +2437,8 @@ namespace SIPSorcery.Net
                                     AudioRemoteTrack.LastRemoteSeqNum = rtpPacket.Header.SequenceNumber;
                                 }
 
-                                OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, rtpPacket);
+                                if (isValidContent)
+                                    OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, rtpPacket);
                                 //}
 
                                 // Used for reporting purposes.
