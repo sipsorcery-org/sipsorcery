@@ -1942,7 +1942,7 @@ namespace SIPSorcery.Net
                 else
                 {
                     m_rtpEventInProgress = true;
-                    uint startTimestamp = m_lastRtpTimestamp;
+                    uint startTimestamp = audioTrack.Timestamp;
 
                     // The sample period in milliseconds being used for the media stream that the event 
                     // is being inserted into. Should be set to 50ms if main media stream is dynamic or 
@@ -1993,6 +1993,7 @@ namespace SIPSorcery.Net
                             SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioRtcpSession);
                         }
                     }
+                    audioTrack.Timestamp += rtpEvent.TotalDuration;
                 }
             }
             catch (SocketException sockExcp)
