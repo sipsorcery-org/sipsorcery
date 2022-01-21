@@ -2116,28 +2116,21 @@ namespace SIPSorcery.Net
 
         private (bool, byte[]) UnprotectBuffer(SDPMediaTypesEnum mediaType, byte[] buffer)
         {
-            if (UseSdpCryptoNegotiation || IsSecure)
+            var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
+            if (secureContext != null)
             {
-                var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
-                if (secureContext != null)
-                {
-                    int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
+                int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
                     
-                    if (res == 0)
-                    {
-                        return (true, buffer.Take(outBufLen).ToArray());
-                    }
-                    else 
-                    {
-                        logger.LogWarning($"SRTP unprotect failed for {mediaType}, result {res}.");
-                    }
+                if (res == 0)
+                {
+                    return (true, buffer.Take(outBufLen).ToArray());
                 }
-                return (false, buffer);
+                else 
+                {
+                    logger.LogWarning($"SRTP unprotect failed for {mediaType}, result {res}.");
+                }
             }
-            else
-            {
-                return (true, buffer);
-            }
+            return (false, buffer);
         }
 
         /// <summary>
@@ -2296,12 +2289,20 @@ namespace SIPSorcery.Net
                         // Check whether this is an RTP event.
                         if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
                         {
-                            var (succeeded, newBuffer) = UnprotectBuffer(SDPMediaTypesEnum.audio, buffer);
-                            if (!succeeded)
+                            RTPPacket rtpPacket;
+                            if (IsSecure || UseSdpCryptoNegotiation)
                             {
-                                return;
+                                var (succeeded, newBuffer) = UnprotectBuffer(SDPMediaTypesEnum.audio, buffer);
+                                if (!succeeded)
+                                {
+                                    return;
+                                }
+                                rtpPacket = new RTPPacket(newBuffer);
                             }
-                            var rtpPacket = new RTPPacket(newBuffer);
+                            else
+                            { 
+                                rtpPacket = new RTPPacket(buffer); 
+                            }
 
                             RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
                             OnRtpEvent?.Invoke(remoteEndPoint, rtpEvent, rtpPacket.Header);
@@ -2384,12 +2385,19 @@ namespace SIPSorcery.Net
 
                                     if (OnVideoFrameReceived != null)
                                     {
-                                        var (succeeded, newBuffer) = UnprotectBuffer(SDPMediaTypesEnum.video, buffer);
-                                        if (!succeeded)
+                                        if (IsSecure || UseSdpCryptoNegotiation)
                                         {
-                                            return;
+                                            var (succeeded, newBuffer) = UnprotectBuffer(SDPMediaTypesEnum.video, buffer);
+                                            if (!succeeded)
+                                            {
+                                                return;
+                                            }
+                                            rtpPacket = new RTPPacket(newBuffer);
                                         }
-                                        rtpPacket = new RTPPacket(newBuffer);
+                                        else
+                                        {
+                                            rtpPacket = new RTPPacket(buffer);
+                                        }
 
                                         if (_rtpVideoFramer != null)
                                         {
@@ -2425,12 +2433,19 @@ namespace SIPSorcery.Net
                                 }
                                 else if (avFormat.Value.Kind == SDPMediaTypesEnum.audio && AudioRemoteTrack != null)
                                 {
-                                    var (succeeded, newBuffer) = UnprotectBuffer(SDPMediaTypesEnum.audio, buffer);
-                                    if (!succeeded)
+                                    if (IsSecure || UseSdpCryptoNegotiation)
                                     {
-                                        return;
+                                        var (succeeded, newBuffer) = UnprotectBuffer(SDPMediaTypesEnum.audio, buffer);
+                                        if (!succeeded)
+                                        {
+                                            return;
+                                        }
+                                        rtpPacket = new RTPPacket(newBuffer);
                                     }
-                                    rtpPacket = new RTPPacket(newBuffer);
+                                    else
+                                    {
+                                        rtpPacket = new RTPPacket(buffer);
+                                    }
 
                                     if (AudioRemoteTrack.LastRemoteSeqNum != 0 &&
                                         rtpPacket.Header.SequenceNumber != (AudioRemoteTrack.LastRemoteSeqNum + 1) &&
