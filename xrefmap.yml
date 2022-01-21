@@ -12789,12 +12789,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SendDtmf
   nameWithType: RTPSession.SendDtmf
-- uid: SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent,System.Threading.CancellationToken,System.Int32)
-  name: SendDtmfEvent(RTPEvent, CancellationToken, Int32)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent,System.Threading.CancellationToken,System.Int32)
-  fullName: SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent, System.Threading.CancellationToken, System.Int32)
-  nameWithType: RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32)
+- uid: SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent,System.Threading.CancellationToken,System.Int32,System.Int32)
+  name: SendDtmfEvent(RTPEvent, CancellationToken, Int32, Int32)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent,System.Threading.CancellationToken,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent, System.Threading.CancellationToken, System.Int32, System.Int32)
+  nameWithType: RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32, Int32)
 - uid: SIPSorcery.Net.RTPSession.SendDtmfEvent*
   name: SendDtmfEvent
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_
