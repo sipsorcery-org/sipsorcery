@@ -2140,11 +2140,13 @@ namespace SIPSorcery.Net
 
                     #region RTCP packet.
 
-                    if (UseSdpCryptoNegotiation)
+                    var isValidContent = true;
+                    if (UseSdpCryptoNegotiation || IsSecure)
                     {
                         // Get the SSRC in order to be able to figure out which media type 
                         // This will let us choose the apropriate unprotect methods
                         uint ssrc;
+                        isValidContent = false;
                         if (BitConverter.IsLittleEndian)
                         {
                             ssrc = NetConvert.DoReverseEndian(BitConverter.ToUInt32(buffer, 4));
@@ -2174,6 +2176,7 @@ namespace SIPSorcery.Net
                                     }
                                     else
                                     {
+                                        isValidContent = true;
                                         buffer = buffer.Take(outBufLen).ToArray();
                                     }
                                 }
@@ -2184,6 +2187,9 @@ namespace SIPSorcery.Net
                             logger.LogWarning("Could not find appropriate remote track for SSRC for RTCP packet");
                         }
                     }
+
+                    if (!isValidContent)
+                        return;
 
                     var rtcpPkt = new RTCPCompoundPacket(buffer);
 
@@ -2270,7 +2276,7 @@ namespace SIPSorcery.Net
                     if (!IsClosed)
                     {
                         var isValidContent = true;
-                        if (UseSdpCryptoNegotiation)
+                        if (UseSdpCryptoNegotiation || IsSecure)
                         {
                             isValidContent = false;
                             RTPHeader header = new RTPHeader(buffer);
