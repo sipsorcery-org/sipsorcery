@@ -179,7 +179,8 @@ namespace SIPSorcery.Net
 
         private RtpIceChannel _rtpIceChannel;
 
-        public List<RTCDataChannel> DataChannels { get; private set; } = new List<RTCDataChannel>();
+        readonly RTCDataChannelCollection dataChannels;
+        public IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
 
         private Org.BouncyCastle.Crypto.Tls.Certificate _dtlsCertificate;
         private Org.BouncyCastle.Crypto.AsymmetricKeyParameter _dtlsPrivateKey;
@@ -386,6 +387,8 @@ namespace SIPSorcery.Net
         public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0) :
             base(true, true, true, configuration?.X_BindAddress, bindPort)
         {
+            dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
+            
             if (_configuration != null &&
                _configuration.iceTransportPolicy == RTCIceTransportPolicy.relay &&
                _configuration.iceServers?.Count == 0)
@@ -1401,7 +1404,7 @@ namespace SIPSorcery.Net
                 sctp.RTCSctpAssociation.OnNewDataChannel += OnSctpAssociationNewDataChannel;
 
                 // Create new SCTP streams for any outstanding data channel requests.
-                foreach (var dataChannel in DataChannels)
+                foreach (var dataChannel in dataChannels.ActivatePendingChannels())
                 {
                     OpenDataChannel(dataChannel);
                 }
@@ -1421,16 +1424,14 @@ namespace SIPSorcery.Net
 
             dc.SendDcepAck();
 
-            if (DataChannels.Any(x => x.id == streamID))
+            if (dataChannels.AddActiveChannel(dc))
             {
-                // TODO: What's the correct behaviour here?? I guess use the newest one and remove the old one?
-                logger.LogWarning($"WebRTC duplicate data channel requested for stream ID {streamID}.");
+                ondatachannel?.Invoke(dc);
             }
             else
             {
-                DataChannels.Add(dc);
-
-                ondatachannel?.Invoke(dc);
+                // TODO: What's the correct behaviour here?? I guess use the newest one and remove the old one?
+                logger.LogWarning($"WebRTC duplicate data channel requested for stream ID {streamID}.");
             }
         }
 
@@ -1440,7 +1441,7 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The ID of the stream corresponding to the acknowledged data channel.</param>
         private void OnSctpAssociationDataChannelOpened(ushort streamID)
         {
-            var dc = DataChannels.FirstOrDefault(x => x.id == streamID);
+            dataChannels.TryGetChannel(streamID, out var dc);
 
             string label = dc != null ? dc.label : "<none>";
             logger.LogInformation($"WebRTC data channel opened label {label} and stream ID {streamID}.");
@@ -1464,11 +1465,7 @@ namespace SIPSorcery.Net
         /// <param name="data">The chunk data.</param>
         private void OnSctpAssociationDataChunk(SctpDataFrame frame)
         {
-            // Should only be one channel per stream ID but no point blowing up if a duplicate
-            // was created by the remote peer or it snuck in some other way.
-            var dc = DataChannels.FirstOrDefault(x => x.id == frame.StreamID);
-
-            if (dc != null)
+            if (dataChannels.TryGetChannel(frame.StreamID, out var dc))
             {
                 dc.GotData(frame.StreamID, frame.StreamSeqNum, frame.PPID, frame.UserData);
             }
@@ -1540,8 +1537,6 @@ namespace SIPSorcery.Net
                 label = label,
             };
 
-            DataChannels.Add(channel);
-
             if (connectionState == RTCPeerConnectionState.connected)
             {
                 // If the peer connection is not in a connected state there's no point doing anything
@@ -1560,6 +1555,7 @@ namespace SIPSorcery.Net
                         await InitialiseSctpAssociation().ConfigureAwait(false);
                     }
 
+                    dataChannels.AddActiveChannel(channel);
                     OpenDataChannel(channel);
 
                     // Wait for the DCEP ACK from the remote peer.
@@ -1583,6 +1579,7 @@ namespace SIPSorcery.Net
                 // Data channels can be created prior to the SCTP transport being available.
                 // They will act as placeholders and then be opened once the SCTP transport 
                 // becomes available.
+                dataChannels.AddPendingChannel(channel);
                 return channel;
             }
         }
@@ -1594,36 +1591,14 @@ namespace SIPSorcery.Net
         /// <param name="dataChannel">The data channel to open.</param>
         private void OpenDataChannel(RTCDataChannel dataChannel)
         {
-            logger.LogDebug($"WebRTC attempting to open data channel with label {dataChannel.label}.");
-
-            // Get next available stream ID.
-            bool eventStreamID = _dtlsHandle.IsClient;
-            var lastAssignedDC = DataChannels.Where(x => x.id != null && x.id % 2 == (eventStreamID ? 0 : 1))
-                .OrderByDescending(x => x.id.GetValueOrDefault()).FirstOrDefault();
-            bool canCreateStream = true;
-            ushort nextID = (ushort)(eventStreamID ? 0 : 1);
-            if (lastAssignedDC != null)
+            if (dataChannel.id.HasValue)
             {
-                //  The SCTP stream identifier 65535 is reserved due to SCTP INIT and
-                // INIT - ACK chunks only allowing a maximum of 65535 streams to be
-                // negotiated(0 - 65534) - https://tools.ietf.org/html/rfc8832
-                if (lastAssignedDC.id.Value == ushort.MaxValue - 1 || lastAssignedDC.id.Value == ushort.MaxValue - 2)
-                {
-                    logger.LogError("Data channel stream IDs have been exhausted. No more streams can be created on this data channel.");
-                    canCreateStream = false;
-                }
-                else
-                {
-                    nextID = (ushort)(lastAssignedDC.id.Value + 2);
-                }
-            }
-
-            if (canCreateStream)
-            {
-                logger.LogDebug($"WebRTC setting stream ID to {nextID} for data channel {dataChannel.label}.");
-
-                dataChannel.id = nextID;
+                logger.LogDebug($"WebRTC attempting to open data channel with label {dataChannel.label} and stream ID {dataChannel.id}.");
                 dataChannel.SendDcepOpen();
+            }
+            else
+            {
+                logger.LogError("Attempt to open a data channel without an assigned ID has failed.");
             }
         }
 

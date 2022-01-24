@@ -113,7 +113,8 @@ namespace SIPSorcery.Net
         {
             IsOpened = false;
             readyState = RTCDataChannelState.closed;
-            // TODO. What actions are required?
+            logger.LogDebug($"Data channel with id {id} has been closed");
+            onclose?.Invoke();
         }
 
         /// <summary>
@@ -219,13 +220,6 @@ namespace SIPSorcery.Net
                        (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
                        new byte[] { (byte)DataChannelMessageTypes.ACK });
             }
-        }
-
-        public void close(uint streamID)
-        {
-            IsOpened = false;
-            logger.LogDebug($"Data channel stream closed id {streamID}.");
-            onclose?.Invoke();
         }
 
         /// <summary>
