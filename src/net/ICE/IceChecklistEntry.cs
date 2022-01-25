@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -229,7 +230,41 @@ namespace SIPSorcery.Net
 
         internal void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)
         {
-            if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+            bool retry = false;
+            var msgType = stunResponse.Header.MessageClass;
+            if (msgType == STUNClassTypesEnum.ErrorResponse)
+            {
+                if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                {
+                    var errCodeAttribute =
+                        stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as
+                            STUNErrorCodeAttribute;
+                    if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE ||
+                        errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
+                    {
+                        LocalCandidate.IceServer.SetAuthenticationFields(stunResponse);
+                        LocalCandidate.IceServer.GenerateNewTransactionID();
+                        retry = true;
+                    }
+                }
+
+            }
+
+            if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshSuccessResponse)
+            {
+                var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
+
+                if (lifetime != null)
+                {
+                    LocalCandidate.IceServer.TurnTimeToExpiry = DateTime.Now +
+                                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                }
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)
+            {
+                logger.LogError("Cannot refresh TURN allocation");
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
             {
                 if (Nominated)
                 {
@@ -254,13 +289,14 @@ namespace SIPSorcery.Net
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionSuccessResponse)
             {
                 logger.LogDebug($"A TURN Create Permission success response was received from {remoteEndPoint} (TxID: {Encoding.ASCII.GetString(stunResponse.Header.TransactionId)}).");
+                TurnPermissionsRequestSent = 1;
                 TurnPermissionsResponseAt = DateTime.Now;
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionErrorResponse)
             {
                 logger.LogWarning($"ICE RTP channel TURN Create Permission error response was received from {remoteEndPoint}.");
                 TurnPermissionsResponseAt = DateTime.Now;
-                State = ChecklistEntryState.Failed;
+                State = retry ? State : ChecklistEntryState.Failed;
             }
             else
             {
