@@ -7812,12 +7812,6 @@ references:
   commentId: M:SIPSorcery.Net.RTCDataChannel.close
   fullName: SIPSorcery.Net.RTCDataChannel.close()
   nameWithType: RTCDataChannel.close()
-- uid: SIPSorcery.Net.RTCDataChannel.close(System.UInt32)
-  name: close(UInt32)
-  href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_close_System_UInt32_
-  commentId: M:SIPSorcery.Net.RTCDataChannel.close(System.UInt32)
-  fullName: SIPSorcery.Net.RTCDataChannel.close(System.UInt32)
-  nameWithType: RTCDataChannel.close(UInt32)
 - uid: SIPSorcery.Net.RTCDataChannel.close*
   name: close
   href: api/SIPSorcery.Net.RTCDataChannel.html#SIPSorcery_Net_RTCDataChannel_close_
