@@ -324,7 +324,7 @@ namespace SIPSorcery.Net
                             }
                         }
                     }
-                    else if (_isClosed)
+                    else if (_isClosed || bytesRead == DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE)
                     {
                         // The DTLS transport has been closed or is no longer available.
                         logger.LogWarning($"SCTP the RTCSctpTransport DTLS transport returned an error.");
