@@ -204,10 +204,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; private set; }
 
-        public bool IsDtlsNegotiationComplete
-        {
-            get { return base.IsSecureContextReady; }
-        }
+        public bool IsDtlsNegotiationComplete { get; private set; } = false;
 
         public RTCSessionDescription localDescription { get; private set; }
 
@@ -1674,10 +1671,13 @@ namespace SIPSorcery.Net
                     logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
 
                     base.SetSecurityContext(
+                        new List<SDPMediaTypesEnum> { SDPMediaTypesEnum.audio, SDPMediaTypesEnum.video, SDPMediaTypesEnum.application },
                         dtlsHandle.ProtectRTP,
                         dtlsHandle.UnprotectRTP,
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);
+                        
+                    IsDtlsNegotiationComplete = true;
 
                     return true;
                 }
