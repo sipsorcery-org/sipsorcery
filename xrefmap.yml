@@ -5716,6 +5716,19 @@ references:
   commentId: T:SIPSorcery.Net.IceServer
   fullName: SIPSorcery.Net.IceServer
   nameWithType: IceServer
+- uid: SIPSorcery.Net.IceServer.TurnTimeToExpiry
+  name: TurnTimeToExpiry
+  href: api/SIPSorcery.Net.IceServer.html#SIPSorcery_Net_IceServer_TurnTimeToExpiry
+  commentId: P:SIPSorcery.Net.IceServer.TurnTimeToExpiry
+  fullName: SIPSorcery.Net.IceServer.TurnTimeToExpiry
+  nameWithType: IceServer.TurnTimeToExpiry
+- uid: SIPSorcery.Net.IceServer.TurnTimeToExpiry*
+  name: TurnTimeToExpiry
+  href: api/SIPSorcery.Net.IceServer.html#SIPSorcery_Net_IceServer_TurnTimeToExpiry_
+  commentId: Overload:SIPSorcery.Net.IceServer.TurnTimeToExpiry
+  isSpec: "True"
+  fullName: SIPSorcery.Net.IceServer.TurnTimeToExpiry
+  nameWithType: IceServer.TurnTimeToExpiry
 - uid: SIPSorcery.Net.IDtlsSrtpPeer
   name: IDtlsSrtpPeer
   href: api/SIPSorcery.Net.IDtlsSrtpPeer.html
@@ -11827,6 +11840,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate
   nameWithType: RtpIceChannel.AddRemoteCandidate
+- uid: SIPSorcery.Net.RtpIceChannel.ALLOCATION_TIME_TO_EXPIRY_VALUE
+  name: ALLOCATION_TIME_TO_EXPIRY_VALUE
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_ALLOCATION_TIME_TO_EXPIRY_VALUE
+  commentId: F:SIPSorcery.Net.RtpIceChannel.ALLOCATION_TIME_TO_EXPIRY_VALUE
+  fullName: SIPSorcery.Net.RtpIceChannel.ALLOCATION_TIME_TO_EXPIRY_VALUE
+  nameWithType: RtpIceChannel.ALLOCATION_TIME_TO_EXPIRY_VALUE
 - uid: SIPSorcery.Net.RtpIceChannel.Candidates
   name: Candidates
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Candidates
@@ -12032,6 +12051,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RtpIceChannel.ProcessStunMessage
   nameWithType: RtpIceChannel.ProcessStunMessage
+- uid: SIPSorcery.Net.RtpIceChannel.REFRESH_PERMISSION_PERIOD
+  name: REFRESH_PERMISSION_PERIOD
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_REFRESH_PERMISSION_PERIOD
+  commentId: F:SIPSorcery.Net.RtpIceChannel.REFRESH_PERMISSION_PERIOD
+  fullName: SIPSorcery.Net.RtpIceChannel.REFRESH_PERMISSION_PERIOD
+  nameWithType: RtpIceChannel.REFRESH_PERMISSION_PERIOD
 - uid: SIPSorcery.Net.RtpIceChannel.RemoteIcePassword
   name: RemoteIcePassword
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_RemoteIcePassword
