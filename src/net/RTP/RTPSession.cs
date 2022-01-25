@@ -1963,7 +1963,7 @@ namespace SIPSorcery.Net
                 else
                 {
                     m_rtpEventInProgress = true;
-                    uint startTimestamp = m_lastRtpTimestamp;
+                    uint startTimestamp = audioTrack.Timestamp;
 
                     // The RTP timestamp step corresponding to the sampling period. This can change depending
                     // on the codec being used. For example using PCMU with a sampling frequency of 8000Hz and a sample period of 50ms
@@ -2012,6 +2012,7 @@ namespace SIPSorcery.Net
                             SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioRtcpSession, protectRtpPacket);
                         }
                     }
+                    audioTrack.Timestamp += rtpEvent.TotalDuration;
                 }
             }
             catch (SocketException sockExcp)
