@@ -143,6 +143,16 @@ namespace SIPSorcery.Net
         /// </summary>
         public static int FAILED_TIMEOUT_PERIOD = 16;
 
+        /// <summary>
+        /// The period in seconds after which a CreatePermission will be sent.
+        /// </summary>
+        public static int REFRESH_PERMISSION_PERIOD = 240;
+
+        /// <summary>
+        /// The lifetime value used in refresh request.
+        /// </summary>
+        public static uint ALLOCATION_TIME_TO_EXPIRY_VALUE = 600;
+
         private IPAddress _bindAddress;
         private List<RTCIceServer> _iceServers;
         private RTCIceTransportPolicy _policy;
@@ -252,6 +262,7 @@ namespace SIPSorcery.Net
         private bool _closed = false;
         private Timer _connectivityChecksTimer;
         private Timer _processIceServersTimer;
+        private Timer _refreshTurnTimer;
         private DateTime _checklistStartedAt = DateTime.MinValue;
         private bool _includeAllInterfaceAddresses = false;
         private ulong _iceTiebreaker;
@@ -457,6 +468,7 @@ namespace SIPSorcery.Net
                 _closed = true;
                 _connectivityChecksTimer?.Dispose();
                 _processIceServersTimer?.Dispose();
+                _refreshTurnTimer?.Dispose();
             }
         }
 
@@ -523,6 +535,7 @@ namespace SIPSorcery.Net
             // Reset the session state.
             _connectivityChecksTimer?.Dispose();
             _processIceServersTimer?.Dispose();
+            _refreshTurnTimer?.Dispose();
             _candidates = new ConcurrentBag<RTCIceCandidate>();
             _checklist?.Clear();
             _iceServerConnections?.Clear();
@@ -707,6 +720,40 @@ namespace SIPSorcery.Net
             }
         }
 
+        //
+        private void RefreshTurn(Object state)
+        {
+            if (NominatedEntry == null)
+            {
+                return;
+            }
+            if (_activeIceServer._uri.Scheme != STUNSchemesEnum.turn)
+            {
+                _refreshTurnTimer.Dispose();
+                return;
+            }
+            if (_activeIceServer.TurnTimeToExpiry.Subtract(DateTime.Now) <= TimeSpan.FromMinutes(1))
+            {
+                logger.LogDebug($"Sending TURN refresh request to ICE server {_activeIceServer._uri}.");
+                _activeIceServer.Error = SendTurnRefreshRequest(_activeIceServer);
+            }
+            
+            if (NominatedEntry.TurnPermissionsRequestSent >= IceServer.MAX_REQUESTS)
+            {
+                logger.LogWarning($"ICE RTP channel failed to get a Create Permissions response from {NominatedEntry.LocalCandidate.IceServer._uri} after {NominatedEntry.TurnPermissionsRequestSent} attempts.");
+            }
+            else if (NominatedEntry.TurnPermissionsRequestSent != 1 || NominatedEntry.TurnPermissionsResponseAt == DateTime.MinValue || DateTime.Now.Subtract(NominatedEntry.TurnPermissionsResponseAt).TotalSeconds >
+                     REFRESH_PERMISSION_PERIOD)
+            {
+                // Send Create Permissions request to TURN server for remote candidate.
+                NominatedEntry.TurnPermissionsRequestSent++;
+                logger.LogDebug($"ICE RTP channel sending TURN permissions request {NominatedEntry.TurnPermissionsRequestSent} " +
+                                $"to server {NominatedEntry.LocalCandidate.IceServer._uri} for peer {NominatedEntry.RemoteCandidate.DestinationEndPoint} " +
+                                $"(TxID: {NominatedEntry.RequestTransactionID}).");
+                SendTurnCreatePermissionsRequest(NominatedEntry.RequestTransactionID, NominatedEntry.LocalCandidate.IceServer, NominatedEntry.RemoteCandidate.DestinationEndPoint);
+            }
+        }
+
         /// <summary>
         /// Checks the list of ICE servers to perform STUN binding or TURN reservation requests.
         /// Only one of the ICE server entries should end up being used. If at least one TURN server
@@ -719,6 +766,8 @@ namespace SIPSorcery.Net
                 !(IceConnectionState == RTCIceConnectionState.@new || IceConnectionState == RTCIceConnectionState.checking))
             {
                 logger.LogDebug($"ICE RTP channel stopping ICE server checks in gathering state {IceGatheringState} and connection state {IceConnectionState}.");
+                _refreshTurnTimer?.Dispose();
+                _refreshTurnTimer = new Timer(RefreshTurn, null, 0, 2000);
                 _processIceServersTimer.Dispose();
                 return;
             }
@@ -1760,6 +1809,47 @@ namespace SIPSorcery.Net
             if (sendResult != SocketError.Success)
             {
                 logger.LogWarning($"Error sending TURN Allocate request {iceServer.OutstandingRequestsSent} for " +
+                    $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
+            }
+            else
+            {
+                OnStunMessageSent?.Invoke(allocateRequest, iceServer.ServerEndPoint, false);
+            }
+
+            return sendResult;
+        }
+
+        /// <summary>
+        /// Sends an allocate request to a TURN server.
+        /// </summary>
+        /// <param name="iceServer">The TURN server to send the request to.</param>
+        /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
+        private SocketError SendTurnRefreshRequest(IceServer iceServer)
+        {
+            iceServer.OutstandingRequestsSent += 1;
+            iceServer.LastRequestSentAt = DateTime.Now;
+
+            STUNMessage allocateRequest = new STUNMessage(STUNMessageTypesEnum.Refresh);
+            allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
+            //allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600));
+            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, ALLOCATION_TIME_TO_EXPIRY_VALUE));
+
+            byte[] allocateReqBytes = null;
+
+            if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+            {
+                allocateReqBytes = GetAuthenticatedStunRequest(allocateRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+            }
+            else
+            {
+                allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
+            }
+
+            var sendResult = base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
+
+            if (sendResult != SocketError.Success)
+            {
+                logger.LogWarning($"Error sending TURN Refresh request {iceServer.OutstandingRequestsSent} for " +
                     $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
             }
             else
