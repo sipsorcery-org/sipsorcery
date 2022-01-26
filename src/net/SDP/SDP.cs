@@ -132,6 +132,7 @@ namespace SIPSorcery.Net
         public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
         // ICE attributes.
+        public const string ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX = "ice-lite";
         public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
         public const string ICE_PWD_ATTRIBUTE_PREFIX = "ice-pwd";
         public const string END_ICE_CANDIDATES_ATTRIBUTE = "end-of-candidates";
@@ -164,6 +165,7 @@ namespace SIPSorcery.Net
         public string URI;                          // URI for additional information about the session.
         public string[] OriginatorEmailAddresses;   // Email addresses for the person responsible for the session.
         public string[] OriginatorPhoneNumbers;     // Phone numbers for the person responsible for the session.
+        public IceImplementationEnum IceImplementation = IceImplementationEnum.full;
         public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
         public IceRolesEnum? IceRole = null;
@@ -328,7 +330,9 @@ namespace SIPSorcery.Net
                             case var x when x.StartsWith($"a={GROUP_ATRIBUTE_PREFIX}"):
                                 sdp.Group = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
                                 break;
-
+                            case var x when x.StartsWith($"a={ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX}"):
+                                sdp.IceImplementation = IceImplementationEnum.lite;
+                                break;
                             case var x when x.StartsWith($"a={ICE_UFRAG_ATTRIBUTE_PREFIX}"):
                                 if (activeAnnouncement != null)
                                 {
