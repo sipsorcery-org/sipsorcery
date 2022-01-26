@@ -5686,6 +5686,24 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.HepPacket.GetBytes
   nameWithType: HepPacket.GetBytes
+- uid: SIPSorcery.Net.IceImplementationEnum
+  name: IceImplementationEnum
+  href: api/SIPSorcery.Net.IceImplementationEnum.html
+  commentId: T:SIPSorcery.Net.IceImplementationEnum
+  fullName: SIPSorcery.Net.IceImplementationEnum
+  nameWithType: IceImplementationEnum
+- uid: SIPSorcery.Net.IceImplementationEnum.full
+  name: full
+  href: api/SIPSorcery.Net.IceImplementationEnum.html#SIPSorcery_Net_IceImplementationEnum_full
+  commentId: F:SIPSorcery.Net.IceImplementationEnum.full
+  fullName: SIPSorcery.Net.IceImplementationEnum.full
+  nameWithType: IceImplementationEnum.full
+- uid: SIPSorcery.Net.IceImplementationEnum.lite
+  name: lite
+  href: api/SIPSorcery.Net.IceImplementationEnum.html#SIPSorcery_Net_IceImplementationEnum_lite
+  commentId: F:SIPSorcery.Net.IceImplementationEnum.lite
+  fullName: SIPSorcery.Net.IceImplementationEnum.lite
+  nameWithType: IceImplementationEnum.lite
 - uid: SIPSorcery.Net.IceRolesEnum
   name: IceRolesEnum
   href: api/SIPSorcery.Net.IceRolesEnum.html
@@ -18305,6 +18323,12 @@ references:
   commentId: F:SIPSorcery.Net.SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX
   fullName: SIPSorcery.Net.SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX
   nameWithType: SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX
+- uid: SIPSorcery.Net.SDP.ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX
+  name: ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX
+  commentId: F:SIPSorcery.Net.SDP.ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX
+  fullName: SIPSorcery.Net.SDP.ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX
+  nameWithType: SDP.ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX
 - uid: SIPSorcery.Net.SDP.ICE_OPTIONS
   name: ICE_OPTIONS
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_ICE_OPTIONS
@@ -18335,6 +18359,12 @@ references:
   commentId: F:SIPSorcery.Net.SDP.IceCandidates
   fullName: SIPSorcery.Net.SDP.IceCandidates
   nameWithType: SDP.IceCandidates
+- uid: SIPSorcery.Net.SDP.IceImplementation
+  name: IceImplementation
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_IceImplementation
+  commentId: F:SIPSorcery.Net.SDP.IceImplementation
+  fullName: SIPSorcery.Net.SDP.IceImplementation
+  nameWithType: SDP.IceImplementation
 - uid: SIPSorcery.Net.SDP.IcePwd
   name: IcePwd
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_IcePwd

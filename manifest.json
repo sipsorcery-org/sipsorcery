@@ -609,7 +609,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IRTCIceCandidate.html",
-          "hash": "Jk6s4yZk5qdqtkPlwxzmhfNiKlJRIRGNPyVKunuAhQg="
+          "hash": "Y9E9z+7pQd5te+JF600vhZCNy9WyJbi/hecFHuEx1V4="
         }
       },
       "is_incremental": false,
@@ -677,11 +677,23 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.IceImplementationEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.IceImplementationEnum.html",
+          "hash": "r65fzrQQjUjk3s+tuRsiS8RGCWUp4bMSSO2O2ssj4L8="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.IceRolesEnum.yml",
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IceRolesEnum.html",
-          "hash": "QZhFma0RVxJIPaMKQZdHR/tEmsWZ97LBZ1Dze5WrEuk="
+          "hash": "+axmo2zTf81ZgCnI7ksOWACnzEJ2yJYz6mHPTGSzLA0="
         }
       },
       "is_incremental": false,
@@ -945,7 +957,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceCandidateInit.html",
-          "hash": "QIlG+rcI3bfag7zschuZjWacbHRqGlqzCT1DYmjE7tg="
+          "hash": "dvUkcsvtcfkUXcP93d5d/mdbXa846IFptn7lCsLykuc="
         }
       },
       "is_incremental": false,
@@ -957,7 +969,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceCandidateType.html",
-          "hash": "8pMdBD/j4TgO0Qg4Uu3YhPpq0JeFoTNo1NZMOcAK1+w="
+          "hash": "NSVx7JkNsZrLD+s4gHCK1Gv3TJSnxkAbQbkL6YPVNDo="
         }
       },
       "is_incremental": false,
@@ -969,7 +981,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceComponent.html",
-          "hash": "5xZ+z+xq6HJKYD+wWKoLqwX5Zl0GRUd0a5WSada9NR0="
+          "hash": "tePbcOQBaCVE0Mj+1Lv48EPGsOCUclaue0ZjgNtzjzo="
         }
       },
       "is_incremental": false,
@@ -981,7 +993,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceConnectionState.html",
-          "hash": "PZhekuC0JrGomiGn/w8bcC2cap/OT3of9uqJMrVP3eU="
+          "hash": "w7ODLEMagnqHrfl4ERizeNlMFtZpvZdhyzivmCOkdg4="
         }
       },
       "is_incremental": false,
@@ -1005,7 +1017,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceGatheringState.html",
-          "hash": "ElaQR9Bnsvr5PgD1xtHKkXIfrPgSr/O5KnerHRsvfzw="
+          "hash": "h+Vydz5nNLdUIvf16JHkDzhYa43rTWCfnFqj2CimZDM="
         }
       },
       "is_incremental": false,
@@ -1017,7 +1029,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceProtocol.html",
-          "hash": "zgl0XSKgANqOi77dYP9ADTmyeacVpTiLmCXXSKBSoE8="
+          "hash": "KmGSOSFTd4lsNmlmtAfcmb6Uh5ZJaYBvU/h0q4Mm7PU="
         }
       },
       "is_incremental": false,
@@ -1041,7 +1053,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceTcpCandidateType.html",
-          "hash": "DWX69FVQpnb4Dowlq43UeRwdK9Dmg0xoDFI5LdFWVyA="
+          "hash": "A/VfmloWoJ1Vhie+RbmeJpadKmnpvDGTREIyrgGVBHk="
         }
       },
       "is_incremental": false,
@@ -1209,7 +1221,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "K6aGeUxnza0PeeAA3GG7zH3VR+d8j75t1haq2tOytVM="
+          "hash": "nd+5xqkaR4P9nIjPUC25tHTAZKtHESHBHw224/Wm9r0="
         }
       },
       "is_incremental": false,
@@ -1713,7 +1725,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDP.html",
-          "hash": "rWxkB83AzWpI/Hn5e0lss6QEKLxt0+KkZfagrZL0CI4="
+          "hash": "u6tEwBiFdo/NQ0PFgZ+C/Xl6AtZQGYdyAsfTvLrn0ls="
         }
       },
       "is_incremental": false,
@@ -2889,7 +2901,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "/47ijR0i0XvwSXADQhk9ERXm/7yCskES5YaGD9mwu08="
+          "hash": "vTYIuFcwjq+xvn+eG9oLx2svTYeQNgoO/CAF8UpixNI="
         }
       },
       "is_incremental": false,
@@ -4713,7 +4725,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "zJzTKj7A2PKYIsCRimJB+o8PvuhU1zIWIVX3/+6f6kM="
+          "hash": "QGAbHqrBxZIRYVEvCV1Q229uVXaeqrAhIoIVlgAJBw8="
         }
       },
       "is_incremental": false,
@@ -4981,7 +4993,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 391,
+          "total_file_count": 392,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
