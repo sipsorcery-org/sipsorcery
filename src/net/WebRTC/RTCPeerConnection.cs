@@ -731,6 +731,9 @@ namespace SIPSorcery.Net
 
                 SdpSessionID = remoteSdp.SessionId;
 
+                if (remoteSdp.IceImplementation == IceImplementationEnum.lite) {
+                    _rtpIceChannel.IsController = true;
+                }
                 if (init.type == RTCSdpType.answer)
                 {
                     _rtpIceChannel.IsController = true;
