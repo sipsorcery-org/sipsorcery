@@ -1080,8 +1080,8 @@ namespace SIPSorcery.Net
             // Media announcements must be in the same order in the offer and answer.
             foreach (var track in tracks)
             {
-                (int mindex, string midTag) = RemoteDescription == null || RequireRenegotiation ? (mediaIndex++, mediaIndex.ToString()) : RemoteDescription.GetIndexForMediaType(track.Kind);
-
+                (int mindex, string midTag) = RemoteDescription == null || RequireRenegotiation ? (mediaIndex, mediaIndex.ToString()) : RemoteDescription.GetIndexForMediaType(track.Kind);
+                mediaIndex++;
                 if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
                     logger.LogWarning($"Media announcement for {track.Kind} omitted due to no reciprocal remote announcement.");
