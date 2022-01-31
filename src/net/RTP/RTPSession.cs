@@ -1538,8 +1538,17 @@ namespace SIPSorcery.Net
         {
             if (mediaType == SDPMediaTypesEnum.audio)
             {
-                if (AudioLocalTrack != null && AudioRemoteTrack != null)
+                if (AudioLocalTrack != null || AudioRemoteTrack != null)
                 {
+                    if (AudioLocalTrack == null)
+                    {
+                        return AudioRemoteTrack.Capabilities.First();
+                    }
+                    else if (AudioRemoteTrack == null)
+                    {
+                        return AudioLocalTrack.Capabilities.First();
+                    }
+
                     var format = SDPAudioVideoMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, AudioRemoteTrack.Capabilities)
                         .Where(x => x.ID != RemoteRtpEventPayloadID).FirstOrDefault();
 
@@ -1561,13 +1570,22 @@ namespace SIPSorcery.Net
             }
             else if (mediaType == SDPMediaTypesEnum.video)
             {
-                if (VideoLocalTrack != null && VideoRemoteTrack != null)
+                if (VideoLocalTrack != null || VideoRemoteTrack != null)
                 {
-                    return SDPAudioVideoMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities).First();
+                    if (VideoRemoteTrack == null)
+                    {
+                        return VideoLocalTrack.Capabilities.First();
+                    }
+                    else if (VideoLocalTrack == null)
+                    {
+                        return VideoRemoteTrack.Capabilities.First();
+                    }
+
+                    return SDPAudioVideoMediaFormat.GetCompatibleFormats(VideoLocalTrack?.Capabilities, VideoRemoteTrack?.Capabilities).First();
                 }
                 else
                 {
-                    throw new ApplicationException($"Cannot get the {mediaType} sending format, missing wither local or remote {mediaType} track.");
+                    throw new ApplicationException($"Cannot get the {mediaType} sending format, missing either local or remote {mediaType} track.");
                 }
             }
             else
@@ -1607,11 +1625,11 @@ namespace SIPSorcery.Net
                 switch (videoSendingFormat.Name())
                 {
                     case "VP8":
-                        int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
+                        int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.First(x => x.Name() == "VP8").ID);
                         SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
                         break;
                     case "H264":
-                        int h264PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.Name() == "H264").ID);
+                        int h264PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.First(x => x.Name() == "H264").ID);
                         SendH264Frame(durationRtpUnits, h264PayloadID, sample);
                         break;
                     default:
@@ -2202,8 +2220,6 @@ namespace SIPSorcery.Net
                         {
                             logger.LogDebug($"RTCP BYE received for SSRC {rtcpPkt.Bye.SSRC}, reason {rtcpPkt.Bye.Reason}.");
 
-                            OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
-
                             // In some cases, such as a SIP re-INVITE, it's possible the RTP session
                             // will keep going with a new remote SSRC. 
                             if (AudioRemoteTrack != null && rtcpPkt.Bye.SSRC == AudioRemoteTrack.Ssrc)
@@ -2219,6 +2235,14 @@ namespace SIPSorcery.Net
                                 //VideoDestinationEndPoint = null;
                                 //VideoControlDestinationEndPoint = null;
                                 VideoRemoteTrack.Ssrc = 0;
+                            }
+                            else
+                            {
+                                // We close peer connection only if there is no more audio local/remote tracks
+                                if ( (AudioRemoteTrack == null) && (AudioLocalTrack == null) )
+                                {
+                                    OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
+                                }
                             }
                         }
                         else if (!IsClosed)
