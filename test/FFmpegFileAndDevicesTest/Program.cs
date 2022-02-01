@@ -87,6 +87,13 @@ namespace FFmpegFileAndDevicesTest
         static private bool RepeatVideoFile = true; // Used if VideoSource == VIDEO_SOURCE.FILE_OR_STREAM
         static private bool RepeatAudioFile = true; // Used if AudioSource == AUDIO_SOURCE.FILE_OR_STREAM
 
+        static private RTCPeerConnection PeerConnection = null;
+
+        static private IAudioSink audioSink = null;
+
+        static private IVideoSource videoSource = null;
+        static private IAudioSource audioSource = null;
+
         static void Main()
         {
             Console.WriteLine("WebRTC MP4 Source Demo");
@@ -103,27 +110,26 @@ namespace FFmpegFileAndDevicesTest
             Console.WriteLine("Press ctrl-c to exit.");
 
             // Ctrl-c will gracefully exit the call at any point.
-            ManualResetEvent exitMre = new ManualResetEvent(false);
+            ManualResetEvent exitMe = new ManualResetEvent(false);
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
-                exitMre.Set();
+                exitMe.Set();
             };
 
             // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
-            exitMre.WaitOne();
+            exitMe.WaitOne();
         }
 
         static private Task<RTCPeerConnection> CreatePeerConnection()
         {
-            IVideoSource videoSource = null;
-            IAudioSource audioSource = null;
-
+            
             RTCConfiguration config = new RTCConfiguration
             {
                 iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
             };
-            var pc = new RTCPeerConnection(config);
+
+            PeerConnection = new RTCPeerConnection(config);
 
             // Initialise FFmpeg librairies
             SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_DEBUG, LIB_PATH);
@@ -135,7 +141,7 @@ namespace FFmpegFileAndDevicesTest
                     if ((AudioSourceType == AUDIO_SOURCE.FILE_OR_STREAM)  && (AudioSourceFile == VideoSourceFile))
                     {
                         SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), true);
-                        fileSource.OnEndOfFile += () => pc.Close("source eof");
+                        fileSource.OnEndOfFile += () => PeerConnection.Close("source eof");
 
                         videoSource = fileSource as IVideoSource;
                         audioSource = fileSource as IAudioSource;
@@ -143,7 +149,7 @@ namespace FFmpegFileAndDevicesTest
                     else
                     {
                         SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), true);
-                        fileSource.OnEndOfFile += () => pc.Close("source eof");
+                        fileSource.OnEndOfFile += () => PeerConnection.Close("source eof");
 
                         videoSource = fileSource as IVideoSource;
                     }
@@ -164,7 +170,7 @@ namespace FFmpegFileAndDevicesTest
                 {
                     case AUDIO_SOURCE.FILE_OR_STREAM:
                         SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(AudioSourceFile, RepeatAudioFile, new AudioEncoder(), false);
-                        fileSource.OnEndOfFile += () => pc.Close("source eof");
+                        fileSource.OnEndOfFile += () => PeerConnection.Close("source eof");
 
                         audioSource = fileSource as IAudioSource;
                         break;
@@ -180,10 +186,11 @@ namespace FFmpegFileAndDevicesTest
                 videoSource.RestrictFormats(x => x.Codec == VideoCodec);
 
                 MediaStreamTrack videoTrack = new MediaStreamTrack(videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
-                pc.addTrack(videoTrack);
+                PeerConnection.addTrack(videoTrack);
 
-                videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
-                pc.OnVideoFormatsNegotiated += (videoFormats) => videoSource.SetVideoSourceFormat(videoFormats.First());
+
+                videoSource.OnVideoSourceEncodedSample += PeerConnection.SendVideo;
+                PeerConnection.OnVideoFormatsNegotiated += (videoFormats) => videoSource.SetVideoSourceFormat(videoFormats.First());
             }
 
             if(audioSource != null)
@@ -191,24 +198,27 @@ namespace FFmpegFileAndDevicesTest
                 audioSource.RestrictFormats(x => x.Codec == AudioCodec);
 
                 MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
-                pc.addTrack(audioTrack);
+                PeerConnection.addTrack(audioTrack);
 
-                audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
-                pc.OnAudioFormatsNegotiated += (audioFormats) => audioSource.SetAudioSourceFormat(audioFormats.First());
+                audioSource.OnAudioSourceEncodedSample += AudioSource_OnAudioSourceEncodedSample; 
+                PeerConnection.OnAudioFormatsNegotiated += (audioFormats) => audioSource.SetAudioSourceFormat(audioFormats.First());
             }
 
-            pc.onconnectionstatechange += async (state) =>
+            PeerConnection.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
 
                 if (state == RTCPeerConnectionState.failed)
                 {
-                    pc.Close("ice disconnection");
+                    PeerConnection.Close("ice disconnection");
                 }
                 else if (state == RTCPeerConnectionState.closed)
                 {
                     if(videoSource != null)
                         await videoSource.CloseVideo();
+
+                    if (audioSink != null)
+                        await audioSink.CloseAudioSink();
 
                     if (audioSource != null)
                         await audioSource.CloseAudio();
@@ -217,6 +227,11 @@ namespace FFmpegFileAndDevicesTest
                 {
                     if (videoSource != null)
                         await videoSource.StartVideo();
+
+                    if (audioSink != null)
+                    {
+                        await audioSink.StartAudioSink();
+                    }
 
                     if (audioSource != null)
                         await audioSource.StartAudio();
@@ -227,9 +242,17 @@ namespace FFmpegFileAndDevicesTest
             //pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
             //pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
-            pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+            PeerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
-            return Task.FromResult(pc);
+            return Task.FromResult(PeerConnection);
+        }
+
+        private static void AudioSource_OnAudioSourceEncodedSample(uint durationRtpUnits, byte[] sample)
+        {
+            PeerConnection.SendAudio(durationRtpUnits, sample);
+
+            if (audioSink != null)
+                audioSink.GotAudioRtp(null, 0, 0, 0, 0, false, sample);
         }
 
         /// <summary>

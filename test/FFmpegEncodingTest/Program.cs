@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using FFmpeg.AutoGen;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
 
 namespace FFmpegEncodingTest
@@ -173,19 +174,12 @@ namespace FFmpegEncodingTest
 
         private void StreamToFFPlay()
         {
-            var videoCapabilities = new List<SDPMediaFormat>
+            var videoCapabilities = new List<SDPAudioVideoMediaFormat>
                 {
-                    //new SDPMediaFormat(SDPMediaFormatsEnum.VP8)
-                    new SDPMediaFormat(SDPMediaFormatsEnum.H264)
-                    {
-                        FormatID = "96"
-                    }
-                    //new SDPMediaFormat(SDPMediaFormatsEnum.H264)
-                    //{
-                    //    FormatParameterAttribute = $"packetization-mode=1",
-                    //}
+                    new SDPAudioVideoMediaFormat(new VideoFormat(VideoCodecsEnum.H264, Helper.H264_FORMATID, Helper.VIDEO_SAMPLING_RATE))
+                    
                 };
-            int payloadID = Convert.ToInt32(videoCapabilities.First().FormatID);
+            int payloadID = Convert.ToInt32(videoCapabilities.First().ID);
 
             var rtpSession = CreateRtpSession(videoCapabilities);
             //OnTestPatternSampleReady += (media, duration, payload) => rtpSession.SendVp8Frame(duration, payloadID, payload);
@@ -214,7 +208,7 @@ namespace FFmpegEncodingTest
                 AVPixelFormat.AV_PIX_FMT_YUV420P);
         }
 
-        private static RTPSession CreateRtpSession(List<SDPMediaFormat> videoFormats)
+        private static RTPSession CreateRtpSession(List<SDPAudioVideoMediaFormat> videoFormats)
         {
             var rtpSession = new RTPSession(false, false, false, IPAddress.Loopback);
 
