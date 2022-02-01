@@ -22,12 +22,14 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isClosed;
 
         public event EncodedSampleDelegate? OnAudioSourceEncodedSample;
+
         public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
+        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
 
 #pragma warning disable CS0067
         public event RawAudioSampleDelegate? OnAudioSourceRawSample;
+
         public event SourceErrorDelegate? OnAudioSourceError;
-        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
         public event SourceErrorDelegate? OnVideoSourceError;
 #pragma warning restore CS0067
 
@@ -57,12 +59,18 @@ namespace SIPSorceryMedia.FFmpeg
                 _FFmpegVideoSource.InitialiseDecoder();
 
                 _FFmpegVideoSource.OnVideoSourceEncodedSample += _FFmpegVideoSource_OnVideoSourceEncodedSample;
+                _FFmpegVideoSource.OnVideoSourceRawSample += _FFmpegVideoSource_OnVideoSourceRawSample;
             }
         }
 
         private void _FFmpegVideoSource_OnVideoSourceEncodedSample(uint durationRtpUnits, byte[] sample)
         {
             OnVideoSourceEncodedSample?.Invoke(durationRtpUnits, sample);
+        }
+
+        private void _FFmpegVideoSource_OnVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
+        {
+            OnVideoSourceRawSample?.Invoke(durationMilliseconds, width, height, sample, pixelFormat);
         }
 
         private void _FFmpegAudioSource_OnAudioSourceEncodedSample(uint durationRtpUnits, byte[] sample)
@@ -121,8 +129,37 @@ namespace SIPSorceryMedia.FFmpeg
         }
 
         public void ForceKeyFrame() => _FFmpegVideoSource?.ForceKeyFrame();
+        
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) => throw new NotImplementedException();
-        public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
+
+        public bool HasEncodedVideoSubscribers()
+        {
+            Boolean result =  OnVideoSourceEncodedSample != null;
+            if (_FFmpegVideoSource != null)
+            {
+                if (result)
+                    _FFmpegVideoSource.OnVideoSourceEncodedSample += _FFmpegVideoSource_OnVideoSourceEncodedSample;
+                else
+                    _FFmpegVideoSource.OnVideoSourceEncodedSample -= _FFmpegVideoSource_OnVideoSourceEncodedSample;
+            }
+
+            return result;
+        }
+
+        public bool HasRawVideoSubscribers()
+        {
+            Boolean result = OnVideoSourceRawSample != null;
+            if (_FFmpegVideoSource != null)
+            {
+                if (result)
+                    _FFmpegVideoSource.OnVideoSourceRawSample += _FFmpegVideoSource_OnVideoSourceRawSample;
+                else
+                    _FFmpegVideoSource.OnVideoSourceRawSample -= _FFmpegVideoSource_OnVideoSourceRawSample;
+            }
+
+            return result;
+        }
+
         public bool IsVideoSourcePaused() => _isPaused;
         public Task StartVideo() => Start();
         public Task PauseVideo() => Pause();

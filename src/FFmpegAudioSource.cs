@@ -49,7 +49,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public unsafe void CreateAudioDecoder(String path, AVInputFormat* avInputFormat, bool repeat = false, bool isMicrophone = false)
         {
-            _audioDecoder = new FFmpegAudioDecoder(path, avInputFormat, false, isMicrophone);
+            _audioDecoder = new FFmpegAudioDecoder(path, avInputFormat, repeat, isMicrophone);
             _audioDecoder.OnAudioFrame += AudioDecoder_OnAudioFrame;
 
             _audioDecoder.OnEndOfFile += () =>
@@ -119,15 +119,13 @@ namespace SIPSorceryMedia.FFmpeg
 
             Console.WriteLine($"nb_samples:{avFrame.nb_samples} - bufferSize:{bufferSize} - dstSampleCount:{dstSampleCount}");
 
-            // Take only necessary data
-            byte[] resultBuffer = buffer.Take(dstSampleCount * 2).ToArray();
-            if(resultBuffer.Length > 0)
+            if(dstSampleCount > 0)
             {
                 // FFmpeg AV_SAMPLE_FMT_S16 will store the bytes in the correct endianess for the underlying platform.
-                short[] pcm = resultBuffer.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(resultBuffer, i * 2)).ToArray();
+                short[] pcm = buffer.Take(dstSampleCount * 2).Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(buffer, i * 2)).ToArray();
                 var encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
 
-                OnAudioSourceEncodedSample((uint)encodedSample.Length, encodedSample);
+                OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
             }
         }
 
