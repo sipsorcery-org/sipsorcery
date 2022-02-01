@@ -248,6 +248,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                         ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, 0).ThrowExceptionIfError();
 
+                        canContinue = true;
                         goto Repeat;
                     }
                     else

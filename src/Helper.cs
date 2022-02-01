@@ -6,7 +6,7 @@ using System.Text;
 
 namespace SIPSorceryMedia.FFmpeg
 {
-    static class Helper
+    public class Helper
     {
         public const int MIN_SLEEP_MILLISECONDS = 15;
 

@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const STUN_URL = "stun:stun.sipsorcery.com";
+        const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
+
+        var pc, ws;
+
+        async function start() {
+
+            // Request access to required audio/video capture devices.
+            var captureStm = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.querySelector('#videoCtl').srcObject = captureStm; // No remote streams so render local ones.
+
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+
+            //pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+
+            // Diagnostics.
+            pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+            pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+            pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
+            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
+
+            // Add local capture streams to peer connection.
+            captureStm.getTracks().forEach(track => pc.addTrack(track, captureStm));
+
+            // Web socket signaling.
+            ws = new WebSocket(document.querySelector('#websockurl').value, []);
+            ws.onmessage = async function (evt) {
+                if (/^[\{"'\s]*candidate/.test(evt.data)) {
+                    pc.addIceCandidate(JSON.parse(evt.data));
+                }
+                else {
+                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+                    pc.createAnswer()
+                        .then((answer) => pc.setLocalDescription(answer))
+                        .then(() => ws.send(JSON.stringify(pc.localDescription)));
+                }
+            };
+        };
+
+        async function closePeer() {
+            pc.getSenders().forEach(sender => {
+                sender.track.stop();
+                pc.removeTrack(sender);
+            });
+            await pc.close();
+            await ws.close();
+        };
+
+    </script>
+</head>
+<body>
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+    <div>
+        <input type="text" id="websockurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+</body>
+
+<script>
+    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+</script>
