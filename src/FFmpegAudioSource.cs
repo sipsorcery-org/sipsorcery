@@ -50,6 +50,7 @@ namespace SIPSorceryMedia.FFmpeg
         public unsafe void CreateAudioDecoder(String path, AVInputFormat* avInputFormat, bool repeat = false, bool isMicrophone = false)
         {
             _audioDecoder = new FFmpegAudioDecoder(path, avInputFormat, repeat, isMicrophone);
+
             _audioDecoder.OnAudioFrame += AudioDecoder_OnAudioFrame;
 
             _audioDecoder.OnEndOfFile += () =>

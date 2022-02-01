@@ -38,7 +38,7 @@ namespace FFmpegFileAndDevicesTest
     class Program
     {
         //  /!\ TO DEFINE WHERE ffmpeg librairies are stored
-        private const string LIB_PATH = @"C:\ffmpeg-4.4.1-full_build-shared\bin";
+        private const string LIB_PATH = @"..\..\..\..\..\lib\x64" ;// @"C:\ffmpeg-4.4.1-full_build-shared\bin";
 
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
@@ -70,8 +70,8 @@ namespace FFmpegFileAndDevicesTest
         static private string DISTANT_AUDIO_AND_VIDEO_FILE_WEBM = @"https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm";
 
         // Define variables according what you want to test
-        static private VIDEO_SOURCE VideoSourceType = VIDEO_SOURCE.FILE_OR_STREAM;
-        static private AUDIO_SOURCE AudioSourceType = AUDIO_SOURCE.FILE_OR_STREAM;
+        static private VIDEO_SOURCE VideoSourceType = VIDEO_SOURCE.CAMERA;
+        static private AUDIO_SOURCE AudioSourceType = AUDIO_SOURCE.MICROPHONE;
 
         static private VideoCodecsEnum VideoCodec = VideoCodecsEnum.H264; // or VideoCodecsEnum.VP8
         static private AudioCodecsEnum AudioCodec = AudioCodecsEnum.PCMU;

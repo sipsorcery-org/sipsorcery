@@ -19,7 +19,8 @@
 		<dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" />
 		<dependency id="FFmpeg.AutoGen" version="4.3.0.1" />
     </dependencies>
-	<releaseNotes>-v0.0.11-pre: Chnaged target framework from netcoreapp3.1 to netstandard2.1 for wider platform support.
+	<releaseNotes>-v0.0.12-pre: New features from @ChristopheI, including camera and microphone sources. 
+-v0.0.11-pre: Changed target framework from netcoreapp3.1 to netstandard2.1 for wider platform support.
 -v0.0.10-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
 -v0.0.9-pre: Updated to use latest abstractions nuget package and video format parameter on IVideoSink.GotVideoFrame.
 -v0.0.8-pre: Fixed the video decoder to return BGR instead of RGB.
@@ -30,7 +31,7 @@
 -v0.0.3-pre: Fixed bugs passing frames between file source decoder and video encoder.
 -v0.0.2-pre: Added file based source.
 -v0.0.1-pre: Initial release.</releaseNotes>
-	<version>0.0.11-pre</version>
+	<version>0.0.12-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
