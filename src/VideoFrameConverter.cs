@@ -8,7 +8,7 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public sealed unsafe class VideoFrameConverter : IDisposable
     {
-        private static ILogger logger = NullLogger.Instance;
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<VideoFrameConverter>();
 
         private readonly IntPtr _convertedFrameBufferPtr;
         private readonly int _srcWidth;
@@ -116,6 +116,7 @@ namespace SIPSorceryMedia.FFmpeg
             };
         }
 
+        // to convert Bitmap to Frame
         public byte[] ConvertToBuffer(byte[] srcData)
         {
             //int linesz0 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 0);
