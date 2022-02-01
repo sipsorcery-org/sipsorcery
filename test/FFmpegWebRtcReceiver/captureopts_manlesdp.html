@@ -1,0 +1,199 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const STUN_URL = "stun:stun.sipsorcery.com";
+        const WEBSOCKET_URL = "ws://127.0.0.1:8081/";
+        const FRAME_RATE = 30.0;
+        const MAX_BITRATE = 10000000;
+
+        var pc, ws, statsInterval, videoSender;
+        var lastBytesSent = 0, lastTimestamp = 0;
+
+        async function start() {
+
+            // Construct the audio and video capture options from the HTML inputs.
+            let videoResFn = function (videoResStr) {
+                switch (videoResStr) {
+                    case "default": return true;
+                    case "240p": return { width: 320, height: 240, frameRate: FRAME_RATE};
+                    case "480p": return { width: 640, height: 480, frameRate: FRAME_RATE};
+                    case "720p": return { width: 1280, height: 720, frameRate: FRAME_RATE};
+                    case "1080p": return { width: 1920, height: 1080, frameRate: FRAME_RATE};
+                    default: return { };
+                }
+            };
+
+            let captureOptions = {
+                audio: false, // document.querySelector('input[name="captureAudio"]').checked,
+                video:
+                    document.querySelector('input[name="captureVideo"]').checked ?
+                        videoResFn(document.querySelector('input[name="videoResolution"]:checked').value) : false
+            };
+
+            console.log(document.querySelector('input[name="videoResolution"]:checked').value);
+            console.log(captureOptions);
+
+            // Request access to required audio/video capture devices.
+            let captureStm = await navigator.mediaDevices.getUserMedia(captureOptions);
+            document.querySelector('#videoCtl').srcObject = captureStm; // No remote streams so render local ones.
+
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+
+            statsInterval = window.setInterval(getConnectionStats, 1000);
+
+            //pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+
+            // Diagnostics.
+            pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+            pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+            pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
+            pc.onconnectionstatechange = () => {
+                console.log("onconnectionstatechange: " + pc.connectionState);
+                if (pc.connectionState === "connected") {
+                    pc.getSenders().forEach(async sender => {
+                        if (sender.track.kind === "video") {
+                            
+                            //var vidStmParams = sender.getParameters();
+                            //vidStmParams.encodings[0].maxBitrate = MAX_BITRATE;
+                            //await sender.setParameters(vidStmParams);
+
+                            console.log("Video stream parameters:");
+                            console.log(sender.getParameters());
+                            vidStmParams = sender.getParameters();
+                            console.log(`is active: ${vidStmParams.encodings[0].active}.`);
+                            console.log(`maxBitrate: ${vidStmParams.encodings[0].maxBitrate}.`);
+                        }
+                    });
+                }
+            }
+
+            // Add local capture streams to peer connection.
+            captureStm.getTracks().forEach(track => pc.addTrack(track, captureStm));
+            //var videotrack = captureStm.getVideoTracks()[0];
+            //videoSender = pc.addTrack(videotrack, captureStm);
+
+            //audiotrack = captureStm.getAudioTracks()[0];
+            //pc.addTrack(audiotrack, captureStm);
+
+            //var params = videoSender.getParameters();
+            //params.encodings[0].maxBitrate = 10000000;
+            //videoSender.setParameters(params);
+
+            // Web socket signaling.
+            ws = new WebSocket(document.querySelector('#websockurl').value, []);
+            ws.onmessage = async function (evt) {
+                if (/^[\{"'\s]*candidate/.test(evt.data)) {
+                    pc.addIceCandidate(JSON.parse(evt.data));
+                }
+                else {
+                    console.log(`Remote Offer: ${JSON.parse(evt.data).sdp}`);
+                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+                    pc.createAnswer()
+                        //.then(answer => {
+                        //    var arr = answer.sdp.split('\r\n');
+                        //    arr.forEach((str, i) => {
+                        //        if (/^c=/.test(str)) {
+                        //            arr[i] = str + '\r\n' + "b=TIAS:2147483";
+                        //        }
+                        //        else if (str === "a=rtpmap:96 VP8/90000") {
+                        //            arr[i] = str + '\r\n' + "a=fmtp:96 x-google-max-bitrate=10000000;x-google-min-bitrate=0;x-google-start-bitrate=10000000";
+                        //        }
+                        //    });
+                        //    return new RTCSessionDescription({
+                        //        type: 'answer',
+                        //        sdp: arr.join('\r\n'),
+                        //    })
+                        //})
+                        .then(answer => pc.setLocalDescription(answer))
+                        .then(() => {
+                            console.log(`Local Answer: ${pc.localDescription.sdp}`);
+                            ws.send(JSON.stringify(pc.localDescription));
+                        });
+                }
+            };
+        };
+
+        async function closePeer() {
+            document.querySelector('#videoCtl').srcObject.getTracks().forEach(function (track) {
+                track.stop();
+            });
+            pc.getSenders().forEach(sender => {
+                sender.track.stop();
+                pc.removeTrack(sender);
+            });
+            await pc.close();
+            await ws.close();
+            clearInterval(statsInterval);
+        };
+
+        function getConnectionStats() {
+
+            pc.getSenders().forEach(sender => {
+                //console.log(sender);
+
+                //let parameters = sender.getParameters();
+                //console.log(`parameters.transactionId ${parameters.transactionId}.`);
+                //parameters.encodings.forEach(enc => {
+                //    console.log(enc);
+                //    console.log(`maxBitrate=${enc.maxBitrate}.`);
+                //});
+
+                sender.getStats().then(stats => {
+                    stats.forEach(report => {
+                        if (report.type === "outbound-rtp" && report.kind === "video") {
+                            let timestamp = report["timestamp"];
+                            let bytesSent = report["bytesSent"];
+
+                            let bw = ((bytesSent - lastBytesSent) * 8) / ((timestamp - lastTimestamp) / 1000)
+
+                            document.querySelector("#videoBandwidth").innerText = bw.toFixed(0);
+
+                            document.querySelector("#qualityLimitationReason").innerText = report["qualityLimitationReason"];
+                            document.querySelector("#qualityLimitationResolutionChanges").innerText = report["qualityLimitationResolutionChanges"];
+
+                            lastBytesSent = bytesSent;
+                            lastTimestamp = timestamp;
+                        }
+                    });
+                });
+            });
+        };
+
+    </script>
+</head>
+<body>
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+    <div>
+        <input type="text" id="websockurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+    <div>
+        <fieldset style="width: 400px">
+            <legend>Capture Options:</legend>
+            <input type="checkbox" checked="checked" name="captureAudio" /> Audio <br />
+            <input type="checkbox" checked="checked" name="captureVideo" onchange="document.querySelector('#videoResOptions').disabled=!this.checked" /> Video <br />
+            <fieldset style="width: 200px" id="videoResOptions">
+                <legend>Video Resolution:</legend>
+                <input type="radio" name="videoResolution" checked="checked" value="default" /> Default<br />
+                <input type="radio" name="videoResolution" value="240p" /> 240p (320x240)<br />
+                <input type="radio" name="videoResolution" value="480p" /> 480p (640x480)<br />
+                <input type="radio" name="videoResolution" value="720p" /> 720p (1280x720)<br />
+                <input type="radio" name="videoResolution" value="1080p" /> 1080p (1920x1080)<br />
+            </fieldset>
+        </fieldset>
+    </div>
+    <div>
+        Video Bandwidth (bps): <span id="videoBandwidth"></span><br />
+        Quality Limitation Reason: <span id="qualityLimitationReason"></span><br />
+        Quality Limitation Resolution Changes: <span id="qualityLimitationResolutionChanges"></span><br />
+    </div>
+</body>
+
+<script>
+    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+</script>
