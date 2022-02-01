@@ -77,7 +77,7 @@ namespace SIPSorceryMedia.FFmpeg
                 // Set up video decoder.
                 AVCodec* vidCodec = null;
                 _videoStreamIndex = ffmpeg.av_find_best_stream(_fmtCtx, AVMediaType.AVMEDIA_TYPE_VIDEO, -1, -1, &vidCodec, 0).ThrowExceptionIfError();
-                logger.LogDebug($"FFmpeg file source decoder {ffmpeg.avcodec_get_name(vidCodec->id)} video codec for stream {_videoStreamIndex}.");
+                logger.LogDebug($"FFmpeg file source decoder [{ffmpeg.avcodec_get_name(vidCodec->id)}] video codec for stream [{_videoStreamIndex}] - url:[{_sourceUrl}].");
                 _vidDecCtx = ffmpeg.avcodec_alloc_context3(vidCodec);
                 if (_vidDecCtx == null)
                 {
@@ -238,6 +238,8 @@ namespace SIPSorceryMedia.FFmpeg
                         ((int)ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL)).ThrowExceptionIfError();
 
                         ffmpeg.avformat_seek_file(_fmtCtx, _videoStreamIndex, 0, 0, _fmtCtx->streams[_videoStreamIndex]->duration, 0).ThrowExceptionIfError();
+
+                        canContinue = true;
 
                         goto Repeat;
                     }
