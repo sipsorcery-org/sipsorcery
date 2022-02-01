@@ -171,6 +171,10 @@ namespace SIPSorceryMedia.FFmpeg
 
                 
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
+
+
+                logger.LogDebug($"Successfully initialised ffmpeg based image encoder: CodecId:[{codecID}] - {width}:{height} - {fps} Fps");
+
             }
         }
 
@@ -284,6 +288,11 @@ namespace SIPSorceryMedia.FFmpeg
                     if (!_isEncoderInitialised)
                     {
                         InitialiseEncoder(codecID, width, height, fps);
+                    }
+                    else if (_encoderContext->width != width || _encoderContext->height != height)
+                    {
+                        _encoderContext->width = width;
+                        _encoderContext->height = height;
                     }
 
                     int _linesizeY = width;
