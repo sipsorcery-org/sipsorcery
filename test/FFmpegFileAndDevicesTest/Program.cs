@@ -38,7 +38,7 @@ namespace FFmpegFileAndDevicesTest
     class Program
     {
         //  /!\ TO DEFINE WHERE ffmpeg librairies are stored
-        private const string LIB_PATH = @"..\..\..\..\..\lib\x64" ;// @"C:\ffmpeg-4.4.1-full_build-shared\bin";
+        private const string LIB_PATH = @"..\..\..\..\..\lib\x64"; // @"C:\ffmpeg-4.4.1-full_build-shared\bin";
 
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
@@ -70,8 +70,8 @@ namespace FFmpegFileAndDevicesTest
         static private string DISTANT_AUDIO_AND_VIDEO_FILE_WEBM = @"https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm";
 
         // Define variables according what you want to test
-        static private VIDEO_SOURCE VideoSourceType = VIDEO_SOURCE.CAMERA;
-        static private AUDIO_SOURCE AudioSourceType = AUDIO_SOURCE.MICROPHONE;
+        static private VIDEO_SOURCE VideoSourceType = VIDEO_SOURCE.FILE_OR_STREAM; // VIDEO_SOURCE.FILE_OR_STREAM;
+        static private AUDIO_SOURCE AudioSourceType = AUDIO_SOURCE.FILE_OR_STREAM;
 
         static private VideoCodecsEnum VideoCodec = VideoCodecsEnum.H264; // or VideoCodecsEnum.VP8
         static private AudioCodecsEnum AudioCodec = AudioCodecsEnum.PCMU;
@@ -81,8 +81,6 @@ namespace FFmpegFileAndDevicesTest
 
         static private string MicrophoneDevicePath = "audio=Microphone (HD Pro Webcam C920)"; // Specific info according end-user devices
         static private string CameraDevicePath = "video=HD Pro Webcam C920"; // Specific info according end-user devices
-        static private string ScreenDevicePath = "desktop"; // On Windows. It's different on MacOS or Linux
-        static private Rectangle ScreenRectangle = new Rectangle(100, 100, 640, 480); // Zone of the screen 
 
         static private bool RepeatVideoFile = true; // Used if VideoSource == VIDEO_SOURCE.FILE_OR_STREAM
         static private bool RepeatAudioFile = true; // Used if AudioSource == AUDIO_SOURCE.FILE_OR_STREAM
@@ -99,6 +97,9 @@ namespace FFmpegFileAndDevicesTest
             Console.WriteLine("WebRTC MP4 Source Demo");
 
             logger = AddConsoleLogger();
+
+            // Initialise FFmpeg librairies
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_DEBUG, LIB_PATH);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -131,9 +132,6 @@ namespace FFmpegFileAndDevicesTest
 
             PeerConnection = new RTCPeerConnection(config);
 
-            // Initialise FFmpeg librairies
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_DEBUG, LIB_PATH);
-
             switch(VideoSourceType)
             {
                 case VIDEO_SOURCE.FILE_OR_STREAM:
@@ -156,11 +154,42 @@ namespace FFmpegFileAndDevicesTest
                     break;
 
                 case VIDEO_SOURCE.CAMERA:
-                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegCameraSource(CameraDevicePath);
+                    List<SIPSorceryMedia.FFmpeg.Camera>? cameras = SIPSorceryMedia.FFmpeg.FFmpegCameraManager.GetCameraDevices();
+                    
+                    SIPSorceryMedia.FFmpeg.Camera? camera = null;
+                    if (cameras?.Count > 0 )
+                    {
+                        // Get last one
+                        camera = cameras.Last();
+                    }
+                    if (camera != null)
+                        videoSource = new SIPSorceryMedia.FFmpeg.FFmpegCameraSource(camera.Path);
+                    else
+                        throw new NotSupportedException($"Cannot find adequate camera ...");
+                    
                     break;
 
                 case VIDEO_SOURCE.SCREEN:
-                    videoSource = new SIPSorceryMedia.FFmpeg.FFmpegScreenSource(ScreenDevicePath, ScreenRectangle);
+                    List<SIPSorceryMedia.FFmpeg.Monitor>? monitors = SIPSorceryMedia.FFmpeg.FFmpegMonitorManager.GetMonitorDevices();
+                    SIPSorceryMedia.FFmpeg.Monitor? primaryMonitor = null;
+                    if (monitors?.Count > 0)
+                    {
+                        foreach(SIPSorceryMedia.FFmpeg.Monitor monitor in monitors)
+                        {
+                            if (monitor.Primary)
+                            {
+                                primaryMonitor = monitor;
+                                break;
+                            }
+                        }
+                        if (primaryMonitor == null)
+                            primaryMonitor = monitors[0];
+                    }
+
+                    if(primaryMonitor != null)
+                        videoSource = new SIPSorceryMedia.FFmpeg.FFmpegScreenSource(primaryMonitor.Path, primaryMonitor.Rect, 10);
+                    else
+                        throw new NotSupportedException($"Cannot find adequate monitor ...");
                     break;
             }
 

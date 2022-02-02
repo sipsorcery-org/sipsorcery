@@ -16,7 +16,7 @@ namespace SIPSorceryMedia.FFmpeg
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegScreenSource>();
 
 
-        public unsafe FFmpegScreenSource(string path, Rectangle? rect = null)
+        public unsafe FFmpegScreenSource(string path, Rectangle rect, int frameRate = 20)
         {
             string inputFormat;
             Dictionary<String, String>? options = null;
@@ -24,32 +24,34 @@ namespace SIPSorceryMedia.FFmpeg
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 inputFormat = "gdigrab";
-                if (rect != null)
+                options = new Dictionary<string, string>()
                 {
-                    options = new Dictionary<string, string>()
-                    {
-                        ["offset_x"] = rect.Value.X.ToString(),
-                        ["offset_y"] = rect.Value.Y.ToString(),
-                        ["video_size"] = $"{rect.Value.Width.ToString()}X{rect.Value.Height.ToString()}"
-                    };
-                }
+                    ["offset_x"] = rect.X.ToString(),
+                    ["offset_y"] = rect.Y.ToString(),
+                    ["video_size"] = $"{rect.Width.ToString()}X{rect.Height.ToString()}",
+                    ["framerate"] = frameRate.ToString()
+                };
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 inputFormat = "avfoundation";
-                if (rect != null)
+                options = new Dictionary<string, string>()
                 {
-                    options = new Dictionary<string, string>()
-                    {
-                        ["vf"] = $"crop={rect.Value.Width.ToString()}:{rect.Value.Height.ToString()}:{rect.Value.X.ToString()}:{rect.Value.Y.ToString()}"
-                    };
-                }
+                    ["vf"] = $"crop={rect.Width.ToString()}:{rect.Height.ToString()}:{rect.X.ToString()}:{rect.Y.ToString()}",
+                    ["framerate"] = frameRate.ToString()
+                };
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                // TODO
                 inputFormat = "x11grab";
-                throw new NotSupportedException($"Cannot find adequate input format - OSArchitecture:[{RuntimeInformation.OSArchitecture}] - OSDescription:[{RuntimeInformation.OSDescription}]");
+                //https://superuser.com/questions/1562228/how-to-specify-the-size-to-record-the-screen-with-ffmpeg
+                options = new Dictionary<string, string>()
+                {
+                    ["video_size"] = $"{rect.Width.ToString()}X{rect.Height.ToString()}",
+                    ["grab_x"] = rect.X.ToString(),
+                    ["grab_y"] = rect.Y.ToString(),
+                    ["framerate"] = frameRate.ToString()
+                };
             }
             else
                 throw new NotSupportedException($"Cannot find adequate input format - OSArchitecture:[{RuntimeInformation.OSArchitecture}] - OSDescription:[{RuntimeInformation.OSDescription}]");
