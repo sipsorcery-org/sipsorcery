@@ -727,7 +727,7 @@ namespace SIPSorcery.Net
             {
                 return;
             }
-            if (_activeIceServer._uri.Scheme != STUNSchemesEnum.turn)
+            if (_activeIceServer._uri.Scheme != STUNSchemesEnum.turn || NominatedEntry.LocalCandidate.IceServer is null)
             {
                 _refreshTurnTimer.Dispose();
                 return;
