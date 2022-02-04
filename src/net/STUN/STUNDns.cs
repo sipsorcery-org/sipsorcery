@@ -36,6 +36,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -208,10 +209,10 @@ namespace SIPSorcery.Net
         {
             try
             {
-                var addrRecord = _lookupClient.Query(host, queryType).Answers.FirstOrDefault();
-                if (addrRecord != null)
+                var answers = _lookupClient.Query(host, queryType).Answers;
+                if (answers.Count > 0)
                 {
-                    return GetFromLookupResult(addrRecord, port);
+                    return GetFromLookupResult(answers, port);
                 }
             }
             catch (Exception excp)
@@ -232,23 +233,15 @@ namespace SIPSorcery.Net
         /// The query may have returned an AAAA or A record. This method checks which 
         /// and extracts the IP address accordingly.
         /// </summary>
-        /// <param name="addrRecord">The DNS lookup result.</param>
+        /// <param name="answers">The DNS lookup result.</param>
         /// <param name="port">The port for the IP end point.</param>
         /// <returns>An IP end point or null.</returns>
-        private static IPEndPoint GetFromLookupResult(DnsResourceRecord addrRecord, int port)
+        private static IPEndPoint GetFromLookupResult(IEnumerable<DnsResourceRecord> answers, int port)
         {
-            if (addrRecord is AaaaRecord)
-            {
-                return new IPEndPoint((addrRecord as AaaaRecord).Address, port);
-            }
-            else if (addrRecord is ARecord)
-            {
-                return new IPEndPoint((addrRecord as ARecord).Address, port);
-            }
-            else
-            {
-                return null;
-            }
+            var addrRecord = answers.OfType<AddressRecord>().FirstOrDefault();
+            return addrRecord != null
+                ? new IPEndPoint(addrRecord.Address, port)
+                : null;
         }
     }
 }
