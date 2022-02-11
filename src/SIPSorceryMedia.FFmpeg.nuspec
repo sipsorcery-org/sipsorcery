@@ -19,7 +19,8 @@
 		<dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" />
 		<dependency id="FFmpeg.AutoGen" version="4.3.0.1" />
     </dependencies>
-	<releaseNotes>-v0.0.12-pre: New features from @ChristopheI, including camera and microphone sources. 
+	<releaseNotes>-v0.0.13-pre: More great work and features from @ChristopheI. Netstandard2.0 target added.
+-v0.0.12-pre: New features from @ChristopheI, including camera and microphone sources. 
 -v0.0.11-pre: Changed target framework from netcoreapp3.1 to netstandard2.1 for wider platform support.
 -v0.0.10-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
 -v0.0.9-pre: Updated to use latest abstractions nuget package and video format parameter on IVideoSink.GotVideoFrame.
