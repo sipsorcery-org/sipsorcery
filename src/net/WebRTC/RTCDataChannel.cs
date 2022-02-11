@@ -123,7 +123,7 @@ namespace SIPSorcery.Net
         /// <param name="message">The string message to send.</param>
         public void send(string message)
         {
-            if (message != null & Encoding.UTF8.GetByteCount(message) > _transport.maxMessageSize)
+            if (message != null && Encoding.UTF8.GetByteCount(message) > _transport.maxMessageSize)
             {
                 throw new ApplicationException($"Data channel {label} was requested to send data of length {Encoding.UTF8.GetByteCount(message)} " +
                     $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
