@@ -8,6 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
+    <PackageLicenseExpression>LGPL-2.1</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
