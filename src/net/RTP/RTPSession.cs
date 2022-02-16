@@ -26,6 +26,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
@@ -190,6 +191,8 @@ namespace SIPSorcery.Net
         private SrtpHandlerCollection m_secureHandlerCollection = new SrtpHandlerCollection();
 
         private SecureContextCollection m_secureContextCollection = new SecureContextCollection();
+
+        private Dictionary<SDPMediaTypesEnum, RTPReorderBuffer> _reorderBuffers = new Dictionary<SDPMediaTypesEnum, RTPReorderBuffer>();
 
         /// <summary>
         /// Track if current remote description is invalid (used in Renegotiation logic)
@@ -477,6 +480,23 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Add reorder buffer for receiving RTP packets. It reorders RTP packets based on RTP sequence number.
+        /// </summary>
+        /// <param name="type">The type of RTP stream for which the buffer will be used</param>
+        /// <param name="dropPacketTimeout">The time after which it stops waiting for a packet with the correct sequence number</param>
+        public void AddBuffer(SDPMediaTypesEnum type, TimeSpan dropPacketTimeout) {
+            _reorderBuffers.Add(type, new RTPReorderBuffer(dropPacketTimeout));
+        }
+
+        /// <summary>
+        /// Removes buffer from RTP stream
+        /// </summary>
+        /// <param name="type">The type of RTP stream from which the buffer will be removed</param>
+        public void RemoveBuffer(SDPMediaTypesEnum type) {
+            _reorderBuffers.Remove(type);
+        }
+
+        /// <summary>
         /// Used for child classes that require a single RTP channel for all RTP (audio and video)
         /// and RTCP communications.
         /// </summary>
@@ -690,7 +710,7 @@ namespace SIPSorcery.Net
                 foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio || x.Media == SDPMediaTypesEnum.video))
                 {
                     MediaStreamStatusEnum mediaStreamStatus = announcement.MediaStreamStatus.HasValue ? announcement.MediaStreamStatus.Value : MediaStreamStatusEnum.SendRecv;
-                    var remoteTrack = new MediaStreamTrack(announcement.Media, true, announcement.MediaFormats.Values.ToList(), mediaStreamStatus, announcement.SsrcAttributes);
+                    var remoteTrack = new MediaStreamTrack(announcement.Media, true, announcement.MediaFormats.Values.ToList(), mediaStreamStatus, announcement.SsrcAttributes, announcement.HeaderExtensions);
                     addTrack(remoteTrack);
 
                     if (UseSdpCryptoNegotiation)
@@ -2148,6 +2168,79 @@ namespace SIPSorcery.Net
             return (false, buffer);
         }
 
+        private bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, SDPMediaTypesEnum type, out RTPPacket packet)
+        {
+            if (IsSecure || UseSdpCryptoNegotiation)
+            {
+                var (succeeded, newBuffer) = UnprotectBuffer(type, buf);
+                if (!succeeded)
+                {
+                    packet = null;
+                    return false;
+                }
+                packet = new RTPPacket(newBuffer);
+            }
+            else
+            {
+                packet = new RTPPacket(buf);
+            }
+            packet.Header.ReceivedTime = header.ReceivedTime;
+            return true;
+        }
+        private void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
+        {
+            if (track.LastRemoteSeqNum != 0 &&
+                header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
+                !(header.SequenceNumber == 0 && track.LastRemoteSeqNum == ushort.MaxValue))
+            {
+                logger.LogWarning($"{trackType} stream sequence number jumped from {track.LastRemoteSeqNum} to {header.SequenceNumber}.");
+            }
+        }
+
+        private void ProcessHeaderExtensions(RTPHeader header, MediaStreamTrack track)
+        {
+            header.GetHeaderExtensions().ToList().ForEach(x =>
+            {
+                var ntpTimestamp = x.GetNtpTimestamp(track.HeaderExtensions);
+                if (ntpTimestamp.HasValue)
+                {
+                    track.LastAbsoluteCaptureTimestamp = new TimestampPair() { NtpTimestamp = ntpTimestamp.Value, RtpTimestamp = header.Timestamp };
+                }
+            });
+        }
+
+        private void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
+        {
+            if (_rtpVideoFramer != null)
+            {
+                var frame = _rtpVideoFramer.GotRtpPacket(packet);
+                if (frame != null)
+                {
+                    OnVideoFrameReceived?.Invoke(endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
+                }
+            }
+            else
+            {
+                if (format.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
+                    format.ToVideoFormat().Codec == VideoCodecsEnum.H264)
+                {
+                    logger.LogDebug($"Video depacketisation codec set to {format.ToVideoFormat().Codec} for SSRC {packet.Header.SyncSource}.");
+
+                    _rtpVideoFramer = new RtpVideoFramer(format.ToVideoFormat().Codec);
+
+                    var frame = _rtpVideoFramer.GotRtpPacket(packet);
+                    if (frame != null)
+                    {
+                        OnVideoFrameReceived?.Invoke(endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
+                    }
+                }
+                else
+                {
+                    logger.LogWarning($"Video depacketisation logic for codec {format.Name()} has not been implemented, PR's welcome!");
+                }
+            }
+        }
+
         /// <summary>
         /// Event handler for receiving data on the RTP and Control channels. For multiplexed
         /// sessions both RTP and RTCP packets will be received on the RTP channel.
@@ -2303,6 +2396,7 @@ namespace SIPSorcery.Net
                     if (!IsClosed)
                     {
                         var hdr = new RTPHeader(buffer);
+                        hdr.ReceivedTime = DateTime.Now;
                         //logger.LogDebug($"rtp recv, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {rtpPacket.Payload.Length}.");
 
                         //SDPMediaTypesEnum? rtpMediaType = null;
@@ -2310,21 +2404,9 @@ namespace SIPSorcery.Net
                         // Check whether this is an RTP event.
                         if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
                         {
-                            RTPPacket rtpPacket;
-                            if (IsSecure || UseSdpCryptoNegotiation)
-                            {
-                                var (succeeded, newBuffer) = UnprotectBuffer(SDPMediaTypesEnum.audio, buffer);
-                                if (!succeeded)
-                                {
-                                    return;
-                                }
-                                rtpPacket = new RTPPacket(newBuffer);
+                            if (!EnsureBufferUnprotected(buffer, hdr, SDPMediaTypesEnum.audio, out var rtpPacket)) {
+                                return;
                             }
-                            else
-                            { 
-                                rtpPacket = new RTPPacket(buffer); 
-                            }
-
                             RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
                             OnRtpEvent?.Invoke(remoteEndPoint, rtpEvent, rtpPacket.Header);
                         }
@@ -2392,97 +2474,58 @@ namespace SIPSorcery.Net
                                 RTPPacket rtpPacket = null;
                                 if (avFormat.Value.Kind == SDPMediaTypesEnum.video)
                                 {
-                                    if (VideoRemoteTrack != null)
-                                    {
-                                        if (VideoRemoteTrack.LastRemoteSeqNum != 0 &&
-                                           hdr.SequenceNumber != (VideoRemoteTrack.LastRemoteSeqNum + 1) &&
-                                          !(hdr.SequenceNumber == 0 && VideoRemoteTrack.LastRemoteSeqNum == UInt16.MaxValue))
-                                        {
-                                            logger.LogWarning($"Video stream sequence number jumped from {VideoRemoteTrack.LastRemoteSeqNum} to {hdr.SequenceNumber}.");
-                                        }
-
-                                        VideoRemoteTrack.LastRemoteSeqNum = hdr.SequenceNumber;
+                                    if (VideoRemoteTrack != null) {
+                                        ProcessHeaderExtensions(hdr, VideoRemoteTrack);
                                     }
-
-                                    if (OnVideoFrameReceived != null)
+                                    if (!EnsureBufferUnprotected(buffer, hdr, SDPMediaTypesEnum.video, out rtpPacket))
                                     {
-                                        if (IsSecure || UseSdpCryptoNegotiation)
-                                        {
-                                            var (succeeded, newBuffer) = UnprotectBuffer(SDPMediaTypesEnum.video, buffer);
-                                            if (!succeeded)
-                                            {
-                                                return;
-                                            }
-                                            rtpPacket = new RTPPacket(newBuffer);
-                                        }
-                                        else
-                                        {
-                                            rtpPacket = new RTPPacket(buffer);
-                                        }
-
-                                        if (_rtpVideoFramer != null)
-                                        {
-                                            var frame = _rtpVideoFramer.GotRtpPacket(rtpPacket);
-                                            if (frame != null)
-                                            {
-                                                OnVideoFrameReceived?.Invoke(remoteEndPoint, rtpPacket.Header.Timestamp, frame, avFormat.Value.ToVideoFormat());
-                                            }
-                                        }
-                                        else
-                                        {
-                                            var videoFormat = avFormat.Value; //GetSendingFormat(SDPMediaTypesEnum.video);
-
-                                            if (videoFormat.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
-                                                videoFormat.ToVideoFormat().Codec == VideoCodecsEnum.H264)
-                                            {
-                                                logger.LogDebug($"Video depacketisation codec set to {videoFormat.ToVideoFormat().Codec} for SSRC {rtpPacket.Header.SyncSource}.");
-
-                                                _rtpVideoFramer = new RtpVideoFramer(videoFormat.ToVideoFormat().Codec);
-
-                                                var frame = _rtpVideoFramer.GotRtpPacket(rtpPacket);
-                                                if (frame != null)
-                                                {
-                                                    OnVideoFrameReceived?.Invoke(remoteEndPoint, rtpPacket.Header.Timestamp, frame, avFormat.Value.ToVideoFormat());
-                                                }
-                                            }
-                                            else
-                                            {
-                                                logger.LogWarning($"Video depacketisation logic for codec {videoFormat.Name()} has not been implemented, PR's welcome!");
-                                            }
-                                        }
+                                        return;
                                     }
                                 }
-                                else if (avFormat.Value.Kind == SDPMediaTypesEnum.audio && AudioRemoteTrack != null)
+                                else if (avFormat.Value.Kind == SDPMediaTypesEnum.audio)
                                 {
-                                    if (IsSecure || UseSdpCryptoNegotiation)
-                                    {
-                                        var (succeeded, newBuffer) = UnprotectBuffer(SDPMediaTypesEnum.audio, buffer);
-                                        if (!succeeded)
-                                        {
-                                            return;
-                                        }
-                                        rtpPacket = new RTPPacket(newBuffer);
+                                    if(!EnsureBufferUnprotected(buffer, hdr, SDPMediaTypesEnum.audio, out rtpPacket)) {
+                                        return;
                                     }
-                                    else
-                                    {
-                                        rtpPacket = new RTPPacket(buffer);
+                                    if (AudioRemoteTrack != null) {
+                                        LogIfWrongSeqNumber("Audio", hdr, AudioRemoteTrack);
+                                        ProcessHeaderExtensions(hdr, AudioRemoteTrack);
                                     }
-
-                                    if (AudioRemoteTrack.LastRemoteSeqNum != 0 &&
-                                        rtpPacket.Header.SequenceNumber != (AudioRemoteTrack.LastRemoteSeqNum + 1) &&
-                                       !(rtpPacket.Header.SequenceNumber == 0 && AudioRemoteTrack.LastRemoteSeqNum == UInt16.MaxValue))
-                                    {
-                                        logger.LogWarning($"Audio stream sequence number jumped from {AudioRemoteTrack.LastRemoteSeqNum} to {rtpPacket.Header.SequenceNumber}.");
-                                    }
-
-                                    AudioRemoteTrack.LastRemoteSeqNum = rtpPacket.Header.SequenceNumber;
                                 }
 
                                 if (rtpPacket != null)
                                 {
-                                    OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, rtpPacket);
-                                    //}
-
+                                    if (_reorderBuffers.ContainsKey(avFormat.Value.Kind))
+                                    {
+                                        var reorderBuffer = _reorderBuffers[avFormat.Value.Kind];
+                                        
+                                        reorderBuffer.Add(rtpPacket);
+                                        while (reorderBuffer.Get(out var bufferedPacket))
+                                        {
+                                            
+                                            if (avFormat.Value.Kind == SDPMediaTypesEnum.video && VideoRemoteTrack != null)
+                                            {
+                                                LogIfWrongSeqNumber("Video", bufferedPacket.Header, VideoRemoteTrack);
+                                                VideoRemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                                                //logger.LogInformation($"Inserted: {bufferedPacket.Header.SequenceNumber} {bufferedPacket.Payload.Length} {bufferedPacket.Header.MarkerBit}");
+                                            }
+                                            else if (avFormat.Value.Kind == SDPMediaTypesEnum.audio && AudioRemoteTrack != null)
+                                            {
+                                                LogIfWrongSeqNumber("Audio", bufferedPacket.Header, AudioRemoteTrack);
+                                                AudioRemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                                            }
+                                            if (avFormat.Value.Kind == SDPMediaTypesEnum.video && OnVideoFrameReceived != null)
+                                            {
+                                                ProcessVideoRtpFrame(remoteEndPoint, bufferedPacket, avFormat.Value);
+                                            }
+                                            OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, bufferedPacket);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, rtpPacket);
+                                    }
+                                    
                                     // Used for reporting purposes.
                                     if (avFormat.Value.Kind == SDPMediaTypesEnum.audio && AudioRtcpSession != null)
                                     {
