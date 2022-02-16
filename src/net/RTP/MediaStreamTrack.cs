@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
@@ -53,6 +54,11 @@ namespace SIPSorcery.Net
         public ushort SeqNum { get { return (ushort)m_seqNum; } internal set { m_seqNum = value; } }
 
         /// <summary>
+        /// The last abs-capture-time received from the remote peer for this stream.
+        /// </summary>
+        public TimestampPair LastAbsoluteCaptureTimestamp{ get; internal set; }
+
+        /// <summary>
         /// The value used in the RTP Timestamp header field for media packets
         /// sent using this media stream.
         /// </summary>
@@ -73,6 +79,11 @@ namespace SIPSorcery.Net
         /// The media capabilities supported by this track.
         /// </summary>
         public List<SDPAudioVideoMediaFormat> Capabilities { get; internal set; }
+
+        // <summary>
+        ///  a=extmap - Mapping for RTP header extensions
+        /// </summary>
+        public Dictionary<int, RTPHeaderExtension> HeaderExtensions { get; }
 
         /// <summary>
         /// Represents the original and default stream status for the track. This is set
@@ -151,14 +162,14 @@ namespace SIPSorcery.Net
             bool isRemote,
             List<SDPAudioVideoMediaFormat> capabilities,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv,
-            List<SDPSsrcAttribute> ssrcAttributes = null)
+            List<SDPSsrcAttribute> ssrcAttributes = null, Dictionary<int, RTPHeaderExtension> headerExtensions = null)
         {
             Kind = kind;
             IsRemote = isRemote;
             Capabilities = capabilities;
             StreamStatus = streamStatus;
             DefaultStreamStatus = streamStatus;
-
+            HeaderExtensions = headerExtensions ?? new Dictionary<int, RTPHeaderExtension>();
             if (!isRemote)
             {
                 Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));

@@ -9,7 +9,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Linq;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
@@ -190,6 +192,29 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"RTP length: {rtp.Header.Length}");
 
             Assert.NotNull(rtp);
+        }
+
+        [Fact]
+        public void ParseHeaderExtensions()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var rtpHeaderBytes = new byte[] {
+                0x90, 0x60, 0x0c, 0xd5, 0x83, 0x0a, 0xcd, 0x97, 0x2e, 0xba, 0x23, 0x57, 0xbe, 0xde, 0x00, 0x05,
+                0xdf, 0xb3, 0x85, 0xb0, 0x8f, 0x0c, 0x13, 0x9d, 0xe5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00
+            };
+
+            var header = new RTPHeader(rtpHeaderBytes);
+            var extensions = header.GetHeaderExtensions();
+            Assert.Single(extensions);
+            var extension = extensions.Single();
+            Assert.Equal(13, extension.Id);
+            Assert.Equal(RTPHeaderExtensionType.OneByte, extension.Type);
+
+            var expectedValue = new byte[] {0xb3, 0x85, 0xb0, 0x8f, 0xc, 0x13, 0x9d, 0xe5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+            Assert.Equal(expectedValue, extension.Data);
         }
     }
 }
