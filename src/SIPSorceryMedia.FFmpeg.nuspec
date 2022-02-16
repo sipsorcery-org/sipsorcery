@@ -4,39 +4,43 @@
     <id>SIPSorceryMedia.FFmpeg</id>
     <authors>Aaron Clauson</authors>
     <copyright>Copyright © 2020-2022 Aaron Clauson, Christophe Irles and Contributors.</copyright>
-    <PackageLicenseExpression>LGPL-2.1</PackageLicenseExpression>
+    <license type="expression">LGPL-2.1-only</license>
     <title>SIPSorceryMedia.FFmpeg</title>
     <summary>FFmpeg media end points for real-time communications.</summary>
-	<description>Provides FFmpeg based audio and video media end points that can be used with the SIPSorcery real-time communications library.</description>
-	<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
-	<icon>icon.png</icon>
+    <description>Provides FFmpeg based audio and video media end points that can be used with the SIPSorcery real-time communications library.</description>
+    <iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
+    <icon>icon.png</icon>
     <projectUrl>https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg</projectUrl>
-	<repository type="git" url="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg" branch="master" />
-	<tags>WebRTC VoIP SIPSorcery Media FFmpeg</tags>
-	<dependencies>
-	    <dependency id="Microsoft.Extensions.Logging.Abstractions" version="5.0.0" />
-		<dependency id="SIPSorceryMedia.Abstractions" version="1.1.0" />
-		<dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" />
-		<dependency id="FFmpeg.AutoGen" version="4.3.0.1" />
+    <repository type="git" url="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg" branch="master" />
+    <tags>WebRTC VoIP SIPSorcery Media FFmpeg</tags>
+    <dependencies>
+      <dependency id="Microsoft.Extensions.Logging.Abstractions" version="6.0.0" />
+      <dependency id="SIPSorceryMedia.Abstractions" version="1.1.0" />
+      <dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" />
+      <dependency id="FFmpeg.AutoGen" version="4.4.1.1" />
     </dependencies>
-	<releaseNotes>-v0.0.18-pre: More great work and features from @ChristopheI. Netstandard2.0 target added.
--v0.0.12-pre: New features from @ChristopheI, including camera and microphone sources. 
--v0.0.11-pre: Changed target framework from netcoreapp3.1 to netstandard2.1 for wider platform support.
--v0.0.10-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
--v0.0.9-pre: Updated to use latest abstractions nuget package and video format parameter on IVideoSink.GotVideoFrame.
--v0.0.8-pre: Fixed the video decoder to return BGR instead of RGB.
--v0.0.7-pre: Updated the video encoder class to support the IVideoEncoder interface.
--v0.0.6-pre: Updated to use latest abstractions nuget package. 
--v0.0.5-pre: Use pixel conversion class from abstractions package.
--v0.0.4-pre: Added codec manager support to FFmpegVideoEndPoint.
--v0.0.3-pre: Fixed bugs passing frames between file source decoder and video encoder.
--v0.0.2-pre: Added file based source.
--v0.0.1-pre: Initial release.</releaseNotes>
-	<version>0.0.18-pre</version>
+    <releaseNotes>
+      -v0.0.18-pre: More great work and features from @ChristopheI. Netstandard2.0 target added.
+      -v0.0.12-pre: New features from @ChristopheI, including camera and microphone sources.
+      -v0.0.11-pre: Changed target framework from netcoreapp3.1 to netstandard2.1 for wider platform support.
+      -v0.0.10-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
+      -v0.0.9-pre: Updated to use latest abstractions nuget package and video format parameter on IVideoSink.GotVideoFrame.
+      -v0.0.8-pre: Fixed the video decoder to return BGR instead of RGB.
+      -v0.0.7-pre: Updated the video encoder class to support the IVideoEncoder interface.
+      -v0.0.6-pre: Updated to use latest abstractions nuget package.
+      -v0.0.5-pre: Use pixel conversion class from abstractions package.
+      -v0.0.4-pre: Added codec manager support to FFmpegVideoEndPoint.
+      -v0.0.3-pre: Fixed bugs passing frames between file source decoder and video encoder.
+      -v0.0.2-pre: Added file based source.
+      -v0.0.1-pre: Initial release.
+    </releaseNotes>
+    <version>0.0.18-pre</version>
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
-  	<file src="bin\Release\netstandard2.1\SIPSorceryMedia.FFmpeg.dll" target="lib\netstandard2.1" />
+    <file src="bin\Release\netstandard2.0\SIPSorceryMedia.FFmpeg.dll" target="lib\netstandard2.0" />
+    <file src="bin\Release\netstandard2.1\SIPSorceryMedia.FFmpeg.dll" target="lib\netstandard2.1" />
+    <file src="bin\Release\netcoreapp3.1\SIPSorceryMedia.FFmpeg.dll" target="lib\netcoreapp3.1" />
     <file src="..\lib\nuspec\SIPSorceryMedia.FFmpeg.targets" target="build\SIPSorceryMedia.FFmpeg.targets" />
     <file src="..\lib\x64\*.dll" target="build\x64" />
   </files>
