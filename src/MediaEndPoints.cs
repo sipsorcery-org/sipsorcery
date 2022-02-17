@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions
 {
     public delegate void EncodedSampleDelegate(uint durationRtpUnits, byte[] sample);
+    
     public delegate void RawAudioSampleDelegate(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
-    public delegate void RawVideoSampleDelegate(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
-    public delegate void VideoSinkSampleDecodedDelegate(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat);
+    
+    public delegate void RawVideoSampleDelegate(uint durationMilliseconds, RawImage rawImage);
+    public delegate void VideoSinkSampleDecodedDelegate(RawImage rawImage);
+
     public delegate void SourceErrorDelegate(string errorMessage);
 
     public enum AudioSamplingRatesEnum
@@ -22,8 +26,8 @@ namespace SIPSorceryMedia.Abstractions
         Rgb = 0,        // 24 bits per pixel.
         Bgr = 1,        // 24 bits per pixel.
         Bgra = 2,       // 32 bits per pixel.
-        I420 = 3,
-        NV12 = 4,
+        I420 = 3,       // 12 bits per pixel.
+        NV12 = 4,       // 12 bits per pixel.
     }
 
     /// <summary>
@@ -440,12 +444,54 @@ namespace SIPSorceryMedia.Abstractions
         short[] DecodeAudio(byte[] encodedSample, AudioFormat format);
     }
 
-    public struct VideoSample
+    public class RawImage
     {
-        public uint Width;
-        public uint Height;
-        public byte[] Sample;
+        /// <summary>
+        /// The width, in pixels, of the image
+        /// </summary>
+        public int Width { get; set; }
+
+        /// <summary>
+        /// The height, in pixels, of the image
+        /// </summary>
+        public int Height { get; set; }
+
+        /// <summary>
+        /// Integer that specifies the byte offset between the beginning of one scan line and the next.
+        /// </summary>
+        public int Stride { get; set; }
+
+        /// <summary>
+        /// Pointer to an array of bytes that contains the pixel data.
+        /// </summary>
+        public IntPtr Sample { get; set; }
+
+        /// <summary>
+        /// The pixel format of the image
+        /// </summary>
+        public VideoPixelFormatsEnum PixelFormat { get; set; }
+
+        /// <summary>
+        /// Get bytes array of the image.
+        /// 
+        /// For performance reasons it's better to use directly Sample
+        /// </summary>
+        /// <returns></returns>
+        public byte[] GetBuffer()
+        {
+            byte[] result = null;
+
+            if ( (Height > 0) && (Stride > 0) && (Sample != null) )
+            {
+                var bufferSize = Height * Stride;
+
+                result = new byte[bufferSize];
+                Marshal.Copy(Sample, result, 0, bufferSize);
+            }
+            return result;
+        }
     }
+
 
     public interface IVideoEncoder : IDisposable
     {
@@ -454,11 +500,11 @@ namespace SIPSorceryMedia.Abstractions
         /// </summary>
         List<VideoFormat> SupportedFormats { get; }
 
-        byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
+        byte[] EncodeVideo(RawImage rawImage, VideoCodecsEnum codec);
 
         void ForceKeyFrame();
 
-        IEnumerable<VideoSample> DecodeVideo(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
+        IEnumerable<RawImage> DecodeVideo(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
     }
 
     public interface IAudioSource
