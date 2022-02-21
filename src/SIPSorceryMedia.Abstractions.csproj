@@ -6,7 +6,7 @@
 
   <PropertyGroup>
     <PackageId>SIPSorceryMedia.Abstractions</PackageId>
-    <TargetFrameworks>netstandard2.0;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Aaron Clauson</Authors>
     <Copyright>Copyright © 2020 Aaron Clauson</Copyright>
@@ -21,12 +21,13 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Abstractions</RepositoryUrl>
-    <Version>1.1.0.1</Version>
-    <AssemblyVersion>1.1.0.1</AssemblyVersion>
-    <FileVersion>1.1.0.1</FileVersion>
+    <Version>1.1.0.2</Version>
+    <AssemblyVersion>1.1.0.2</AssemblyVersion>
+    <FileVersion>1.1.0.2</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
-    <PackageReleaseNotes>-v1.1.0.1: Use RawImage instead of VideoSample (to use IntPtr instead of byte[])
+    <PackageReleaseNotes>-v1.1.0.2: IVideoSource.ExternalVideoSourceRawSample must also use RawImage
+-v1.1.0.1: Use RawImage instead of VideoSample (to use IntPtr instead of byte[])
 -v1.1.0: Stable release.
 -v1.0.4-pre: Changed IAudioEncoder and IVideoEncoder to use SupportedFormats property instead of IsSupported method.
 -v1.0.3-pre: Added video format to IVideoSink.GotVideoFrame. Removed 'V1' from namespace, the versioning mechanism is not going to be suitable for such a formative API.

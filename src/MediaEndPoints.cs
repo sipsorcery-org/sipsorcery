@@ -579,7 +579,7 @@ namespace SIPSorceryMedia.Abstractions
 
         void RestrictFormats(Func<VideoFormat, bool> filter);
 
-        void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
+        void ExternalVideoSourceRawSample(uint durationMilliseconds, RawImage rawImage);
 
         void ForceKeyFrame();
 
