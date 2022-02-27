@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0-windows10.0.22000.0</TargetFramework>
     <UseWPF>true</UseWPF>
-	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	  <AssemblyName>softphone</AssemblyName>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<AssemblyName>softphone</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,9 +17,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
-    <PackageReference Include="SIPSorcery" Version="5.1.2" />
+    <PackageReference Include="SIPSorcery" Version="6.0.6" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.10-pre" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.31-pre" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="6.0.1-pre" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
     <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
   </ItemGroup>
