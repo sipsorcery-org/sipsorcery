@@ -396,9 +396,9 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendMusicSample(object state)
         {
-            if (!_isClosed && !_streamSendInProgress)
+            if (!_isClosed && !_streamSendInProgress && _musicStreamReader != null)
             {
-                lock (_sendSampleTimer)
+                lock (_musicStreamReader)
                 {
                     var pcm = GetPcmSampleFromReader(_musicStreamReader, _audioOpts.MusicInputSamplingRate, out int samplesRead);
 
@@ -454,9 +454,9 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendStreamSample(object state)
         {
-            if (!_isClosed)
+            if (!_isClosed && _streamSourceReader != null)
             {
-                lock (_streamSourceTimer)
+                lock (_streamSourceReader)
                 {
                     if (_streamSourceReader?.BaseStream?.CanRead == true)
                     {
@@ -550,7 +550,21 @@ namespace SIPSorcery.Media
 
         public void Close()
         {
-            _streamSourceReader?.Close();
+            if (_streamSourceReader != null)
+            {
+                lock (_streamSourceReader)
+                {
+                    _streamSourceReader.Close();
+                }
+            }
+
+            if(_musicStreamReader != null)
+            {
+                lock(_musicStreamReader)
+                {
+                    _musicStreamReader.Close();
+                }
+            }
         }
     }
 }
