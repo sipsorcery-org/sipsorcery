@@ -108,6 +108,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -415,7 +416,24 @@ namespace SIPSorcery.Net
                             case var x when x == $"a={END_ICE_CANDIDATES_ATTRIBUTE}":
                                 // TODO: Set a flag.
                                 break;
+                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX):
+                                if (activeAnnouncement != null) {
+                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video) {
+                                         var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX + @"(?<id>\d+) (?<url>\S+)$");
+                                         if (formatAttributeMatch.Success) {
+                                             var extensionId = formatAttributeMatch.Result("${id}");
+                                             var uri = formatAttributeMatch.Result("${url}");
+                                             if (Int32.TryParse(extensionId, out var id)) {
+                                                 activeAnnouncement.HeaderExtensions.Add(id, new RTPHeaderExtension(id, uri));
+                                             }
+                                             else {
+                                                 logger.LogWarning("Invalid id of header extension in " + SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX);
+                                             }
+                                         }
+                                    }
+                                }
 
+                                break;
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX):
                                 if (activeAnnouncement != null)
                                 {

@@ -15,6 +15,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -41,7 +45,7 @@ namespace SIPSorcery.Net
 
         public int PayloadSize;
         public byte PaddingCount;
-
+        public DateTime ReceivedTime;
         public int Length
         {
             get { return MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4)); }
@@ -176,6 +180,73 @@ namespace SIPSorcery.Net
             }
 
             return header;
+        }
+
+        private RTPHeaderExtensionData GetExtensionAtPosition(ref int position, int id, int len, RTPHeaderExtensionType type, out bool invalid) {
+            RTPHeaderExtensionData ext = null;
+            if (id != 0)
+            {
+                if (position + len > ExtensionPayload.Length)
+                {
+                    // invalid extension
+                    invalid = true;
+                    return null;
+                }
+                ext = new RTPHeaderExtensionData(id, ExtensionPayload.Skip(position).Take(len).ToArray(), type);
+                position += len;
+            }
+            else
+            {
+                position++;
+            }
+            while ((position < ExtensionPayload.Length) && (ExtensionPayload[position] == 0))
+            {
+                position++;
+            }
+
+            invalid = false;
+            return ext;
+        }
+
+        public List<RTPHeaderExtensionData> GetHeaderExtensions() {
+            var extensions = new List<RTPHeaderExtensionData>();
+            RTPHeaderExtensionData extension = null;
+            var i = 0;
+            bool invalid = false;
+            while (i + 1 < ExtensionPayload.Length)
+            {
+                if (HasOneByteExtension()) {
+                    var id = (ExtensionPayload[i] & 0xF0) >> 4;
+                    var len = (ExtensionPayload[i] & 0x0F) + 1;
+                    i++;
+                    extension = GetExtensionAtPosition(ref i, id, len, RTPHeaderExtensionType.OneByte, out invalid);
+
+                }
+                else if(HasTwoByteExtension()) {
+                    var id = ExtensionPayload[i++];
+                    var len = ExtensionPayload[i++] + 1;
+                    extension = GetExtensionAtPosition(ref i, id, len, RTPHeaderExtensionType.TwoByte, out invalid);
+                }
+
+                if (invalid) {
+                    break;
+                }
+
+                if (extension != null) {
+                    extensions.Add(extension);
+                }
+            }
+
+            return extensions;
+        }
+
+        private bool HasOneByteExtension() {
+            return ExtensionProfile == 0xBEDE;
+        }
+
+        private bool HasTwoByteExtension()
+        {
+            return (ExtensionProfile & 0b1111111111110000) == 0b0001000000000000;
         }
     }
 }

@@ -32,6 +32,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
@@ -68,6 +69,7 @@ namespace SIPSorcery.Net
 
     public class SDPMediaAnnouncement
     {
+        public const string MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX = "a=extmap:";
         public const string MEDIA_FORMAT_ATTRIBUE_PREFIX = "a=rtpmap:";
         public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
         public const string MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX = "a=ssrc:";
@@ -149,6 +151,11 @@ namespace SIPSorcery.Net
         ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
         /// </summary>
         public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
+
+        /// <summary>
+        ///  a=extmap - Mapping for RTP header extensions
+        /// </summary>
+        public Dictionary<int, RTPHeaderExtension> HeaderExtensions = new Dictionary<int, RTPHeaderExtension>();
 
         /// <summary>
         ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
@@ -311,6 +318,7 @@ namespace SIPSorcery.Net
 
             announcement += GetFormatListAttributesToString();
 
+            announcement += string.Join("", HeaderExtensions.Select(x => $"{MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX}{x.Value.Id} {x.Value.Uri}{m_CRLF}"));
             foreach (string extra in ExtraMediaAttributes)
             {
                 announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
