@@ -114,13 +114,13 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPSsrcAttribute__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.%23ctor(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.Boolean%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.SDPAudioVideoMediaFormat%7D%2CSIPSorcery.Net.MediaStreamStatusEnum%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.SDPSsrcAttribute%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPSsrcAttribute__System_Collections_Generic_Dictionary_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtension__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.%23ctor(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.Boolean%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.SDPAudioVideoMediaFormat%7D%2CSIPSorcery.Net.MediaStreamStatusEnum%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.SDPSsrcAttribute%7D%2CSystem.Collections.Generic.Dictionary%7BSystem.Int32%2CSIPSorcery.net.RTP.RTPHeaderExtension%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L149">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L160">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack__ctor_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPSsrcAttribute__" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute})">MediaStreamTrack(SDPMediaTypesEnum, Boolean, List&lt;SDPAudioVideoMediaFormat&gt;, MediaStreamStatusEnum, List&lt;SDPSsrcAttribute&gt;)</h4>
+  <h4 id="SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPSsrcAttribute__System_Collections_Generic_Dictionary_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtension__" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute},System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})">MediaStreamTrack(SDPMediaTypesEnum, Boolean, List&lt;SDPAudioVideoMediaFormat&gt;, MediaStreamStatusEnum, List&lt;SDPSsrcAttribute&gt;, Dictionary&lt;Int32, RTPHeaderExtension&gt;)</h4>
   <div class="markdown level1 summary"><p>Creates a lightweight class to track a media stream track within an RTP session
 When supporting RFC3550 (the standard RTP specification) the relationship between
 an RTP stream and session is 1:1. For WebRTC and RFC8101 there can be multiple
@@ -129,7 +129,7 @@ streams per session.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public MediaStreamTrack(SDPMediaTypesEnum kind, bool isRemote, List&lt;SDPAudioVideoMediaFormat&gt; capabilities, MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv, List&lt;SDPSsrcAttribute&gt; ssrcAttributes = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public MediaStreamTrack(SDPMediaTypesEnum kind, bool isRemote, List&lt;SDPAudioVideoMediaFormat&gt; capabilities, MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv, List&lt;SDPSsrcAttribute&gt; ssrcAttributes = null, Dictionary&lt;int, RTPHeaderExtension&gt; headerExtensions = null)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -179,6 +179,11 @@ parameter contains a list of the SSRC attributes that should then match the RTP 
 for this track.</p>
 </td>
       </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.Int32</span>, <a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtension.html">RTPHeaderExtension</a>&gt;</td>
+        <td><span class="parametername">headerExtensions</span></td>
+        <td></td>
+      </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
@@ -186,7 +191,7 @@ for this track.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_AudioFormat_SIPSorcery_Net_MediaStreamStatusEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.%23ctor(SIPSorceryMedia.Abstractions.AudioFormat%2CSIPSorcery.Net.MediaStreamStatusEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L188">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L199">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack__ctor_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_AudioFormat_SIPSorcery_Net_MediaStreamStatusEnum_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.AudioFormat,SIPSorcery.Net.MediaStreamStatusEnum)">MediaStreamTrack(AudioFormat, MediaStreamStatusEnum)</h4>
@@ -227,7 +232,7 @@ send and receive or only one of.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_SDPWellKnownMediaFormatsEnum___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.%23ctor(SIPSorceryMedia.Abstractions.SDPWellKnownMediaFormatsEnum%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L236">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L247">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack__ctor_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_SDPWellKnownMediaFormatsEnum___" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.SDPWellKnownMediaFormatsEnum[])">MediaStreamTrack(SDPWellKnownMediaFormatsEnum[])</h4>
@@ -263,7 +268,7 @@ the well known video formats.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_VideoFormat_SIPSorcery_Net_MediaStreamStatusEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.%23ctor(SIPSorceryMedia.Abstractions.VideoFormat%2CSIPSorcery.Net.MediaStreamStatusEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L212">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L223">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack__ctor_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_VideoFormat_SIPSorcery_Net_MediaStreamStatusEnum_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.VideoFormat,SIPSorcery.Net.MediaStreamStatusEnum)">MediaStreamTrack(VideoFormat, MediaStreamStatusEnum)</h4>
@@ -304,7 +309,7 @@ send and receive or only one of.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack__ctor_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_AudioFormat__SIPSorcery_Net_MediaStreamStatusEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.%23ctor(System.Collections.Generic.List%7BSIPSorceryMedia.Abstractions.AudioFormat%7D%2CSIPSorcery.Net.MediaStreamStatusEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L200">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L211">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack__ctor_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack__ctor_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_AudioFormat__SIPSorcery_Net_MediaStreamStatusEnum_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.AudioFormat},SIPSorcery.Net.MediaStreamStatusEnum)">MediaStreamTrack(List&lt;AudioFormat&gt;, MediaStreamStatusEnum)</h4>
@@ -344,7 +349,7 @@ send and receive or only one of.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack__ctor_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_VideoFormat__SIPSorcery_Net_MediaStreamStatusEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.%23ctor(System.Collections.Generic.List%7BSIPSorceryMedia.Abstractions.VideoFormat%7D%2CSIPSorcery.Net.MediaStreamStatusEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L224">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L235">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack__ctor_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack__ctor_System_Collections_Generic_List_SIPSorceryMedia_Abstractions_VideoFormat__SIPSorcery_Net_MediaStreamStatusEnum_" data-uid="SIPSorcery.Net.MediaStreamTrack.#ctor(System.Collections.Generic.List{SIPSorceryMedia.Abstractions.VideoFormat},SIPSorcery.Net.MediaStreamStatusEnum)">MediaStreamTrack(List&lt;VideoFormat&gt;, MediaStreamStatusEnum)</h4>
@@ -386,7 +391,7 @@ send and receive or only one of.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_Capabilities.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.Capabilities%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L75">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L81">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_Capabilities_" data-uid="SIPSorcery.Net.MediaStreamTrack.Capabilities*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_Capabilities" data-uid="SIPSorcery.Net.MediaStreamTrack.Capabilities">Capabilities</h4>
@@ -417,7 +422,7 @@ send and receive or only one of.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_DefaultStreamStatus.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.DefaultStreamStatus%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L84">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L95">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_DefaultStreamStatus_" data-uid="SIPSorcery.Net.MediaStreamTrack.DefaultStreamStatus*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_DefaultStreamStatus" data-uid="SIPSorcery.Net.MediaStreamTrack.DefaultStreamStatus">DefaultStreamStatus</h4>
@@ -449,10 +454,40 @@ be known that the track reverts receive only rather than sendrecv.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_HeaderExtensions.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.HeaderExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L86">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_MediaStreamTrack_HeaderExtensions_" data-uid="SIPSorcery.Net.MediaStreamTrack.HeaderExtensions*"></a>
+  <h4 id="SIPSorcery_Net_MediaStreamTrack_HeaderExtensions" data-uid="SIPSorcery.Net.MediaStreamTrack.HeaderExtensions">HeaderExtensions</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Dictionary&lt;int, RTPHeaderExtension&gt; HeaderExtensions { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.Int32</span>, <a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtension.html">RTPHeaderExtension</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_IsRemote.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.IsRemote%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L64">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L70">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_IsRemote_" data-uid="SIPSorcery.Net.MediaStreamTrack.IsRemote*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_IsRemote" data-uid="SIPSorcery.Net.MediaStreamTrack.IsRemote">IsRemote</h4>
@@ -483,7 +518,7 @@ be known that the track reverts receive only rather than sendrecv.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_Kind.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.Kind%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L35">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L36">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_Kind_" data-uid="SIPSorcery.Net.MediaStreamTrack.Kind*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_Kind" data-uid="SIPSorcery.Net.MediaStreamTrack.Kind">Kind</h4>
@@ -511,10 +546,41 @@ be known that the track reverts receive only rather than sendrecv.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_LastAbsoluteCaptureTimestamp.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.LastAbsoluteCaptureTimestamp%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L59">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_MediaStreamTrack_LastAbsoluteCaptureTimestamp_" data-uid="SIPSorcery.Net.MediaStreamTrack.LastAbsoluteCaptureTimestamp*"></a>
+  <h4 id="SIPSorcery_Net_MediaStreamTrack_LastAbsoluteCaptureTimestamp" data-uid="SIPSorcery.Net.MediaStreamTrack.LastAbsoluteCaptureTimestamp">LastAbsoluteCaptureTimestamp</h4>
+  <div class="markdown level1 summary"><p>The last abs-capture-time received from the remote peer for this stream.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public TimestampPair LastAbsoluteCaptureTimestamp { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.TimestampPair.html">TimestampPair</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_LastRemoteSeqNum.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L50">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L51">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_LastRemoteSeqNum_" data-uid="SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_LastRemoteSeqNum" data-uid="SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum">LastRemoteSeqNum</h4>
@@ -545,7 +611,7 @@ be known that the track reverts receive only rather than sendrecv.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_MaximumBandwidth.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.MaximumBandwidth%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L110">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L121">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_MaximumBandwidth_" data-uid="SIPSorcery.Net.MediaStreamTrack.MaximumBandwidth*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_MaximumBandwidth" data-uid="SIPSorcery.Net.MediaStreamTrack.MaximumBandwidth">MaximumBandwidth</h4>
@@ -582,7 +648,7 @@ The bandwith is specified in bits per seconds (bps).</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_NoDtmfSupport.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.NoDtmfSupport%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L70">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L76">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_NoDtmfSupport_" data-uid="SIPSorcery.Net.MediaStreamTrack.NoDtmfSupport*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_NoDtmfSupport" data-uid="SIPSorcery.Net.MediaStreamTrack.NoDtmfSupport">NoDtmfSupport</h4>
@@ -614,7 +680,7 @@ out of DTMF support set this property to true.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_SdpSsrc.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.SdpSsrc%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L97">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L108">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_SdpSsrc_" data-uid="SIPSorcery.Net.MediaStreamTrack.SdpSsrc*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_SdpSsrc" data-uid="SIPSorcery.Net.MediaStreamTrack.SdpSsrc">SdpSsrc</h4>
@@ -648,7 +714,7 @@ RTCP report.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_SeqNum.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.SeqNum%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L53">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L54">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_SeqNum_" data-uid="SIPSorcery.Net.MediaStreamTrack.SeqNum*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_SeqNum" data-uid="SIPSorcery.Net.MediaStreamTrack.SeqNum">SeqNum</h4>
@@ -678,7 +744,7 @@ RTCP report.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_Ssrc.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.Ssrc%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L45">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L46">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_Ssrc_" data-uid="SIPSorcery.Net.MediaStreamTrack.Ssrc*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_Ssrc" data-uid="SIPSorcery.Net.MediaStreamTrack.Ssrc">Ssrc</h4>
@@ -714,7 +780,7 @@ will have the same SSRC.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_StreamStatus.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.StreamStatus%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L89">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L100">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_StreamStatus_" data-uid="SIPSorcery.Net.MediaStreamTrack.StreamStatus*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_StreamStatus" data-uid="SIPSorcery.Net.MediaStreamTrack.StreamStatus">StreamStatus</h4>
@@ -745,7 +811,7 @@ will have the same SSRC.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_Timestamp.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.Timestamp%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L59">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L65">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_Timestamp_" data-uid="SIPSorcery.Net.MediaStreamTrack.Timestamp*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_Timestamp" data-uid="SIPSorcery.Net.MediaStreamTrack.Timestamp">Timestamp</h4>
@@ -779,7 +845,7 @@ sent using this media stream.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_GetFormatForPayloadID_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.GetFormatForPayloadID(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L267">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L278">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_GetFormatForPayloadID_" data-uid="SIPSorcery.Net.MediaStreamTrack.GetFormatForPayloadID*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_GetFormatForPayloadID_System_Int32_" data-uid="SIPSorcery.Net.MediaStreamTrack.GetFormatForPayloadID(System.Int32)">GetFormatForPayloadID(Int32)</h4>
@@ -829,7 +895,7 @@ sent using this media stream.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_GetNextSeqNum.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L277">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L288">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_GetNextSeqNum_" data-uid="SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_GetNextSeqNum" data-uid="SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum">GetNextSeqNum()</h4>
@@ -861,7 +927,7 @@ sent using this media stream.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_IsPayloadIDMatch_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.IsPayloadIDMatch(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L246">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L257">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_IsPayloadIDMatch_" data-uid="SIPSorcery.Net.MediaStreamTrack.IsPayloadIDMatch*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_IsPayloadIDMatch_System_Int32_" data-uid="SIPSorcery.Net.MediaStreamTrack.IsPayloadIDMatch(System.Int32)">IsPayloadIDMatch(Int32)</h4>
@@ -912,7 +978,7 @@ is in this track's list.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_IsSsrcMatch_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.IsSsrcMatch(System.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L257">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L268">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_IsSsrcMatch_" data-uid="SIPSorcery.Net.MediaStreamTrack.IsSsrcMatch*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_IsSsrcMatch_System_UInt32_" data-uid="SIPSorcery.Net.MediaStreamTrack.IsSsrcMatch(System.UInt32)">IsSsrcMatch(UInt32)</h4>
@@ -973,7 +1039,7 @@ a value expected for this track.</p>
                     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L28" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L29" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

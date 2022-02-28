@@ -6667,15 +6667,15 @@ references:
   commentId: T:SIPSorcery.Net.MediaStreamTrack
   fullName: SIPSorcery.Net.MediaStreamTrack
   nameWithType: MediaStreamTrack
-- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute})
-  name: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum, List<SDPSsrcAttribute>)
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPSsrcAttribute__
-  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute})
-  name.vb: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum, List(Of SDPSsrcAttribute))
-  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>, SIPSorcery.Net.MediaStreamStatusEnum, System.Collections.Generic.List<SIPSorcery.Net.SDPSsrcAttribute>)
-  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat), SIPSorcery.Net.MediaStreamStatusEnum, System.Collections.Generic.List(Of SIPSorcery.Net.SDPSsrcAttribute))
-  nameWithType: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum, List<SDPSsrcAttribute>)
-  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum, List(Of SDPSsrcAttribute))
+- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute},System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
+  name: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum, List<SDPSsrcAttribute>, Dictionary<Int32, RTPHeaderExtension>)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPSsrcAttribute__System_Collections_Generic_Dictionary_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtension__
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute},System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
+  name.vb: MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum, List(Of SDPSsrcAttribute), Dictionary(Of Int32, RTPHeaderExtension))
+  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>, SIPSorcery.Net.MediaStreamStatusEnum, System.Collections.Generic.List<SIPSorcery.Net.SDPSsrcAttribute>, System.Collections.Generic.Dictionary<System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension>)
+  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat), SIPSorcery.Net.MediaStreamStatusEnum, System.Collections.Generic.List(Of SIPSorcery.Net.SDPSsrcAttribute), System.Collections.Generic.Dictionary(Of System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension))
+  nameWithType: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPAudioVideoMediaFormat>, MediaStreamStatusEnum, List<SDPSsrcAttribute>, Dictionary<Int32, RTPHeaderExtension>)
+  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPAudioVideoMediaFormat), MediaStreamStatusEnum, List(Of SDPSsrcAttribute), Dictionary(Of Int32, RTPHeaderExtension))
 - uid: SIPSorcery.Net.MediaStreamTrack.#ctor(SIPSorceryMedia.Abstractions.AudioFormat,SIPSorcery.Net.MediaStreamStatusEnum)
   name: MediaStreamTrack(AudioFormat, MediaStreamStatusEnum)
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_SIPSorceryMedia_Abstractions_AudioFormat_SIPSorcery_Net_MediaStreamStatusEnum_
@@ -6774,6 +6774,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum
   nameWithType: MediaStreamTrack.GetNextSeqNum
+- uid: SIPSorcery.Net.MediaStreamTrack.HeaderExtensions
+  name: HeaderExtensions
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_HeaderExtensions
+  commentId: P:SIPSorcery.Net.MediaStreamTrack.HeaderExtensions
+  fullName: SIPSorcery.Net.MediaStreamTrack.HeaderExtensions
+  nameWithType: MediaStreamTrack.HeaderExtensions
+- uid: SIPSorcery.Net.MediaStreamTrack.HeaderExtensions*
+  name: HeaderExtensions
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_HeaderExtensions_
+  commentId: Overload:SIPSorcery.Net.MediaStreamTrack.HeaderExtensions
+  isSpec: "True"
+  fullName: SIPSorcery.Net.MediaStreamTrack.HeaderExtensions
+  nameWithType: MediaStreamTrack.HeaderExtensions
 - uid: SIPSorcery.Net.MediaStreamTrack.IsPayloadIDMatch(System.Int32)
   name: IsPayloadIDMatch(Int32)
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_IsPayloadIDMatch_System_Int32_
@@ -6826,6 +6839,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.MediaStreamTrack.Kind
   nameWithType: MediaStreamTrack.Kind
+- uid: SIPSorcery.Net.MediaStreamTrack.LastAbsoluteCaptureTimestamp
+  name: LastAbsoluteCaptureTimestamp
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_LastAbsoluteCaptureTimestamp
+  commentId: P:SIPSorcery.Net.MediaStreamTrack.LastAbsoluteCaptureTimestamp
+  fullName: SIPSorcery.Net.MediaStreamTrack.LastAbsoluteCaptureTimestamp
+  nameWithType: MediaStreamTrack.LastAbsoluteCaptureTimestamp
+- uid: SIPSorcery.Net.MediaStreamTrack.LastAbsoluteCaptureTimestamp*
+  name: LastAbsoluteCaptureTimestamp
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_LastAbsoluteCaptureTimestamp_
+  commentId: Overload:SIPSorcery.Net.MediaStreamTrack.LastAbsoluteCaptureTimestamp
+  isSpec: "True"
+  fullName: SIPSorcery.Net.MediaStreamTrack.LastAbsoluteCaptureTimestamp
+  nameWithType: MediaStreamTrack.LastAbsoluteCaptureTimestamp
 - uid: SIPSorcery.Net.MediaStreamTrack.LastRemoteSeqNum
   name: LastRemoteSeqNum
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_LastRemoteSeqNum
@@ -7024,6 +7050,103 @@ references:
   commentId: F:SIPSorcery.Net.Mjpeg.Tags.TextComment
   fullName: SIPSorcery.Net.Mjpeg.Tags.TextComment
   nameWithType: Mjpeg.Tags.TextComment
+- uid: SIPSorcery.Net.Ntp64Timestamp
+  name: Ntp64Timestamp
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html
+  commentId: T:SIPSorcery.Net.Ntp64Timestamp
+  fullName: SIPSorcery.Net.Ntp64Timestamp
+  nameWithType: Ntp64Timestamp
+- uid: SIPSorcery.Net.Ntp64Timestamp.AddFraction(System.UInt64,System.Double)
+  name: AddFraction(UInt64, Double)
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_AddFraction_System_UInt64_System_Double_
+  commentId: M:SIPSorcery.Net.Ntp64Timestamp.AddFraction(System.UInt64,System.Double)
+  fullName: SIPSorcery.Net.Ntp64Timestamp.AddFraction(System.UInt64, System.Double)
+  nameWithType: Ntp64Timestamp.AddFraction(UInt64, Double)
+- uid: SIPSorcery.Net.Ntp64Timestamp.AddFraction*
+  name: AddFraction
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_AddFraction_
+  commentId: Overload:SIPSorcery.Net.Ntp64Timestamp.AddFraction
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Ntp64Timestamp.AddFraction
+  nameWithType: Ntp64Timestamp.AddFraction
+- uid: SIPSorcery.Net.Ntp64Timestamp.AddSeconds(System.UInt64,System.UInt32)
+  name: AddSeconds(UInt64, UInt32)
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_AddSeconds_System_UInt64_System_UInt32_
+  commentId: M:SIPSorcery.Net.Ntp64Timestamp.AddSeconds(System.UInt64,System.UInt32)
+  fullName: SIPSorcery.Net.Ntp64Timestamp.AddSeconds(System.UInt64, System.UInt32)
+  nameWithType: Ntp64Timestamp.AddSeconds(UInt64, UInt32)
+- uid: SIPSorcery.Net.Ntp64Timestamp.AddSeconds*
+  name: AddSeconds
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_AddSeconds_
+  commentId: Overload:SIPSorcery.Net.Ntp64Timestamp.AddSeconds
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Ntp64Timestamp.AddSeconds
+  nameWithType: Ntp64Timestamp.AddSeconds
+- uid: SIPSorcery.Net.Ntp64Timestamp.GetDatetime(System.UInt64)
+  name: GetDatetime(UInt64)
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_GetDatetime_System_UInt64_
+  commentId: M:SIPSorcery.Net.Ntp64Timestamp.GetDatetime(System.UInt64)
+  fullName: SIPSorcery.Net.Ntp64Timestamp.GetDatetime(System.UInt64)
+  nameWithType: Ntp64Timestamp.GetDatetime(UInt64)
+- uid: SIPSorcery.Net.Ntp64Timestamp.GetDatetime*
+  name: GetDatetime
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_GetDatetime_
+  commentId: Overload:SIPSorcery.Net.Ntp64Timestamp.GetDatetime
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Ntp64Timestamp.GetDatetime
+  nameWithType: Ntp64Timestamp.GetDatetime
+- uid: SIPSorcery.Net.Ntp64Timestamp.GetFraction(System.UInt64)
+  name: GetFraction(UInt64)
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_GetFraction_System_UInt64_
+  commentId: M:SIPSorcery.Net.Ntp64Timestamp.GetFraction(System.UInt64)
+  fullName: SIPSorcery.Net.Ntp64Timestamp.GetFraction(System.UInt64)
+  nameWithType: Ntp64Timestamp.GetFraction(UInt64)
+- uid: SIPSorcery.Net.Ntp64Timestamp.GetFraction*
+  name: GetFraction
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_GetFraction_
+  commentId: Overload:SIPSorcery.Net.Ntp64Timestamp.GetFraction
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Ntp64Timestamp.GetFraction
+  nameWithType: Ntp64Timestamp.GetFraction
+- uid: SIPSorcery.Net.Ntp64Timestamp.GetSeconds(System.UInt64)
+  name: GetSeconds(UInt64)
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_GetSeconds_System_UInt64_
+  commentId: M:SIPSorcery.Net.Ntp64Timestamp.GetSeconds(System.UInt64)
+  fullName: SIPSorcery.Net.Ntp64Timestamp.GetSeconds(System.UInt64)
+  nameWithType: Ntp64Timestamp.GetSeconds(UInt64)
+- uid: SIPSorcery.Net.Ntp64Timestamp.GetSeconds*
+  name: GetSeconds
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_GetSeconds_
+  commentId: Overload:SIPSorcery.Net.Ntp64Timestamp.GetSeconds
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Ntp64Timestamp.GetSeconds
+  nameWithType: Ntp64Timestamp.GetSeconds
+- uid: SIPSorcery.Net.Ntp64Timestamp.InterpolateDatetime(SIPSorcery.Net.TimestampPair,System.UInt32,System.Int32)
+  name: InterpolateDatetime(TimestampPair, UInt32, Int32)
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_InterpolateDatetime_SIPSorcery_Net_TimestampPair_System_UInt32_System_Int32_
+  commentId: M:SIPSorcery.Net.Ntp64Timestamp.InterpolateDatetime(SIPSorcery.Net.TimestampPair,System.UInt32,System.Int32)
+  fullName: SIPSorcery.Net.Ntp64Timestamp.InterpolateDatetime(SIPSorcery.Net.TimestampPair, System.UInt32, System.Int32)
+  nameWithType: Ntp64Timestamp.InterpolateDatetime(TimestampPair, UInt32, Int32)
+- uid: SIPSorcery.Net.Ntp64Timestamp.InterpolateDatetime*
+  name: InterpolateDatetime
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_InterpolateDatetime_
+  commentId: Overload:SIPSorcery.Net.Ntp64Timestamp.InterpolateDatetime
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Ntp64Timestamp.InterpolateDatetime
+  nameWithType: Ntp64Timestamp.InterpolateDatetime
+- uid: SIPSorcery.Net.Ntp64Timestamp.InterpolateNtpTime(SIPSorcery.Net.TimestampPair,System.UInt32,System.Int32)
+  name: InterpolateNtpTime(TimestampPair, UInt32, Int32)
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_InterpolateNtpTime_SIPSorcery_Net_TimestampPair_System_UInt32_System_Int32_
+  commentId: M:SIPSorcery.Net.Ntp64Timestamp.InterpolateNtpTime(SIPSorcery.Net.TimestampPair,System.UInt32,System.Int32)
+  fullName: SIPSorcery.Net.Ntp64Timestamp.InterpolateNtpTime(SIPSorcery.Net.TimestampPair, System.UInt32, System.Int32)
+  nameWithType: Ntp64Timestamp.InterpolateNtpTime(TimestampPair, UInt32, Int32)
+- uid: SIPSorcery.Net.Ntp64Timestamp.InterpolateNtpTime*
+  name: InterpolateNtpTime
+  href: api/SIPSorcery.Net.Ntp64Timestamp.html#SIPSorcery_Net_Ntp64Timestamp_InterpolateNtpTime_
+  commentId: Overload:SIPSorcery.Net.Ntp64Timestamp.InterpolateNtpTime
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Ntp64Timestamp.InterpolateNtpTime
+  nameWithType: Ntp64Timestamp.InterpolateNtpTime
 - uid: SIPSorcery.Net.OnDataChannelMessageDelegate
   name: OnDataChannelMessageDelegate
   href: api/SIPSorcery.Net.OnDataChannelMessageDelegate.html
@@ -11237,6 +11360,317 @@ references:
   commentId: F:SIPSorcery.Net.RTCSignalingState.stable
   fullName: SIPSorcery.Net.RTCSignalingState.stable
   nameWithType: RTCSignalingState.stable
+- uid: SIPSorcery.net.RTP
+  name: SIPSorcery.net.RTP
+  href: api/SIPSorcery.net.RTP.html
+  commentId: N:SIPSorcery.net.RTP
+  fullName: SIPSorcery.net.RTP
+  nameWithType: SIPSorcery.net.RTP
+- uid: SIPSorcery.net.RTP.DefaultTimeProvider
+  name: DefaultTimeProvider
+  href: api/SIPSorcery.net.RTP.DefaultTimeProvider.html
+  commentId: T:SIPSorcery.net.RTP.DefaultTimeProvider
+  fullName: SIPSorcery.net.RTP.DefaultTimeProvider
+  nameWithType: DefaultTimeProvider
+- uid: SIPSorcery.net.RTP.DefaultTimeProvider.Time
+  name: Time
+  href: api/SIPSorcery.net.RTP.DefaultTimeProvider.html#SIPSorcery_net_RTP_DefaultTimeProvider_Time
+  commentId: P:SIPSorcery.net.RTP.DefaultTimeProvider.Time
+  fullName: SIPSorcery.net.RTP.DefaultTimeProvider.Time
+  nameWithType: DefaultTimeProvider.Time
+- uid: SIPSorcery.net.RTP.DefaultTimeProvider.Time*
+  name: Time
+  href: api/SIPSorcery.net.RTP.DefaultTimeProvider.html#SIPSorcery_net_RTP_DefaultTimeProvider_Time_
+  commentId: Overload:SIPSorcery.net.RTP.DefaultTimeProvider.Time
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.DefaultTimeProvider.Time
+  nameWithType: DefaultTimeProvider.Time
+- uid: SIPSorcery.net.RTP.IDateTime
+  name: IDateTime
+  href: api/SIPSorcery.net.RTP.IDateTime.html
+  commentId: T:SIPSorcery.net.RTP.IDateTime
+  fullName: SIPSorcery.net.RTP.IDateTime
+  nameWithType: IDateTime
+- uid: SIPSorcery.net.RTP.IDateTime.Time
+  name: Time
+  href: api/SIPSorcery.net.RTP.IDateTime.html#SIPSorcery_net_RTP_IDateTime_Time
+  commentId: P:SIPSorcery.net.RTP.IDateTime.Time
+  fullName: SIPSorcery.net.RTP.IDateTime.Time
+  nameWithType: IDateTime.Time
+- uid: SIPSorcery.net.RTP.IDateTime.Time*
+  name: Time
+  href: api/SIPSorcery.net.RTP.IDateTime.html#SIPSorcery_net_RTP_IDateTime_Time_
+  commentId: Overload:SIPSorcery.net.RTP.IDateTime.Time
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.IDateTime.Time
+  nameWithType: IDateTime.Time
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension
+  name: RTPHeaderExtension
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtension
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension
+  nameWithType: RTPHeaderExtension
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.#ctor(System.Int32,System.String)
+  name: RTPHeaderExtension(Int32, String)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension__ctor_System_Int32_System_String_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtension.#ctor(System.Int32,System.String)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.RTPHeaderExtension(System.Int32, System.String)
+  nameWithType: RTPHeaderExtension.RTPHeaderExtension(Int32, String)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.#ctor*
+  name: RTPHeaderExtension
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension__ctor_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.RTPHeaderExtension
+  nameWithType: RTPHeaderExtension.RTPHeaderExtension
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Id
+  name: Id
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Id
+  commentId: P:SIPSorcery.net.RTP.RTPHeaderExtension.Id
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Id
+  nameWithType: RTPHeaderExtension.Id
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Id*
+  name: Id
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Id_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.Id
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Id
+  nameWithType: RTPHeaderExtension.Id
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Type
+  name: Type
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Type
+  commentId: P:SIPSorcery.net.RTP.RTPHeaderExtension.Type
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Type
+  nameWithType: RTPHeaderExtension.Type
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Type*
+  name: Type
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Type_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.Type
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Type
+  nameWithType: RTPHeaderExtension.Type
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Uri
+  name: Uri
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Uri
+  commentId: P:SIPSorcery.net.RTP.RTPHeaderExtension.Uri
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Uri
+  nameWithType: RTPHeaderExtension.Uri
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Uri*
+  name: Uri
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Uri_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.Uri
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Uri
+  nameWithType: RTPHeaderExtension.Uri
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData
+  name: RTPHeaderExtensionData
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensionData
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData
+  nameWithType: RTPHeaderExtensionData
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.#ctor(System.Int32,System.Byte[],SIPSorcery.net.RTP.RTPHeaderExtensionType)
+  name: RTPHeaderExtensionData(Int32, Byte[], RTPHeaderExtensionType)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData__ctor_System_Int32_System_Byte___SIPSorcery_net_RTP_RTPHeaderExtensionType_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensionData.#ctor(System.Int32,System.Byte[],SIPSorcery.net.RTP.RTPHeaderExtensionType)
+  name.vb: RTPHeaderExtensionData(Int32, Byte(), RTPHeaderExtensionType)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.RTPHeaderExtensionData(System.Int32, System.Byte[], SIPSorcery.net.RTP.RTPHeaderExtensionType)
+  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtensionData.RTPHeaderExtensionData(System.Int32, System.Byte(), SIPSorcery.net.RTP.RTPHeaderExtensionType)
+  nameWithType: RTPHeaderExtensionData.RTPHeaderExtensionData(Int32, Byte[], RTPHeaderExtensionType)
+  nameWithType.vb: RTPHeaderExtensionData.RTPHeaderExtensionData(Int32, Byte(), RTPHeaderExtensionType)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.#ctor*
+  name: RTPHeaderExtensionData
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData__ctor_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.RTPHeaderExtensionData
+  nameWithType: RTPHeaderExtensionData.RTPHeaderExtensionData
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.Data
+  name: Data
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_Data
+  commentId: P:SIPSorcery.net.RTP.RTPHeaderExtensionData.Data
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.Data
+  nameWithType: RTPHeaderExtensionData.Data
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.Data*
+  name: Data
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_Data_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.Data
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.Data
+  nameWithType: RTPHeaderExtensionData.Data
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp(System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
+  name: GetNtpTimestamp(Dictionary<Int32, RTPHeaderExtension>)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetNtpTimestamp_System_Collections_Generic_Dictionary_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtension__
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp(System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
+  name.vb: GetNtpTimestamp(Dictionary(Of Int32, RTPHeaderExtension))
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp(System.Collections.Generic.Dictionary<System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension>)
+  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp(System.Collections.Generic.Dictionary(Of System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension))
+  nameWithType: RTPHeaderExtensionData.GetNtpTimestamp(Dictionary<Int32, RTPHeaderExtension>)
+  nameWithType.vb: RTPHeaderExtensionData.GetNtpTimestamp(Dictionary(Of Int32, RTPHeaderExtension))
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp*
+  name: GetNtpTimestamp
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetNtpTimestamp_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp
+  nameWithType: RTPHeaderExtensionData.GetNtpTimestamp
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong(System.Int32)
+  name: GetUlong(Int32)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetUlong_System_Int32_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong(System.Int32)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong(System.Int32)
+  nameWithType: RTPHeaderExtensionData.GetUlong(Int32)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong*
+  name: GetUlong
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetUlong_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong
+  nameWithType: RTPHeaderExtensionData.GetUlong
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType(System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
+  name: GetUriType(Dictionary<Int32, RTPHeaderExtension>)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetUriType_System_Collections_Generic_Dictionary_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtension__
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType(System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
+  name.vb: GetUriType(Dictionary(Of Int32, RTPHeaderExtension))
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType(System.Collections.Generic.Dictionary<System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension>)
+  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType(System.Collections.Generic.Dictionary(Of System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension))
+  nameWithType: RTPHeaderExtensionData.GetUriType(Dictionary<Int32, RTPHeaderExtension>)
+  nameWithType.vb: RTPHeaderExtensionData.GetUriType(Dictionary(Of Int32, RTPHeaderExtension))
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType*
+  name: GetUriType
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetUriType_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType
+  nameWithType: RTPHeaderExtensionData.GetUriType
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.Id
+  name: Id
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_Id
+  commentId: P:SIPSorcery.net.RTP.RTPHeaderExtensionData.Id
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.Id
+  nameWithType: RTPHeaderExtensionData.Id
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.Id*
+  name: Id
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_Id_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.Id
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.Id
+  nameWithType: RTPHeaderExtensionData.Id
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.Type
+  name: Type
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_Type
+  commentId: P:SIPSorcery.net.RTP.RTPHeaderExtensionData.Type
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.Type
+  nameWithType: RTPHeaderExtensionData.Type
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.Type*
+  name: Type
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_Type_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.Type
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.Type
+  nameWithType: RTPHeaderExtensionData.Type
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionType
+  name: RTPHeaderExtensionType
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionType.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensionType
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionType
+  nameWithType: RTPHeaderExtensionType
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionType.OneByte
+  name: OneByte
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionType.html#SIPSorcery_net_RTP_RTPHeaderExtensionType_OneByte
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensionType.OneByte
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionType.OneByte
+  nameWithType: RTPHeaderExtensionType.OneByte
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionType.TwoByte
+  name: TwoByte
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionType.html#SIPSorcery_net_RTP_RTPHeaderExtensionType_TwoByte
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensionType.TwoByte
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionType.TwoByte
+  nameWithType: RTPHeaderExtensionType.TwoByte
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri
+  name: RTPHeaderExtensionUri
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensionUri
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri
+  nameWithType: RTPHeaderExtensionUri
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType(System.String)
+  name: GetType(String)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.html#SIPSorcery_net_RTP_RTPHeaderExtensionUri_GetType_System_String_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType(System.String)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType(System.String)
+  nameWithType: RTPHeaderExtensionUri.GetType(String)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType*
+  name: GetType
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.html#SIPSorcery_net_RTP_RTPHeaderExtensionUri_GetType_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType
+  nameWithType: RTPHeaderExtensionUri.GetType
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type
+  name: RTPHeaderExtensionUri.Type
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type
+  nameWithType: RTPHeaderExtensionUri.Type
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.AbsCaptureTime
+  name: AbsCaptureTime
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.html#SIPSorcery_net_RTP_RTPHeaderExtensionUri_Type_AbsCaptureTime
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.AbsCaptureTime
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.AbsCaptureTime
+  nameWithType: RTPHeaderExtensionUri.Type.AbsCaptureTime
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.Unknown
+  name: Unknown
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.html#SIPSorcery_net_RTP_RTPHeaderExtensionUri_Type_Unknown
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.Unknown
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.Unknown
+  nameWithType: RTPHeaderExtensionUri.Type.Unknown
+- uid: SIPSorcery.net.RTP.RTPReorderBuffer
+  name: RTPReorderBuffer
+  href: api/SIPSorcery.net.RTP.RTPReorderBuffer.html
+  commentId: T:SIPSorcery.net.RTP.RTPReorderBuffer
+  fullName: SIPSorcery.net.RTP.RTPReorderBuffer
+  nameWithType: RTPReorderBuffer
+- uid: SIPSorcery.net.RTP.RTPReorderBuffer.#ctor(System.TimeSpan,SIPSorcery.net.RTP.IDateTime)
+  name: RTPReorderBuffer(TimeSpan, IDateTime)
+  href: api/SIPSorcery.net.RTP.RTPReorderBuffer.html#SIPSorcery_net_RTP_RTPReorderBuffer__ctor_System_TimeSpan_SIPSorcery_net_RTP_IDateTime_
+  commentId: M:SIPSorcery.net.RTP.RTPReorderBuffer.#ctor(System.TimeSpan,SIPSorcery.net.RTP.IDateTime)
+  fullName: SIPSorcery.net.RTP.RTPReorderBuffer.RTPReorderBuffer(System.TimeSpan, SIPSorcery.net.RTP.IDateTime)
+  nameWithType: RTPReorderBuffer.RTPReorderBuffer(TimeSpan, IDateTime)
+- uid: SIPSorcery.net.RTP.RTPReorderBuffer.#ctor*
+  name: RTPReorderBuffer
+  href: api/SIPSorcery.net.RTP.RTPReorderBuffer.html#SIPSorcery_net_RTP_RTPReorderBuffer__ctor_
+  commentId: Overload:SIPSorcery.net.RTP.RTPReorderBuffer.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPReorderBuffer.RTPReorderBuffer
+  nameWithType: RTPReorderBuffer.RTPReorderBuffer
+- uid: SIPSorcery.net.RTP.RTPReorderBuffer.Add(SIPSorcery.Net.RTPPacket)
+  name: Add(RTPPacket)
+  href: api/SIPSorcery.net.RTP.RTPReorderBuffer.html#SIPSorcery_net_RTP_RTPReorderBuffer_Add_SIPSorcery_Net_RTPPacket_
+  commentId: M:SIPSorcery.net.RTP.RTPReorderBuffer.Add(SIPSorcery.Net.RTPPacket)
+  fullName: SIPSorcery.net.RTP.RTPReorderBuffer.Add(SIPSorcery.Net.RTPPacket)
+  nameWithType: RTPReorderBuffer.Add(RTPPacket)
+- uid: SIPSorcery.net.RTP.RTPReorderBuffer.Add*
+  name: Add
+  href: api/SIPSorcery.net.RTP.RTPReorderBuffer.html#SIPSorcery_net_RTP_RTPReorderBuffer_Add_
+  commentId: Overload:SIPSorcery.net.RTP.RTPReorderBuffer.Add
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPReorderBuffer.Add
+  nameWithType: RTPReorderBuffer.Add
+- uid: SIPSorcery.net.RTP.RTPReorderBuffer.Get(SIPSorcery.Net.RTPPacket@)
+  name: Get(out RTPPacket)
+  href: api/SIPSorcery.net.RTP.RTPReorderBuffer.html#SIPSorcery_net_RTP_RTPReorderBuffer_Get_SIPSorcery_Net_RTPPacket__
+  commentId: M:SIPSorcery.net.RTP.RTPReorderBuffer.Get(SIPSorcery.Net.RTPPacket@)
+  name.vb: Get(ByRef RTPPacket)
+  fullName: SIPSorcery.net.RTP.RTPReorderBuffer.Get(out SIPSorcery.Net.RTPPacket)
+  fullName.vb: SIPSorcery.net.RTP.RTPReorderBuffer.Get(ByRef SIPSorcery.Net.RTPPacket)
+  nameWithType: RTPReorderBuffer.Get(out RTPPacket)
+  nameWithType.vb: RTPReorderBuffer.Get(ByRef RTPPacket)
+- uid: SIPSorcery.net.RTP.RTPReorderBuffer.Get*
+  name: Get
+  href: api/SIPSorcery.net.RTP.RTPReorderBuffer.html#SIPSorcery_net_RTP_RTPReorderBuffer_Get_
+  commentId: Overload:SIPSorcery.net.RTP.RTPReorderBuffer.Get
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPReorderBuffer.Get
+  nameWithType: RTPReorderBuffer.Get
 - uid: SIPSorcery.Net.RTPChannel
   name: RTPChannel
   href: api/SIPSorcery.Net.RTPChannel.html
@@ -11732,6 +12166,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPHeader.GetHeader
   nameWithType: RTPHeader.GetHeader
+- uid: SIPSorcery.Net.RTPHeader.GetHeaderExtensions
+  name: GetHeaderExtensions()
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_GetHeaderExtensions
+  commentId: M:SIPSorcery.Net.RTPHeader.GetHeaderExtensions
+  fullName: SIPSorcery.Net.RTPHeader.GetHeaderExtensions()
+  nameWithType: RTPHeader.GetHeaderExtensions()
+- uid: SIPSorcery.Net.RTPHeader.GetHeaderExtensions*
+  name: GetHeaderExtensions
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_GetHeaderExtensions_
+  commentId: Overload:SIPSorcery.Net.RTPHeader.GetHeaderExtensions
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPHeader.GetHeaderExtensions
+  nameWithType: RTPHeader.GetHeaderExtensions
 - uid: SIPSorcery.Net.RTPHeader.HeaderExtensionFlag
   name: HeaderExtensionFlag
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_HeaderExtensionFlag
@@ -11787,6 +12234,12 @@ references:
   commentId: F:SIPSorcery.Net.RTPHeader.PayloadType
   fullName: SIPSorcery.Net.RTPHeader.PayloadType
   nameWithType: RTPHeader.PayloadType
+- uid: SIPSorcery.Net.RTPHeader.ReceivedTime
+  name: ReceivedTime
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_ReceivedTime
+  commentId: F:SIPSorcery.Net.RTPHeader.ReceivedTime
+  fullName: SIPSorcery.Net.RTPHeader.ReceivedTime
+  nameWithType: RTPHeader.ReceivedTime
 - uid: SIPSorcery.Net.RTPHeader.RTP_VERSION
   name: RTP_VERSION
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_RTP_VERSION
@@ -12289,6 +12742,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.AcceptRtpFromAny
   nameWithType: RTPSession.AcceptRtpFromAny
+- uid: SIPSorcery.Net.RTPSession.AddBuffer(SIPSorcery.Net.SDPMediaTypesEnum,System.TimeSpan)
+  name: AddBuffer(SDPMediaTypesEnum, TimeSpan)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AddBuffer_SIPSorcery_Net_SDPMediaTypesEnum_System_TimeSpan_
+  commentId: M:SIPSorcery.Net.RTPSession.AddBuffer(SIPSorcery.Net.SDPMediaTypesEnum,System.TimeSpan)
+  fullName: SIPSorcery.Net.RTPSession.AddBuffer(SIPSorcery.Net.SDPMediaTypesEnum, System.TimeSpan)
+  nameWithType: RTPSession.AddBuffer(SDPMediaTypesEnum, TimeSpan)
+- uid: SIPSorcery.Net.RTPSession.AddBuffer*
+  name: AddBuffer
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AddBuffer_
+  commentId: Overload:SIPSorcery.Net.RTPSession.AddBuffer
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.AddBuffer
+  nameWithType: RTPSession.AddBuffer
 - uid: SIPSorcery.Net.RTPSession.addSingleTrack
   name: addSingleTrack()
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack
@@ -12731,6 +13197,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RemoteRtpEventPayloadID
   nameWithType: RTPSession.RemoteRtpEventPayloadID
+- uid: SIPSorcery.Net.RTPSession.RemoveBuffer(SIPSorcery.Net.SDPMediaTypesEnum)
+  name: RemoveBuffer(SDPMediaTypesEnum)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoveBuffer_SIPSorcery_Net_SDPMediaTypesEnum_
+  commentId: M:SIPSorcery.Net.RTPSession.RemoveBuffer(SIPSorcery.Net.SDPMediaTypesEnum)
+  fullName: SIPSorcery.Net.RTPSession.RemoveBuffer(SIPSorcery.Net.SDPMediaTypesEnum)
+  nameWithType: RTPSession.RemoveBuffer(SDPMediaTypesEnum)
+- uid: SIPSorcery.Net.RTPSession.RemoveBuffer*
+  name: RemoveBuffer
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoveBuffer_
+  commentId: Overload:SIPSorcery.Net.RTPSession.RemoveBuffer
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.RemoveBuffer
+  nameWithType: RTPSession.RemoveBuffer
 - uid: SIPSorcery.Net.RTPSession.removeTrack(SIPSorcery.Net.MediaStreamTrack)
   name: removeTrack(MediaStreamTrack)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_removeTrack_SIPSorcery_Net_MediaStreamTrack_
@@ -19198,6 +19677,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.HasCryptoLine
   nameWithType: SDPMediaAnnouncement.HasCryptoLine
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.HeaderExtensions
+  name: HeaderExtensions
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_HeaderExtensions
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.HeaderExtensions
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.HeaderExtensions
+  nameWithType: SDPMediaAnnouncement.HeaderExtensions
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.IceCandidates
   name: IceCandidates
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_IceCandidates
@@ -19252,6 +19737,12 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.Media
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.Media
   nameWithType: SDPMediaAnnouncement.Media
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX
+  name: MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX
+  nameWithType: SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX
   name: MEDIA_FORMAT_ATTRIBUE_PREFIX
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MEDIA_FORMAT_ATTRIBUE_PREFIX
@@ -23389,6 +23880,38 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNXORAddressAttribute.ToString
   nameWithType: STUNXORAddressAttribute.ToString
+- uid: SIPSorcery.Net.TimestampPair
+  name: TimestampPair
+  href: api/SIPSorcery.Net.TimestampPair.html
+  commentId: T:SIPSorcery.Net.TimestampPair
+  fullName: SIPSorcery.Net.TimestampPair
+  nameWithType: TimestampPair
+- uid: SIPSorcery.Net.TimestampPair.NtpTimestamp
+  name: NtpTimestamp
+  href: api/SIPSorcery.Net.TimestampPair.html#SIPSorcery_Net_TimestampPair_NtpTimestamp
+  commentId: P:SIPSorcery.Net.TimestampPair.NtpTimestamp
+  fullName: SIPSorcery.Net.TimestampPair.NtpTimestamp
+  nameWithType: TimestampPair.NtpTimestamp
+- uid: SIPSorcery.Net.TimestampPair.NtpTimestamp*
+  name: NtpTimestamp
+  href: api/SIPSorcery.Net.TimestampPair.html#SIPSorcery_Net_TimestampPair_NtpTimestamp_
+  commentId: Overload:SIPSorcery.Net.TimestampPair.NtpTimestamp
+  isSpec: "True"
+  fullName: SIPSorcery.Net.TimestampPair.NtpTimestamp
+  nameWithType: TimestampPair.NtpTimestamp
+- uid: SIPSorcery.Net.TimestampPair.RtpTimestamp
+  name: RtpTimestamp
+  href: api/SIPSorcery.Net.TimestampPair.html#SIPSorcery_Net_TimestampPair_RtpTimestamp
+  commentId: P:SIPSorcery.Net.TimestampPair.RtpTimestamp
+  fullName: SIPSorcery.Net.TimestampPair.RtpTimestamp
+  nameWithType: TimestampPair.RtpTimestamp
+- uid: SIPSorcery.Net.TimestampPair.RtpTimestamp*
+  name: RtpTimestamp
+  href: api/SIPSorcery.Net.TimestampPair.html#SIPSorcery_Net_TimestampPair_RtpTimestamp_
+  commentId: Overload:SIPSorcery.Net.TimestampPair.RtpTimestamp
+  isSpec: "True"
+  fullName: SIPSorcery.Net.TimestampPair.RtpTimestamp
+  nameWithType: TimestampPair.RtpTimestamp
 - uid: SIPSorcery.Net.UdpReceiver
   name: UdpReceiver
   href: api/SIPSorcery.Net.UdpReceiver.html
