@@ -68,6 +68,30 @@ namespace SIPSorcery.Media
 
         public event VideoSinkSampleDecodedDelegate OnVideoSinkSample;
 
+        /// <summary>
+        /// Default constructor which creates the simplest possible send only audio session. It does not
+        /// wire up any devices or video processing.
+        /// </summary>
+        public VoIPMediaSession(string musicFilePath = null, Func<AudioFormat, bool> restrictFormats = null) : base(false, false, false)
+        {
+            _audioExtrasSource = new AudioExtrasSource();
+            _audioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
+            _audioExtrasSource.SetSource(AudioSourcesEnum.Music);
+
+            if(restrictFormats != null)
+            {
+                _audioExtrasSource.RestrictFormats(restrictFormats);
+            }
+
+
+            Media = new MediaEndPoints { AudioSource = _audioExtrasSource };
+
+            var audioTrack = new MediaStreamTrack(_audioExtrasSource.GetAudioSourceFormats());
+            base.addTrack(audioTrack);
+            Media.AudioSource.OnAudioSourceEncodedSample += base.SendAudio;
+            base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
+        }
+
         public VoIPMediaSession(MediaEndPoints mediaEndPoint, VideoTestPatternSource testPatternSource)
             : this(mediaEndPoint, null, 0, testPatternSource)
         { }
@@ -82,12 +106,14 @@ namespace SIPSorcery.Media
         }
 
         public VoIPMediaSession(VoIPMediaSessionConfig config)
-            : base(new RtpSessionConfig { 
-                IsMediaMultiplexed = false, 
-                IsRtcpMultiplexed = false, 
-                RtpSecureMediaOption = config.RtpSecureMediaOption, 
+            : base(new RtpSessionConfig
+            {
+                IsMediaMultiplexed = false,
+                IsRtcpMultiplexed = false,
+                RtpSecureMediaOption = config.RtpSecureMediaOption,
                 BindAddress = config.BindAddress,
-                BindPort = config.BindPort } )
+                BindPort = config.BindPort
+            })
         {
             if (config.MediaEndPoint == null)
             {
