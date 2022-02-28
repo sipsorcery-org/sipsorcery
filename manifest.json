@@ -101,18 +101,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Media.EmptyAudioSource.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Media.EmptyAudioSource.html",
-          "hash": "HzDhYsvsyf66dm+LGw5A8VsJzcRC7exn2xujlQI5gqM="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Media.G722Codec.yml",
       "output": {
         ".html": {
@@ -245,18 +233,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Media.MusicMediaSession.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Media.MusicMediaSession.html",
-          "hash": "FyA2nYs5lxLUr9yvIpacrIxGAPK499yIz/oQZLm8zjU="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Media.SignalGenerator.yml",
       "output": {
         ".html": {
@@ -297,7 +273,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.VoIPMediaSession.html",
-          "hash": "EGe0Q6s83+cLRrytJTRJ4Cp9PZi0Eq5tY/39uxuGyhM="
+          "hash": "cpgMndHX+PQittZJTPOautVwWWajffxZtwIqIcZdPqE="
         }
       },
       "is_incremental": false,
@@ -321,7 +297,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.html",
-          "hash": "40eyUtHWF0Y7VMmsW5s6ITwV/H7jhbUX2ae9ryHe2AU="
+          "hash": "nVU7cBMJUXLscUsDC7fPoqyQMVG4KF6Gt5bbwnMzi9Q="
         }
       },
       "is_incremental": false,
@@ -4857,7 +4833,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "GyhTsnZ4xKLDyxKpmGzb8HD4G9avH45sKUEe95KSSDE="
+          "hash": "UCEJ+nUgXzuQ2NFzo2mUR53VONaNe2qu3dWCtOvNdGE="
         }
       },
       "is_incremental": false,
@@ -5125,7 +5101,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 403,
+          "total_file_count": 401,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
