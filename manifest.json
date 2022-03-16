@@ -569,6 +569,18 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.IPAddressHelper.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.IPAddressHelper.html",
+          "hash": "+2h3BETcFLqYj49cS4pf7f5/hgqK4sEY+H2Jr+IxOw8="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.IPacketTransformer.yml",
       "output": {
         ".html": {
@@ -933,7 +945,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceCandidate.html",
-          "hash": "ObldhIXOuka535ufRZXkCi0Hz43a4mgFzlx35mZ29IY="
+          "hash": "qlSsMbpgDKX2WQD05nnVND4HKX8tU4Hv2o0eBR5Zy4Y="
         }
       },
       "is_incremental": false,
@@ -2901,7 +2913,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "ZnFE3/rpynJlFEMRhQ5jALaFfD0tsbrW3TrTd0lLtZU="
+          "hash": "HLsdyPIrnn1v/QKk3eEC8VvIAjDfu20nDA73R4HESeA="
         }
       },
       "is_incremental": false,
@@ -4833,7 +4845,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "UCEJ+nUgXzuQ2NFzo2mUR53VONaNe2qu3dWCtOvNdGE="
+          "hash": "0I+NYLFAV0Quo6LqFYrrfMn7nFH9U5mBHxmacBsT5kk="
         }
       },
       "is_incremental": false,
@@ -5101,7 +5113,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 401,
+          "total_file_count": 402,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
