@@ -139,7 +139,7 @@ namespace SIPSorcery.Net
         /// to create an ICE candidate,
         /// </summary>
         public RTCIceCandidate(
-             RTCIceProtocol cProtocol,
+            RTCIceProtocol cProtocol,
             IPAddress cAddress,
             ushort cPort,
             RTCIceCandidateType cType)
@@ -285,9 +285,47 @@ namespace SIPSorcery.Net
 
         private uint GetPriority()
         {
-            return (uint)((2 ^ 24) * (126 - type.GetHashCode()) +
-                      (2 ^ 8) * (65535) + // TODO: Add some kind of priority to different local IP addresses if needed.
-                      (2 ^ 0) * (256 - component.GetHashCode()));
+            uint localPreference = 0;
+            IPAddress addr;
+
+            //Calculate our LocalPreference Priority
+            if (IPAddress.TryParse(address, out addr))
+            {
+                uint addrPref = IPAddressHelper.IPAddressPrecedence(addr);
+
+                // relay_preference in original code was sorted with params:
+                // UDP == 2
+                // TCP == 1
+                // TLS == 0
+                uint relayPreference = protocol == RTCIceProtocol.udp ? 2u : 1u;
+
+                // TODO: Original implementation consider network adapter preference as strength of wifi
+                // We will ignore it as its seems to not be a trivial implementation for use in net-standard 2.0
+                uint networkAdapterPreference = 0;
+
+                localPreference = ((networkAdapterPreference << 8) | addrPref) + relayPreference;
+            }
+
+            // RTC 5245 Define priority for RTCIceCandidateType
+            // https://datatracker.ietf.org/doc/html/rfc5245
+            uint type_preference = 0;
+            switch(type)
+            {
+                case RTCIceCandidateType.host:
+                    type_preference = 126;
+                    break;
+                case RTCIceCandidateType.prflx:
+                    type_preference = 110;
+                    break;
+                case RTCIceCandidateType.srflx:
+                    type_preference = 100;
+                    break;
+            }
+
+            //Use formula found in RTC 5245 to define candidate priority
+            return (uint)((2 ^ 24) * (type_preference) +
+                          (2 ^ 8) * (localPreference) +
+                          (2 ^ 0) * (256 - component.GetHashCode()));
         }
 
         public string toJSON()
