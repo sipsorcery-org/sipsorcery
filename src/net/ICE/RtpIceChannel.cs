@@ -729,7 +729,7 @@ namespace SIPSorcery.Net
             }
             if (_activeIceServer._uri.Scheme != STUNSchemesEnum.turn || NominatedEntry.LocalCandidate.IceServer is null)
             {
-                _refreshTurnTimer.Dispose();
+                _refreshTurnTimer?.Dispose();
                 return;
             }
             if (_activeIceServer.TurnTimeToExpiry.Subtract(DateTime.Now) <= TimeSpan.FromMinutes(1))
