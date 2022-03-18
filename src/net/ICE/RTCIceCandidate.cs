@@ -323,7 +323,7 @@ namespace SIPSorcery.Net
             }
 
             //Use formula found in RTC 5245 to define candidate priority
-            return (uint)((type_preference << 24) | (localPreference << 8) | (256 - component.GetHashCode()));
+            return (uint)((type_preference << 24) | (localPreference << 8) | (256u - component.GetHashCode()));
         }
 
         public string toJSON()
