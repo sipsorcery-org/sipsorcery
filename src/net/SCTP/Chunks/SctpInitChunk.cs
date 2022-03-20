@@ -41,7 +41,8 @@ namespace SIPSorcery.Net
         CookiePreservative = 9,
         HostNameAddress = 11,
         SupportedAddressTypes = 12,
-        EcnCapable = 32768
+        EcnCapable = 32768,
+        ForwardTSNSupported = 49152
     }
 
     /// <summary>
@@ -60,6 +61,7 @@ namespace SIPSorcery.Net
         private const ushort PARAMVAL_LENGTH_IPV4 = 4;
         private const ushort PARAMVAL_LENGTH_IPV6 = 16;
         private const ushort PARAMVAL_LENGTH_COOKIE_PRESERVATIVE = 4;
+        private const ushort PARAMVAL_LENGTH_FORWARD_TSN_SUPPORTED = 4;
 
         /// <summary>
         /// The receiver of the INIT (the responding end) records the value of
@@ -103,6 +105,13 @@ namespace SIPSorcery.Net
         /// receiver of the INIT for a longer life-span of the State Cookie.
         /// </summary>
         public uint CookiePreservative;
+
+        /// <summary>
+        /// At the initialization of the association, the sender of the INIT or
+        /// INIT ACK chunk MAY include this OPTIONAL parameter to inform its peer
+        /// that it is able to support the Forward TSN chunk
+        /// </summary>
+        public bool ForwardTSNSupported;
 
         /// <summary>
         /// The sender of INIT uses this parameter to pass its Host Name (in
@@ -194,6 +203,11 @@ namespace SIPSorcery.Net
                     SctpPadding.PadTo4ByteBoundary(StateCookie.Length);
             }
 
+            if (ForwardTSNSupported)
+            {
+                len += SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH + PARAMVAL_LENGTH_FORWARD_TSN_SUPPORTED;
+            }
+
             foreach (var unrecognised in UnrecognizedPeerParameters)
             {
                 len += SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH +
@@ -254,6 +268,11 @@ namespace SIPSorcery.Net
             {
                 varParams.Add(
                     new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.StateCookie, StateCookie));
+            }
+
+            if (ForwardTSNSupported)
+            {
+                varParams.Add(new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.ForwardTSNSupported, NetConvert.GetBytes((uint)0xC000)));
             }
 
             foreach (var unrecognised in UnrecognizedPeerParameters)
@@ -381,6 +400,9 @@ namespace SIPSorcery.Net
                         case (ushort)SctpInitChunkParameterType.StateCookie:
                             // Used with INIT ACK chunks only.
                             initChunk.StateCookie = varParam.ParameterValue;
+                            break;
+                        case (ushort)SctpInitChunkParameterType.ForwardTSNSupported:
+                            initChunk.ForwardTSNSupported = true;
                             break;
 
                         case (ushort)SctpInitChunkParameterType.UnrecognizedParameter:
