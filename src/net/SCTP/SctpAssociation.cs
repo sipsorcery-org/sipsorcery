@@ -183,7 +183,8 @@ namespace SIPSorcery.Net
         public event Action<string> OnAborted;
 
         /// <summary>
-        /// If true, the association supports partially-reliable (FORWARD-TSN) as described in rfc3758
+        /// If true, the association supports partially-reliable (FORWARD-TSN) as described in rfc3758.  
+        /// This value is assigned after initialization.  
         /// </summary>
         public bool SupportsPartiallyReliable { get; private set; }
 
