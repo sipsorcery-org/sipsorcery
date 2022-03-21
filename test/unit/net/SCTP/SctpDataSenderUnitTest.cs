@@ -71,7 +71,7 @@ namespace SIPSorcery.Net.UnitTests
             uint arwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW;
             ushort mtu = 1400;
 
-            Action<SctpDataChunk> blackholeSender = (chunk) => { };
+            Action<SctpChunk> blackholeSender = (chunk) => { };
 
             SctpDataSender sender = new SctpDataSender("dummy", blackholeSender, mtu, 0, arwnd);
             sender.StartSending();

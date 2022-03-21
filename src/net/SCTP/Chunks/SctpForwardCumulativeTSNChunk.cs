@@ -22,27 +22,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public struct SctpFwdTsnStreamSeqNumAssociation
-    {
-        /// <summary>
-        /// This field holds a stream number that was skipped by this
-        /// FWD-TSN.
-        /// </summary>
-        public ushort StreamNumber;
-
-        /// <summary>
-        /// This field holds the sequence number associated with the stream
-        /// that was skipped.The stream sequence field holds the largest
-        /// stream sequence number in this stream being skipped.The receiver
-        /// of the FWD-TSN's can use the Stream-N and Stream Sequence-N fields
-        /// to enable delivery of any stranded TSN's that remain on the stream
-        /// re-ordering queues.This field MUST NOT report TSN's corresponding
-        /// to DATA chunks that are marked as unordered.For ordered DATA
-        /// chunks this field MUST be filled in.
-        /// </summary>
-        public ushort StreamSequenceNumber;
-    }
-
     /// <summary>
     /// This chunk shall be used by the data sender to inform the data
     /// receiver to adjust its cumulative received TSN point forward because
@@ -64,8 +43,17 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Pairings between stream number and stream sequence number. 
+        /// Key: This field holds a stream number that was skipped by this FWD-TSN.
+        /// Value: This field holds the sequence number associated with the stream
+        /// that was skipped.The stream sequence field holds the largest
+        /// stream sequence number in this stream being skipped.The receiver
+        /// of the FWD-TSN's can use the Stream-N and Stream Sequence-N fields
+        /// to enable delivery of any stranded TSN's that remain on the stream
+        /// re-ordering queues.This field MUST NOT report TSN's corresponding
+        /// to DATA chunks that are marked as unordered.For ordered DATA
+        /// chunks this field MUST be filled in.
         /// </summary>
-        public List<SctpFwdTsnStreamSeqNumAssociation> StreamSequenceAssociations = new List<SctpFwdTsnStreamSeqNumAssociation>();
+        public Dictionary<ushort,ushort> StreamSequenceAssociations = new Dictionary<ushort,ushort>();
 
         private SctpForwardCumulativeTSNChunk() : base(SctpChunkType.FORWARDTSN)
         { }
@@ -113,8 +101,8 @@ namespace SIPSorcery.Net
 
             foreach (var seqPair in StreamSequenceAssociations)
             {
-                NetConvert.ToBuffer(seqPair.StreamNumber, buffer, reportPosn);
-                NetConvert.ToBuffer(seqPair.StreamSequenceNumber, buffer, reportPosn + 2);
+                NetConvert.ToBuffer(seqPair.Key, buffer, reportPosn);
+                NetConvert.ToBuffer(seqPair.Value, buffer, reportPosn + 2);
                 reportPosn += STREAM_SEQUENCE_ASSOCIATION_LENGTH;
             }
 
@@ -144,7 +132,7 @@ namespace SIPSorcery.Net
             {
                 ushort streamNum = NetConvert.ParseUInt16(buffer, reportPosn);
                 ushort seqNum = NetConvert.ParseUInt16(buffer, reportPosn + 2);
-                fwdTsnChunk.StreamSequenceAssociations.Add(new SctpFwdTsnStreamSeqNumAssociation { StreamNumber=streamNum, StreamSequenceNumber = seqNum});
+                fwdTsnChunk.StreamSequenceAssociations.Add(streamNum, seqNum);
                 reportPosn += STREAM_SEQUENCE_ASSOCIATION_LENGTH;
             }
 

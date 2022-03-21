@@ -69,6 +69,11 @@ namespace SIPSorcery.Net
         /// </summary>
         internal Action<SctpDataChunk> _sendDataChunk;
 
+        /// <summary>
+        /// Callback method that sends forward-tsn chunks.
+        /// </summary>
+        internal Action<SctpForwardCumulativeTSNChunk> _sendForwardTsn;
+
         private string _associationID;
         private ushort _defaultMTU;
         private uint _initialTSN;
@@ -167,13 +172,14 @@ namespace SIPSorcery.Net
 
         public SctpDataSender(
             string associationID,
-            Action<SctpDataChunk> sendDataChunk,
+            Action<SctpChunk> sendChunk,
             ushort defaultMTU,
             uint initialTSN,
             uint remoteARwnd)
         {
             _associationID = associationID;
-            _sendDataChunk = sendDataChunk;
+            _sendDataChunk = sendChunk;
+            _sendForwardTsn = sendChunk;
             _defaultMTU = defaultMTU > 0 ? defaultMTU : DEFAULT_SCTP_MTU;
             _initialTSN = initialTSN;
             TSN = initialTSN;
@@ -280,7 +286,9 @@ namespace SIPSorcery.Net
                     if (SctpDataReceiver.IsNewer(AdvancedPeerAckPoint, sack.CumulativeTsnAck))
                     {
                         AdvancedPeerAckPoint = sack.CumulativeTsnAck;
+                        // RFC 3758 3.5 C2
                         UpdateAdvancedPeerAckPoint();
+
                     }
                 }
                 // SACK's will normally allow more data to be sent.
@@ -344,6 +352,34 @@ namespace SIPSorcery.Net
                     }
                 }
                 while (safety >= 0);
+            }
+
+            // RFC 3758 3.5 C3
+            if (AdvancedPeerAckPoint  > _cumulativeAckTSN)
+            {
+                var forwardTsn = new SctpForwardCumulativeTSNChunk(AdvancedPeerAckPoint);
+                foreach (var chunk in _unconfirmedChunks.Values)
+                {
+                    if (!chunk.Unordered && chunk.Abandoned)
+                    {
+                        if (forwardTsn.StreamSequenceAssociations.TryGetValue(chunk.StreamID, out ushort currentStreamSeq))
+                        {
+                            // Check for wrapped sequence numbers
+                            if ((currentStreamSeq > ushort.MaxValue*2/3 && chunk.StreamSeqNum < ushort.MaxValue / 3)
+                                || chunk.StreamSeqNum > currentStreamSeq)
+                            {
+                                forwardTsn.StreamSequenceAssociations[chunk.StreamID] = chunk.StreamSeqNum;
+                            }
+                        }
+                        else
+                        {
+                            forwardTsn.StreamSequenceAssociations.Add(chunk.StreamID, chunk.StreamSeqNum);
+                        }
+                    }
+                }
+
+                _sendForwardTsn(forwardTsn);
+                
             }
         }
 
