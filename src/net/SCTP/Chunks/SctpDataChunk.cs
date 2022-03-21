@@ -87,6 +87,10 @@ namespace SIPSorcery.Net
         internal DateTime LastSentAt;
         internal int SendCount;
 
+        // Used by the sender for the partial-reliability extension RFC3758
+        internal uint FragmentGroupId;
+        internal bool Abandoned;
+
         private SctpDataChunk()
             : base(SctpChunkType.DATA)
         { }

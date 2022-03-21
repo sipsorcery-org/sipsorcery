@@ -159,6 +159,17 @@ namespace SIPSorcery.Net
         /// </summary>
         public uint TSN { get; internal set; }
 
+        /// <summary>
+        /// Fragment group number that will be used in the next fragmented chunk.
+        /// </summary>
+        private uint _fragmentGroupId;
+
+        /// <summary>
+        /// A theoretical cumulative TSN point of the peer.  
+        /// https://datatracker.ietf.org/doc/html/rfc3758#section-3.5
+        /// </summary>
+        public uint AdvancedPeerAckPoint { get; internal set; }
+
         public SctpDataSender(
             string associationID,
             Action<SctpDataChunk> sendDataChunk,
@@ -195,6 +206,7 @@ namespace SIPSorcery.Net
             if (sack != null)
             {
                 _inRetransmitMode = false;
+                bool updateCwnd = true;
 
                 unchecked
                 {
@@ -203,7 +215,14 @@ namespace SIPSorcery.Net
 
                     if (_unconfirmedChunks.TryGetValue(sack.CumulativeTsnAck, out var result))
                     {
-                        _lastAckedDataChunkSize = result.UserData.Length;
+                        if (!result.Abandoned)
+                        {
+                            _lastAckedDataChunkSize = result.UserData.Length;
+                        }
+                        else
+                        {
+                            updateCwnd = false;
+                        }
                     }
 
                     if (!_gotFirstSACK)
@@ -252,10 +271,84 @@ namespace SIPSorcery.Net
                 }
 
                 _receiverWindow = CalculateReceiverWindow(sack.ARwnd);
-                _congestionWindow = CalculateCongestionWindow(_lastAckedDataChunkSize);
+                // RFC 3758 3.5 A2 The sender MUST NOT credit an "abandoned" data chunk to the
+                // partial_bytes_acked  and MUST NOT advance the cwnd based on this "abandoned" data chunk.
+                if (updateCwnd)
+                {
+                    _congestionWindow = CalculateCongestionWindow(_lastAckedDataChunkSize);
+                }
 
+
+                if (_supportsForwardTSN)
+                {
+                    // RFC 3758 3.5 C1
+                    if (SctpDataReceiver.IsNewer(AdvancedPeerAckPoint, sack.CumulativeTsnAck))
+                    {
+                        AdvancedPeerAckPoint = sack.CumulativeTsnAck;
+                        UpdateAdvancedPeerAckPoint();
+                    }
+                }
                 // SACK's will normally allow more data to be sent.
                 _senderMre.Set();
+            }
+        }
+
+        /// <summary>
+        /// RFC 3758 3.5 C2) Try to further advance the "Advanced.Peer.Ack.Point" locally,
+        /// that is, to move "Advanced.Peer.Ack.Point" up as long as the chunk next in
+        /// the out-queue space is marked as "abandoned"
+        /// </summary>
+        private void UpdateAdvancedPeerAckPoint()
+        {
+            unchecked
+            {
+                int safety = _unconfirmedChunks.Count();
+                do
+                {
+                    var nextTsn = AdvancedPeerAckPoint + 1;
+                    safety--;
+
+                    if (_unconfirmedChunks.TryGetValue(nextTsn, out var chunk))
+                    {
+                        if (chunk.Abandoned)
+                        {
+                            AdvancedPeerAckPoint = chunk.TSN;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                } while (safety >= 0);
+
+                // Chunk may have been abandoned before sending
+                // (But already assigned a TSN)
+                safety = _sendQueue.Count();
+                do
+                {
+                    var nextTsn = AdvancedPeerAckPoint + 1;
+
+                    safety--;
+                    if (_sendQueue.TryPeek(out var nextChunk))
+                    {
+                        if (nextChunk.Abandoned && nextChunk.TSN == nextTsn)
+                        {
+                            if (_sendQueue.TryDequeue(out var _))
+                            {
+                                AdvancedPeerAckPoint = nextTsn;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+                while (safety >= 0);
             }
         }
 
@@ -304,12 +397,16 @@ namespace SIPSorcery.Net
                         streamID,
                         seqnum,
                         ppid,
-                        payload);
-
+                        payload)
+                    {
+                        FragmentGroupId = _fragmentGroupId,
+                    };
                     _sendQueue.Enqueue(dataChunk);
 
                     TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
                 }
+
+                _fragmentGroupId = (TSN == UInt32.MaxValue) ? 0 : _fragmentGroupId + 1;
 
                 _senderMre.Set();
             }
@@ -620,6 +717,35 @@ namespace SIPSorcery.Net
                 {
                     return _congestionWindow;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Marks a chunk as abandoned for the PR-SCTP extension.  
+        /// When a data chunk is "abandoned", the sender MUST treat the data
+        /// chunk as being finally acked and no longer outstanding.
+        /// https://datatracker.ietf.org/doc/html/rfc3758#section-3.5 A2
+        /// </summary>
+        /// <param name="chunk">The chunk to flag as abandoned</param>
+        public void AbandonChunk(SctpDataChunk chunk)
+        {
+            if (!_supportsForwardTSN)
+            {
+                logger.LogWarning("SCTP Chunk can not be abandoned as FORWARDTSN is not supported on this sender");
+                return;
+            }
+
+            chunk.Abandoned = true;
+
+            // RFC 3758 3.5 A3) When a TSN is "abandoned", if it is part of a fragmented message,
+            // all other TSN's within that fragmented message MUST be abandoned at the same time.
+            foreach (var chunkFragment in _unconfirmedChunks.Where(x => x.Value.FragmentGroupId == chunk.FragmentGroupId))
+            {
+                chunk.Abandoned = true;
+            }
+            foreach (var chunkFragment in _sendQueue.Where(x => x.FragmentGroupId == chunk.FragmentGroupId))
+            {
+                chunk.Abandoned = true;
             }
         }
     }
