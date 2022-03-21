@@ -199,7 +199,8 @@ namespace SIPSorcery.Net
                 initChunk.InitialTSN,
                 initChunk.ARwnd,
                 remoteEP != null ? remoteEP.ToString() : string.Empty,
-                (int)(initChunk.CookiePreservative / 1000));
+                (int)(initChunk.CookiePreservative / 1000),
+                initChunk.ForwardTSNSupported);
 
             var json = cookie.ToJson();
             var jsonBuffer = Encoding.UTF8.GetBytes(json);
@@ -220,7 +221,7 @@ namespace SIPSorcery.Net
                 cookie.ARwnd,
                 SctpAssociation.DEFAULT_NUMBER_OUTBOUND_STREAMS,
                 SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS,
-                true);
+                initChunk.ForwardTSNSupported);
             initAckChunk.StateCookie = jsonBufferWithHMAC;
             initAckChunk.UnrecognizedPeerParameters = initChunk.UnrecognizedPeerParameters;
 
