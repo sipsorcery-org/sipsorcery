@@ -58,6 +58,8 @@ namespace SIPSorcery.Net
         CWR = 13,           // Not used (specified in the RFC for future use).
         SHUTDOWN_COMPLETE = 14,
 
+        FORWARDTSN = 192, // RFC3758 PR-SCTP
+
         // Not defined in RFC4960.
         //AUTH = 15,
         //PKTDROP = 129,
