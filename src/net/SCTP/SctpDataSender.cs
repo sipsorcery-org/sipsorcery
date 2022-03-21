@@ -160,11 +160,6 @@ namespace SIPSorcery.Net
         public uint TSN { get; internal set; }
 
         /// <summary>
-        /// Fragment group number that will be used in the next fragmented chunk.
-        /// </summary>
-        private uint _fragmentGroupId;
-
-        /// <summary>
         /// A theoretical cumulative TSN point of the peer.  
         /// https://datatracker.ietf.org/doc/html/rfc3758#section-3.5
         /// </summary>
@@ -397,16 +392,12 @@ namespace SIPSorcery.Net
                         streamID,
                         seqnum,
                         ppid,
-                        payload)
-                    {
-                        FragmentGroupId = _fragmentGroupId,
-                    };
+                        payload);
+
                     _sendQueue.Enqueue(dataChunk);
 
                     TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
                 }
-
-                _fragmentGroupId = (TSN == UInt32.MaxValue) ? 0 : _fragmentGroupId + 1;
 
                 _senderMre.Set();
             }
@@ -739,11 +730,11 @@ namespace SIPSorcery.Net
 
             // RFC 3758 3.5 A3) When a TSN is "abandoned", if it is part of a fragmented message,
             // all other TSN's within that fragmented message MUST be abandoned at the same time.
-            foreach (var chunkFragment in _unconfirmedChunks.Where(x => x.Value.FragmentGroupId == chunk.FragmentGroupId))
+            foreach (var chunkFragment in _unconfirmedChunks.Where(x => x.Value.StreamID == chunk.StreamID && x.Value.StreamSeqNum == chunk.StreamSeqNum))
             {
                 chunk.Abandoned = true;
             }
-            foreach (var chunkFragment in _sendQueue.Where(x => x.FragmentGroupId == chunk.FragmentGroupId))
+            foreach (var chunkFragment in _sendQueue.Where(x => x.StreamID == chunk.StreamID && x.StreamSeqNum == chunk.StreamSeqNum))
             {
                 chunk.Abandoned = true;
             }
