@@ -183,6 +183,11 @@ namespace SIPSorcery.Net
         public event Action<string> OnAborted;
 
         /// <summary>
+        /// If true, the association supports partially-reliable (FORWARD-TSN) as described in rfc3758
+        /// </summary>
+        public bool SupportsPartiallyReliable { get; private set; }
+
+        /// <summary>
         /// Create a new SCTP association instance where the INIT will be generated
         /// from this end of the connection.
         /// </summary>
@@ -332,7 +337,7 @@ namespace SIPSorcery.Net
                     _dataSender = new SctpDataSender(ID, this.SendChunk, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
                 }
 
-                InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
+                InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd, cookie.ForwardTSNSupported);
 
                 var cookieAckChunk = new SctpChunk(SctpChunkType.COOKIE_ACK);
                 SendChunk(cookieAckChunk);
@@ -349,13 +354,20 @@ namespace SIPSorcery.Net
         internal void InitRemoteProperties(
             uint remoteVerificationTag,
             uint remoteInitialTSN,
-            uint remoteARwnd)
+            uint remoteARwnd,
+            bool supportsForwardTSN)
         {
             _remoteVerificationTag = remoteVerificationTag;
             _remoteInitialTSN = remoteInitialTSN;
 
             _dataReceiver.SetInitialTSN(remoteInitialTSN);
             _dataSender.SetReceiverWindow(remoteARwnd);
+
+            SupportsPartiallyReliable = supportsForwardTSN;
+            _dataReceiver._supportsForwardTSN = supportsForwardTSN;
+            _dataSender._supportsForwardTSN = supportsForwardTSN;
+
+            logger.LogInformation($"SCTP Association {(supportsForwardTSN ? "does" : "does NOT")} support partially reliable (FORWARD-TSN) chunks.");
         }
 
         /// <summary>
@@ -500,7 +512,7 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                InitRemoteProperties(initAckChunk.InitiateTag, initAckChunk.InitialTSN, initAckChunk.ARwnd);
+                                InitRemoteProperties(initAckChunk.InitiateTag, initAckChunk.InitialTSN, initAckChunk.ARwnd, initAckChunk.ForwardTSNSupported);
 
                                 var cookie = initAckChunk.StateCookie;
 
@@ -702,7 +714,8 @@ namespace SIPSorcery.Net
                     TSN,
                     ARwnd,
                     _numberOutboundStreams,
-                    _numberInboundStreams);
+                    _numberInboundStreams,
+                    true);
                 init.AddChunk(initChunk);
 
                 SetState(SctpAssociationState.CookieWait);

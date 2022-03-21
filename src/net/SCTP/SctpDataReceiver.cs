@@ -150,6 +150,11 @@ namespace SIPSorcery.Net
         public uint? CumulativeAckTSN => (_inOrderReceiveCount > 0) ? _lastInOrderTSN : (uint?)null;
 
         /// <summary>
+        /// If true, FORWARD-TSN chunks are permitted as described in rfc3758
+        /// </summary>
+        internal bool _supportsForwardTSN;
+
+        /// <summary>
         /// A count of the total entries in the receive dictionary. Note that if chunks
         /// have been received out of order this count could include chunks that have
         /// already been processed. They are kept in the dictionary as empty chunks to

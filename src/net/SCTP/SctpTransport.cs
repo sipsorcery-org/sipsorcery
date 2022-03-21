@@ -49,6 +49,7 @@ namespace SIPSorcery.Net
         public string CreatedAt { get; set; }
         public int Lifetime { get; set; }
         public string HMAC { get; set; }
+        public bool ForwardTSNSupported { get; set; }
 
         private bool _isEmpty;
 
@@ -150,7 +151,8 @@ namespace SIPSorcery.Net
             uint remoteTSN,
             uint remoteARwnd,
             string remoteEndPoint,
-            int lifeTimeExtension = 0)
+            int lifeTimeExtension = 0,
+            bool forwardTSNSupported = false)
         {
             var cookie = new SctpTransportCookie
             {
@@ -165,7 +167,8 @@ namespace SIPSorcery.Net
                 ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
                 CreatedAt = DateTime.Now.ToString("o"),
                 Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS + lifeTimeExtension,
-                HMAC = string.Empty
+                HMAC = string.Empty,
+                ForwardTSNSupported = forwardTSNSupported
             };
 
             return cookie;
@@ -216,7 +219,8 @@ namespace SIPSorcery.Net
                 cookie.TSN,
                 cookie.ARwnd,
                 SctpAssociation.DEFAULT_NUMBER_OUTBOUND_STREAMS,
-                SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS);
+                SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS,
+                true);
             initAckChunk.StateCookie = jsonBufferWithHMAC;
             initAckChunk.UnrecognizedPeerParameters = initChunk.UnrecognizedPeerParameters;
 

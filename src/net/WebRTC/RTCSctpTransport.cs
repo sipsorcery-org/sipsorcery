@@ -239,7 +239,8 @@ namespace SIPSorcery.Net
             uint remoteTSN,
             uint remoteARwnd,
             string remoteEndPoint,
-            int lifeTimeExtension = 0)
+            int lifeTimeExtension = 0,
+            bool forwardTSNSupported = false)
         {
             var cookie = new SctpTransportCookie
             {

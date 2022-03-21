@@ -154,13 +154,15 @@ namespace SIPSorcery.Net
             uint initialTSN,
             uint arwnd,
             ushort numberOutboundStreams,
-            ushort numberInboundStreams) : base(initChunkType)
+            ushort numberInboundStreams,
+            bool forwardTsnSupported) : base(initChunkType)
         {
             InitiateTag = initiateTag;
             NumberOutboundStreams = numberOutboundStreams;
             NumberInboundStreams = numberInboundStreams;
             InitialTSN = initialTSN;
             ARwnd = arwnd;
+            ForwardTSNSupported = forwardTsnSupported;
         }
 
         /// <summary>

@@ -123,6 +123,11 @@ namespace SIPSorcery.Net
         private uint _cumulativeAckTSN;
 
         /// <summary>
+        /// If true, FORWARD-TSN chunks are permitted as described in rfc3758
+        /// </summary>
+        internal bool _supportsForwardTSN;
+
+        /// <summary>
         /// Keeps track of the sequence numbers for each of the streams being
         /// used by the association.
         /// </summary>
