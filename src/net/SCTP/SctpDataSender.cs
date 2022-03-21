@@ -646,6 +646,12 @@ namespace SIPSorcery.Net
                     }
                 }
 
+                if (_supportsForwardTSN)
+                {
+                    // // RFC 3758 3.5 A5
+                    UpdateAdvancedPeerAckPoint();
+                }
+
                 _senderMre.Reset();
 
                 int wait = GetSendWaitMilliseconds();
