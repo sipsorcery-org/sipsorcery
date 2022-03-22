@@ -97,24 +97,24 @@ namespace SIPSorcery.Net
         /// This dictionary holds data chunk Transaction Sequence Numbers (TSN) that have
         /// been received out of order and are in advance of the expected TSN.
         /// </summary>
-        private ConcurrentDictionary<uint, int> _forwardTSN = new ConcurrentDictionary<uint, int>();
+        private SortedDictionary<uint, int> _forwardTSN = new SortedDictionary<uint, int>();
 
         /// <summary>
         /// Storage for fragmented chunks.
         /// </summary>
-        private ConcurrentDictionary<uint, SctpDataChunk> _fragmentedChunks = new ConcurrentDictionary<uint, SctpDataChunk>();
+        private Dictionary<uint, SctpDataChunk> _fragmentedChunks = new Dictionary<uint, SctpDataChunk>();
 
         /// <summary>
         /// Keeps track of the latest sequence number for each stream. Used to ensure
         /// stream chunks are delivered in order.
         /// </summary>
-        private ConcurrentDictionary<ushort, ushort> _streamLatestSeqNums = new ConcurrentDictionary<ushort, ushort>();
+        private Dictionary<ushort, ushort> _streamLatestSeqNums = new Dictionary<ushort, ushort>();
 
         /// <summary>
         /// A dictionary of dictionaries used to hold out of order stream chunks.
         /// </summary>
-        private ConcurrentDictionary<ushort, ConcurrentDictionary<ushort, SctpDataFrame>> _streamOutOfOrderFrames =
-            new ConcurrentDictionary<ushort, ConcurrentDictionary<ushort, SctpDataFrame>>();
+        private Dictionary<ushort, Dictionary<ushort, SctpDataFrame>> _streamOutOfOrderFrames =
+            new Dictionary<ushort, Dictionary<ushort, SctpDataFrame>>();
 
         /// <summary>
         /// The maximum amount of received data that will be stored at any one time.
@@ -253,16 +253,17 @@ namespace SIPSorcery.Net
                         // already received.
                         if (_inOrderReceiveCount > 0 && _forwardTSN.Count > 0)
                         {
-                            while (_forwardTSN.TryRemove(_lastInOrderTSN + 1, out _))
+                            while (_forwardTSN.ContainsKey(_lastInOrderTSN + 1))
                             {
                                 _lastInOrderTSN++;
                                 _inOrderReceiveCount++;
+                                _forwardTSN.Remove(_lastInOrderTSN);
                             }
                         }
                     }
                     else
                     {
-                        _forwardTSN.TryAdd(dataChunk.TSN, 1);
+                        _forwardTSN.Add(dataChunk.TSN, 1);
                     }
                 }
 
@@ -280,7 +281,7 @@ namespace SIPSorcery.Net
                 else
                 {
                     // This is a data chunk fragment.
-                    _fragmentedChunks.TryAdd(dataChunk.TSN, dataChunk);
+                    _fragmentedChunks.Add(dataChunk.TSN, dataChunk);
                     (var begin, var end) = GetChunkBeginAndEnd(_fragmentedChunks, dataChunk.TSN);
 
                     if (begin != null && end != null)
@@ -339,7 +340,7 @@ namespace SIPSorcery.Net
                     // and then MUST further advance its cumulative TSN point locally if possible
                     unchecked
                     {
-                        while (_forwardTSN.TryRemove(newCumulativeTSN, out _))
+                        while (_forwardTSN.Remove(newCumulativeTSN))
                         {
                             newCumulativeTSN++;
                         }
@@ -368,9 +369,10 @@ namespace SIPSorcery.Net
                                     for (ushort i = 0; i < dist; i++)
                                     {
                                         ushort nextSeqNum = (ushort) (currentStreamSequence + i);
-                                        if (outOfOrder.TryRemove(nextSeqNum, out var frame))
+                                        if (outOfOrder.TryGetValue(nextSeqNum, out var frame))
                                         {
                                             _onFrameReady?.Invoke(frame);
+                                            outOfOrder.Remove(nextSeqNum);
                                         }
                                         else
                                         {
@@ -395,8 +397,8 @@ namespace SIPSorcery.Net
                         for (int i=0;i<dist;i++)
                         {
                             uint nextTSN = (uint) (currentCumulativeTSN + i);
-                            _fragmentedChunks.TryRemove(nextTSN, out _);
-                            _forwardTSN.TryRemove(nextTSN, out _);
+                            _fragmentedChunks.Remove(nextTSN);
+                            _forwardTSN.Remove(nextTSN);
                         }
                     }
                 }
@@ -459,7 +461,7 @@ namespace SIPSorcery.Net
                     ushort? start = null;
                     uint prev = 0;
 
-                    foreach (var tsn in _forwardTSN.Keys.OrderBy(x => x))
+                    foreach (var tsn in _forwardTSN.Keys)
                     {
                         if (start == null)
                         {
@@ -501,9 +503,10 @@ namespace SIPSorcery.Net
                 // This is a stream chunk. Need to ensure in order delivery.
                 var sortedFrames = new List<SctpDataFrame>();
 
-                // First frame for this stream.
-                if (_streamLatestSeqNums.TryAdd(frame.StreamID, frame.StreamSeqNum))
+                if (!_streamLatestSeqNums.ContainsKey(frame.StreamID))
                 {
+                    // First frame for this stream.
+                    _streamLatestSeqNums.Add(frame.StreamID, frame.StreamSeqNum);
                     sortedFrames.Add(frame);
                 }
                 else if ((ushort)(_streamLatestSeqNums[frame.StreamID] + 1) == frame.StreamSeqNum)
@@ -513,15 +516,18 @@ namespace SIPSorcery.Net
                     sortedFrames.Add(frame);
 
                     // There could also be out of order frames that can now be delivered.
-                    if (_streamOutOfOrderFrames.TryGetValue(frame.StreamID, out var outOfOrder) && outOfOrder.Count > 0)
-                    { 
+                    if (_streamOutOfOrderFrames.ContainsKey(frame.StreamID) &&
+                        _streamOutOfOrderFrames[frame.StreamID].Count > 0)
+                    {
+                        var outOfOrder = _streamOutOfOrderFrames[frame.StreamID];
+
                         ushort nextSeqnum = (ushort)(_streamLatestSeqNums[frame.StreamID] + 1);
                         while (outOfOrder.ContainsKey(nextSeqnum) &&
                             outOfOrder.TryGetValue(nextSeqnum, out var nextFrame))
                         {
                             sortedFrames.Add(nextFrame);
                             _streamLatestSeqNums[frame.StreamID] = nextSeqnum;
-                            outOfOrder.TryRemove(nextSeqnum, out _);
+                            outOfOrder.Remove(nextSeqnum);
                             nextSeqnum++;
                         }
                     }
@@ -529,13 +535,12 @@ namespace SIPSorcery.Net
                 else
                 {
                     // Stream seqnum is out of order.
-                    if (!_streamOutOfOrderFrames.TryGetValue(frame.StreamID, out var outOfOrder))
+                    if (!_streamOutOfOrderFrames.ContainsKey(frame.StreamID))
                     {
-                        outOfOrder = new ConcurrentDictionary<ushort, SctpDataFrame>();
-                        _streamOutOfOrderFrames[frame.StreamID] = outOfOrder;
+                        _streamOutOfOrderFrames[frame.StreamID] = new Dictionary<ushort, SctpDataFrame>();
                     }
 
-                    if (outOfOrder.Count > MAXIMUM_OUTOFORDER_FRAMES)
+                    if (_streamOutOfOrderFrames[frame.StreamID].Count > MAXIMUM_OUTOFORDER_FRAMES)
                     {
                         logger.LogWarning($"SCTP data receiver exceeded the maximum queue size for out of order frames for stream ID {frame.StreamID}.");
                         // TODO https://tools.ietf.org/html/rfc4960#section-6.2 says to drop the chunk with the highest TSN that's ahead of the 
@@ -543,7 +548,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        outOfOrder.TryAdd(frame.StreamSeqNum, frame);
+                        _streamOutOfOrderFrames[frame.StreamID].Add(frame.StreamSeqNum, frame);
                     }
                 }
 
@@ -559,7 +564,7 @@ namespace SIPSorcery.Net
         /// <param name="fragments">The dictionary containing the chunk fragments.</param>
         /// <returns>If the chunk is complete the begin and end TSNs will be returned. If
         /// the fragmented chunk is incomplete one or both of the begin and/or end TSNs will be null.</returns>
-        private (uint?, uint?) GetChunkBeginAndEnd(IDictionary<uint, SctpDataChunk> fragments, uint tsn)
+        private (uint?, uint?) GetChunkBeginAndEnd(Dictionary<uint, SctpDataChunk> fragments, uint tsn)
         {
             unchecked
             {
@@ -605,7 +610,7 @@ namespace SIPSorcery.Net
         /// <param name="fragments">The dictionary containing the chunk fragments.</param>
         /// <param name="beginTSN">The beginning TSN for the fragment.</param>
         /// <param name="endTSN">The end TSN for the fragment.</param>
-        private SctpDataFrame GetFragmentedChunk(IDictionary<uint, SctpDataChunk> fragments, uint beginTSN, uint endTSN)
+        private SctpDataFrame GetFragmentedChunk(Dictionary<uint, SctpDataChunk> fragments, uint beginTSN, uint endTSN)
         {
             unchecked
             {
