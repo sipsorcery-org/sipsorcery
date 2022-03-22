@@ -100,7 +100,7 @@ namespace SIPSorcery.Net.UnitTests
             ushort mtu = 1400;
             uint initialTSN = 0;
 
-            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
+            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, null, null, mtu, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, mtu, initialTSN, arwnd);
             sender._burstPeriodMilliseconds = 1;
             sender._rtoInitialMilliseconds = 1;

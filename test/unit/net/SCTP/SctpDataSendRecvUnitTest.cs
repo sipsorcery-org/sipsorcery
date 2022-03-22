@@ -44,7 +44,7 @@ namespace SIPSorcery.Net.UnitTests
             ushort mtu = 1400;
             uint initialTSN = Crypto.GetRandomUInt(true);
 
-            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
+            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, null, null, mtu, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, mtu, initialTSN, arwnd);
             sender.StartSending();
 
@@ -89,7 +89,7 @@ namespace SIPSorcery.Net.UnitTests
             ushort mtu = 1400;
             uint initialTSN = Crypto.GetRandomUInt(true);
 
-            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
+            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, null, null, mtu, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, mtu, initialTSN, arwnd);
             sender.StartSending();
 
@@ -137,7 +137,7 @@ namespace SIPSorcery.Net.UnitTests
         public void MediumBufferSend()
         {
             ushort mtu = 1400;
-            SctpDataReceiver receiver = new SctpDataReceiver(1000, mtu, 0);
+            SctpDataReceiver receiver = new SctpDataReceiver(1000, null, null, mtu, 0);
             SctpDataSender sender = new SctpDataSender("dummy", null, mtu, 0, 1000);
             sender.StartSending();
 
@@ -149,17 +149,18 @@ namespace SIPSorcery.Net.UnitTests
             Action<SctpDataChunk> doSend = (chunk) =>
             {
                 logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
-                var frames = receiver.OnDataChunk(chunk);
+                receiver.OnDataChunk(chunk);
                 sender.GotSack(receiver.GetSackChunk());
-
-                if (frames.Count > 0)
-                {
-                    logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
-                    frame = frames.First();
-                    frameReady.Set();
-                }
-
             };
+
+            Action<SctpDataFrame> onFrame = (f) =>
+            {
+                logger.LogDebug($"Receiver got frame of length {f.UserData?.Length}.");
+                frame = f;
+                frameReady.Set();
+            };
+
+            receiver._onFrameReady = onFrame;
             sender._sendDataChunk = doSend;
 
             byte[] buffer = new byte[10 * mtu];
@@ -185,7 +186,7 @@ namespace SIPSorcery.Net.UnitTests
         public void MaxBufferSend()
         {
             uint arwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW;
-            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, 1400, 0);
+            SctpDataReceiver receiver = new SctpDataReceiver(arwnd, null, null, 1400, 0);
             SctpDataSender sender = new SctpDataSender("dummy", null, 1400, 0, arwnd);
             sender.StartSending();
 
@@ -197,17 +198,18 @@ namespace SIPSorcery.Net.UnitTests
             Action<SctpDataChunk> doSend = (chunk) =>
             {
                 logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
-                var frames = receiver.OnDataChunk(chunk);
+                receiver.OnDataChunk(chunk);
                 sender.GotSack(receiver.GetSackChunk());
-                
-                if (frames.Count > 0)
-                {
-                    logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
-                    frame = frames.First();
-                    frameReady.Set();
-                }
-
             };
+
+            Action<SctpDataFrame> onFrame = (f) =>
+            {
+                logger.LogDebug($"Receiver got frame of length {f.UserData?.Length}.");
+                frame = f;
+                frameReady.Set();
+            };
+
+            receiver._onFrameReady = onFrame;
             sender._sendDataChunk = doSend;
 
             byte[] buffer = new byte[RTCSctpTransport.SCTP_DEFAULT_MAX_MESSAGE_SIZE];
@@ -233,7 +235,7 @@ namespace SIPSorcery.Net.UnitTests
         public void MediumBufferSendWithRandomDrops()
         {
             ushort mtu = 1400;
-            SctpDataReceiver receiver = new SctpDataReceiver(1000, mtu, 0);
+            SctpDataReceiver receiver = new SctpDataReceiver(1000, null, null, mtu, 0);
             SctpDataSender sender = new SctpDataSender("dummy", null, mtu, 0, 1000);
             sender._burstPeriodMilliseconds = 1;
             sender._rtoInitialMilliseconds = 1;
@@ -254,19 +256,21 @@ namespace SIPSorcery.Net.UnitTests
                 else
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
-                    var frames = receiver.OnDataChunk(chunk);
+                    receiver.OnDataChunk(chunk);
                     sender.GotSack(receiver.GetSackChunk());
-
-                    if (frames.Count > 0)
-                    {
-                        logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
-                        frame = frames.First();
-                        frameReady.Set();
-                    }
                 }
 
                 await Task.Delay(1);
             };
+
+            Action<SctpDataFrame> onFrame = (f) =>
+            {
+                logger.LogDebug($"Receiver got frame of length {f.UserData?.Length}.");
+                frame = f;
+                frameReady.Set();
+            };
+
+            receiver._onFrameReady = onFrame;
             sender._sendDataChunk = doSend;
 
             byte[] buffer = new byte[10 * mtu];
@@ -291,7 +295,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact(Skip = "Frequently fails to start the sending thread.")]
         public async Task MaxBufferSendWithRandomDrops()
         {
-            SctpDataReceiver receiver = new SctpDataReceiver(1000, 1400, 0);
+            SctpDataReceiver receiver = new SctpDataReceiver(1000, null, null, 1400, 0);
             SctpDataSender sender = new SctpDataSender("dummy", null, 1400, 0, 1000);
             sender._burstPeriodMilliseconds = 1;
             sender._rtoInitialMilliseconds = 1;
@@ -312,19 +316,21 @@ namespace SIPSorcery.Net.UnitTests
                 else
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
-                    var frames = receiver.OnDataChunk(chunk);
+                    receiver.OnDataChunk(chunk);
                     sender.GotSack(receiver.GetSackChunk());
-
-                    if (frames.Count > 0)
-                    {
-                        logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
-                        frame = frames.First();
-                        frameReady.Set();
-                    }
                 }
 
                 await Task.Delay(1);
             };
+
+            Action<SctpDataFrame> onFrame = (f) =>
+            {
+                logger.LogDebug($"Receiver got frame of length {f.UserData?.Length}.");
+                frame = f;
+                frameReady.Set();
+            };
+
+            receiver._onFrameReady = onFrame;
             sender._sendDataChunk = doSend;
 
             byte[] buffer = new byte[RTCSctpTransport.SCTP_DEFAULT_MAX_MESSAGE_SIZE];

@@ -226,7 +226,7 @@ namespace SIPSorcery.Net
             ID = $"{sctpSourcePort}:{sctpDestinationPort}:{localTransportPort}";
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
 
-            _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, 0);
+            _dataReceiver = new SctpDataReceiver(ARwnd, this.SendChunk, this.FrameReady, _defaultMTU, 0);
             _dataSender = new SctpDataSender(ID, this.SendChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
 
             State = SctpAssociationState.Closed;
@@ -330,7 +330,7 @@ namespace SIPSorcery.Net
 
                 if (_dataReceiver == null)
                 {
-                    _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, cookie.RemoteTSN);
+                    _dataReceiver = new SctpDataReceiver(ARwnd, this.SendChunk, this.FrameReady, _defaultMTU, cookie.RemoteTSN);
                 }
 
                 if (_dataSender == null)
@@ -365,7 +365,6 @@ namespace SIPSorcery.Net
             _dataSender.SetReceiverWindow(remoteARwnd);
 
             SupportsPartiallyReliable = supportsForwardTSN;
-            _dataReceiver._supportsForwardTSN = supportsForwardTSN;
             _dataSender._supportsForwardTSN = supportsForwardTSN;
 
             logger.LogInformation($"SCTP Association {(supportsForwardTSN ? "does" : "does NOT")} support partially reliable (FORWARD-TSN) chunks.");
@@ -453,20 +452,19 @@ namespace SIPSorcery.Net
                                 // A received data chunk can result in multiple data frames becoming available.
                                 // For example if a stream has out of order frames already received and the next
                                 // in order frame arrives then all the in order ones will be supplied.
-                                var sortedFrames = _dataReceiver.OnDataChunk(dataChunk);
+                                _dataReceiver.OnDataChunk(dataChunk);
 
                                 var sack = _dataReceiver.GetSackChunk();
                                 if (sack != null)
                                 {
                                     SendChunk(sack);
                                 }
-
-                                foreach (var frame in sortedFrames)
-                                {
-                                    OnData?.Invoke(frame);
-                                }
                             }
 
+                            break;
+                        case SctpChunkType.FORWARDTSN:
+                            var fwdTsnChunk = chunk as SctpForwardCumulativeTSNChunk;
+                            _dataReceiver.OnForwardCumulativeTSNChunk(fwdTsnChunk);
                             break;
 
                         case SctpChunkType.ERROR:
@@ -747,6 +745,15 @@ namespace SIPSorcery.Net
 
                 _sctpTransport.Send(ID, buffer, 0, buffer.Length);
             }
+        }
+
+        /// <summary>
+        /// Raises the OnData event when the receiver produces a frame
+        /// </summary>
+        /// <param name="frame">The completed frame</param>
+        internal void FrameReady(SctpDataFrame frame)
+        {
+            OnData?.Invoke(frame);
         }
 
         /// <summary>

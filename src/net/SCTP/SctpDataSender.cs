@@ -364,9 +364,7 @@ namespace SIPSorcery.Net
                     {
                         if (forwardTsn.StreamSequenceAssociations.TryGetValue(chunk.StreamID, out ushort currentStreamSeq))
                         {
-                            // Check for wrapped sequence numbers
-                            if ((currentStreamSeq > ushort.MaxValue*2/3 && chunk.StreamSeqNum < ushort.MaxValue / 3)
-                                || chunk.StreamSeqNum > currentStreamSeq)
+                            if (SctpDataReceiver.IsNewerOrEqual(currentStreamSeq, chunk.StreamSeqNum))
                             {
                                 forwardTsn.StreamSequenceAssociations[chunk.StreamID] = chunk.StreamSeqNum;
                             }

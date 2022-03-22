@@ -97,24 +97,24 @@ namespace SIPSorcery.Net
         /// This dictionary holds data chunk Transaction Sequence Numbers (TSN) that have
         /// been received out of order and are in advance of the expected TSN.
         /// </summary>
-        private SortedDictionary<uint, int> _forwardTSN = new SortedDictionary<uint, int>();
+        private ConcurrentDictionary<uint, int> _forwardTSN = new ConcurrentDictionary<uint, int>();
 
         /// <summary>
         /// Storage for fragmented chunks.
         /// </summary>
-        private Dictionary<uint, SctpDataChunk> _fragmentedChunks = new Dictionary<uint, SctpDataChunk>();
+        private ConcurrentDictionary<uint, SctpDataChunk> _fragmentedChunks = new ConcurrentDictionary<uint, SctpDataChunk>();
 
         /// <summary>
         /// Keeps track of the latest sequence number for each stream. Used to ensure
         /// stream chunks are delivered in order.
         /// </summary>
-        private Dictionary<ushort, ushort> _streamLatestSeqNums = new Dictionary<ushort, ushort>();
+        private ConcurrentDictionary<ushort, ushort> _streamLatestSeqNums = new ConcurrentDictionary<ushort, ushort>();
 
         /// <summary>
         /// A dictionary of dictionaries used to hold out of order stream chunks.
         /// </summary>
-        private Dictionary<ushort, Dictionary<ushort, SctpDataFrame>> _streamOutOfOrderFrames =
-            new Dictionary<ushort, Dictionary<ushort, SctpDataFrame>>();
+        private ConcurrentDictionary<ushort, ConcurrentDictionary<ushort, SctpDataFrame>> _streamOutOfOrderFrames =
+            new ConcurrentDictionary<ushort, ConcurrentDictionary<ushort, SctpDataFrame>>();
 
         /// <summary>
         /// The maximum amount of received data that will be stored at any one time.
@@ -150,17 +150,22 @@ namespace SIPSorcery.Net
         public uint? CumulativeAckTSN => (_inOrderReceiveCount > 0) ? _lastInOrderTSN : (uint?)null;
 
         /// <summary>
-        /// If true, FORWARD-TSN chunks are permitted as described in rfc3758
-        /// </summary>
-        internal bool _supportsForwardTSN;
-
-        /// <summary>
         /// A count of the total entries in the receive dictionary. Note that if chunks
         /// have been received out of order this count could include chunks that have
         /// already been processed. They are kept in the dictionary as empty chunks to
         /// track which TSN's have been received.
         /// </summary>
         public int ForwardTSNCount => _forwardTSN.Count;
+
+        /// <summary>
+        /// Callback method that sends data chunks.
+        /// </summary>
+        internal Action<SctpSackChunk> _sendSackChunk;
+
+        /// <summary>
+        /// Callback method that handles received data frames
+        /// </summary>
+        internal Action<SctpDataFrame> _onFrameReady;
 
         private uint _initialTSN;
         private uint _inOrderReceiveCount;
@@ -174,10 +179,12 @@ namespace SIPSorcery.Net
         /// <param name="mtu">The Maximum Transmission Unit for the network layer that the SCTP
         /// association is being used with.</param>
         /// <param name="initialTSN">The initial TSN for the association from the INIT handshake.</param>
-        public SctpDataReceiver(uint receiveWindow, uint mtu, uint initialTSN)
+        public SctpDataReceiver(uint receiveWindow, Action<SctpChunk> sendChunk, Action<SctpDataFrame> frameReady, uint mtu, uint initialTSN)
         {
             _receiveWindow = receiveWindow != 0 ? receiveWindow : SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW;
             _initialTSN = initialTSN;
+            _sendSackChunk = sendChunk;
+            _onFrameReady = frameReady;
 
             mtu = mtu != 0 ? mtu : SctpUdpTransport.DEFAULT_UDP_MTU;
             _windowSize = (ushort)(_receiveWindow / mtu);
@@ -204,9 +211,8 @@ namespace SIPSorcery.Net
         /// or more new frames will be returned otherwise an empty frame is returned. Multiple
         /// frames may be returned if this chunk is part of a stream and was received out
         /// or order. For unordered chunks the list will always have a single entry.</returns>
-        public List<SctpDataFrame> OnDataChunk(SctpDataChunk dataChunk)
+        public void OnDataChunk(SctpDataChunk dataChunk)
         {
-            var sortedFrames = new List<SctpDataFrame>();
             var frame = SctpDataFrame.Empty;
 
             if (_inOrderReceiveCount == 0 &&
@@ -247,17 +253,16 @@ namespace SIPSorcery.Net
                         // already received.
                         if (_inOrderReceiveCount > 0 && _forwardTSN.Count > 0)
                         {
-                            while (_forwardTSN.ContainsKey(_lastInOrderTSN + 1))
+                            while (_forwardTSN.TryRemove(_lastInOrderTSN + 1, out _))
                             {
                                 _lastInOrderTSN++;
                                 _inOrderReceiveCount++;
-                                _forwardTSN.Remove(_lastInOrderTSN);
                             }
                         }
                     }
                     else
                     {
-                        _forwardTSN.Add(dataChunk.TSN, 1);
+                        _forwardTSN.TryAdd(dataChunk.TSN, 1);
                     }
                 }
 
@@ -275,7 +280,7 @@ namespace SIPSorcery.Net
                 else
                 {
                     // This is a data chunk fragment.
-                    _fragmentedChunks.Add(dataChunk.TSN, dataChunk);
+                    _fragmentedChunks.TryAdd(dataChunk.TSN, dataChunk);
                     (var begin, var end) = GetChunkBeginAndEnd(_fragmentedChunks, dataChunk.TSN);
 
                     if (begin != null && end != null)
@@ -299,16 +304,117 @@ namespace SIPSorcery.Net
 
             if (!frame.IsEmpty() && !dataChunk.Unordered)
             {
-                return ProcessStreamFrame(frame);
+                foreach (var readyFrame in ProcessStreamFrame(frame))
+                {
+                    _onFrameReady?.Invoke(readyFrame);
+                }
             }
             else
             {
                 if (!frame.IsEmpty())
                 {
-                    sortedFrames.Add(frame);
+                    _onFrameReady?.Invoke(frame);
                 }
+            }
+        }
 
-                return sortedFrames;
+        /// <summary>
+        /// Handles receipt of a FORWARD-TSN chunk as part of the PR-SCTP extension RFC 3758.  
+        /// See https://datatracker.ietf.org/doc/html/rfc3758#section-3.6
+        /// </summary>
+        /// <param name="chunk">The Forward-TSN chunk</param>
+        public void OnForwardCumulativeTSNChunk(SctpForwardCumulativeTSNChunk chunk)
+        {
+            if (_inOrderReceiveCount > 0)
+            {
+                var currentCumulativeTSN = _lastInOrderTSN;
+                var newCumulativeTSN = chunk.NewCumulativeTSN;
+
+                // When a FORWARD TSN chunk arrives, the data receiver MUST first update its cumulative TSN point
+                // to the value carried in the FORWARD TSN chunk
+                if (SctpDataReceiver.IsNewer(currentCumulativeTSN, newCumulativeTSN))
+                {
+                    _lastInOrderTSN = newCumulativeTSN;
+
+                    // and then MUST further advance its cumulative TSN point locally if possible
+                    unchecked
+                    {
+                        while (_forwardTSN.TryRemove(newCumulativeTSN, out _))
+                        {
+                            newCumulativeTSN++;
+                        }
+                        _lastInOrderTSN = newCumulativeTSN;
+                    }
+
+
+                    // examine all of the listed stream reordering queues, and immediately make available for delivery
+                    // stream sequence numbers earlier than or equal to the stream sequence number listed inside the
+                    // FORWARD-TSN. Any such stranded data SHOULD be made immediately available to the upper layer application.
+
+                    if (chunk.StreamSequenceAssociations.Count > 0)
+                    {
+                        foreach (var kvp in chunk.StreamSequenceAssociations)
+                        {
+                            var streamNum = kvp.Key;
+                            var streamSequenceNum = kvp.Value;
+                            if (_streamLatestSeqNums.TryGetValue(streamNum, out ushort currentStreamSequence)
+                                && SctpDataReceiver.IsNewer(currentStreamSequence, streamSequenceNum)
+                                && _streamOutOfOrderFrames.TryGetValue(streamNum, out var outOfOrder))
+                            {
+                                unchecked
+                                {
+                                    var dist = SctpDataReceiver.GetDistance(currentStreamSequence, streamSequenceNum);
+
+                                    for (ushort i = 0; i < dist; i++)
+                                    {
+                                        ushort nextSeqNum = (ushort) (currentStreamSequence + i);
+                                        if (outOfOrder.TryRemove(nextSeqNum, out var frame))
+                                        {
+                                            _onFrameReady?.Invoke(frame);
+                                        }
+                                        else
+                                        {
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                logger.LogWarning($"SCTP received a FORWARD-TSN containing untracked stream {streamNum}");
+                            }
+
+                        }
+                    }
+
+                    // The receiver MUST remove any partially reassembled message, which is still missing one
+                    // or more TSNs earlier than or equal to the new cumulative TSN point.
+                    unchecked
+                    {
+                        var dist = SctpDataReceiver.GetDistance(currentCumulativeTSN, newCumulativeTSN);
+                        for (int i=0;i<dist;i++)
+                        {
+                            uint nextTSN = (uint) (currentCumulativeTSN + i);
+                            _fragmentedChunks.TryRemove(nextTSN, out _);
+                            _forwardTSN.TryRemove(nextTSN, out _);
+                        }
+                    }
+                }
+                else
+                {
+                    logger.LogDebug("SCTP received an older or equal FORWARD-TSN.");
+                    // The receiver SHOULD send a SACK to its peer(the sender of the FORWARD TSN) since such a
+                    // duplicate may indicate the previous SACK was lost in the network.
+                    if (GetSackChunk() is SctpSackChunk sack)
+                    {
+                        _sendSackChunk?.Invoke(sack);
+                    }
+                }
+            }
+            else
+            {
+                // This isn't specified in RFC-3758. What is the expected behaviour here?
+                logger.LogWarning("SCTP received a FORWARD-TSN chunk before the first DATA chunk.");
             }
         }
 
@@ -353,7 +459,7 @@ namespace SIPSorcery.Net
                     ushort? start = null;
                     uint prev = 0;
 
-                    foreach (var tsn in _forwardTSN.Keys)
+                    foreach (var tsn in _forwardTSN.Keys.OrderBy(x => x))
                     {
                         if (start == null)
                         {
@@ -395,10 +501,9 @@ namespace SIPSorcery.Net
                 // This is a stream chunk. Need to ensure in order delivery.
                 var sortedFrames = new List<SctpDataFrame>();
 
-                if (!_streamLatestSeqNums.ContainsKey(frame.StreamID))
+                // First frame for this stream.
+                if (_streamLatestSeqNums.TryAdd(frame.StreamID, frame.StreamSeqNum))
                 {
-                    // First frame for this stream.
-                    _streamLatestSeqNums.Add(frame.StreamID, frame.StreamSeqNum);
                     sortedFrames.Add(frame);
                 }
                 else if ((ushort)(_streamLatestSeqNums[frame.StreamID] + 1) == frame.StreamSeqNum)
@@ -408,18 +513,15 @@ namespace SIPSorcery.Net
                     sortedFrames.Add(frame);
 
                     // There could also be out of order frames that can now be delivered.
-                    if (_streamOutOfOrderFrames.ContainsKey(frame.StreamID) &&
-                        _streamOutOfOrderFrames[frame.StreamID].Count > 0)
-                    {
-                        var outOfOrder = _streamOutOfOrderFrames[frame.StreamID];
-
+                    if (_streamOutOfOrderFrames.TryGetValue(frame.StreamID, out var outOfOrder) && outOfOrder.Count > 0)
+                    { 
                         ushort nextSeqnum = (ushort)(_streamLatestSeqNums[frame.StreamID] + 1);
                         while (outOfOrder.ContainsKey(nextSeqnum) &&
                             outOfOrder.TryGetValue(nextSeqnum, out var nextFrame))
                         {
                             sortedFrames.Add(nextFrame);
                             _streamLatestSeqNums[frame.StreamID] = nextSeqnum;
-                            outOfOrder.Remove(nextSeqnum);
+                            outOfOrder.TryRemove(nextSeqnum, out _);
                             nextSeqnum++;
                         }
                     }
@@ -427,12 +529,13 @@ namespace SIPSorcery.Net
                 else
                 {
                     // Stream seqnum is out of order.
-                    if (!_streamOutOfOrderFrames.ContainsKey(frame.StreamID))
+                    if (!_streamOutOfOrderFrames.TryGetValue(frame.StreamID, out var outOfOrder))
                     {
-                        _streamOutOfOrderFrames[frame.StreamID] = new Dictionary<ushort, SctpDataFrame>();
+                        outOfOrder = new ConcurrentDictionary<ushort, SctpDataFrame>();
+                        _streamOutOfOrderFrames[frame.StreamID] = outOfOrder;
                     }
 
-                    if (_streamOutOfOrderFrames[frame.StreamID].Count > MAXIMUM_OUTOFORDER_FRAMES)
+                    if (outOfOrder.Count > MAXIMUM_OUTOFORDER_FRAMES)
                     {
                         logger.LogWarning($"SCTP data receiver exceeded the maximum queue size for out of order frames for stream ID {frame.StreamID}.");
                         // TODO https://tools.ietf.org/html/rfc4960#section-6.2 says to drop the chunk with the highest TSN that's ahead of the 
@@ -440,7 +543,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        _streamOutOfOrderFrames[frame.StreamID].Add(frame.StreamSeqNum, frame);
+                        outOfOrder.TryAdd(frame.StreamSeqNum, frame);
                     }
                 }
 
@@ -456,7 +559,7 @@ namespace SIPSorcery.Net
         /// <param name="fragments">The dictionary containing the chunk fragments.</param>
         /// <returns>If the chunk is complete the begin and end TSNs will be returned. If
         /// the fragmented chunk is incomplete one or both of the begin and/or end TSNs will be null.</returns>
-        private (uint?, uint?) GetChunkBeginAndEnd(Dictionary<uint, SctpDataChunk> fragments, uint tsn)
+        private (uint?, uint?) GetChunkBeginAndEnd(IDictionary<uint, SctpDataChunk> fragments, uint tsn)
         {
             unchecked
             {
@@ -502,7 +605,7 @@ namespace SIPSorcery.Net
         /// <param name="fragments">The dictionary containing the chunk fragments.</param>
         /// <param name="beginTSN">The beginning TSN for the fragment.</param>
         /// <param name="endTSN">The end TSN for the fragment.</param>
-        private SctpDataFrame GetFragmentedChunk(Dictionary<uint, SctpDataChunk> fragments, uint beginTSN, uint endTSN)
+        private SctpDataFrame GetFragmentedChunk(IDictionary<uint, SctpDataChunk> fragments, uint beginTSN, uint endTSN)
         {
             unchecked
             {
@@ -555,9 +658,39 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Determines if a received stream sequence number is newer. See rfc2960 6.5
+        /// </summary>
+        /// <param name="seqNum">The sequence number to compare against.</param>
+        /// <param name="receivedSeqNum">The received stream sequence number.</param>
+        /// <returns>True if the received stream sequence number is newer than the reference stream sequence number
+        /// or false if not.</returns>
+        public static bool IsNewer(ushort seqNum, ushort receivedSeqNum)
+        {
+            if (seqNum < ushort.MaxValue /2 && receivedSeqNum > ushort.MaxValue / 2)
+            {
+                // Wrap has occurred and the received seqnum is old.
+                return false;
+            }
+            else if (seqNum > ushort.MaxValue / 2 && receivedSeqNum < ushort.MaxValue / 2)
+            {
+                // Wrap has occurred and the received seqnum is new.
+                return true;
+            }
+            else
+            {
+                return receivedSeqNum > seqNum;
+            }
+        }
+
         public static bool IsNewerOrEqual(uint tsn, uint receivedTSN)
         {
             return tsn == receivedTSN || IsNewer(tsn, receivedTSN);
+        }
+
+        public static bool IsNewerOrEqual(ushort seqNum, ushort receivedSeqNum)
+        {
+            return seqNum == receivedSeqNum || IsNewer(seqNum, receivedSeqNum);
         }
 
         /// <summary>
@@ -572,6 +705,24 @@ namespace SIPSorcery.Net
             uint backDistance = start - end;
 
             return (fwdDistance < backDistance) ? fwdDistance : backDistance;
+        }
+
+
+        /// <summary>
+        /// Gets the distance between two unsigned shorts. The "distance" means how many 
+        /// points are there between the two unsigned integers and allows wrapping from
+        /// the unsigned shorts maximum to zero.
+        /// </summary>
+        /// <returns>The shortest distance between the two unsigned shorts.</returns>
+        public static ushort GetDistance(ushort start, ushort end)
+        {
+            // NOTE Arithmetic on shorts will cast to int.
+            ushort fwdDistance = (ushort)(end - start);
+            if (fwdDistance < ushort.MaxValue / 2)
+            {
+                return fwdDistance;
+            }
+            return (ushort)(ushort.MaxValue - end + start + 1);
         }
     }
 }
