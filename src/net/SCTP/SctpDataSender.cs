@@ -379,7 +379,8 @@ namespace SIPSorcery.Net
                 }
 
                 _sendForwardTsn(forwardTsn);
-                
+
+                RemoveAckedUnconfirmedChunks(AdvancedPeerAckPoint);
             }
         }
 
@@ -577,6 +578,12 @@ namespace SIPSorcery.Net
 
                 //logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
 
+                if (_supportsForwardTSN)
+                {
+                    // // RFC 3758 3.5 A5
+                    UpdateAdvancedPeerAckPoint();
+                }
+
                 // Missing chunks from a SACK gap report take priority.
                 if (_missingChunks.Count > 0)
                 {
@@ -634,6 +641,11 @@ namespace SIPSorcery.Net
                 {
                     while (chunksSent < burstSize && _sendQueue.TryDequeue(out var dataChunk))
                     {
+                        if (dataChunk.Abandoned)
+                        {
+                            continue;
+                        }
+
                         dataChunk.LastSentAt = DateTime.Now;
                         dataChunk.SendCount = 1;
 
@@ -644,12 +656,6 @@ namespace SIPSorcery.Net
                         _sendDataChunk(dataChunk);
                         chunksSent++;
                     }
-                }
-
-                if (_supportsForwardTSN)
-                {
-                    // // RFC 3758 3.5 A5
-                    UpdateAdvancedPeerAckPoint();
                 }
 
                 _senderMre.Reset();
