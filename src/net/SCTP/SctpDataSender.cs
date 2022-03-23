@@ -130,7 +130,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// If true, FORWARD-TSN chunks are permitted as described in rfc3758
         /// </summary>
-        internal bool _supportsForwardTSN;
+        internal bool _supportsPartialReliabilityExtension;
 
         /// <summary>
         /// Keeps track of the sequence numbers for each of the streams being
@@ -280,7 +280,7 @@ namespace SIPSorcery.Net
                 }
 
 
-                if (_supportsForwardTSN)
+                if (_supportsPartialReliabilityExtension)
                 {
                     // RFC 3758 3.5 C1
                     if (SctpDataReceiver.IsNewer(AdvancedPeerAckPoint, sack.CumulativeTsnAck))
@@ -358,8 +358,10 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
-        /// <param name="message">The byte data to send.</param>
-        public void SendData(ushort streamID, uint ppid, byte[] data)
+        /// <param name="data">The byte data to send.</param>
+        /// <param name="ordered">If true, messages will be received in order.</param>
+        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the message is abandoned. Zero is infinite.</param>
+        public void SendData(ushort streamID, uint ppid, byte[] data, bool ordered=true, uint maxLifetime=0)
         {
             lock (_sendQueue)
             {
@@ -391,7 +393,7 @@ namespace SIPSorcery.Net
                     bool isEnd = ((offset + payloadLength) >= data.Length) ? true : false;
 
                     SctpDataChunk dataChunk = new SctpDataChunk(
-                        false,
+                        !ordered,
                         isBegining,
                         isEnd,
                         streamID,
@@ -544,7 +546,7 @@ namespace SIPSorcery.Net
 
                 //logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
 
-                if (_supportsForwardTSN)
+                if (_supportsPartialReliabilityExtension)
                 {
                     // // RFC 3758 3.5 A5
                     UpdateAdvancedPeerAckPoint();
@@ -560,6 +562,11 @@ namespace SIPSorcery.Net
                     {
                         if (_unconfirmedChunks.TryGetValue(misses.Current.Key, out var missingChunk))
                         {
+                            if (CheckForAbandonedChunk(missingChunk, now))
+                            {
+                                continue;
+                            }
+
                             missingChunk.LastSentAt = now;
                             missingChunk.SendCount += 1;
 
@@ -581,6 +588,11 @@ namespace SIPSorcery.Net
                         .Where(x => now.Subtract(x.LastSentAt).TotalSeconds > RTO_MIN_SECONDS)
                         .Take(burstSize - chunksSent))
                     {
+                        if (CheckForAbandonedChunk(chunk, now))
+                        {
+                            continue;
+                        }
+
                         chunk.LastSentAt = DateTime.Now;
                         chunk.SendCount += 1;
 
@@ -607,7 +619,7 @@ namespace SIPSorcery.Net
                 {
                     while (chunksSent < burstSize && _sendQueue.TryDequeue(out var dataChunk))
                     {
-                        if (dataChunk.Abandoned)
+                        if (CheckForAbandonedChunk(dataChunk, now))
                         {
                             continue;
                         }
@@ -732,6 +744,29 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Checks if a chunk is either already abandoned, or should be abandoned.
+        /// </summary>
+        /// <returns>True if the chunk is abandoned.</returns>
+        public bool CheckForAbandonedChunk(SctpDataChunk chunk, DateTime now)
+        {
+            if (!_supportsPartialReliabilityExtension)
+            {
+                return false;
+            }
+            if (chunk.Abandoned)
+            {
+                return true;
+            }                            // Abandon messages that have exceeded their lifetime
+            if (chunk.Lifetime > 0 && (now - chunk.CreatedAt).TotalMilliseconds > chunk.Lifetime)
+            {
+                AbandonChunk(chunk);
+                return true;
+            }
+            return false;
+
+        }
+
+        /// <summary>
         /// Marks a chunk as abandoned for the PR-SCTP extension.  
         /// When a data chunk is "abandoned", the sender MUST treat the data
         /// chunk as being finally acked and no longer outstanding.
@@ -740,7 +775,7 @@ namespace SIPSorcery.Net
         /// <param name="chunk">The chunk to flag as abandoned</param>
         public void AbandonChunk(SctpDataChunk chunk)
         {
-            if (!_supportsForwardTSN)
+            if (!_supportsPartialReliabilityExtension)
             {
                 logger.LogWarning("SCTP Chunk can not be abandoned as FORWARDTSN is not supported on this sender");
                 return;

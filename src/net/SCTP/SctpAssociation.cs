@@ -365,7 +365,7 @@ namespace SIPSorcery.Net
             _dataSender.SetReceiverWindow(remoteARwnd);
 
             SupportsPartiallyReliable = supportsForwardTSN;
-            _dataSender._supportsForwardTSN = supportsForwardTSN;
+            _dataSender._supportsPartialReliabilityExtension = supportsForwardTSN;
 
             logger.LogInformation($"SCTP Association {(supportsForwardTSN ? "does" : "does NOT")} support partially reliable (FORWARD-TSN) chunks.");
         }
@@ -584,14 +584,17 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="message">The string data to send.</param>
-        public void SendData(ushort streamID, uint ppid, string message)
+        /// <param name="ordered">If true, messages will be received in order.</param>
+        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the message is abandoned. Zero is infinite.</param>
+
+        public void SendData(ushort streamID, uint ppid, string message, bool ordered=true, uint maxLifetime=0)
         {
             if (string.IsNullOrEmpty(message))
             {
                 throw new ArgumentNullException("The message cannot be empty when sending a data chunk on an SCTP association.");
             }
 
-            SendData(streamID, ppid, Encoding.UTF8.GetBytes(message));
+            SendData(streamID, ppid, Encoding.UTF8.GetBytes(message), ordered, maxLifetime);
         }
 
         /// <summary>
@@ -599,8 +602,11 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
-        /// <param name="message">The byte data to send.</param>
-        public void SendData(ushort streamID, uint ppid, byte[] data)
+        /// <param name="data">The byte data to send.</param>
+        /// <param name="ordered">If true, messages will be received in order.</param>
+        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the message is abandoned. Zero is infinite.</param>
+
+        public void SendData(ushort streamID, uint ppid, byte[] data, bool ordered=true, uint maxLifetime=0)
         {
             if (_wasAborted)
             {
@@ -614,7 +620,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                _dataSender.SendData(streamID, ppid, data);
+                _dataSender.SendData(streamID, ppid, data, ordered, maxLifetime);
             }
         }
 

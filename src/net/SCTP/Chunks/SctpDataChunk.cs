@@ -96,7 +96,19 @@ namespace SIPSorcery.Net
         internal int SendCount;
 
         // Used by the sender for the partial-reliability extension RFC3758
+        /// <summary>
+        /// If true, the message is abandoned and should NOT be retransmitted.
+        /// </summary>
         internal bool Abandoned;
+        /// <summary>
+        /// The time at which the ULP requested this message be sent.
+        /// </summary>
+        internal DateTime CreatedAt;
+        /// <summary>
+        /// The maximum lifetime for the packet.  
+        /// If zero, there is no lifetime assigned and this value should be ignored.  
+        /// </summary>
+        public uint Lifetime = 0;
 
         private SctpDataChunk()
             : base(SctpChunkType.DATA)
@@ -144,6 +156,8 @@ namespace SIPSorcery.Net
                 (Unordered ? 0x04 : 0x0) +
                 (Begining ? 0x02 : 0x0) +
                 (Ending ? 0x01 : 0x0));
+
+            CreatedAt = DateTime.Now;
         }
 
         /// <summary>
