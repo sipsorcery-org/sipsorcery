@@ -333,8 +333,9 @@ namespace SIPSorcery.Net
             List<RTCIceServer> iceServers = null,
             RTCIceTransportPolicy policy = RTCIceTransportPolicy.all,
             bool includeAllInterfaceAddresses = false,
-            int bindPort = 0) :
-            base(false, bindAddress, bindPort)
+            int bindPort = 0, 
+            PortRange portRange = null) :
+            base(false, bindAddress, bindPort, portRange)
         {
             _bindAddress = bindAddress;
             Component = component;
