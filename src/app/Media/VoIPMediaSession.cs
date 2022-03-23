@@ -266,9 +266,9 @@ namespace SIPSorcery.Media
             }
         }
 
-        private void VideoSinkSampleReady(byte[] buffer, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
+        private void VideoSinkSampleReady(RawImage rawImage)
         {
-            OnVideoSinkSample?.Invoke(buffer, width, height, stride, pixelFormat);
+            OnVideoSinkSample?.Invoke(rawImage);
         }
 
         protected void RtpMediaPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)

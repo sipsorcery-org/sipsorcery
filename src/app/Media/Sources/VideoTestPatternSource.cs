@@ -106,7 +106,7 @@ namespace SIPSorcery.Media
 
         public void ForceKeyFrame() => _videoEncoder?.ForceKeyFrame();
         public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
-        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixlFormat) =>
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, RawImage rawImage) =>
             throw new NotImplementedException("The test pattern video source does not offer any encoding services for external sources.");
         public Task<bool> InitialiseVideoSourceDevice() =>
             throw new NotImplementedException("The test pattern video source does not use a device.");
@@ -227,7 +227,23 @@ namespace SIPSorcery.Media
 
                     if (_videoEncoder != null && OnVideoSourceEncodedSample != null && !_formatManager.SelectedFormat.IsEmpty())
                     {
-                        var encodedBuffer = _videoEncoder.EncodeVideo(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420, _formatManager.SelectedFormat.Codec);
+                        byte[] encodedBuffer = null;
+                        unsafe
+                        {
+                            fixed (byte* ptr = _testI420Buffer)
+                            {
+                                RawImage rawImage = new RawImage
+                                {
+                                    Width = TEST_PATTERN_WIDTH,
+                                    Height = TEST_PATTERN_HEIGHT,
+                                    Stride = _testI420Buffer.Length / TEST_PATTERN_HEIGHT,
+                                    Sample = (IntPtr)ptr,
+                                    PixelFormat = VideoPixelFormatsEnum.I420
+                                };
+                                encodedBuffer = _videoEncoder.EncodeVideo(rawImage, _formatManager.SelectedFormat.Codec);
+                            }
+                        }
+
 
                         if (encodedBuffer != null)
                         {
@@ -252,8 +268,24 @@ namespace SIPSorcery.Media
         /// <param name="i420Buffer">The I420 buffer representing the test pattern.</param>
         private void GenerateRawSample(int width, int height, byte[] i420Buffer)
         {
-            var bgr = PixelConverter.I420toBGR(i420Buffer, width, height, out _);
-            OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, width, height,bgr, VideoPixelFormatsEnum.Bgr);
+            var bgr = PixelConverter.I420toBGR(i420Buffer, width, height, out int stride);
+
+            unsafe
+            {
+                fixed (byte* ptr = bgr)
+                {
+                    RawImage rawImage = new RawImage
+                    {
+                        Width = width,
+                        Height = height,
+                        Stride = stride,
+                        Sample = (IntPtr)ptr,
+                        PixelFormat = VideoPixelFormatsEnum.Bgr
+                    };
+
+                    OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, rawImage);
+                }
+            }
         }
 
         /// <summary>
