@@ -360,8 +360,9 @@ namespace SIPSorcery.Net
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="data">The byte data to send.</param>
         /// <param name="ordered">If true, messages will be received in order.</param>
-        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the message is abandoned. Zero is infinite.</param>
-        public void SendData(ushort streamID, uint ppid, byte[] data, bool ordered=true, uint maxLifetime=0)
+        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the message is abandoned.</param>
+        /// <param name="maxRetransmits">The maximum number of retranmissions before the message is abandoned.</param>
+        public void SendData(ushort streamID, uint ppid, byte[] data, bool ordered=true, uint maxLifetime=uint.MaxValue, uint maxRetransmits=uint.MaxValue)
         {
             lock (_sendQueue)
             {
@@ -399,7 +400,9 @@ namespace SIPSorcery.Net
                         streamID,
                         seqnum,
                         ppid,
-                        payload);
+                        payload,
+                        maxLifetime,
+                        maxRetransmits);
 
                     _sendQueue.Enqueue(dataChunk);
                 }
@@ -749,18 +752,24 @@ namespace SIPSorcery.Net
         /// <returns>True if the chunk is abandoned.</returns>
         public bool CheckForAbandonedChunk(SctpDataChunk chunk, DateTime now)
         {
-            if (!_supportsPartialReliabilityExtension)
+            if (_supportsPartialReliabilityExtension)
             {
-                return false;
-            }
-            if (chunk.Abandoned)
-            {
-                return true;
-            }                            // Abandon messages that have exceeded their lifetime
-            if (chunk.Lifetime > 0 && (now - chunk.CreatedAt).TotalMilliseconds > chunk.Lifetime)
-            {
-                AbandonChunk(chunk);
-                return true;
+                if (chunk.Abandoned)
+                {
+                    return true;
+                }
+                // Abandon messages that have exceeded their lifetime
+                if (chunk.MaxLifetime < uint.MaxValue && (now - chunk.CreatedAt).TotalMilliseconds > chunk.MaxLifetime)
+                {
+                    AbandonChunk(chunk);
+                    return true;
+                }
+                if (chunk.MaxRetransmissions < uint.MaxValue && chunk.MaxRetransmissions < chunk.SendCount)
+                {
+                    AbandonChunk(chunk);
+                    return true;
+                }
+
             }
             return false;
 

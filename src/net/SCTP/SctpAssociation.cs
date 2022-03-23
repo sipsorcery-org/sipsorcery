@@ -585,16 +585,17 @@ namespace SIPSorcery.Net
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="message">The string data to send.</param>
         /// <param name="ordered">If true, messages will be received in order.</param>
-        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the message is abandoned. Zero is infinite.</param>
+        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the message is abandoned.</param>
+        /// <param name="maxRetransmits">The maximum number of retranmissions before the message is abandoned.</param>
 
-        public void SendData(ushort streamID, uint ppid, string message, bool ordered=true, uint maxLifetime=0)
+        public void SendData(ushort streamID, uint ppid, string message, bool ordered=true, uint maxLifetime=uint.MaxValue, uint maxRetransmits=uint.MaxValue)
         {
             if (string.IsNullOrEmpty(message))
             {
                 throw new ArgumentNullException("The message cannot be empty when sending a data chunk on an SCTP association.");
             }
 
-            SendData(streamID, ppid, Encoding.UTF8.GetBytes(message), ordered, maxLifetime);
+            SendData(streamID, ppid, Encoding.UTF8.GetBytes(message), ordered, maxLifetime, maxRetransmits);
         }
 
         /// <summary>
@@ -604,9 +605,10 @@ namespace SIPSorcery.Net
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="data">The byte data to send.</param>
         /// <param name="ordered">If true, messages will be received in order.</param>
-        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the message is abandoned. Zero is infinite.</param>
+        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the message is abandoned.</param>
+        /// <param name="maxRetransmits">The maximum number of retranmissions before the message is abandoned.</param>
 
-        public void SendData(ushort streamID, uint ppid, byte[] data, bool ordered=true, uint maxLifetime=0)
+        public void SendData(ushort streamID, uint ppid, byte[] data, bool ordered=true, uint maxLifetime=uint.MaxValue, uint maxRetransmits=uint.MaxValue)
         {
             if (_wasAborted)
             {
@@ -620,7 +622,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                _dataSender.SendData(streamID, ppid, data, ordered, maxLifetime);
+                _dataSender.SendData(streamID, ppid, data, ordered, maxLifetime, maxRetransmits);
             }
         }
 

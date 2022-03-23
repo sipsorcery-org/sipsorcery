@@ -106,9 +106,14 @@ namespace SIPSorcery.Net
         internal DateTime CreatedAt;
         /// <summary>
         /// The maximum lifetime for the packet.  
-        /// If zero, there is no lifetime assigned and this value should be ignored.  
+        /// If equal to uint.MaxValue, this parameter should be ignored.
         /// </summary>
-        public uint Lifetime = 0;
+        public uint MaxLifetime = uint.MaxValue;
+        /// <summary>
+        /// The maximum number of retransmissions for this packet. 
+        /// If equal to uint.MaxValue, this parameter should be ignored.
+        /// </summary>
+        public uint MaxRetransmissions = uint.MaxValue;
 
         private SctpDataChunk()
             : base(SctpChunkType.DATA)
@@ -128,6 +133,8 @@ namespace SIPSorcery.Net
         /// <param name="seqnum">Optional. The stream sequence number for this send. Set to 0 for unordered streams.</param>
         /// <param name="ppid">Optional. The payload protocol ID for this data chunk.</param>
         /// <param name="data">The data to send.</param>
+        /// <param name="maxLifetime">The maximum lifetime in milliseconds before the chunk is abandoned.</param>
+        /// <param name="maxRetransmissions">The maximum number of retransmissions before the chunk is abandoned.</param>
         public SctpDataChunk(
             bool isUnordered,
             bool isBegining,
@@ -136,7 +143,10 @@ namespace SIPSorcery.Net
             ushort streamID, 
             ushort seqnum, 
             uint ppid, 
-            byte[] data) : base(SctpChunkType.DATA)
+            byte[] data,
+            uint maxLifetime = uint.MaxValue,
+            uint maxRetransmissions = uint.MaxValue
+            ) : base(SctpChunkType.DATA)
         {
             if (data == null || data.Length == 0)
             {
@@ -151,6 +161,9 @@ namespace SIPSorcery.Net
             StreamSeqNum = seqnum; 
             PPID = ppid;
             UserData = data;
+
+            MaxLifetime = maxLifetime;
+            MaxRetransmissions = maxRetransmissions;
 
             ChunkFlags = (byte)(
                 (Unordered ? 0x04 : 0x0) +
@@ -171,7 +184,9 @@ namespace SIPSorcery.Net
            ushort streamID,
            ushort seqnum,
            uint ppid,
-           byte[] data) : this(isUnordered,isBegining,isEnd,0,streamID,seqnum,ppid,data)
+           byte[] data,
+           uint maxLifetime = uint.MaxValue,
+           uint maxRetransmissions = uint.MaxValue) : this(isUnordered,isBegining,isEnd,0,streamID,seqnum,ppid,data, maxLifetime, maxRetransmissions)
         {
             _tsnAssigned = false;
         }
