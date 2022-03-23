@@ -60,6 +60,14 @@ namespace SIPSorcery.Net
         /// </summary>
         public uint TSN;
 
+
+        /// <summary>
+        /// https://datatracker.ietf.org/doc/html/rfc2960#section-10.1
+        /// The TSN may be assigned after chunk construction.  
+        /// If it is unassigned at serialization time, an error will be thrown.
+        /// </summary>
+        internal bool _tsnAssigned = true;
+
         /// <summary>
         /// Identifies the stream to which the following user data belongs.
         /// </summary>
@@ -139,6 +147,22 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Creates a new DATA chunk with an unassigned TSN.
+        /// </summary>
+        /// <inheritdoc cref="SctpDataChunk.SctpDataChunk(bool, bool, bool, uint, ushort, ushort, uint, byte[])"/>
+        public SctpDataChunk(
+           bool isUnordered,
+           bool isBegining,
+           bool isEnd,
+           ushort streamID,
+           ushort seqnum,
+           uint ppid,
+           byte[] data) : this(isUnordered,isBegining,isEnd,0,streamID,seqnum,ppid,data)
+        {
+            _tsnAssigned = false;
+        }
+
+        /// <summary>
         /// Calculates the length for DATA chunk.
         /// </summary>
         /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
@@ -159,6 +183,11 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public override ushort WriteTo(byte[] buffer, int posn)
         {
+            if (!_tsnAssigned)
+            {
+                throw new InvalidOperationException("Can not serialize a data chunk with an unassigned TSN.");
+            }
+
             WriteChunkHeader(buffer, posn);
 
             // Write fixed parameters.
@@ -182,6 +211,21 @@ namespace SIPSorcery.Net
         public bool IsEmpty()
         {
             return UserData == null;
+        }
+
+        /// <summary>
+        /// Assigns a TSN post chunk construction.
+        /// </summary>
+        /// <param name="tsn">The TSN to assign.</param>
+        internal void SetTSN(uint tsn)
+        {
+            if (_tsnAssigned)
+            {
+                throw new ArgumentException("Data chunk has already been assigned a TSN. It can not be changed");
+            }
+
+            TSN = tsn;
+            _tsnAssigned = true;
         }
 
         /// <summary>

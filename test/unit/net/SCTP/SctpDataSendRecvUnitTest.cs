@@ -60,6 +60,7 @@ namespace SIPSorcery.Net.UnitTests
 
             sender._sendDataChunk = doSend;
             sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
+            await Task.Delay(sender._burstPeriodMilliseconds);
             Assert.Equal(initialTSN + 1, sender.TSN);
             await Task.Delay(250);
             Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
@@ -67,6 +68,7 @@ namespace SIPSorcery.Net.UnitTests
             // This send to the receiver is blocked so the receivers ACK TSN should stay the same.
             sender._sendDataChunk = dontSend;
             sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
+            await Task.Delay(sender._burstPeriodMilliseconds);
             Assert.Equal(initialTSN + 2, sender.TSN);
             await Task.Delay(250);
             Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
@@ -74,6 +76,7 @@ namespace SIPSorcery.Net.UnitTests
             // Unblock. Receiver's ACK TSN should not advance as it has a missing chunk.
             sender._sendDataChunk = doSend;
             sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
+            await Task.Delay(sender._burstPeriodMilliseconds);
             Assert.Equal(initialTSN + 3, sender.TSN);
             await Task.Delay(250);
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
@@ -103,6 +106,7 @@ namespace SIPSorcery.Net.UnitTests
                 }
                 else
                 {
+                    logger.LogDebug($"Data chunk {chunk.TSN} received.");
                     receiver.OnDataChunk(chunk);
                     sender.GotSack(receiver.GetSackChunk());
                 }
@@ -110,6 +114,7 @@ namespace SIPSorcery.Net.UnitTests
             sender._sendDataChunk = doSend;
 
             sender.SendData(0, 0, new byte[] { 0x55 });
+            await Task.Delay(sender._burstPeriodMilliseconds);
             Assert.Equal(initialTSN + 1, sender.TSN);
             await Task.Delay(250);
             Assert.Null(receiver.CumulativeAckTSN);
@@ -117,6 +122,7 @@ namespace SIPSorcery.Net.UnitTests
             await Task.Delay(500);
 
             sender.SendData(0, 0, new byte[] { 0x55 });
+            await Task.Delay(sender._burstPeriodMilliseconds);
             Assert.Equal(initialTSN + 2, sender.TSN);
             await Task.Delay(1250);
             Assert.Equal(initialTSN + 1, receiver.CumulativeAckTSN);
@@ -124,6 +130,7 @@ namespace SIPSorcery.Net.UnitTests
             await Task.Delay(500);
 
             sender.SendData(0, 0, new byte[] { 0x55 });
+            await Task.Delay(sender._burstPeriodMilliseconds);
             Assert.Equal(initialTSN + 3, sender.TSN);
             await Task.Delay(250);
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);

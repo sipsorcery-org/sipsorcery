@@ -323,35 +323,6 @@ namespace SIPSorcery.Net
                         }
                     }
                 } while (safety >= 0);
-
-                // Chunk may have been abandoned before sending
-                // (But already assigned a TSN)
-                safety = _sendQueue.Count();
-                do
-                {
-                    var nextTsn = AdvancedPeerAckPoint + 1;
-
-                    safety--;
-                    if (_sendQueue.TryPeek(out var nextChunk))
-                    {
-                        if (nextChunk.Abandoned && nextChunk.TSN == nextTsn)
-                        {
-                            if (_sendQueue.TryDequeue(out var _))
-                            {
-                                AdvancedPeerAckPoint = nextTsn;
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-                while (safety >= 0);
             }
 
             // RFC 3758 3.5 C3
@@ -423,15 +394,12 @@ namespace SIPSorcery.Net
                         false,
                         isBegining,
                         isEnd,
-                        TSN,
                         streamID,
                         seqnum,
                         ppid,
                         payload);
 
                     _sendQueue.Enqueue(dataChunk);
-
-                    TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
                 }
 
                 _senderMre.Set();
@@ -642,6 +610,12 @@ namespace SIPSorcery.Net
                         if (dataChunk.Abandoned)
                         {
                             continue;
+                        }
+
+                        if (!dataChunk._tsnAssigned)
+                        {
+                            dataChunk.SetTSN(TSN);
+                            TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
                         }
 
                         dataChunk.LastSentAt = DateTime.Now;
