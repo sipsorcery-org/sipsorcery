@@ -591,19 +591,17 @@ namespace SIPSorcery.Net
                         .Where(x => now.Subtract(x.LastSentAt).TotalSeconds > RTO_MIN_SECONDS)
                         .Take(burstSize - chunksSent))
                     {
-                        if (CheckForAbandonedChunk(chunk, now))
+                        if (!CheckForAbandonedChunk(chunk, now))
                         {
-                            continue;
+                            chunk.LastSentAt = DateTime.Now;
+                            chunk.SendCount += 1;
+
+                            logger.LogTrace($"SCTP retransmitting data chunk for TSN {chunk.TSN}, data length {chunk.UserData.Length}, " +
+                                $"flags {chunk.ChunkFlags:X2}, send count {chunk.SendCount}.");
+
+                            _sendDataChunk(chunk);
+                            chunksSent++;
                         }
-
-                        chunk.LastSentAt = DateTime.Now;
-                        chunk.SendCount += 1;
-
-                        logger.LogTrace($"SCTP retransmitting data chunk for TSN {chunk.TSN}, data length {chunk.UserData.Length}, " +
-                            $"flags {chunk.ChunkFlags:X2}, send count {chunk.SendCount}.");
-
-                        _sendDataChunk(chunk);
-                        chunksSent++;
                         
                         if (!_inRetransmitMode)
                         {
@@ -633,7 +631,7 @@ namespace SIPSorcery.Net
                             TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
                         }
 
-                        dataChunk.LastSentAt = DateTime.Now;
+                        dataChunk.LastSentAt = now;
                         dataChunk.SendCount = 1;
 
                         logger.LogTrace($"SCTP sending data chunk for TSN {dataChunk.TSN}, data length {dataChunk.UserData.Length}, " +
