@@ -9049,12 +9049,12 @@ references:
   commentId: M:SIPSorcery.Net.RTCPeerConnection.#ctor
   fullName: SIPSorcery.Net.RTCPeerConnection.RTCPeerConnection()
   nameWithType: RTCPeerConnection.RTCPeerConnection()
-- uid: SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration,System.Int32)
-  name: RTCPeerConnection(RTCConfiguration, Int32)
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__ctor_SIPSorcery_Net_RTCConfiguration_System_Int32_
-  commentId: M:SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration,System.Int32)
-  fullName: SIPSorcery.Net.RTCPeerConnection.RTCPeerConnection(SIPSorcery.Net.RTCConfiguration, System.Int32)
-  nameWithType: RTCPeerConnection.RTCPeerConnection(RTCConfiguration, Int32)
+- uid: SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration,System.Int32,SIPSorcery.Sys.PortRange)
+  name: RTCPeerConnection(RTCConfiguration, Int32, PortRange)
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__ctor_SIPSorcery_Net_RTCConfiguration_System_Int32_SIPSorcery_Sys_PortRange_
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration,System.Int32,SIPSorcery.Sys.PortRange)
+  fullName: SIPSorcery.Net.RTCPeerConnection.RTCPeerConnection(SIPSorcery.Net.RTCConfiguration, System.Int32, SIPSorcery.Sys.PortRange)
+  nameWithType: RTCPeerConnection.RTCPeerConnection(RTCConfiguration, Int32, PortRange)
 - uid: SIPSorcery.Net.RTCPeerConnection.#ctor*
   name: RTCPeerConnection
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__ctor_
@@ -12130,15 +12130,15 @@ references:
   commentId: M:SIPSorcery.Net.RtpIceChannel.#ctor
   fullName: SIPSorcery.Net.RtpIceChannel.RtpIceChannel()
   nameWithType: RtpIceChannel.RtpIceChannel()
-- uid: SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy,System.Boolean,System.Int32)
-  name: RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy, Boolean, Int32)
-  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel__ctor_System_Net_IPAddress_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_System_Boolean_System_Int32_
-  commentId: M:SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy,System.Boolean,System.Int32)
-  name.vb: RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy, Boolean, Int32)
-  fullName: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List<SIPSorcery.Net.RTCIceServer>, SIPSorcery.Net.RTCIceTransportPolicy, System.Boolean, System.Int32)
-  fullName.vb: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List(Of SIPSorcery.Net.RTCIceServer), SIPSorcery.Net.RTCIceTransportPolicy, System.Boolean, System.Int32)
-  nameWithType: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy, Boolean, Int32)
-  nameWithType.vb: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy, Boolean, Int32)
+- uid: SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy,System.Boolean,System.Int32,SIPSorcery.Sys.PortRange)
+  name: RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy, Boolean, Int32, PortRange)
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel__ctor_System_Net_IPAddress_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_System_Boolean_System_Int32_SIPSorcery_Sys_PortRange_
+  commentId: M:SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy,System.Boolean,System.Int32,SIPSorcery.Sys.PortRange)
+  name.vb: RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy, Boolean, Int32, PortRange)
+  fullName: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List<SIPSorcery.Net.RTCIceServer>, SIPSorcery.Net.RTCIceTransportPolicy, System.Boolean, System.Int32, SIPSorcery.Sys.PortRange)
+  fullName.vb: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List(Of SIPSorcery.Net.RTCIceServer), SIPSorcery.Net.RTCIceTransportPolicy, System.Boolean, System.Int32, SIPSorcery.Sys.PortRange)
+  nameWithType: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy, Boolean, Int32, PortRange)
+  nameWithType.vb: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy, Boolean, Int32, PortRange)
 - uid: SIPSorcery.Net.RtpIceChannel.#ctor*
   name: RtpIceChannel
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel__ctor_
@@ -12564,12 +12564,12 @@ references:
   commentId: M:SIPSorcery.Net.RTPSession.#ctor(SIPSorcery.Net.RtpSessionConfig)
   fullName: SIPSorcery.Net.RTPSession.RTPSession(SIPSorcery.Net.RtpSessionConfig)
   nameWithType: RTPSession.RTPSession(RtpSessionConfig)
-- uid: SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress,System.Int32)
-  name: RTPSession(Boolean, Boolean, Boolean, IPAddress, Int32)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_System_Net_IPAddress_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress,System.Int32)
-  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Boolean, System.Boolean, System.Boolean, System.Net.IPAddress, System.Int32)
-  nameWithType: RTPSession.RTPSession(Boolean, Boolean, Boolean, IPAddress, Int32)
+- uid: SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange)
+  name: RTPSession(Boolean, Boolean, Boolean, IPAddress, Int32, PortRange)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_System_Net_IPAddress_System_Int32_SIPSorcery_Sys_PortRange_
+  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange)
+  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Boolean, System.Boolean, System.Boolean, System.Net.IPAddress, System.Int32, SIPSorcery.Sys.PortRange)
+  nameWithType: RTPSession.RTPSession(Boolean, Boolean, Boolean, IPAddress, Int32, PortRange)
 - uid: SIPSorcery.Net.RTPSession.#ctor*
   name: RTPSession
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_
