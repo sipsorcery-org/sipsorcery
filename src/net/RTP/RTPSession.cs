@@ -442,14 +442,16 @@ namespace SIPSorcery.Net
             bool isRtcpMultiplexed,
             bool isSecure,
             IPAddress bindAddress = null,
-            int bindPort = 0)
+            int bindPort = 0,
+            PortRange portRange = null)
             : this(new RtpSessionConfig
             {
                 IsMediaMultiplexed = isMediaMultiplexed,
                 IsRtcpMultiplexed = isRtcpMultiplexed,
                 RtpSecureMediaOption = isSecure ? RtpSecureMediaOptionEnum.DtlsSrtp : RtpSecureMediaOptionEnum.None,
                 BindAddress = bindAddress,
-                BindPort = bindPort
+                BindPort = bindPort,
+                RtpPortRange = portRange
             })
         {
         }
