@@ -356,7 +356,7 @@ namespace SIPSorcery.Net
             int paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
             int paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
 
-            if (paramPosn < paramsBufferLength)
+            if (paramsBufferLength > 0)
             {
                 bool stopProcessing = false;
 
