@@ -274,7 +274,7 @@ namespace SIPSorcery.Net
 
             if (ForwardTSNSupported)
             {
-                varParams.Add(new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.ForwardTSNSupported, NetConvert.GetBytes((uint)0xC000)));
+                varParams.Add(new SctpTlvChunkParameter((ushort)SctpInitChunkParameterType.ForwardTSNSupported, NetConvert.GetBytes(0xC000U)));
             }
 
             foreach (var unrecognised in UnrecognizedPeerParameters)
