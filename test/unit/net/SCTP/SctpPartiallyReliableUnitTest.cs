@@ -34,6 +34,8 @@ namespace SIPSorcery.Net.UnitTests
 
             SctpInitChunk initChunk = new SctpInitChunk(SctpChunkType.INIT, remoteTag, remoteTSN, remoteARwnd,
                 SctpAssociation.DEFAULT_NUMBER_OUTBOUND_STREAMS, SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS);
+            Assert.True(initChunk.ForwardTSNSupported);
+            initChunk.ForwardTSNSupported = supported;
             Assert.Equal(supported, initChunk.ForwardTSNSupported);
             initPacket.AddChunk(initChunk);
 
