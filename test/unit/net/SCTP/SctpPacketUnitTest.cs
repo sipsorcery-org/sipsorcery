@@ -238,7 +238,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(7, sctpPkt.Header.DestinationPort);
             Assert.Equal(0U, sctpPkt.Header.VerificationTag);
             // Note the checksum can differ if there are any unrecognised parameters.
-            Assert.Equal(0xBE4AE6F5U, sctpPkt.Header.Checksum);
+            Assert.Equal(0x81D782AFU, sctpPkt.Header.Checksum);
             Assert.Single(sctpPkt.Chunks);
             Assert.Contains(sctpPkt.Chunks, (chunk) => { return chunk.KnownType == SctpChunkType.INIT; });
 
