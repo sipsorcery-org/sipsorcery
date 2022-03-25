@@ -333,9 +333,8 @@ namespace SIPSorcery.Net
             List<RTCIceServer> iceServers = null,
             RTCIceTransportPolicy policy = RTCIceTransportPolicy.all,
             bool includeAllInterfaceAddresses = false,
-            int bindPort = 0,
-            PortRange portRange = null) :
-            base(false, bindAddress, bindPort, portRange)
+            int bindPort = 0) :
+            base(false, bindAddress, bindPort)
         {
             _bindAddress = bindAddress;
             Component = component;
@@ -738,7 +737,7 @@ namespace SIPSorcery.Net
                 logger.LogDebug($"Sending TURN refresh request to ICE server {_activeIceServer._uri}.");
                 _activeIceServer.Error = SendTurnRefreshRequest(_activeIceServer);
             }
-
+            
             if (NominatedEntry.TurnPermissionsRequestSent >= IceServer.MAX_REQUESTS)
             {
                 logger.LogWarning($"ICE RTP channel failed to get a Create Permissions response from {NominatedEntry.LocalCandidate.IceServer._uri} after {NominatedEntry.TurnPermissionsRequestSent} attempts.");
@@ -1229,35 +1228,11 @@ namespace SIPSorcery.Net
 
                                 // If this point is reached and all entries are in a failed state then the overall result 
                                 // of the ICE check is a failure.
-                                if (IceGatheringState == RTCIceGatheringState.complete)
+                                if (IceGatheringState == RTCIceGatheringState.complete && _checklist.All(x => x.State == ChecklistEntryState.Failed))
                                 {
-                                    if (_checklist.All(x => x.State == ChecklistEntryState.Failed))
-                                    {
-                                        _checklistState = ChecklistState.Failed;
-                                        IceConnectionState = RTCIceConnectionState.failed;
-                                        OnIceConnectionStateChange?.Invoke(IceConnectionState);
-                                    }
-                                    //Try force finalize process as probably we lost any RtpPacketResponse during process and we are unable to finalize process
-                                    else if (IsController && NominatedEntry == null)
-                                    {
-                                        // Do a check for any timed out that has been nominated
-                                        var failedNominatedEntries = _checklist.Where(x =>
-                                            x.State == ChecklistEntryState.Succeeded
-                                            && x.Nominated
-                                            && x.LastCheckSentAt > System.DateTime.MinValue
-                                            && DateTime.Now.Subtract(x.LastCheckSentAt).TotalSeconds > FAILED_TIMEOUT_PERIOD).ToList();
-
-                                        foreach (var failedNominatedEntry in failedNominatedEntries)
-                                        {
-                                            logger.LogDebug($"ICE RTP channel checks for nominated checklist entry have timed out, state being set to failed: {failedNominatedEntry.LocalCandidate.ToShortString()}->{failedNominatedEntry.RemoteCandidate.ToShortString()}.");
-                                            failedNominatedEntry.State = ChecklistEntryState.Failed;
-                                        }
-
-                                        if (_checklist.All(x => x.State == ChecklistEntryState.Failed || x.State == ChecklistEntryState.Succeeded))
-                                        {
-                                            ProcessNominateLogicAsController();
-                                        }
-                                    }
+                                    _checklistState = ChecklistState.Failed;
+                                    IceConnectionState = RTCIceConnectionState.failed;
+                                    OnIceConnectionStateChange?.Invoke(IceConnectionState);
                                 }
                             }
                         }
@@ -1291,7 +1266,7 @@ namespace SIPSorcery.Net
                 _connectedAt = DateTime.Now;
                 int duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
 
-                logger.LogInformation($"ICE RTP channel nominated and connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
+                logger.LogInformation($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
 
                 entry.Nominated = true;
                 entry.LastConnectedResponseAt = DateTime.Now;
@@ -1329,7 +1304,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         private void SendConnectivityCheck(ChecklistEntry candidatePair, bool setUseCandidate)
         {
-            if (_closed)
+            if(_closed)
             {
                 return;
             }
@@ -1391,7 +1366,7 @@ namespace SIPSorcery.Net
             stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(candidatePair.LocalPriority)));
 
-            if (IsController)
+            if(IsController)
             {
                 stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.IceControlling, NetConvert.GetBytes(_iceTiebreaker)));
             }
@@ -1500,7 +1475,7 @@ namespace SIPSorcery.Net
         /// <param name="remoteEndPoint">The remote end point the STUN packet was received from.</param>
         public async Task ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)
         {
-            if (_closed)
+            if(_closed)
             {
                 return;
             }
@@ -1549,21 +1524,23 @@ namespace SIPSorcery.Net
                     {
                         matchingChecklistEntry.GotStunResponse(stunMessage, remoteEndPoint);
 
-                        logger.LogDebug($"Checking matchingChecklistEntry {matchingChecklistEntry.RemoteCandidate.ToShortString()} STUNMessageType: {stunMessage.Header.MessageType}");
                         if (_checklistState == ChecklistState.Running &&
-                            (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse || stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse))
+                            stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
                         {
-                            if (matchingChecklistEntry.Nominated &&
-                                stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+                            if (matchingChecklistEntry.Nominated)
                             {
                                 logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding response {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
 
                                 // This is the response to a connectivity check that had the "UseCandidate" attribute set.
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
-                            else
+                            else if (IsController && !_checklist.Any(x => x.Nominated))
                             {
-                                ProcessNominateLogicAsController(matchingChecklistEntry);
+                                // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
+                                // For the lack of a more sophisticated approach use whichever pair gets the first successful STUN exchange. If needs be 
+                                // the selection algorithm can improve over time.
+                                matchingChecklistEntry.Nominated = true;
+                                SendConnectivityCheck(matchingChecklistEntry, true);
                             }
                         }
                     }
@@ -1571,52 +1548,6 @@ namespace SIPSorcery.Net
                 else
                 {
                     logger.LogWarning($"ICE RTP channel received an unexpected STUN message {stunMessage.Header.MessageType} from {remoteEndPoint}.");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Handles Nominate logic when Agent is the controller
-        /// </summary>
-        /// <param name="possibleMatchingCheckEntry">Optional initial ChecklistEntry.</param>
-        private void ProcessNominateLogicAsController(ChecklistEntry possibleMatchingCheckEntry = null)
-        {
-            if (IsController && !_checklist.Any(x => x.Nominated))
-            {
-                // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
-                // Our approuch will only nominate entry if it has the highest priority is list.
-                // If another entry with high priority is already processing we need to wait it before nominate someone.
-
-                //Find high priority succeded event
-                _checklist.Sort();
-                possibleMatchingCheckEntry = _checklist.Find(x =>
-                                    x.State == ChecklistEntryState.Succeeded &&
-                                    //If our response has error or other matchingEntry has high priority and succeded
-                                    (possibleMatchingCheckEntry == null || x.Priority > possibleMatchingCheckEntry.Priority ||
-                                    possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
-
-                //Try find a high priority "waiting" entry as we need to wait this response
-                if (possibleMatchingCheckEntry != null)
-                {
-                    var highPriorityCheckingEntry = _checklist.Find(x =>
-                        (x.State != ChecklistEntryState.Failed &&
-                        x.State != ChecklistEntryState.Succeeded &&
-                        x.State != ChecklistEntryState.Frozen) &&
-                        (x.Priority > possibleMatchingCheckEntry.Priority ||
-                            possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
-
-                    //We have a high priority candidate to wait response
-                    if (highPriorityCheckingEntry != null)
-                    {
-                        possibleMatchingCheckEntry = null;
-                    }
-                }
-
-                //We can nominate this entry
-                if (possibleMatchingCheckEntry != null && possibleMatchingCheckEntry.State == ChecklistEntryState.Succeeded)
-                {
-                    possibleMatchingCheckEntry.Nominated = true;
-                    SendConnectivityCheck(possibleMatchingCheckEntry, true);
                 }
             }
         }
@@ -1676,7 +1607,7 @@ namespace SIPSorcery.Net
                          ).FirstOrDefault();
                     }
 
-                    if (matchingChecklistEntry == null &&
+                    if (matchingChecklistEntry == null && 
                         (_remoteCandidates == null || !_remoteCandidates.Any(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint))))
                     {
                         // This STUN request has come from a socket not in the remote ICE candidates list. 
