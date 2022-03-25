@@ -313,9 +313,9 @@ namespace SIPSorcery.Net
 
                     if (_unconfirmedChunks.TryGetValue(nextTsn, out var chunk))
                     {
-                        if (chunk.Abandoned)
+                        if (CheckForAbandonedChunk(chunk))
                         {
-                            AdvancedPeerAckPoint = chunk.TSN;
+                            AdvancedPeerAckPoint = nextTsn;
                         }
                         else
                         {
@@ -328,6 +328,8 @@ namespace SIPSorcery.Net
             // RFC 3758 3.5 C3
             if (AdvancedPeerAckPoint  > _cumulativeAckTSN)
             {
+                logger.LogTrace($"SCTP AdvancedPeerAckPoint moved from {_cumulativeAckTSN} to {AdvancedPeerAckPoint}");
+
                 var forwardTsn = new SctpForwardCumulativeTSNChunk(AdvancedPeerAckPoint);
                 foreach (var chunk in _unconfirmedChunks.Values)
                 {
@@ -565,8 +567,9 @@ namespace SIPSorcery.Net
                     {
                         if (_unconfirmedChunks.TryGetValue(misses.Current.Key, out var missingChunk))
                         {
-                            if (CheckForAbandonedChunk(missingChunk, now))
+                            if (CheckForAbandonedChunk(missingChunk))
                             {
+                                logger.LogTrace($"SCTP abandoned resend of missing chunk for TSN {missingChunk.TSN}");
                                 continue;
                             }
 
@@ -591,7 +594,7 @@ namespace SIPSorcery.Net
                         .Where(x => now.Subtract(x.LastSentAt).TotalSeconds > RTO_MIN_SECONDS)
                         .Take(burstSize - chunksSent))
                     {
-                        if (!CheckForAbandonedChunk(chunk, now))
+                        if (!CheckForAbandonedChunk(chunk))
                         {
                             chunk.LastSentAt = DateTime.Now;
                             chunk.SendCount += 1;
@@ -601,6 +604,10 @@ namespace SIPSorcery.Net
 
                             _sendDataChunk(chunk);
                             chunksSent++;
+                        }
+                        else
+                        {
+                            logger.LogTrace($"SCTP abandoned unconfirmed chunk for TSN {chunk.TSN}");
                         }
                         
                         if (!_inRetransmitMode)
@@ -620,8 +627,9 @@ namespace SIPSorcery.Net
                 {
                     while (chunksSent < burstSize && _sendQueue.TryDequeue(out var dataChunk))
                     {
-                        if (CheckForAbandonedChunk(dataChunk, now))
+                        if (CheckForAbandonedChunk(dataChunk))
                         {
+                            logger.LogTrace($"SCTP abandoned chunk prior to sending");
                             continue;
                         }
 
@@ -748,7 +756,7 @@ namespace SIPSorcery.Net
         /// Checks if a chunk is either already abandoned, or should be abandoned.
         /// </summary>
         /// <returns>True if the chunk is abandoned.</returns>
-        public bool CheckForAbandonedChunk(SctpDataChunk chunk, DateTime now)
+        public bool CheckForAbandonedChunk(SctpDataChunk chunk)
         {
             if (_supportsPartialReliabilityExtension)
             {
@@ -756,8 +764,9 @@ namespace SIPSorcery.Net
                 {
                     return true;
                 }
+
                 // Abandon messages that have exceeded their lifetime
-                if (chunk.MaxLifetime < uint.MaxValue && (now - chunk.CreatedAt).TotalMilliseconds > chunk.MaxLifetime)
+                if (chunk.MaxLifetime < uint.MaxValue && (DateTime.Now - chunk.CreatedAt).TotalMilliseconds > chunk.MaxLifetime)
                 {
                     AbandonChunk(chunk);
                     return true;

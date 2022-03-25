@@ -358,34 +358,38 @@ namespace SIPSorcery.Net
                         {
                             var streamNum = kvp.Key;
                             var streamSequenceNum = kvp.Value;
-                            if (_streamLatestSeqNums.TryGetValue(streamNum, out ushort currentStreamSequence)
-                                && SctpDataReceiver.IsNewer(currentStreamSequence, streamSequenceNum)
-                                && _streamOutOfOrderFrames.TryGetValue(streamNum, out var outOfOrder))
+                            if (_streamLatestSeqNums.TryGetValue(streamNum, out ushort currentStreamSequence))
                             {
-                                unchecked
+                                if (SctpDataReceiver.IsNewer(currentStreamSequence, streamSequenceNum))
                                 {
-                                    var dist = SctpDataReceiver.GetDistance(currentStreamSequence, streamSequenceNum);
-
-                                    for (ushort i = 0; i < dist; i++)
+                                    if (_streamOutOfOrderFrames.TryGetValue(streamNum, out var outOfOrder))
                                     {
-                                        ushort nextSeqNum = (ushort) (currentStreamSequence + i);
-                                        if (outOfOrder.TryGetValue(nextSeqNum, out var frame))
+                                        unchecked
                                         {
-                                            _onFrameReady?.Invoke(frame);
-                                            outOfOrder.Remove(nextSeqNum);
-                                        }
-                                        else
-                                        {
-                                            break;
+                                            var dist = SctpDataReceiver.GetDistance(currentStreamSequence, streamSequenceNum);
+
+                                            for (ushort i = 0; i < dist; i++)
+                                            {
+                                                ushort nextSeqNum = (ushort)(currentStreamSequence + i);
+                                                if (outOfOrder.TryGetValue(nextSeqNum, out var frame))
+                                                {
+                                                    _onFrameReady?.Invoke(frame);
+                                                    outOfOrder.Remove(nextSeqNum);
+                                                }
+                                                else
+                                                {
+                                                    break;
+                                                }
+                                            }
                                         }
                                     }
                                 }
+                                _streamLatestSeqNums[streamNum] = streamSequenceNum;
                             }
                             else
                             {
                                 logger.LogWarning($"SCTP received a FORWARD-TSN containing untracked stream {streamNum}");
                             }
-
                         }
                     }
 

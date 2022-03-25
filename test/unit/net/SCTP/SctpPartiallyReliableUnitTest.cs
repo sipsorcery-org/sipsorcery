@@ -102,6 +102,82 @@ namespace SIPSorcery.Net.UnitTests
 
         /// <summary>
         /// Tests that the SCTP association correctly sets the PartiallyReliable extension as supported
+        /// <summary>
+        /// Tests that a message can be abandoned and prompts a FORWARD-TSN message
+        /// </summary>
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async void MessageAbandonedTimeout(bool ordered)
+        {
+            uint initialTSN = 0;
+            uint messageTimeout = 50;
+
+            SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
+            SctpDataSender sender = new SctpDataSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+            sender._burstPeriodMilliseconds = 1;
+
+            sender._supportsPartialReliabilityExtension = true;
+            sender.StartSending();
+
+            int framesSent = 0;
+
+            Action<SctpDataChunk> senderSendData = (chunk) =>
+            {
+                if (framesSent == 1)
+                {
+                    logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver.");
+                }
+                else
+                {
+                    logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
+                    receiver.OnDataChunk(chunk);
+                    logger.LogDebug($"SACK chunk {chunk.TSN} provided to sender.");
+                    sender.GotSack(receiver.GetSackChunk());
+                }
+                framesSent++;
+            };
+
+            Action<SctpForwardCumulativeTSNChunk> senderSendForwardTSN = (chunk) =>
+            {
+                logger.LogDebug($"Forward TSN chunk {chunk.NewCumulativeTSN} provided to receiver.");
+                receiver.OnForwardCumulativeTSNChunk(chunk);
+            };
+
+            Action<SctpSackChunk> receiverSendSack = (chunk) =>
+            {
+                logger.LogDebug($"SACK chunk {chunk.CumulativeTsnAck} provided to the sender.");
+                sender.GotSack(chunk);
+            };
+
+            int framesReceived = 0;
+
+            Action<SctpDataFrame> receiverOnFrame = (f) =>
+            {
+                logger.LogDebug($"Receiver got frame of length {f.UserData?.Length}.");
+                framesReceived++;
+            };
+
+            receiver._onFrameReady = receiverOnFrame;
+            receiver._sendSackChunk = receiverSendSack;
+            sender._sendDataChunk = senderSendData;
+            sender._sendForwardTsn = senderSendForwardTSN;
+
+            sender.SendData(0, 0, new byte[] { 0x01 }, ordered: ordered, maxLifetime: messageTimeout);
+            sender.SendData(0, 0, new byte[] { 0x02 }, ordered: ordered, maxLifetime: messageTimeout);
+            await Task.Delay((int)(messageTimeout + sender._burstPeriodMilliseconds * 10));
+
+            sender.SendData(0, 0, new byte[] { 0x03 }, ordered: ordered);
+            await Task.Delay(sender._burstPeriodMilliseconds*10);
+
+            await Task.Delay(1000);
+            Assert.Equal(3, framesSent);
+            Assert.Equal(2, framesReceived);
+            Assert.Equal(initialTSN + 2, sender.AdvancedPeerAckPoint);
+            Assert.Equal(initialTSN + 3, sender.TSN);
+            Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
+            Assert.Equal(0, receiver.ForwardTSNCount);
+        }
         /// </summary>
         [Fact]
         public void ForwardTSNSupportedSet()
