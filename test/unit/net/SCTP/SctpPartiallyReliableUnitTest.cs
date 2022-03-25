@@ -117,15 +117,19 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
             sender._burstPeriodMilliseconds = 1;
+            sender._rtoInitialMilliseconds = 1;
+            sender._rtoMinimumMilliseconds = 1;
 
             sender._supportsPartialReliabilityExtension = true;
             sender.StartSending();
 
             int framesSent = 0;
 
+            int forwardTSNCount = 0;
+
             Action<SctpDataChunk> senderSendData = (chunk) =>
             {
-                if (framesSent == 1)
+                if (chunk.UserData[0] == 0x02)
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver.");
                 }
@@ -143,6 +147,7 @@ namespace SIPSorcery.Net.UnitTests
             {
                 logger.LogDebug($"Forward TSN chunk {chunk.NewCumulativeTSN} provided to receiver.");
                 receiver.OnForwardCumulativeTSNChunk(chunk);
+                forwardTSNCount++;
             };
 
             Action<SctpSackChunk> receiverSendSack = (chunk) =>
@@ -164,20 +169,26 @@ namespace SIPSorcery.Net.UnitTests
             sender._sendDataChunk = senderSendData;
             sender._sendForwardTsn = senderSendForwardTSN;
 
-            sender.SendData(0, 0, new byte[] { 0x01 }, ordered: ordered);
-            sender.SendData(0, 0, new byte[] { 0x02 }, ordered: ordered, timeoutMillis, maxRetransmits);
-            await Task.Delay((100 + sender._burstPeriodMilliseconds * 10));
+            sender.SendData(0, 0, new byte[] { 0x01 }, ordered);
+            sender.SendData(0, 0, new byte[] { 0x02 }, ordered, timeoutMillis, maxRetransmits);
 
-            sender.SendData(0, 0, new byte[] { 0x03 }, ordered: ordered);
-            await Task.Delay(sender._burstPeriodMilliseconds*10);
+            if (timeoutMillis < uint.MaxValue)
+            {
+                // If we are testing message timeout
+                // delay so that message 0x02 times out and becomes abandoned
+                await Task.Delay((int)timeoutMillis + sender._burstPeriodMilliseconds);
+            }
 
-            await Task.Delay(1000);
+            sender.SendData(0, 0, new byte[] { 0x03 }, ordered);
+            await Task.Delay(sender._burstPeriodMilliseconds * 10);
+
             Assert.Equal(3, framesSent);
             Assert.Equal(2, framesReceived);
             Assert.Equal(initialTSN + 2, sender.AdvancedPeerAckPoint);
             Assert.Equal(initialTSN + 3, sender.TSN);
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
             Assert.Equal(0, receiver.ForwardTSNCount);
+            Assert.Equal(1, forwardTSNCount);
         }
         /// </summary>
         [Fact]
