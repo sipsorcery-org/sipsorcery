@@ -1229,11 +1229,35 @@ namespace SIPSorcery.Net
 
                                 // If this point is reached and all entries are in a failed state then the overall result 
                                 // of the ICE check is a failure.
-                                if (IceGatheringState == RTCIceGatheringState.complete && _checklist.All(x => x.State == ChecklistEntryState.Failed))
+                                if (IceGatheringState == RTCIceGatheringState.complete)
                                 {
-                                    _checklistState = ChecklistState.Failed;
-                                    IceConnectionState = RTCIceConnectionState.failed;
-                                    OnIceConnectionStateChange?.Invoke(IceConnectionState);
+                                    if (_checklist.All(x => x.State == ChecklistEntryState.Failed))
+                                    {
+                                        _checklistState = ChecklistState.Failed;
+                                        IceConnectionState = RTCIceConnectionState.failed;
+                                        OnIceConnectionStateChange?.Invoke(IceConnectionState);
+                                    }
+                                    //Try force finalize process as probably we lost any RtpPacketResponse during process and we are unable to finalize process
+                                    else if (IsController && NominatedEntry == null)
+                                    {
+                                        // Do a check for any timed out that has been nominated
+                                        var failedNominatedEntries = _checklist.Where(x =>
+                                            x.State == ChecklistEntryState.Succeeded
+                                            && x.Nominated
+                                            && x.LastCheckSentAt > System.DateTime.MinValue
+                                            && DateTime.Now.Subtract(x.LastCheckSentAt).TotalSeconds > FAILED_TIMEOUT_PERIOD).ToList();
+
+                                        foreach (var failedNominatedEntry in failedNominatedEntries)
+                                        {
+                                            logger.LogDebug($"ICE RTP channel checks for nominated checklist entry have timed out, state being set to failed: {failedNominatedEntry.LocalCandidate.ToShortString()}->{failedNominatedEntry.RemoteCandidate.ToShortString()}.");
+                                            failedNominatedEntry.State = ChecklistEntryState.Failed;
+                                        }
+
+                                        if (_checklist.All(x => x.State == ChecklistEntryState.Failed || x.State == ChecklistEntryState.Succeeded))
+                                        {
+                                            ProcessNominateLogicAsController();
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1529,50 +1553,17 @@ namespace SIPSorcery.Net
                         if (_checklistState == ChecklistState.Running &&
                             (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse || stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse))
                         {
-                            if (matchingChecklistEntry.Nominated)
+                            if (matchingChecklistEntry.Nominated &&
+                                stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
                             {
                                 logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding response {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
 
                                 // This is the response to a connectivity check that had the "UseCandidate" attribute set.
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
-                            else if (IsController && !_checklist.Any(x => x.Nominated))
+                            else
                             {
-                                // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
-                                // Our approuch will only nominate entry if it has the highest priority is list.
-                                // If another entry with high priority is already processing we need to wait it before nominate someone.
-
-                                var highPriorityMatchingCheckList = _checklist.Find(x =>
-                                    x.State == ChecklistEntryState.Succeeded &&
-                                    //If our response has error or other matchingEntry has high priority and succeded
-                                    (x.Priority > matchingChecklistEntry.Priority ||
-                                    stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse));
-
-                                //We found a better candidate to nominate
-                                if (highPriorityMatchingCheckList != null)
-                                {
-                                    matchingChecklistEntry = highPriorityMatchingCheckList;
-                                }
-
-                                var highPriorityCheckingCheckList = _checklist.Find(x =>
-                                    (x.State != ChecklistEntryState.Failed &&
-                                    x.State != ChecklistEntryState.Succeeded &&
-                                    x.State != ChecklistEntryState.Frozen) &&
-                                    (x.Priority > matchingChecklistEntry.Priority ||
-                                        matchingChecklistEntry.State != ChecklistEntryState.Succeeded));
-
-                                //We have a high priority candidate to wait response
-                                if (highPriorityCheckingCheckList != null)
-                                {
-                                    matchingChecklistEntry = null;
-                                }
-
-                                //We can nominate this entry
-                                if (matchingChecklistEntry != null && matchingChecklistEntry.State == ChecklistEntryState.Succeeded)
-                                {
-                                    matchingChecklistEntry.Nominated = true;
-                                    SendConnectivityCheck(matchingChecklistEntry, true);
-                                }
+                                ProcessNominateLogicAsController(matchingChecklistEntry);
                             }
                         }
                     }
@@ -1580,6 +1571,52 @@ namespace SIPSorcery.Net
                 else
                 {
                     logger.LogWarning($"ICE RTP channel received an unexpected STUN message {stunMessage.Header.MessageType} from {remoteEndPoint}.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles Nominate logic when Agent is the controller
+        /// </summary>
+        /// <param name="possibleMatchingCheckEntry">Optional initial ChecklistEntry.</param>
+        private void ProcessNominateLogicAsController(ChecklistEntry possibleMatchingCheckEntry = null)
+        {
+            if (IsController && !_checklist.Any(x => x.Nominated))
+            {
+                // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
+                // Our approuch will only nominate entry if it has the highest priority is list.
+                // If another entry with high priority is already processing we need to wait it before nominate someone.
+
+                //Find high priority succeded event
+                _checklist.Sort();
+                possibleMatchingCheckEntry = _checklist.Find(x =>
+                                    x.State == ChecklistEntryState.Succeeded &&
+                                    //If our response has error or other matchingEntry has high priority and succeded
+                                    (possibleMatchingCheckEntry == null || x.Priority > possibleMatchingCheckEntry.Priority ||
+                                    possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
+
+                //Try find a high priority "waiting" entry as we need to wait this response
+                if (possibleMatchingCheckEntry != null)
+                {
+                    var highPriorityCheckingEntry = _checklist.Find(x =>
+                        (x.State != ChecklistEntryState.Failed &&
+                        x.State != ChecklistEntryState.Succeeded &&
+                        x.State != ChecklistEntryState.Frozen) &&
+                        (x.Priority > possibleMatchingCheckEntry.Priority ||
+                            possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
+
+                    //We have a high priority candidate to wait response
+                    if (highPriorityCheckingEntry != null)
+                    {
+                        possibleMatchingCheckEntry = null;
+                    }
+                }
+
+                //We can nominate this entry
+                if (possibleMatchingCheckEntry != null && possibleMatchingCheckEntry.State == ChecklistEntryState.Succeeded)
+                {
+                    possibleMatchingCheckEntry.Nominated = true;
+                    SendConnectivityCheck(possibleMatchingCheckEntry, true);
                 }
             }
         }
