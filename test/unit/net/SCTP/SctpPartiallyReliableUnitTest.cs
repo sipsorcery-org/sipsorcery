@@ -103,15 +103,16 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that the SCTP association correctly sets the PartiallyReliable extension as supported
         /// <summary>
-        /// Tests that a message can be abandoned and prompts a FORWARD-TSN message
+        /// Tests that a message can be abandoned by timeout or retransmit limitations for both ordered and unordered modes
         /// </summary>
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public async void MessageAbandonedTimeout(bool ordered)
+        [InlineData(true, 50, uint.MaxValue)]
+        [InlineData(true, uint.MaxValue, 0)]
+        [InlineData(false, 50, uint.MaxValue)]
+        [InlineData(false, uint.MaxValue, 0)]
+        public async void MessageAbandoned(bool ordered, uint timeoutMillis, uint maxRetransmits)
         {
             uint initialTSN = 0;
-            uint messageTimeout = 50;
 
             SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
@@ -163,9 +164,9 @@ namespace SIPSorcery.Net.UnitTests
             sender._sendDataChunk = senderSendData;
             sender._sendForwardTsn = senderSendForwardTSN;
 
-            sender.SendData(0, 0, new byte[] { 0x01 }, ordered: ordered, maxLifetime: messageTimeout);
-            sender.SendData(0, 0, new byte[] { 0x02 }, ordered: ordered, maxLifetime: messageTimeout);
-            await Task.Delay((int)(messageTimeout + sender._burstPeriodMilliseconds * 10));
+            sender.SendData(0, 0, new byte[] { 0x01 }, ordered: ordered);
+            sender.SendData(0, 0, new byte[] { 0x02 }, ordered: ordered, timeoutMillis, maxRetransmits);
+            await Task.Delay((100 + sender._burstPeriodMilliseconds * 10));
 
             sender.SendData(0, 0, new byte[] { 0x03 }, ordered: ordered);
             await Task.Delay(sender._burstPeriodMilliseconds*10);
