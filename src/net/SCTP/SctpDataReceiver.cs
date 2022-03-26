@@ -341,11 +341,14 @@ namespace SIPSorcery.Net
                     unchecked
                     {
                         while (_forwardTSN.Remove(newCumulativeTSN))
+                        while (_forwardTSN.Remove(newCumulativeTSN + 1))
                         {
                             newCumulativeTSN++;
                         }
                         _lastInOrderTSN = newCumulativeTSN;
                     }
+
+                    logger.LogTrace($"SCTP receiver LastInOrderTSN moved from {currentCumulativeTSN} to {newCumulativeTSN}");
 
 
                     // examine all of the listed stream reordering queues, and immediately make available for delivery
