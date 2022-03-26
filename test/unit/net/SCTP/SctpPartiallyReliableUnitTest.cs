@@ -219,10 +219,13 @@ namespace SIPSorcery.Net.UnitTests
 
             Action<SctpDataChunk> senderSendData = (chunk) =>
             {
-                if (chunk.TSN == 0 && chunk.SendCount == 1 && dropFirstFrame)
+                if (chunk.TSN == 0 && dropFirstFrame)
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver (first frame drop).");
-                    framesAbandoned++;
+                    if (chunk.SendCount - 1 == maxRetransmits)
+                    {
+                        framesAbandoned++;
+                    }
                 }
                 // Always send the last frame so that variables are 
                 // correctly updated for the sender and receiver
