@@ -1256,7 +1256,7 @@ namespace SIPSorcery.Net
                                         //Try nominate another entry
                                         if (requireReprocess)
                                         {
-                                            ProcessNominateLogicAsController();
+                                            ProcessNominateLogicAsController(null);
                                         }
                                     }
 
@@ -1569,13 +1569,9 @@ namespace SIPSorcery.Net
                                 // This is the response to a connectivity check that had the "UseCandidate" attribute set.
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
-                            else if (IsController && !_checklist.Any(x => x.Nominated))
+                            else if(IsController)
                             {
-                                // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
-                                // For the lack of a more sophisticated approach use whichever pair gets the first successful STUN exchange. If needs be 
-                                // the selection algorithm can improve over time.
-                                matchingChecklistEntry.Nominated = true;
-                                SendConnectivityCheck(matchingChecklistEntry, true);
+                                ProcessNominateLogicAsController(matchingChecklistEntry);
                             }
                         }
                     }
@@ -1591,9 +1587,67 @@ namespace SIPSorcery.Net
         /// Handles Nominate logic when Agent is the controller
         /// </summary>
         /// <param name="possibleMatchingCheckEntry">Optional initial ChecklistEntry.</param>
-        private void ProcessNominateLogicAsController()
+        private void ProcessNominateLogicAsController(ChecklistEntry possibleMatchingCheckEntry)
         {
-            if (IsController && !_checklist.Any(x => x.Nominated))
+            if (IsController && (NominatedEntry == null || !NominatedEntry.Nominated || NominatedEntry.State != ChecklistEntryState.Succeeded))
+            {
+                _checklist.Sort();
+
+                var findBetterOptionOrWait = possibleMatchingCheckEntry == null || possibleMatchingCheckEntry.RemoteCandidate.type == RTCIceCandidateType.relay;
+                var nominatedCandidate = _checklist.Find(
+                        x => x.Nominated
+                        && x.State == ChecklistEntryState.Succeeded
+                        && (x.LastCheckSentAt == DateTime.MinValue ||
+                            DateTime.Now.Subtract(x.LastCheckSentAt).TotalSeconds <= FAILED_TIMEOUT_PERIOD));
+
+                //We already have a good candidate, discard our succeded candidate
+                if (nominatedCandidate != null && nominatedCandidate.RemoteCandidate.type != RTCIceCandidateType.relay)
+                {
+                    possibleMatchingCheckEntry = null;
+                    findBetterOptionOrWait = false;
+                }
+
+                if (findBetterOptionOrWait)
+                {
+                    //Search for another succeded non-nominated entries with better priority over our current object.
+                    var betterOptionEntry = _checklist.Find(x =>
+                       x.State == ChecklistEntryState.Succeeded &&
+                        !x.Nominated &&
+                        (possibleMatchingCheckEntry == null ||
+                         (x.Priority > possibleMatchingCheckEntry.Priority && x.RemoteCandidate.type != RTCIceCandidateType.relay) ||
+                         possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
+
+                    if (betterOptionEntry != null)
+                    {
+                        possibleMatchingCheckEntry = betterOptionEntry;
+                        findBetterOptionOrWait = possibleMatchingCheckEntry.RemoteCandidate.type == RTCIceCandidateType.relay;
+                    }
+
+                    //if we still need to find a better option, we will search for matching entries with high priority that still processing
+                    if (findBetterOptionOrWait)
+                    {
+                        var waitOptionEntry = _checklist.Find(x =>
+                            (x.State == ChecklistEntryState.InProgress || x.State == ChecklistEntryState.Waiting) &&
+                             (possibleMatchingCheckEntry == null ||
+                              (x.Priority > possibleMatchingCheckEntry.Priority && x.RemoteCandidate.type != RTCIceCandidateType.relay) ||
+                              possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
+
+                        if (waitOptionEntry != null)
+                        {
+                            possibleMatchingCheckEntry = null;
+                        }
+                    }
+                }
+
+                //Nominate Candidate if we pass in all heuristic checks from previous algorithm
+                if (possibleMatchingCheckEntry != null && possibleMatchingCheckEntry.State == ChecklistEntryState.Succeeded)
+                {
+                    possibleMatchingCheckEntry.Nominated = true;
+                    SendConnectivityCheck(possibleMatchingCheckEntry, true);
+                }
+            }
+
+            /*if (IsController && !_checklist.Any(x => x.Nominated))
             {
                 // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
                 // For the lack of a more sophisticated approach use whichever pair gets the first successful STUN exchange. If needs be 
@@ -1609,7 +1663,7 @@ namespace SIPSorcery.Net
                     matchingCheckEntry.Nominated = true;
                     SendConnectivityCheck(matchingCheckEntry, true);
                 }
-            }
+            }*/
         }
 
         /// <summary>
