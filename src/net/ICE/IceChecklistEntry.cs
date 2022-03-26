@@ -284,7 +284,7 @@ namespace SIPSorcery.Net
                 {
                     State = ChecklistEntryState.Succeeded;
                     ChecksSent = 0;
-                    LastCheckSentAt = DateTime.MinValue;
+                    //LastCheckSentAt = DateTime.MinValue;
                 }
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
