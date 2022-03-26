@@ -101,8 +101,6 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that the SCTP association correctly sets the PartiallyReliable extension as supported
-        /// <summary>
         /// Tests that a message can be abandoned by timeout or retransmit limitations for both ordered and unordered modes
         /// </summary>
         [Theory]
@@ -172,12 +170,8 @@ namespace SIPSorcery.Net.UnitTests
             sender.SendData(0, 0, new byte[] { 0x01 }, ordered);
             sender.SendData(0, 0, new byte[] { 0x02 }, ordered, timeoutMillis, maxRetransmits);
 
-            if (timeoutMillis < uint.MaxValue)
-            {
-                // If we are testing message timeout
-                // delay so that message 0x02 times out and becomes abandoned
-                await Task.Delay((int)timeoutMillis + sender._burstPeriodMilliseconds);
-            }
+            // delay so that message 0x02 times out and becomes abandoned
+            await Task.Delay((int)(timeoutMillis == uint.MaxValue ? 0 : timeoutMillis) + sender._burstPeriodMilliseconds);
 
             sender.SendData(0, 0, new byte[] { 0x03 }, ordered);
             await Task.Delay(sender._burstPeriodMilliseconds * 10);
@@ -190,13 +184,122 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(0, receiver.ForwardTSNCount);
             Assert.Equal(1, forwardTSNCount);
         }
+
+
+        /// <summary>
+        /// Tests that randomly dropped messages result in a correctly CumAckTSN 
         /// </summary>
-        [Fact]
-        public void ForwardTSNSupportedSet()
+        [Theory]
+        [InlineData(true, 0, false)]
+        [InlineData(true, 1, false)]
+        [InlineData(true, 1,true)]
+        [InlineData(false, 0, false)]
+        [InlineData(false, 1,false)]
+        [InlineData(false, 1, true)]
+        public async void RandomDataDrops(bool ordered, uint maxRetransmits, bool dropFirstFrame)
         {
-            (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
-            Assert.True(aAssoc.SupportsPartiallyReliable);
-            Assert.True(bAssoc.SupportsPartiallyReliable);
+            uint initialTSN = 0;
+
+            SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
+            SctpDataSender sender = new SctpDataSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+            sender._burstPeriodMilliseconds = 1;
+            sender._rtoInitialMilliseconds = 1;
+            sender._rtoMinimumMilliseconds = 1;
+
+            sender._supportsPartialReliabilityExtension = true;
+            sender.StartSending();
+
+            ManualResetEventSlim waiter = new ManualResetEventSlim(false);
+
+            byte messageCount = 100;
+            int forwardTSNCount = 0;
+
+            int framesAbandoned = 0;
+            int framesSucceeded = 0;
+
+            Action<SctpDataChunk> senderSendData = (chunk) =>
+            {
+                if (chunk.TSN == 0 && chunk.SendCount == 1 && dropFirstFrame)
+                {
+                    logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver (first frame drop).");
+                    framesAbandoned++;
+                }
+                // Always send the last frame so that variables are 
+                // correctly updated for the sender and receiver
+                else if (chunk.UserData[0] != messageCount-1 && Crypto.GetRandomInt(0, 99) % 9 == 0)
+                {
+                    logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver.");
+                    if (chunk.SendCount - 1 == maxRetransmits)
+                    {
+                        framesAbandoned++;
+                    }
+                }
+                else
+                {
+                    logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
+                    receiver.OnDataChunk(chunk);
+                    logger.LogDebug($"SACK chunk {chunk.TSN} provided to sender.");
+                    sender.GotSack(receiver.GetSackChunk());
+
+                    framesSucceeded++;
+                    
+                    if (ordered && chunk.UserData[0] == messageCount-1)
+                    {
+                        waiter.Set();
+                    }
+                }
+                if (!ordered && framesSucceeded + framesAbandoned == messageCount)
+                {
+                    waiter.Set();
+                }
+            };
+
+            Action<SctpForwardCumulativeTSNChunk> senderSendForwardTSN = (chunk) =>
+            {
+                logger.LogDebug($"Forward TSN chunk {chunk.NewCumulativeTSN} provided to receiver.");
+                receiver.OnForwardCumulativeTSNChunk(chunk);
+                forwardTSNCount++;
+            };
+
+            Action<SctpSackChunk> receiverSendSack = (chunk) =>
+            {
+                logger.LogDebug($"SACK chunk {chunk.CumulativeTsnAck} provided to the sender.");
+                sender.GotSack(chunk);
+            };
+
+            int framesReceived = 0;
+
+            Action<SctpDataFrame> receiverOnFrame = (f) =>
+            {
+                logger.LogDebug($"Receiver got frame of length {f.UserData?.Length}.");
+                framesReceived++;
+            };
+
+            receiver._onFrameReady = receiverOnFrame;
+            receiver._sendSackChunk = receiverSendSack;
+            sender._sendDataChunk = senderSendData;
+            sender._sendForwardTsn = senderSendForwardTSN;
+
+            for (byte i=0;i<messageCount;i++)
+            {
+                sender.SendData(0, 0, new byte[] { i }, ordered, maxRetransmits:maxRetransmits);
+            }
+
+            //frameReady.WaitHandle.WaitOne(1000, true);
+            waiter.WaitHandle.WaitOne(2000, true);
+
+            // There may be more delayed messages after the last one is ack'd
+            // If we are supporting unordered sending
+            await Task.Delay(sender._burstPeriodMilliseconds * 10);
+
+            if (!ordered)
+            {
+                Assert.Equal(messageCount, framesSucceeded + framesAbandoned);
+            }
+            Assert.Equal(initialTSN + messageCount, sender.TSN);
+            Assert.Equal(initialTSN + messageCount-1, sender.AdvancedPeerAckPoint);
+            Assert.Equal(initialTSN + messageCount-1, receiver.CumulativeAckTSN);
+            Assert.Equal(0, receiver.ForwardTSNCount);
         }
     }
 }

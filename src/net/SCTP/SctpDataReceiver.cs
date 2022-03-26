@@ -326,104 +326,97 @@ namespace SIPSorcery.Net
         /// <param name="chunk">The Forward-TSN chunk</param>
         public void OnForwardCumulativeTSNChunk(SctpForwardCumulativeTSNChunk chunk)
         {
-            if (_inOrderReceiveCount > 0)
+            var currentCumulativeTSN = _lastInOrderTSN;
+            var newCumulativeTSN = chunk.NewCumulativeTSN;
+
+            // When a FORWARD TSN chunk arrives, the data receiver MUST first update its cumulative TSN point
+            // to the value carried in the FORWARD TSN chunk
+            if (SctpDataReceiver.IsNewer(currentCumulativeTSN, newCumulativeTSN))
             {
-                var currentCumulativeTSN = _lastInOrderTSN;
-                var newCumulativeTSN = chunk.NewCumulativeTSN;
+                _lastInOrderTSN = newCumulativeTSN;
 
-                // When a FORWARD TSN chunk arrives, the data receiver MUST first update its cumulative TSN point
-                // to the value carried in the FORWARD TSN chunk
-                if (SctpDataReceiver.IsNewer(currentCumulativeTSN, newCumulativeTSN))
+                // and then MUST further advance its cumulative TSN point locally if possible
+                unchecked
                 {
-                    _lastInOrderTSN = newCumulativeTSN;
-
-                    // and then MUST further advance its cumulative TSN point locally if possible
-                    unchecked
+                    logger.LogDebug("FWDTSN " + String.Join(",", _forwardTSN.Keys));
+                    _forwardTSN.Remove(newCumulativeTSN);
+                    while (_forwardTSN.Remove(newCumulativeTSN + 1))
                     {
-                        while (_forwardTSN.Remove(newCumulativeTSN))
-                        while (_forwardTSN.Remove(newCumulativeTSN + 1))
-                        {
-                            newCumulativeTSN++;
-                        }
-                        _lastInOrderTSN = newCumulativeTSN;
+                        newCumulativeTSN++;
                     }
+                    _lastInOrderTSN = newCumulativeTSN;
+                }
 
-                    logger.LogTrace($"SCTP receiver LastInOrderTSN moved from {currentCumulativeTSN} to {newCumulativeTSN}");
+                logger.LogTrace($"SCTP receiver LastInOrderTSN moved from {currentCumulativeTSN} to {newCumulativeTSN}");
+                _inOrderReceiveCount += GetDistance(currentCumulativeTSN, newCumulativeTSN);
 
+                // examine all of the listed stream reordering queues, and immediately make available for delivery
+                // stream sequence numbers earlier than or equal to the stream sequence number listed inside the
+                // FORWARD-TSN. Any such stranded data SHOULD be made immediately available to the upper layer application.
 
-                    // examine all of the listed stream reordering queues, and immediately make available for delivery
-                    // stream sequence numbers earlier than or equal to the stream sequence number listed inside the
-                    // FORWARD-TSN. Any such stranded data SHOULD be made immediately available to the upper layer application.
-
-                    if (chunk.StreamSequenceAssociations.Count > 0)
+                if (chunk.StreamSequenceAssociations.Count > 0)
+                {
+                    foreach (var kvp in chunk.StreamSequenceAssociations)
                     {
-                        foreach (var kvp in chunk.StreamSequenceAssociations)
+                        var streamNum = kvp.Key;
+                        var streamSequenceNum = kvp.Value;
+                        if (_streamLatestSeqNums.TryGetValue(streamNum, out ushort currentStreamSequence))
                         {
-                            var streamNum = kvp.Key;
-                            var streamSequenceNum = kvp.Value;
-                            if (_streamLatestSeqNums.TryGetValue(streamNum, out ushort currentStreamSequence))
+                            if (SctpDataReceiver.IsNewer(currentStreamSequence, streamSequenceNum))
                             {
-                                if (SctpDataReceiver.IsNewer(currentStreamSequence, streamSequenceNum))
+                                if (_streamOutOfOrderFrames.TryGetValue(streamNum, out var outOfOrder))
                                 {
-                                    if (_streamOutOfOrderFrames.TryGetValue(streamNum, out var outOfOrder))
+                                    unchecked
                                     {
-                                        unchecked
-                                        {
-                                            var dist = SctpDataReceiver.GetDistance(currentStreamSequence, streamSequenceNum);
+                                        var dist = SctpDataReceiver.GetDistance(currentStreamSequence, streamSequenceNum);
 
-                                            for (ushort i = 0; i < dist; i++)
+                                        for (ushort i = 0; i < dist; i++)
+                                        {
+                                            ushort nextSeqNum = (ushort)(currentStreamSequence + i);
+                                            if (outOfOrder.TryGetValue(nextSeqNum, out var frame))
                                             {
-                                                ushort nextSeqNum = (ushort)(currentStreamSequence + i);
-                                                if (outOfOrder.TryGetValue(nextSeqNum, out var frame))
-                                                {
-                                                    _onFrameReady?.Invoke(frame);
-                                                    outOfOrder.Remove(nextSeqNum);
-                                                }
-                                                else
-                                                {
-                                                    break;
-                                                }
+                                                _onFrameReady?.Invoke(frame);
+                                                outOfOrder.Remove(nextSeqNum);
+                                            }
+                                            else
+                                            {
+                                                break;
                                             }
                                         }
                                     }
                                 }
-                                _streamLatestSeqNums[streamNum] = streamSequenceNum;
                             }
-                            else
-                            {
-                                logger.LogWarning($"SCTP received a FORWARD-TSN containing untracked stream {streamNum}");
-                            }
+                            _streamLatestSeqNums[streamNum] = streamSequenceNum;
                         }
-                    }
-
-                    // The receiver MUST remove any partially reassembled message, which is still missing one
-                    // or more TSNs earlier than or equal to the new cumulative TSN point.
-                    unchecked
-                    {
-                        var dist = SctpDataReceiver.GetDistance(currentCumulativeTSN, newCumulativeTSN);
-                        for (int i=0;i<dist;i++)
+                        else
                         {
-                            uint nextTSN = (uint) (currentCumulativeTSN + i);
-                            _fragmentedChunks.Remove(nextTSN);
-                            _forwardTSN.Remove(nextTSN);
+                            logger.LogWarning($"SCTP received a FORWARD-TSN containing untracked stream {streamNum}");
                         }
                     }
                 }
-                else
+
+                // The receiver MUST remove any partially reassembled message, which is still missing one
+                // or more TSNs earlier than or equal to the new cumulative TSN point.
+                unchecked
                 {
-                    logger.LogDebug("SCTP received an older or equal FORWARD-TSN.");
-                    // The receiver SHOULD send a SACK to its peer(the sender of the FORWARD TSN) since such a
-                    // duplicate may indicate the previous SACK was lost in the network.
-                    if (GetSackChunk() is SctpSackChunk sack)
+                    var dist = SctpDataReceiver.GetDistance(currentCumulativeTSN, newCumulativeTSN);
+                    for (int i=0;i<dist;i++)
                     {
-                        _sendSackChunk?.Invoke(sack);
+                        uint nextTSN = (uint) (currentCumulativeTSN + i);
+                        _fragmentedChunks.Remove(nextTSN);
+                        _forwardTSN.Remove(nextTSN);
                     }
                 }
             }
             else
             {
-                // This isn't specified in RFC-3758. What is the expected behaviour here?
-                logger.LogWarning("SCTP received a FORWARD-TSN chunk before the first DATA chunk.");
+                logger.LogDebug("SCTP received an older or equal FORWARD-TSN.");
+                // The receiver SHOULD send a SACK to its peer(the sender of the FORWARD TSN) since such a
+                // duplicate may indicate the previous SACK was lost in the network.
+                if (GetSackChunk() is SctpSackChunk sack)
+                {
+                    _sendSackChunk?.Invoke(sack);
+                }
             }
         }
 
