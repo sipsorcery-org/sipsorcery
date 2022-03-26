@@ -187,16 +187,18 @@ namespace SIPSorcery.Net.UnitTests
 
 
         /// <summary>
-        /// Tests that randomly dropped messages result in a correctly CumAckTSN 
+        /// Tests that randomly dropped messages result in a correctly set CumAckTSN 
         /// </summary>
         [Theory]
         [InlineData(true, 0, false)]
         [InlineData(true, 1, false)]
+        [InlineData(true, 0, true)]
         [InlineData(true, 1,true)]
         [InlineData(false, 0, false)]
         [InlineData(false, 1,false)]
+        [InlineData(false, 0, true)]
         [InlineData(false, 1, true)]
-        public async void RandomDataDrops(bool ordered, uint maxRetransmits, bool dropFirstFrame)
+        public void RandomDataDrops(bool ordered, uint maxRetransmits, bool dropFirstFrame)
         {
             uint initialTSN = 0;
 
@@ -211,11 +213,10 @@ namespace SIPSorcery.Net.UnitTests
 
             ManualResetEventSlim waiter = new ManualResetEventSlim(false);
 
-            byte messageCount = 100;
+            byte messageCount = 20;
             int forwardTSNCount = 0;
 
             int framesAbandoned = 0;
-            int framesSucceeded = 0;
 
             Action<SctpDataChunk> senderSendData = (chunk) =>
             {
@@ -225,11 +226,10 @@ namespace SIPSorcery.Net.UnitTests
                     if (chunk.SendCount - 1 == maxRetransmits)
                     {
                         framesAbandoned++;
+
                     }
                 }
-                // Always send the last frame so that variables are 
-                // correctly updated for the sender and receiver
-                else if (chunk.UserData[0] != messageCount-1 && Crypto.GetRandomInt(0, 99) % 9 == 0)
+                else if (chunk.TSN != 0 && Crypto.GetRandomInt(0, 99) % 9 == 0)
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver.");
                     if (chunk.SendCount - 1 == maxRetransmits)
@@ -243,17 +243,6 @@ namespace SIPSorcery.Net.UnitTests
                     receiver.OnDataChunk(chunk);
                     logger.LogDebug($"SACK chunk {chunk.TSN} provided to sender.");
                     sender.GotSack(receiver.GetSackChunk());
-
-                    framesSucceeded++;
-                    
-                    if (ordered && chunk.UserData[0] == messageCount-1)
-                    {
-                        waiter.Set();
-                    }
-                }
-                if (!ordered && framesSucceeded + framesAbandoned == messageCount)
-                {
-                    waiter.Set();
                 }
             };
 
@@ -270,12 +259,15 @@ namespace SIPSorcery.Net.UnitTests
                 sender.GotSack(chunk);
             };
 
-            int framesReceived = 0;
-
             Action<SctpDataFrame> receiverOnFrame = (f) =>
             {
-                logger.LogDebug($"Receiver got frame of length {f.UserData?.Length}.");
-                framesReceived++;
+                logger.LogDebug($"Receiver got a frame seqnum {f.StreamSeqNum}");
+
+                if (sender.BufferedAmount == 0 && sender._outstandingBytes == 0)
+                {
+                    waiter.Set();
+                }
+
             };
 
             receiver._onFrameReady = receiverOnFrame;
@@ -288,17 +280,8 @@ namespace SIPSorcery.Net.UnitTests
                 sender.SendData(0, 0, new byte[] { i }, ordered, maxRetransmits:maxRetransmits);
             }
 
-            //frameReady.WaitHandle.WaitOne(1000, true);
             waiter.WaitHandle.WaitOne(2000, true);
 
-            // There may be more delayed messages after the last one is ack'd
-            // If we are supporting unordered sending
-            await Task.Delay(sender._burstPeriodMilliseconds * 10);
-
-            if (!ordered)
-            {
-                Assert.Equal(messageCount, framesSucceeded + framesAbandoned);
-            }
             Assert.Equal(initialTSN + messageCount, sender.TSN);
             Assert.Equal(initialTSN + messageCount-1, sender.AdvancedPeerAckPoint);
             Assert.Equal(initialTSN + messageCount-1, receiver.CumulativeAckTSN);

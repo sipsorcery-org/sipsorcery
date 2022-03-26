@@ -286,10 +286,10 @@ namespace SIPSorcery.Net
                     if (SctpDataReceiver.IsNewer(AdvancedPeerAckPoint, sack.CumulativeTsnAck))
                     {
                         AdvancedPeerAckPoint = sack.CumulativeTsnAck;
-                        // RFC 3758 3.5 C2
-                        UpdateAdvancedPeerAckPoint();
-
                     }
+
+                    // RFC 3758 3.5 C2
+                    UpdateAdvancedPeerAckPoint();
                 }
                 // SACK's will normally allow more data to be sent.
                 _senderMre.Set();
@@ -329,6 +329,12 @@ namespace SIPSorcery.Net
             if (AdvancedPeerAckPoint  > _cumulativeAckTSN)
             {
                 logger.LogTrace($"SCTP AdvancedPeerAckPoint moved from {_cumulativeAckTSN} to {AdvancedPeerAckPoint}");
+
+                // First DATA frame may have been dropped
+                if (!_gotFirstSACK && _cumulativeAckTSN == _initialTSN)
+                {
+                    _unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _);
+                }
 
                 var forwardTsn = new SctpForwardCumulativeTSNChunk(AdvancedPeerAckPoint);
                 foreach (var chunk in _unconfirmedChunks.Values)
