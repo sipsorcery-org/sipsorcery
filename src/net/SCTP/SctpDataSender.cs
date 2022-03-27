@@ -574,6 +574,8 @@ namespace SIPSorcery.Net
                         {
                             if (CheckForAbandonedChunk(missingChunk))
                             {
+                                _unconfirmedChunks.TryRemove(missingChunk.TSN, out _);
+                                _missingChunks.TryRemove(missingChunk.TSN, out _);
                                 logger.LogTrace($"SCTP abandoned resend of missing chunk for TSN {missingChunk.TSN}");
                                 continue;
                             }
@@ -612,6 +614,8 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
+                            _unconfirmedChunks.TryRemove(chunk.TSN, out _);
+                            _missingChunks.TryRemove(chunk.TSN, out _);
                             logger.LogTrace($"SCTP abandoned unconfirmed chunk for TSN {chunk.TSN}");
                         }
                         
