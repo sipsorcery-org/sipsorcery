@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -211,25 +213,40 @@ namespace SIPSorcery.Net.UnitTests
             sender._supportsPartialReliabilityExtension = true;
             sender.StartSending();
 
-            ManualResetEventSlim waiter = new ManualResetEventSlim(false);
+            ManualResetEventSlim mre = new ManualResetEventSlim(false);
 
             byte messageCount = 20;
             int forwardTSNCount = 0;
 
             int framesAbandoned = 0;
+            int framesReceived = 0;
+
+            // One in every X chunks (SACK, DATA, FORWARDTSN) will be dropped (randomly)
+            int dropFrequency = 10;
+
 
             Action<SctpDataChunk> senderSendData = (chunk) =>
             {
+                // Conditionally drop the first frame
                 if (chunk.TSN == 0 && dropFirstFrame)
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver (first frame drop).");
                     if (chunk.SendCount - 1 == maxRetransmits)
                     {
                         framesAbandoned++;
-
                     }
                 }
-                else if (chunk.TSN != 0 && Crypto.GetRandomInt(0, 99) % 9 == 0)
+                // ALWAYS drop the third frame
+                if (chunk.TSN == 2)
+                {
+                    logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver (always dropped).");
+                    if (chunk.SendCount - 1 == maxRetransmits)
+                    {
+                        framesAbandoned++;
+                    }
+                }
+                // Drop another % of frames
+                else if (chunk.TSN != 0 && Crypto.GetRandomInt(0, dropFrequency) == 0)
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver.");
                     if (chunk.SendCount - 1 == maxRetransmits)
@@ -241,33 +258,76 @@ namespace SIPSorcery.Net.UnitTests
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
                     receiver.OnDataChunk(chunk);
+
+                    if (Crypto.GetRandomInt(0, dropFrequency) == 0)
+                    {
+                        logger.LogDebug($"SACK chunk {chunk.TSN} NOT provided to sender.");
+                        return;
+                    }
+
                     logger.LogDebug($"SACK chunk {chunk.TSN} provided to sender.");
                     sender.GotSack(receiver.GetSackChunk());
+
+                    if (receiver.CumulativeAckTSN.Value == initialTSN + messageCount - 1)
+                    {
+                        logger.LogDebug("Break D");
+
+                        mre.Set();
+                    }
                 }
             };
 
             Action<SctpForwardCumulativeTSNChunk> senderSendForwardTSN = (chunk) =>
             {
+                // Don't drop a final fwdTSN or this test will fail (there will be no more SACKs)
+                if (Crypto.GetRandomInt(0, dropFrequency) == 0 && chunk.NewCumulativeTSN != initialTSN + messageCount-1)
+                {
+                    logger.LogDebug($"Forward TSN chunk {chunk.NewCumulativeTSN} NOT provided to receiver.");
+                    return;
+                }
+
                 logger.LogDebug($"Forward TSN chunk {chunk.NewCumulativeTSN} provided to receiver.");
                 receiver.OnForwardCumulativeTSNChunk(chunk);
                 forwardTSNCount++;
+
+                if (sender.AdvancedPeerAckPoint == initialTSN + messageCount - 1)
+                {
+                    logger.LogDebug("Break C");
+
+                    mre.Set();
+                }
             };
 
             Action<SctpSackChunk> receiverSendSack = (chunk) =>
             {
+                if (Crypto.GetRandomInt(0, dropFrequency) == 0)
+                {
+                    logger.LogDebug($"SACK chunk {chunk.CumulativeTsnAck} NOT provided to the sender.");
+                    return;
+                }
+
                 logger.LogDebug($"SACK chunk {chunk.CumulativeTsnAck} provided to the sender.");
                 sender.GotSack(chunk);
+
+                if (receiver.CumulativeAckTSN.Value == initialTSN + messageCount - 1)
+                {
+                    logger.LogDebug("Break A");
+                    mre.Set();
+                }
             };
 
             Action<SctpDataFrame> receiverOnFrame = (f) =>
             {
                 logger.LogDebug($"Receiver got a frame seqnum {f.StreamSeqNum}");
 
-                if (sender.BufferedAmount == 0 && sender._outstandingBytes == 0)
-                {
-                    waiter.Set();
-                }
+                framesReceived++;
 
+                if (sender.BufferedAmount == 0 && sender._outstandingBytes == 0 && ordered)
+                {
+                    logger.LogDebug("Break B");
+
+                    mre.Set();
+                }
             };
 
             receiver._onFrameReady = receiverOnFrame;
@@ -277,10 +337,13 @@ namespace SIPSorcery.Net.UnitTests
 
             for (byte i=0;i<messageCount;i++)
             {
-                sender.SendData(0, 0, new byte[] { i }, ordered, maxRetransmits:maxRetransmits);
+                sender.SendData(0, 0, new byte[] { i }, ordered, maxRetransmits: maxRetransmits);
             }
 
-            waiter.WaitHandle.WaitOne(2000, true);
+            mre.WaitHandle.WaitOne(5000, true);
+
+            Assert.True(framesAbandoned > 0);
+            Assert.True(framesReceived < messageCount);
 
             Assert.Equal(initialTSN + messageCount, sender.TSN);
             Assert.Equal(initialTSN + messageCount-1, sender.AdvancedPeerAckPoint);

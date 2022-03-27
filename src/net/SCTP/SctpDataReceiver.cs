@@ -338,7 +338,6 @@ namespace SIPSorcery.Net
                 // and then MUST further advance its cumulative TSN point locally if possible
                 unchecked
                 {
-                    logger.LogDebug("FWDTSN " + String.Join(",", _forwardTSN.Keys));
                     _forwardTSN.Remove(newCumulativeTSN);
                     while (_forwardTSN.Remove(newCumulativeTSN + 1))
                     {
