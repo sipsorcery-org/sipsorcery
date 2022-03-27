@@ -200,7 +200,7 @@ namespace SIPSorcery.Net.UnitTests
         [InlineData(false, 1,false)]
         [InlineData(false, 0, true)]
         [InlineData(false, 1, true)]
-        public void RandomDataDrops(bool ordered, uint maxRetransmits, bool dropFirstFrame)
+        public async void RandomDataDrops(bool ordered, uint maxRetransmits, bool dropFirstFrame)
         {
             uint initialTSN = 0;
 
@@ -268,10 +268,9 @@ namespace SIPSorcery.Net.UnitTests
                     logger.LogDebug($"SACK chunk {chunk.TSN} provided to sender.");
                     sender.GotSack(receiver.GetSackChunk());
 
-                    if (receiver.CumulativeAckTSN.Value == initialTSN + messageCount - 1)
+                    if (receiver.CumulativeAckTSN.Value == initialTSN + messageCount - 1
+                    && sender.AdvancedPeerAckPoint == initialTSN + messageCount - 1)
                     {
-                        logger.LogDebug("Break D");
-
                         mre.Set();
                     }
                 }
@@ -292,8 +291,6 @@ namespace SIPSorcery.Net.UnitTests
 
                 if (sender.AdvancedPeerAckPoint == initialTSN + messageCount - 1)
                 {
-                    logger.LogDebug("Break C");
-
                     mre.Set();
                 }
             };
@@ -311,7 +308,6 @@ namespace SIPSorcery.Net.UnitTests
 
                 if (receiver.CumulativeAckTSN.Value == initialTSN + messageCount - 1)
                 {
-                    logger.LogDebug("Break A");
                     mre.Set();
                 }
             };
@@ -324,8 +320,6 @@ namespace SIPSorcery.Net.UnitTests
 
                 if (sender.BufferedAmount == 0 && sender._outstandingBytes == 0 && ordered)
                 {
-                    logger.LogDebug("Break B");
-
                     mre.Set();
                 }
             };
@@ -341,6 +335,8 @@ namespace SIPSorcery.Net.UnitTests
             }
 
             mre.WaitHandle.WaitOne(5000, true);
+
+            await Task.Delay(50);
 
             Assert.True(framesAbandoned > 0);
             Assert.True(framesReceived < messageCount);
