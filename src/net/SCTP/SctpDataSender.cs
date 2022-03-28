@@ -82,7 +82,7 @@ namespace SIPSorcery.Net
         private bool _isClosed;
         private int _lastAckedDataChunkSize;
         private bool _inRetransmitMode;
-        private ManualResetEventSlim _senderMre = new ManualResetEventSlim();
+        protected ManualResetEventSlim _senderMre = new ManualResetEventSlim();
 
         /// <summary>
         /// Congestion control window (cwnd, in bytes), which is adjusted by
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Queue to hold SCTP frames that are waiting to be sent to the remote peer.
         /// </summary>
-        private ConcurrentQueue<SctpDataChunk> _sendQueue = new ConcurrentQueue<SctpDataChunk>();
+        protected ConcurrentQueue<SctpDataChunk> _sendQueue = new ConcurrentQueue<SctpDataChunk>();
 
         /// <summary>
         /// Chunks that have been sent to the remote peer but have yet to be acknowledged.
@@ -765,7 +765,7 @@ namespace SIPSorcery.Net
         /// Checks if a chunk is either already abandoned, or should be abandoned.
         /// </summary>
         /// <returns>True if the chunk is abandoned.</returns>
-        public bool CheckForAbandonedChunk(SctpDataChunk chunk)
+        protected bool CheckForAbandonedChunk(SctpDataChunk chunk)
         {
             if (_supportsPartialReliabilityExtension)
             {
@@ -798,7 +798,7 @@ namespace SIPSorcery.Net
         /// https://datatracker.ietf.org/doc/html/rfc3758#section-3.5 A2
         /// </summary>
         /// <param name="chunk">The chunk to flag as abandoned</param>
-        public void AbandonChunk(SctpDataChunk chunk)
+        protected void AbandonChunk(SctpDataChunk chunk)
         {
             if (!_supportsPartialReliabilityExtension)
             {

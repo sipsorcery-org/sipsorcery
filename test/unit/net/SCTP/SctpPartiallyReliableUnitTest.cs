@@ -189,15 +189,95 @@ namespace SIPSorcery.Net.UnitTests
 
 
         /// <summary>
-        /// Tests that randomly dropped messages result in a correctly set CumAckTSN 
+        /// Tests that abandoning a fragment of a message abandons the entire message
+        /// </summary>
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async void FragmentAbandoned(bool ordered)
+        {
+            uint initialTSN = 0;
+
+            PartiallyReliableTestHelper.SenderWithExposedQueue sender = new PartiallyReliableTestHelper.SenderWithExposedQueue("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+            SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
+
+            sender._burstPeriodMilliseconds = 1;
+            sender._rtoMinimumMilliseconds = 1000;
+            sender._rtoInitialMilliseconds = 1000;
+
+            sender._supportsPartialReliabilityExtension = true;
+            sender.StartSending();
+
+            var chunk0 = new SctpDataChunk(!ordered, true, false, 0, 0, 0, new byte[] { 0x00 });
+            var chunk1 = new SctpDataChunk(!ordered, false, false, 0, 0, 0, new byte[] { 0x01 });
+            var chunk2 = new SctpDataChunk(!ordered, false, true, 0, 0, 0, new byte[] { 0x02 });
+
+            uint fwdCumTsn = 0;
+
+            sender._sendDataChunk = (data) =>
+            {
+                if (data.UserData[0] != 0x01)
+                {
+                    logger.LogDebug($"Sending chunk {data.TSN}");
+                    receiver.OnDataChunk(data);
+                    sender.GotSack(receiver.GetSackChunk());
+                }
+                else
+                {
+                    logger.LogDebug($"Skipping send for chunk {data.TSN}");
+                }
+            };
+
+            sender._sendForwardTsn = (fwdTsn) =>
+            {
+                fwdCumTsn = fwdTsn.NewCumulativeTSN;
+                logger.LogDebug($"Sending FWDTSN, new cumulative TSN: {fwdCumTsn}");
+                receiver.OnForwardCumulativeTSNChunk(fwdTsn);
+            };
+
+
+            int framesReceived = 0;
+
+            receiver._onFrameReady += (data) =>
+            {
+                framesReceived++;
+            };
+
+
+            sender.Enqueue(chunk0);
+            sender.Enqueue(chunk1);
+            sender.Enqueue(chunk2);
+
+            await Task.Delay(100);
+
+            logger.LogDebug($"Abandoning chunk { chunk1.TSN}");
+            sender.Abandon(chunk1);
+
+            await Task.Delay(100);
+
+            sender.GotSack(receiver.GetSackChunk());
+
+            await Task.Delay(100);
+
+            Assert.Equal(0U, sender._outstandingBytes);
+            Assert.Equal(0, framesReceived);
+            Assert.Equal(0, receiver.ForwardTSNCount);
+            Assert.Equal(initialTSN + 3, sender.TSN);
+            Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
+        }
+
+
+        /// <summary>
+        /// Tests that randomly dropped messages result in a correctly set CumAckTSN and AdvancedPeerAckPoint  
+        /// And ForwardTSN messages can be safely dropped
         /// </summary>
         [Theory]
         [InlineData(true, 0, false)]
         [InlineData(true, 1, false)]
         [InlineData(true, 0, true)]
-        [InlineData(true, 1,true)]
+        [InlineData(true, 1, true)]
         [InlineData(false, 0, false)]
-        [InlineData(false, 1,false)]
+        [InlineData(false, 1, false)]
         [InlineData(false, 0, true)]
         [InlineData(false, 1, true)]
         public async void RandomDataDrops(bool ordered, uint maxRetransmits, bool dropFirstFrame)
@@ -279,7 +359,7 @@ namespace SIPSorcery.Net.UnitTests
             Action<SctpForwardCumulativeTSNChunk> senderSendForwardTSN = (chunk) =>
             {
                 // Don't drop a final fwdTSN or this test will fail (there will be no more SACKs)
-                if (Crypto.GetRandomInt(0, dropFrequency) == 0 && chunk.NewCumulativeTSN != initialTSN + messageCount-1)
+                if (Crypto.GetRandomInt(0, dropFrequency) == 0 && chunk.NewCumulativeTSN != initialTSN + messageCount - 1)
                 {
                     logger.LogDebug($"Forward TSN chunk {chunk.NewCumulativeTSN} NOT provided to receiver.");
                     return;
@@ -329,7 +409,7 @@ namespace SIPSorcery.Net.UnitTests
             sender._sendDataChunk = senderSendData;
             sender._sendForwardTsn = senderSendForwardTSN;
 
-            for (byte i=0;i<messageCount;i++)
+            for (byte i = 0; i < messageCount; i++)
             {
                 sender.SendData(0, 0, new byte[] { i }, ordered, maxRetransmits: maxRetransmits);
             }
@@ -342,9 +422,41 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(framesReceived < messageCount);
 
             Assert.Equal(initialTSN + messageCount, sender.TSN);
-            Assert.Equal(initialTSN + messageCount-1, sender.AdvancedPeerAckPoint);
-            Assert.Equal(initialTSN + messageCount-1, receiver.CumulativeAckTSN);
+            Assert.Equal(initialTSN + messageCount - 1, sender.AdvancedPeerAckPoint);
+            Assert.Equal(initialTSN + messageCount - 1, receiver.CumulativeAckTSN);
             Assert.Equal(0, receiver.ForwardTSNCount);
+        }
+    }
+
+    /// <summary>
+    /// Exposes protected methods for unit testing.
+    /// </summary>
+    internal static class PartiallyReliableTestHelper
+    {
+        internal class SenderWithExposedQueue : SctpDataSender
+        {
+            public SenderWithExposedQueue(
+                string associationID,
+                Action<SctpChunk> sendChunk,
+                ushort defaultMTU,
+                uint initialTSN,
+                uint remoteARwnd) : base(associationID, sendChunk, defaultMTU, initialTSN, remoteARwnd)
+            {
+            }
+
+            public void Enqueue(SctpDataChunk chunk)
+            {
+                lock (_sendQueue)
+                {
+                    this._sendQueue.Enqueue(chunk);
+                    this._senderMre.Set();
+                }
+            }
+
+            public void Abandon(SctpDataChunk chunk)
+            {
+                this.AbandonChunk(chunk);
+            }
         }
     }
 }
