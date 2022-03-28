@@ -870,11 +870,11 @@ namespace SIPSorcery.Net
                 // all other TSN's within that fragmented message MUST be abandoned at the same time.
                 foreach (var chunkFragment in _unconfirmedChunks.Where(x => x.Value.StreamID == chunk.StreamID && x.Value.StreamSeqNum == chunk.StreamSeqNum))
                 {
-                    chunk.Abandoned = true;
+                    chunkFragment.Value.Abandoned = true;
                 }
                 foreach (var chunkFragment in _sendQueue.Where(x => x.StreamID == chunk.StreamID && x.StreamSeqNum == chunk.StreamSeqNum))
                 {
-                    chunk.Abandoned = true;
+                    chunkFragment.Abandoned = true;
                 }
             }
         }
