@@ -2097,6 +2097,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSample
   nameWithType: VideoTestPatternSource.ExternalVideoSourceRawSample
+- uid: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSampleFaster(System.UInt32,SIPSorceryMedia.Abstractions.RawImage)
+  name: ExternalVideoSourceRawSampleFaster(UInt32, RawImage)
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_ExternalVideoSourceRawSampleFaster_System_UInt32_SIPSorceryMedia_Abstractions_RawImage_
+  commentId: M:SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSampleFaster(System.UInt32,SIPSorceryMedia.Abstractions.RawImage)
+  fullName: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSampleFaster(System.UInt32, SIPSorceryMedia.Abstractions.RawImage)
+  nameWithType: VideoTestPatternSource.ExternalVideoSourceRawSampleFaster(UInt32, RawImage)
+- uid: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSampleFaster*
+  name: ExternalVideoSourceRawSampleFaster
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_ExternalVideoSourceRawSampleFaster_
+  commentId: Overload:SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSampleFaster
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VideoTestPatternSource.ExternalVideoSourceRawSampleFaster
+  nameWithType: VideoTestPatternSource.ExternalVideoSourceRawSampleFaster
 - uid: SIPSorcery.Media.VideoTestPatternSource.ForceKeyFrame
   name: ForceKeyFrame()
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_ForceKeyFrame
@@ -2199,6 +2212,12 @@ references:
   commentId: E:SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceRawSample
   fullName: SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceRawSample
   nameWithType: VideoTestPatternSource.OnVideoSourceRawSample
+- uid: SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceRawSampleFaster
+  name: OnVideoSourceRawSampleFaster
+  href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_OnVideoSourceRawSampleFaster
+  commentId: E:SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceRawSampleFaster
+  fullName: SIPSorcery.Media.VideoTestPatternSource.OnVideoSourceRawSampleFaster
+  nameWithType: VideoTestPatternSource.OnVideoSourceRawSampleFaster
 - uid: SIPSorcery.Media.VideoTestPatternSource.PauseVideo
   name: PauseVideo()
   href: api/SIPSorcery.Media.VideoTestPatternSource.html#SIPSorcery_Media_VideoTestPatternSource_PauseVideo
