@@ -586,7 +586,7 @@ namespace SIPSorcery.Net
                         {
                             if (!_unconfirmedChunks.TryRemove(nextTSN, out _))
                             {
-                                logger.LogWarning($"SCTP data sender could not remove abandoned chunk for {_cumulativeAckTSN}.");
+                                logger.LogWarning($"SCTP data sender could not remove abandoned chunk for {nextTSN}.");
                             }
                             _missingChunks.TryRemove(nextTSN, out _);
                             _cumulativeAckTSN = nextTSN;
