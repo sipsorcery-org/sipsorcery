@@ -133,6 +133,12 @@ namespace SIPSorcery.Net
         internal bool _supportsPartialReliabilityExtension;
 
         /// <summary>
+        /// A theoretical cumulative TSN point of the peer.  
+        /// https://datatracker.ietf.org/doc/html/rfc3758#section-3.5
+        /// </summary>
+        internal uint _advancedPeerAckPoint { get; private set; }
+
+        /// <summary>
         /// Keeps track of the sequence numbers for each of the streams being
         /// used by the association.
         /// </summary>
@@ -164,11 +170,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public uint TSN { get; internal set; }
 
-        /// <summary>
-        /// A theoretical cumulative TSN point of the peer.  
-        /// https://datatracker.ietf.org/doc/html/rfc3758#section-3.5
-        /// </summary>
-        public uint AdvancedPeerAckPoint { get; internal set; }
 
         public SctpDataSender(
             string associationID,
@@ -182,6 +183,7 @@ namespace SIPSorcery.Net
             _sendForwardTsn = sendChunk;
             _defaultMTU = defaultMTU > 0 ? defaultMTU : DEFAULT_SCTP_MTU;
             _initialTSN = initialTSN;
+            _advancedPeerAckPoint = initialTSN;
             TSN = initialTSN;
             _initialRemoteARwnd = remoteARwnd;
             _receiverWindow = remoteARwnd;
@@ -282,9 +284,9 @@ namespace SIPSorcery.Net
                 if (_supportsPartialReliabilityExtension)
                 {
                     // RFC 3758 3.5 C1
-                    if (SctpDataReceiver.IsNewer(AdvancedPeerAckPoint, sack.CumulativeTsnAck))
+                    if (SctpDataReceiver.IsNewer(_advancedPeerAckPoint, sack.CumulativeTsnAck))
                     {
-                        AdvancedPeerAckPoint = sack.CumulativeTsnAck;
+                        _advancedPeerAckPoint = sack.CumulativeTsnAck;
                     }
 
                     // RFC 3758 3.5 C2
@@ -302,19 +304,25 @@ namespace SIPSorcery.Net
         /// </summary>
         private void UpdateAdvancedPeerAckPoint()
         {
+            var unconfirmed = _unconfirmedChunks.GetEnumerator();
+            while (unconfirmed.MoveNext())
+            {
+                CheckForAbandonedChunk(unconfirmed.Current.Value);
+            }
+
             unchecked
             {
                 int safety = _unconfirmedChunks.Count();
                 do
                 {
-                    var nextTsn = AdvancedPeerAckPoint + 1;
+                    var nextTsn = _advancedPeerAckPoint + 1;
                     safety--;
 
                     if (_unconfirmedChunks.TryGetValue(nextTsn, out var chunk))
                     {
-                        if (CheckForAbandonedChunk(chunk))
+                        if (chunk.Abandoned)
                         {
-                            AdvancedPeerAckPoint = nextTsn;
+                            _advancedPeerAckPoint = nextTsn;
                         }
                         else
                         {
@@ -325,39 +333,45 @@ namespace SIPSorcery.Net
             }
 
             // RFC 3758 3.5 C3
-            if (AdvancedPeerAckPoint  > _cumulativeAckTSN)
+            if (SctpDataReceiver.IsNewer(_gotFirstSACK ? _cumulativeAckTSN : _initialTSN, _advancedPeerAckPoint))
             {
-                logger.LogTrace($"SCTP AdvancedPeerAckPoint moved from {_cumulativeAckTSN} to {AdvancedPeerAckPoint}");
+                logger.LogTrace($"SCTP AdvancedPeerAckPoint moved from {_cumulativeAckTSN} to {_advancedPeerAckPoint}");
+                
+                _sendForwardTsn(GetForwardTSN());
 
-                // First DATA frame may have been dropped
-                if (!_gotFirstSACK && _cumulativeAckTSN == _initialTSN)
-                {
-                    _unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _);
-                }
+                RemoveAbandonedUnconfirmedChunks(_advancedPeerAckPoint);
+            }
+        }
 
-                var forwardTsn = new SctpForwardCumulativeTSNChunk(AdvancedPeerAckPoint);
-                foreach (var chunk in _unconfirmedChunks.Values)
+        /// <summary>
+        /// Creates a FORWARD-TSN chunk that represents the current state of the sender
+        /// </summary>
+        /// <returns>A ForwardCumulativeTSN chunk</returns>
+        internal SctpForwardCumulativeTSNChunk GetForwardTSN()
+        {
+            var forwardTsn = new SctpForwardCumulativeTSNChunk(_advancedPeerAckPoint);
+            foreach (var chunk in _unconfirmedChunks.Values)
+            {
+                if (!chunk.Unordered && chunk.Abandoned)
                 {
-                    if (!chunk.Unordered && chunk.Abandoned)
+                    if (forwardTsn.StreamSequenceAssociations.TryGetValue(chunk.StreamID, out ushort currentStreamSeq))
                     {
-                        if (forwardTsn.StreamSequenceAssociations.TryGetValue(chunk.StreamID, out ushort currentStreamSeq))
+                        if (SctpDataReceiver.IsNewerOrEqual(currentStreamSeq, chunk.StreamSeqNum))
                         {
-                            if (SctpDataReceiver.IsNewerOrEqual(currentStreamSeq, chunk.StreamSeqNum))
-                            {
-                                forwardTsn.StreamSequenceAssociations[chunk.StreamID] = chunk.StreamSeqNum;
-                            }
-                        }
-                        else
-                        {
-                            forwardTsn.StreamSequenceAssociations.Add(chunk.StreamID, chunk.StreamSeqNum);
+                            forwardTsn.StreamSequenceAssociations[chunk.StreamID] = chunk.StreamSeqNum;
                         }
                     }
+                    else
+                    {
+                        forwardTsn.StreamSequenceAssociations.Add(chunk.StreamID, chunk.StreamSeqNum);
+                    }
                 }
-
-                _sendForwardTsn(forwardTsn);
-
-                RemoveAckedUnconfirmedChunks(AdvancedPeerAckPoint);
             }
+
+            // TODO: rfc3758 C4: If the total size of the FORWARD TSN does NOT fit in a single MTU, then the sender of
+            // the FORWARD TSN SHOULD lower the Advanced.Peer.Ack.Point to the last TSN that will fit in a single MTU.
+
+            return forwardTsn;
         }
 
         /// <summary>
@@ -539,6 +553,50 @@ namespace SIPSorcery.Net
             }
         }
 
+
+        /// <summary>
+        /// Removes the chunks waiting for a SACK confirmation from the unconfirmed queue when they have been flagged as abandoned
+        /// </summary>
+        /// <param name="sackTSN">The acknowledged TSN received from in a SACK from the remote peer.</param>
+        private void RemoveAbandonedUnconfirmedChunks(uint peerAckPoint)
+        {
+            logger.LogTrace($"SCTP data sender removing abandoned chunks cumulative ACK TSN {_cumulativeAckTSN}, PeerAckPoint {peerAckPoint}.");
+
+            if (!_gotFirstSACK && _cumulativeAckTSN == _initialTSN)
+            {
+                // This is normal if the initial DATA chunk or SACK has been dropped
+                _unconfirmedChunks.TryRemove(_initialTSN, out _);
+                _missingChunks.TryRemove(_initialTSN, out _);
+            }
+
+            int safety = _unconfirmedChunks.Count();
+
+            var nextTSN = _cumulativeAckTSN;
+
+            unchecked
+            {
+                do
+                {
+                    nextTSN++;
+                    safety--;
+
+                    if (_unconfirmedChunks.TryGetValue(nextTSN, out SctpDataChunk chunk))
+                    {
+                        if (chunk.Abandoned)
+                        {
+                            if (!_unconfirmedChunks.TryRemove(nextTSN, out _))
+                            {
+                                logger.LogWarning($"SCTP data sender could not remove abandoned chunk for {nextTSN}.");
+                            }
+                            _missingChunks.TryRemove(nextTSN, out _);
+                            _cumulativeAckTSN = nextTSN;
+                        }
+                    }
+
+                } while (nextTSN < peerAckPoint && safety >= 0);
+            }
+        }
+
         /// <summary>
         /// Worker thread to process the send and retransmit queues.
         /// </summary>
@@ -573,22 +631,21 @@ namespace SIPSorcery.Net
                     {
                         if (_unconfirmedChunks.TryGetValue(misses.Current.Key, out var missingChunk))
                         {
-                            if (CheckForAbandonedChunk(missingChunk))
+                            if (!missingChunk.Abandoned)
                             {
-                                _unconfirmedChunks.TryRemove(missingChunk.TSN, out _);
-                                _missingChunks.TryRemove(missingChunk.TSN, out _);
-                                logger.LogTrace($"SCTP abandoned resend of missing chunk for TSN {missingChunk.TSN}");
-                                continue;
+                                missingChunk.LastSentAt = now;
+                                missingChunk.SendCount += 1;
+
+                                logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserData.Length}, " +
+                                    $"flags {missingChunk.ChunkFlags:X2}, send count {missingChunk.SendCount}.");
+
+                                _sendDataChunk(missingChunk);
+                                chunksSent++;
                             }
-
-                            missingChunk.LastSentAt = now;
-                            missingChunk.SendCount += 1;
-
-                            logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserData.Length}, " +
-                                $"flags {missingChunk.ChunkFlags:X2}, send count {missingChunk.SendCount}.");
-
-                            _sendDataChunk(missingChunk);
-                            chunksSent++;
+                            else
+                            {
+                                logger.LogTrace($"SCTP abandoned resend of missing chunk for TSN {missingChunk.TSN}");
+                            }
                         }
 
                         haveMissing = misses.MoveNext();
@@ -602,7 +659,7 @@ namespace SIPSorcery.Net
                         .Where(x => now.Subtract(x.LastSentAt).TotalSeconds > RTO_MIN_SECONDS)
                         .Take(burstSize - chunksSent))
                     {
-                        if (!CheckForAbandonedChunk(chunk))
+                        if (!chunk.Abandoned)
                         {
                             chunk.LastSentAt = DateTime.Now;
                             chunk.SendCount += 1;
@@ -615,8 +672,6 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            _unconfirmedChunks.TryRemove(chunk.TSN, out _);
-                            _missingChunks.TryRemove(chunk.TSN, out _);
                             logger.LogTrace($"SCTP abandoned unconfirmed chunk for TSN {chunk.TSN}");
                         }
                         
@@ -809,15 +864,19 @@ namespace SIPSorcery.Net
 
             chunk.Abandoned = true;
 
-            // RFC 3758 3.5 A3) When a TSN is "abandoned", if it is part of a fragmented message,
-            // all other TSN's within that fragmented message MUST be abandoned at the same time.
-            foreach (var chunkFragment in _unconfirmedChunks.Where(x => x.Value.StreamID == chunk.StreamID && x.Value.StreamSeqNum == chunk.StreamSeqNum))
+
+            if (chunk.Begining != chunk.Ending || !chunk.Begining)
             {
-                chunk.Abandoned = true;
-            }
-            foreach (var chunkFragment in _sendQueue.Where(x => x.StreamID == chunk.StreamID && x.StreamSeqNum == chunk.StreamSeqNum))
-            {
-                chunk.Abandoned = true;
+                // RFC 3758 3.5 A3) When a TSN is "abandoned", if it is part of a fragmented message,
+                // all other TSN's within that fragmented message MUST be abandoned at the same time.
+                foreach (var chunkFragment in _unconfirmedChunks.Where(x => x.Value.StreamID == chunk.StreamID && x.Value.StreamSeqNum == chunk.StreamSeqNum))
+                {
+                    chunkFragment.Value.Abandoned = true;
+                }
+                foreach (var chunkFragment in _sendQueue.Where(x => x.StreamID == chunk.StreamID && x.StreamSeqNum == chunk.StreamSeqNum))
+                {
+                    chunkFragment.Abandoned = true;
+                }
             }
         }
     }

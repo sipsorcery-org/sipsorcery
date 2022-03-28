@@ -326,12 +326,12 @@ namespace SIPSorcery.Net
         /// <param name="chunk">The Forward-TSN chunk</param>
         public void OnForwardCumulativeTSNChunk(SctpForwardCumulativeTSNChunk chunk)
         {
-            var currentCumulativeTSN = _lastInOrderTSN;
+            var currentCumulativeTSN = _inOrderReceiveCount == 0 ? _initialTSN : _lastInOrderTSN;
             var newCumulativeTSN = chunk.NewCumulativeTSN;
 
             // When a FORWARD TSN chunk arrives, the data receiver MUST first update its cumulative TSN point
             // to the value carried in the FORWARD TSN chunk
-            if (SctpDataReceiver.IsNewer(currentCumulativeTSN, newCumulativeTSN))
+            if (IsNewer(currentCumulativeTSN, newCumulativeTSN))
             {
                 _lastInOrderTSN = newCumulativeTSN;
 
