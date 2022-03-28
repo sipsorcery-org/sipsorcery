@@ -20,10 +20,58 @@ namespace SIPSorceryMedia.FFmpeg
         AV_LOG_TRACE = 56,
     }
 
-    public static class FFmpegInit
+    public static unsafe class FFmpegInit
     {
         private static ILogger logger = NullLogger.Instance;
         private static bool registered = false;
+
+        private static av_log_set_callback_callback logCallback;
+        private static String storedLogs = "";
+
+        public static String GetStoredLogs(Boolean clear = true)
+        {
+            if(clear)
+            {
+                String log = storedLogs;
+                storedLogs = "";
+                return log;
+            }
+            return storedLogs;
+        }
+
+        public static void ClearStoredLogs()
+        {
+            storedLogs = "";
+        }
+
+        public static void UseSpecificLogCallback(Boolean storeLogs = true)
+        {
+            // We clear previous stored logs
+            if (storeLogs)
+                ClearStoredLogs();
+
+            logCallback = (p0, level, format, vl) =>
+            {
+                if ( (!storeLogs) && (level > ffmpeg.av_log_get_level())) return;
+
+                var lineSize = 1024;
+                var lineBuffer = stackalloc byte[lineSize];
+                var printPrefix = 1;
+                ffmpeg.av_log_format_line(p0, level, format, vl, lineBuffer, lineSize, &printPrefix);
+                var line = Marshal.PtrToStringAnsi((IntPtr)lineBuffer);
+                Console.Write(line);
+                if (storeLogs)
+                    storedLogs += line;
+            };
+            ffmpeg.av_log_set_callback(logCallback);
+        }
+
+        public static void UseDefaultLogCallback()
+        {
+            logCallback = (p0, level, format, vl) => ffmpeg.av_log_default_callback(p0, level, format, vl);
+
+            ffmpeg.av_log_set_callback(logCallback);
+        }
 
         public static void Initialise(FfmpegLogLevelEnum? logLevel = null, String? libPath = null, ILogger appLogger = null)
         {
