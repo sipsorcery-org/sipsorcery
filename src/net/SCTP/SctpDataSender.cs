@@ -631,20 +631,21 @@ namespace SIPSorcery.Net
                     {
                         if (_unconfirmedChunks.TryGetValue(misses.Current.Key, out var missingChunk))
                         {
-                            if (missingChunk.Abandoned)
+                            if (!missingChunk.Abandoned)
+                            {
+                                missingChunk.LastSentAt = now;
+                                missingChunk.SendCount += 1;
+
+                                logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserData.Length}, " +
+                                    $"flags {missingChunk.ChunkFlags:X2}, send count {missingChunk.SendCount}.");
+
+                                _sendDataChunk(missingChunk);
+                                chunksSent++;
+                            }
+                            else
                             {
                                 logger.LogTrace($"SCTP abandoned resend of missing chunk for TSN {missingChunk.TSN}");
-                                continue;
                             }
-
-                            missingChunk.LastSentAt = now;
-                            missingChunk.SendCount += 1;
-
-                            logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserData.Length}, " +
-                                $"flags {missingChunk.ChunkFlags:X2}, send count {missingChunk.SendCount}.");
-
-                            _sendDataChunk(missingChunk);
-                            chunksSent++;
                         }
 
                         haveMissing = misses.MoveNext();
