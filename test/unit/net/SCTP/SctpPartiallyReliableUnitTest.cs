@@ -180,7 +180,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(3, framesSent);
             Assert.Equal(2, framesReceived);
-            Assert.Equal(initialTSN + 2, sender.AdvancedPeerAckPoint);
+            Assert.Equal(initialTSN + 2, sender._advancedPeerAckPoint);
             Assert.Equal(initialTSN + 3, sender.TSN);
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
             Assert.Equal(0, receiver.ForwardTSNCount);
@@ -282,7 +282,7 @@ namespace SIPSorcery.Net.UnitTests
         [InlineData(false, 1, true)]
         public async void RandomDataDrops(bool ordered, uint maxRetransmits, bool dropFirstFrame)
         {
-            uint initialTSN = 0;
+            uint initialTSN = Crypto.GetRandomUInt();
 
             SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
@@ -308,7 +308,7 @@ namespace SIPSorcery.Net.UnitTests
             Action<SctpDataChunk> senderSendData = (chunk) =>
             {
                 // Conditionally drop the first frame
-                if (chunk.TSN == 0 && dropFirstFrame)
+                if (chunk.TSN == initialTSN && dropFirstFrame)
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver (first frame drop).");
                     if (chunk.SendCount - 1 == maxRetransmits)
@@ -317,7 +317,7 @@ namespace SIPSorcery.Net.UnitTests
                     }
                 }
                 // ALWAYS drop the third frame
-                if (chunk.TSN == 2)
+                else if (chunk.TSN == initialTSN + 2)
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver (always dropped).");
                     if (chunk.SendCount - 1 == maxRetransmits)
@@ -326,7 +326,7 @@ namespace SIPSorcery.Net.UnitTests
                     }
                 }
                 // Drop another % of frames
-                else if (chunk.TSN != 0 && Crypto.GetRandomInt(0, dropFrequency) == 0)
+                else if (chunk.TSN != initialTSN && Crypto.GetRandomInt(0, dropFrequency) == 0)
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} NOT provided to receiver.");
                     if (chunk.SendCount - 1 == maxRetransmits)
@@ -348,8 +348,8 @@ namespace SIPSorcery.Net.UnitTests
                     logger.LogDebug($"SACK chunk {chunk.TSN} provided to sender.");
                     sender.GotSack(receiver.GetSackChunk());
 
-                    if (receiver.CumulativeAckTSN.Value == initialTSN + messageCount - 1
-                    && sender.AdvancedPeerAckPoint == initialTSN + messageCount - 1)
+                    if (receiver.CumulativeAckTSN.HasValue && receiver.CumulativeAckTSN.Value == initialTSN + messageCount - 1
+                    && sender._advancedPeerAckPoint == initialTSN + messageCount - 1)
                     {
                         mre.Set();
                     }
@@ -369,7 +369,7 @@ namespace SIPSorcery.Net.UnitTests
                 receiver.OnForwardCumulativeTSNChunk(chunk);
                 forwardTSNCount++;
 
-                if (sender.AdvancedPeerAckPoint == initialTSN + messageCount - 1)
+                if (sender._advancedPeerAckPoint == initialTSN + messageCount - 1)
                 {
                     mre.Set();
                 }
@@ -416,17 +416,22 @@ namespace SIPSorcery.Net.UnitTests
 
             mre.WaitHandle.WaitOne(5000, true);
 
+            // Catch-up values in the scenario where the last SACK or FWD-TSN was dropped
+            receiver.OnForwardCumulativeTSNChunk(sender.GetForwardTSN());
             sender.GotSack(receiver.GetSackChunk());
 
             await Task.Delay(100);
 
-            Assert.True(framesAbandoned > 0);
-            Assert.True(framesReceived < messageCount);
+            unchecked
+            {
+                Assert.True(framesAbandoned > 0);
+                Assert.True(framesReceived < messageCount);
 
-            Assert.Equal(initialTSN + messageCount, sender.TSN);
-            Assert.Equal(initialTSN + messageCount - 1, sender.AdvancedPeerAckPoint);
-            Assert.Equal(initialTSN + messageCount - 1, receiver.CumulativeAckTSN);
-            Assert.Equal(0, receiver.ForwardTSNCount);
+                Assert.Equal(initialTSN + messageCount, sender.TSN);
+                Assert.Equal(initialTSN + messageCount - 1, sender._advancedPeerAckPoint);
+                Assert.Equal(initialTSN + messageCount - 1, receiver.CumulativeAckTSN);
+                Assert.Equal(0, receiver.ForwardTSNCount);
+            }
         }
     }
 
