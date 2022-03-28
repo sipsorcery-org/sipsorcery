@@ -527,13 +527,14 @@ namespace SIPSorcery.Net
 
                     if (!_unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _))
                     {
-                        logger.LogWarning($"SCTP data sender could not remove unconfirmed chunk for {_cumulativeAckTSN}.");
+                        if (!_supportsPartialReliabilityExtension)
+                        {
+                            logger.LogWarning($"SCTP data sender could not remove unconfirmed chunk for {_cumulativeAckTSN}.");
+                        }
                     }
 
-                    if (_missingChunks.ContainsKey(_cumulativeAckTSN))
-                    {
-                        _missingChunks.TryRemove(_cumulativeAckTSN, out _);
-                    }
+                    _missingChunks.TryRemove(_cumulativeAckTSN, out _);
+
                 } while (_cumulativeAckTSN != sackTSN && safety >= 0);
             }
         }
