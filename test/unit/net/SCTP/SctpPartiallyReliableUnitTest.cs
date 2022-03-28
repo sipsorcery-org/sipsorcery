@@ -416,7 +416,9 @@ namespace SIPSorcery.Net.UnitTests
 
             mre.WaitHandle.WaitOne(5000, true);
 
-            await Task.Delay(50);
+            sender.GotSack(receiver.GetSackChunk());
+
+            await Task.Delay(100);
 
             Assert.True(framesAbandoned > 0);
             Assert.True(framesReceived < messageCount);

@@ -346,7 +346,7 @@ namespace SIPSorcery.Net
                     _lastInOrderTSN = newCumulativeTSN;
                 }
 
-                logger.LogTrace($"SCTP receiver LastInOrderTSN moved from {currentCumulativeTSN} to {newCumulativeTSN}");
+                logger.LogDebug($"SCTP receiver LastInOrderTSN moved from {currentCumulativeTSN} to {newCumulativeTSN}");
                 _inOrderReceiveCount += GetDistance(currentCumulativeTSN, newCumulativeTSN);
 
                 // examine all of the listed stream reordering queues, and immediately make available for delivery
@@ -409,7 +409,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogDebug("SCTP received an older or equal FORWARD-TSN.");
+                logger.LogDebug($"SCTP received an older or equal FORWARD-TSN. Current: {currentCumulativeTSN}, new: {newCumulativeTSN}.");
                 // The receiver SHOULD send a SACK to its peer(the sender of the FORWARD TSN) since such a
                 // duplicate may indicate the previous SACK was lost in the network.
                 if (GetSackChunk() is SctpSackChunk sack)
