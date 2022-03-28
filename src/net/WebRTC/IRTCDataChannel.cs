@@ -166,11 +166,39 @@ namespace SIPSorcery.Net
 
     public class RTCDataChannelInit
     {
-        public bool ordered { get; set; }
-        public ushort maxPacketLifeTime { get; set; }
-        public ushort maxRetransmits { get; set; }
-        public string protocol { get; set; }
-        public bool negotiated { get; set; }
-        public ushort id { get; set; }
+        /// <summary>
+        /// Indicates whether or not messages sent on the RTCDataChannel are required to arrive at their destination
+        /// in the same order in which they were sent (true), or if they're allowed to arrive out-of-order (false). 
+        /// Default: true.
+        /// </summary>
+        public bool ordered { get; set; } = true;
+        /// <summary>
+        /// The maximum number of milliseconds that attempts to transfer a message may take in unreliable mode. 
+        /// While this value is a 16-bit unsigned number, each user agent may clamp it to whatever maximum it deems appropriate. 
+        /// Default: null.
+        /// </summary>
+        public ushort? maxPacketLifeTime { get; set; }
+        /// <summary>
+        /// The maximum number of times the user agent should attempt to retransmit a message which fails the first time in unreliable mode. 
+        /// While this value is a 16-bit unsigned number, each user agent may clamp it to whatever maximum it deems appropriate. 
+        /// Default: null.
+        /// </summary>
+        public ushort? maxRetransmits { get; set; }
+        /// <summary>
+        /// The name of the sub-protocol being used on the RTCDataChannel, if any; otherwise, the empty string (""). Default: empty string (""). 
+        /// This string may not be longer than 65,535 bytes.
+        /// </summary>
+        public string protocol { get; set; } = "";
+        /// <summary>
+        /// By default (false), data channels are negotiated in-band, where one side calls createDataChannel, 
+        /// and the other side listens to the RTCDataChannelEvent event using the ondatachannel event handler. 
+        /// Alternatively (true), they can be negotiated out of-band, where both sides call createDataChannel with an agreed-upon ID. 
+        /// Default: false.
+        /// </summary>
+        public bool negotiated { get; set; } = false;
+        /// <summary>
+        /// A 16-bit numeric ID for the channel; permitted values are 0 to 65534. If you don't include this option, the user agent will select an ID for you.
+        /// </summary>
+        public ushort? id { get; set; }
     };
 }

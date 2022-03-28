@@ -1419,8 +1419,8 @@ namespace SIPSorcery.Net
             logger.LogInformation($"WebRTC new data channel opened by remote peer for stream ID {streamID}, type {type}, " +
                 $"priority {priority}, reliability {reliability}, label {label}, protocol {protocol}.");
 
-            // TODO: Set reliability, priority etc. properties on the data channel.
-            var dc = new RTCDataChannel(sctp) { id = streamID, label = label, IsOpened = true, readyState = RTCDataChannelState.open };
+            var init = CreateDataChannelInit(streamID, type, reliability);
+            var dc = new RTCDataChannel(sctp, init) { label = label, IsOpened = true, readyState = RTCDataChannelState.open };
 
             dc.SendDcepAck();
 
@@ -1433,6 +1433,41 @@ namespace SIPSorcery.Net
                 // TODO: What's the correct behaviour here?? I guess use the newest one and remove the old one?
                 logger.LogWarning($"WebRTC duplicate data channel requested for stream ID {streamID}.");
             }
+        }
+
+        /// <summary>
+        /// Creates a data channel configuration based on an incoming type and reliability.
+        /// </summary>
+        /// <returns>The data channel initialization</returns>
+        private static RTCDataChannelInit CreateDataChannelInit(ushort id, DataChannelTypes type, uint reliability)
+        {
+            var init = new RTCDataChannelInit()
+            {
+                id = id,
+            };
+            switch (type)
+            {
+                case DataChannelTypes.DATA_CHANNEL_RELIABLE:
+                    break;
+                case DataChannelTypes.DATA_CHANNEL_RELIABLE_UNORDERED:
+                    init.ordered = false;
+                    break;
+                case DataChannelTypes.DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT:
+                    init.maxRetransmits = (ushort)reliability;
+                    break;
+                case DataChannelTypes.DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT_UNORDERED:
+                    init.maxRetransmits = (ushort)reliability;
+                    init.ordered = false;
+                    break;
+                case DataChannelTypes.DATA_CHANNEL_PARTIAL_RELIABLE_TIMED:
+                    init.maxPacketLifeTime = (ushort)reliability;
+                    break;
+                case DataChannelTypes.DATA_CHANNEL_PARTIAL_RELIABLE_TIMED_UNORDERED:
+                    init.maxPacketLifeTime = (ushort)reliability;
+                    init.ordered = false;
+                    break;
+            }
+            return init;
         }
 
         /// <summary>

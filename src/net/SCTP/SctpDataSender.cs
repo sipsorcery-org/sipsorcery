@@ -82,7 +82,7 @@ namespace SIPSorcery.Net
         private bool _isClosed;
         private int _lastAckedDataChunkSize;
         private bool _inRetransmitMode;
-        private ManualResetEventSlim _senderMre = new ManualResetEventSlim();
+        protected ManualResetEventSlim _senderMre = new ManualResetEventSlim();
 
         /// <summary>
         /// Congestion control window (cwnd, in bytes), which is adjusted by
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Queue to hold SCTP frames that are waiting to be sent to the remote peer.
         /// </summary>
-        private ConcurrentQueue<SctpDataChunk> _sendQueue = new ConcurrentQueue<SctpDataChunk>();
+        protected ConcurrentQueue<SctpDataChunk> _sendQueue = new ConcurrentQueue<SctpDataChunk>();
 
         /// <summary>
         /// Chunks that have been sent to the remote peer but have yet to be acknowledged.
@@ -228,8 +228,7 @@ namespace SIPSorcery.Net
 
                     if (!_gotFirstSACK)
                     {
-                        if (SctpDataReceiver.GetDistance(_initialTSN, sack.CumulativeTsnAck) < maxTSNDistance
-                            && SctpDataReceiver.IsNewerOrEqual(_initialTSN, sack.CumulativeTsnAck))
+                        if (SctpDataReceiver.IsNewerOrEqual(_initialTSN, sack.CumulativeTsnAck))
                         {
                             logger.LogTrace($"SCTP first SACK remote peer TSN ACK {sack.CumulativeTsnAck} next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.GapAckBlocks.Count}).");
                             _gotFirstSACK = true;
@@ -286,10 +285,10 @@ namespace SIPSorcery.Net
                     if (SctpDataReceiver.IsNewer(AdvancedPeerAckPoint, sack.CumulativeTsnAck))
                     {
                         AdvancedPeerAckPoint = sack.CumulativeTsnAck;
-                        // RFC 3758 3.5 C2
-                        UpdateAdvancedPeerAckPoint();
-
                     }
+
+                    // RFC 3758 3.5 C2
+                    UpdateAdvancedPeerAckPoint();
                 }
                 // SACK's will normally allow more data to be sent.
                 _senderMre.Set();
@@ -313,9 +312,9 @@ namespace SIPSorcery.Net
 
                     if (_unconfirmedChunks.TryGetValue(nextTsn, out var chunk))
                     {
-                        if (chunk.Abandoned)
+                        if (CheckForAbandonedChunk(chunk))
                         {
-                            AdvancedPeerAckPoint = chunk.TSN;
+                            AdvancedPeerAckPoint = nextTsn;
                         }
                         else
                         {
@@ -328,6 +327,14 @@ namespace SIPSorcery.Net
             // RFC 3758 3.5 C3
             if (AdvancedPeerAckPoint  > _cumulativeAckTSN)
             {
+                logger.LogTrace($"SCTP AdvancedPeerAckPoint moved from {_cumulativeAckTSN} to {AdvancedPeerAckPoint}");
+
+                // First DATA frame may have been dropped
+                if (!_gotFirstSACK && _cumulativeAckTSN == _initialTSN)
+                {
+                    _unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _);
+                }
+
                 var forwardTsn = new SctpForwardCumulativeTSNChunk(AdvancedPeerAckPoint);
                 foreach (var chunk in _unconfirmedChunks.Values)
                 {
@@ -520,13 +527,14 @@ namespace SIPSorcery.Net
 
                     if (!_unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _))
                     {
-                        logger.LogWarning($"SCTP data sender could not remove unconfirmed chunk for {_cumulativeAckTSN}.");
+                        if (!_supportsPartialReliabilityExtension)
+                        {
+                            logger.LogWarning($"SCTP data sender could not remove unconfirmed chunk for {_cumulativeAckTSN}.");
+                        }
                     }
 
-                    if (_missingChunks.ContainsKey(_cumulativeAckTSN))
-                    {
-                        _missingChunks.TryRemove(_cumulativeAckTSN, out _);
-                    }
+                    _missingChunks.TryRemove(_cumulativeAckTSN, out _);
+
                 } while (_cumulativeAckTSN != sackTSN && safety >= 0);
             }
         }
@@ -565,8 +573,11 @@ namespace SIPSorcery.Net
                     {
                         if (_unconfirmedChunks.TryGetValue(misses.Current.Key, out var missingChunk))
                         {
-                            if (CheckForAbandonedChunk(missingChunk, now))
+                            if (CheckForAbandonedChunk(missingChunk))
                             {
+                                _unconfirmedChunks.TryRemove(missingChunk.TSN, out _);
+                                _missingChunks.TryRemove(missingChunk.TSN, out _);
+                                logger.LogTrace($"SCTP abandoned resend of missing chunk for TSN {missingChunk.TSN}");
                                 continue;
                             }
 
@@ -591,7 +602,7 @@ namespace SIPSorcery.Net
                         .Where(x => now.Subtract(x.LastSentAt).TotalSeconds > RTO_MIN_SECONDS)
                         .Take(burstSize - chunksSent))
                     {
-                        if (!CheckForAbandonedChunk(chunk, now))
+                        if (!CheckForAbandonedChunk(chunk))
                         {
                             chunk.LastSentAt = DateTime.Now;
                             chunk.SendCount += 1;
@@ -601,6 +612,12 @@ namespace SIPSorcery.Net
 
                             _sendDataChunk(chunk);
                             chunksSent++;
+                        }
+                        else
+                        {
+                            _unconfirmedChunks.TryRemove(chunk.TSN, out _);
+                            _missingChunks.TryRemove(chunk.TSN, out _);
+                            logger.LogTrace($"SCTP abandoned unconfirmed chunk for TSN {chunk.TSN}");
                         }
                         
                         if (!_inRetransmitMode)
@@ -620,8 +637,9 @@ namespace SIPSorcery.Net
                 {
                     while (chunksSent < burstSize && _sendQueue.TryDequeue(out var dataChunk))
                     {
-                        if (CheckForAbandonedChunk(dataChunk, now))
+                        if (CheckForAbandonedChunk(dataChunk))
                         {
+                            logger.LogTrace($"SCTP abandoned chunk prior to sending");
                             continue;
                         }
 
@@ -748,7 +766,7 @@ namespace SIPSorcery.Net
         /// Checks if a chunk is either already abandoned, or should be abandoned.
         /// </summary>
         /// <returns>True if the chunk is abandoned.</returns>
-        public bool CheckForAbandonedChunk(SctpDataChunk chunk, DateTime now)
+        protected bool CheckForAbandonedChunk(SctpDataChunk chunk)
         {
             if (_supportsPartialReliabilityExtension)
             {
@@ -756,8 +774,9 @@ namespace SIPSorcery.Net
                 {
                     return true;
                 }
+
                 // Abandon messages that have exceeded their lifetime
-                if (chunk.MaxLifetime < uint.MaxValue && (now - chunk.CreatedAt).TotalMilliseconds > chunk.MaxLifetime)
+                if (chunk.MaxLifetime < uint.MaxValue && (DateTime.Now - chunk.CreatedAt).TotalMilliseconds > chunk.MaxLifetime)
                 {
                     AbandonChunk(chunk);
                     return true;
@@ -780,7 +799,7 @@ namespace SIPSorcery.Net
         /// https://datatracker.ietf.org/doc/html/rfc3758#section-3.5 A2
         /// </summary>
         /// <param name="chunk">The chunk to flag as abandoned</param>
-        public void AbandonChunk(SctpDataChunk chunk)
+        protected void AbandonChunk(SctpDataChunk chunk)
         {
             if (!_supportsPartialReliabilityExtension)
             {

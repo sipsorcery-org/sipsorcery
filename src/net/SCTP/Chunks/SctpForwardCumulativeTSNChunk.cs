@@ -126,9 +126,7 @@ namespace SIPSorcery.Net
 
             int reportPosn = startPosn + NEW_CUMULATIVE_TSN_LENGTH;
 
-            int numStreamSeqAssoc = chunkLen - reportPosn; 
-
-            for (int i = 0; i < numStreamSeqAssoc; i++)
+            while (reportPosn < posn + chunkLen)
             {
                 ushort streamNum = NetConvert.ParseUInt16(buffer, reportPosn);
                 ushort seqNum = NetConvert.ParseUInt16(buffer, reportPosn + 2);
