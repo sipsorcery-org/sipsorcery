@@ -7,11 +7,14 @@ using System.Threading.Tasks;
 namespace SIPSorceryMedia.Abstractions
 {
     public delegate void EncodedSampleDelegate(uint durationRtpUnits, byte[] sample);
-    
+
     public delegate void RawAudioSampleDelegate(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
-    
-    public delegate void RawVideoSampleDelegate(uint durationMilliseconds, RawImage rawImage);
-    public delegate void VideoSinkSampleDecodedDelegate(RawImage rawImage);
+
+    public delegate void RawVideoSampleDelegate(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
+    public delegate void VideoSinkSampleDecodedDelegate(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat);
+
+    public delegate void RawVideoSampleFasterDelegate(uint durationMilliseconds, RawImage rawImage); // Avoid to use byte[] to improve performance
+    public delegate void VideoSinkSampleDecodedFasterDelegate(RawImage rawImage); // Avoid to use byte[] to improve performance
 
     public delegate void SourceErrorDelegate(string errorMessage);
 
@@ -481,7 +484,7 @@ namespace SIPSorceryMedia.Abstractions
         {
             byte[] result = null;
 
-            if ( (Height > 0) && (Stride > 0) && (Sample != null) )
+            if ((Height > 0) && (Stride > 0))
             {
                 var bufferSize = Height * Stride;
 
@@ -492,6 +495,12 @@ namespace SIPSorceryMedia.Abstractions
         }
     }
 
+    public struct VideoSample
+    {
+        public uint Width;
+        public uint Height;
+        public byte[] Sample;
+    }
 
     public interface IVideoEncoder : IDisposable
     {
@@ -500,11 +509,15 @@ namespace SIPSorceryMedia.Abstractions
         /// </summary>
         List<VideoFormat> SupportedFormats { get; }
 
-        byte[] EncodeVideo(RawImage rawImage, VideoCodecsEnum codec);
+        byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
+
+        byte[] EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec); // Avoid to use byte[] to improve performance
 
         void ForceKeyFrame();
 
-        IEnumerable<RawImage> DecodeVideo(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
+        IEnumerable<VideoSample> DecodeVideo(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
+
+        IEnumerable<RawImage> DecodeVideoFaster(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec); // Avoid to use byte[] to improve performance
     }
 
     public interface IAudioSource
@@ -563,6 +576,8 @@ namespace SIPSorceryMedia.Abstractions
 
         event RawVideoSampleDelegate OnVideoSourceRawSample;
 
+        event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster; // Avoid to use byte[] to improve performance
+
         event SourceErrorDelegate OnVideoSourceError;
 
         Task PauseVideo();
@@ -581,6 +596,8 @@ namespace SIPSorceryMedia.Abstractions
 
         void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
 
+        void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage); // Avoid to use byte[] to improve performance
+
         void ForceKeyFrame();
 
         bool HasEncodedVideoSubscribers();
@@ -594,6 +611,8 @@ namespace SIPSorceryMedia.Abstractions
         /// This event will be fired by the sink after is decodes a video frame from the RTP stream.
         /// </summary>
         event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
+
+        event VideoSinkSampleDecodedFasterDelegate OnVideoSinkDecodedSampleFaster; // Avoid to use byte[] to improve performance
 
         void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
 
