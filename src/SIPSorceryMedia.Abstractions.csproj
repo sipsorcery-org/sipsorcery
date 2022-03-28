@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>SIPSorceryMedia.Abstractions</PackageId>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Aaron Clauson</Authors>
     <Copyright>Copyright © 2020 Aaron Clauson</Copyright>
