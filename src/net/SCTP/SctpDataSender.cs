@@ -339,7 +339,7 @@ namespace SIPSorcery.Net
                 
                 _sendForwardTsn(GetForwardTSN());
 
-                RemoveAbandonedUnconfirmedChunks(_advancedPeerAckPoint);
+                RemoveAckedUnconfirmedChunks(_advancedPeerAckPoint);
             }
         }
 
@@ -532,7 +532,10 @@ namespace SIPSorcery.Net
             }
             else
             {
-                int safety = _unconfirmedChunks.Count();
+                _unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _);
+                _missingChunks.TryRemove(_cumulativeAckTSN, out _);
+
+                int safety = _unconfirmedChunks.Count() + 1;
 
                 do
                 {
@@ -550,50 +553,6 @@ namespace SIPSorcery.Net
                     _missingChunks.TryRemove(_cumulativeAckTSN, out _);
 
                 } while (_cumulativeAckTSN != sackTSN && safety >= 0);
-            }
-        }
-
-
-        /// <summary>
-        /// Removes the chunks waiting for a SACK confirmation from the unconfirmed queue when they have been flagged as abandoned
-        /// </summary>
-        /// <param name="sackTSN">The acknowledged TSN received from in a SACK from the remote peer.</param>
-        private void RemoveAbandonedUnconfirmedChunks(uint peerAckPoint)
-        {
-            logger.LogTrace($"SCTP data sender removing abandoned chunks cumulative ACK TSN {_cumulativeAckTSN}, PeerAckPoint {peerAckPoint}.");
-
-            if (!_gotFirstSACK && _cumulativeAckTSN == _initialTSN)
-            {
-                // This is normal if the initial DATA chunk or SACK has been dropped
-                _unconfirmedChunks.TryRemove(_initialTSN, out _);
-                _missingChunks.TryRemove(_initialTSN, out _);
-            }
-
-            int safety = _unconfirmedChunks.Count();
-
-            var nextTSN = _cumulativeAckTSN;
-
-            unchecked
-            {
-                do
-                {
-                    nextTSN++;
-                    safety--;
-
-                    if (_unconfirmedChunks.TryGetValue(nextTSN, out SctpDataChunk chunk))
-                    {
-                        if (chunk.Abandoned)
-                        {
-                            if (!_unconfirmedChunks.TryRemove(nextTSN, out _))
-                            {
-                                logger.LogWarning($"SCTP data sender could not remove abandoned chunk for {nextTSN}.");
-                            }
-                            _missingChunks.TryRemove(nextTSN, out _);
-                            _cumulativeAckTSN = nextTSN;
-                        }
-                    }
-
-                } while (nextTSN < peerAckPoint && safety >= 0);
             }
         }
 
@@ -862,7 +821,13 @@ namespace SIPSorcery.Net
                 return;
             }
 
+            if (chunk.Abandoned)
+            {
+                return;
+            }
+
             chunk.Abandoned = true;
+            logger.LogDebug("SCTP sender abandoned chunk " + chunk.TSN);
 
 
             if (chunk.Begining != chunk.Ending || !chunk.Begining)
