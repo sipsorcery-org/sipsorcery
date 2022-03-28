@@ -188,6 +188,13 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool SupportsPartiallyReliable { get; private set; }
 
+
+
+        // Used for bundling outgoing chunks into combined SctpPackets
+        private object _pendingBundleLock = new object();
+        private SctpPacket _pendingPacket;
+        private int _pendingPacketSize;
+
         /// <summary>
         /// Create a new SCTP association instance where the INIT will be generated
         /// from this end of the connection.
@@ -226,8 +233,8 @@ namespace SIPSorcery.Net
             ID = $"{sctpSourcePort}:{sctpDestinationPort}:{localTransportPort}";
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
 
-            _dataReceiver = new SctpDataReceiver(ARwnd, this.SendChunk, this.FrameReady, _defaultMTU, 0);
-            _dataSender = new SctpDataSender(ID, this.SendChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+            _dataReceiver = new SctpDataReceiver(ARwnd, this.BundleChunk, this.FrameReady, _defaultMTU, 0);
+            _dataSender = new SctpDataSender(ID, this.BundleChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW, this.ReleasePendingPacketBundle);
 
             State = SctpAssociationState.Closed;
         }
@@ -752,6 +759,96 @@ namespace SIPSorcery.Net
                 byte[] buffer = pkt.GetBytes();
 
                 _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+            }
+        }
+
+
+        /// <summary>
+        /// Sends a SCTP chunk to the remote party.
+        /// </summary>
+        /// <param name="chunk">The chunk to send.</param>
+        internal void BundleChunk(SctpChunk chunk)
+        {
+            if (!_wasAborted)
+            {
+                // INIT, INIT-ACK and SHUTDOWN must not be bundled
+                switch (chunk)
+                {
+                    case SctpDataChunk dc:
+                        // rfc4960 6.10 Partial chunks MUST NOT be placed in an SCTP packet with other chunks
+                        if (dc.Begining && dc.Ending)
+                        {
+                            AddChunkToPendingPacketBundle(chunk);
+                            return;
+                        }
+                        else
+                        {
+                            ReleasePendingPacketBundle();
+                            SendChunk(chunk);
+                            break;
+                        }
+                    case SctpForwardCumulativeTSNChunk _:
+                    case SctpSackChunk _:
+                        AddChunkToPendingPacketBundle(chunk);
+                        return;
+                    default:
+                        ReleasePendingPacketBundle();
+                        SendChunk(chunk);
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Appends a chunk to the pending packet.
+        /// </summary>
+        /// <param name="chunk"></param>
+
+        private void AddChunkToPendingPacketBundle(SctpChunk chunk)
+        {
+            lock (_pendingBundleLock)
+            {
+                var chunkSize = chunk.GetChunkLength(true);
+                if (_pendingPacket != null)
+                {
+                    // Add to the current pending packet.
+                    if (chunkSize + _pendingPacketSize + SctpHeader.SCTP_HEADER_LENGTH < _defaultMTU)
+                    { 
+                        _pendingPacket.AddChunk(chunk);
+                        _pendingPacketSize += chunkSize;
+                        return;
+                    }
+                    else
+                    {
+                        // Release the old bundle
+                        ReleasePendingPacketBundle();
+                    }
+                }
+
+                // Start a new bundle
+                _pendingPacket = new SctpPacket(
+                _sctpSourcePort,
+                _sctpDestinationPort,
+                _remoteVerificationTag);
+                _pendingPacketSize = chunkSize;
+                _pendingPacket.AddChunk(chunk);
+            }
+        }
+
+        /// <summary>
+        /// Sends the currently pending bundle packet
+        /// </summary>
+        private void ReleasePendingPacketBundle()
+        {
+
+            lock (_pendingBundleLock)
+            {            
+                if (_pendingPacket != null)
+                {
+                    byte[] buffer = _pendingPacket.GetBytes();
+                    _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+                    _pendingPacket = null;
+                }
             }
         }
 
