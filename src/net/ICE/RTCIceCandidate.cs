@@ -308,24 +308,22 @@ namespace SIPSorcery.Net
 
             // RTC 5245 Define priority for RTCIceCandidateType
             // https://datatracker.ietf.org/doc/html/rfc5245
-            uint type_preference = 0;
-            switch(type)
+            uint typePreference = 0;
+            switch (type)
             {
                 case RTCIceCandidateType.host:
-                    type_preference = 126;
+                    typePreference = 126;
                     break;
                 case RTCIceCandidateType.prflx:
-                    type_preference = 110;
+                    typePreference = 110;
                     break;
                 case RTCIceCandidateType.srflx:
-                    type_preference = 100;
+                    typePreference = 100;
                     break;
             }
 
-            //Use formula found in RTC 5245 to define candidate priority
-            return (uint)((2 ^ 24) * (type_preference) +
-                          (2 ^ 8) * (localPreference) +
-                          (2 ^ 0) * (256 - component.GetHashCode()));
+            //Use formula found in RFC 5245 to define candidate priority
+            return (uint)((typePreference << 24) | (localPreference << 8) | (256u - component.GetHashCode()));
         }
 
         public string toJSON()

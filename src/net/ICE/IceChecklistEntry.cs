@@ -144,11 +144,18 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc8445#section-6.1.2.3.
         /// </remarks>
-        public ulong Priority =>
-                ((2 << 32) * Math.Min(LocalPriority, RemotePriority) +
-                2 * Math.Max(LocalPriority, RemotePriority) +
-                (ulong)((IsLocalController) ? LocalPriority > RemotePriority ? 1 : 0
-                    : RemotePriority > LocalPriority ? 1 : 0));
+        public ulong Priority
+        {
+            get
+            {
+                ulong priority = Math.Min(LocalPriority, RemotePriority);
+                priority = priority << 32;
+                priority += 2u * (ulong)Math.Max(LocalPriority, RemotePriority) + (ulong)((IsLocalController) ? LocalPriority > RemotePriority ? 1 : 0
+                    : RemotePriority > LocalPriority ? 1 : 0);
+
+                return priority;
+            }
+        }
 
         /// <summary>
         /// Timestamp the first connectivity check (STUN binding request) was sent at.
@@ -277,7 +284,7 @@ namespace SIPSorcery.Net
                 {
                     State = ChecklistEntryState.Succeeded;
                     ChecksSent = 0;
-                    LastCheckSentAt = DateTime.MinValue;
+                    //LastCheckSentAt = DateTime.MinValue;
                 }
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)

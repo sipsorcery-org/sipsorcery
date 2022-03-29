@@ -383,8 +383,8 @@ namespace SIPSorcery.Net
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
         /// <param name="configuration">Optional.</param>
-        public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0) :
-            base(true, true, true, configuration?.X_BindAddress, bindPort)
+        public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0, PortRange portRange = null) :
+            base(true, true, true, configuration?.X_BindAddress, bindPort, portRange)
         {
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
             
@@ -609,7 +609,8 @@ namespace SIPSorcery.Net
                 _configuration?.iceServers,
                 _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
                 _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
-                m_bindPort == 0 ? 0 : m_bindPort + m_rtpChannels.Count() * 2 + 2);
+                m_bindPort == 0 ? 0 : m_bindPort + m_rtpChannels.Count() * 2 + 2,
+                m_rtpPortRange);
 
             m_rtpChannels.Add(mediaType, rtpIceChannel);
 
