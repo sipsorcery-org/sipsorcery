@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: RTCDataChannelReliabilityUnitTest.cs
 //
-// Description: Unit tests for the RTCDataChannel and RTCDataChannelInit class.
-//
+// Description: Unit tests to verify that RTCDataChannels are initialized 
+//              with the correct parameters
 // History:
 // 28 Mar 2021	Cam Newnham     Created.
 //

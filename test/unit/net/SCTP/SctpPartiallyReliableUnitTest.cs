@@ -1,4 +1,19 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: SctpPartiallyReliableUnitTest.cs
+//
+// Description: Unit tests to verify that partially reliable SCTP associations function
+//
+// Author(s):
+// Cam Newnham (camnewnham@gmail.com)
+// 
+// History:
+// 29 Mar 2022  Cam Newnham     Created
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
