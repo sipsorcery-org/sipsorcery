@@ -2,12 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Drawing;
 
 using SIPSorceryMedia.FFmpeg.Interop.X11;
 using SIPSorceryMedia.FFmpeg.Interop.Win32;
-using static SIPSorceryMedia.FFmpeg.Interop.Win32.User32;
+using SIPSorceryMedia.FFmpeg.Interop.MacOS;
 
 namespace SIPSorceryMedia.FFmpeg
 {
@@ -27,7 +26,7 @@ namespace SIPSorceryMedia.FFmpeg
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                // TODO
+                result = AvFoundation.GetMonitors();
             }
             else
             {

@@ -196,7 +196,7 @@ namespace FFmpegEncodingTest
         {
             _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
 
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_DEBUG);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL);
 
             _ffmpegEncoder = new FFmpegVideoEncoder();
             Console.WriteLine($"Codec name {_ffmpegEncoder.GetCodecName()}.");

@@ -18,7 +18,7 @@ namespace SIPSorceryMedia.FFmpeg
                                     : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "avfoundation"
                                     : throw new NotSupportedException($"Cannot find adequate input format - OSArchitecture:[{RuntimeInformation.OSArchitecture}] - OSDescription:[{RuntimeInformation.OSDescription}]");
 
-            
+
             // FFmpeg doesn't implement avdevice_list_input_sources() for the DShow input format yet.
             if (inputFormat == "dshow")
             {
@@ -38,11 +38,15 @@ namespace SIPSorceryMedia.FFmpeg
                     }
                 }
             }
+            else if (inputFormat == "avfoundation")
+            {
+                result = SIPSorceryMedia.FFmpeg.Interop.MacOS.AvFoundation.GetCameraDevices();
+            }
             else
             {
                 AVInputFormat* avInputFormat = ffmpeg.av_find_input_format(inputFormat);
                 AVDeviceInfoList* avDeviceInfoList = null;
-                
+
                 ffmpeg.avdevice_list_input_sources(avInputFormat, null, null, &avDeviceInfoList).ThrowExceptionIfError();
                 int nDevices = avDeviceInfoList->nb_devices;
                 var avDevices = avDeviceInfoList->devices;
