@@ -4,7 +4,7 @@
     <id>SIPSorceryMedia.FFmpeg</id>
     <authors>Aaron Clauson</authors>
     <copyright>Copyright © 2020-2022 Aaron Clauson, Christophe Irles and Contributors.</copyright>
-    <PackageLicenseExpression>LGPL-2.1</PackageLicenseExpression>
+    <license type="expression">LGPL-2.1-only</license>
     <title>SIPSorceryMedia.FFmpeg</title>
     <summary>FFmpeg media end points for real-time communications.</summary>
 	<description>Provides FFmpeg based audio and video media end points that can be used with the SIPSorcery real-time communications library.</description>
@@ -39,7 +39,10 @@
   </metadata>
   <files>
     <file src="icon.png" target="icon.png" />
+    <file src="bin\Release\netstandard2.0\SIPSorceryMedia.FFmpeg.dll" target="lib\netstandard2.0" />
   	<file src="bin\Release\netstandard2.1\SIPSorceryMedia.FFmpeg.dll" target="lib\netstandard2.1" />
+    <file src="bin\Release\netcoreapp3.1\SIPSorceryMedia.FFmpeg.dll" target="lib\netcoreapp3.1" />
+    <file src="bin\Release\net5.0\SIPSorceryMedia.FFmpeg.dll" target="lib\net5.0" />
     <file src="..\lib\nuspec\SIPSorceryMedia.FFmpeg.targets" target="build\SIPSorceryMedia.FFmpeg.targets" />
     <file src="..\lib\x64\*.dll" target="build\x64" />
   </files>
