@@ -337,12 +337,12 @@ namespace SIPSorcery.Net
 
                 if (_dataReceiver == null)
                 {
-                    _dataReceiver = new SctpDataReceiver(ARwnd, this.SendChunk, this.FrameReady, _defaultMTU, cookie.RemoteTSN);
+                    _dataReceiver = new SctpDataReceiver(ARwnd, this.BundleChunk, this.FrameReady, _defaultMTU, cookie.RemoteTSN);
                 }
 
                 if (_dataSender == null)
                 {
-                    _dataSender = new SctpDataSender(ID, this.SendChunk, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
+                    _dataSender = new SctpDataSender(ID, this.BundleChunk, _defaultMTU, cookie.TSN, cookie.RemoteARwnd, this.ReleasePendingPacketBundle);
                 }
 
                 InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd, cookie.ForwardTSNSupported);
