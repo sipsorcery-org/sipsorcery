@@ -336,10 +336,8 @@ namespace SIPSorcery.Net
             if (SctpDataReceiver.IsNewer(_gotFirstSACK ? _cumulativeAckTSN : _initialTSN, _advancedPeerAckPoint))
             {
                 logger.LogTrace($"SCTP AdvancedPeerAckPoint moved from {_cumulativeAckTSN} to {_advancedPeerAckPoint}");
-                
                 _sendForwardTsn(GetForwardTSN());
-
-                RemoveAckedUnconfirmedChunks(_advancedPeerAckPoint);
+                RemoveAbandonedUnconfirmedChunks(_advancedPeerAckPoint);
             }
         }
 
@@ -537,22 +535,25 @@ namespace SIPSorcery.Net
 
                 int safety = _unconfirmedChunks.Count() + 1;
 
-                do
+                unchecked 
                 {
-                    _cumulativeAckTSN++;
-                    safety--;
-
-                    if (!_unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _))
+                    do
                     {
-                        if (!_supportsPartialReliabilityExtension)
+                        _cumulativeAckTSN++;
+                        safety--;
+
+                        if (!_unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _))
                         {
-                            logger.LogWarning($"SCTP data sender could not remove unconfirmed chunk for {_cumulativeAckTSN}.");
+                            if (!_supportsPartialReliabilityExtension)
+                            {
+                                logger.LogWarning($"SCTP data sender could not remove unconfirmed chunk for {_cumulativeAckTSN}.");
+                            }
                         }
-                    }
 
-                    _missingChunks.TryRemove(_cumulativeAckTSN, out _);
+                        _missingChunks.TryRemove(_cumulativeAckTSN, out _);
 
-                } while (_cumulativeAckTSN != sackTSN && safety >= 0);
+                    } while (_cumulativeAckTSN != sackTSN && safety >= 0);
+                }
             }
         }
 
@@ -841,6 +842,53 @@ namespace SIPSorcery.Net
                 foreach (var chunkFragment in _sendQueue.Where(x => x.StreamID == chunk.StreamID && x.StreamSeqNum == chunk.StreamSeqNum))
                 {
                     chunkFragment.Abandoned = true;
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Removes the chunks waiting for a SACK confirmation from the unconfirmed queue,  
+        /// up to the advanced peer ack point.
+        /// </summary>
+        /// <param name="advPeerAckPt">The TSN of which all prior chunks have been abandoned or SACK'd.</param>
+        private void RemoveAbandonedUnconfirmedChunks(uint advPeerAckPt)
+        {
+            logger.LogTrace($"SCTP data sender removing unconfirmed chunks cumulative ACK TSN {(_gotFirstSACK ? _cumulativeAckTSN : _initialTSN)}, SACK TSN {advPeerAckPt}.");
+
+            if (_cumulativeAckTSN == advPeerAckPt)
+            {
+                // This is normal for the first SACK received.
+                _unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _);
+                _missingChunks.TryRemove(_cumulativeAckTSN, out _);
+            }
+            else
+            {
+                _unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _);
+                _missingChunks.TryRemove(_cumulativeAckTSN, out _);
+
+                int safety = _unconfirmedChunks.Count() + 1;
+
+                var nextTSN = _cumulativeAckTSN;
+
+                unchecked
+                {
+                    do
+                    {
+                        nextTSN++;
+                        safety--;
+
+                        if (!_unconfirmedChunks.TryRemove(nextTSN, out _))
+                        {
+                            if (!_supportsPartialReliabilityExtension)
+                            {
+                                logger.LogWarning($"SCTP data sender could not remove unconfirmed chunk for {nextTSN}.");
+                            }
+                        }
+
+                        _missingChunks.TryRemove(nextTSN, out _);
+
+                    } while (nextTSN != advPeerAckPt && safety >= 0);
                 }
             }
         }

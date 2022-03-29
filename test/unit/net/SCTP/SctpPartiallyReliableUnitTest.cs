@@ -99,7 +99,6 @@ namespace SIPSorcery.Net.UnitTests
             {
                 Assert.Equal(fwdTsnChunk.StreamSequenceAssociations[kvp.Key], kvp.Value);
             }
-
         }
 
         /// <summary>
@@ -176,7 +175,7 @@ namespace SIPSorcery.Net.UnitTests
             await Task.Delay((int)(timeoutMillis == uint.MaxValue ? 0 : timeoutMillis) + sender._burstPeriodMilliseconds);
 
             sender.SendData(0, 0, new byte[] { 0x03 }, ordered);
-            await Task.Delay(sender._burstPeriodMilliseconds * 10);
+            await Task.Delay(sender._burstPeriodMilliseconds);
 
             Assert.Equal(3, framesSent);
             Assert.Equal(2, framesReceived);
@@ -184,9 +183,84 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(initialTSN + 3, sender.TSN);
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
             Assert.Equal(0, receiver.ForwardTSNCount);
-            Assert.Equal(1, forwardTSNCount);
+            Assert.True(forwardTSNCount > 0);
         }
 
+
+
+        /// <summary>
+        /// Tests that a dropped forward TSN is sent after a packet is marked as abandoned
+        /// </summary>
+        [Fact]
+        public async void ForwardTSNSent()
+        {
+            uint initialTSN = 0;
+
+            SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
+            PartiallyReliableTestHelper.TestSender sender = new PartiallyReliableTestHelper.TestSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+            sender._burstPeriodMilliseconds = 1;
+            sender._rtoInitialMilliseconds = 1;
+            sender._rtoMinimumMilliseconds = 1;
+
+            sender._supportsPartialReliabilityExtension = true;
+            sender.StartSending();
+
+            int forwardTSNCount = 0;
+
+            Action<SctpDataChunk> senderSendData = (chunk) =>
+            {
+                // Drop the second chunk
+                if (chunk.UserData[0] == 0x02)
+                {
+                    logger.LogDebug($"Data chunk {chunk.TSN} dropped and abandoned.");
+                    sender.Abandon(chunk);
+                    return;
+                }
+
+                logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
+                receiver.OnDataChunk(chunk);
+                logger.LogDebug($"SACK chunk {chunk.TSN} provided to sender.");
+                sender.GotSack(receiver.GetSackChunk());
+            };
+
+            Action<SctpForwardCumulativeTSNChunk> senderSendForwardTSN = (chunk) =>
+            {
+                logger.LogDebug($"Forward TSN chunk {chunk.NewCumulativeTSN} provided to receiver.");
+                receiver.OnForwardCumulativeTSNChunk(chunk);
+                forwardTSNCount++;
+            };
+
+            Action<SctpSackChunk> receiverSendSack = (chunk) =>
+            {
+                logger.LogDebug($"SACK chunk {chunk.CumulativeTsnAck} provided to the sender.");
+                sender.GotSack(chunk);
+            };
+
+            int framesReceived = 0;
+
+            Action<SctpDataFrame> receiverOnFrame = (f) =>
+            {
+                logger.LogDebug($"Receiver got frame of length {f.UserData?.Length}.");
+                framesReceived++;
+            };
+
+            receiver._onFrameReady = receiverOnFrame;
+            receiver._sendSackChunk = receiverSendSack;
+            sender._sendDataChunk = senderSendData;
+            sender._sendForwardTsn = senderSendForwardTSN;
+
+            sender.SendData(0, 0, new byte[] { 0x01 }); // Received
+            await Task.Delay(sender._burstPeriodMilliseconds);
+            sender.SendData(0, 0, new byte[] { 0x02 }); // Dropped and abandoned
+            await Task.Delay(sender._burstPeriodMilliseconds);
+            sender.SendData(0, 0, new byte[] { 0x03 }); // Received
+            await Task.Delay(sender._burstPeriodMilliseconds);
+            Assert.True(forwardTSNCount > 0);
+
+            Assert.Equal(initialTSN + 3, sender.TSN);
+            Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
+            Assert.Equal(0, receiver.ForwardTSNCount);
+        }
 
         /// <summary>
         /// Tests that abandoning a fragment of a message abandons the entire message
@@ -198,7 +272,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             uint initialTSN = 0;
 
-            PartiallyReliableTestHelper.SenderWithExposedQueue sender = new PartiallyReliableTestHelper.SenderWithExposedQueue("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+            PartiallyReliableTestHelper.TestSender sender = new PartiallyReliableTestHelper.TestSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
             SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
 
             sender._burstPeriodMilliseconds = 1;
@@ -440,9 +514,9 @@ namespace SIPSorcery.Net.UnitTests
     /// </summary>
     internal static class PartiallyReliableTestHelper
     {
-        internal class SenderWithExposedQueue : SctpDataSender
+        internal class TestSender : SctpDataSender
         {
-            public SenderWithExposedQueue(
+            public TestSender(
                 string associationID,
                 Action<SctpChunk> sendChunk,
                 ushort defaultMTU,
