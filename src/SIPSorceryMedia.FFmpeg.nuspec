@@ -7,9 +7,9 @@
     <license type="expression">LGPL-2.1-only</license>
     <title>SIPSorceryMedia.FFmpeg</title>
     <summary>FFmpeg media end points for real-time communications.</summary>
-	<description>Provides FFmpeg based audio and video media end points that can be used with the SIPSorcery real-time communications library.</description>
-	<iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
-	<icon>icon.png</icon>
+    <description>Provides FFmpeg based audio and video media end points that can be used with the SIPSorcery real-time communications library.</description>
+    <iconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</iconUrl>
+    <icon>icon.png</icon>
     <projectUrl>https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg</projectUrl>
 	<repository type="git" url="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg" branch="master" />
 	<tags>WebRTC VoIP SIPSorcery Media FFmpeg</tags>
