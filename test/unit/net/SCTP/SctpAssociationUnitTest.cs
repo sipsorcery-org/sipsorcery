@@ -156,6 +156,42 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(tcs.Task.IsCompleted);
             Assert.Equal(sha256Hash, tcs.Task.Result);
         }
+
+
+        /// <summary>
+        /// Tests that two associations can send a number of chunks and each chunk will be received
+        /// </summary>
+        [Fact]
+        public void SendMultipleDataChunks()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
+
+            int framesToSend = 100;
+            int framesRaised = 0;
+            var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            bAssoc.OnData += (frame) =>
+            {
+                framesRaised++;
+
+                if (framesRaised == framesToSend)
+                {
+                    tcs.TrySetResult(framesRaised);
+                }
+            };
+
+            for (byte i=0;i<framesToSend; i++)
+            {
+                aAssoc.SendData(0, 0, new byte[] { i });
+            }
+
+            tcs.Task.Wait(3000);
+
+            Assert.True(tcs.Task.IsCompleted);
+        }
     }
 
     internal static class AssociationTestHelper
