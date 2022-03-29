@@ -7,9 +7,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
+// Cam Newnham (camnewnham@gmail.com)
 //
 // History:
 // 22 Mar 2021	Aaron Clauson	Created.
+// 29 Mar 2022  Cam Newnham     Implemented RTCDataChannelInit
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

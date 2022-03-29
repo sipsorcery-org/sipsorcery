@@ -6,9 +6,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
+// Cam Newnham (camnewnham@gmail.com)
 // 
 // History:
 // 29 Mar 2021	Aaron Clauson	Created, Dublin, Ireland.
+// 29 Mar 2022  Cam Newnham     Added support for PR-SCTP
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

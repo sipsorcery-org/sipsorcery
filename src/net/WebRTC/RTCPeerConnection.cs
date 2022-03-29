@@ -20,6 +20,7 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
+// Cam Newnham (camnewnham@gmail.com)
 //
 // History:
 // 04 Mar 2016	Aaron Clauson	Created.
@@ -29,6 +30,7 @@
 // 13 Jul 2020  Aaron Clauson   Added data channel support.
 // 22 Mar 2021  Aaron Clauson   Refactored data channels logic for new SCTP
 //                              implementation.
+// 29 Mar 2022  Cam Newnham     Implemented RTCDataChannelInit
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

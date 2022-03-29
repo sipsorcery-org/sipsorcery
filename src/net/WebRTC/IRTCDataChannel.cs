@@ -23,10 +23,12 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
+// Cam Newnham (camnewnham@gmail.com)
 //
 // History:
 // 11 Jul 2020	Aaron Clauson	Created, Dublin, Ireland.
 // 23 Mar 2021  Aaron Clauson   Refactored for new SCTP implementation.
+// 29 Mar 2022  Cam Newnham     Implemented RTCDataChannelInit
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
