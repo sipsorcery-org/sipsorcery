@@ -45,22 +45,32 @@ namespace SIPSorceryMedia.FFmpeg
 
         public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
+            fixed (byte* pSample = sample)
+            {
+                return EncodeVideo(width, height, pSample, pixelFormat, codec);
+            }
+        }
+
+        public byte[] EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec)
+        {
+            byte* pSample = (byte*)rawImage.Sample;
+            return EncodeVideo(rawImage.Width, rawImage.Height, pSample, rawImage.PixelFormat, codec);
+        }
+
+        private byte[] EncodeVideo(int width, int height, byte* sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
+        {
             AVCodecID codecID = GetAVCodecID(codec);
             if (codecID == AVCodecID.AV_CODEC_ID_NONE)
             {
                 throw new NotImplementedException($"Codec {codec} is not supported by the FFmpeg video encoder.");
             }
-
-            //var i420 = PixelConverter.ToI420(width, height, sample, pixelFormat);
             var avPixelFormat = GetAVPixelFormat(pixelFormat);
             if (avPixelFormat == AVPixelFormat.AV_PIX_FMT_NONE)
             {
                 throw new NotImplementedException($"No matching FFmpeg pixel format was found for video pixel format {pixelFormat}.");
             }
 
-#pragma warning disable CS8603
             return Encode(codecID, sample, width, height, Helper.DEFAULT_VIDEO_FRAME_RATE, false, avPixelFormat);
-#pragma warning restore
         }
 
         public void ForceKeyFrame()
@@ -68,7 +78,7 @@ namespace SIPSorceryMedia.FFmpeg
             _forceKeyFrame = true;
         }
 
-        public IEnumerable<VideoSample> DecodeVideo(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
+        public IEnumerable<RawImage> DecodeVideoFaster(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
             AVCodecID codecID = GetAVCodecID(codec);
             if (codecID == AVCodecID.AV_CODEC_ID_NONE)
@@ -76,14 +86,19 @@ namespace SIPSorceryMedia.FFmpeg
                 throw new NotImplementedException($"Codec {codec} is not supported by the FFmpeg video decoder.");
             }
 
-            var decodedFrames = Decode(codecID, encodedSample, out int width, out int height);
-
+            var decodedFrames = DecodeFaster(codecID, encodedSample, out int width, out int height);
             if (decodedFrames != null && decodedFrames.Count > 0)
+                return decodedFrames;
+
+            return new List<RawImage>();
+        }
+
+        public IEnumerable<VideoSample> DecodeVideo(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
+        {
+            var rawImageList = DecodeVideoFaster(encodedSample, pixelFormat, codec);
+            foreach (var rawImage in rawImageList)
             {
-                foreach (var decodedFrame in decodedFrames)
-                {
-                    yield return new VideoSample { Width = (uint)width, Height = (uint)height, Sample = decodedFrame };
-                }
+                yield return new VideoSample { Width = (uint)rawImage.Width, Height = (uint)rawImage.Height, Sample = rawImage.GetBuffer() };
             }
         }
 
@@ -206,7 +221,7 @@ namespace SIPSorceryMedia.FFmpeg
             return ffmpeg.avcodec_get_name(_codecID);
         }
 
-        public AVFrame MakeFrame(byte[] buffer, int width, int height)
+        public AVFrame MakeFrame(byte* sample, int width, int height)
         {
             AVFrame avFrame = new AVFrame
             {
@@ -215,21 +230,19 @@ namespace SIPSorceryMedia.FFmpeg
                 format = (int)AVPixelFormat.AV_PIX_FMT_YUV420P,
             };
 
-            fixed (byte* pSrcData = buffer)
-            {
-                var data = new byte_ptrArray4();
-                var linesize = new int_array4();
 
-                ffmpeg.av_image_fill_arrays(ref data, ref linesize, pSrcData, AVPixelFormat.AV_PIX_FMT_YUV420P, width, height, 1).ThrowExceptionIfError();
+            var data = new byte_ptrArray4();
+            var linesize = new int_array4();
 
-                avFrame.data.UpdateFrom(data);
-                avFrame.linesize.UpdateFrom(linesize);
-            }
+            ffmpeg.av_image_fill_arrays(ref data, ref linesize, sample, AVPixelFormat.AV_PIX_FMT_YUV420P, width, height, 1).ThrowExceptionIfError();
+
+            avFrame.data.UpdateFrom(data);
+            avFrame.linesize.UpdateFrom(linesize);
 
             return avFrame;
         }
 
-        public byte[]? Encode(AVCodecID codecID, byte[] sample, int width, int height, int fps, bool keyFrame = false, AVPixelFormat pixelFormat = AVPixelFormat.AV_PIX_FMT_YUV420P)
+        public byte[]? Encode(AVCodecID codecID, byte* sample, int width, int height, int fps, bool keyFrame = false, AVPixelFormat pixelFormat = AVPixelFormat.AV_PIX_FMT_YUV420P)
         {
             lock (_encoderLock)
             {
@@ -364,7 +377,7 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public List<byte[]>? Decode(AVCodecID codecID, byte[] buffer, out int width, out int height)
+        public List<RawImage>? DecodeFaster(AVCodecID codecID, byte[] buffer, out int width, out int height)
         {
             if (!_isDisposed)
             {
@@ -380,7 +393,7 @@ namespace SIPSorceryMedia.FFmpeg
                         fixed (byte* pBuffer = paddedBuffer)
                         {
                             ffmpeg.av_packet_from_data(packet, pBuffer, paddedBuffer.Length).ThrowExceptionIfError();
-                            return Decode(codecID, packet, out width, out height);
+                            return DecodeFaster(codecID, packet, out width, out height);
                         }
                     }
                     finally
@@ -397,7 +410,7 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        private List<byte[]>? Decode(AVCodecID codecID, AVPacket* packet, out int width, out int height)
+        private List<RawImage>? DecodeFaster(AVCodecID codecID, AVPacket* packet, out int width, out int height)
         {
             if (!_isDisposed)
             {
@@ -413,7 +426,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                 try
                 {
-                    List<byte[]> rgbFrames = new List<byte[]>();
+                    List<RawImage> rgbFrames = new List<RawImage>();
 
                     ffmpeg.avcodec_send_packet(_decoderContext, packet).ThrowExceptionIfError();
 
@@ -435,7 +448,19 @@ namespace SIPSorceryMedia.FFmpeg
                                 AVPixelFormat.AV_PIX_FMT_BGR24);
                         }
 
-                        rgbFrames.Add(_i420ToRgb.ConvertFrame(ref *decodedFrame));
+                        var frameI420 = _i420ToRgb.Convert(*decodedFrame);
+                        if ((frameI420.width != 0) && (frameI420.height != 0))
+                        {
+                            RawImage imageRawSample = new RawImage
+                            {
+                                Width = width,
+                                Height = height,
+                                Stride = frameI420.linesize[0],
+                                Sample = (IntPtr)frameI420.data[0],
+                                PixelFormat = VideoPixelFormatsEnum.Rgb
+                            };
+                            rgbFrames.Add(imageRawSample);
+                        }
 
                         recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, decodedFrame);
                     }

@@ -1,11 +1,8 @@
-﻿using FFmpeg.AutoGen;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.FFmpeg
@@ -22,18 +19,19 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isClosed;
 
         public event EncodedSampleDelegate? OnAudioSourceEncodedSample;
+        public event RawAudioSampleDelegate? OnAudioSourceRawSample;
 
         public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
-        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
+        public event RawVideoSampleFasterDelegate? OnVideoSourceRawSampleFaster;
+
+        public event Action? OnEndOfFile;
 
 #pragma warning disable CS0067
-        public event RawAudioSampleDelegate? OnAudioSourceRawSample;
+        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
 
         public event SourceErrorDelegate? OnAudioSourceError;
         public event SourceErrorDelegate? OnVideoSourceError;
 #pragma warning restore CS0067
-
-        public event Action? OnEndOfFile;
 
         public unsafe FFmpegFileSource(string path, bool repeat, IAudioEncoder audioEncoder, bool useVideo = true)
         {
@@ -50,6 +48,8 @@ namespace SIPSorceryMedia.FFmpeg
                 _FFmpegAudioSource.InitialiseDecoder();
 
                 _FFmpegAudioSource.OnAudioSourceEncodedSample += _FFmpegAudioSource_OnAudioSourceEncodedSample;
+                _FFmpegAudioSource.OnAudioSourceRawSample += _FFmpegAudioSource_OnAudioSourceRawSample;
+                _FFmpegAudioSource.OnEndOfFile += _FFmpegAudioSource_OnEndOfFile;
             }
 
             if (useVideo)
@@ -59,8 +59,19 @@ namespace SIPSorceryMedia.FFmpeg
                 _FFmpegVideoSource.InitialiseDecoder();
 
                 _FFmpegVideoSource.OnVideoSourceEncodedSample += _FFmpegVideoSource_OnVideoSourceEncodedSample;
-                _FFmpegVideoSource.OnVideoSourceRawSample += _FFmpegVideoSource_OnVideoSourceRawSample;
+                _FFmpegVideoSource.OnVideoSourceRawSampleFaster += _FFmpegVideoSource_OnVideoSourceRawSampleFaster;
+                _FFmpegVideoSource.OnEndOfFile += _FFmpegVideoSource_OnEndOfFile;
             }
+        }
+
+        private void _FFmpegVideoSource_OnEndOfFile()
+        {
+            OnEndOfFile?.Invoke();
+        }
+
+        private void _FFmpegAudioSource_OnEndOfFile()
+        {
+            OnEndOfFile?.Invoke();
         }
 
         private void _FFmpegVideoSource_OnVideoSourceEncodedSample(uint durationRtpUnits, byte[] sample)
@@ -68,14 +79,20 @@ namespace SIPSorceryMedia.FFmpeg
             OnVideoSourceEncodedSample?.Invoke(durationRtpUnits, sample);
         }
 
-        private void _FFmpegVideoSource_OnVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
+        private void _FFmpegVideoSource_OnVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage imageRawSample)
         {
-            OnVideoSourceRawSample?.Invoke(durationMilliseconds, width, height, sample, pixelFormat);
+            OnVideoSourceRawSampleFaster?.Invoke(durationMilliseconds, imageRawSample);
         }
 
         private void _FFmpegAudioSource_OnAudioSourceEncodedSample(uint durationRtpUnits, byte[] sample)
         {
             OnAudioSourceEncodedSample?.Invoke(durationRtpUnits, sample);
+        }
+
+        private void _FFmpegAudioSource_OnAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
+        {
+            OnAudioSourceRawSample?.Invoke(samplingRate, durationMilliseconds, sample);
+
         }
 
         public bool IsPaused() => _isPaused;
@@ -100,7 +117,35 @@ namespace SIPSorceryMedia.FFmpeg
                 _FFmpegAudioSource.RestrictFormats(filter);
         }
         public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) => throw new NotImplementedException();
-        public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
+        
+        public bool HasEncodedAudioSubscribers()
+        {
+            Boolean result = OnAudioSourceEncodedSample != null;
+            if (_FFmpegAudioSource != null)
+            {
+                if (result)
+                    _FFmpegAudioSource.OnAudioSourceEncodedSample += _FFmpegAudioSource_OnAudioSourceEncodedSample;
+                else
+                    _FFmpegAudioSource.OnAudioSourceEncodedSample -= _FFmpegAudioSource_OnAudioSourceEncodedSample;
+            }
+
+            return result;
+        }
+
+        public bool HasRawAudioSubscribers()
+        {
+            Boolean result = OnAudioSourceRawSample!= null;
+            if (_FFmpegAudioSource != null)
+            {
+                if (result)
+                    _FFmpegAudioSource.OnAudioSourceRawSample += _FFmpegAudioSource_OnAudioSourceRawSample;
+                else
+                    _FFmpegAudioSource.OnAudioSourceRawSample -= _FFmpegAudioSource_OnAudioSourceRawSample;
+            }
+
+            return result;
+        }
+
         public bool IsAudioSourcePaused() => _isPaused;
         public Task StartAudio() => Start();
         public Task PauseAudio() => Pause();
@@ -122,6 +167,7 @@ namespace SIPSorceryMedia.FFmpeg
                 _FFmpegVideoSource.SetVideoSourceFormat(videoFormat);
             }
         }
+       
         public void RestrictFormats(Func<VideoFormat, bool> filter)
         {
             if (_FFmpegVideoSource != null)
@@ -131,6 +177,7 @@ namespace SIPSorceryMedia.FFmpeg
         public void ForceKeyFrame() => _FFmpegVideoSource?.ForceKeyFrame();
         
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) => throw new NotImplementedException();
+        public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) => throw new NotImplementedException();
 
         public bool HasEncodedVideoSubscribers()
         {
@@ -148,13 +195,13 @@ namespace SIPSorceryMedia.FFmpeg
 
         public bool HasRawVideoSubscribers()
         {
-            Boolean result = OnVideoSourceRawSample != null;
+            Boolean result = OnVideoSourceRawSampleFaster != null;
             if (_FFmpegVideoSource != null)
             {
                 if (result)
-                    _FFmpegVideoSource.OnVideoSourceRawSample += _FFmpegVideoSource_OnVideoSourceRawSample;
+                    _FFmpegVideoSource.OnVideoSourceRawSampleFaster += _FFmpegVideoSource_OnVideoSourceRawSampleFaster;
                 else
-                    _FFmpegVideoSource.OnVideoSourceRawSample -= _FFmpegVideoSource_OnVideoSourceRawSample;
+                    _FFmpegVideoSource.OnVideoSourceRawSampleFaster -= _FFmpegVideoSource_OnVideoSourceRawSampleFaster;
             }
 
             return result;

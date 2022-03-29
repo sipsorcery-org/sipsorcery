@@ -110,24 +110,21 @@ namespace demo
             var videoEP = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
-            videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+            videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
             {
                 _form.BeginInvoke(new Action(() =>
                 {
                     unsafe
                     {
-                        if(_picBox.Width != (int)width || _picBox.Height != (int)height)
+                        if(_picBox.Width != rawImage.Width || _picBox.Height != rawImage.Height)
                         {
-                           logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {width}x{height}.");
-                            _picBox.Width = (int)width;
-                            _picBox.Height = (int)height;
+                           logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {rawImage.Width}x{rawImage.Height}.");
+                            _picBox.Width = rawImage.Width;
+                            _picBox.Height = rawImage.Height;
                         }
 
-                        fixed (byte* s = bmp)
-                        {
-                            Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
-                            _picBox.Image = bmpImage;
-                        }
+                        Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
+                        _picBox.Image = bmpImage;
                     }
                 }));
             };

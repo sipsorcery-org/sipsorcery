@@ -21,6 +21,8 @@ namespace SIPSorceryMedia.FFmpeg
         private readonly AVPixelFormat _srcPixelFormat;
         private readonly AVPixelFormat _dstPixelFormat;
 
+        private readonly AVFrame *_dstFrame;
+
         public int SourceWidth => _srcWidth;
         public int SourceHeight => _srcHeight;
         public int DestinationWidth => _dstWidth;
@@ -54,6 +56,14 @@ namespace SIPSorceryMedia.FFmpeg
                 .ThrowExceptionIfError();
 
             logger.LogDebug($"Successfully initialised ffmpeg based image converted for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{_dstPixelFormat}.");
+
+
+            _dstFrame = ffmpeg.av_frame_alloc();
+            _dstFrame->width = _dstWidth;
+            _dstFrame->height = _dstHeight;
+            _dstFrame->data.UpdateFrom(_dstData);
+            _dstFrame->linesize.UpdateFrom(_dstLinesize);
+            _dstFrame->format = (int)_dstPixelFormat;
         }
 
         public void Dispose()
@@ -62,43 +72,27 @@ namespace SIPSorceryMedia.FFmpeg
             ffmpeg.sws_freeContext(_pConvertContext);
         }
 
+        public AVFrame Convert(IntPtr srcData)
+        {
+            return Convert((byte*)srcData);
+        }
+
         public AVFrame Convert(byte[] srcData)
         {
-            //int linesz0 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 0);
-            //int linesz1 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 1);
-            //int linesz2 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 2);
+            AVFrame result;
+            fixed (byte* pSrcData = srcData)
+            {
+                result = Convert(pSrcData);
+            }
+            return result;
+        }
 
+        public AVFrame Convert(byte * pSrcData)
+        {
             byte_ptrArray4 src = new byte_ptrArray4();
             int_array4 srcStride = new int_array4();
 
-            fixed (byte* pSrcData = srcData)
-            {
-                ffmpeg.av_image_fill_arrays(ref src, ref srcStride, pSrcData, _srcPixelFormat, _srcWidth, _srcHeight, 1).ThrowExceptionIfError();
-            }
-
-            //var srcFrameData = new byte_ptrArray8 {
-            //    [0] = pSrcData,
-            //    [1] = (linesz1 > 0) ? pSrcData + linesz0 : null,
-            //    [2] = (linesz2 > 0) ? pSrcData + linesz0 + linesz1: null,
-            //};
-            //var srcLinesize = new int_array8 { 
-            //    [0] = linesz0,
-            //    [1] = linesz1,
-            //    [2] = linesz2
-            //};
-
-            //AVFrame srcFrame = new AVFrame
-            //{
-            //    data = srcFrameData,
-            //    linesize = srcLinesize,
-            //    width = _srcSize.Width,
-            //    height = _srcSize.Height
-            //};
-
-            //ffmpeg.sws_scale(_pConvertContext, srcFrame.data, srcFrame.linesize, 0, srcFrame.height, _dstData, _dstLinesize).ThrowExceptionIfError();
-
-            //int outputBufferSize = ffmpeg.av_image_get_buffer_size(_dstPixelFormat, _dstSize.Width, _dstSize.Height, 1);
-            //byte[] outputBuffer = new byte[outputBufferSize];
+            ffmpeg.av_image_fill_arrays(ref src, ref srcStride, pSrcData, _srcPixelFormat, _srcWidth, _srcHeight, 1).ThrowExceptionIfError();
 
             ffmpeg.sws_scale(_pConvertContext, src, srcStride, 0, _srcHeight, _dstData, _dstLinesize).ThrowExceptionIfError();
 
@@ -112,7 +106,8 @@ namespace SIPSorceryMedia.FFmpeg
                 data = data,
                 linesize = linesize,
                 width = _dstWidth,
-                height = _dstHeight
+                height = _dstHeight,
+                format = (int)_dstPixelFormat
             };
         }
 
@@ -143,6 +138,60 @@ namespace SIPSorceryMedia.FFmpeg
             }
 
             return outputBuffer;
+        }
+
+        public AVFrame Convert(AVFrame frame)
+        {
+
+            try
+            {
+                int result = ffmpeg.av_frame_copy_props(&frame, _dstFrame);
+
+
+                if (result >= 0)
+                    result = ffmpeg.sws_scale(_pConvertContext,
+                                frame.data, frame.linesize, 0, frame.height,
+                                _dstData, _dstLinesize);
+
+
+
+                if (result < 0)
+                {
+                    return new AVFrame
+                    {
+                        width = 0,
+                        height = 0
+                    };
+                }
+
+                var data = new byte_ptrArray8();
+                data.UpdateFrom(_dstData);
+                var linesize = new int_array8();
+                linesize.UpdateFrom(_dstLinesize);
+
+                return new AVFrame
+                {
+                    data = data,
+                    linesize = linesize,
+                    width = _dstWidth,
+                    height = _dstHeight,
+                    format = (int)_dstPixelFormat
+                };
+
+            }
+            catch
+            {
+                return new AVFrame
+                {
+                    width = 0,
+                    height = 0
+                };
+            }
+
+            //ffmpeg.sws_scale(_pConvertContext,
+            //    frame.data, frame.linesize, 0, frame.height,
+            //    _dstFrame->data, _dstFrame->linesize);
+            //return _dstFrame;
         }
 
         public byte[] ConvertFrame(ref AVFrame frame)

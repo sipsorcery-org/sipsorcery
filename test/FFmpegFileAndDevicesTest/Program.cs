@@ -99,7 +99,7 @@ namespace FFmpegFileAndDevicesTest
             logger = AddConsoleLogger();
 
             // Initialise FFmpeg librairies
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_DEBUG, LIB_PATH);
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_FATAL, LIB_PATH);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
