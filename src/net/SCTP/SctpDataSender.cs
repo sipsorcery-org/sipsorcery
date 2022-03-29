@@ -74,6 +74,11 @@ namespace SIPSorcery.Net
         /// </summary>
         internal Action<SctpForwardCumulativeTSNChunk> _sendForwardTsn;
 
+        /// <summary>
+        /// Raised when the sender t3 timer ticks. Used to bundle chunks together.
+        /// </summary>
+        internal Action _t3tick;
+
         private string _associationID;
         private ushort _defaultMTU;
         private uint _initialTSN;
@@ -176,7 +181,8 @@ namespace SIPSorcery.Net
             Action<SctpChunk> sendChunk,
             ushort defaultMTU,
             uint initialTSN,
-            uint remoteARwnd)
+            uint remoteARwnd,
+            Action t3tick = null)
         {
             _associationID = associationID;
             _sendDataChunk = sendChunk;
@@ -187,12 +193,14 @@ namespace SIPSorcery.Net
             TSN = initialTSN;
             _initialRemoteARwnd = remoteARwnd;
             _receiverWindow = remoteARwnd;
+            _t3tick = t3tick;
 
             // RFC4960 7.2.1 (point 1)
             _congestionWindow = (uint)(Math.Min(4 * _defaultMTU, Math.Max(2 * _defaultMTU, CONGESTION_WINDOW_FACTOR)));
 
             // RFC4960 7.2.1 (point 3)
             _slowStartThreshold = _initialRemoteARwnd;
+
         }
 
         public void SetReceiverWindow(uint remoteARwnd)
@@ -677,6 +685,8 @@ namespace SIPSorcery.Net
                 }
 
                 _senderMre.Reset();
+
+                _t3tick?.Invoke();
 
                 int wait = GetSendWaitMilliseconds();
                 //logger.LogTrace($"SCTP sender wait period {wait}ms, arwnd {_receiverWindow}, cwnd {_congestionWindow} " +
