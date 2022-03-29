@@ -2509,7 +2509,6 @@ namespace SIPSorcery.Net
                                             {
                                                 LogIfWrongSeqNumber("Video", bufferedPacket.Header, VideoRemoteTrack);
                                                 VideoRemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
-                                                //logger.LogInformation($"Inserted: {bufferedPacket.Header.SequenceNumber} {bufferedPacket.Payload.Length} {bufferedPacket.Header.MarkerBit}");
                                             }
                                             else if (avFormat.Value.Kind == SDPMediaTypesEnum.audio && AudioRemoteTrack != null)
                                             {
@@ -2525,6 +2524,10 @@ namespace SIPSorcery.Net
                                     }
                                     else
                                     {
+                                        if (avFormat.Value.Kind == SDPMediaTypesEnum.video && OnVideoFrameReceived != null)
+                                        {
+                                            ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, avFormat.Value);
+                                        }
                                         OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, rtpPacket);
                                     }
                                     
