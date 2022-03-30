@@ -97,8 +97,8 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataReceiver receiver = new SctpDataReceiver(arwnd, null, null, mtu, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, mtu, initialTSN, arwnd);
 
-            sender._rtoInitialMilliseconds = 1;
-            sender._rtoMinimumMilliseconds = 1;
+            sender._rtoInitialMilliseconds = 200;
+            sender._rtoMinimumMilliseconds = 200;
             sender.StartSending();
 
             // This local function replicates a data chunk being sent from a data
@@ -121,7 +121,7 @@ namespace SIPSorcery.Net.UnitTests
             sender.SendData(0, 0, new byte[] { 0x55 });
             await Task.Delay(sender._burstPeriodMilliseconds);
             Assert.Equal(initialTSN + 1, sender.TSN);
-            await Task.Delay(250);
+            await Task.Delay(100);
             Assert.Null(receiver.CumulativeAckTSN);
 
             await Task.Delay(500);
