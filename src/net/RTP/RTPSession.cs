@@ -320,8 +320,34 @@ namespace SIPSorcery.Net
         {
             get
             {
+                // TODO: need to use dictionnary
                 return VideoLocalTrack != null && VideoLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
                   && VideoRemoteTrack != null && VideoRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+            }
+        }
+
+
+        /// <summary>
+        /// Get the list of Ssrc of local video stream
+        /// </summary>
+        public List<String> VideoLocalSsrcList
+        {
+            get
+            {
+                // TODO
+                return new List<String>();
+            }
+        }
+
+        /// <summary>
+        /// Get the list of Ssrc of remote video stream
+        /// </summary>
+        public List<String> VideoRemoteSsrcList
+        {
+            get
+            {
+                // TODO
+                return new List<String>();
             }
         }
 
@@ -870,6 +896,8 @@ namespace SIPSorcery.Net
         /// <param name="status">The stream status for the media track.</param>
         public void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status)
         {
+            //TODO: Need to loop on all local Videa Tracks to set the correct status
+
             if (kind == SDPMediaTypesEnum.audio && AudioLocalTrack != null)
             {
                 AudioLocalTrack.StreamStatus = status;
@@ -880,6 +908,31 @@ namespace SIPSorcery.Net
                 VideoLocalTrack.StreamStatus = status;
                 m_sdpAnnouncementVersion++;
             }
+        }
+
+
+        /// <summary>
+        /// Sets the stream status on local audio track.
+        /// </summary>
+        /// <param name="kind">The type of the media track. Must be audio or video.</param>
+        /// <param name="status">The stream status for the media track.</param>
+        public void SetAudioMediaStreamStatus(MediaStreamStatusEnum status)
+        {
+            AudioLocalTrack.StreamStatus = status;
+            m_sdpAnnouncementVersion++;
+        }
+
+        /// <summary>
+        /// Sets the stream status on local audio track.
+        /// </summary>
+        /// <param name="kind">The type of the media track. Must be audio or video.</param>
+        /// <param name="status">The stream status for the media track.</param>
+        public void SetVideoMediaStreamStatus(String Ssrc, MediaStreamStatusEnum status)
+        {
+            //TODO: Need to use Ssrc to get correct local video stream
+
+            VideoLocalTrack.StreamStatus = status;
+            m_sdpAnnouncementVersion++;
         }
 
         /// <summary>

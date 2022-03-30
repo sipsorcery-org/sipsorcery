@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,6 +50,16 @@ namespace SIPSorcery.SIP.App
         /// Indicates whether the session supports video.
         /// </summary>
         bool HasVideo { get; }
+
+        /// <summary>
+        /// Get the list of Ssrc of local video stream
+        /// </summary>
+        List<String> VideoLocalSsrcList { get; }
+
+        /// <summary>
+        /// Get the list of Ssrc of remote video stream
+        /// </summary>
+        List<String> VideoRemoteSsrcList { get; }
 
         /// <summary>
         /// Indicates whether the session has been closed.
@@ -126,11 +137,26 @@ namespace SIPSorcery.SIP.App
         Task Start();
 
         /// <summary>
-        /// Sets the stream status on a local audio or video media track.
+        /// Sets the stream status on all local audio or all video media track.
         /// </summary>
         /// <param name="kind">The type of the media track. Must be audio or video.</param>
         /// <param name="status">The stream status for the media track.</param>
         void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status);
+
+        /// <summary>
+        /// Sets the stream status on local audio track.
+        /// </summary>
+        /// <param name="kind">The type of the media track. Must be audio or video.</param>
+        /// <param name="status">The stream status for the media track.</param>
+        void SetAudioMediaStreamStatus(MediaStreamStatusEnum status);
+
+        /// <summary>
+        /// Sets the stream status on local video track.
+        /// </summary>
+        /// <param name="Ssrc">Ssrc of the local video track</param>
+        /// <param name="status">The stream status for the media track.</param>
+        void SetVideoMediaStreamStatus(String Ssrc, MediaStreamStatusEnum status);
+
 
         /// <summary>
         /// Attempts to send a DTMF tone to the remote party.

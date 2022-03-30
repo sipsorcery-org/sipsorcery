@@ -43,7 +43,7 @@ namespace SIPSorcery.Media
     /// always co-ordinate the encoding and decoding of samples sent to and received from
     /// the RTP transport.
     /// </summary>
-    public class VoIPMediaSession : RTPSession, IMediaSession
+    public class VoIPMediaSession : RTPSession
     {
         private const int TEST_PATTERN_FPS = 30;
         private const int TEST_PATTERN_ONHOLD_FPS = 3;
