@@ -645,7 +645,7 @@ namespace SIPSorcery.Net
                 if (chunksSent < burstSize && _unconfirmedChunks.Count > 0)
                 {
                     foreach (var chunk in _unconfirmedChunks.Values
-                        .Where(x => now.Subtract(x.LastSentAt).TotalSeconds > RTO_MIN_SECONDS)
+                        .Where(x => now.Subtract(x.LastSentAt).TotalMilliseconds > (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
                         .Take(burstSize - chunksSent))
                     {
                         if (!chunk.Abandoned)
