@@ -128,7 +128,7 @@ namespace SIPSorcery.Net
         internal double _rto = RTO_INITIAL_SECONDS * 1000;
         internal int _rtoInitialMilliseconds = RTO_INITIAL_SECONDS * 1000;
         internal int _rtoMinimumMilliseconds = RTO_MIN_SECONDS * 1000;
-        private double _rtoMaximumMilliseconds = RTO_MAX_SECONDS * 1000;
+        internal int _rtoMaximumMilliseconds = RTO_MAX_SECONDS * 1000;
         private bool _hasRoundTripTime;
         private double _smoothedRoundTripTime; // "SRTT"
         private double _roundTripTimeVariation; // "RTTVAR"
@@ -658,12 +658,12 @@ namespace SIPSorcery.Net
                 if (chunksSent < burstSize && _unconfirmedChunks.Count > 0)
                 {
                     foreach (var chunk in _unconfirmedChunks.Values
-                        .Where(x => now.Subtract(x.LastSentAt).TotalMilliseconds > (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
+                        .Where(x => (now - x.LastSentAt).TotalMilliseconds > (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
                         .Take(burstSize - chunksSent))
                     {
                         if (!chunk.Abandoned)
                         {
-                            chunk.LastSentAt = DateTime.Now;
+                            chunk.LastSentAt = now;
                             chunk.SendCount += 1;
 
                             logger.LogTrace($"SCTP retransmitting data chunk for TSN {chunk.TSN}, data length {chunk.UserData.Length}, " +
@@ -754,7 +754,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    return _rtoMinimumMilliseconds;
+                    return (int)(_hasRoundTripTime ? _rto : _rtoInitialMilliseconds);
                 }
             }
             else if (_unconfirmedChunks.Count > 0)
