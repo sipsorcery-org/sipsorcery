@@ -157,6 +157,8 @@ namespace SIPSorcery.Net
         /// https://datatracker.ietf.org/doc/html/rfc3758#section-3.5
         /// </summary>
         internal uint _advancedPeerAckPoint { get; private set; }
+        private uint _lastSentForwardCumulativeTSN;
+        private DateTime _lastSentForwardCumulativeTSNTime;
 
         /// <summary>
         /// Keeps track of the sequence numbers for each of the streams being
@@ -364,9 +366,20 @@ namespace SIPSorcery.Net
             // RFC 3758 3.5 C3
             if (SctpDataReceiver.IsNewer(_gotFirstSACK ? _cumulativeAckTSN : _initialTSN, _advancedPeerAckPoint))
             {
-                logger.LogTrace($"SCTP AdvancedPeerAckPoint moved from {_cumulativeAckTSN} to {_advancedPeerAckPoint}");
-                _sendForwardTsn(GetForwardTSN());
-                RemoveAbandonedUnconfirmedChunks(_advancedPeerAckPoint);
+                var now = DateTime.Now;
+                // RFC 3758 3.5 F2: An implementation may wish to limit the number of duplicate FORWARD TSN chunks it sends by either
+                // only sending a duplicate FORWARD TSN every other SACK or waiting a full RTT before sending a duplicate FORWARD TSN.
+                if (_lastSentForwardCumulativeTSNTime == default
+                    || _lastSentForwardCumulativeTSN != _advancedPeerAckPoint
+                    || (now - _lastSentForwardCumulativeTSNTime).TotalMilliseconds > _rto)
+                {
+                    _lastSentForwardCumulativeTSNTime = now;
+                    _lastSentForwardCumulativeTSN = _advancedPeerAckPoint;
+
+                    logger.LogTrace($"SCTP AdvancedPeerAckPoint ({_advancedPeerAckPoint}) is ahead of CumAckTSN ({(_gotFirstSACK ? _cumulativeAckTSN : _initialTSN)}). Sending Forward TSN");
+                    _sendForwardTsn(GetForwardTSN());
+                    RemoveAbandonedUnconfirmedChunks(_advancedPeerAckPoint);
+                }
             }
         }
 

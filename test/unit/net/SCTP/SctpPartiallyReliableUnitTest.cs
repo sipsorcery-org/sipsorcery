@@ -131,8 +131,8 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
             sender._burstPeriodMilliseconds = 1;
-            sender._rtoInitialMilliseconds = 1;
-            sender._rtoMinimumMilliseconds = 1;
+            sender._rtoInitialMilliseconds = 100;
+            sender._rtoMinimumMilliseconds = 100;
 
             sender._supportsPartialReliabilityExtension = true;
             sender.StartSending();
@@ -198,7 +198,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(initialTSN + 3, sender.TSN);
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
             Assert.Equal(0, receiver.ForwardTSNCount);
-            Assert.True(forwardTSNCount > 0);
+            Assert.Equal(1, forwardTSNCount);
         }
 
 
@@ -214,8 +214,8 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
             PartiallyReliableTestHelper.TestSender sender = new PartiallyReliableTestHelper.TestSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
             sender._burstPeriodMilliseconds = 1;
-            sender._rtoInitialMilliseconds = 1;
-            sender._rtoMinimumMilliseconds = 1;
+            sender._rtoInitialMilliseconds = 100;
+            sender._rtoMinimumMilliseconds = 100;
 
             sender._supportsPartialReliabilityExtension = true;
             sender.StartSending();
@@ -270,7 +270,7 @@ namespace SIPSorcery.Net.UnitTests
             await Task.Delay(sender._burstPeriodMilliseconds);
             sender.SendData(0, 0, new byte[] { 0x03 }); // Received
             await Task.Delay(sender._burstPeriodMilliseconds);
-            Assert.True(forwardTSNCount > 0);
+            Assert.Equal(1, forwardTSNCount);
 
             Assert.Equal(initialTSN + 3, sender.TSN);
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
@@ -503,7 +503,7 @@ namespace SIPSorcery.Net.UnitTests
                 sender.SendData(0, 0, new byte[] { i }, ordered, maxRetransmits: maxRetransmits);
             }
 
-            mre.WaitHandle.WaitOne(5000, true);
+            mre.WaitHandle.WaitOne(10000, true);
 
             // Catch-up values in the scenario where the last SACK or FWD-TSN was dropped
             receiver.OnForwardCumulativeTSNChunk(sender.GetForwardTSN());
