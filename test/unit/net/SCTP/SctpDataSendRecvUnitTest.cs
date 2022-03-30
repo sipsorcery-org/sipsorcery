@@ -96,6 +96,9 @@ namespace SIPSorcery.Net.UnitTests
 
             SctpDataReceiver receiver = new SctpDataReceiver(arwnd, null, null, mtu, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, mtu, initialTSN, arwnd);
+
+            sender._rtoInitialMilliseconds = 1;
+            sender._rtoMinimumMilliseconds = 1;
             sender.StartSending();
 
             // This local function replicates a data chunk being sent from a data
