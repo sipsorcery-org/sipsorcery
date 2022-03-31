@@ -64,6 +64,10 @@ namespace SIPSorcery.Net
         /// </summary>
         public const int RTO_MAX_SECONDS = 60;
 
+        public const double RTO_ALPHA = 0.125; // Suggested value in rfc4960#section-15
+        public const double RTO_BETA = 0.25; // Suggested value in rfc4960#section-15
+
+
         private static ILogger logger = LogFactory.CreateLogger<SctpDataSender>();
 
         /// <summary>
@@ -132,8 +136,6 @@ namespace SIPSorcery.Net
         private bool _hasRoundTripTime;
         private double _smoothedRoundTripTime; // "SRTT"
         private double _roundTripTimeVariation; // "RTTVAR"
-        private double _rtoAlpha = 0.125; // Suggested value in rfc4960#section-15
-        private double _rtoBeta = 0.25; // Suggested value in rfc4960#section-15
 
 
         /// <summary>
@@ -777,8 +779,8 @@ namespace SIPSorcery.Net
             else
             {
                 // rfc 4960 6.3.1 C3
-                _roundTripTimeVariation = (1 - _rtoBeta) * _roundTripTimeVariation + _rtoBeta * Math.Abs(_smoothedRoundTripTime - rttMilliseconds);
-                _smoothedRoundTripTime = (1 - _rtoAlpha) * _smoothedRoundTripTime + _rtoAlpha * rttMilliseconds;
+                _roundTripTimeVariation = (1 - RTO_BETA) * _roundTripTimeVariation + RTO_BETA * Math.Abs(_smoothedRoundTripTime - rttMilliseconds);
+                _smoothedRoundTripTime = (1 - RTO_ALPHA) * _smoothedRoundTripTime + RTO_ALPHA * rttMilliseconds;
                 _rto = (int) (_smoothedRoundTripTime + 4 * _roundTripTimeVariation);
             }
 
