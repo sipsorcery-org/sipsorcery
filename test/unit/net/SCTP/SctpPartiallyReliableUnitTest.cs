@@ -139,8 +139,6 @@ namespace SIPSorcery.Net.UnitTests
 
             int framesSent = 0;
 
-            int forwardTSNCount = 0;
-
             Action<SctpDataChunk> senderSendData = (chunk) =>
             {
                 if (chunk.UserData[0] == 0x02)
@@ -161,7 +159,6 @@ namespace SIPSorcery.Net.UnitTests
             {
                 logger.LogDebug($"Forward TSN chunk {chunk.NewCumulativeTSN} provided to receiver.");
                 receiver.OnForwardCumulativeTSNChunk(chunk);
-                forwardTSNCount++;
             };
 
             Action<SctpSackChunk> receiverSendSack = (chunk) =>
@@ -187,7 +184,7 @@ namespace SIPSorcery.Net.UnitTests
             sender.SendData(0, 0, new byte[] { 0x02 }, ordered, timeoutMillis, maxRetransmits);
 
             // delay so that message 0x02 times out and becomes abandoned
-            await Task.Delay((int)(timeoutMillis == uint.MaxValue ? 0 : timeoutMillis) + sender._burstPeriodMilliseconds);
+            await Task.Delay((int)(timeoutMillis == uint.MaxValue ? (uint)sender._burstPeriodMilliseconds : timeoutMillis));
 
             sender.SendData(0, 0, new byte[] { 0x03 }, ordered);
             await Task.Delay(sender._burstPeriodMilliseconds);
@@ -198,7 +195,6 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(initialTSN + 3, sender.TSN);
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
             Assert.Equal(0, receiver.ForwardTSNCount);
-            Assert.Equal(1, forwardTSNCount);
         }
 
 
