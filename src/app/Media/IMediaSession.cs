@@ -92,7 +92,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Fired when no RTP or RTCP packets are received for a pre-defined period (typically 30s).
         /// </summary>
-        event Action<SDPMediaTypesEnum> OnTimeout;
+        event Action<uint, SDPMediaTypesEnum> OnTimeout;
 
         /// <summary>
         /// Creates a new SDP offer based on the local media tracks in the session.

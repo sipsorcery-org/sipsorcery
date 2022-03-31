@@ -499,14 +499,14 @@ namespace SIPSorcery.Net
             {
                 if (_dtlsHandle != null)
                 {
-                    if (base.AudioDestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
-                        base.AudioDestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
+                    if (base.AudioStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
+                        base.AudioStream.DestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
                     {
                         // Already connected and this event is due to change in the nominated remote candidate.
                         var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
                         base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
-                        logger.LogInformation($"ICE changing connected remote end point to {AudioDestinationEndPoint}.");
+                        logger.LogInformation($"ICE changing connected remote end point to {AudioStream.DestinationEndPoint}.");
                     }
 
                     if (connectionState == RTCPeerConnectionState.disconnected ||
@@ -526,7 +526,7 @@ namespace SIPSorcery.Net
 
                     base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
-                    logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
+                    logger.LogInformation($"ICE connected to remote end point {AudioStream.DestinationEndPoint}.");
 
                     bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
                     _dtlsHandle = new DtlsSrtpTransport(
@@ -946,10 +946,10 @@ namespace SIPSorcery.Net
             }
             else
             {
-                var audioCapabilities = (AudioLocalTrack != null && AudioRemoteTrack != null) ?
-                    SDPAudioVideoMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, AudioRemoteTrack.Capabilities) : null;
-                var videoCapabilities = (VideoLocalTrack != null && VideoRemoteTrack != null) ?
-                    SDPAudioVideoMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities) : null;
+                var audioCapabilities = (AudioStream.LocalTrack != null && AudioStream.RemoteTrack != null) ?
+                    SDPAudioVideoMediaFormat.GetCompatibleFormats(AudioStream.LocalTrack.Capabilities, AudioStream.RemoteTrack.Capabilities) : null;
+                var videoCapabilities = (VideoStream.LocalTrack != null && VideoStream.RemoteTrack != null) ?
+                    SDPAudioVideoMediaFormat.GetCompatibleFormats(VideoStream.LocalTrack.Capabilities, VideoStream.RemoteTrack.Capabilities) : null;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
 
@@ -958,8 +958,8 @@ namespace SIPSorcery.Net
                 {
                     if (localTrack != null && localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
                     {
-                        if ((localTrack.Kind == SDPMediaTypesEnum.audio && AudioRemoteTrack != null && AudioRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive) ||
-                            (localTrack.Kind == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive))
+                        if ((localTrack.Kind == SDPMediaTypesEnum.audio && AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive) ||
+                            (localTrack.Kind == SDPMediaTypesEnum.video && VideoStream.RemoteTrack != null && VideoStream.RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive))
                         {
                             localTrack.StreamStatus = localTrack.DefaultStreamStatus;
                         }
@@ -1117,7 +1117,7 @@ namespace SIPSorcery.Net
                     if (track.Ssrc != 0)
                     {
                         string trackCname = track.Kind == SDPMediaTypesEnum.video ?
-                       VideoRtcpSession?.Cname : AudioRtcpSession?.Cname;
+                       VideoStream.RtcpSession?.Cname : AudioStream.RtcpSession?.Cname;
 
                         if (trackCname != null)
                         {
@@ -1620,7 +1620,7 @@ namespace SIPSorcery.Net
             dtlsHandle.OnDataReady += (buf) =>
             {
                 //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-                rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
+                rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioStream.DestinationEndPoint, buf);
             };
 
             var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);

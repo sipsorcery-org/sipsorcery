@@ -89,7 +89,7 @@ namespace SIPSorcery.Media
             var audioTrack = new MediaStreamTrack(_audioExtrasSource.GetAudioSourceFormats());
             base.addTrack(audioTrack);
             Media.AudioSource.OnAudioSourceEncodedSample += base.SendAudio;
-            base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
+            base.AudioStream.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
         }
 
         public VoIPMediaSession(MediaEndPoints mediaEndPoint, VideoTestPatternSource testPatternSource)
@@ -154,7 +154,7 @@ namespace SIPSorcery.Media
             if (Media.VideoSink != null)
             {
                 Media.VideoSink.OnVideoSinkDecodedSample += VideoSinkSampleReady;
-                base.OnVideoFrameReceived += Media.VideoSink.GotVideoFrame;
+                base.VideoStream.OnVideoFrameReceived += Media.VideoSink.GotVideoFrame;
             }
 
             if (Media.AudioSink != null)
@@ -162,8 +162,9 @@ namespace SIPSorcery.Media
                 base.OnRtpPacketReceived += RtpMediaPacketReceived;
             }
 
-            base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
-            base.OnVideoFormatsNegotiated += VideoFormatsNegotiated;
+            base.AudioStream.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
+            base.VideoStream.OnVideoFormatsNegotiated += VideoFormatsNegotiated;
+            
         }
 
         private async void VideoSource_OnVideoSourceError(string errorMessage)
@@ -261,7 +262,7 @@ namespace SIPSorcery.Media
                 if (Media.VideoSink != null)
                 {
                     Media.VideoSink.OnVideoSinkDecodedSample -= VideoSinkSampleReady;
-                    base.OnVideoFrameReceived -= Media.VideoSink.GotVideoFrame;
+                    base.VideoStream.OnVideoFrameReceived -= Media.VideoSink.GotVideoFrame;
                 }
             }
         }

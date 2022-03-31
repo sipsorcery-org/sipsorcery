@@ -28,7 +28,7 @@ namespace SIPSorcery.Media
             AudioExtrasSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
             AudioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
 
-            base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
+            base.AudioStream.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
 
             var audioTrack = new MediaStreamTrack(AudioExtrasSource.GetAudioSourceFormats());
             base.addTrack(audioTrack);

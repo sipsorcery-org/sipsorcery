@@ -167,7 +167,7 @@ namespace SIPSorcery.Net
         /// Fires when the connection is classified as timed out due to not
         /// receiving any RTP or RTCP packets within the given period.
         /// </summary>
-        public event Action<SDPMediaTypesEnum> OnTimeout;
+        public event Action<uint, SDPMediaTypesEnum> OnTimeout;
 
         /// <summary>
         /// Default constructor.
@@ -315,7 +315,7 @@ namespace SIPSorcery.Net
                                 logger.LogWarning($"RTCP session for local ssrc {Ssrc} has not had any activity for over {NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds.");
                                 IsTimedOut = true;
 
-                                OnTimeout?.Invoke(MediaType);
+                                OnTimeout?.Invoke(Ssrc, MediaType);
                             }
                         }
 
