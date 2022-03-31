@@ -374,7 +374,7 @@ namespace SIPSorcery.Net.UnitTests
             uint initialTSN = Crypto.GetRandomUInt();
 
             SctpDataReceiver receiver = new SctpDataReceiver(SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, null, null, 1400, initialTSN);
-            SctpDataSender sender = new SctpDataSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+            var sender = new PartiallyReliableTestHelper.TestSender("dummy", null, 1400, initialTSN, SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
             sender._burstPeriodMilliseconds = 1;
             sender._rtoInitialMilliseconds = 1;
             sender._rtoMinimumMilliseconds = 1;
@@ -509,7 +509,7 @@ namespace SIPSorcery.Net.UnitTests
             receiver.OnForwardCumulativeTSNChunk(sender.GetForwardTSN());
             sender.GotSack(receiver.GetSackChunk());
 
-            await Task.Delay(100);
+            await Task.Delay(sender._burstPeriodMilliseconds);
 
             unchecked
             {
@@ -520,6 +520,10 @@ namespace SIPSorcery.Net.UnitTests
                 Assert.Equal(initialTSN + messageCount - 1, sender._advancedPeerAckPoint);
                 Assert.Equal(initialTSN + messageCount - 1, receiver.CumulativeAckTSN);
                 Assert.Equal(0, receiver.ForwardTSNCount);
+
+                Assert.Equal(0, sender.MissingChunkCount);
+                Assert.Equal(0, sender.UnconfirmedChunkCount);
+                Assert.Equal(0, sender.AbandonedChunkCount);
             }
         }
     }
@@ -539,6 +543,10 @@ namespace SIPSorcery.Net.UnitTests
                 uint remoteARwnd) : base(associationID, sendChunk, defaultMTU, initialTSN, remoteARwnd)
             {
             }
+
+            public int MissingChunkCount => _missingChunks.Count;
+            public int UnconfirmedChunkCount => _unconfirmedChunks.Count;
+            public int AbandonedChunkCount => _abandonedChunks.Count;
 
             public void Enqueue(SctpDataChunk chunk)
             {

@@ -98,10 +98,7 @@ namespace SIPSorcery.Net
         internal int SendCount;
 
         // Used by the sender for the partial-reliability extension RFC3758
-        /// <summary>
-        /// If true, the message is abandoned and should NOT be retransmitted.
-        /// </summary>
-        internal bool Abandoned;
+
         /// <summary>
         /// The time at which the ULP requested this message be sent.
         /// </summary>
