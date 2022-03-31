@@ -189,8 +189,6 @@ namespace SIPSorcery.Net
 
         private SrtpHandlerCollection m_secureHandlerCollection = new SrtpHandlerCollection();
 
-        private SecureContextCollection m_secureContextCollection = new SecureContextCollection();
-
         private Dictionary<SDPMediaTypesEnum, RTPReorderBuffer> _reorderBuffers = new Dictionary<SDPMediaTypesEnum, RTPReorderBuffer>();
 
         /// <summary>
@@ -229,10 +227,20 @@ namespace SIPSorcery.Net
         /// If this session is using a secure context this flag MUST be set to indicate
         /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
         /// </summary>
-        public bool IsSecureContextReady => 
-                (HasAudio && !HasVideo && IsSecureContextReadyForMediaType(SDPMediaTypesEnum.audio)) 
-                || (!HasAudio && HasVideo && IsSecureContextReadyForMediaType(SDPMediaTypesEnum.video))
-                || (HasAudio && HasVideo && IsSecureContextReadyForMediaType(SDPMediaTypesEnum.audio) && IsSecureContextReadyForMediaType(SDPMediaTypesEnum.video));
+        public bool IsSecureContextReady()
+        {
+            if (HasAudio && !AudioStream.IsSecurityContextReady())
+            {
+                return false;
+            }
+
+            if (HasVideo && !VideoStream.IsSecurityContextReady())
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         /// <summary>
         /// If this session is using a secure context this list MAY contain custom
@@ -502,7 +510,54 @@ namespace SIPSorcery.Net
         /// If this session is using a secure context this flag MUST be set to indicate
         /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
         /// </summary>        
-        public bool IsSecureContextReadyForMediaType(SDPMediaTypesEnum mediaType) => m_secureContextCollection.IsSecureContextReady(mediaType);
+        public bool IsSecureContextReadyForMediaType(SDPMediaTypesEnum mediaType)
+        {
+            if(mediaType == SDPMediaTypesEnum.audio)
+            {
+                return AudioStream.IsSecurityContextReady();
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                return VideoStream.IsSecurityContextReady();
+            }
+            return false;
+        }
+
+        public void SetSecureContextForMediaType(SDPMediaTypesEnum mediaType, 
+                    ProtectRtpPacket protectRtp,
+                    ProtectRtpPacket unprotectRtp,
+                    ProtectRtpPacket protectRtcp,
+                    ProtectRtpPacket unprotectRtcp)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                AudioStream.SetSecurityContext(protectRtp,
+                    unprotectRtp,
+                    protectRtcp,
+                    unprotectRtcp);
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                VideoStream.SetSecurityContext(protectRtp,
+                    unprotectRtp,
+                    protectRtcp,
+                    unprotectRtcp);
+            }
+        }
+
+        public SecureContext GetSecureContextForMediaType(SDPMediaTypesEnum mediaType)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                return AudioStream.GetSecurityContext();
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                return VideoStream.GetSecurityContext();
+            }
+            return null; ;
+        }
+
 
         /// <summary>
         /// Removes a media track from this session. A media track represents an audio or video
@@ -703,12 +758,11 @@ namespace SIPSorcery.Net
 
                             if (srtpHandler.IsNegotiationComplete)
                             {
-                                SetSecurityContext(
-                                    mediaType,
-                                    srtpHandler.ProtectRTP,
-                                    srtpHandler.UnprotectRTP,
-                                    srtpHandler.ProtectRTCP,
-                                    srtpHandler.UnprotectRTCP);
+                                SetSecureContextForMediaType(mediaType,
+                                        srtpHandler.ProtectRTP,
+                                        srtpHandler.UnprotectRTP,
+                                        srtpHandler.ProtectRTCP,
+                                        srtpHandler.UnprotectRTCP);
                             }
                         }
                         // If we had no crypto but we were definetely expecting something since we had a port value
@@ -1330,10 +1384,10 @@ namespace SIPSorcery.Net
 
                     var handler = m_secureHandlerCollection.GetOrCreateSrtpHandler(announcement.Media);
                     handler.SetupLocal(announcement.SecurityDescriptions, sdpType);
+                    
                     if (handler.IsNegotiationComplete)
                     {
-                        SetSecurityContext(
-                            announcement.Media,
+                        SetSecureContextForMediaType(announcement.Media, 
                             handler.ProtectRTP,
                             handler.UnprotectRTP,
                             handler.ProtectRTCP,
@@ -1388,46 +1442,6 @@ namespace SIPSorcery.Net
             rtpChannel.Start();
 
             return rtpChannel;
-        }
-
-        /// <summary>
-        /// Sets the Secure RTP (SRTP) delegates for the media types. This version is to be used to set for multiplexed sessions
-        /// </summary>
-        /// <param name="mediaTypes">The media types to set the secure context for.</param>
-        /// <param name="protectRtp">SRTP encrypt RTP packet delegate.</param>
-        /// <param name="unprotectRtp">SRTP decrypt RTP packet delegate.</param>
-        /// <param name="protectRtcp">SRTP encrypt RTCP packet delegate.</param>
-        /// <param name="unprotectRtcp">SRTP decrypt RTCP packet delegate.</param>
-        public virtual void SetSecurityContext(
-            IEnumerable<SDPMediaTypesEnum> mediaTypes,
-            ProtectRtpPacket protectRtp,
-            ProtectRtpPacket unprotectRtp,
-            ProtectRtpPacket protectRtcp,
-            ProtectRtpPacket unprotectRtcp)
-        {
-            foreach (var mediaType in mediaTypes)
-            {
-                SetSecurityContext(mediaType, protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
-            }
-        }
-
-        /// <summary>
-        /// Sets the Secure RTP (SRTP) delegates for a specific media type
-        /// </summary>
-        /// <param name="mediaType">The media type to set the secure context for.</param>
-        /// <param name="protectRtp">SRTP encrypt RTP packet delegate.</param>
-        /// <param name="unprotectRtp">SRTP decrypt RTP packet delegate.</param>
-        /// <param name="protectRtcp">SRTP encrypt RTCP packet delegate.</param>
-        /// <param name="unprotectRtcp">SRTP decrypt RTCP packet delegate.</param>
-        public virtual void SetSecurityContext(
-            SDPMediaTypesEnum mediaType,
-            ProtectRtpPacket protectRtp,
-            ProtectRtpPacket unprotectRtp,
-            ProtectRtpPacket protectRtcp,
-            ProtectRtpPacket unprotectRtcp)
-        {
-            m_secureContextCollection.SetSecureContextForMediaType(mediaType, new SecureContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp));
-            logger.LogDebug($"Secure context successfully set on RTPSession for media type {mediaType}.");
         }
 
         /// <summary>
@@ -1594,7 +1608,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
         public void SendAudio(uint durationRtpUnits, byte[] sample)
         {
-            if (AudioStream.DestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReadyForMediaType(SDPMediaTypesEnum.audio)))
+            if (AudioStream.DestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || AudioStream.IsSecurityContextReady()))
             {
                 var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
                 SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
@@ -1610,7 +1624,7 @@ namespace SIPSorcery.Net
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
             if (VideoStream.DestinationEndPoint != null || (m_isMediaMultiplexed && AudioStream.DestinationEndPoint != null) &&
-                ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecureContextReadyForMediaType(SDPMediaTypesEnum.video)))
+                ((!IsSecure && !UseSdpCryptoNegotiation) || VideoStream.IsSecurityContextReady()))
             {
                 var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
 
@@ -1684,7 +1698,7 @@ namespace SIPSorcery.Net
                         int markerBit = 0;
 
                         var audioRtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
-                        var protectRtpPacket = m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.audio)?.ProtectRtpPacket;
+                        var protectRtpPacket = AudioStream.GetSecurityContext()?.ProtectRtpPacket;
                         SendRtpPacket(audioRtpChannel, AudioStream.DestinationEndPoint, payload, payloadTimestamp, markerBit, payloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioStream.RtcpSession, protectRtpPacket);
 
                         //logger.LogDebug($"send audio { audioRtpChannel.RTPLocalEndPoint}->{AudioDestinationEndPoint}.");
@@ -1745,7 +1759,7 @@ namespace SIPSorcery.Net
 
                         var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
 
-                        var protectRtpPacket = m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.video)?.ProtectRtpPacket;
+                        var protectRtpPacket = VideoStream.GetSecurityContext()?.ProtectRtpPacket;
                         SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), VideoStream.RtcpSession, protectRtpPacket);
                         //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
                     }
@@ -1804,7 +1818,7 @@ namespace SIPSorcery.Net
 
                         int markerBit = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
 
-                        var protectRtpPacket = m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.video)?.ProtectRtpPacket;
+                        var protectRtpPacket = VideoStream.GetSecurityContext()?.ProtectRtpPacket;
                         SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.video), dstEndPoint, packetPayload.ToArray(), videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), VideoStream.RtcpSession, protectRtpPacket);
                     }
 
@@ -1884,7 +1898,7 @@ namespace SIPSorcery.Net
 
                 var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
 
-                var protectRtpPacket = m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.video)?.ProtectRtpPacket;
+                var protectRtpPacket = VideoStream.GetSecurityContext()?.ProtectRtpPacket;
                 SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), VideoStream.RtcpSession, protectRtpPacket);
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
@@ -1911,7 +1925,7 @@ namespace SIPSorcery.Net
 
                     var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
 
-                    var protectRtpPacket = m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.video)?.ProtectRtpPacket;
+                    var protectRtpPacket = VideoStream.GetSecurityContext()?.ProtectRtpPacket;
                     SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), VideoStream.RtcpSession, protectRtpPacket);
                     //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 }
@@ -1991,7 +2005,7 @@ namespace SIPSorcery.Net
                         byte[] buffer = rtpEvent.GetEventPayload();
 
                         int markerBit = (i == 0) ? 1 : 0;  // Set marker bit for the first packet in the event.
-                        var protectRtpPacket = m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.audio)?.ProtectRtpPacket;
+                        var protectRtpPacket = AudioStream.GetSecurityContext()?.ProtectRtpPacket;
                         SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, markerBit, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioStream.RtcpSession, protectRtpPacket);
                     }
 
@@ -2005,7 +2019,7 @@ namespace SIPSorcery.Net
                             rtpEvent.Duration += rtpTimestampStep;
                             byte[] buffer = rtpEvent.GetEventPayload();
 
-                            var protectRtpPacket = m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.audio)?.ProtectRtpPacket;
+                            var protectRtpPacket = AudioStream.GetSecurityContext()?.ProtectRtpPacket;
                             SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioStream.RtcpSession, protectRtpPacket);
 
                             await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
@@ -2018,7 +2032,7 @@ namespace SIPSorcery.Net
                             rtpEvent.Duration = rtpEvent.TotalDuration;
                             byte[] buffer = rtpEvent.GetEventPayload();
 
-                            var protectRtpPacket = m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.audio)?.ProtectRtpPacket;
+                            var protectRtpPacket = AudioStream.GetSecurityContext()?.ProtectRtpPacket;
                             SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioStream.RtcpSession, protectRtpPacket);
                         }
                     }
@@ -2066,7 +2080,7 @@ namespace SIPSorcery.Net
 
                 if (dstEndPoint != null)
                 {
-                    var protectRtpPacket = mediaType == SDPMediaTypesEnum.audio ? m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.audio)?.ProtectRtpPacket : (mediaType == SDPMediaTypesEnum.video ? m_secureContextCollection.GetSecureContext(SDPMediaTypesEnum.video)?.ProtectRtpPacket : null);
+                    var protectRtpPacket = GetSecureContextForMediaType(mediaType)?.ProtectRtpPacket;
                     SendRtpPacket(rtpChannel, dstEndPoint, payload, timestamp, markerBit, payloadTypeID, track.Ssrc, track.GetNextSeqNum(), rtcpSession, protectRtpPacket);
                 }
             }
@@ -2123,7 +2137,7 @@ namespace SIPSorcery.Net
 
         private (bool, byte[]) UnprotectBuffer(SDPMediaTypesEnum mediaType, byte[] buffer)
         {
-            var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
+            var secureContext = GetSecureContextForMediaType(mediaType);
             if (secureContext != null)
             {
                 int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
@@ -2200,7 +2214,7 @@ namespace SIPSorcery.Net
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
-                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady)
+                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady())
                 {
                     logger.LogWarning("RTP or RTCP packet received before secure context ready.");
                 }
@@ -2225,7 +2239,7 @@ namespace SIPSorcery.Net
                     SDPMediaTypesEnum mediaType = GetMediaTypesFromSSRC(ssrc);
                     if (mediaType != SDPMediaTypesEnum.invalid)
                     {
-                        var secureContext = m_secureContextCollection.GetSecureContext(mediaType);
+                        var secureContext = GetSecureContextForMediaType(mediaType);
                         if (secureContext != null)
                         {
                             int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
@@ -2774,7 +2788,7 @@ namespace SIPSorcery.Net
 
                 var rtpChannel = GetRtpChannel(mediaType);
 
-                var protectRtcpPacket = m_secureContextCollection.GetSecureContext(mediaType)?.ProtectRtcpPacket;
+                var protectRtcpPacket = GetSecureContextForMediaType(mediaType)?.ProtectRtcpPacket;
 
                 if (protectRtcpPacket == null)
                 {

@@ -1649,9 +1649,12 @@ namespace SIPSorcery.Net
                 {
                     logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
 
-                    base.SetSecurityContext(
-                        new List<SDPMediaTypesEnum> { SDPMediaTypesEnum.audio, SDPMediaTypesEnum.video, SDPMediaTypesEnum.application },
-                        dtlsHandle.ProtectRTP,
+                    AudioStream.SetSecurityContext(dtlsHandle.ProtectRTP,
+                        dtlsHandle.UnprotectRTP,
+                        dtlsHandle.ProtectRTCP,
+                        dtlsHandle.UnprotectRTCP);
+
+                    VideoStream.SetSecurityContext(dtlsHandle.ProtectRTP,
                         dtlsHandle.UnprotectRTP,
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);

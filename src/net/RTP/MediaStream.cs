@@ -156,7 +156,7 @@ namespace SIPSorcery.net.RTP
         /// </summary>
         public SDPMediaTypesEnum MediaType;
 
-        public SecureContext SecureContext;
+        private SecureContext SecureContext;
 
         public RtpIceChannel RtpIceChannel;
 
@@ -184,6 +184,30 @@ namespace SIPSorcery.net.RTP
         /// The remote RTP control end point this stream is sending to RTCP reports for the media stream to.
         /// </summary>
         public IPEndPoint ControlDestinationEndPoint { get; set; }
+
+        public void SetSecurityContext(
+            ProtectRtpPacket protectRtp,
+            ProtectRtpPacket unprotectRtp,
+            ProtectRtpPacket protectRtcp,
+            ProtectRtpPacket unprotectRtcp)
+        {
+            if (SecureContext != null)
+            {
+                logger.LogTrace($"Tried adding new SecureContext for media type {MediaType}, but one already existed");
+            }
+
+            SecureContext = new SecureContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
+        }
+
+        public SecureContext GetSecurityContext()
+        {
+            return SecureContext;
+        }
+
+        public Boolean IsSecurityContextReady()
+        {
+            return (SecureContext != null);
+        }
 
         public MediaStream()
         {
