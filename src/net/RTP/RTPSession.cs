@@ -247,12 +247,6 @@ namespace SIPSorcery.Net
         public List<SDPSecurityDescription.CryptoSuites> SrtpCryptoSuites { get; set; }
 
         /// <summary>
-        /// In order to detect RTP events from the remote party this property needs to 
-        /// be set to the payload ID they are using.
-        /// </summary>
-        public int RemoteRtpEventPayloadID { get; set; } = DEFAULT_DTMF_EVENT_PAYLOAD_ID;
-
-        /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot
         /// be restarted.
         /// </summary>
@@ -797,7 +791,7 @@ namespace SIPSorcery.Net
                             SDPAudioVideoMediaFormat commonEventFormat = SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(announcement.MediaFormats.Values.ToList(), AudioStream.LocalTrack.Capabilities);
                             if (!commonEventFormat.IsEmpty())
                             {
-                                RemoteRtpEventPayloadID = commonEventFormat.ID;
+                                AudioStream.RemoteRtpEventPayloadID = commonEventFormat.ID;
                             }
 
                             SetLocalTrackStreamStatus(AudioStream.LocalTrack, remoteTrack.StreamStatus, remoteAudioRtpEP);
@@ -1494,22 +1488,18 @@ namespace SIPSorcery.Net
         {
             if (m_isMediaMultiplexed)
             {
-                AudioStream.DestinationEndPoint = rtpEndPoint;
-                VideoStream.DestinationEndPoint = rtpEndPoint;
-                AudioStream.ControlDestinationEndPoint = rtcpEndPoint;
-                VideoStream.ControlDestinationEndPoint = rtcpEndPoint;
+                AudioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
+                VideoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
             }
             else
             {
                 if (mediaType == SDPMediaTypesEnum.audio)
                 {
-                    AudioStream.DestinationEndPoint = rtpEndPoint;
-                    AudioStream.ControlDestinationEndPoint = rtcpEndPoint;
+                    AudioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
                 }
                 else if (mediaType == SDPMediaTypesEnum.video)
                 {
-                    VideoStream.DestinationEndPoint = rtpEndPoint;
-                    VideoStream.ControlDestinationEndPoint = rtcpEndPoint;
+                    VideoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
                 }
             }
         }
@@ -1544,71 +1534,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Attempts to get the highest priority sending format for the remote call party.
-        /// </summary>
-        /// <param name="mediaType">The media type to get the sending format for.</param>
-        /// <returns>The first compatible media format found for the specified media type.</returns>
-        public SDPAudioVideoMediaFormat GetSendingFormat(SDPMediaTypesEnum mediaType)
-        {
-            if (mediaType == SDPMediaTypesEnum.audio)
-            {
-                if (AudioStream.LocalTrack != null || AudioStream.RemoteTrack != null)
-                {
-                    if (AudioStream.LocalTrack == null)
-                    {
-                        return AudioStream.RemoteTrack.Capabilities.First();
-                    }
-                    else if (AudioStream.RemoteTrack == null)
-                    {
-                        return AudioStream.LocalTrack.Capabilities.First();
-                    }
-
-                    var format = SDPAudioVideoMediaFormat.GetCompatibleFormats(AudioStream.LocalTrack.Capabilities, AudioStream.RemoteTrack.Capabilities)
-                        .Where(x => x.ID != RemoteRtpEventPayloadID).FirstOrDefault();
-
-                    if (format.IsEmpty())
-                    {
-                        // It's not expected that this occurs as a compatibility check is done when the remote session description
-                        // is set. By this point a compatible codec should be available.
-                        throw new ApplicationException($"No compatible sending format could be found for media {mediaType}.");
-                    }
-                    else
-                    {
-                        return format;
-                    }
-                }
-                else
-                {
-                    throw new ApplicationException($"Cannot get the {mediaType} sending format, missing either local or remote {mediaType} track.");
-                }
-            }
-            else if (mediaType == SDPMediaTypesEnum.video)
-            {
-                if (VideoStream.LocalTrack != null || VideoStream.RemoteTrack != null)
-                {
-                    if (VideoStream.RemoteTrack == null)
-                    {
-                        return VideoStream.LocalTrack.Capabilities.First();
-                    }
-                    else if (VideoStream.LocalTrack == null)
-                    {
-                        return VideoStream.RemoteTrack.Capabilities.First();
-                    }
-
-                    return SDPAudioVideoMediaFormat.GetCompatibleFormats(VideoStream.LocalTrack?.Capabilities, VideoStream.RemoteTrack?.Capabilities).First();
-                }
-                else
-                {
-                    throw new ApplicationException($"Cannot get the {mediaType} sending format, missing either local or remote {mediaType} track.");
-                }
-            }
-            else
-            {
-                throw new ApplicationException($"Sending of {mediaType} is not supported.");
-            }
-        }
-
-        /// <summary>
         /// Sends an audio sample to the remote peer.
         /// </summary>
         /// <param name="durationRtpUnits">The duration in RTP timestamp units of the audio sample. This
@@ -1618,7 +1543,7 @@ namespace SIPSorcery.Net
         {
             if (AudioStream.DestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || AudioStream.IsSecurityContextReady()))
             {
-                var audioFormat = GetSendingFormat(SDPMediaTypesEnum.audio);
+                var audioFormat = AudioStream.GetSendingFormat();
                 SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
             }
         }
@@ -1634,7 +1559,7 @@ namespace SIPSorcery.Net
             if (VideoStream.DestinationEndPoint != null || (m_isMediaMultiplexed && AudioStream.DestinationEndPoint != null) &&
                 ((!IsSecure && !UseSdpCryptoNegotiation) || VideoStream.IsSecurityContextReady()))
             {
-                var videoSendingFormat = GetSendingFormat(SDPMediaTypesEnum.video);
+                var videoSendingFormat = VideoStream.GetSendingFormat();
 
                 switch (videoSendingFormat.Name())
                 {
@@ -2315,7 +2240,7 @@ namespace SIPSorcery.Net
                         //SDPMediaTypesEnum? rtpMediaType = null;
 
                         // Check whether this is an RTP event.
-                        if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
+                        if (AudioStream.RemoteRtpEventPayloadID != 0 && hdr.PayloadType == AudioStream.RemoteRtpEventPayloadID)
                         {
                             if (!AudioStream.EnsureBufferUnprotected(buffer, hdr, out var rtpPacket)) {
                                 return;

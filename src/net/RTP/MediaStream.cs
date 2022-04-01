@@ -167,6 +167,12 @@ namespace SIPSorcery.net.RTP
     #region PROPERTIES
 
         /// <summary>
+        /// In order to detect RTP events from the remote party this property needs to 
+        /// be set to the payload ID they are using.
+        /// </summary>
+        public int RemoteRtpEventPayloadID { get; set; } = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
+
+        /// <summary>
         /// To type of this media
         /// </summary>
         public SDPMediaTypesEnum MediaType { get; set; }
@@ -313,6 +319,64 @@ namespace SIPSorcery.net.RTP
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Sets the remote end points for a media type supported by this RTP session.
+        /// </summary>
+        /// <param name="mediaType">The media type, must be audio or video, to set the remote end point for.</param>
+        /// <param name="rtpEndPoint">The remote end point for RTP packets corresponding to the media type.</param>
+        /// <param name="rtcpEndPoint">The remote end point for RTCP packets corresponding to the media type.</param>
+        public void SetDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
+        {
+            DestinationEndPoint = rtpEndPoint;
+            ControlDestinationEndPoint = rtcpEndPoint;
+        }
+
+        /// <summary>
+        /// Attempts to get the highest priority sending format for the remote call party.
+        /// </summary>
+        /// <returns>The first compatible media format found for the specified media type.</returns>
+        public SDPAudioVideoMediaFormat GetSendingFormat()
+        {
+            if (LocalTrack != null || RemoteTrack != null)
+            {
+                if (LocalTrack == null)
+                {
+                    return RemoteTrack.Capabilities.First();
+                }
+                else if (RemoteTrack == null)
+                {
+                    return LocalTrack.Capabilities.First();
+                }
+
+                SDPAudioVideoMediaFormat format;
+                if (MediaType == SDPMediaTypesEnum.audio)
+                {
+
+                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(LocalTrack.Capabilities, RemoteTrack.Capabilities)
+                        .Where(x => x.ID != RemoteRtpEventPayloadID).FirstOrDefault();
+                }
+                else
+                {
+                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(LocalTrack.Capabilities, RemoteTrack.Capabilities).First();
+                }
+
+                if (format.IsEmpty())
+                {
+                    // It's not expected that this occurs as a compatibility check is done when the remote session description
+                    // is set. By this point a compatible codec should be available.
+                    throw new ApplicationException($"No compatible sending format could be found for media {MediaType}.");
+                }
+                else
+                {
+                    return format;
+                }
+            }
+            else
+            {
+                throw new ApplicationException($"Cannot get the {MediaType} sending format, missing either local or remote {MediaType} track.");
+            }
         }
 
         public void ProcessHeaderExtensions(RTPHeader header)
