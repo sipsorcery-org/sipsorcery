@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
@@ -32,9 +33,23 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        public AudioStream(Boolean isSecure, Boolean useSdpCryptoNegotiation) : base(isSecure, useSdpCryptoNegotiation)
+        public AudioStream(RtpSessionConfig config) : base(config)
         {
             MediaType = SDPMediaTypesEnum.audio;
+        }
+
+        public Boolean RtpEventInProgress { get; set; } = false;
+
+        /// <summary>
+        /// Indicates whether this session is using audio.
+        /// </summary>
+        public bool HasAudio
+        {
+            get
+            {
+                return LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
+                  && RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+            }
         }
     }
 
@@ -60,6 +75,19 @@ namespace SIPSorcery.net.RTP
         public event Action<IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceived;
 
         public RtpVideoFramer RtpVideoFramer;
+
+        /// <summary>
+        /// Indicates whether this session is using video.
+        /// </summary>
+        public bool HasVideo
+        {
+            get
+            {
+                // TODO - CI - need to use dictionnary
+                return LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
+                  && RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+            }
+        }
 
         public void CheckVideoFormatsNegotiation()
         {
@@ -108,7 +136,7 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        public VideoStream(Boolean isSecure, Boolean useSdpCryptoNegotiation): base(isSecure, useSdpCryptoNegotiation)
+        public VideoStream(RtpSessionConfig config) : base(config)
         {
             MediaType = SDPMediaTypesEnum.video;
         }
@@ -119,6 +147,9 @@ namespace SIPSorcery.net.RTP
     {
         private static ILogger logger = Log.Logger;
 
+        private uint m_lastRtpTimestamp;
+
+        private RtpSessionConfig RtpSessionConfig;
         private Boolean IsSecure;
         private Boolean UseSdpCryptoNegotiation;
 
@@ -157,14 +188,25 @@ namespace SIPSorcery.net.RTP
         /// </summary>
         public event Action<RTCPCompoundPacket> OnSendReport;  // TODO - CI - 
 
+
+        public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
+        public event Action<int, IPEndPoint, byte[]> OnRTPControlDataReceived;
         /// <summary>
         /// Event handler for the RTP channel closure.
         /// </summary>
-        public event Action<String> OnRTPChannelClosed;  // TODO - CI - 
+        public event Action<string> OnRTPChannelClosed;
 
     #endregion EVENTS
 
     #region PROPERTIES
+
+        protected RTPChannel rtpChannel = null;
+
+        /// <summary>
+        /// Indicates whether the session has been closed. Once a session is closed it cannot
+        /// be restarted.
+        /// </summary>
+        public bool IsClosed { get; set; } = false;
 
         /// <summary>
         /// In order to detect RTP events from the remote party this property needs to 
@@ -297,10 +339,32 @@ namespace SIPSorcery.net.RTP
 
     #endregion SECURITY CONTEXT
 
-        public MediaStream(Boolean isSecure, Boolean useSdpCryptoNegotiation)
+
+    #region RTP CHANNEL
+
+        public void AddRtpChannel(RTPChannel rtpChannel)
         {
-            IsSecure = isSecure;
-            UseSdpCryptoNegotiation = useSdpCryptoNegotiation;
+            this.rtpChannel = rtpChannel;
+        }
+
+        public Boolean HasRtpChannel()
+        {
+            return rtpChannel != null;
+        }
+
+        public RTPChannel GetRTPChannel()
+        {
+            return rtpChannel;
+        }
+
+    #endregion RTP CHANNEL
+
+
+        public MediaStream(RtpSessionConfig config)
+        {
+            IsSecure = config.RtpSecureMediaOption == RtpSecureMediaOptionEnum.DtlsSrtp;
+            UseSdpCryptoNegotiation = config.RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoNegotiation;
+            RtpSessionConfig = config;
         }
 
         /// <summary>

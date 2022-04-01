@@ -607,10 +607,10 @@ namespace SIPSorcery.Net
                 _configuration?.iceServers,
                 _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
                 _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
-                m_bindPort == 0 ? 0 : m_bindPort + m_rtpChannels.Count() * 2 + 2,
+                m_bindPort == 0 ? 0 : m_bindPort + m_rtpChannelsCount * 2 + 2,
                 m_rtpPortRange);
 
-            m_rtpChannels.Add(mediaType, rtpIceChannel);
+            AddRtpChannel(mediaType, rtpIceChannel);
 
             rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
 
@@ -1010,7 +1010,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public RtpIceChannel GetRtpChannel()
         {
-            return m_rtpChannels.FirstOrDefault().Value as RtpIceChannel;
+            return GetRtpChannel(SDPMediaTypesEnum.audio) as RtpIceChannel;
         }
 
         /// <summary>

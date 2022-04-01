@@ -134,7 +134,7 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTPSession : IMediaSession, IDisposable
     {
-        private const int RTP_MAX_PAYLOAD = 1400;
+        internal const int RTP_MAX_PAYLOAD = 1400;
 
         /// <summary>
         /// From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
@@ -185,7 +185,8 @@ namespace SIPSorcery.Net
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
 
-        internal Dictionary<SDPMediaTypesEnum, RTPChannel> m_rtpChannels = new Dictionary<SDPMediaTypesEnum, RTPChannel>();
+        internal int m_rtpChannelsCount = 0; // Need to know the number of RTP Channels
+
 
         private SrtpHandlerCollection m_secureHandlerCollection = new SrtpHandlerCollection();
 
@@ -265,8 +266,8 @@ namespace SIPSorcery.Net
         {
             get
             {
-                return AudioStream.LocalTrack != null && AudioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
-                  && AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+                // TODO - CI - need to use dictionnary
+                return AudioStream.HasAudio;
             }
         }
 
@@ -278,8 +279,7 @@ namespace SIPSorcery.Net
             get
             {
                 // TODO - CI - need to use dictionnary
-                return VideoStream.LocalTrack != null && VideoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
-                  && VideoStream.RemoteTrack != null && VideoStream.RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+                return VideoStream.HasVideo;
             }
         }
 
@@ -464,8 +464,8 @@ namespace SIPSorcery.Net
                 SrtpCryptoSuites.Add(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_32);
             }
 
-            AudioStream = new AudioStream(IsSecure, UseSdpCryptoNegotiation);
-            VideoStream = new VideoStream(IsSecure, UseSdpCryptoNegotiation);
+            AudioStream = new AudioStream(config);
+            VideoStream = new VideoStream(config);
         }
 
 
@@ -1107,7 +1107,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                if (m_isMediaMultiplexed && m_rtpChannels.Count == 0)
+                if (m_isMediaMultiplexed && m_rtpChannelsCount == 0)
                 {
                     // We use audio as the media type when multiplexing.
                     CreateRtpChannel(SDPMediaTypesEnum.audio);
@@ -1120,7 +1120,7 @@ namespace SIPSorcery.Net
 
                 if (track.Kind == SDPMediaTypesEnum.audio)
                 {
-                    if (!m_isMediaMultiplexed && !m_rtpChannels.ContainsKey(SDPMediaTypesEnum.audio))
+                    if (!m_isMediaMultiplexed && !AudioStream.HasRtpChannel())
                     {
                         CreateRtpChannel(SDPMediaTypesEnum.audio);
                     }
@@ -1153,7 +1153,7 @@ namespace SIPSorcery.Net
                     // Only create the RTP socket, RTCP session etc. if a non-inactive local track is added
                     // to the session.
 
-                    if (!m_isMediaMultiplexed && !m_rtpChannels.ContainsKey(SDPMediaTypesEnum.video))
+                    if (!m_isMediaMultiplexed && !VideoStream.HasRtpChannel())
                     {
                         CreateRtpChannel(SDPMediaTypesEnum.video);
                     }
@@ -1328,7 +1328,14 @@ namespace SIPSorcery.Net
                 int rtpPort = 0; // A port of zero means the media type is not supported.
                 if (track.Capabilities != null && track.Capabilities.Count() > 0 && track.StreamStatus != MediaStreamStatusEnum.Inactive)
                 {
-                    rtpPort = (m_isMediaMultiplexed) ? m_rtpChannels.Single().Value.RTPPort : m_rtpChannels[track.Kind].RTPPort;
+                    if(m_isMediaMultiplexed || track.Kind == SDPMediaTypesEnum.audio)
+                    {
+                        rtpPort = AudioStream.GetRTPChannel().RTPPort;
+                    }
+                    else if (track.Kind == SDPMediaTypesEnum.video)
+                    {
+                        rtpPort = VideoStream.GetRTPChannel().RTPPort;
+                    }
                 }
 
                 SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
@@ -1411,14 +1418,18 @@ namespace SIPSorcery.Net
         {
             if (m_isMediaMultiplexed)
             {
-                return m_rtpChannels.FirstOrDefault().Value;
-            }
-            else if (m_rtpChannels.ContainsKey(mediaType))
-            {
-                return m_rtpChannels[mediaType];
+                return AudioStream.GetRTPChannel();
             }
             else
             {
+                if (mediaType == SDPMediaTypesEnum.audio)
+                {
+                    return AudioStream.GetRTPChannel();
+                }
+                else if (mediaType == SDPMediaTypesEnum.video)
+                {
+                    return VideoStream.GetRTPChannel();
+                }
                 return null;
             }
         }
@@ -1432,9 +1443,8 @@ namespace SIPSorcery.Net
         protected virtual RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
             // If RTCP is multiplexed we don't need a control socket.
-            int bindPort = (m_bindPort == 0) ? 0 : m_bindPort + m_rtpChannels.Count() * 2;
+            int bindPort = (m_bindPort == 0) ? 0 : m_bindPort + m_rtpChannelsCount * 2;
             var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress, bindPort, m_rtpPortRange);
-            m_rtpChannels.Add(mediaType, rtpChannel);
 
             rtpChannel.OnRTPDataReceived += OnReceive;
             rtpChannel.OnControlDataReceived += OnReceive; // RTCP packets could come on RTP or control socket.
@@ -1443,8 +1453,23 @@ namespace SIPSorcery.Net
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             rtpChannel.Start();
 
-            return rtpChannel;
+            return null;
         }
+
+        protected void AddRtpChannel(SDPMediaTypesEnum mediaType, RTPChannel rtpChannel)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                AudioStream.AddRtpChannel(rtpChannel);
+                m_rtpChannelsCount++;
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                VideoStream.AddRtpChannel(rtpChannel);
+                m_rtpChannelsCount++;
+            }
+        }
+
 
         /// <summary>
         /// Gets the local tracks available in this session. Will only be audio, video or both.
@@ -2039,16 +2064,31 @@ namespace SIPSorcery.Net
             {
                 IsClosed = true;
 
+                AudioStream.IsClosed = true;
+                VideoStream.IsClosed = true;
+
                 AudioStream.RtcpSession?.Close(reason);
                 VideoStream.RtcpSession?.Close(reason);
 
-                foreach (var rtpChannel in m_rtpChannels.Values)
+
+                if(AudioStream.HasRtpChannel())
                 {
+                    var rtpChannel = AudioStream.GetRTPChannel();
                     rtpChannel.OnRTPDataReceived -= OnReceive;
                     rtpChannel.OnControlDataReceived -= OnReceive;
                     rtpChannel.OnClosed -= OnRTPChannelClosed;
                     rtpChannel.Close(reason);
                 }
+
+                if (VideoStream.HasRtpChannel())
+                {
+                    var rtpChannel = AudioStream.GetRTPChannel();
+                    rtpChannel.OnRTPDataReceived -= OnReceive;
+                    rtpChannel.OnControlDataReceived -= OnReceive;
+                    rtpChannel.OnClosed -= OnRTPChannelClosed;
+                    rtpChannel.Close(reason);
+                }
+
 
                 OnRtpClosed?.Invoke(reason);
 
