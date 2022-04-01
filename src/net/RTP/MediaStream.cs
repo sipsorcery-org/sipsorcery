@@ -493,6 +493,86 @@ namespace SIPSorcery.net.RTP
             }
         }
 
+        /// <summary>
+        /// Sends a VP8 frame as one or more RTP packets.
+        /// </summary>
+        /// <param name="timestamp">The timestamp to place in the RTP header. Needs
+        /// to be based on a 90Khz clock.</param>
+        /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
+        /// <param name="buffer">The VP8 encoded payload.</param>
+        public void SendVp8Frame(uint duration, int payloadTypeID, byte[] buffer)
+        {
+            if (IsClosed || DestinationEndPoint == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (LocalTrack == null)
+                {
+                    logger.LogWarning("SendVp8Frame was called on an RTP session without a video stream.");
+                }
+                else if (!HasVideo || LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
+                {
+                    return;
+                }
+                else
+                {
+                    for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
+                    {
+                        int offset = index * RTPSession.RTP_MAX_PAYLOAD;
+                        int payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
+
+                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
+                        byte[] payload = new byte[payloadLength + vp8HeaderBytes.Length];
+                        Buffer.BlockCopy(vp8HeaderBytes, 0, payload, 0, vp8HeaderBytes.Length);
+                        Buffer.BlockCopy(buffer, offset, payload, vp8HeaderBytes.Length, payloadLength);
+
+                        int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+
+                        var protectRtpPacket = SecureContext?.ProtectRtpPacket;
+                        SendRtpPacket(rtpChannel, DestinationEndPoint, payload, LocalTrack.Timestamp, markerBit, payloadTypeID, LocalTrack.Ssrc, LocalTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                        //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
+                    }
+
+                    LocalTrack.Timestamp += duration;
+                }
+            }
+            catch (SocketException sockExcp)
+            {
+                logger.LogError("SocketException SendVp8Frame. " + sockExcp.Message);
+            }
+        }
+
+        /// <summary>
+        /// Sends a video sample to the remote peer.
+        /// </summary>
+        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
+        /// value is added to the previous RTP timestamp when building the RTP header.</param>
+        /// <param name="sample">The video sample to set as the RTP packet payload.</param>
+        public void SendVideo(uint durationRtpUnits, byte[] sample)
+        {
+            if (DestinationEndPoint != null || (DestinationEndPoint != null) &&
+                ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecurityContextReady()))
+            {
+                var videoSendingFormat = GetSendingFormat();
+
+                switch (videoSendingFormat.Name())
+                {
+                    case "VP8":
+                        int vp8PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "VP8").ID);
+                        SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
+                        break;
+                    case "H264":
+                        int h264PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "H264").ID);
+                        SendH264Frame(durationRtpUnits, h264PayloadID, sample);
+                        break;
+                    default:
+                        throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
+                }
+            }
+        }
 
         public VideoStream(RtpSessionConfig config) : base(config)
         {

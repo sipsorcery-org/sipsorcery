@@ -1566,7 +1566,7 @@ namespace SIPSorcery.Net
             return Task.CompletedTask;
         }
 
-         /// <summary>
+        /// <summary>
         /// Sends a video sample to the remote peer.
         /// </summary>
         /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
@@ -1574,83 +1574,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The video sample to set as the RTP packet payload.</param>
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
-            if (VideoStream.DestinationEndPoint != null || (m_isMediaMultiplexed && AudioStream.DestinationEndPoint != null) &&
-                ((!IsSecure && !UseSdpCryptoNegotiation) || VideoStream.IsSecurityContextReady()))
-            {
-                var videoSendingFormat = VideoStream.GetSendingFormat();
-
-                switch (videoSendingFormat.Name())
-                {
-                    case "VP8":
-                        int vp8PayloadID = Convert.ToInt32(VideoStream.LocalTrack.Capabilities.First(x => x.Name() == "VP8").ID);
-                        SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
-                        break;
-                    case "H264":
-                        int h264PayloadID = Convert.ToInt32(VideoStream.LocalTrack.Capabilities.First(x => x.Name() == "H264").ID);
-                        VideoStream.SendH264Frame(durationRtpUnits, h264PayloadID, sample);
-                        break;
-                    default:
-                        throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
-                }
-            }
-        }
-
-         /// <summary>
-        /// Sends a VP8 frame as one or more RTP packets.
-        /// </summary>
-        /// <param name="timestamp">The timestamp to place in the RTP header. Needs
-        /// to be based on a 90Khz clock.</param>
-        /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
-        /// <param name="buffer">The VP8 encoded payload.</param>
-        public void SendVp8Frame(uint duration, int payloadTypeID, byte[] buffer)
-        {
-            var dstEndPoint = m_isMediaMultiplexed ? AudioStream.DestinationEndPoint : VideoStream.DestinationEndPoint;
-
-            if (IsClosed || m_rtpEventInProgress || dstEndPoint == null)
-            {
-                return;
-            }
-
-            try
-            {
-                var videoTrack = VideoStream.LocalTrack;
-
-                if (videoTrack == null)
-                {
-                    logger.LogWarning("SendVp8Frame was called on an RTP session without a video stream.");
-                }
-                else if (!HasVideo || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
-                {
-                    for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
-                    {
-                        int offset = index * RTP_MAX_PAYLOAD;
-                        int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
-
-                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
-                        byte[] payload = new byte[payloadLength + vp8HeaderBytes.Length];
-                        Buffer.BlockCopy(vp8HeaderBytes, 0, payload, 0, vp8HeaderBytes.Length);
-                        Buffer.BlockCopy(buffer, offset, payload, vp8HeaderBytes.Length, payloadLength);
-
-                        int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
-
-                        var videoChannel = GetRtpChannel(SDPMediaTypesEnum.video);
-
-                        var protectRtpPacket = VideoStream.GetSecurityContext()?.ProtectRtpPacket;
-                        SendRtpPacket(videoChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), VideoStream.RtcpSession, protectRtpPacket);
-                        //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
-                    }
-
-                    videoTrack.Timestamp += duration;
-                }
-            }
-            catch (SocketException sockExcp)
-            {
-                logger.LogError("SocketException SendVp8Frame. " + sockExcp.Message);
-            }
+            VideoStream.SendVideo(durationRtpUnits, sample);
         }
 
         /// <summary>
@@ -2242,59 +2166,6 @@ namespace SIPSorcery.Net
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Does the actual sending of an RTP packet using the specified data and header values.
-        /// </summary>
-        /// <param name="rtpChannel">The RTP channel to send from.</param>
-        /// <param name="dstRtpSocket">Destination to send to.</param>
-        /// <param name="data">The RTP packet payload.</param>
-        /// <param name="timestamp">The RTP header timestamp.</param>
-        /// <param name="markerBit">The RTP header marker bit.</param>
-        /// <param name="payloadType">The RTP header payload type.</param>
-        private void SendRtpPacket(RTPChannel rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType, uint ssrc, ushort seqNum, RTCPSession rtcpSession, ProtectRtpPacket protectRtpPacket)
-        {
-            if ((IsSecure || UseSdpCryptoNegotiation) && protectRtpPacket == null)
-            {
-                logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
-            }
-            else
-            {
-                int srtpProtectionLength = (protectRtpPacket != null) ? SRTP_MAX_PREFIX_LENGTH : 0;
-
-                RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
-                rtpPacket.Header.SyncSource = ssrc;
-                rtpPacket.Header.SequenceNumber = seqNum;
-                rtpPacket.Header.Timestamp = timestamp;
-                rtpPacket.Header.MarkerBit = markerBit;
-                rtpPacket.Header.PayloadType = payloadType;
-
-                Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
-
-                var rtpBuffer = rtpPacket.GetBytes();
-
-                if (protectRtpPacket == null)
-                {
-                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer);
-                }
-                else
-                {
-                    int outBufLen = 0;
-                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
-                    if (rtperr != 0)
-                    {
-                        logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
-                    }
-                    else
-                    {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer.Take(outBufLen).ToArray());
-                    }
-                }
-                m_lastRtpTimestamp = timestamp;
-
-                rtcpSession?.RecordRtpPacketSend(rtpPacket);
-            }
         }
 
         /// <summary>
