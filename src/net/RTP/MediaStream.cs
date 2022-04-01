@@ -138,13 +138,8 @@ namespace SIPSorcery.net.RTP
         /// <param name="clockRate">To send an RTP event the clock rate of the underlying stream needs to be known.</param>
         /// <param name="samplePeriod">The sample period in milliseconds being used for the media stream that the event 
         /// is being inserted into. Should be set to 50ms if main media stream is dynamic or sample period is unknown.</param>
-        public async Task SendDtmfEvent(
-            RTPEvent rtpEvent,
-            CancellationToken cancellationToken,
-            int clockRate = RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
-            int samplePeriod = RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS)
+        public async Task SendDtmfEvent(RTPEvent rtpEvent, CancellationToken cancellationToken, int clockRate = RTPSession.DEFAULT_AUDIO_CLOCK_RATE, int samplePeriod = RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS)
         {
-
             if (IsClosed || rtpEventInProgress == true || DestinationEndPoint == null)
             {
                 logger.LogWarning("SendDtmfEvent request ignored as an RTP event is already in progress.");
@@ -580,7 +575,6 @@ namespace SIPSorcery.net.RTP
         }
     }
 
-
     public class MediaStream
     {
         private static ILogger logger = Log.Logger;
@@ -602,7 +596,7 @@ namespace SIPSorcery.net.RTP
         /// Fires when the connection for a media type is classified as timed out due to not
         /// receiving any RTP or RTCP packets within the given period.
         /// </summary>
-        public event Action<uint, SDPMediaTypesEnum> OnTimeout;
+        public event Action<SDPMediaTypesEnum> OnTimeout;
 
         /// <summary>
         /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
@@ -1039,6 +1033,5 @@ namespace SIPSorcery.net.RTP
                 }
             });
         }
-
     }
 }

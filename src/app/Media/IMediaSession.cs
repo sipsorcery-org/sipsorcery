@@ -52,26 +52,6 @@ namespace SIPSorcery.SIP.App
         bool HasVideo { get; }
 
         /// <summary>
-        /// Get the list of Ssrc of local audio stream
-        /// </summary>
-        List<uint> AudioLocalSsrcList { get; }
-
-        /// <summary>
-        /// Get the list of Ssrc of remote audio stream
-        /// </summary>
-        List<uint> AudioRemoteSsrcList { get; }
-
-        /// <summary>
-        /// Get the list of Ssrc of local video stream
-        /// </summary>
-        List<uint> VideoLocalSsrcList { get; }
-
-        /// <summary>
-        /// Get the list of Ssrc of remote video stream
-        /// </summary>
-        List<uint> VideoRemoteSsrcList { get; }
-
-        /// <summary>
         /// Indicates whether the session has been closed.
         /// </summary>
         bool IsClosed { get; }
@@ -102,7 +82,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Fired when no RTP or RTCP packets are received for a pre-defined period (typically 30s).
         /// </summary>
-        event Action<uint, SDPMediaTypesEnum> OnTimeout;
+        event Action<SDPMediaTypesEnum> OnTimeout;
 
         /// <summary>
         /// Creates a new SDP offer based on the local media tracks in the session.
@@ -152,21 +132,6 @@ namespace SIPSorcery.SIP.App
         /// <param name="kind">The type of the media track. Must be audio or video.</param>
         /// <param name="status">The stream status for the media track.</param>
         void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status);
-
-        /// <summary>
-        /// Sets the stream status on local audio track.
-        /// </summary>
-        /// <param name="kind">The type of the media track. Must be audio or video.</param>
-        /// <param name="status">The stream status for the media track.</param>
-        void SetAudioMediaStreamStatus(uint Ssrc, MediaStreamStatusEnum status);
-
-        /// <summary>
-        /// Sets the stream status on local video track.
-        /// </summary>
-        /// <param name="Ssrc">Ssrc of the local video track</param>
-        /// <param name="status">The stream status for the media track.</param>
-        void SetVideoMediaStreamStatus(uint Ssrc, MediaStreamStatusEnum status);
-
 
         /// <summary>
         /// Attempts to send a DTMF tone to the remote party.

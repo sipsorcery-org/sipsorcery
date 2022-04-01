@@ -373,7 +373,7 @@ namespace SIPSorcery.Net
         /// Fires when the connection for a media type is classified as timed out due to not
         /// receiving any RTP or RTCP packets within the given period.
         /// </summary>
-        public event Action<uint, SDPMediaTypesEnum> OnTimeout;
+        public event Action<SDPMediaTypesEnum> OnTimeout;
 
         /// <summary>
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
