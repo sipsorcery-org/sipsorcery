@@ -372,7 +372,6 @@ namespace SIPSorcery.Net
 
                     logger.LogTrace($"SCTP AdvancedPeerAckPoint {_advancedPeerAckPoint} is ahead of the last ACK'd TSN {ackdTSN}. Sending Forward TSN");
                     _sendForwardTsn(GetForwardTSN());
-                    RemoveAbandonedUnconfirmedChunks(_advancedPeerAckPoint);
                 }
             }
         }
@@ -917,41 +916,6 @@ namespace SIPSorcery.Net
                     else
                     {
                         break;
-                    }
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// Removes the chunks waiting for a SACK confirmation from the unconfirmed queue,  
-        /// up to the advanced peer ack point.  These chunks have been abandoned.
-        /// This does not change the Cumulative Ack TSN
-        /// </summary>
-        /// <param name="advPeerAckPt">The TSN of which all prior chunks have been abandoned or SACK'd.</param>
-        private void RemoveAbandonedUnconfirmedChunks(uint advPeerAckPt)
-        {
-            if (!_supportsPartialReliabilityExtension)
-            {
-                throw new InvalidOperationException("SCTP sender can not remove abandoned chunks; partial reliability is not supported on this association");
-            }
-
-            logger.LogTrace($"SCTP data sender removing unconfirmed chunks cumulative ACK TSN {(_gotFirstSACK ? _cumulativeAckTSN : _initialTSN)}, SACK TSN {advPeerAckPt}.");
-
-            if (_cumulativeAckTSN == advPeerAckPt)
-            {
-                // This is normal for the first SACK received.
-                _unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _);
-                _missingChunks.TryRemove(_cumulativeAckTSN, out _);
-            }
-            else
-            {
-                unchecked
-                {
-                    foreach (var chunk in _unconfirmedChunks.Values.Where(chunk => SctpDataReceiver.IsNewerOrEqual(chunk.TSN, advPeerAckPt)))
-                    {
-                        _unconfirmedChunks.TryRemove(chunk.TSN, out _);
-                        _missingChunks.TryRemove(chunk.TSN, out _);
                     }
                 }
             }
