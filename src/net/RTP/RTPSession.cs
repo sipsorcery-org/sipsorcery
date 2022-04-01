@@ -2154,18 +2154,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        private void ProcessHeaderExtensions(RTPHeader header, MediaStreamTrack track)
-        {
-            header.GetHeaderExtensions().ToList().ForEach(x =>
-            {
-                var ntpTimestamp = x.GetNtpTimestamp(track.HeaderExtensions);
-                if (ntpTimestamp.HasValue)
-                {
-                    track.LastAbsoluteCaptureTimestamp = new TimestampPair() { NtpTimestamp = ntpTimestamp.Value, RtpTimestamp = header.Timestamp };
-                }
-            });
-        }
-
         /// <summary>
         /// Event handler for receiving data on the RTP and Control channels. For multiplexed
         /// sessions both RTP and RTCP packets will be received on the RTP channel.
@@ -2400,7 +2388,7 @@ namespace SIPSorcery.Net
                                 if (avFormat.Value.Kind == SDPMediaTypesEnum.video)
                                 {
                                     if (VideoStream.RemoteTrack != null) {
-                                        ProcessHeaderExtensions(hdr, VideoStream.RemoteTrack);
+                                        VideoStream.ProcessHeaderExtensions(hdr);
                                     }
                                     if (!VideoStream.EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
                                     {
@@ -2414,7 +2402,7 @@ namespace SIPSorcery.Net
                                     }
                                     if (AudioStream.RemoteTrack != null) {
                                         LogIfWrongSeqNumber("Audio", hdr, AudioStream.RemoteTrack);
-                                        ProcessHeaderExtensions(hdr, AudioStream.RemoteTrack);
+                                        AudioStream.ProcessHeaderExtensions(hdr);
                                     }
                                 }
 
