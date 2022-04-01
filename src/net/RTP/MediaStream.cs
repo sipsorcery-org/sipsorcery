@@ -605,6 +605,12 @@ namespace SIPSorcery.net.RTP
         public event Action<uint, SDPMediaTypesEnum> OnTimeout;
 
         /// <summary>
+        /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
+        /// </summary>
+        public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReport;
+
+
+        /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
         /// Parameters are:
         ///  - Remote endpoint packet was received from,
@@ -622,11 +628,6 @@ namespace SIPSorcery.net.RTP
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
         /// </summary>
         public event Action<IPEndPoint, RTCPCompoundPacket> OnReceiveReport;  // TODO - CI - 
-
-        /// <summary>
-        /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
-        /// </summary>
-        public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReport;  // TODO - CI - 
 
     #endregion EVENTS
 
@@ -706,11 +707,7 @@ namespace SIPSorcery.net.RTP
 
     #region SECURITY CONTEXT
 
-        public void SetSecurityContext(
-            ProtectRtpPacket protectRtp,
-            ProtectRtpPacket unprotectRtp,
-            ProtectRtpPacket protectRtcp,
-            ProtectRtpPacket unprotectRtcp)
+        public void SetSecurityContext( ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
         {
             if (SecureContext != null)
             {

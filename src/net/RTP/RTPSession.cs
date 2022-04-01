@@ -416,13 +416,7 @@ namespace SIPSorcery.Net
         /// <param name="bindPort">Optional. If specified a single attempt will be made to bind the RTP socket
         /// on this port. It's recommended to leave this parameter as the default of 0 to let the Operating
         /// System select the port number.</param>
-        public RTPSession(
-            bool isMediaMultiplexed,
-            bool isRtcpMultiplexed,
-            bool isSecure,
-            IPAddress bindAddress = null,
-            int bindPort = 0,
-            PortRange portRange = null)
+        public RTPSession(bool isMediaMultiplexed, bool isRtcpMultiplexed, bool isSecure, IPAddress bindAddress = null, int bindPort = 0, PortRange portRange = null)
             : this(new RtpSessionConfig
             {
                 IsMediaMultiplexed = isMediaMultiplexed,
@@ -462,8 +456,6 @@ namespace SIPSorcery.Net
             AudioStream = new AudioStream(config);
             VideoStream = new VideoStream(config);
         }
-
-
 
         /// <summary>
         /// Used for child classes that require a single RTP channel for all RTP (audio and video)
@@ -520,11 +512,7 @@ namespace SIPSorcery.Net
             return false;
         }
 
-        private void SetSecureContextForMediaType(SDPMediaTypesEnum mediaType, 
-                    ProtectRtpPacket protectRtp,
-                    ProtectRtpPacket unprotectRtp,
-                    ProtectRtpPacket protectRtcp,
-                    ProtectRtpPacket unprotectRtcp)
+        private void SetSecureContextForMediaType(SDPMediaTypesEnum mediaType, ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
         {
             if (mediaType == SDPMediaTypesEnum.audio)
             {
@@ -935,9 +923,7 @@ namespace SIPSorcery.Net
         /// <param name="announcement">The media announcement to get the connection address for.</param>
         /// <param name="connectionAddress">The remote SDP session level connection address. Will be null if not available.</param>
         /// <returns>An IP end point for an SDP media announcement from the remote peer.</returns>
-        private IPEndPoint GetAnnouncementRTPDestination(
-            SDPMediaAnnouncement announcement,
-            IPAddress connectionAddress)
+        private IPEndPoint GetAnnouncementRTPDestination(SDPMediaAnnouncement announcement, IPAddress connectionAddress)
         {
             SDPMediaTypesEnum kind = announcement.Media;
             IPEndPoint rtpEndPoint = null;
