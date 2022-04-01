@@ -189,8 +189,6 @@ namespace SIPSorcery.Net
 
         private SrtpHandlerCollection m_secureHandlerCollection = new SrtpHandlerCollection();
 
-        private Dictionary<SDPMediaTypesEnum, RTPReorderBuffer> _reorderBuffers = new Dictionary<SDPMediaTypesEnum, RTPReorderBuffer>();
-
         /// <summary>
         /// Track if current remote description is invalid (used in Renegotiation logic)
         /// </summary>
@@ -476,22 +474,7 @@ namespace SIPSorcery.Net
             VideoStream = new VideoStream(IsSecure, UseSdpCryptoNegotiation);
         }
 
-        /// <summary>
-        /// Add reorder buffer for receiving RTP packets. It reorders RTP packets based on RTP sequence number.
-        /// </summary>
-        /// <param name="type">The type of RTP stream for which the buffer will be used</param>
-        /// <param name="dropPacketTimeout">The time after which it stops waiting for a packet with the correct sequence number</param>
-        public void AddBuffer(SDPMediaTypesEnum type, TimeSpan dropPacketTimeout) {
-            _reorderBuffers.Add(type, new RTPReorderBuffer(dropPacketTimeout));
-        }
 
-        /// <summary>
-        /// Removes buffer from RTP stream
-        /// </summary>
-        /// <param name="type">The type of RTP stream from which the buffer will be removed</param>
-        public void RemoveBuffer(SDPMediaTypesEnum type) {
-            _reorderBuffers.Remove(type);
-        }
 
         /// <summary>
         /// Used for child classes that require a single RTP channel for all RTP (audio and video)
@@ -2437,38 +2420,51 @@ namespace SIPSorcery.Net
 
                                 if (rtpPacket != null)
                                 {
-                                    if (_reorderBuffers.ContainsKey(avFormat.Value.Kind))
+                                    if (avFormat.Value.Kind == SDPMediaTypesEnum.audio)
                                     {
-                                        var reorderBuffer = _reorderBuffers[avFormat.Value.Kind];
-                                        
-                                        reorderBuffer.Add(rtpPacket);
-                                        while (reorderBuffer.Get(out var bufferedPacket))
+                                        if (AudioStream.UseBuffer())
                                         {
-                                            
-                                            if (avFormat.Value.Kind == SDPMediaTypesEnum.video && VideoStream.RemoteTrack != null)
+                                            var reorderBuffer = AudioStream.GetBuffer();
+                                            reorderBuffer.Add(rtpPacket);
+                                            while (reorderBuffer.Get(out var bufferedPacket))
                                             {
-                                                LogIfWrongSeqNumber("Video", bufferedPacket.Header, VideoStream.RemoteTrack);
-                                                VideoStream.RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                                                if (AudioStream.RemoteTrack != null)
+                                                {
+                                                    LogIfWrongSeqNumber("Audio", bufferedPacket.Header, AudioStream.RemoteTrack);
+                                                    AudioStream.RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                                                }
+                                                OnRtpPacketReceived?.Invoke(remoteEndPoint, AudioStream.MediaType, bufferedPacket);
                                             }
-                                            else if (avFormat.Value.Kind == SDPMediaTypesEnum.audio && AudioStream.RemoteTrack != null)
-                                            {
-                                                LogIfWrongSeqNumber("Audio", bufferedPacket.Header, AudioStream.RemoteTrack);
-                                                AudioStream.RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
-                                            }
-                                            if (avFormat.Value.Kind == SDPMediaTypesEnum.video)
-                                            {
-                                                VideoStream.ProcessVideoRtpFrame(remoteEndPoint, bufferedPacket, avFormat.Value);
-                                            }
-                                            OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, bufferedPacket);
                                         }
+                                        else
+                                        {
+                                            OnRtpPacketReceived?.Invoke(remoteEndPoint, AudioStream.MediaType, rtpPacket);
+                                        }
+    
                                     }
-                                    else
+                                    else if (avFormat.Value.Kind == SDPMediaTypesEnum.video)
                                     {
-                                        if (avFormat.Value.Kind == SDPMediaTypesEnum.video)
+                                        if (VideoStream.UseBuffer())
+                                        {
+                                            var reorderBuffer = VideoStream.GetBuffer();
+                                            reorderBuffer.Add(rtpPacket);
+                                            while (reorderBuffer.Get(out var bufferedPacket))
+                                            {
+
+                                                if (VideoStream.RemoteTrack != null)
+                                                {
+                                                    LogIfWrongSeqNumber("Video", bufferedPacket.Header, VideoStream.RemoteTrack);
+                                                    VideoStream.RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                                                }
+                                                VideoStream.ProcessVideoRtpFrame(remoteEndPoint, bufferedPacket, avFormat.Value);
+                                                OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, bufferedPacket);
+                                            }
+                                        }
+                                        else
                                         {
                                             VideoStream.ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, avFormat.Value);
+                                            OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, rtpPacket);
                                         }
-                                        OnRtpPacketReceived?.Invoke(remoteEndPoint, avFormat.Value.Kind, rtpPacket);
                                     }
                                     
                                     // Used for reporting purposes.

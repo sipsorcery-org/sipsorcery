@@ -119,11 +119,11 @@ namespace SIPSorcery.net.RTP
     {
         private static ILogger logger = Log.Logger;
 
-
         private Boolean IsSecure;
         private Boolean UseSdpCryptoNegotiation;
 
         private SecureContext SecureContext;
+        private RTPReorderBuffer RTPReorderBuffer = null;
 
     #region EVENTS
 
@@ -197,6 +197,32 @@ namespace SIPSorcery.net.RTP
         public IPEndPoint ControlDestinationEndPoint { get; set; }
 
     #endregion PROPERTIES
+
+
+    #region REORDER BUFFER
+
+        public void AddBuffer(TimeSpan dropPacketTimeout)
+        {
+            RTPReorderBuffer = new RTPReorderBuffer(dropPacketTimeout);
+        }
+
+        public void RemoveBuffer(TimeSpan dropPacketTimeout)
+        {
+            RTPReorderBuffer = null;
+        }
+
+        public Boolean UseBuffer()
+        {
+            return RTPReorderBuffer != null;
+        }
+
+        public RTPReorderBuffer GetBuffer()
+        {
+            return RTPReorderBuffer;
+        }
+
+    #endregion REORDER BUFFER
+
 
     #region SECURITY CONTEXT
 
