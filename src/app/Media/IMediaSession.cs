@@ -52,14 +52,24 @@ namespace SIPSorcery.SIP.App
         bool HasVideo { get; }
 
         /// <summary>
+        /// Get the list of Ssrc of local audio stream
+        /// </summary>
+        List<uint> AudioLocalSsrcList { get; }
+
+        /// <summary>
+        /// Get the list of Ssrc of remote audio stream
+        /// </summary>
+        List<uint> AudioRemoteSsrcList { get; }
+
+        /// <summary>
         /// Get the list of Ssrc of local video stream
         /// </summary>
-        List<String> VideoLocalSsrcList { get; }
+        List<uint> VideoLocalSsrcList { get; }
 
         /// <summary>
         /// Get the list of Ssrc of remote video stream
         /// </summary>
-        List<String> VideoRemoteSsrcList { get; }
+        List<uint> VideoRemoteSsrcList { get; }
 
         /// <summary>
         /// Indicates whether the session has been closed.
@@ -148,14 +158,14 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="kind">The type of the media track. Must be audio or video.</param>
         /// <param name="status">The stream status for the media track.</param>
-        void SetAudioMediaStreamStatus(MediaStreamStatusEnum status);
+        void SetAudioMediaStreamStatus(uint Ssrc, MediaStreamStatusEnum status);
 
         /// <summary>
         /// Sets the stream status on local video track.
         /// </summary>
         /// <param name="Ssrc">Ssrc of the local video track</param>
         /// <param name="status">The stream status for the media track.</param>
-        void SetVideoMediaStreamStatus(String Ssrc, MediaStreamStatusEnum status);
+        void SetVideoMediaStreamStatus(uint Ssrc, MediaStreamStatusEnum status);
 
 
         /// <summary>
