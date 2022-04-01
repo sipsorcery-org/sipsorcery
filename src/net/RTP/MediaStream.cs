@@ -111,7 +111,7 @@ namespace SIPSorcery.net.RTP
                         int markerBit = 0;
 
                         var audioRtpChannel = rtpChannel;
-                        var protectRtpPacket = GetSecurityContext()?.ProtectRtpPacket;
+                        var protectRtpPacket = SecureContext?.ProtectRtpPacket;
                         SendRtpPacket(audioRtpChannel, DestinationEndPoint, payload, payloadTimestamp, markerBit, payloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
 
                         //logger.LogDebug($"send audio { audioRtpChannel.RTPLocalEndPoint}->{AudioDestinationEndPoint}.");
@@ -144,29 +144,26 @@ namespace SIPSorcery.net.RTP
             int clockRate = RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
             int samplePeriod = RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS)
         {
-            var dstEndPoint = DestinationEndPoint;
 
-            if (IsClosed || rtpEventInProgress == true || dstEndPoint == null)
+            if (IsClosed || rtpEventInProgress == true || DestinationEndPoint == null)
             {
                 logger.LogWarning("SendDtmfEvent request ignored as an RTP event is already in progress.");
             }
 
             try
             {
-                var audioTrack = LocalTrack;
-
-                if (audioTrack == null)
+                if (LocalTrack == null)
                 {
                     logger.LogWarning("SendDtmfEvent was called on an RTP session without an audio stream.");
                 }
-                else if (!HasAudio || audioTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
+                else if (!HasAudio || LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
                 {
                     return;
                 }
                 else
                 {
                     rtpEventInProgress = true;
-                    uint startTimestamp = audioTrack.Timestamp;
+                    uint startTimestamp = LocalTrack.Timestamp;
 
                     // The RTP timestamp step corresponding to the sampling period. This can change depending
                     // on the codec being used. For example using PCMU with a sampling frequency of 8000Hz and a sample period of 50ms
@@ -184,8 +181,8 @@ namespace SIPSorcery.net.RTP
                         byte[] buffer = rtpEvent.GetEventPayload();
 
                         int markerBit = (i == 0) ? 1 : 0;  // Set marker bit for the first packet in the event.
-                        var protectRtpPacket = GetSecurityContext()?.ProtectRtpPacket;
-                        SendRtpPacket(rtpChannel, dstEndPoint, buffer, startTimestamp, markerBit, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                        var protectRtpPacket = SecureContext?.ProtectRtpPacket;
+                        SendRtpPacket(rtpChannel, DestinationEndPoint, buffer, startTimestamp, markerBit, rtpEvent.PayloadTypeID, LocalTrack.Ssrc, LocalTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
                     }
 
                     await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
@@ -198,8 +195,8 @@ namespace SIPSorcery.net.RTP
                             rtpEvent.Duration += rtpTimestampStep;
                             byte[] buffer = rtpEvent.GetEventPayload();
 
-                            var protectRtpPacket = GetSecurityContext()?.ProtectRtpPacket;
-                            SendRtpPacket(rtpChannel, dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                            var protectRtpPacket = SecureContext?.ProtectRtpPacket;
+                            SendRtpPacket(rtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, LocalTrack.Ssrc, LocalTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
 
                             await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
                         }
@@ -211,11 +208,11 @@ namespace SIPSorcery.net.RTP
                             rtpEvent.Duration = rtpEvent.TotalDuration;
                             byte[] buffer = rtpEvent.GetEventPayload();
 
-                            var protectRtpPacket = GetSecurityContext()?.ProtectRtpPacket;
-                            SendRtpPacket(rtpChannel, dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                            var protectRtpPacket = SecureContext?.ProtectRtpPacket;
+                            SendRtpPacket(rtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, LocalTrack.Ssrc, LocalTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
                         }
                     }
-                    audioTrack.Timestamp += rtpEvent.TotalDuration;
+                    LocalTrack.Timestamp += rtpEvent.TotalDuration;
                 }
             }
             catch (SocketException sockExcp)
@@ -340,6 +337,163 @@ namespace SIPSorcery.net.RTP
             }
         }
 
+        /// <summary>
+        /// Helper method to send a low quality JPEG image over RTP. This method supports a very abbreviated version of RFC 2435 "RTP Payload Format for JPEG-compressed Video".
+        /// It's intended as a quick convenient way to send something like a test pattern image over an RTSP connection. More than likely it won't be suitable when a high
+        /// quality image is required since the header used in this method does not support quantization tables.
+        /// </summary>
+        /// <param name="jpegBytes">The raw encoded bytes of the JPEG image to transmit.</param>
+        /// <param name="jpegQuality">The encoder quality of the JPEG image.</param>
+        /// <param name="jpegWidth">The width of the JPEG image.</param>
+        /// <param name="jpegHeight">The height of the JPEG image.</param>
+        /// <param name="framesPerSecond">The rate at which the JPEG frames are being transmitted at. used to calculate the timestamp.</param>
+        public void SendJpegFrame(uint duration, int payloadTypeID, byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight)
+        {
+            if (IsClosed || DestinationEndPoint == null)
+            {
+                return;
+            }
+            try
+            {
+                var videoTrack = LocalTrack;
+
+                if (videoTrack == null)
+                {
+                    logger.LogWarning("SendJpegFrame was called on an RTP session without a video stream.");
+                }
+                else if (!HasVideo || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
+                {
+                    return;
+                }
+                else
+                {
+                    for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
+                    {
+                        uint offset = Convert.ToUInt32(index * RTPSession.RTP_MAX_PAYLOAD);
+                        int payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length) ? RTPSession.RTP_MAX_PAYLOAD : jpegBytes.Length - index * RTPSession.RTP_MAX_PAYLOAD;
+                        byte[] jpegHeader = RtpVideoFramer.CreateLowQualityRtpJpegHeader(offset, jpegQuality, jpegWidth, jpegHeight);
+
+                        List<byte> packetPayload = new List<byte>();
+                        packetPayload.AddRange(jpegHeader);
+                        packetPayload.AddRange(jpegBytes.Skip(index * RTPSession.RTP_MAX_PAYLOAD).Take(payloadLength));
+
+                        int markerBit = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
+
+                        var protectRtpPacket = SecureContext?.ProtectRtpPacket;
+                        SendRtpPacket(rtpChannel, DestinationEndPoint, packetPayload.ToArray(), videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                    }
+
+                    videoTrack.Timestamp += duration;
+                }
+            }
+            catch (SocketException sockExcp)
+            {
+                logger.LogError("SocketException SendJpegFrame. " + sockExcp.Message);
+            }
+        }
+
+        /// <summary>
+        /// Sends a H264 frame, represented by an Access Unit, to the remote party.
+        /// </summary>
+        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
+        /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
+        /// <param name="accessUnit">The encoded H264 access unit to transmit. An access unit can contain one or more
+        /// NAL's.</param>
+        /// <remarks>
+        /// An Access Unit can contain one or more NAL's. The NAL's have to be parsed in order to be able to package 
+        /// in RTP packets.
+        /// 
+        /// See https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201602-S!!PDF-E&type=items Annex B for byte stream specification.
+        /// </remarks>
+        public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit)
+        {
+            var dstEndPoint = DestinationEndPoint;
+
+            if (IsClosed || dstEndPoint == null || accessUnit == null || accessUnit.Length == 0)
+            {
+                return;
+            }
+
+            if (LocalTrack == null)
+            {
+                logger.LogWarning("SendH264Frame was called on an RTP session without a video stream.");
+            }
+            else if (!HasVideo || LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
+            {
+                return;
+            }
+            else
+            {
+                foreach (var nal in H264Packetiser.ParseNals(accessUnit))
+                {
+                    SendH264Nal(duration, payloadTypeID, nal.NAL, nal.IsLast, dstEndPoint, LocalTrack);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a single H264 NAL to the remote party.
+        /// </summary>
+        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
+        /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
+        /// <param name="nal">The buffer containing the NAL to send.</param>
+        /// <param name="isLastNal">Should be set for the last NAL in the H264 access unit. Determines when the markbit gets set 
+        /// and the timestamp incremented.</param>
+        /// <param name="dstEndPoint">The destination end point to send to.</param>
+        /// <param name="videoTrack">The video track to send on.</param>
+        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal, IPEndPoint dstEndPoint, MediaStreamTrack videoTrack)
+        {
+            //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
+            //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
+
+            byte nal0 = nal[0];
+
+            if (nal.Length <= RTPSession.RTP_MAX_PAYLOAD)
+            {
+                // Send as Single-Time Aggregation Packet (STAP-A).
+                byte[] payload = new byte[nal.Length];
+                int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
+                Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
+
+                var protectRtpPacket = SecureContext?.ProtectRtpPacket;
+                SendRtpPacket(rtpChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+            }
+            else
+            {
+                nal = nal.Skip(1).ToArray();
+
+                // Send as Fragmentation Unit A (FU-A):
+                for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nal.Length; index++)
+                {
+                    int offset = index * RTPSession.RTP_MAX_PAYLOAD;
+                    int payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < nal.Length) ? RTPSession.RTP_MAX_PAYLOAD : nal.Length - index * RTPSession.RTP_MAX_PAYLOAD;
+
+                    bool isFirstPacket = index == 0;
+                    bool isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= nal.Length;
+                    int markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
+
+                    byte[] h264RtpHdr = H264Packetiser.GetH264RtpHeader(nal0, isFirstPacket, isFinalPacket);
+
+                    byte[] payload = new byte[payloadLength + h264RtpHdr.Length];
+                    Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, h264RtpHdr.Length);
+                    Buffer.BlockCopy(nal, offset, payload, h264RtpHdr.Length, payloadLength);
+
+
+                    var protectRtpPacket = SecureContext?.ProtectRtpPacket;
+                    SendRtpPacket(rtpChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                    //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+                }
+            }
+
+            if (isLastNal)
+            {
+                videoTrack.Timestamp += duration;
+            }
+        }
+
+
         public VideoStream(RtpSessionConfig config) : base(config)
         {
             MediaType = SDPMediaTypesEnum.video;
@@ -357,7 +511,7 @@ namespace SIPSorcery.net.RTP
         protected Boolean IsSecure;
         protected Boolean UseSdpCryptoNegotiation;
 
-        private SecureContext SecureContext;
+        protected SecureContext SecureContext;
         private RTPReorderBuffer RTPReorderBuffer = null;
 
     #region EVENTS
@@ -504,10 +658,9 @@ namespace SIPSorcery.net.RTP
 
         private (bool, byte[]) UnprotectBuffer(byte[] buffer)
         {
-            var secureContext = GetSecurityContext();
-            if (secureContext != null)
+            if (SecureContext != null)
             {
-                int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
+                int res = SecureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
 
                 if (res == 0)
                 {
@@ -610,10 +763,35 @@ namespace SIPSorcery.net.RTP
             }
         }
 
+        /// <summary>
+        /// Allows additional control for sending raw RTP payloads. No framing or other processing is carried out.
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTP packet being sent. Must be audio or video.</param>
+        /// <param name="payload">The RTP packet payload.</param>
+        /// <param name="timestamp">The timestamp to set on the RTP header.</param>
+        /// <param name="markerBit">The value to set on the RTP header marker bit, should be 0 or 1.</param>
+        /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
+        public void SendRtpRaw(SDPMediaTypesEnum mediaType, byte[] payload, uint timestamp, int markerBit, int payloadTypeID)
+        {
+            if (LocalTrack == null)
+            {
+                logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session without a local audio stream.");
+            }
+            else
+            {
+                RTCPSession rtcpSession = RtcpSession;
+                IPEndPoint dstEndPoint = DestinationEndPoint;
+                MediaStreamTrack track = LocalTrack;
+
+                if (dstEndPoint != null)
+                {
+                    var protectRtpPacket = SecureContext?.ProtectRtpPacket;
+                    SendRtpPacket(rtpChannel, dstEndPoint, payload, timestamp, markerBit, payloadTypeID, track.Ssrc, track.GetNextSeqNum(), rtcpSession, protectRtpPacket);
+                }
+            }
+        }
+
     #endregion SEND PACKET
-
-
-
 
         public MediaStream(RtpSessionConfig config)
         {
