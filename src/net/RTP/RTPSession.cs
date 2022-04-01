@@ -292,26 +292,50 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Get the list of Ssrc of local video stream
+        /// Get the list of Ssrc of local audio stream
         /// </summary>
-        public List<String> VideoLocalSsrcList
+        public List<uint> AudioLocalSsrcList
         {
             get
             {
                 // TODO - CI -
-                return new List<String>();
+                return new List<uint>();
+            }
+        }
+
+        /// <summary>
+        /// Get the list of Ssrc of remote audio stream
+        /// </summary>
+        public List<uint> AudioRemoteSsrcList
+        {
+            get
+            {
+                // TODO - CI -
+                return new List<uint>();
+            }
+        }
+
+        /// <summary>
+        /// Get the list of Ssrc of local video stream
+        /// </summary>
+        public List<uint> VideoLocalSsrcList
+        {
+            get
+            {
+                // TODO - CI -
+                return new List<uint>();
             }
         }
 
         /// <summary>
         /// Get the list of Ssrc of remote video stream
         /// </summary>
-        public List<String> VideoRemoteSsrcList
+        public List<uint> VideoRemoteSsrcList
         {
             get
             {
                 // TODO - CI -
-                return new List<String>();
+                return new List<uint>();
             }
         }
 
@@ -448,8 +472,8 @@ namespace SIPSorcery.Net
                 SrtpCryptoSuites.Add(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_32);
             }
 
-            AudioStream = new AudioStream();
-            VideoStream = new VideoStream();
+            AudioStream = new AudioStream(IsSecure, UseSdpCryptoNegotiation);
+            VideoStream = new VideoStream(IsSecure, UseSdpCryptoNegotiation);
         }
 
         /// <summary>
@@ -557,7 +581,6 @@ namespace SIPSorcery.Net
             }
             return null; ;
         }
-
 
         /// <summary>
         /// Removes a media track from this session. A media track represents an audio or video
@@ -880,7 +903,7 @@ namespace SIPSorcery.Net
         /// <param name="status">The stream status for the media track.</param>
         public void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status)
         {
-            // TODO - CI - Need to loop on all local Videa Tracks to set the correct status
+            // TODO - CI - Need to loop on all local audio tracks and all video tracks to set the correct status
 
             if (kind == SDPMediaTypesEnum.audio && AudioStream.LocalTrack != null)
             {
@@ -899,8 +922,10 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="kind">The type of the media track. Must be audio or video.</param>
         /// <param name="status">The stream status for the media track.</param>
-        public void SetAudioMediaStreamStatus(MediaStreamStatusEnum status)
+        public void SetAudioMediaStreamStatus(uint Ssrc, MediaStreamStatusEnum status)
         {
+            // TODO - CI - Need to use Ssrc to get correct local audio stream
+
             AudioStream.LocalTrack.StreamStatus = status;
             m_sdpAnnouncementVersion++;
         }
@@ -910,7 +935,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="kind">The type of the media track. Must be audio or video.</param>
         /// <param name="status">The stream status for the media track.</param>
-        public void SetVideoMediaStreamStatus(String Ssrc, MediaStreamStatusEnum status)
+        public void SetVideoMediaStreamStatus(uint Ssrc, MediaStreamStatusEnum status)
         {
             // TODO - CI - Need to use Ssrc to get correct local video stream
 
@@ -2122,6 +2147,7 @@ namespace SIPSorcery.Net
                 OnClosed?.Invoke();
             }
         }
+        
         private SDPMediaTypesEnum GetMediaTypesFromSSRC(uint ssrc)
         {
             if (AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.Ssrc == ssrc)
@@ -2135,44 +2161,6 @@ namespace SIPSorcery.Net
             return SDPMediaTypesEnum.invalid;
         }
 
-        private (bool, byte[]) UnprotectBuffer(SDPMediaTypesEnum mediaType, byte[] buffer)
-        {
-            var secureContext = GetSecureContextForMediaType(mediaType);
-            if (secureContext != null)
-            {
-                int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
-                    
-                if (res == 0)
-                {
-                    return (true, buffer.Take(outBufLen).ToArray());
-                }
-                else 
-                {
-                    logger.LogWarning($"SRTP unprotect failed for {mediaType}, result {res}.");
-                }
-            }
-            return (false, buffer);
-        }
-
-        private bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, SDPMediaTypesEnum type, out RTPPacket packet)
-        {
-            if (IsSecure || UseSdpCryptoNegotiation)
-            {
-                var (succeeded, newBuffer) = UnprotectBuffer(type, buf);
-                if (!succeeded)
-                {
-                    packet = null;
-                    return false;
-                }
-                packet = new RTPPacket(newBuffer);
-            }
-            else
-            {
-                packet = new RTPPacket(buf);
-            }
-            packet.Header.ReceivedTime = header.ReceivedTime;
-            return true;
-        }
         private void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
         {
             if (track.LastRemoteSeqNum != 0 &&
@@ -2358,7 +2346,7 @@ namespace SIPSorcery.Net
                         // Check whether this is an RTP event.
                         if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
                         {
-                            if (!EnsureBufferUnprotected(buffer, hdr, SDPMediaTypesEnum.audio, out var rtpPacket)) {
+                            if (!AudioStream.EnsureBufferUnprotected(buffer, hdr, out var rtpPacket)) {
                                 return;
                             }
                             RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
@@ -2431,14 +2419,14 @@ namespace SIPSorcery.Net
                                     if (VideoStream.RemoteTrack != null) {
                                         ProcessHeaderExtensions(hdr, VideoStream.RemoteTrack);
                                     }
-                                    if (!EnsureBufferUnprotected(buffer, hdr, SDPMediaTypesEnum.video, out rtpPacket))
+                                    if (!VideoStream.EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
                                     {
                                         return;
                                     }
                                 }
                                 else if (avFormat.Value.Kind == SDPMediaTypesEnum.audio)
                                 {
-                                    if(!EnsureBufferUnprotected(buffer, hdr, SDPMediaTypesEnum.audio, out rtpPacket)) {
+                                    if(!AudioStream.EnsureBufferUnprotected(buffer, hdr, out rtpPacket)) {
                                         return;
                                     }
                                     if (AudioStream.RemoteTrack != null) {

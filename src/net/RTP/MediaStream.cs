@@ -32,7 +32,7 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        public AudioStream()
+        public AudioStream(Boolean isSecure, Boolean useSdpCryptoNegotiation) : base(isSecure, useSdpCryptoNegotiation)
         {
             MediaType = SDPMediaTypesEnum.audio;
         }
@@ -108,7 +108,7 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        public VideoStream()
+        public VideoStream(Boolean isSecure, Boolean useSdpCryptoNegotiation): base(isSecure, useSdpCryptoNegotiation)
         {
             MediaType = SDPMediaTypesEnum.video;
         }
@@ -119,19 +119,13 @@ namespace SIPSorcery.net.RTP
     {
         private static ILogger logger = Log.Logger;
 
-        /// <summary>
-        /// Gets fired when an RTP packet is received from a remote party.
-        /// Parameters are:
-        ///  - Remote endpoint packet was received from,
-        ///  - The media type the packet contains, will be audio or video,
-        ///  - The full RTP packet.
-        /// </summary>
-        public event Action<IPEndPoint, RTPPacket> OnRtpPacketReceived;
 
-        /// <summary>
-        /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
-        /// </summary>
-        public event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;
+        private Boolean IsSecure;
+        private Boolean UseSdpCryptoNegotiation;
+
+        private SecureContext SecureContext;
+
+    #region EVENTS
 
         /// <summary>
         /// Fires when the connection for a media type is classified as timed out due to not
@@ -140,25 +134,42 @@ namespace SIPSorcery.net.RTP
         public event Action<uint, SDPMediaTypesEnum> OnTimeout;
 
         /// <summary>
+        /// Gets fired when an RTP packet is received from a remote party.
+        /// Parameters are:
+        ///  - Remote endpoint packet was received from,
+        ///  - The media type the packet contains, will be audio or video,
+        ///  - The full RTP packet.
+        /// </summary>
+        public event Action<IPEndPoint, RTPPacket> OnRtpPacketReceived;  // TODO - CI - 
+
+        /// <summary>
+        /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
+        /// </summary>
+        public event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;  // TODO - CI - 
+
+        /// <summary>
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
         /// </summary>
-        public event Action<IPEndPoint, RTCPCompoundPacket> OnReceiveReport;
+        public event Action<IPEndPoint, RTCPCompoundPacket> OnReceiveReport;  // TODO - CI - 
 
         /// <summary>
         /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
         /// </summary>
-        public event Action<RTCPCompoundPacket> OnSendReport;
+        public event Action<RTCPCompoundPacket> OnSendReport;  // TODO - CI - 
 
-        public event Action<String> OnRTPChannelClosed;
+        /// <summary>
+        /// Event handler for the RTP channel closure.
+        /// </summary>
+        public event Action<String> OnRTPChannelClosed;  // TODO - CI - 
+
+    #endregion EVENTS
+
+    #region PROPERTIES
 
         /// <summary>
         /// To type of this media
         /// </summary>
-        public SDPMediaTypesEnum MediaType;
-
-        private SecureContext SecureContext;
-
-        public RtpIceChannel RtpIceChannel;
+        public SDPMediaTypesEnum MediaType { get; set; }
 
         /// <summary>
         /// The local track. Will be null if we are not sending this media.
@@ -185,6 +196,10 @@ namespace SIPSorcery.net.RTP
         /// </summary>
         public IPEndPoint ControlDestinationEndPoint { get; set; }
 
+    #endregion PROPERTIES
+
+    #region SECURITY CONTEXT
+
         public void SetSecurityContext(
             ProtectRtpPacket protectRtp,
             ProtectRtpPacket unprotectRtp,
@@ -209,8 +224,51 @@ namespace SIPSorcery.net.RTP
             return (SecureContext != null);
         }
 
-        public MediaStream()
+        private (bool, byte[]) UnprotectBuffer(byte[] buffer)
         {
+            var secureContext = GetSecurityContext();
+            if (secureContext != null)
+            {
+                int res = secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
+
+                if (res == 0)
+                {
+                    return (true, buffer.Take(outBufLen).ToArray());
+                }
+                else
+                {
+                    logger.LogWarning($"SRTP unprotect failed for {MediaType}, result {res}.");
+                }
+            }
+            return (false, buffer);
+        }
+
+        public bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
+        {
+            if (IsSecure || UseSdpCryptoNegotiation)
+            {
+                var (succeeded, newBuffer) = UnprotectBuffer(buf);
+                if (!succeeded)
+                {
+                    packet = null;
+                    return false;
+                }
+                packet = new RTPPacket(newBuffer);
+            }
+            else
+            {
+                packet = new RTPPacket(buf);
+            }
+            packet.Header.ReceivedTime = header.ReceivedTime;
+            return true;
+        }
+
+    #endregion SECURITY CONTEXT
+
+        public MediaStream(Boolean isSecure, Boolean useSdpCryptoNegotiation)
+        {
+            IsSecure = isSecure;
+            UseSdpCryptoNegotiation = useSdpCryptoNegotiation;
         }
 
         /// <summary>
@@ -225,11 +283,10 @@ namespace SIPSorcery.net.RTP
             if (RtcpSession == null)
             {
                 RtcpSession = new RTCPSession(MediaType, 0);
-                RtcpSession.OnTimeout += (ssrc, mt) => this.OnTimeout?.Invoke(ssrc, mt);
+                RtcpSession.OnTimeout += (ssrc, mt) => OnTimeout?.Invoke(ssrc, mt);
                 return true;
             }
             return false;
         }
-
     }
 }
