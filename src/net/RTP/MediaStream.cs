@@ -279,7 +279,6 @@ namespace SIPSorcery.net.RTP
         {
             get
             {
-                // TODO - CI - need to use dictionnary
                 return LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
                   && RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
             }

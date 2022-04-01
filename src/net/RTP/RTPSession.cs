@@ -892,32 +892,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Sets the stream status on local audio track.
-        /// </summary>
-        /// <param name="kind">The type of the media track. Must be audio or video.</param>
-        /// <param name="status">The stream status for the media track.</param>
-        public void SetAudioMediaStreamStatus(uint Ssrc, MediaStreamStatusEnum status)
-        {
-            // TODO - CI - Need to use Ssrc to get correct local audio stream
-
-            AudioStream.LocalTrack.StreamStatus = status;
-            m_sdpAnnouncementVersion++;
-        }
-
-        /// <summary>
-        /// Sets the stream status on local audio track.
-        /// </summary>
-        /// <param name="kind">The type of the media track. Must be audio or video.</param>
-        /// <param name="status">The stream status for the media track.</param>
-        public void SetVideoMediaStreamStatus(uint Ssrc, MediaStreamStatusEnum status)
-        {
-            // TODO - CI - Need to use Ssrc to get correct local video stream
-
-            VideoStream.LocalTrack.StreamStatus = status;
-            m_sdpAnnouncementVersion++;
-        }
-
-        /// <summary>
         /// Gets the RTP end point for an SDP media announcement from the remote peer.
         /// </summary>
         /// <param name="announcement">The media announcement to get the connection address for.</param>
