@@ -176,19 +176,14 @@ namespace SIPSorcery.Net
 
         private bool m_isMediaMultiplexed = false;      // Indicates whether audio and video are multiplexed on a single RTP channel or not.
         private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
-        private IPAddress m_bindAddress = null;       // If set the address to use for binding the RTP and control sockets.
-        protected int m_bindPort = 0;                     // If non-zero specifies the port number to attempt to bind the first RTP socket on.
-        protected PortRange m_rtpPortRange = null;        // If non-null, overwritws m_bindPort and calls to PortRange.GetNextPort() when trying to bind an RTP socket
-        private bool m_rtpEventInProgress;              // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
-        private uint m_lastRtpTimestamp;                // The last timestamp used in an RTP packet.    
+        private IPAddress m_bindAddress = null;         // If set the address to use for binding the RTP and control sockets.
+        protected int m_bindPort = 0;                   // If non-zero specifies the port number to attempt to bind the first RTP socket on.
+        protected PortRange m_rtpPortRange = null;      // If non-null, overwritws m_bindPort and calls to PortRange.GetNextPort() when trying to bind an RTP socket
 
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
 
-        internal int m_rtpChannelsCount = 0; // Need to know the number of RTP Channels
-
-
-        private SrtpHandlerCollection m_secureHandlerCollection = new SrtpHandlerCollection();
+        internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
 
         /// <summary>
         /// Track if current remote description is invalid (used in Renegotiation logic)
@@ -525,7 +520,7 @@ namespace SIPSorcery.Net
             return false;
         }
 
-        public void SetSecureContextForMediaType(SDPMediaTypesEnum mediaType, 
+        private void SetSecureContextForMediaType(SDPMediaTypesEnum mediaType, 
                     ProtectRtpPacket protectRtp,
                     ProtectRtpPacket unprotectRtp,
                     ProtectRtpPacket protectRtcp,
@@ -545,6 +540,19 @@ namespace SIPSorcery.Net
                     protectRtcp,
                     unprotectRtcp);
             }
+        }
+
+        private SrtpHandler GetOrCreateSrtpHandler(SDPMediaTypesEnum mediaType)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                AudioStream.GetOrCreateSrtpHandler();
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                VideoStream.GetOrCreateSrtpHandler();
+            }
+            return null;
         }
 
         public SecureContext GetSecureContextForMediaType(SDPMediaTypesEnum mediaType)
@@ -750,7 +758,7 @@ namespace SIPSorcery.Net
                         {
                             // Setup the appropriate srtp handler
                             var mediaType = announcement.Media;
-                            var srtpHandler = m_secureHandlerCollection.GetOrCreateSrtpHandler(mediaType);
+                            var srtpHandler = GetOrCreateSrtpHandler(mediaType);
                             if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
                             {
                                 logger.LogError($"Error negotiating secure media for type {mediaType}. Incompatible crypto parameter.");
@@ -1397,7 +1405,7 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    var handler = m_secureHandlerCollection.GetOrCreateSrtpHandler(announcement.Media);
+                    var handler = GetOrCreateSrtpHandler(announcement.Media);
                     handler.SetupLocal(announcement.SecurityDescriptions, sdpType);
                     
                     if (handler.IsNegotiationComplete)

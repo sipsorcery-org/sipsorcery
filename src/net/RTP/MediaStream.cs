@@ -592,6 +592,8 @@ namespace SIPSorcery.net.RTP
         protected Boolean UseSdpCryptoNegotiation;
 
         protected SecureContext SecureContext;
+        protected SrtpHandler SrtpHandler;
+
         private RTPReorderBuffer RTPReorderBuffer = null;
 
     #region EVENTS
@@ -625,14 +627,6 @@ namespace SIPSorcery.net.RTP
         /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
         /// </summary>
         public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReport;  // TODO - CI - 
-
-
-        public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
-        public event Action<int, IPEndPoint, byte[]> OnRTPControlDataReceived;
-        /// <summary>
-        /// Event handler for the RTP channel closure.
-        /// </summary>
-        public event Action<string> OnRTPChannelClosed;
 
     #endregion EVENTS
 
@@ -772,6 +766,15 @@ namespace SIPSorcery.net.RTP
             }
             packet.Header.ReceivedTime = header.ReceivedTime;
             return true;
+        }
+
+        public SrtpHandler GetOrCreateSrtpHandler()
+        {
+            if(SrtpHandler == null)
+            {
+                SrtpHandler = new SrtpHandler();
+            }
+            return SrtpHandler;
         }
 
     #endregion SECURITY CONTEXT
