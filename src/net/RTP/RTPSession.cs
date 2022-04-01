@@ -481,7 +481,8 @@ namespace SIPSorcery.Net
 
             if(AudioStream.CreateRtcpSession())
             {
-                AudioStream.OnTimeout += (ssrc, mt) => OnTimeout?.Invoke(ssrc, mt);
+                AudioStream.OnTimeout += OnTimeout;
+                AudioStream.OnSendReport += OnSendReport;
             }
         }
 
@@ -1114,7 +1115,8 @@ namespace SIPSorcery.Net
 
                     if (AudioStream.CreateRtcpSession())
                     {
-                        AudioStream.OnTimeout += (ssrc, mt) => OnTimeout?.Invoke(ssrc, mt);
+                        AudioStream.OnTimeout += OnTimeout;
+                        AudioStream.OnSendReport += OnSendReport;
                     }
                 }
 
@@ -1127,7 +1129,8 @@ namespace SIPSorcery.Net
 
                     if (AudioStream.CreateRtcpSession())
                     {
-                        AudioStream.OnTimeout += (ssrc, mt) => OnTimeout?.Invoke(ssrc, mt);
+                        AudioStream.OnTimeout += OnTimeout;
+                        AudioStream.OnSendReport += OnSendReport;
                     }
 
                     RequireRenegotiation = true;
@@ -1160,7 +1163,8 @@ namespace SIPSorcery.Net
 
                     if (VideoStream.CreateRtcpSession())
                     {
-                        VideoStream.OnTimeout += (ssrc, mt) => OnTimeout?.Invoke(ssrc, mt);
+                        VideoStream.OnTimeout += OnTimeout;
+                        VideoStream.OnSendReport += OnSendReport;
                     }
 
                     RequireRenegotiation = true;
@@ -1195,7 +1199,8 @@ namespace SIPSorcery.Net
                 // to send or receive audio on this session at some later stage).
                 if (AudioStream.CreateRtcpSession())
                 {
-                    AudioStream.OnTimeout += (ssrc, mt) => OnTimeout?.Invoke(ssrc, mt);
+                    AudioStream.OnTimeout += OnTimeout;
+                    AudioStream.OnSendReport += OnSendReport;
                 }
             }
             else if (track.Kind == SDPMediaTypesEnum.video)
@@ -1213,7 +1218,8 @@ namespace SIPSorcery.Net
                 // to send or receive video on this session at some later stage).
                 if (VideoStream.CreateRtcpSession())
                 {
-                    VideoStream.OnTimeout += (ssrc, mt) => OnTimeout?.Invoke(ssrc, mt);
+                    VideoStream.OnTimeout += OnTimeout;
+                    VideoStream.OnSendReport += OnSendReport;
                 }
             }
         }
@@ -1586,17 +1592,6 @@ namespace SIPSorcery.Net
         public virtual Task SendDtmf(byte key, CancellationToken ct)
         {
             return AudioStream.SendDtmf(key, ct);
-        }
-
-        /// <summary>
-        /// Allows sending of RTCP feedback reports.
-        /// </summary>
-        /// <param name="mediaType">The media type of the RTCP report  being sent. Must be audio or video.</param>
-        /// <param name="feedback">The feedback report to send.</param>
-        public void SendRtcpFeedback(SDPMediaTypesEnum mediaType, RTCPFeedback feedback)
-        {
-            var reportBytes = feedback.GetBytes();
-            SendRtcpReport(mediaType, reportBytes);
         }
 
         /// <summary>
@@ -2169,75 +2164,35 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Sends the RTCP report to the remote call party.
+        /// Allows sending of RTCP feedback reports.
         /// </summary>
-        /// <param name="report">RTCP report to send.</param>
-        private void SendRtcpReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket report)
+        /// <param name="mediaType">The media type of the RTCP report  being sent. Must be audio or video.</param>
+        /// <param name="feedback">The feedback report to send.</param>
+        public void SendRtcpFeedback(SDPMediaTypesEnum mediaType, RTCPFeedback feedback)
         {
-            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReadyForMediaType(mediaType) && report.Bye != null)
+            if (mediaType == SDPMediaTypesEnum.audio)
             {
-                // Do nothing. The RTCP BYE gets generated when an RTP session is closed.
-                // If that occurs before the connection was able to set up the secure context
-                // there's no point trying to send it.
+                AudioStream.SendRtcpFeedback(feedback);
             }
-            else
+            else if (mediaType == SDPMediaTypesEnum.audio)
             {
-                var reportBytes = report.GetBytes();
-                SendRtcpReport(mediaType, reportBytes);
-                OnSendReport?.Invoke(mediaType, report);
+                VideoStream.SendRtcpFeedback(feedback);
             }
         }
 
         /// <summary>
         /// Sends the RTCP report to the remote call party.
         /// </summary>
-        /// <param name="report">The serialised RTCP report to send.</param>
-        private void SendRtcpReport(SDPMediaTypesEnum mediaType, byte[] reportBuffer)
+        /// <param name="report">RTCP report to send.</param>
+        public void SendRtcpReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket report)
         {
-            IPEndPoint controlDstEndPoint = null;
-            if (m_isMediaMultiplexed || mediaType == SDPMediaTypesEnum.audio)
+            if (mediaType == SDPMediaTypesEnum.audio)
             {
-                controlDstEndPoint = AudioStream.ControlDestinationEndPoint;
+                AudioStream.SendRtcpReport(report);
             }
             else if (mediaType == SDPMediaTypesEnum.video)
             {
-                controlDstEndPoint = VideoStream.ControlDestinationEndPoint;
-            }
-
-            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReadyForMediaType(mediaType))
-            {
-                logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
-            }
-            else if (controlDstEndPoint != null)
-            {
-                //logger.LogDebug($"SendRtcpReport: {reportBytes.HexStr()}");
-
-                var sendOnSocket = (m_isRtcpMultiplexed) ? RTPChannelSocketsEnum.RTP : RTPChannelSocketsEnum.Control;
-
-                var rtpChannel = GetRtpChannel(mediaType);
-
-                var protectRtcpPacket = GetSecureContextForMediaType(mediaType)?.ProtectRtcpPacket;
-
-                if (protectRtcpPacket == null)
-                {
-                    rtpChannel.Send(sendOnSocket, controlDstEndPoint, reportBuffer);
-                }
-                else
-                {
-                    byte[] sendBuffer = new byte[reportBuffer.Length + SRTP_MAX_PREFIX_LENGTH];
-                    Buffer.BlockCopy(reportBuffer, 0, sendBuffer, 0, reportBuffer.Length);
-
-                    int outBufLen = 0;
-                    int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - SRTP_MAX_PREFIX_LENGTH, out outBufLen);
-                    if (rtperr != 0)
-                    {
-                        logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
-                    }
-                    else
-                    {
-                        rtpChannel.Send(sendOnSocket, controlDstEndPoint, sendBuffer.Take(outBufLen).ToArray());
-                    }
-                }
+                VideoStream.SendRtcpReport(report);
             }
         }
 

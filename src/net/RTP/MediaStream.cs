@@ -624,7 +624,7 @@ namespace SIPSorcery.net.RTP
         /// <summary>
         /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
         /// </summary>
-        public event Action<RTCPCompoundPacket> OnSendReport;  // TODO - CI - 
+        public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReport;  // TODO - CI - 
 
 
         public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
@@ -851,7 +851,7 @@ namespace SIPSorcery.net.RTP
         /// <param name="timestamp">The timestamp to set on the RTP header.</param>
         /// <param name="markerBit">The value to set on the RTP header marker bit, should be 0 or 1.</param>
         /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
-        public void SendRtpRaw(SDPMediaTypesEnum mediaType, byte[] payload, uint timestamp, int markerBit, int payloadTypeID)
+        public void SendRtpRaw(byte[] payload, uint timestamp, int markerBit, int payloadTypeID)
         {
             if (LocalTrack == null)
             {
@@ -869,6 +869,78 @@ namespace SIPSorcery.net.RTP
                     SendRtpPacket(rtpChannel, dstEndPoint, payload, timestamp, markerBit, payloadTypeID, track.Ssrc, track.GetNextSeqNum(), rtcpSession, protectRtpPacket);
                 }
             }
+        }
+
+        /// <summary>
+        /// Sends the RTCP report to the remote call party.
+        /// </summary>
+        /// <param name="report">The serialised RTCP report to send.</param>
+        private void SendRtcpReport(byte[] reportBuffer)
+        {
+            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecurityContextReady())
+            {
+                logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
+            }
+            else if (ControlDestinationEndPoint != null)
+            {
+                //logger.LogDebug($"SendRtcpReport: {reportBytes.HexStr()}");
+
+                var sendOnSocket = RtpSessionConfig.IsRtcpMultiplexed ? RTPChannelSocketsEnum.RTP : RTPChannelSocketsEnum.Control;
+
+                var protectRtcpPacket = SecureContext?.ProtectRtcpPacket;
+
+                if (protectRtcpPacket == null)
+                {
+                    rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, reportBuffer);
+                }
+                else
+                {
+                    byte[] sendBuffer = new byte[reportBuffer.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH];
+                    Buffer.BlockCopy(reportBuffer, 0, sendBuffer, 0, reportBuffer.Length);
+
+                    int outBufLen = 0;
+                    int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out outBufLen);
+                    if (rtperr != 0)
+                    {
+                        logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
+                    }
+                    else
+                    {
+                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends the RTCP report to the remote call party.
+        /// </summary>
+        /// <param name="report">RTCP report to send.</param>
+        public void SendRtcpReport(RTCPCompoundPacket report)
+        {
+            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecurityContextReady() && report.Bye != null)
+            {
+                // Do nothing. The RTCP BYE gets generated when an RTP session is closed.
+                // If that occurs before the connection was able to set up the secure context
+                // there's no point trying to send it.
+            }
+            else
+            {
+                var reportBytes = report.GetBytes();
+                SendRtcpReport(reportBytes);
+                OnSendReport?.Invoke(MediaType, report);
+            }
+        }
+
+        /// <summary>
+        /// Allows sending of RTCP feedback reports.
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTCP report  being sent. Must be audio or video.</param>
+        /// <param name="feedback">The feedback report to send.</param>
+        public void SendRtcpFeedback(RTCPFeedback feedback)
+        {
+            var reportBytes = feedback.GetBytes();
+            SendRtcpReport(reportBytes);
         }
 
     #endregion SEND PACKET
@@ -892,7 +964,7 @@ namespace SIPSorcery.net.RTP
             if (RtcpSession == null)
             {
                 RtcpSession = new RTCPSession(MediaType, 0);
-                RtcpSession.OnTimeout += (ssrc, mt) => OnTimeout?.Invoke(ssrc, mt);
+                RtcpSession.OnTimeout += OnTimeout;
                 return true;
             }
             return false;
