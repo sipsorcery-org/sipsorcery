@@ -75,7 +75,7 @@ namespace SIPSorcery.Media
         public VoIPMediaSession(string musicFilePath = null, Func<AudioFormat, bool> restrictFormats = null) : base(false, false, false)
         {
             _audioExtrasSource = new AudioExtrasSource();
-            _audioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
+            _audioExtrasSource.OnAudioSourceEncodedSample += AudioStream.SendAudio;
             _audioExtrasSource.SetSource(AudioSourcesEnum.Music);
 
             if(restrictFormats != null)
@@ -88,7 +88,7 @@ namespace SIPSorcery.Media
 
             var audioTrack = new MediaStreamTrack(_audioExtrasSource.GetAudioSourceFormats());
             base.addTrack(audioTrack);
-            Media.AudioSource.OnAudioSourceEncodedSample += base.SendAudio;
+            Media.AudioSource.OnAudioSourceEncodedSample += AudioStream.SendAudio;
             base.AudioStream.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
         }
 
@@ -124,14 +124,14 @@ namespace SIPSorcery.Media
 
             // The audio extras source is used for on-hold music.
             _audioExtrasSource = new AudioExtrasSource();
-            _audioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
+            _audioExtrasSource.OnAudioSourceEncodedSample += AudioStream.SendAudio;
 
             // Wire up the audio and video sample event handlers.
             if (Media.AudioSource != null)
             {
                 var audioTrack = new MediaStreamTrack(config.MediaEndPoint.AudioSource.GetAudioSourceFormats());
                 base.addTrack(audioTrack);
-                Media.AudioSource.OnAudioSourceEncodedSample += base.SendAudio;
+                Media.AudioSource.OnAudioSourceEncodedSample += AudioStream.SendAudio;
             }
 
             if (Media.VideoSource != null)
@@ -239,7 +239,7 @@ namespace SIPSorcery.Media
 
                 if (_audioExtrasSource != null)
                 {
-                    _audioExtrasSource.OnAudioSourceEncodedSample -= SendAudio;
+                    _audioExtrasSource.OnAudioSourceEncodedSample -= AudioStream.SendAudio;
                     await _audioExtrasSource.CloseAudio().ConfigureAwait(false);
                 }
 

@@ -41,6 +41,94 @@ namespace SIPSorcery.net.RTP
         public Boolean RtpEventInProgress { get; set; } = false;
 
         /// <summary>
+        /// Sends an audio sample to the remote peer.
+        /// </summary>
+        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the audio sample. This
+        /// value is added to the previous RTP timestamp when building the RTP header.</param>
+        /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
+        public void SendAudio(uint durationRtpUnits, byte[] sample)
+        {
+            if (DestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecurityContextReady()))
+            {
+                var audioFormat = GetSendingFormat();
+                SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
+            }
+        }
+
+        /// <summary>
+        /// Sends an audio packet to the remote party.
+        /// </summary>
+        /// <param name="duration">The duration of the audio payload in timestamp units. This value
+        /// gets added onto the timestamp being set in the RTP header.</param>
+        /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
+        /// <param name="buffer">The audio payload to send.</param>
+        public void SendAudioFrame(uint duration, int payloadTypeID, byte[] buffer)
+        {
+            if (IsClosed || RtpEventInProgress || DestinationEndPoint == null || buffer == null || buffer.Length == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                var audioTrack = LocalTrack;
+
+                if (audioTrack == null)
+                {
+                    logger.LogWarning("SendAudio was called on an RTP session without an audio stream.");
+                }
+                else if (!HasAudio || audioTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
+                {
+                    return;
+                }
+                else
+                {
+                    // Basic RTP audio formats (such as G711, G722) do not have a concept of frames. The payload of the RTP packet is
+                    // considered a single frame. This results in a problem is the audio frame being sent is larger than the MTU. In 
+                    // that case the audio frame must be split across mutliple RTP packets. Unlike video frames theres no way to 
+                    // indicate that a series of RTP packets are correlated to the same timestamp. For that reason if an audio buffer
+                    // is supplied that's larger than MTU it will be split and the timestamp will be adjusted to best fit each RTP 
+                    // paylaod.
+                    // See https://github.com/sipsorcery/sipsorcery/issues/394.
+
+                    uint payloadTimestamp = audioTrack.Timestamp;
+                    uint payloadDuration = 0;
+
+                    for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
+                    {
+                        int offset = (index == 0) ? 0 : (index * RTPSession.RTP_MAX_PAYLOAD);
+                        int payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
+                        payloadTimestamp += payloadDuration;
+                        byte[] payload = new byte[payloadLength];
+
+                        Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
+
+                        // RFC3551 specifies that for audio the marker bit should always be 0 except for when returning
+                        // from silence suppression. For video the marker bit DOES get set to 1 for the last packet
+                        // in a frame.
+                        int markerBit = 0;
+
+                        var audioRtpChannel = rtpChannel;
+                        var protectRtpPacket = GetSecurityContext()?.ProtectRtpPacket;
+                        SendRtpPacket(audioRtpChannel, DestinationEndPoint, payload, payloadTimestamp, markerBit, payloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+
+                        //logger.LogDebug($"send audio { audioRtpChannel.RTPLocalEndPoint}->{AudioDestinationEndPoint}.");
+
+                        payloadDuration = (uint)(((decimal)payloadLength / buffer.Length) * duration); // Get the percentage duration of this payload.
+                    }
+
+                    audioTrack.Timestamp += duration;
+                }
+            }
+            catch (SocketException sockExcp)
+            {
+                logger.LogError("SocketException SendAudioFrame. " + sockExcp.Message);
+            }
+        }
+
+
+
+        /// <summary>
         /// Indicates whether this session is using audio.
         /// </summary>
         public bool HasAudio
@@ -150,8 +238,8 @@ namespace SIPSorcery.net.RTP
         private uint m_lastRtpTimestamp;
 
         private RtpSessionConfig RtpSessionConfig;
-        private Boolean IsSecure;
-        private Boolean UseSdpCryptoNegotiation;
+        protected Boolean IsSecure;
+        protected Boolean UseSdpCryptoNegotiation;
 
         private SecureContext SecureContext;
         private RTPReorderBuffer RTPReorderBuffer = null;
@@ -358,6 +446,57 @@ namespace SIPSorcery.net.RTP
         }
 
     #endregion RTP CHANNEL
+
+
+    #region SEND PACKET
+
+        protected void SendRtpPacket(RTPChannel rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType, uint ssrc, ushort seqNum, RTCPSession rtcpSession, ProtectRtpPacket protectRtpPacket)
+        {
+            if ((IsSecure || UseSdpCryptoNegotiation) && protectRtpPacket == null)
+            {
+                logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
+            }
+            else
+            {
+                int srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
+
+                RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
+                rtpPacket.Header.SyncSource = ssrc;
+                rtpPacket.Header.SequenceNumber = seqNum;
+                rtpPacket.Header.Timestamp = timestamp;
+                rtpPacket.Header.MarkerBit = markerBit;
+                rtpPacket.Header.PayloadType = payloadType;
+
+                Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
+
+                var rtpBuffer = rtpPacket.GetBytes();
+
+                if (protectRtpPacket == null)
+                {
+                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer);
+                }
+                else
+                {
+                    int outBufLen = 0;
+                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+                    if (rtperr != 0)
+                    {
+                        logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
+                    }
+                    else
+                    {
+                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer.Take(outBufLen).ToArray());
+                    }
+                }
+                m_lastRtpTimestamp = timestamp;
+
+                rtcpSession?.RecordRtpPacketSend(rtpPacket);
+            }
+        }
+
+    #endregion SEND PACKET
+
+
 
 
         public MediaStream(RtpSessionConfig config)

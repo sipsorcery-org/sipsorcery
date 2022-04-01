@@ -1470,7 +1470,6 @@ namespace SIPSorcery.Net
             }
         }
 
-
         /// <summary>
         /// Gets the local tracks available in this session. Will only be audio, video or both.
         /// Local tracks represent an audio or video source that we are sending to the remote party.
@@ -1558,22 +1557,7 @@ namespace SIPSorcery.Net
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Sends an audio sample to the remote peer.
-        /// </summary>
-        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the audio sample. This
-        /// value is added to the previous RTP timestamp when building the RTP header.</param>
-        /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
-        public void SendAudio(uint durationRtpUnits, byte[] sample)
-        {
-            if (AudioStream.DestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || AudioStream.IsSecurityContextReady()))
-            {
-                var audioFormat = AudioStream.GetSendingFormat();
-                SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
-            }
-        }
-
-        /// <summary>
+         /// <summary>
         /// Sends a video sample to the remote peer.
         /// </summary>
         /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
@@ -1602,78 +1586,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        /// <summary>
-        /// Sends an audio packet to the remote party.
-        /// </summary>
-        /// <param name="duration">The duration of the audio payload in timestamp units. This value
-        /// gets added onto the timestamp being set in the RTP header.</param>
-        /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
-        /// <param name="buffer">The audio payload to send.</param>
-        public void SendAudioFrame(uint duration, int payloadTypeID, byte[] buffer)
-        {
-            if (IsClosed || m_rtpEventInProgress || AudioStream.DestinationEndPoint == null || buffer == null || buffer.Length == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                var audioTrack = AudioStream.LocalTrack;
-
-                if (audioTrack == null)
-                {
-                    logger.LogWarning("SendAudio was called on an RTP session without an audio stream.");
-                }
-                else if (!HasAudio || audioTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
-                {
-                    // Basic RTP audio formats (such as G711, G722) do not have a concept of frames. The payload of the RTP packet is
-                    // considered a single frame. This results in a problem is the audio frame being sent is larger than the MTU. In 
-                    // that case the audio frame must be split across mutliple RTP packets. Unlike video frames theres no way to 
-                    // indicate that a series of RTP packets are correlated to the same timestamp. For that reason if an audio buffer
-                    // is supplied that's larger than MTU it will be split and the timestamp will be adjusted to best fit each RTP 
-                    // paylaod.
-                    // See https://github.com/sipsorcery/sipsorcery/issues/394.
-
-                    uint payloadTimestamp = audioTrack.Timestamp;
-                    uint payloadDuration = 0;
-
-                    for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
-                    {
-                        int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
-                        int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
-                        payloadTimestamp += payloadDuration;
-                        byte[] payload = new byte[payloadLength];
-
-                        Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
-
-                        // RFC3551 specifies that for audio the marker bit should always be 0 except for when returning
-                        // from silence suppression. For video the marker bit DOES get set to 1 for the last packet
-                        // in a frame.
-                        int markerBit = 0;
-
-                        var audioRtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
-                        var protectRtpPacket = AudioStream.GetSecurityContext()?.ProtectRtpPacket;
-                        SendRtpPacket(audioRtpChannel, AudioStream.DestinationEndPoint, payload, payloadTimestamp, markerBit, payloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioStream.RtcpSession, protectRtpPacket);
-
-                        //logger.LogDebug($"send audio { audioRtpChannel.RTPLocalEndPoint}->{AudioDestinationEndPoint}.");
-
-                        payloadDuration = (uint)(((decimal)payloadLength / buffer.Length) * duration); // Get the percentage duration of this payload.
-                    }
-
-                    audioTrack.Timestamp += duration;
-                }
-            }
-            catch (SocketException sockExcp)
-            {
-                logger.LogError("SocketException SendAudioFrame. " + sockExcp.Message);
-            }
-        }
-
-        /// <summary>
+         /// <summary>
         /// Sends a VP8 frame as one or more RTP packets.
         /// </summary>
         /// <param name="timestamp">The timestamp to place in the RTP header. Needs
