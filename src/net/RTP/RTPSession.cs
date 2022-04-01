@@ -155,7 +155,7 @@ namespace SIPSorcery.Net
         /// the buffer that holds the RTCP packet.
         /// </summary>
         public const int SRTP_MAX_PREFIX_LENGTH = 148;
-        private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
+        internal const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
         public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50; // Default sample period for an RTP event as specified by RFC2833.
         public const SDPMediaTypesEnum DEFAULT_MEDIA_TYPE = SDPMediaTypesEnum.audio; // If we can't match an RTP payload ID assume it's audio.
         public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101;
@@ -1816,112 +1816,7 @@ namespace SIPSorcery.Net
         /// be used to cancel the send.</param>
         public virtual Task SendDtmf(byte key, CancellationToken ct)
         {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, DTMF_EVENT_PAYLOAD_ID);
-            return SendDtmfEvent(dtmfEvent, ct);
-        }
-
-        /// <summary>
-        /// Sends an RTP event for a DTMF tone as per RFC2833. Sending the event requires multiple packets to be sent.
-        /// This method will hold onto the socket until all the packets required for the event have been sent. The send
-        /// can be cancelled using the cancellation token.
-        /// </summary>
-        /// <param name="rtpEvent">The RTP event to send.</param>
-        /// <param name="cancellationToken">CancellationToken to allow the operation to be cancelled prematurely.</param>
-        /// <param name="clockRate">To send an RTP event the clock rate of the underlying stream needs to be known.</param>
-        /// <param name="samplePeriod">The sample period in milliseconds being used for the media stream that the event 
-        /// is being inserted into. Should be set to 50ms if main media stream is dynamic or sample period is unknown.</param>
-        public async Task SendDtmfEvent(
-            RTPEvent rtpEvent,
-            CancellationToken cancellationToken,
-            int clockRate = DEFAULT_AUDIO_CLOCK_RATE,
-            int samplePeriod = RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS)
-        {
-            var dstEndPoint = AudioStream.DestinationEndPoint;
-
-            if (IsClosed || m_rtpEventInProgress == true || dstEndPoint == null)
-            {
-                logger.LogWarning("SendDtmfEvent request ignored as an RTP event is already in progress.");
-            }
-
-            try
-            {
-                var audioTrack = AudioStream.LocalTrack;
-
-                if (audioTrack == null)
-                {
-                    logger.LogWarning("SendDtmfEvent was called on an RTP session without an audio stream.");
-                }
-                else if (!HasAudio || audioTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
-                {
-                    m_rtpEventInProgress = true;
-                    uint startTimestamp = audioTrack.Timestamp;
-
-                    // The RTP timestamp step corresponding to the sampling period. This can change depending
-                    // on the codec being used. For example using PCMU with a sampling frequency of 8000Hz and a sample period of 50ms
-                    // the timestamp step is 400 (8000 / (1000 / 50)). For a sample period of 20ms it's 160 (8000 / (1000 / 20)).
-                    ushort rtpTimestampStep = (ushort)(clockRate * samplePeriod / 1000);
-
-                    // If only the minimum number of packets are being sent then they are both the start and end of the event.
-                    rtpEvent.EndOfEvent = (rtpEvent.TotalDuration <= rtpTimestampStep);
-                    // The DTMF tone is generally multiple RTP events. Each event has a duration of the RTP timestamp step.
-                    rtpEvent.Duration = rtpTimestampStep;
-
-                    // Send the start of event packets.
-                    for (int i = 0; i < RTPEvent.DUPLICATE_COUNT && !cancellationToken.IsCancellationRequested; i++)
-                    {
-                        byte[] buffer = rtpEvent.GetEventPayload();
-
-                        int markerBit = (i == 0) ? 1 : 0;  // Set marker bit for the first packet in the event.
-                        var protectRtpPacket = AudioStream.GetSecurityContext()?.ProtectRtpPacket;
-                        SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, markerBit, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioStream.RtcpSession, protectRtpPacket);
-                    }
-
-                    await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
-
-                    if (!rtpEvent.EndOfEvent)
-                    {
-                        // Send the progressive event packets 
-                        while ((rtpEvent.Duration + rtpTimestampStep) < rtpEvent.TotalDuration && !cancellationToken.IsCancellationRequested)
-                        {
-                            rtpEvent.Duration += rtpTimestampStep;
-                            byte[] buffer = rtpEvent.GetEventPayload();
-
-                            var protectRtpPacket = AudioStream.GetSecurityContext()?.ProtectRtpPacket;
-                            SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioStream.RtcpSession, protectRtpPacket);
-
-                            await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
-                        }
-
-                        // Send the end of event packets.
-                        for (int j = 0; j < RTPEvent.DUPLICATE_COUNT && !cancellationToken.IsCancellationRequested; j++)
-                        {
-                            rtpEvent.EndOfEvent = true;
-                            rtpEvent.Duration = rtpEvent.TotalDuration;
-                            byte[] buffer = rtpEvent.GetEventPayload();
-
-                            var protectRtpPacket = AudioStream.GetSecurityContext()?.ProtectRtpPacket;
-                            SendRtpPacket(GetRtpChannel(SDPMediaTypesEnum.audio), dstEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), AudioStream.RtcpSession, protectRtpPacket);
-                        }
-                    }
-                    audioTrack.Timestamp += rtpEvent.TotalDuration;
-                }
-            }
-            catch (SocketException sockExcp)
-            {
-                logger.LogError("SocketException SendDtmfEvent. " + sockExcp.Message);
-            }
-            catch (TaskCanceledException)
-            {
-                logger.LogWarning("SendDtmfEvent was cancelled by caller.");
-            }
-            finally
-            {
-                m_rtpEventInProgress = false;
-            }
+            return AudioStream.SendDtmf(key, ct);
         }
 
         /// <summary>
