@@ -1420,6 +1420,8 @@ namespace SIPSorcery.Net
             int bindPort = (m_bindPort == 0) ? 0 : m_bindPort + m_rtpChannelsCount * 2;
             var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress, bindPort, m_rtpPortRange);
 
+            AddRtpChannel(mediaType, rtpChannel);
+
             rtpChannel.OnRTPDataReceived += OnReceive;
             rtpChannel.OnControlDataReceived += OnReceive; // RTCP packets could come on RTP or control socket.
             rtpChannel.OnClosed += OnRTPChannelClosed;
