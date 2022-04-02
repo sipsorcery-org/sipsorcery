@@ -1591,7 +1591,7 @@ namespace SIPSorcery.Net
 
                 if (VideoStream.HasRtpChannel())
                 {
-                    var rtpChannel = AudioStream.GetRTPChannel();
+                    var rtpChannel = VideoStream.GetRTPChannel();
                     rtpChannel.OnRTPDataReceived -= OnReceive;
                     rtpChannel.OnControlDataReceived -= OnReceive;
                     rtpChannel.OnClosed -= OnRTPChannelClosed;
