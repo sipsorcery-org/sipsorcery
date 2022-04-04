@@ -1512,6 +1512,17 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Sends an audio sample to the remote peer.
+        /// </summary>
+        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the audio sample. This
+        /// value is added to the previous RTP timestamp when building the RTP header.</param>
+        /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
+        public void SendAudio(uint durationRtpUnits, byte[] sample)
+        {
+            AudioStream?.SendAudio(durationRtpUnits, sample);
+        }
+
+        /// <summary>
         /// Sends a video sample to the remote peer.
         /// </summary>
         /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
@@ -1519,7 +1530,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The video sample to set as the RTP packet payload.</param>
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
-            VideoStream.SendVideo(durationRtpUnits, sample);
+            VideoStream?.SendVideo(durationRtpUnits, sample);
         }
 
         /// <summary>
@@ -1530,7 +1541,7 @@ namespace SIPSorcery.Net
         /// be used to cancel the send.</param>
         public virtual Task SendDtmf(byte key, CancellationToken ct)
         {
-            return AudioStream.SendDtmf(key, ct);
+            return AudioStream?.SendDtmf(key, ct);
         }
 
         /// <summary>
