@@ -247,6 +247,11 @@ namespace SIPSorcery.net.RTP
                   && RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
             }
         }
+
+        public void OnReceiveRTPPacket(RTPHeader hdr, SDPAudioVideoMediaFormat format, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        {
+            base.OnReceiveRTPPacket(hdr, format, localPort, remoteEndPoint, buffer, null);
+        }
     }
 
     public class VideoStream: MediaStream
@@ -568,6 +573,11 @@ namespace SIPSorcery.net.RTP
             }
         }
 
+        public void OnReceiveRTPPacket(RTPHeader hdr, SDPAudioVideoMediaFormat format, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        {
+            base.OnReceiveRTPPacket(hdr, format, localPort, remoteEndPoint, buffer, this);
+        }
+
         public VideoStream(RtpSessionConfig config) : base(config)
         {
             MediaType = SDPMediaTypesEnum.video;
@@ -588,6 +598,8 @@ namespace SIPSorcery.net.RTP
         protected SrtpHandler SrtpHandler;
 
         private RTPReorderBuffer RTPReorderBuffer = null;
+
+        public Boolean AcceptRtpFromAny { get; set; } = false;
 
     #region EVENTS
 
@@ -610,12 +622,12 @@ namespace SIPSorcery.net.RTP
         ///  - The media type the packet contains, will be audio or video,
         ///  - The full RTP packet.
         /// </summary>
-        public event Action<IPEndPoint, RTPPacket> OnRtpPacketReceived;  // TODO - CI - 
+        public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
 
         /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
         /// </summary>
-        public event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;  // TODO - CI - 
+        public event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;
 
         /// <summary>
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
@@ -672,7 +684,6 @@ namespace SIPSorcery.net.RTP
 
     #endregion PROPERTIES
 
-
     #region REORDER BUFFER
 
         public void AddBuffer(TimeSpan dropPacketTimeout)
@@ -696,7 +707,6 @@ namespace SIPSorcery.net.RTP
         }
 
     #endregion REORDER BUFFER
-
 
     #region SECURITY CONTEXT
 
@@ -769,7 +779,6 @@ namespace SIPSorcery.net.RTP
 
     #endregion SECURITY CONTEXT
 
-
     #region RTP CHANNEL
 
         public void AddRtpChannel(RTPChannel rtpChannel)
@@ -788,7 +797,6 @@ namespace SIPSorcery.net.RTP
         }
 
     #endregion RTP CHANNEL
-
 
     #region SEND PACKET
 
@@ -937,6 +945,161 @@ namespace SIPSorcery.net.RTP
         }
 
     #endregion SEND PACKET
+
+        protected void OnReceiveRTPPacket(RTPHeader hdr, SDPAudioVideoMediaFormat format, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
+        {
+            RTPPacket rtpPacket = null;
+            if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
+            {
+                if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
+                {
+                    return;
+                }
+
+                RtpEvent(remoteEndPoint, new RTPEvent(rtpPacket.Payload), rtpPacket.Header);
+                return;
+            }
+
+            // Set the remote track SSRC so that RTCP reports can match the media type.
+            if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null)
+            {
+                bool isValidSource = AdjustRemoteEndPoint(hdr.SyncSource, remoteEndPoint);
+
+                if (isValidSource)
+                {
+                    logger.LogDebug($"Set remote {MediaType} track SSRC to {hdr.SyncSource}.");
+                    RemoteTrack.Ssrc = hdr.SyncSource;
+                }
+            }
+
+
+            // Note AC 24 Dec 2020: The problem with waiting until the remote description is set is that the remote peer often starts sending
+            // RTP packets at the same time it signals its SDP offer or answer. Generally this is not a problem for audio but for video streams
+            // the first RTP packet(s) are the key frame and if they are ignored the video stream will take additional time or manual 
+            // intervention to synchronise.
+            //if (RemoteDescription != null)
+            //{
+
+            // Don't hand RTP packets to the application until the remote description has been set. Without it
+            // things like the common codec, DTMF support etc. are not known.
+
+            //SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
+
+            // For video RTP packets an attempt will be made to collate into frames. It's up to the application
+            // whether it wants to subscribe to frames of RTP packets.
+
+            rtpPacket = null;
+            if (RemoteTrack != null)
+            {
+                LogIfWrongSeqNumber($"{MediaType}", hdr, RemoteTrack);
+                ProcessHeaderExtensions(hdr);
+            }
+            if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
+            {
+                return;
+            }
+
+            if (rtpPacket != null)
+            {
+                if (UseBuffer())
+                {
+                    var reorderBuffer = GetBuffer();
+                    reorderBuffer.Add(rtpPacket);
+                    while (reorderBuffer.Get(out var bufferedPacket))
+                    {
+                        if (RemoteTrack != null)
+                        {
+                            LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
+                            RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                        }
+                        videoStream?.ProcessVideoRtpFrame(remoteEndPoint, bufferedPacket, format);
+                        RtpPacketReceived(remoteEndPoint, bufferedPacket);
+                    }
+                }
+                else
+                {
+                    videoStream?.ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, format);
+                    RtpPacketReceived(remoteEndPoint, rtpPacket);
+                }
+
+                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+            }
+        }
+
+        protected void RtpEvent(IPEndPoint ipEndPoint, RTPEvent rtpEvent, RTPHeader rtpHeader)
+        {
+            OnRtpEvent?.Invoke(ipEndPoint, rtpEvent, rtpHeader);
+        }
+
+        protected void RtpPacketReceived(IPEndPoint ipEndPoint, RTPPacket rtpPacket)
+        {
+            OnRtpPacketReceived?.Invoke(ipEndPoint, MediaType, rtpPacket);
+        }
+
+        protected void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
+        {
+            if (track.LastRemoteSeqNum != 0 &&
+                header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
+                !(header.SequenceNumber == 0 && track.LastRemoteSeqNum == ushort.MaxValue))
+            {
+                logger.LogWarning($"{trackType} stream sequence number jumped from {track.LastRemoteSeqNum} to {header.SequenceNumber}.");
+            }
+        }
+
+        /// <summary>
+        /// Adjusts the expected remote end point for a particular media type.
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTP packet received.</param>
+        /// <param name="ssrc">The SSRC from the RTP packet header.</param>
+        /// <param name="receivedOnEndPoint">The actual remote end point that the RTP packet came from.</param>
+        /// <returns>True if remote end point for this media type was the expected one or it was adjusted. False if
+        /// the remote end point was deemed to be invalid for this media type.</returns>
+        protected bool AdjustRemoteEndPoint(uint ssrc, IPEndPoint receivedOnEndPoint)
+        {
+            bool isValidSource = false;
+            IPEndPoint expectedEndPoint = DestinationEndPoint;
+
+            if (expectedEndPoint.Address.Equals(receivedOnEndPoint.Address) && expectedEndPoint.Port == receivedOnEndPoint.Port)
+            {
+                // Exact match on actual and expected destination.
+                isValidSource = true;
+            }
+            else if (AcceptRtpFromAny || (expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate())
+                //|| (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address
+                )
+            {
+                // The end point doesn't match BUT we were supplied a private address in the SDP and the remote source is a public address
+                // so high probability there's a NAT on the network path. Switch to the remote end point (note this can only happen once
+                // and only if the SSRV is 0, i.e. this is the first RTP packet.
+                // If the remote end point is a loopback address then it's likely that this is a test/development 
+                // scenario and the source can be trusted.
+                // AC 12 Jul 2020: Commented out the expression that allows the end point to be change just because it's a loopback address.
+                // A breaking case is doing an attended transfer test where two different agents are using loopback addresses. 
+                // The expression allows an older session to override the destination set by a newer remote SDP.
+                // AC 18 Aug 2020: Despite the carefully crafted rules below and https://github.com/sipsorcery/sipsorcery/issues/197
+                // there are still cases that were a problem in one scenario but acceptable in another. To accommodate a new property
+                // was added to allow the application to decide whether the RTP end point switches should be liberal or not.
+                logger.LogDebug($"{MediaType} end point switched for RTP ssrc {ssrc} from {expectedEndPoint} to {receivedOnEndPoint}.");
+
+                DestinationEndPoint = receivedOnEndPoint;
+                if (RtpSessionConfig.IsRtcpMultiplexed)
+                {
+                    ControlDestinationEndPoint = DestinationEndPoint;
+                }
+                else
+                {
+                    ControlDestinationEndPoint = new IPEndPoint(DestinationEndPoint.Address, DestinationEndPoint.Port + 1);
+                }
+
+                isValidSource = true;
+            }
+            else
+            {
+                logger.LogWarning($"RTP packet with SSRC {ssrc} received from unrecognised end point {receivedOnEndPoint}.");
+            }
+
+            return isValidSource;
+        }
 
         public MediaStream(RtpSessionConfig config)
         {
