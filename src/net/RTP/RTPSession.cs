@@ -537,11 +537,11 @@ namespace SIPSorcery.Net
         {
             if (mediaType == SDPMediaTypesEnum.audio)
             {
-                AudioStream.GetOrCreateSrtpHandler();
+                return AudioStream.GetOrCreateSrtpHandler();
             }
             else if (mediaType == SDPMediaTypesEnum.video)
             {
-                VideoStream.GetOrCreateSrtpHandler();
+                return VideoStream.GetOrCreateSrtpHandler();
             }
             return null;
         }
