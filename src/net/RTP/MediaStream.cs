@@ -632,7 +632,7 @@ namespace SIPSorcery.net.RTP
         /// <summary>
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
         /// </summary>
-        public event Action<IPEndPoint, RTCPCompoundPacket> OnReceiveReport;  // TODO - CI - 
+        public event Action<IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReport;
 
     #endregion EVENTS
 
@@ -1024,6 +1024,11 @@ namespace SIPSorcery.net.RTP
 
                 RtcpSession?.RecordRtpPacketReceived(rtpPacket);
             }
+        }
+
+        public void ReceiveReport(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
+        {
+            OnReceiveReport?.Invoke(ipEndPoint, MediaType, rtcpPCompoundPacket);
         }
 
         protected void RtpEvent(IPEndPoint ipEndPoint, RTPEvent rtpEvent, RTPHeader rtpHeader)
