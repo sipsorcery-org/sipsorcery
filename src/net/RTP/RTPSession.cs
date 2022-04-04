@@ -279,54 +279,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Get the list of Ssrc of local audio stream
-        /// </summary>
-        public List<uint> AudioLocalSsrcList
-        {
-            get
-            {
-                // TODO - CI -
-                return new List<uint>();
-            }
-        }
-
-        /// <summary>
-        /// Get the list of Ssrc of remote audio stream
-        /// </summary>
-        public List<uint> AudioRemoteSsrcList
-        {
-            get
-            {
-                // TODO - CI -
-                return new List<uint>();
-            }
-        }
-
-        /// <summary>
-        /// Get the list of Ssrc of local video stream
-        /// </summary>
-        public List<uint> VideoLocalSsrcList
-        {
-            get
-            {
-                // TODO - CI -
-                return new List<uint>();
-            }
-        }
-
-        /// <summary>
-        /// Get the list of Ssrc of remote video stream
-        /// </summary>
-        public List<uint> VideoRemoteSsrcList
-        {
-            get
-            {
-                // TODO - CI -
-                return new List<uint>();
-            }
-        }
-
-        /// <summary>
         /// If set to true RTP will be accepted from ANY remote end point. If false
         /// certain rules are used to determine whether RTP should be accepted for 
         /// a particular audio or video stream. It is recommended to leave the
@@ -645,7 +597,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                var offerSdp = GetSessionDesciption(localTracks, connectionAddress);
+                var offerSdp = GetSessionDescription(localTracks, connectionAddress);
                 return offerSdp;
             }
         }
@@ -712,7 +664,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                var answerSdp = GetSessionDesciption(tracks, connectionAddress);
+                var answerSdp = GetSessionDescription(tracks, connectionAddress);
 
                 return answerSdp;
             }
@@ -915,8 +867,6 @@ namespace SIPSorcery.Net
         /// <param name="status">The stream status for the media track.</param>
         public void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status)
         {
-            // TODO - CI - Need to loop on all local audio tracks and all video tracks to set the correct status
-
             if (kind == SDPMediaTypesEnum.audio && AudioStream.LocalTrack != null)
             {
                 AudioStream.LocalTrack.StreamStatus = status;
@@ -1258,7 +1208,7 @@ namespace SIPSorcery.Net
         /// be used. IPAddress.Any and IPAddress. Any and IPv6Any are special cases. If they are set the respective
         /// Internet facing IPv4 or IPv6 address will be used.</param>
         /// <returns>A session description payload.</returns>
-        private SDP GetSessionDesciption(List<MediaStreamTrack> tracks, IPAddress connectionAddress)
+        private SDP GetSessionDescription(List<MediaStreamTrack> tracks, IPAddress connectionAddress)
         {
             IPAddress localAddress = connectionAddress;
 
@@ -1794,29 +1744,14 @@ namespace SIPSorcery.Net
         {
             MediaStreamTrack matchingTrack = null;
 
-            if (AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.IsSsrcMatch(header.SyncSource))
+            var mediaStream = GetMediaStream(header.SyncSource);
+            if (mediaStream != null)
             {
-                matchingTrack = AudioStream.RemoteTrack;
+                matchingTrack = mediaStream.RemoteTrack;
             }
-            else if (VideoStream.RemoteTrack != null && VideoStream.RemoteTrack.IsSsrcMatch(header.SyncSource))
+            else 
             {
-                matchingTrack = VideoStream.RemoteTrack;
-            }
-            else if (AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.IsPayloadIDMatch(header.PayloadType))
-            {
-                matchingTrack = AudioStream.RemoteTrack;
-            }
-            else if (VideoStream.RemoteTrack != null && VideoStream.RemoteTrack.IsPayloadIDMatch(header.PayloadType))
-            {
-                matchingTrack = VideoStream.RemoteTrack;
-            }
-            else if (AudioStream.LocalTrack != null && AudioStream.LocalTrack.IsPayloadIDMatch(header.PayloadType))
-            {
-                matchingTrack = AudioStream.LocalTrack;
-            }
-            else if (VideoStream.LocalTrack != null && VideoStream.LocalTrack.IsPayloadIDMatch(header.PayloadType))
-            {
-                matchingTrack = VideoStream.LocalTrack;
+                matchingTrack = GetMediaStreamTrack(header.PayloadType);
             }
 
             if (matchingTrack != null)
@@ -1840,15 +1775,38 @@ namespace SIPSorcery.Net
             }
         }
 
+        private MediaStreamTrack GetMediaStreamTrack(int payloadId)
+        {
+            MediaStreamTrack matchingTrack = null;
+
+            if (AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.IsPayloadIDMatch(payloadId))
+            {
+                matchingTrack = AudioStream.RemoteTrack;
+            }
+            else if (VideoStream.RemoteTrack != null && VideoStream.RemoteTrack.IsPayloadIDMatch(payloadId))
+            {
+                matchingTrack = VideoStream.RemoteTrack;
+            }
+            else if (AudioStream.LocalTrack != null && AudioStream.LocalTrack.IsPayloadIDMatch(payloadId))
+            {
+                matchingTrack = AudioStream.LocalTrack;
+            }
+            else if (VideoStream.LocalTrack != null && VideoStream.LocalTrack.IsPayloadIDMatch(payloadId))
+            {
+                matchingTrack = VideoStream.LocalTrack;
+            }
+            return matchingTrack;
+        }
+        
         private MediaStream GetMediaStream(uint ssrc)
         {
-            if (AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.Ssrc == ssrc)
+            if (AudioStream?.RemoteTrack?.IsSsrcMatch(ssrc) == true)
             {
                 return AudioStream;
             }
-            else if (VideoStream.RemoteTrack != null && VideoStream.RemoteTrack.Ssrc == ssrc)
+            else if (VideoStream?.RemoteTrack?.IsSsrcMatch(ssrc) == true)
             {
-                return AudioStream;
+                return VideoStream;
             }
             return null;
         }
@@ -1862,25 +1820,11 @@ namespace SIPSorcery.Net
         {
             if (rtcpPkt.SenderReport != null)
             {
-                if (AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.IsSsrcMatch(rtcpPkt.SenderReport.SSRC))
-                {
-                    return AudioStream;
-                }
-                else if (VideoStream.RemoteTrack != null && VideoStream.RemoteTrack.IsSsrcMatch(rtcpPkt.SenderReport.SSRC))
-                {
-                    return VideoStream;
-                }
+                return GetMediaStream(rtcpPkt.SenderReport.SSRC);
             }
             else if (rtcpPkt.ReceiverReport != null)
             {
-                if (AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.IsSsrcMatch(rtcpPkt.ReceiverReport.SSRC))
-                {
-                    return AudioStream;
-                }
-                else if (VideoStream.RemoteTrack != null && VideoStream.RemoteTrack.IsSsrcMatch(rtcpPkt.ReceiverReport.SSRC))
-                {
-                    return VideoStream;
-                }
+                return GetMediaStream(rtcpPkt.ReceiverReport.SSRC);
             }
 
             // No match on SR/RR SSRC. Check the individual reception reports for a known SSRC.
@@ -1899,12 +1843,12 @@ namespace SIPSorcery.Net
             {
                 foreach (var recRep in receptionReports)
                 {
-                    if (AudioStream.LocalTrack != null && recRep.SSRC == AudioStream.LocalTrack.Ssrc)
+                    if (AudioStream?.LocalTrack?.Ssrc == recRep.SSRC)
                     {
                         return AudioStream;
                     }
-                    else if (VideoStream.LocalTrack != null && recRep.SSRC == VideoStream.LocalTrack.Ssrc)
-                    {
+                    else if (VideoStream?.LocalTrack?.Ssrc == recRep.SSRC)
+                        {
                         return VideoStream;
                     }
                 }
