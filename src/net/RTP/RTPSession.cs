@@ -261,8 +261,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                // TODO - CI - need to use dictionnary
-                return AudioStream.HasAudio;
+                return AudioStream?.HasAudio == true;
             }
         }
 
@@ -273,8 +272,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                // TODO - CI - need to use dictionnary
-                return VideoStream.HasVideo;
+                return VideoStream?.HasVideo == true;
             }
         }
 
@@ -816,6 +814,7 @@ namespace SIPSorcery.Net
                 {
                     AudioStream.RtcpSession.Close(null);
                 }
+
                 if (VideoStream.RtcpSession != null && VideoStream.RemoteTrack == null && VideoStream.LocalTrack == null)
                 {
                     VideoStream.RtcpSession.Close(null);
