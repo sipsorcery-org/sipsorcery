@@ -272,49 +272,41 @@ namespace SIPSorcery.net.RTP
             if (checkDone || CheckIfCanSendRtpRaw())
             {
                 ProtectRtpPacket protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                if ((IsSecure || UseSdpCryptoNegotiation) && protectRtpPacket == null)
+                int srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
+
+                RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
+                rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
+                rtpPacket.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
+                rtpPacket.Header.Timestamp = timestamp;
+                rtpPacket.Header.MarkerBit = markerBit;
+                rtpPacket.Header.PayloadType = payloadType;
+
+                Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
+
+                var rtpBuffer = rtpPacket.GetBytes();
+
+                if (protectRtpPacket == null)
                 {
-                    logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
+                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
                 }
                 else
                 {
-                    int srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
-
-                    RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
-                    rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
-                    rtpPacket.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
-                    rtpPacket.Header.Timestamp = timestamp;
-                    rtpPacket.Header.MarkerBit = markerBit;
-                    rtpPacket.Header.PayloadType = payloadType;
-
-                    Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
-
-                    var rtpBuffer = rtpPacket.GetBytes();
-
-                    if (protectRtpPacket == null)
+                    int outBufLen = 0;
+                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+                    if (rtperr != 0)
                     {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
+                        logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
                     }
                     else
                     {
-                        int outBufLen = 0;
-                        int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
-                        if (rtperr != 0)
-                        {
-                            logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
-                        }
-                        else
-                        {
-                            rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
-                        }
+                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
                     }
-                    m_lastRtpTimestamp = timestamp;
-
-                    RtcpSession?.RecordRtpPacketSend(rtpPacket);
                 }
+                m_lastRtpTimestamp = timestamp;
+
+                RtcpSession?.RecordRtpPacketSend(rtpPacket);
             }
         }
-
 
         /// <summary>
         /// Allows additional control for sending raw RTP payloads. No framing or other processing is carried out.
