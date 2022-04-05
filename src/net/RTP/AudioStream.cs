@@ -1,4 +1,20 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: AudioStream.cs
+//
+// Description: Define an Audio media stream (which inherits MediaStream) to focus an Audio specific treatment
+// The goal is to simplify RTPSession class
+//
+// Author(s):
+// Christophe Irles
+//
+// History:
+// 05 Apr 2022	Christophe Irles        Created (based on existing code from previous RTPSession class)
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;

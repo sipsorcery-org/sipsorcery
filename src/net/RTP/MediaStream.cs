@@ -1,4 +1,20 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: MediaStream.cs
+//
+// Description: Define a Media Stream to centralize all related objects: local/remote tracks, rtcp session, ip end point
+// The goal is to simplify RTPSession class
+//
+// Author(s):
+// Christophe Irles
+//
+// History:
+// 05 Apr 2022	Christophe Irles        Created (based on existing code from previous RTPSession class)
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;

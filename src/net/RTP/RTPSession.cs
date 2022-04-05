@@ -8,11 +8,12 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 25 Aug 2019	Aaron Clauson	Created, Montreux, Switzerland.
-// 12 Nov 2019  Aaron Clauson   Added send event method.
-// 07 Dec 2019  Aaron Clauson   Big refactor. Brought in a lot of functions previously
-//                              in the RTPChannel class.
-// 26 Jul 2021  Kurt Kießling   Added secure media negotiation.
+// 25 Aug 2019	Aaron Clauson	    Created, Montreux, Switzerland.
+// 12 Nov 2019  Aaron Clauson       Added send event method.
+// 07 Dec 2019  Aaron Clauson       Big refactor. Brought in a lot of functions previously
+//                                  in the RTPChannel class.
+// 26 Jul 2021  Kurt Kießling       Added secure media negotiation.
+// 05 Apr 2022  Christophe Irles    Simplify file using MediaSteam, AudioStream and Video Stream
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -428,67 +429,58 @@ namespace SIPSorcery.Net
             // We use audio as the media type when multiplexing.
             CreateRtpChannel(SDPMediaTypesEnum.audio);
 
-            CreateRtcpSession(SDPMediaTypesEnum.audio);
+            CreateRtcpSession(AudioStream);
         }
 
-        private void CreateRtcpSession(SDPMediaTypesEnum mediaType)
+        private void CreateRtcpSession(MediaStream mediaStream)
         {
-            if (mediaType == SDPMediaTypesEnum.audio)
-            { 
-                if (AudioStream.CreateRtcpSession())
-                {
-                    AudioStream.OnTimeout += (media) =>
-                    {
-                        OnTimeout?.Invoke(media);
-                    };
-
-                    AudioStream.OnSendReport += (media, report) =>
-                    {
-                        OnSendReport?.Invoke(media, report);
-                    };
-
-                    AudioStream.OnRtpEvent += (ipEndPoint, rtpEvent, rtpHeader) =>
-                    {
-                        OnRtpEvent?.Invoke(ipEndPoint, rtpEvent, rtpHeader);
-                    };
-
-                    AudioStream.OnRtpPacketReceived += (ipEndPoint, media, rtpPacket) =>
-                    {
-                        OnRtpPacketReceived?.Invoke(ipEndPoint, media, rtpPacket);
-                    };
-
-                    AudioStream.OnReceiveReport += (ipEndPoint, media, rtcpCompoundPacket) =>
-                    {
-                        OnReceiveReport?.Invoke(ipEndPoint, media, rtcpCompoundPacket);
-                    };
-
-                }
-            }
-            else if (mediaType == SDPMediaTypesEnum.video)
+            if (mediaStream.CreateRtcpSession())
             {
-                if (VideoStream.CreateRtcpSession())
-                {
-                    VideoStream.OnTimeout += (media) =>
-                    {
-                        OnTimeout?.Invoke(media);
-                    };
-
-                    VideoStream.OnSendReport += (media, report) =>
-                    {
-                        OnSendReport?.Invoke(media, report);
-                    };
-
-                    VideoStream.OnRtpPacketReceived += (ipEndPoint, media, rtpPacket) =>
-                    {
-                        OnRtpPacketReceived?.Invoke(ipEndPoint, media, rtpPacket);
-                    };
-
-                    VideoStream.OnReceiveReport += (ipEndPoint, media, rtcpCompoundPacket) =>
-                    {
-                        OnReceiveReport?.Invoke(ipEndPoint, media, rtcpCompoundPacket);
-                    };
-                }
+                mediaStream.OnTimeout += RaiseOnTimeOut;
+                mediaStream.OnSendReport += RaiseOnSendReport;
+                mediaStream.OnRtpEvent += RaisedOnRtpEvent;
+                mediaStream.OnRtpPacketReceived += RaisedOnRtpPacketReceived;
+                mediaStream.OnReceiveReport += RaisedOnOnReceiveReport;
             }
+        }
+
+        private void CloseRtcpSession(MediaStream mediaStream, string reason)
+        {
+            if (mediaStream.RtcpSession != null)
+            {
+                mediaStream.OnTimeout -= RaiseOnTimeOut;
+                mediaStream.OnSendReport -= RaiseOnSendReport;
+                mediaStream.OnRtpEvent -= RaisedOnRtpEvent;
+                mediaStream.OnRtpPacketReceived -= RaisedOnRtpPacketReceived;
+                mediaStream.OnReceiveReport -= RaisedOnOnReceiveReport;
+
+                mediaStream.RtcpSession.Close(reason);
+            }
+        }
+
+        private void RaiseOnTimeOut(SDPMediaTypesEnum media)
+        {
+            OnTimeout?.Invoke(media);
+        }
+
+        private void RaiseOnSendReport(SDPMediaTypesEnum media, RTCPCompoundPacket report)
+        {
+            OnSendReport?.Invoke(media, report);
+        }
+
+        private void RaisedOnRtpEvent(IPEndPoint ipEndPoint, RTPEvent rtpEvent, RTPHeader rtpHeader)
+        {
+            OnRtpEvent?.Invoke(ipEndPoint, rtpEvent, rtpHeader);
+        }
+
+        private void RaisedOnRtpPacketReceived(IPEndPoint ipEndPoint, SDPMediaTypesEnum media, RTPPacket rtpPacket)
+        {
+            OnRtpPacketReceived?.Invoke(ipEndPoint, media, rtpPacket);
+        }
+
+        private void RaisedOnOnReceiveReport(IPEndPoint ipEndPoint, SDPMediaTypesEnum media, RTCPCompoundPacket report)
+        {
+            OnReceiveReport?.Invoke(ipEndPoint, media, report);
         }
 
         /// <summary>
@@ -1068,7 +1060,7 @@ namespace SIPSorcery.Net
                     // We use audio as the media type when multiplexing.
                     CreateRtpChannel(SDPMediaTypesEnum.audio);
 
-                    CreateRtcpSession(SDPMediaTypesEnum.audio);
+                    CreateRtcpSession(AudioStream);
                 }
 
                 if (track.Kind == SDPMediaTypesEnum.audio)
@@ -1078,7 +1070,7 @@ namespace SIPSorcery.Net
                         CreateRtpChannel(SDPMediaTypesEnum.audio);
                     }
 
-                    CreateRtcpSession(SDPMediaTypesEnum.audio);
+                    CreateRtcpSession(AudioStream);
 
                     RequireRenegotiation = true;
                     // Need to create a sending SSRC and set it on the RTCP session. 
@@ -1108,7 +1100,7 @@ namespace SIPSorcery.Net
                         CreateRtpChannel(SDPMediaTypesEnum.video);
                     }
 
-                    CreateRtcpSession(SDPMediaTypesEnum.video);
+                    CreateRtcpSession(VideoStream);
 
                     RequireRenegotiation = true;
                     // Need to create a sending SSRC and set it on the RTCP session. 
@@ -1140,7 +1132,7 @@ namespace SIPSorcery.Net
                 // Even if there's no local audio track an RTCP session can still be required 
                 // in case the remote party send reports (presumably in case we decide we do want
                 // to send or receive audio on this session at some later stage).
-                CreateRtcpSession(SDPMediaTypesEnum.audio);
+                CreateRtcpSession(AudioStream);
 
             }
             else if (track.Kind == SDPMediaTypesEnum.video)
@@ -1156,7 +1148,7 @@ namespace SIPSorcery.Net
                 // Even if there's no local video track an RTCP session can still be required 
                 // in case the remote party send reports (presumably in case we decide we do want
                 // to send or receive video on this session at some later stage).
-                CreateRtcpSession(SDPMediaTypesEnum.video);
+                CreateRtcpSession(VideoStream);
             }
         }
 
@@ -1555,11 +1547,10 @@ namespace SIPSorcery.Net
                 AudioStream.IsClosed = true;
                 VideoStream.IsClosed = true;
 
-                AudioStream.RtcpSession?.Close(reason);
-                VideoStream.RtcpSession?.Close(reason);
+                CloseRtcpSession(AudioStream, reason);
+                CloseRtcpSession(VideoStream, reason);
 
-
-                if(AudioStream.HasRtpChannel())
+                if (AudioStream.HasRtpChannel())
                 {
                     var rtpChannel = AudioStream.GetRTPChannel();
                     rtpChannel.OnRTPDataReceived -= OnReceive;
