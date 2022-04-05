@@ -30,8 +30,6 @@ namespace SIPSorcery.net.RTP
         private uint m_lastRtpTimestamp;
 
         private RtpSessionConfig RtpSessionConfig;
-        protected Boolean IsSecure;
-        protected Boolean UseSdpCryptoNegotiation;
 
         protected SecureContext SecureContext;
         protected SrtpHandler SrtpHandler;
@@ -188,7 +186,7 @@ namespace SIPSorcery.net.RTP
 
         public bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
         {
-            if (IsSecure || UseSdpCryptoNegotiation)
+            if (RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation)
             {
                 var (succeeded, newBuffer) = UnprotectBuffer(buf);
                 if (!succeeded)
@@ -258,7 +256,7 @@ namespace SIPSorcery.net.RTP
                 return false;
             }
 
-            if ((IsSecure || UseSdpCryptoNegotiation) && SecureContext?.ProtectRtpPacket == null)
+            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && SecureContext?.ProtectRtpPacket == null)
             {
                 logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
                 return false;
@@ -327,7 +325,7 @@ namespace SIPSorcery.net.RTP
         /// <param name="report">The serialised RTCP report to send.</param>
         private void SendRtcpReport(byte[] reportBuffer)
         {
-            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecurityContextReady())
+            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecurityContextReady())
             {
                 logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
             }
@@ -368,7 +366,7 @@ namespace SIPSorcery.net.RTP
         /// <param name="report">RTCP report to send.</param>
         public void SendRtcpReport(RTCPCompoundPacket report)
         {
-            if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecurityContextReady() && report.Bye != null)
+            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecurityContextReady() && report.Bye != null)
             {
                 // Do nothing. The RTCP BYE gets generated when an RTP session is closed.
                 // If that occurs before the connection was able to set up the secure context
@@ -381,7 +379,7 @@ namespace SIPSorcery.net.RTP
                 OnSendReport?.Invoke(MediaType, report);
             }
         }
-
+         
         /// <summary>
         /// Allows sending of RTCP feedback reports.
         /// </summary>
@@ -653,8 +651,6 @@ namespace SIPSorcery.net.RTP
 
         public MediaStream(RtpSessionConfig config)
         {
-            IsSecure = config.RtpSecureMediaOption == RtpSecureMediaOptionEnum.DtlsSrtp;
-            UseSdpCryptoNegotiation = config.RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoNegotiation;
             RtpSessionConfig = config;
         }
     }

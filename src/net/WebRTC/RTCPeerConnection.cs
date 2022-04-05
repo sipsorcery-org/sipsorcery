@@ -607,8 +607,8 @@ namespace SIPSorcery.Net
                 _configuration?.iceServers,
                 _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
                 _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
-                m_bindPort == 0 ? 0 : m_bindPort + m_rtpChannelsCount * 2 + 2,
-                m_rtpPortRange);
+                rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2 + 2,
+                rtpSessionConfig.RtpPortRange);
 
             AddRtpChannel(mediaType, rtpIceChannel);
 
@@ -1033,10 +1033,7 @@ namespace SIPSorcery.Net
         ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
         ///   agent and the ICE processing MUST continue as usual."
         /// </remarks>
-        private SDP createBaseSdp(List<MediaStreamTrack> tracks,
-            List<SDPAudioVideoMediaFormat> audioCapabilities,
-            List<SDPAudioVideoMediaFormat> videoCapabilities,
-            bool excludeIceCandidates = false)
+        private SDP createBaseSdp(List<MediaStreamTrack> tracks, List<SDPAudioVideoMediaFormat> audioCapabilities, List<SDPAudioVideoMediaFormat> videoCapabilities, bool excludeIceCandidates = false)
         {
             // Make sure the ICE gathering of local IP addresses is complete.
             // This task should complete very quickly (<1s) but it is deemed very useful to wait

@@ -172,18 +172,13 @@ namespace SIPSorcery.Net
         /// in an RFC somewhere but I wasn't able to find it from a quick search.
         /// </summary>
         public const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
-
+            
         private static ILogger logger = Log.Logger;
 
-        private bool m_isMediaMultiplexed = false;      // Indicates whether audio and video are multiplexed on a single RTP channel or not.
-        private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
-        private IPAddress m_bindAddress = null;         // If set the address to use for binding the RTP and control sockets.
-        protected int m_bindPort = 0;                   // If non-zero specifies the port number to attempt to bind the first RTP socket on.
-        protected PortRange m_rtpPortRange = null;      // If non-null, overwritws m_bindPort and calls to PortRange.GetNextPort() when trying to bind an RTP socket
+        protected RtpSessionConfig rtpSessionConfig;
 
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
-
         internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
 
         /// <summary>
@@ -194,7 +189,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The Audio Stream for this session
         /// </summary>
-        public AudioStream AudioStream  { get; set; }
+        public AudioStream AudioStream { get; set; }
 
         /// <summary>
         /// The Video Stream for this session
@@ -205,18 +200,6 @@ namespace SIPSorcery.Net
         /// The SDP offered by the remote call party for this session.
         /// </summary>
         public SDP RemoteDescription { get; protected set; }
-
-        /// <summary>
-        /// Indicates whether this session is using a secure SRTP context to encrypt RTP and
-        /// RTCP packets.
-        /// </summary>
-        public bool IsSecure { get; private set; } = false;
-
-        /// <summary>
-        /// Indicates whether this session should use secure SRTP communication
-        /// negotiated by SDP offer/answer crypto attributes.
-        /// </summary>
-        public bool UseSdpCryptoNegotiation { get; private set; } = false;
 
         /// <summary>
         /// If this session is using a secure context this flag MUST be set to indicate
@@ -301,7 +284,7 @@ namespace SIPSorcery.Net
         /// Set if the session has been bound to a specific IP address.
         /// Normally not required but some esoteric call or network set ups may need.
         /// </summary>
-        public IPAddress RtpBindAddress => m_bindAddress;
+        public IPAddress RtpBindAddress => rtpSessionConfig.BindAddress;
 
         /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
@@ -399,17 +382,10 @@ namespace SIPSorcery.Net
         /// <param name="config">Contains required settings.</param>
         public RTPSession(RtpSessionConfig config)
         {
-            m_isMediaMultiplexed = config.IsMediaMultiplexed;
-            m_isRtcpMultiplexed = config.IsRtcpMultiplexed;
-            IsSecure = config.RtpSecureMediaOption == RtpSecureMediaOptionEnum.DtlsSrtp;
-            UseSdpCryptoNegotiation = config.RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoNegotiation;
-            m_bindAddress = config.BindAddress;
-            m_bindPort = config.BindPort;
-            m_rtpPortRange = config.RtpPortRange;
-
+            rtpSessionConfig = config;
             m_sdpSessionID = Crypto.GetRandomInt(SDP_SESSIONID_LENGTH).ToString();
 
-            if (UseSdpCryptoNegotiation)
+            if (rtpSessionConfig.UseSdpCryptoNegotiation)
             {
                 SrtpCryptoSuites = new List<SDPSecurityDescription.CryptoSuites>();
                 SrtpCryptoSuites.Add(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_80);
@@ -714,7 +690,7 @@ namespace SIPSorcery.Net
                     var remoteTrack = new MediaStreamTrack(announcement.Media, true, announcement.MediaFormats.Values.ToList(), mediaStreamStatus, announcement.SsrcAttributes, announcement.HeaderExtensions);
                     addTrack(remoteTrack);
 
-                    if (UseSdpCryptoNegotiation)
+                    if (rtpSessionConfig.UseSdpCryptoNegotiation)
                     {
                         if (announcement.Transport != RTP_SECUREMEDIA_PROFILE)
                         {
@@ -774,7 +750,7 @@ namespace SIPSorcery.Net
                             SetLocalTrackStreamStatus(AudioStream.LocalTrack, remoteTrack.StreamStatus, remoteAudioRtpEP);
                             if (remoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive && AudioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                             {
-                                remoteAudioRtcpEP = (m_isRtcpMultiplexed) ? remoteAudioRtpEP : new IPEndPoint(remoteAudioRtpEP.Address, remoteAudioRtpEP.Port + 1);
+                                remoteAudioRtcpEP = (rtpSessionConfig.IsRtcpMultiplexed) ? remoteAudioRtpEP : new IPEndPoint(remoteAudioRtpEP.Address, remoteAudioRtpEP.Port + 1);
                             }
                         }
                     }
@@ -795,7 +771,7 @@ namespace SIPSorcery.Net
                             SetLocalTrackStreamStatus(VideoStream.LocalTrack, remoteTrack.StreamStatus, remoteVideoRtpEP);
                             if (remoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive && VideoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                             {
-                                remoteVideoRtcpEP = (m_isRtcpMultiplexed) ? remoteVideoRtpEP : new IPEndPoint(remoteVideoRtpEP.Address, remoteVideoRtpEP.Port + 1);
+                                remoteVideoRtcpEP = (rtpSessionConfig.IsRtcpMultiplexed) ? remoteVideoRtpEP : new IPEndPoint(remoteVideoRtpEP.Address, remoteVideoRtpEP.Port + 1);
                             }
                         }
                     }
@@ -1055,7 +1031,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                if (m_isMediaMultiplexed && m_rtpChannelsCount == 0)
+                if (rtpSessionConfig.IsMediaMultiplexed && m_rtpChannelsCount == 0)
                 {
                     // We use audio as the media type when multiplexing.
                     CreateRtpChannel(SDPMediaTypesEnum.audio);
@@ -1065,7 +1041,7 @@ namespace SIPSorcery.Net
 
                 if (track.Kind == SDPMediaTypesEnum.audio)
                 {
-                    if (!m_isMediaMultiplexed && !AudioStream.HasRtpChannel())
+                    if (!rtpSessionConfig.IsMediaMultiplexed && !AudioStream.HasRtpChannel())
                     {
                         CreateRtpChannel(SDPMediaTypesEnum.audio);
                     }
@@ -1095,7 +1071,7 @@ namespace SIPSorcery.Net
                     // Only create the RTP socket, RTCP session etc. if a non-inactive local track is added
                     // to the session.
 
-                    if (!m_isMediaMultiplexed && !VideoStream.HasRtpChannel())
+                    if (!rtpSessionConfig.IsMediaMultiplexed && !VideoStream.HasRtpChannel())
                     {
                         CreateRtpChannel(SDPMediaTypesEnum.video);
                     }
@@ -1205,9 +1181,9 @@ namespace SIPSorcery.Net
 
             if (localAddress == null || localAddress == IPAddress.Any || localAddress == IPAddress.IPv6Any)
             {
-                if (m_bindAddress != null)
+                if (rtpSessionConfig.BindAddress != null)
                 {
-                    localAddress = m_bindAddress;
+                    localAddress = rtpSessionConfig.BindAddress;
                 }
                 else if (AudioStream.DestinationEndPoint != null && AudioStream.DestinationEndPoint.Address != null)
                 {
@@ -1262,7 +1238,7 @@ namespace SIPSorcery.Net
                 int rtpPort = 0; // A port of zero means the media type is not supported.
                 if (track.Capabilities != null && track.Capabilities.Count() > 0 && track.StreamStatus != MediaStreamStatusEnum.Inactive)
                 {
-                    if(m_isMediaMultiplexed || track.Kind == SDPMediaTypesEnum.audio)
+                    if(rtpSessionConfig.IsMediaMultiplexed || track.Kind == SDPMediaTypesEnum.audio)
                     {
                         rtpPort = AudioStream.GetRTPChannel().RTPPort;
                     }
@@ -1277,7 +1253,7 @@ namespace SIPSorcery.Net
                    rtpPort,
                    track.Capabilities);
 
-                announcement.Transport = UseSdpCryptoNegotiation ? RTP_SECUREMEDIA_PROFILE : RTP_MEDIA_PROFILE;
+                announcement.Transport = rtpSessionConfig.UseSdpCryptoNegotiation ? RTP_SECUREMEDIA_PROFILE : RTP_MEDIA_PROFILE;
                 announcement.MediaStreamStatus = track.StreamStatus;
                 announcement.MLineIndex = mindex;
 
@@ -1297,7 +1273,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                if (UseSdpCryptoNegotiation)
+                if (rtpSessionConfig.UseSdpCryptoNegotiation)
                 {
                     var sdpType = RemoteDescription == null || RequireRenegotiation ? SdpType.offer : SdpType.answer;
 
@@ -1350,7 +1326,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public RTPChannel GetRtpChannel(SDPMediaTypesEnum mediaType)
         {
-            if (m_isMediaMultiplexed)
+            if (rtpSessionConfig.IsMediaMultiplexed)
             {
                 return AudioStream.GetRTPChannel();
             }
@@ -1377,8 +1353,8 @@ namespace SIPSorcery.Net
         protected virtual RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
             // If RTCP is multiplexed we don't need a control socket.
-            int bindPort = (m_bindPort == 0) ? 0 : m_bindPort + m_rtpChannelsCount * 2;
-            var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress, bindPort, m_rtpPortRange);
+            int bindPort = (rtpSessionConfig.BindPort == 0) ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2;
+            var rtpChannel = new RTPChannel(!rtpSessionConfig.IsRtcpMultiplexed, rtpSessionConfig.BindAddress, bindPort, rtpSessionConfig.RtpPortRange);
 
             AddRtpChannel(mediaType, rtpChannel);
 
@@ -1394,7 +1370,7 @@ namespace SIPSorcery.Net
 
         protected void AddRtpChannel(SDPMediaTypesEnum mediaType, RTPChannel rtpChannel)
         {
-            if (m_isMediaMultiplexed)
+            if (rtpSessionConfig.IsMediaMultiplexed)
             {
                 AudioStream.AddRtpChannel(rtpChannel);
                 VideoStream.AddRtpChannel(rtpChannel);
@@ -1455,7 +1431,7 @@ namespace SIPSorcery.Net
         /// <param name="rtcpEndPoint">The remote end point for RTCP packets corresponding to the media type.</param>
         public void SetDestination(SDPMediaTypesEnum mediaType, IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
         {
-            if (m_isMediaMultiplexed)
+            if (rtpSessionConfig.IsMediaMultiplexed)
             {
                 AudioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
                 VideoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
@@ -1587,7 +1563,7 @@ namespace SIPSorcery.Net
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
-                if ((IsSecure || UseSdpCryptoNegotiation) && !IsSecureContextReady())
+                if ((rtpSessionConfig.IsSecure || rtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
                 {
                     logger.LogWarning("RTP or RTCP packet received before secure context ready.");
                 }
