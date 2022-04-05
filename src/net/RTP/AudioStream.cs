@@ -69,11 +69,8 @@ namespace SIPSorcery.net.RTP
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
         public void SendAudio(uint durationRtpUnits, byte[] sample)
         {
-            if (DestinationEndPoint != null && ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecurityContextReady()))
-            {
-                var audioFormat = GetSendingFormat();
-                SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
-            }
+            var audioFormat = GetSendingFormat();
+            SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
         }
 
         /// <summary>
@@ -85,24 +82,9 @@ namespace SIPSorcery.net.RTP
         /// <param name="buffer">The audio payload to send.</param>
         public void SendAudioFrame(uint duration, int payloadTypeID, byte[] buffer)
         {
-            if (IsClosed || rtpEventInProgress || DestinationEndPoint == null || buffer == null || buffer.Length == 0)
+            if (CheckIfCanSendRtpRaw())
             {
-                return;
-            }
-
-            try
-            {
-                var audioTrack = LocalTrack;
-
-                if (audioTrack == null)
-                {
-                    logger.LogWarning("SendAudio was called on an RTP session without an audio stream.");
-                }
-                else if (!HasAudio || audioTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
+                try
                 {
                     // Basic RTP audio formats (such as G711, G722) do not have a concept of frames. The payload of the RTP packet is
                     // considered a single frame. This results in a problem is the audio frame being sent is larger than the MTU. In 
@@ -112,14 +94,13 @@ namespace SIPSorcery.net.RTP
                     // paylaod.
                     // See https://github.com/sipsorcery/sipsorcery/issues/394.
 
-                    uint payloadTimestamp = audioTrack.Timestamp;
                     uint payloadDuration = 0;
 
                     for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
                     {
                         int offset = (index == 0) ? 0 : (index * RTPSession.RTP_MAX_PAYLOAD);
                         int payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
-                        payloadTimestamp += payloadDuration;
+                        LocalTrack.Timestamp += payloadDuration;
                         byte[] payload = new byte[payloadLength];
 
                         Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
@@ -129,21 +110,18 @@ namespace SIPSorcery.net.RTP
                         // in a frame.
                         int markerBit = 0;
 
-                        var audioRtpChannel = rtpChannel;
-                        var protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                        SendRtpPacket(audioRtpChannel, DestinationEndPoint, payload, payloadTimestamp, markerBit, payloadTypeID, audioTrack.Ssrc, audioTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
-
+                        SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                         //logger.LogDebug($"send audio { audioRtpChannel.RTPLocalEndPoint}->{AudioDestinationEndPoint}.");
 
                         payloadDuration = (uint)(((decimal)payloadLength / buffer.Length) * duration); // Get the percentage duration of this payload.
                     }
 
-                    audioTrack.Timestamp += duration;
+                    LocalTrack.Timestamp += duration;
                 }
-            }
-            catch (SocketException sockExcp)
-            {
-                logger.LogError("SocketException SendAudioFrame. " + sockExcp.Message);
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError("SocketException SendAudioFrame. " + sockExcp.Message);
+                }
             }
         }
 
@@ -159,26 +137,11 @@ namespace SIPSorcery.net.RTP
         /// is being inserted into. Should be set to 50ms if main media stream is dynamic or sample period is unknown.</param>
         public async Task SendDtmfEvent(RTPEvent rtpEvent, CancellationToken cancellationToken, int clockRate = RTPSession.DEFAULT_AUDIO_CLOCK_RATE, int samplePeriod = RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS)
         {
-            if (IsClosed || rtpEventInProgress == true || DestinationEndPoint == null)
+            if (CheckIfCanSendRtpRaw())
             {
-                logger.LogWarning("SendDtmfEvent request ignored as an RTP event is already in progress.");
-            }
-
-            try
-            {
-                if (LocalTrack == null)
-                {
-                    logger.LogWarning("SendDtmfEvent was called on an RTP session without an audio stream.");
-                }
-                else if (!HasAudio || LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
+                try
                 {
                     rtpEventInProgress = true;
-                    uint startTimestamp = LocalTrack.Timestamp;
-
                     // The RTP timestamp step corresponding to the sampling period. This can change depending
                     // on the codec being used. For example using PCMU with a sampling frequency of 8000Hz and a sample period of 50ms
                     // the timestamp step is 400 (8000 / (1000 / 50)). For a sample period of 20ms it's 160 (8000 / (1000 / 20)).
@@ -195,8 +158,8 @@ namespace SIPSorcery.net.RTP
                         byte[] buffer = rtpEvent.GetEventPayload();
 
                         int markerBit = (i == 0) ? 1 : 0;  // Set marker bit for the first packet in the event.
-                        var protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                        SendRtpPacket(rtpChannel, DestinationEndPoint, buffer, startTimestamp, markerBit, rtpEvent.PayloadTypeID, LocalTrack.Ssrc, LocalTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+
+                        SendRtpRaw(buffer, LocalTrack.Timestamp, markerBit, rtpEvent.PayloadTypeID, true);
                     }
 
                     await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
@@ -209,8 +172,7 @@ namespace SIPSorcery.net.RTP
                             rtpEvent.Duration += rtpTimestampStep;
                             byte[] buffer = rtpEvent.GetEventPayload();
 
-                            var protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                            SendRtpPacket(rtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, LocalTrack.Ssrc, LocalTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                            SendRtpRaw(buffer, LocalTrack.Timestamp, 0, rtpEvent.PayloadTypeID, true);
 
                             await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
                         }
@@ -222,24 +184,23 @@ namespace SIPSorcery.net.RTP
                             rtpEvent.Duration = rtpEvent.TotalDuration;
                             byte[] buffer = rtpEvent.GetEventPayload();
 
-                            var protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                            SendRtpPacket(rtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, LocalTrack.Ssrc, LocalTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                            SendRtpRaw(buffer, LocalTrack.Timestamp, 0, rtpEvent.PayloadTypeID, true);
                         }
                     }
                     LocalTrack.Timestamp += rtpEvent.TotalDuration;
                 }
-            }
-            catch (SocketException sockExcp)
-            {
-                logger.LogError("SocketException SendDtmfEvent. " + sockExcp.Message);
-            }
-            catch (TaskCanceledException)
-            {
-                logger.LogWarning("SendDtmfEvent was cancelled by caller.");
-            }
-            finally
-            {
-                rtpEventInProgress = false;
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError("SocketException SendDtmfEvent. " + sockExcp.Message);
+                }
+                catch (TaskCanceledException)
+                {
+                    logger.LogWarning("SendDtmfEvent was cancelled by caller.");
+                }
+                finally
+                {
+                    rtpEventInProgress = false;
+                }
             }
         }
 
@@ -281,7 +242,5 @@ namespace SIPSorcery.net.RTP
         {
             MediaType = SDPMediaTypesEnum.audio;
         }
-
-
     }
 }

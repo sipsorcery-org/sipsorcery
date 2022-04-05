@@ -83,23 +83,9 @@ namespace SIPSorcery.net.RTP
         /// <param name="framesPerSecond">The rate at which the JPEG frames are being transmitted at. used to calculate the timestamp.</param>
         public void SendJpegFrame(uint duration, int payloadTypeID, byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight)
         {
-            if (IsClosed || DestinationEndPoint == null)
+            if (CheckIfCanSendRtpRaw())
             {
-                return;
-            }
-            try
-            {
-                var videoTrack = LocalTrack;
-
-                if (videoTrack == null)
-                {
-                    logger.LogWarning("SendJpegFrame was called on an RTP session without a video stream.");
-                }
-                else if (!HasVideo || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
+                try
                 {
                     for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
                     {
@@ -113,16 +99,15 @@ namespace SIPSorcery.net.RTP
 
                         int markerBit = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
 
-                        var protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                        SendRtpPacket(rtpChannel, DestinationEndPoint, packetPayload.ToArray(), videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                        SendRtpRaw(packetPayload.ToArray(), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     }
 
-                    videoTrack.Timestamp += duration;
+                    LocalTrack.Timestamp += duration;
                 }
-            }
-            catch (SocketException sockExcp)
-            {
-                logger.LogError("SocketException SendJpegFrame. " + sockExcp.Message);
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError("SocketException SendJpegFrame. " + sockExcp.Message);
+                }
             }
         }
 
@@ -141,26 +126,11 @@ namespace SIPSorcery.net.RTP
         /// </remarks>
         public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit)
         {
-            var dstEndPoint = DestinationEndPoint;
-
-            if (IsClosed || dstEndPoint == null || accessUnit == null || accessUnit.Length == 0)
-            {
-                return;
-            }
-
-            if (LocalTrack == null)
-            {
-                logger.LogWarning("SendH264Frame was called on an RTP session without a video stream.");
-            }
-            else if (!HasVideo || LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-            {
-                return;
-            }
-            else
+            if (CheckIfCanSendRtpRaw())
             {
                 foreach (var nal in H264Packetiser.ParseNals(accessUnit))
                 {
-                    SendH264Nal(duration, payloadTypeID, nal.NAL, nal.IsLast, dstEndPoint, LocalTrack);
+                    SendH264Nal(duration, payloadTypeID, nal.NAL, nal.IsLast);
                 }
             }
         }
@@ -174,8 +144,8 @@ namespace SIPSorcery.net.RTP
         /// <param name="isLastNal">Should be set for the last NAL in the H264 access unit. Determines when the markbit gets set 
         /// and the timestamp incremented.</param>
         /// <param name="dstEndPoint">The destination end point to send to.</param>
-        /// <param name="videoTrack">The video track to send on.</param>
-        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal, IPEndPoint dstEndPoint, MediaStreamTrack videoTrack)
+        /// <param name="LocalTrack">The video track to send on.</param>
+        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal)
         {
             //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
             //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
@@ -189,8 +159,7 @@ namespace SIPSorcery.net.RTP
                 int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
                 Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
 
-                var protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                SendRtpPacket(rtpChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
             }
@@ -214,16 +183,14 @@ namespace SIPSorcery.net.RTP
                     Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, h264RtpHdr.Length);
                     Buffer.BlockCopy(nal, offset, payload, h264RtpHdr.Length, payloadLength);
 
-
-                    var protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                    SendRtpPacket(rtpChannel, dstEndPoint, payload, videoTrack.Timestamp, markerBit, payloadTypeID, videoTrack.Ssrc, videoTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                    SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 }
             }
 
             if (isLastNal)
             {
-                videoTrack.Timestamp += duration;
+                LocalTrack.Timestamp += duration;
             }
         }
 
@@ -236,22 +203,9 @@ namespace SIPSorcery.net.RTP
         /// <param name="buffer">The VP8 encoded payload.</param>
         public void SendVp8Frame(uint duration, int payloadTypeID, byte[] buffer)
         {
-            if (IsClosed || DestinationEndPoint == null)
+            if (CheckIfCanSendRtpRaw())
             {
-                return;
-            }
-
-            try
-            {
-                if (LocalTrack == null)
-                {
-                    logger.LogWarning("SendVp8Frame was called on an RTP session without a video stream.");
-                }
-                else if (!HasVideo || LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
-                {
-                    return;
-                }
-                else
+                try
                 {
                     for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
                     {
@@ -265,17 +219,16 @@ namespace SIPSorcery.net.RTP
 
                         int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
-                        var protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                        SendRtpPacket(rtpChannel, DestinationEndPoint, payload, LocalTrack.Timestamp, markerBit, payloadTypeID, LocalTrack.Ssrc, LocalTrack.GetNextSeqNum(), RtcpSession, protectRtpPacket);
+                        SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                         //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
                     }
 
                     LocalTrack.Timestamp += duration;
                 }
-            }
-            catch (SocketException sockExcp)
-            {
-                logger.LogError("SocketException SendVp8Frame. " + sockExcp.Message);
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError("SocketException SendVp8Frame. " + sockExcp.Message);
+                }
             }
         }
 
@@ -287,24 +240,20 @@ namespace SIPSorcery.net.RTP
         /// <param name="sample">The video sample to set as the RTP packet payload.</param>
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
-            if (DestinationEndPoint != null || (DestinationEndPoint != null) &&
-                ((!IsSecure && !UseSdpCryptoNegotiation) || IsSecurityContextReady()))
-            {
-                var videoSendingFormat = GetSendingFormat();
+            var videoSendingFormat = GetSendingFormat();
 
-                switch (videoSendingFormat.Name())
-                {
-                    case "VP8":
-                        int vp8PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "VP8").ID);
-                        SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
-                        break;
-                    case "H264":
-                        int h264PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "H264").ID);
-                        SendH264Frame(durationRtpUnits, h264PayloadID, sample);
-                        break;
-                    default:
-                        throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
-                }
+            switch (videoSendingFormat.Name())
+            {
+                case "VP8":
+                    int vp8PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "VP8").ID);
+                    SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
+                    break;
+                case "H264":
+                    int h264PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "H264").ID);
+                    SendH264Frame(durationRtpUnits, h264PayloadID, sample);
+                    break;
+                default:
+                    throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
             }
         }
 
