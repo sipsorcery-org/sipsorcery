@@ -369,7 +369,7 @@ namespace SIPSorcery.Net.UnitTests
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
             localSession.addTrack(localAudioTrack);
 
-            var rtpEndPoint = localSession.GetRtpChannel(SDPMediaTypesEnum.audio).RTPLocalEndPoint;
+            var rtpEndPoint = localSession.AudioStream.GetRTPChannel().RTPLocalEndPoint;
 
             logger.LogDebug($"RTP session local end point {rtpEndPoint}.");
 
