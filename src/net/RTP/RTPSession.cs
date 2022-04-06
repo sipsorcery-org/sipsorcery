@@ -181,6 +181,8 @@ namespace SIPSorcery.Net
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
         internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
 
+        protected RTPChannel MultiplexRtpChannel = null;
+
         /// <summary>
         /// Track if current remote description is invalid (used in Renegotiation logic)
         /// </summary>
@@ -425,8 +427,7 @@ namespace SIPSorcery.Net
         protected void addSingleTrack()
         {
             // We use audio as the media type when multiplexing.
-            CreateRtpChannel(SDPMediaTypesEnum.audio);
-
+            AudioStream.AddRtpChannel(CreateRtpChannel());
             CreateRtcpSession(AudioStream);
         }
 
@@ -563,7 +564,6 @@ namespace SIPSorcery.Net
             }
             return null;
         }
-
 
         /// <summary>
         /// Generates the SDP for an offer that can be made to a remote user agent.
@@ -1106,19 +1106,11 @@ namespace SIPSorcery.Net
             }
             else
             {
-                if (rtpSessionConfig.IsMediaMultiplexed && m_rtpChannelsCount == 0)
-                {
-                    // We use audio as the media type when multiplexing.
-                    CreateRtpChannel(SDPMediaTypesEnum.audio);
-
-                    CreateRtcpSession(AudioStream);
-                }
-
                 if (track.Kind == SDPMediaTypesEnum.audio)
                 {
-                    if (!rtpSessionConfig.IsMediaMultiplexed && !AudioStream.HasRtpChannel())
+                    if (!AudioStream.HasRtpChannel())
                     {
-                        CreateRtpChannel(SDPMediaTypesEnum.audio);
+                        AudioStream.AddRtpChannel(CreateRtpChannel());
                     }
 
                     CreateRtcpSession(AudioStream);
@@ -1146,9 +1138,9 @@ namespace SIPSorcery.Net
                     // Only create the RTP socket, RTCP session etc. if a non-inactive local track is added
                     // to the session.
 
-                    if (!rtpSessionConfig.IsMediaMultiplexed && !VideoStream.HasRtpChannel())
+                    if (!VideoStream.HasRtpChannel())
                     {
-                        CreateRtpChannel(SDPMediaTypesEnum.video);
+                        VideoStream.AddRtpChannel(CreateRtpChannel());
                     }
 
                     CreateRtcpSession(VideoStream);
@@ -1396,42 +1388,30 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Gets the RTP channel being used to send and receive the specified media type for this session.
-        /// If media multiplexing is being used there will only a single RTP channel.
-        /// </summary>
-        public RTPChannel GetRtpChannel(SDPMediaTypesEnum mediaType)
-        {
-            if (rtpSessionConfig.IsMediaMultiplexed)
-            {
-                return AudioStream.GetRTPChannel();
-            }
-            else
-            {
-                if (mediaType == SDPMediaTypesEnum.audio)
-                {
-                    return AudioStream.GetRTPChannel();
-                }
-                else if (mediaType == SDPMediaTypesEnum.video)
-                {
-                    return VideoStream.GetRTPChannel();
-                }
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Creates a new RTP channel (which manages the UDP socket sending and receiving RTP
         /// packets) for use with this session.
         /// </summary>
         /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
         /// <returns>A new RTPChannel instance.</returns>
-        protected virtual RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
+        protected virtual RTPChannel CreateRtpChannel()
         {
+            if (rtpSessionConfig.IsMediaMultiplexed)
+            {
+                if (MultiplexRtpChannel != null)
+                {
+                    return MultiplexRtpChannel;
+                }
+            }
+
             // If RTCP is multiplexed we don't need a control socket.
             int bindPort = (rtpSessionConfig.BindPort == 0) ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2;
             var rtpChannel = new RTPChannel(!rtpSessionConfig.IsRtcpMultiplexed, rtpSessionConfig.BindAddress, bindPort, rtpSessionConfig.RtpPortRange);
 
-            AddRtpChannel(mediaType, rtpChannel);
+
+            if (rtpSessionConfig.IsMediaMultiplexed)
+            {
+                MultiplexRtpChannel = rtpChannel;
+            }
 
             rtpChannel.OnRTPDataReceived += OnReceive;
             rtpChannel.OnControlDataReceived += OnReceive; // RTCP packets could come on RTP or control socket.
@@ -1440,30 +1420,10 @@ namespace SIPSorcery.Net
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             rtpChannel.Start();
 
-            return null;
-        }
 
-        protected void AddRtpChannel(SDPMediaTypesEnum mediaType, RTPChannel rtpChannel)
-        {
-            if (rtpSessionConfig.IsMediaMultiplexed)
-            {
-                AudioStream.AddRtpChannel(rtpChannel);
-                VideoStream.AddRtpChannel(rtpChannel);
-                m_rtpChannelsCount++;
-            }
-            else
-            {
-                if (mediaType == SDPMediaTypesEnum.audio)
-                {
-                    AudioStream.AddRtpChannel(rtpChannel);
-                    m_rtpChannelsCount++;
-                }
-                else if (mediaType == SDPMediaTypesEnum.video)
-                {
-                    VideoStream.AddRtpChannel(rtpChannel);
-                    m_rtpChannelsCount++;
-                }
-            }
+            m_rtpChannelsCount++;
+
+            return rtpChannel;
         }
 
         /// <summary>
@@ -1581,9 +1541,14 @@ namespace SIPSorcery.Net
         /// <param name="key">The DTMF tone to send.</param>
         /// <param name="ct">RTP events can span multiple RTP packets. This token can
         /// be used to cancel the send.</param>
-        public virtual Task SendDtmf(byte key, CancellationToken ct)
+        public Task SendDtmf(byte key, CancellationToken ct)
         {
             return AudioStream?.SendDtmf(key, ct);
+        }
+
+        public Task SendDtmfEvent(RTPEvent rtpEvent, CancellationToken cancellationToken, int clockRate = RTPSession.DEFAULT_AUDIO_CLOCK_RATE, int samplePeriod = RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS)
+        {
+            return AudioStream?.SendDtmfEvent(rtpEvent, cancellationToken, clockRate, samplePeriod);
         }
 
         /// <summary>

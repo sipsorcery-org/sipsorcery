@@ -599,23 +599,36 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
         /// <returns>A new RTPChannel instance.</returns>
-        protected override RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
+        protected override RTPChannel CreateRtpChannel()
         {
-            var rtpIceChannel = new RtpIceChannel(
-                _configuration?.X_BindAddress,
-                RTCIceComponent.rtp,
-                _configuration?.iceServers,
-                _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
-                _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
-                rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2 + 2,
-                rtpSessionConfig.RtpPortRange);
+            if (rtpSessionConfig.IsMediaMultiplexed)
+            {
+                if (MultiplexRtpChannel != null)
+                {
+                    return MultiplexRtpChannel;
+                }
+            }
 
-            AddRtpChannel(mediaType, rtpIceChannel);
+            var rtpIceChannel = new RtpIceChannel(
+            _configuration?.X_BindAddress,
+            RTCIceComponent.rtp,
+            _configuration?.iceServers,
+            _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
+            _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
+            rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2 + 2,
+            rtpSessionConfig.RtpPortRange);
+
+            if (rtpSessionConfig.IsMediaMultiplexed)
+            {
+                MultiplexRtpChannel = rtpIceChannel;
+            }
 
             rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
 
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             rtpIceChannel.Start();
+
+            m_rtpChannelsCount++;
 
             return rtpIceChannel;
         }
@@ -1010,7 +1023,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public RtpIceChannel GetRtpChannel()
         {
-            return GetRtpChannel(SDPMediaTypesEnum.audio) as RtpIceChannel;
+            return AudioStream.GetRTPChannel() as RtpIceChannel;
         }
 
         /// <summary>
@@ -1612,7 +1625,7 @@ namespace SIPSorcery.Net
         {
             logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
 
-            var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
+            var rtpChannel = AudioStream.GetRTPChannel();
 
             dtlsHandle.OnDataReady += (buf) =>
             {
