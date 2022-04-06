@@ -287,6 +287,28 @@ namespace SIPSorcery.Net
         public IPAddress RtpBindAddress => rtpSessionConfig.BindAddress;
 
         /// <summary>
+        /// Gets fired when the remote SDP is received and the set of common audio formats is set.
+        /// </summary>
+        public event Action<List<AudioFormat>> OnAudioFormatsNegotiated;
+
+        /// <summary>
+        /// Gets fired when the remote SDP is received and the set of common video formats is set.
+        /// </summary>
+        public event Action<List<VideoFormat>> OnVideoFormatsNegotiated;
+
+        /// <summary>
+        /// Gets fired when a full video frame is reconstructed from one or more RTP packets
+        /// received from the remote party.
+        /// </summary>
+        /// <remarks>
+        ///  - Received from end point,
+        ///  - The frame timestamp,
+        ///  - The encoded video frame payload.
+        ///  - The video format of the encoded frame.
+        /// </remarks>
+        public event Action<IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceived;
+
+        /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
         /// Parameters are:
         ///  - Remote endpoint packet was received from,
@@ -417,6 +439,24 @@ namespace SIPSorcery.Net
                 mediaStream.OnRtpEvent += RaisedOnRtpEvent;
                 mediaStream.OnRtpPacketReceived += RaisedOnRtpPacketReceived;
                 mediaStream.OnReceiveReport += RaisedOnOnReceiveReport;
+                
+                if(mediaStream.MediaType == SDPMediaTypesEnum.audio)
+                {
+                    var audioStream = mediaStream as AudioStream;
+                    if (audioStream != null)
+                    {
+                        audioStream.OnAudioFormatsNegotiated += RaisedOnAudioFormatsNegotiated;
+                    }
+                }
+                else
+                {
+                    var videoStream = mediaStream as VideoStream;
+                    if (videoStream != null)
+                    {
+                        videoStream.OnVideoFormatsNegotiated += RaisedOnVideoFormatsNegotiated;
+                        videoStream.OnVideoFrameReceived += RaisedOnOnVideoFrameReceived;
+                    }
+                }
             }
         }
 
@@ -430,7 +470,26 @@ namespace SIPSorcery.Net
                 mediaStream.OnRtpPacketReceived -= RaisedOnRtpPacketReceived;
                 mediaStream.OnReceiveReport -= RaisedOnOnReceiveReport;
 
+                if (mediaStream.MediaType == SDPMediaTypesEnum.audio)
+                {
+                    var audioStream = mediaStream as AudioStream;
+                    if (audioStream != null)
+                    {
+                        audioStream.OnAudioFormatsNegotiated -= RaisedOnAudioFormatsNegotiated;
+                    }
+                }
+                else
+                {
+                    var videoStream = mediaStream as VideoStream;
+                    if (videoStream != null)
+                    {
+                        videoStream.OnVideoFormatsNegotiated -= RaisedOnVideoFormatsNegotiated;
+                        videoStream.OnVideoFrameReceived -= RaisedOnOnVideoFrameReceived;
+                    }
+                }
+
                 mediaStream.RtcpSession.Close(reason);
+                mediaStream.RtcpSession = null;
             }
         }
 
@@ -459,26 +518,19 @@ namespace SIPSorcery.Net
             OnReceiveReport?.Invoke(ipEndPoint, media, report);
         }
 
-        /// <summary>
-        /// Adds a media track to this session. A media track represents an audio or video
-        /// stream and can be a local (which means we're sending) or remote (which means
-        /// we're receiving).
-        /// </summary>
-        /// <param name="track">The media track to add to the session.</param>
-        public virtual void addTrack(MediaStreamTrack track)
+        private void RaisedOnAudioFormatsNegotiated(List<AudioFormat> audioFormats)
         {
-            if (track == null)
-            {
-                return;
-            }
-            if (track.IsRemote)
-            {
-                AddRemoteTrack(track);
-            }
-            else
-            {
-                AddLocalTrack(track);
-            }
+            OnAudioFormatsNegotiated?.Invoke(audioFormats);
+        }
+
+        private void RaisedOnVideoFormatsNegotiated(List<VideoFormat> videoFormats)
+        {
+            OnVideoFormatsNegotiated?.Invoke(videoFormats);
+        }
+
+        private void RaisedOnOnVideoFrameReceived(IPEndPoint ipEndPoint, uint timestamp, byte[] frame, VideoFormat videoFormat)
+        {
+            OnVideoFrameReceived?.Invoke(ipEndPoint, timestamp, frame, videoFormat);
         }
 
         private void SetSecureContextForMediaType(SDPMediaTypesEnum mediaType, ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
@@ -512,27 +564,6 @@ namespace SIPSorcery.Net
             return null;
         }
 
-        /// <summary>
-        /// Removes a media track from this session. A media track represents an audio or video
-        /// stream and can be a local (which means we're sending) or remote (which means
-        /// we're receiving).
-        /// </summary>
-        /// <param name="track">The media track to add to the session.</param>
-        public virtual bool removeTrack(MediaStreamTrack track)
-        {
-            if (track == null)
-            {
-                return false;
-            }
-            if (track.IsRemote)
-            {
-                return RemoveRemoteTrack(track);
-            }
-            else
-            {
-                return RemoveLocalTrack(track);
-            }
-        }
 
         /// <summary>
         /// Generates the SDP for an offer that can be made to a remote user agent.
@@ -876,6 +907,50 @@ namespace SIPSorcery.Net
             }
 
             return rtpEndPoint;
+        }
+
+        /// <summary>
+        /// Adds a media track to this session. A media track represents an audio or video
+        /// stream and can be a local (which means we're sending) or remote (which means
+        /// we're receiving).
+        /// </summary>
+        /// <param name="track">The media track to add to the session.</param>
+        public virtual void addTrack(MediaStreamTrack track)
+        {
+            if (track == null)
+            {
+                return;
+            }
+            if (track.IsRemote)
+            {
+                AddRemoteTrack(track);
+            }
+            else
+            {
+                AddLocalTrack(track);
+            }
+        }
+
+        /// <summary>
+        /// Removes a media track from this session. A media track represents an audio or video
+        /// stream and can be a local (which means we're sending) or remote (which means
+        /// we're receiving).
+        /// </summary>
+        /// <param name="track">The media track to add to the session.</param>
+        public virtual bool removeTrack(MediaStreamTrack track)
+        {
+            if (track == null)
+            {
+                return false;
+            }
+            if (track.IsRemote)
+            {
+                return RemoveRemoteTrack(track);
+            }
+            else
+            {
+                return RemoveLocalTrack(track);
+            }
         }
 
         /// <summary>
@@ -1533,6 +1608,7 @@ namespace SIPSorcery.Net
                     rtpChannel.OnControlDataReceived -= OnReceive;
                     rtpChannel.OnClosed -= OnRTPChannelClosed;
                     rtpChannel.Close(reason);
+                    rtpChannel = null;
                 }
 
                 if (VideoStream.HasRtpChannel())
@@ -1542,6 +1618,7 @@ namespace SIPSorcery.Net
                     rtpChannel.OnControlDataReceived -= OnReceive;
                     rtpChannel.OnClosed -= OnRTPChannelClosed;
                     rtpChannel.Close(reason);
+                    rtpChannel = null;
                 }
 
 
