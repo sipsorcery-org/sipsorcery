@@ -84,6 +84,12 @@ namespace SIPSorcery.net.RTP
         {
             if (CheckIfCanSendRtpRaw())
             {
+                if (rtpEventInProgress)
+                {
+                    logger.LogWarning($"A RTPEvent is in progress.");
+                    return;
+                }
+
                 try
                 {
                     // Basic RTP audio formats (such as G711, G722) do not have a concept of frames. The payload of the RTP packet is
@@ -139,6 +145,12 @@ namespace SIPSorcery.net.RTP
         {
             if (CheckIfCanSendRtpRaw())
             {
+                if (rtpEventInProgress)
+                {
+                    logger.LogWarning($"A RTPEvent is in progress.");
+                    return ;
+                }
+
                 try
                 {
                     rtpEventInProgress = true;
