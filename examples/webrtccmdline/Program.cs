@@ -474,7 +474,7 @@ namespace SIPSorcery.Examples
                                         Console.WriteLine($" sending dtmf byte {dtmfByte}.");
 
                                         var dtmfEvent = new RTPEvent(dtmfByte, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
-                                        await _peerConnection.AudioStream.SendDtmfEvent(dtmfEvent, CancellationToken.None).ConfigureAwait(false);
+                                        await _peerConnection.SendDtmfEvent(dtmfEvent, CancellationToken.None).ConfigureAwait(false);
                                     }
                                     else
                                     {
@@ -602,12 +602,12 @@ namespace SIPSorcery.Examples
             {
                 // Add a send-only audio track (this doesn't require any native libraries for encoding so is good for x-platform testing).
                 audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
-                audioSource.OnAudioSourceEncodedSample += _peerConnection.AudioStream.SendAudio;
+                audioSource.OnAudioSourceEncodedSample += _peerConnection.SendAudio;
 
                 MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
                 _peerConnection.addTrack(audioTrack);
 
-                _peerConnection.AudioStream.OnAudioFormatsNegotiated += (formats) =>
+                _peerConnection.OnAudioFormatsNegotiated += (formats) =>
                     audioSource.SetAudioSourceFormat(formats.First());
             }
 
