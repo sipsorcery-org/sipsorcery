@@ -60,7 +60,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload, VideoFormat format)
         {
-            if (!_isClosed)
+            if ( (!_isClosed) && (payload != null) )
             {
                 AVCodecID codecID = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
 
