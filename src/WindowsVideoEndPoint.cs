@@ -86,6 +86,11 @@ namespace SIPSorceryMedia.Windows
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
 
         /// <summary>
+        /// Event Not used in this component - use instead <see cref="OnVideoSourceRawSample"/>
+        /// </summary>
+        public event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster;
+
+        /// <summary>
         /// This event will be fired whenever a video sample is encoded and is ready to transmit to the remote party.
         /// </summary>
         public event EncodedSampleDelegate OnVideoSourceEncodedSample;
@@ -94,6 +99,12 @@ namespace SIPSorceryMedia.Windows
         /// This event is fired after the sink decodes a video frame from the remote party.
         /// </summary>
         public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
+
+        /// <summary>
+        /// Event Not used in this component - use instead <see cref="OnVideoSinkDecodedSample"/>
+        /// </summary>
+        public event VideoSinkSampleDecodedFasterDelegate OnVideoSinkDecodedSampleFaster;
+
 
         /// <summary>
         /// This event will be fired if there is a problem acquiring the capture device.
@@ -137,6 +148,9 @@ namespace SIPSorceryMedia.Windows
         public void SetVideoSinkFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
              throw new ApplicationException("The Windows Video End Point does not support external samples. Use the video end point from SIPSorceryMedia.Encoders.");
+
+        public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) =>
+            throw new ApplicationException("The Windows Video End Point does not support external samples. Use the video end point from SIPSorceryMedia.Encoders.");
 
         public void ForceKeyFrame() => _forceKeyFrame = true;
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
