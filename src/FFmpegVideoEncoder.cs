@@ -379,7 +379,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public List<RawImage>? DecodeFaster(AVCodecID codecID, byte[] buffer, out int width, out int height)
         {
-            if (!_isDisposed)
+            if ( (!_isDisposed) && (buffer != null))
             {
                 lock (_decoderLock)
                 {
