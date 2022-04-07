@@ -1200,10 +1200,13 @@ namespace SIPSorcery.Net
         private Boolean InitIPEndPointAndSecurityContext(MediaStream mediaStream)
         {
             // Get primary AudioStream
-            if (AudioStream != null)
+            if ( (AudioStream != null) && (mediaStream != null) )
             {
                 var secureContext = AudioStream.GetSecurityContext();
-                mediaStream.SetSecurityContext(secureContext.ProtectRtpPacket, secureContext.UnprotectRtpPacket, secureContext.ProtectRtcpPacket, secureContext.UnprotectRtcpPacket);
+                if (secureContext != null)
+                {
+                    mediaStream.SetSecurityContext(secureContext.ProtectRtpPacket, secureContext.UnprotectRtpPacket, secureContext.ProtectRtcpPacket, secureContext.UnprotectRtcpPacket);
+                }
                 mediaStream.SetDestination(AudioStream.DestinationEndPoint, AudioStream.ControlDestinationEndPoint);
 
                 return true;
