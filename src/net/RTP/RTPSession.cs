@@ -420,17 +420,6 @@ namespace SIPSorcery.Net
             VideoStream = new VideoStream(config);
         }
 
-        /// <summary>
-        /// Used for child classes that require a single RTP channel for all RTP (audio and video)
-        /// and RTCP communications.
-        /// </summary>
-        protected void addSingleTrack()
-        {
-            // We use audio as the media type when multiplexing.
-            AudioStream.AddRtpChannel(CreateRtpChannel());
-            CreateRtcpSession(AudioStream);
-        }
-
         private void CreateRtcpSession(MediaStream mediaStream)
         {
             if (mediaStream.CreateRtcpSession())
@@ -910,6 +899,17 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Used for child classes that require a single RTP channel for all RTP (audio and video)
+        /// and RTCP communications.
+        /// </summary>
+        protected void addSingleTrack()
+        {
+            // We use audio as the media type when multiplexing.
+            AudioStream.AddRtpChannel(CreateRtpChannel());
+            CreateRtcpSession(AudioStream);
+        }
+
+        /// <summary>
         /// Adds a media track to this session. A media track represents an audio or video
         /// stream and can be a local (which means we're sending) or remote (which means
         /// we're receiving).
@@ -1135,9 +1135,11 @@ namespace SIPSorcery.Net
                 }
                 else if (track.Kind == SDPMediaTypesEnum.video)
                 {
+                    // We need to get EndPoints and Security Context 
+                    InitIPEndPointAndSecurityContext(VideoStream);
+
                     // Only create the RTP socket, RTCP session etc. if a non-inactive local track is added
                     // to the session.
-
                     if (!VideoStream.HasRtpChannel())
                     {
                         VideoStream.AddRtpChannel(CreateRtpChannel());
@@ -1193,6 +1195,20 @@ namespace SIPSorcery.Net
                 // to send or receive video on this session at some later stage).
                 CreateRtcpSession(VideoStream);
             }
+        }
+
+        private Boolean InitIPEndPointAndSecurityContext(MediaStream mediaStream)
+        {
+            // Get primary AudioStream
+            if (AudioStream != null)
+            {
+                var secureContext = AudioStream.GetSecurityContext();
+                mediaStream.SetSecurityContext(secureContext.ProtectRtpPacket, secureContext.UnprotectRtpPacket, secureContext.ProtectRtcpPacket, secureContext.UnprotectRtcpPacket);
+                mediaStream.SetDestination(AudioStream.DestinationEndPoint, AudioStream.ControlDestinationEndPoint);
+
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -1456,32 +1472,6 @@ namespace SIPSorcery.Net
             }
 
             return localTracks;
-        }
-
-        /// <summary>
-        /// Sets the remote end points for a media type supported by this RTP session.
-        /// </summary>
-        /// <param name="mediaType">The media type, must be audio or video, to set the remote end point for.</param>
-        /// <param name="rtpEndPoint">The remote end point for RTP packets corresponding to the media type.</param>
-        /// <param name="rtcpEndPoint">The remote end point for RTCP packets corresponding to the media type.</param>
-        public void SetDestination(SDPMediaTypesEnum mediaType, IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
-        {
-            if (rtpSessionConfig.IsMediaMultiplexed)
-            {
-                AudioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
-                VideoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
-            }
-            else
-            {
-                if (mediaType == SDPMediaTypesEnum.audio)
-                {
-                    AudioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
-                }
-                else if (mediaType == SDPMediaTypesEnum.video)
-                {
-                    VideoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
-                }
-            }
         }
 
         /// <summary>

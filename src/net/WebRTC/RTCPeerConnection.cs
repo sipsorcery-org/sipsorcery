@@ -504,8 +504,8 @@ namespace SIPSorcery.Net
                     {
                         // Already connected and this event is due to change in the nominated remote candidate.
                         var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
-                        base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
+                        AudioStream.SetDestination(connectedEP, connectedEP);
                         logger.LogInformation($"ICE changing connected remote end point to {AudioStream.DestinationEndPoint}.");
                     }
 
@@ -524,8 +524,7 @@ namespace SIPSorcery.Net
 
                     var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
-                    base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
-
+                    AudioStream.SetDestination(connectedEP, connectedEP);
                     logger.LogInformation($"ICE connected to remote end point {AudioStream.DestinationEndPoint}.");
 
                     bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
@@ -1664,11 +1663,6 @@ namespace SIPSorcery.Net
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);
 
-                    VideoStream.SetSecurityContext(dtlsHandle.ProtectRTP,
-                        dtlsHandle.UnprotectRTP,
-                        dtlsHandle.ProtectRTCP,
-                        dtlsHandle.UnprotectRTCP);
-                        
                     IsDtlsNegotiationComplete = true;
 
                     return true;
