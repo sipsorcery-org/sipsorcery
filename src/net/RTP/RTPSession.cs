@@ -290,6 +290,12 @@ namespace SIPSorcery.Net
         public int RemoteRtpEventPayloadID { get; set; } = DEFAULT_DTMF_EVENT_PAYLOAD_ID;
 
         /// <summary>
+        /// Indicates the maximum frame size that can be reconstructed from RTP packets during the depacketisation
+        /// process.
+        /// </summary>
+        public int MaxReconstructedVideoFrameSize { get; set; } = 1048576;
+
+        /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot
         /// be restarted.
         /// </summary>
@@ -2228,7 +2234,7 @@ namespace SIPSorcery.Net
                 {
                     logger.LogDebug($"Video depacketisation codec set to {format.ToVideoFormat().Codec} for SSRC {packet.Header.SyncSource}.");
 
-                    _rtpVideoFramer = new RtpVideoFramer(format.ToVideoFormat().Codec);
+                    _rtpVideoFramer = new RtpVideoFramer(format.ToVideoFormat().Codec, MaxReconstructedVideoFrameSize);
 
                     var frame = _rtpVideoFramer.GotRtpPacket(packet);
                     if (frame != null)
