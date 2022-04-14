@@ -12950,6 +12950,19 @@ references:
   commentId: F:SIPSorcery.Net.RTPSession.m_rtpPortRange
   fullName: SIPSorcery.Net.RTPSession.m_rtpPortRange
   nameWithType: RTPSession.m_rtpPortRange
+- uid: SIPSorcery.Net.RTPSession.MaxReconstructedVideoFrameSize
+  name: MaxReconstructedVideoFrameSize
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_MaxReconstructedVideoFrameSize
+  commentId: P:SIPSorcery.Net.RTPSession.MaxReconstructedVideoFrameSize
+  fullName: SIPSorcery.Net.RTPSession.MaxReconstructedVideoFrameSize
+  nameWithType: RTPSession.MaxReconstructedVideoFrameSize
+- uid: SIPSorcery.Net.RTPSession.MaxReconstructedVideoFrameSize*
+  name: MaxReconstructedVideoFrameSize
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_MaxReconstructedVideoFrameSize_
+  commentId: Overload:SIPSorcery.Net.RTPSession.MaxReconstructedVideoFrameSize
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.MaxReconstructedVideoFrameSize
+  nameWithType: RTPSession.MaxReconstructedVideoFrameSize
 - uid: SIPSorcery.Net.RTPSession.OnAudioFormatsNegotiated
   name: OnAudioFormatsNegotiated
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnAudioFormatsNegotiated
@@ -13552,12 +13565,12 @@ references:
   commentId: T:SIPSorcery.Net.RtpVideoFramer
   fullName: SIPSorcery.Net.RtpVideoFramer
   nameWithType: RtpVideoFramer
-- uid: SIPSorcery.Net.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.VideoCodecsEnum)
-  name: RtpVideoFramer(VideoCodecsEnum)
-  href: api/SIPSorcery.Net.RtpVideoFramer.html#SIPSorcery_Net_RtpVideoFramer__ctor_SIPSorceryMedia_Abstractions_VideoCodecsEnum_
-  commentId: M:SIPSorcery.Net.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.VideoCodecsEnum)
-  fullName: SIPSorcery.Net.RtpVideoFramer.RtpVideoFramer(SIPSorceryMedia.Abstractions.VideoCodecsEnum)
-  nameWithType: RtpVideoFramer.RtpVideoFramer(VideoCodecsEnum)
+- uid: SIPSorcery.Net.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.VideoCodecsEnum,System.Int32)
+  name: RtpVideoFramer(VideoCodecsEnum, Int32)
+  href: api/SIPSorcery.Net.RtpVideoFramer.html#SIPSorcery_Net_RtpVideoFramer__ctor_SIPSorceryMedia_Abstractions_VideoCodecsEnum_System_Int32_
+  commentId: M:SIPSorcery.Net.RtpVideoFramer.#ctor(SIPSorceryMedia.Abstractions.VideoCodecsEnum,System.Int32)
+  fullName: SIPSorcery.Net.RtpVideoFramer.RtpVideoFramer(SIPSorceryMedia.Abstractions.VideoCodecsEnum, System.Int32)
+  nameWithType: RtpVideoFramer.RtpVideoFramer(VideoCodecsEnum, Int32)
 - uid: SIPSorcery.Net.RtpVideoFramer.#ctor*
   name: RtpVideoFramer
   href: api/SIPSorcery.Net.RtpVideoFramer.html#SIPSorcery_Net_RtpVideoFramer__ctor_
