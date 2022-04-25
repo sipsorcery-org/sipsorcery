@@ -172,7 +172,7 @@ namespace SIPSorcery.Net
         /// in an RFC somewhere but I wasn't able to find it from a quick search.
         /// </summary>
         public const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
-            
+
         private static ILogger logger = Log.Logger;
 
         protected RtpSessionConfig rtpSessionConfig;
@@ -227,6 +227,12 @@ namespace SIPSorcery.Net
         /// Crypto Suites
         /// </summary>
         public List<SDPSecurityDescription.CryptoSuites> SrtpCryptoSuites { get; set; }
+
+        /// <summary>
+        /// Indicates the maximum frame size that can be reconstructed from RTP packets during the depacketisation
+        /// process.
+        /// </summary>
+        public int MaxReconstructedVideoFrameSize { get => VideoStream.MaxReconstructedVideoFrameSize; set => VideoStream.MaxReconstructedVideoFrameSize = value; }
 
         /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot

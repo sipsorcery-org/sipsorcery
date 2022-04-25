@@ -67,6 +67,12 @@ namespace SIPSorcery.net.RTP
             }
         }
 
+        /// <summary>
+        /// Indicates the maximum frame size that can be reconstructed from RTP packets during the depacketisation
+        /// process.
+        /// </summary>
+        public int MaxReconstructedVideoFrameSize { get; set; } = 1048576;
+
     #endregion PROPERTIES
 
     #region SEND PACKET
@@ -283,7 +289,7 @@ namespace SIPSorcery.net.RTP
                 {
                     logger.LogDebug($"Video depacketisation codec set to {format.ToVideoFormat().Codec} for SSRC {packet.Header.SyncSource}.");
 
-                    RtpVideoFramer = new RtpVideoFramer(format.ToVideoFormat().Codec);
+                    RtpVideoFramer = new RtpVideoFramer(format.ToVideoFormat().Codec, MaxReconstructedVideoFrameSize);
 
                     var frame = RtpVideoFramer.GotRtpPacket(packet);
                     if (frame != null)

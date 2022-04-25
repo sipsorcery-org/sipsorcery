@@ -25,16 +25,15 @@ namespace SIPSorcery.Net
 {
     public class RtpVideoFramer
     {
-        private const int MAX_FRAME_SIZE = 65536;
-
         private static ILogger logger = Log.Logger;
 
         private VideoCodecsEnum _codec;
-        private byte[] _currVideoFrame = new byte[MAX_FRAME_SIZE];
+        private int _maxFrameSize;
+        private byte[] _currVideoFrame;
         private int _currVideoFramePosn = 0;
         private H264Depacketiser _h264Depacketiser;
 
-        public RtpVideoFramer(VideoCodecsEnum codec)
+        public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)
         {
             if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264))
             {
@@ -42,7 +41,9 @@ namespace SIPSorcery.Net
             }
 
             _codec = codec;
-
+            _maxFrameSize = maxFrameSize;
+            _currVideoFrame = new byte[maxFrameSize];
+            
             if (_codec == VideoCodecsEnum.H264)
             {
                 _h264Depacketiser = new H264Depacketiser();
@@ -59,7 +60,7 @@ namespace SIPSorcery.Net
             {
                 //logger.LogDebug($"rtp VP8 video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
 
-                if (_currVideoFramePosn + payload.Length >= MAX_FRAME_SIZE)
+                if (_currVideoFramePosn + payload.Length >= _maxFrameSize)
                 {
                     // Something has gone very wrong. Clear the buffer.
                     _currVideoFramePosn = 0;
