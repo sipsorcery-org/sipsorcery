@@ -199,6 +199,36 @@ namespace SIPSorcery.Net
         public VideoStream VideoStream { get; set; }
 
         /// <summary>
+        /// The local audio stream for this session. Will be null if we are not sending audio.
+        /// </summary>
+        public MediaStreamTrack AudioLocalTrack => AudioStream.LocalTrack;
+
+        /// <summary>
+        /// The remote audio track for this session. Will be null if the remote party is not sending audio.
+        /// </summary>
+        public MediaStreamTrack AudioRemoteTrack => AudioStream.RemoteTrack;
+
+        /// <summary>
+        /// The reporting session for the audio stream. Will be null if only video is being sent.
+        /// </summary>
+        public RTCPSession AudioRtcpSession => AudioStream.RtcpSession;
+
+        /// <summary>
+        /// The local video track for this session. Will be null if we are not sending video.
+        /// </summary>
+        public MediaStreamTrack VideoLocalTrack => VideoStream.LocalTrack;
+
+        /// <summary>
+        /// The remote video track for this session. Will be null if the remote party is not sending video.
+        /// </summary>
+        public MediaStreamTrack VideoRemoteTrack => VideoStream.RemoteTrack;
+
+        /// <summary>
+        /// The reporting session for the video stream. Will be null if only audio is being sent.
+        /// </summary>
+        public RTCPSession VideoRtcpSession => VideoStream.RtcpSession;
+
+        /// <summary>
         /// The SDP offered by the remote call party for this session.
         /// </summary>
         public SDP RemoteDescription { get; protected set; }
