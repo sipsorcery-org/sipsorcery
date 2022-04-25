@@ -38,18 +38,20 @@ namespace SIPSorcery.net.RTP
 
         protected RTPChannel rtpChannel = null;
 
+        public int Index = -1;
+
     #region EVENTS
 
         /// <summary>
         /// Fires when the connection for a media type is classified as timed out due to not
         /// receiving any RTP or RTCP packets within the given period.
         /// </summary>
-        public event Action<SDPMediaTypesEnum> OnTimeout;
+        public event Action<int, SDPMediaTypesEnum> OnTimeoutByIndex;
 
         /// <summary>
         /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
         /// </summary>
-        public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReport;
+        public event Action<int, SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReportByIndex;
 
         /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
@@ -58,17 +60,17 @@ namespace SIPSorcery.net.RTP
         ///  - The media type the packet contains, will be audio or video,
         ///  - The full RTP packet.
         /// </summary>
-        public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
+        public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceivedByIndex;
 
         /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
         /// </summary>
-        public event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;
+        public event Action<int, IPEndPoint, RTPEvent, RTPHeader> OnRtpEventByIndex;
 
         /// <summary>
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
         /// </summary>
-        public event Action<IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReport;
+        public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReportByIndex;
 
     #endregion EVENTS
 
@@ -376,7 +378,7 @@ namespace SIPSorcery.net.RTP
             {
                 var reportBytes = report.GetBytes();
                 SendRtcpReport(reportBytes);
-                OnSendReport?.Invoke(MediaType, report);
+                OnSendReportByIndex?.Invoke(Index, MediaType, report);
             }
         }
          
@@ -395,7 +397,7 @@ namespace SIPSorcery.net.RTP
 
     #region RECEIVE PACKET
 
-        protected void OnReceiveRTPPacket(RTPHeader hdr, SDPAudioVideoMediaFormat format, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
+        public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
         {
             RTPPacket rtpPacket = null;
             if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
@@ -405,7 +407,7 @@ namespace SIPSorcery.net.RTP
                     return;
                 }
 
-                RtpEvent(remoteEndPoint, new RTPEvent(rtpPacket.Payload), rtpPacket.Header);
+                RaiseOnRtpEventByIndex(remoteEndPoint, new RTPEvent(rtpPacket.Payload), rtpPacket.Header);
                 return;
             }
 
@@ -416,7 +418,7 @@ namespace SIPSorcery.net.RTP
 
                 if (isValidSource)
                 {
-                    logger.LogDebug($"Set remote {MediaType} track SSRC to {hdr.SyncSource}.");
+                    logger.LogDebug($"Set remote track ({MediaType} - index={Index}) SSRC to {hdr.SyncSource}.");
                     RemoteTrack.Ssrc = hdr.SyncSource;
                 }
             }
@@ -448,8 +450,10 @@ namespace SIPSorcery.net.RTP
                 return;
             }
 
-            if (rtpPacket != null)
+            var format = RemoteTrack.GetFormatForPayloadID(hdr.PayloadType);
+            if ( (rtpPacket != null) && (format != null) )
             {
+                
                 if (UseBuffer())
                 {
                     var reorderBuffer = GetBuffer();
@@ -461,14 +465,14 @@ namespace SIPSorcery.net.RTP
                             LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
                             RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
                         }
-                        videoStream?.ProcessVideoRtpFrame(remoteEndPoint, bufferedPacket, format);
-                        RtpPacketReceived(remoteEndPoint, bufferedPacket);
+                        videoStream?.ProcessVideoRtpFrame(remoteEndPoint, bufferedPacket, format.Value);
+                        RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, bufferedPacket);
                     }
                 }
                 else
                 {
-                    videoStream?.ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, format);
-                    RtpPacketReceived(remoteEndPoint, rtpPacket);
+                    videoStream?.ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, format.Value);
+                    RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, rtpPacket);
                 }
 
                 RtcpSession?.RecordRtpPacketReceived(rtpPacket);
@@ -479,19 +483,24 @@ namespace SIPSorcery.net.RTP
 
     #region TO RAISE EVENTS FROM INHERITED CLASS
 
-        public void ReceiveReport(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
+        public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
         {
-            OnReceiveReport?.Invoke(ipEndPoint, MediaType, rtcpPCompoundPacket);
+            OnReceiveReportByIndex?.Invoke(Index, ipEndPoint, MediaType, rtcpPCompoundPacket);
         }
 
-        protected void RtpEvent(IPEndPoint ipEndPoint, RTPEvent rtpEvent, RTPHeader rtpHeader)
+        protected void RaiseOnRtpEventByIndex(IPEndPoint ipEndPoint, RTPEvent rtpEvent, RTPHeader rtpHeader)
         {
-            OnRtpEvent?.Invoke(ipEndPoint, rtpEvent, rtpHeader);
+            OnRtpEventByIndex?.Invoke(Index, ipEndPoint, rtpEvent, rtpHeader);
         }
 
-        protected void RtpPacketReceived(IPEndPoint ipEndPoint, RTPPacket rtpPacket)
+        protected void RaiseOnRtpPacketReceivedByIndex(IPEndPoint ipEndPoint, RTPPacket rtpPacket)
         {
-            OnRtpPacketReceived?.Invoke(ipEndPoint, MediaType, rtpPacket);
+            OnRtpPacketReceivedByIndex?.Invoke(Index, ipEndPoint, MediaType, rtpPacket);
+        }
+
+        private void RaiseOnTimeoutByIndex(SDPMediaTypesEnum mediaType)
+        {
+            OnTimeoutByIndex?.Invoke(Index, mediaType);
         }
 
     #endregion TO RAISE EVENTS FROM INHERITED CLASS
@@ -573,7 +582,7 @@ namespace SIPSorcery.net.RTP
             if (RtcpSession == null)
             {
                 RtcpSession = new RTCPSession(MediaType, 0);
-                RtcpSession.OnTimeout += OnTimeout;
+                RtcpSession.OnTimeout += RaiseOnTimeoutByIndex;
                 return true;
             }
             return false;
@@ -649,9 +658,10 @@ namespace SIPSorcery.net.RTP
             });
         }
 
-        public MediaStream(RtpSessionConfig config)
+        public MediaStream(RtpSessionConfig config, int index)
         {
             RtpSessionConfig = config;
+            this.Index = index;
         }
     }
 

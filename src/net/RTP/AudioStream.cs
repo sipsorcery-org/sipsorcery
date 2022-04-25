@@ -39,7 +39,7 @@ namespace SIPSorcery.net.RTP
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common audio formats is set.
         /// </summary>
-        public event Action<List<AudioFormat>> OnAudioFormatsNegotiated;
+        public event Action<int, List<AudioFormat>> OnAudioFormatsNegotiatedByIndex;
     
     #endregion EVENTS
 
@@ -230,28 +230,20 @@ namespace SIPSorcery.net.RTP
 
     #endregion SEND PACKET
 
-    #region RECEIVE PACKET
-
-        public void OnReceiveRTPPacket(RTPHeader hdr, SDPAudioVideoMediaFormat format, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
-        {
-            base.OnReceiveRTPPacket(hdr, format, localPort, remoteEndPoint, buffer, null);
-        }
-
-    #endregion RECEIVE PACKET
-
         public void CheckAudioFormatsNegotiation()
         {
             if (LocalTrack != null &&
                         LocalTrack.Capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() > 0)
             {
-                OnAudioFormatsNegotiated?.Invoke(
+                OnAudioFormatsNegotiatedByIndex?.Invoke(
+                            Index,
                             LocalTrack.Capabilities
                             .Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE)
                             .Select(x => x.ToAudioFormat()).ToList());
             }
         }
 
-        public AudioStream(RtpSessionConfig config) : base(config)
+        public AudioStream(RtpSessionConfig config, int index) : base(config, index)
         {
             MediaType = SDPMediaTypesEnum.audio;
         }
