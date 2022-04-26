@@ -1618,11 +1618,32 @@ namespace SIPSorcery.Net
             sdp.Connection = new SDPConnectionInformation(localAddress);
 
             int mediaIndex = 0;
+            int audioMediaIndex = 0;
+            int videoMediaIndex = 0;
 
             foreach (var mediaStream in mediaStreamList)
             {
-                int mindex = mediaIndex;
-                string midTag = mediaIndex.ToString();
+                int mindex = 0;
+                string midTag = "0";
+
+                if (RemoteDescription == null)
+                {
+                    mindex = mediaIndex;
+                    midTag = mediaIndex.ToString();
+                }
+                else
+                {
+                    if (mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.audio)
+                    {
+                        (mindex, midTag) = RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, audioMediaIndex);
+                        audioMediaIndex++;
+                    }
+                    else if (mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.video)
+                    {
+                        (mindex, midTag) = RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, videoMediaIndex);
+                        videoMediaIndex++;
+                    }
+                }
                 mediaIndex++;
 
                 int rtpPort = 0; // A port of zero means the media type is not supported.
@@ -1643,8 +1664,8 @@ namespace SIPSorcery.Net
 
                 announcement.Transport = rtpSessionConfig.UseSdpCryptoNegotiation ? RTP_SECUREMEDIA_PROFILE : RTP_MEDIA_PROFILE;
                 announcement.MediaStreamStatus = mediaStream.LocalTrack.StreamStatus;
-                announcement.MLineIndex = mindex;
                 announcement.MediaID = midTag;
+                announcement.MLineIndex = mindex;
 
                 if (mediaStream.LocalTrack.MaximumBandwidth > 0)
                 {

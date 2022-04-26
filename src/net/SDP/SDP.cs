@@ -853,7 +853,8 @@ namespace SIPSorcery.Net
                 sdp += MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value) + CRLF;
             }
 
-            foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
+            //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
+            foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex))
             {
                 sdp += (media == null) ? null : media.ToString();
             }
@@ -912,6 +913,32 @@ namespace SIPSorcery.Net
                 var announcement = announcements[announcementIndex];
                 return announcement.MediaStreamStatus.HasValue ? announcement.MediaStreamStatus.Value : DEFAULT_STREAM_STATUS;
             }
+        }
+
+        /// <summary>
+        /// Media announcements can be placed in SDP in any order BUT the orders must match
+        /// up in offer/answer pairs. This method can be used to get the index for a specific
+        /// media type. It is useful for obtaining the index of a particular media type when
+        /// constructing an SDP answer.
+        /// </summary>
+        /// <param name="mediaType">The media type to get the index for.</param>
+        /// <returns></returns>
+        public (int, string) GetIndexForMediaType(SDPMediaTypesEnum mediaType, int index)
+        {
+            int i = 0;
+            foreach (var ann in Media)
+            {
+                if (ann.Media == mediaType) 
+                {
+                    if (i == index)
+                    {
+                        return (i, ann.MediaID);
+                    }
+                    i++;
+                }
+            }
+
+            return (MEDIA_INDEX_NOT_PRESENT, MEDIA_INDEX_TAG_NOT_PRESENT);
         }
     }
 }

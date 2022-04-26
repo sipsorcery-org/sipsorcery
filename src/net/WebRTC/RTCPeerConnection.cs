@@ -1047,7 +1047,7 @@ namespace SIPSorcery.Net
 
             string dtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
             bool iceCandidatesAdded = false;
-            int mediaIndex = 0;
+            
 
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)
@@ -1075,10 +1075,32 @@ namespace SIPSorcery.Net
             };
 
             // Media announcements must be in the same order in the offer and answer.
+            int mediaIndex = 0;
+            int audioMediaIndex = 0;
+            int videoMediaIndex = 0;
             foreach (var mediaStream in mediaStreamList)
             {
-                int mindex = mediaIndex;
-                string midTag = mediaIndex.ToString();
+                int mindex = 0;
+                string midTag = "0";
+
+                if (RemoteDescription == null)
+                {
+                    mindex = mediaIndex;
+                    midTag = mediaIndex.ToString();
+                }
+                else
+                {
+                    if(mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.audio)
+                    {
+                        (mindex, midTag) = RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, audioMediaIndex);
+                        audioMediaIndex++;
+                    }
+                    else if (mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.video)
+                    {
+                        (mindex, midTag) = RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, videoMediaIndex);
+                        videoMediaIndex++;
+                    }
+                }
                 mediaIndex++;
 
                 if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
@@ -1128,8 +1150,7 @@ namespace SIPSorcery.Net
 
             if (DataChannels.Count > 0 || (RemoteDescription?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
             {
-                int mindex = mediaIndex;
-                string midTag = mediaIndex.ToString();
+                (int mindex, string midTag) = RemoteDescription == null ? (mediaIndex, mediaIndex.ToString()) : RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
                 mediaIndex++;
 
                 if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
