@@ -237,6 +237,16 @@ namespace SIPSorcery.Net
         public RTCPSession AudioRtcpSession => AudioStream?.RtcpSession;
 
         /// <summary>
+        /// The primary Audio remote RTP end point this stream is sending media to.
+        /// </summary>
+        public IPEndPoint AudioDestinationEndPoint => AudioStream?.DestinationEndPoint;
+
+        /// <summary>
+        /// The primary Audio remote RTP control end point this stream is sending to RTCP reports for the media stream to.
+        /// </summary>
+        public IPEndPoint AudioControlDestinationEndPoint => AudioStream?.ControlDestinationEndPoint;
+
+        /// <summary>
         /// The primary local video track for this session. Will be null if we are not sending video.
         /// </summary>
         public MediaStreamTrack VideoLocalTrack => VideoStream?.LocalTrack;
@@ -250,6 +260,16 @@ namespace SIPSorcery.Net
         /// The primary reporting session for the video stream. Will be null if only audio is being sent.
         /// </summary>
         public RTCPSession VideoRtcpSession => VideoStream?.RtcpSession;
+
+        /// <summary>
+        /// The primary Video remote RTP end point this stream is sending media to.
+        /// </summary>
+        public IPEndPoint VideoDestinationEndPoint => VideoStream?.DestinationEndPoint;
+
+        /// <summary>
+        /// The primary Video remote RTP control end point this stream is sending to RTCP reports for the media stream to.
+        /// </summary>
+        public IPEndPoint VideoControlDestinationEndPoint => VideoStream?.ControlDestinationEndPoint;
 
         /// <summary>
         /// List of all Audio Streams for this session
@@ -588,7 +608,6 @@ namespace SIPSorcery.Net
             str += " ]";
             logger.LogDebug($"LogRemoteSDPSsrcAttributes: {str}");
         }
-
 
         private void CreateRtcpSession(MediaStream mediaStream)
         {
@@ -2054,7 +2073,7 @@ namespace SIPSorcery.Net
                     {
                         // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
                     }
-                    else if (AudioStream.RtcpSession?.PacketsReceivedCount > 0 || VideoStream.RtcpSession?.PacketsReceivedCount > 0)
+                    else if (AudioStream?.RtcpSession?.PacketsReceivedCount > 0 || VideoStream?.RtcpSession?.PacketsReceivedCount > 0)
                     {
                         // Only give this warning if we've received at least one RTP packet.
                         //logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
@@ -2294,6 +2313,51 @@ namespace SIPSorcery.Net
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Allows additional control for sending raw RTP payloads (on the primary one). No framing or other processing is carried out.
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTP packet being sent. Must be audio or video.</param>
+        /// <param name="payload">The RTP packet payload.</param>
+        /// <param name="timestamp">The timestamp to set on the RTP header.</param>
+        /// <param name="markerBit">The value to set on the RTP header marker bit, should be 0 or 1.</param>
+        /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
+        public void SendRtpRaw(SDPMediaTypesEnum mediaType, byte[] payload, uint timestamp, int markerBit, int payloadTypeID)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                AudioStream.SendRtpRaw(payload, timestamp, markerBit, payloadTypeID);
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                VideoStream?.SendRtpRaw(payload, timestamp, markerBit, payloadTypeID);
+            }
+        }
+
+        /// <summary>
+        /// Sets the remote end points for a media type supported by this RTP session. (on the primary one)
+        /// </summary>
+        /// <param name="mediaType">The media type, must be audio or video, to set the remote end point for.</param>
+        /// <param name="rtpEndPoint">The remote end point for RTP packets corresponding to the media type.</param>
+        /// <param name="rtcpEndPoint">The remote end point for RTCP packets corresponding to the media type.</param>
+        public void SetDestination(SDPMediaTypesEnum mediaType, IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
+        {
+            if (rtpSessionConfig.IsMediaMultiplexed)
+            {
+                SetGlobalDestination(rtpEndPoint, rtcpEndPoint);
+            }
+            else
+            {
+                if (mediaType == SDPMediaTypesEnum.audio)
+                {
+                    AudioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
+                }
+                else if (mediaType == SDPMediaTypesEnum.video)
+                {
+                    VideoStream?.SetDestination(rtpEndPoint, rtcpEndPoint);
+                }
+            }
         }
 
         /// <summary>
