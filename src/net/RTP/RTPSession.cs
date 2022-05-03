@@ -214,6 +214,16 @@ namespace SIPSorcery.Net
         public RTCPSession AudioRtcpSession => AudioStream.RtcpSession;
 
         /// <summary>
+        /// The primary Audio remote RTP end point this stream is sending media to.
+        /// </summary>
+        public IPEndPoint AudioDestinationEndPoint => AudioStream.DestinationEndPoint;
+
+        /// <summary>
+        /// The primary Audio remote RTP control end point this stream is sending to RTCP reports for the media stream to.
+        /// </summary>
+        public IPEndPoint AudioControlDestinationEndPoint => AudioStream.ControlDestinationEndPoint;
+
+        /// <summary>
         /// The local video track for this session. Will be null if we are not sending video.
         /// </summary>
         public MediaStreamTrack VideoLocalTrack => VideoStream.LocalTrack;
@@ -227,6 +237,16 @@ namespace SIPSorcery.Net
         /// The reporting session for the video stream. Will be null if only audio is being sent.
         /// </summary>
         public RTCPSession VideoRtcpSession => VideoStream.RtcpSession;
+
+        /// <summary>
+        /// The primary Video remote RTP end point this stream is sending media to.
+        /// </summary>
+        public IPEndPoint VideoDestinationEndPoint => VideoStream?.DestinationEndPoint;
+
+        /// <summary>
+        /// The primary Video remote RTP control end point this stream is sending to RTCP reports for the media stream to.
+        /// </summary>
+        public IPEndPoint VideoControlDestinationEndPoint => VideoStream?.ControlDestinationEndPoint;
 
         /// <summary>
         /// The SDP offered by the remote call party for this session.
@@ -486,6 +506,32 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Sets the Secure RTP (SRTP) delegates for a specific media type
+        /// </summary>
+        /// <param name="mediaType">The media type to set the secure context for.</param>
+        /// <param name="protectRtp">SRTP encrypt RTP packet delegate.</param>
+        /// <param name="unprotectRtp">SRTP decrypt RTP packet delegate.</param>
+        /// <param name="protectRtcp">SRTP encrypt RTCP packet delegate.</param>
+        /// <param name="unprotectRtcp">SRTP decrypt RTCP packet delegate.</param>
+        public void SetSecurityContext(SDPMediaTypesEnum mediaType, ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                AudioStream.SetSecurityContext(protectRtp,
+                    unprotectRtp,
+                    protectRtcp,
+                    unprotectRtcp);
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                VideoStream.SetSecurityContext(protectRtp,
+                    unprotectRtp,
+                    protectRtcp,
+                    unprotectRtcp);
+            }
+        }
+
         private void CloseRtcpSession(MediaStream mediaStream, string reason)
         {
             if (mediaStream.RtcpSession != null)
@@ -557,24 +603,6 @@ namespace SIPSorcery.Net
         private void RaisedOnOnVideoFrameReceived(IPEndPoint ipEndPoint, uint timestamp, byte[] frame, VideoFormat videoFormat)
         {
             OnVideoFrameReceived?.Invoke(ipEndPoint, timestamp, frame, videoFormat);
-        }
-
-        private void SetSecureContextForMediaType(SDPMediaTypesEnum mediaType, ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
-        {
-            if (mediaType == SDPMediaTypesEnum.audio)
-            {
-                AudioStream.SetSecurityContext(protectRtp,
-                    unprotectRtp,
-                    protectRtcp,
-                    unprotectRtcp);
-            }
-            else if (mediaType == SDPMediaTypesEnum.video)
-            {
-                VideoStream.SetSecurityContext(protectRtp,
-                    unprotectRtp,
-                    protectRtcp,
-                    unprotectRtcp);
-            }
         }
 
         private SrtpHandler GetOrCreateSrtpHandler(SDPMediaTypesEnum mediaType)
@@ -767,7 +795,7 @@ namespace SIPSorcery.Net
 
                             if (srtpHandler.IsNegotiationComplete)
                             {
-                                SetSecureContextForMediaType(mediaType,
+                                SetSecurityContext(mediaType,
                                         srtpHandler.ProtectRTP,
                                         srtpHandler.UnprotectRTP,
                                         srtpHandler.ProtectRTCP,
@@ -1428,7 +1456,7 @@ namespace SIPSorcery.Net
                     
                     if (handler.IsNegotiationComplete)
                     {
-                        SetSecureContextForMediaType(announcement.Media, 
+                        SetSecurityContext(announcement.Media, 
                             handler.ProtectRTP,
                             handler.UnprotectRTP,
                             handler.ProtectRTCP,
@@ -1903,6 +1931,52 @@ namespace SIPSorcery.Net
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Allows additional control for sending raw RTP payloads (on the primary one). No framing or other processing is carried out.
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTP packet being sent. Must be audio or video.</param>
+        /// <param name="payload">The RTP packet payload.</param>
+        /// <param name="timestamp">The timestamp to set on the RTP header.</param>
+        /// <param name="markerBit">The value to set on the RTP header marker bit, should be 0 or 1.</param>
+        /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
+        public void SendRtpRaw(SDPMediaTypesEnum mediaType, byte[] payload, uint timestamp, int markerBit, int payloadTypeID)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                AudioStream.SendRtpRaw(payload, timestamp, markerBit, payloadTypeID);
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                VideoStream?.SendRtpRaw(payload, timestamp, markerBit, payloadTypeID);
+            }
+        }
+
+        /// <summary>
+        /// Sets the remote end points for a media type supported by this RTP session. (on the primary one)
+        /// </summary>
+        /// <param name="mediaType">The media type, must be audio or video, to set the remote end point for.</param>
+        /// <param name="rtpEndPoint">The remote end point for RTP packets corresponding to the media type.</param>
+        /// <param name="rtcpEndPoint">The remote end point for RTCP packets corresponding to the media type.</param>
+        public void SetDestination(SDPMediaTypesEnum mediaType, IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
+        {
+            if (rtpSessionConfig.IsMediaMultiplexed)
+            {
+                AudioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
+                VideoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
+            }
+            else
+            {
+                if (mediaType == SDPMediaTypesEnum.audio)
+                {
+                    AudioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
+                }
+                else if (mediaType == SDPMediaTypesEnum.video)
+                {
+                    VideoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
+                }
+            }
         }
 
         /// <summary>
