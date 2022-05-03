@@ -248,16 +248,15 @@ namespace SIPSorcery.net.RTP
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
             var videoSendingFormat = GetSendingFormat();
+            int payloadID = Convert.ToInt32(videoSendingFormat.ID);
 
             switch (videoSendingFormat.Name())
             {
                 case "VP8":
-                    int vp8PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "VP8").ID);
-                    SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
+                    SendVp8Frame(durationRtpUnits, payloadID, sample);
                     break;
                 case "H264":
-                    int h264PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "H264").ID);
-                    SendH264Frame(durationRtpUnits, h264PayloadID, sample);
+                    SendH264Frame(durationRtpUnits, payloadID, sample);
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
