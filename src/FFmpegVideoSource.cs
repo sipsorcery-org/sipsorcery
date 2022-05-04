@@ -149,16 +149,18 @@ namespace SIPSorceryMedia.FFmpeg
                     var frameYUV420P = _videoFrameYUV420PConverter.Convert(frame);
                     if ((frameYUV420P.width != 0) && (frameYUV420P.height != 0))
                     {
-                        AVCodecID aVCodecId = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
+                        AVCodecID? aVCodecId = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
+                        if(aVCodecId != null)
+                        { 
+                            byte[]? encodedSample = _videoEncoder.Encode(aVCodecId.Value, frameYUV420P, frameRate);
 
-                        byte[]? encodedSample = _videoEncoder.Encode(aVCodecId, frameYUV420P, frameRate);
-
-                        if (encodedSample != null)
-                        {
-                            // Note the event handler can be removed while the encoding is in progress.
-                            OnVideoSourceEncodedSample?.Invoke(timestampDuration, encodedSample);
+                            if (encodedSample != null)
+                            {
+                                // Note the event handler can be removed while the encoding is in progress.
+                                OnVideoSourceEncodedSample?.Invoke(timestampDuration, encodedSample);
+                            }
+                            _forceKeyFrame = false;
                         }
-                        _forceKeyFrame = false;
                     }
                     else
                         _forceKeyFrame = true;

@@ -62,19 +62,21 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if ( (!_isClosed) && (payload != null) )
             {
-                AVCodecID codecID = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
+                AVCodecID? codecID = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
+                if(codecID != null)
+                { 
+                    var imageRawSamples = _ffmpegEncoder.DecodeFaster(codecID.Value, payload, out var width, out var height);
 
-                var imageRawSamples = _ffmpegEncoder.DecodeFaster(codecID, payload, out var width, out var height);
-
-                if (imageRawSamples == null || width == 0 || height == 0)
-                {
-                    logger.LogWarning($"Decode of video sample failed, width {width}, height {height}.");
-                }
-                else
-                {
-                    foreach (var imageRawSample in imageRawSamples)
+                    if (imageRawSamples == null || width == 0 || height == 0)
                     {
-                        OnVideoSinkDecodedSampleFaster?.Invoke(imageRawSample);
+                        logger.LogWarning($"Decode of video sample failed, width {width}, height {height}.");
+                    }
+                    else
+                    {
+                        foreach (var imageRawSample in imageRawSamples)
+                        {
+                            OnVideoSinkDecodedSampleFaster?.Invoke(imageRawSample);
+                        }
                     }
                 }
             }

@@ -14,7 +14,7 @@ namespace SIPSorceryMedia.FFmpeg
     {
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegMicrophoneSource>();
 
-        public unsafe FFmpegMicrophoneSource(string path, IAudioEncoder audioEncoder): base(audioEncoder)
+        public unsafe FFmpegMicrophoneSource(string path, IAudioEncoder audioEncoder, uint frameSize = 960) : base(audioEncoder, frameSize)
         {
             string inputFormat = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dshow"
                 : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "alsa"
@@ -24,8 +24,6 @@ namespace SIPSorceryMedia.FFmpeg
             AVInputFormat* aVInputFormat = ffmpeg.av_find_input_format(inputFormat);
 
             CreateAudioDecoder(path, aVInputFormat, false, true);
-
-            InitialiseDecoder();
         }
     }
 }

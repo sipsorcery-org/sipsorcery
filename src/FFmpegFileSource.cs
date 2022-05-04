@@ -33,7 +33,7 @@ namespace SIPSorceryMedia.FFmpeg
         public event SourceErrorDelegate? OnVideoSourceError;
 #pragma warning restore CS0067
 
-        public unsafe FFmpegFileSource(string path, bool repeat, IAudioEncoder audioEncoder, bool useVideo = true)
+        public unsafe FFmpegFileSource(string path, bool repeat, IAudioEncoder audioEncoder, uint audioFrameSize = 960, bool useVideo = true)
         {
             if (!File.Exists(path))
             {
@@ -43,9 +43,8 @@ namespace SIPSorceryMedia.FFmpeg
 
             if ((audioEncoder != null))
             {
-                _FFmpegAudioSource = new FFmpegAudioSource(audioEncoder);
+                _FFmpegAudioSource = new FFmpegAudioSource(audioEncoder, audioFrameSize);
                 _FFmpegAudioSource.CreateAudioDecoder(path, null, repeat, false);
-                _FFmpegAudioSource.InitialiseDecoder();
 
                 _FFmpegAudioSource.OnAudioSourceEncodedSample += _FFmpegAudioSource_OnAudioSourceEncodedSample;
                 _FFmpegAudioSource.OnAudioSourceRawSample += _FFmpegAudioSource_OnAudioSourceRawSample;

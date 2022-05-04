@@ -213,6 +213,8 @@ namespace SIPSorceryMedia.FFmpeg
                 }
 
                 ffmpeg.avcodec_open2(_decoderContext, codec, null).ThrowExceptionIfError();
+
+                logger.LogDebug($"[InitialiseDecoder] CodecId:[{codecID}");
             }
         }
 
@@ -428,7 +430,11 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     List<RawImage> rgbFrames = new List<RawImage>();
 
-                    ffmpeg.avcodec_send_packet(_decoderContext, packet).ThrowExceptionIfError();
+                    if( ffmpeg.avcodec_send_packet(_decoderContext, packet) < 0 )
+                    {
+                        width = height = 0;
+                        return null;
+                    }
 
                     int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, decodedFrame);
 
@@ -443,7 +449,7 @@ namespace SIPSorceryMedia.FFmpeg
                         {
                             _i420ToRgb = new VideoFrameConverter(
                                 width, height,
-                                AVPixelFormat.AV_PIX_FMT_YUV420P,
+                                (AVPixelFormat)decodedFrame->format,
                                 width, height,
                                 AVPixelFormat.AV_PIX_FMT_BGR24);
                         }
@@ -467,7 +473,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                     if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
                     {
-                        recvRes.ThrowExceptionIfError();
+                        //recvRes.ThrowExceptionIfError();
                     }
 
                     return rgbFrames;
