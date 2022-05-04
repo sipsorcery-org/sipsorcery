@@ -21,6 +21,7 @@
       <dependency id="FFmpeg.AutoGen" Version="4.4.1.1" />
     </dependencies>
 	<releaseNotes>
+-v1.1.0: Enhance Audio Source encoding. Audio Codecs tested: PCMU (G711), PCMA (G711), G722, G729 and Opus
 -v1.0.0: Use SIPSorceryMedia.Abstractions v1.2.0. Add Camera and Monitor detection on MacOs      
 -v0.0.18-pre: More great work and features from @ChristopheI. Netstandard2.0 target added.
 -v0.0.12-pre: New features from @ChristopheI, including camera and microphone sources. 

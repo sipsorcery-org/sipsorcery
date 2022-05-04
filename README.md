@@ -7,13 +7,13 @@ This project has been test successfully on Windows, MacOs and Linux.
 The classes in this project provide functions to:
 
  - **Video codecs**: VP8, H264
- - **Audio codecs**: PCMU, PCMA
+ - **Audio codecs**: PCMU (G711), PCMA (G711), G722, G729 and Opus
  - **Video input**:
     - using local file or remote using URI (like [this](https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm))
     - using camera 
     - using screen
  - **Audio input**:
-    - using local file or remote using URI (like [this](https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm))
+    - using local file or remote using URI (like [this](https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm) or [this](https://upload.wikimedia.org/wikipedia/commons/0/0f/Pop_RockBrit_%28exploration%29-en_wave.wav))
     - using microphone
 
 You can set any **Video input** (or none) with any **Audio input** (or none)
