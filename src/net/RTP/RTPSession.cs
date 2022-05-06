@@ -1331,10 +1331,8 @@ namespace SIPSorcery.Net
             {
                 RequireRenegotiation = true;
 
-                // Need to create a sending SSRC and set it on the RTCP session. 
-                //currentMediaStream.RtcpSession.Ssrc = track.Ssrc;
-
                 InitMediaStream(currentMediaStream);
+                currentMediaStream.LocalTrack = track;
             }
         }
 
