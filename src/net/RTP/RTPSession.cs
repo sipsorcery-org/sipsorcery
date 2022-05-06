@@ -1138,9 +1138,14 @@ namespace SIPSorcery.Net
             // We use audio as the media type when multiplexing.
             var audioStream = GetNextAudioStreamByLocalTrack();
 
+            InitMediaStream(audioStream);
+        }
+
+        private void InitMediaStream(MediaStream currentMediaStream)
+        {
             var rtpChannel = CreateRtpChannel();
-            audioStream.AddRtpChannel(rtpChannel);
-            CreateRtcpSession(audioStream);
+            currentMediaStream.AddRtpChannel(rtpChannel);
+            CreateRtcpSession(currentMediaStream);
         }
 
         /// <summary>
@@ -1325,30 +1330,11 @@ namespace SIPSorcery.Net
             else
             {
                 RequireRenegotiation = true;
-                currentMediaStream.LocalTrack = track;
-
-                var rtpChannel = CreateRtpChannel();
-                currentMediaStream.AddRtpChannel(rtpChannel);
-                CreateRtcpSession(currentMediaStream);
 
                 // Need to create a sending SSRC and set it on the RTCP session. 
-                currentMediaStream.RtcpSession.Ssrc = track.Ssrc;
+                //currentMediaStream.RtcpSession.Ssrc = track.Ssrc;
 
-                if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
-                {
-                    if (currentMediaStream.LocalTrack.Capabilities != null && !currentMediaStream.LocalTrack.NoDtmfSupport &&
-                        !currentMediaStream.LocalTrack.Capabilities.Any(x => x.ID == DTMF_EVENT_PAYLOAD_ID))
-                    {
-                        SDPAudioVideoMediaFormat rtpEventFormat = new SDPAudioVideoMediaFormat(
-                            SDPMediaTypesEnum.audio,
-                            DTMF_EVENT_PAYLOAD_ID,
-                            SDP.TELEPHONE_EVENT_ATTRIBUTE,
-                            DEFAULT_AUDIO_CLOCK_RATE,
-                            SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
-                            "0-16");
-                        currentMediaStream.LocalTrack.Capabilities.Add(rtpEventFormat);
-                    }
-                }
+                InitMediaStream(currentMediaStream);
             }
         }
 
