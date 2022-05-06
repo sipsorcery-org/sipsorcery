@@ -1180,22 +1180,7 @@ namespace SIPSorcery.Net
                     CreateRtcpSession(AudioStream);
 
                     RequireRenegotiation = true;
-                    // Need to create a sending SSRC and set it on the RTCP session. 
-                    AudioStream.RtcpSession.Ssrc = track.Ssrc;
                     AudioStream.LocalTrack = track;
-
-                    if (AudioStream.LocalTrack.Capabilities != null && !AudioStream.LocalTrack.NoDtmfSupport &&
-                        !AudioStream.LocalTrack.Capabilities.Any(x => x.ID == DTMF_EVENT_PAYLOAD_ID))
-                    {
-                        SDPAudioVideoMediaFormat rtpEventFormat = new SDPAudioVideoMediaFormat(
-                            SDPMediaTypesEnum.audio,
-                            DTMF_EVENT_PAYLOAD_ID,
-                            SDP.TELEPHONE_EVENT_ATTRIBUTE,
-                            DEFAULT_AUDIO_CLOCK_RATE,
-                            SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
-                            "0-16");
-                        AudioStream.LocalTrack.Capabilities.Add(rtpEventFormat);
-                    }
                 }
                 else if (track.Kind == SDPMediaTypesEnum.video)
                 {
@@ -1212,8 +1197,6 @@ namespace SIPSorcery.Net
                     CreateRtcpSession(VideoStream);
 
                     RequireRenegotiation = true;
-                    // Need to create a sending SSRC and set it on the RTCP session. 
-                    VideoStream.RtcpSession.Ssrc = track.Ssrc;
                     VideoStream.LocalTrack = track;
                 }
             }

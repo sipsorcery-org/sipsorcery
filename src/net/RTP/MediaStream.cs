@@ -36,6 +36,8 @@ namespace SIPSorcery.net.RTP
 
         private RTPReorderBuffer RTPReorderBuffer = null;
 
+        private MediaStreamTrack m_localTrack;
+
         protected RTPChannel rtpChannel = null;
 
     #region EVENTS
@@ -96,7 +98,36 @@ namespace SIPSorcery.net.RTP
         /// <summary>
         /// The local track. Will be null if we are not sending this media.
         /// </summary>
-        public MediaStreamTrack LocalTrack { get; set; }
+        public MediaStreamTrack LocalTrack
+        {
+            get
+            {
+                return m_localTrack;
+            }
+            set
+            {
+                m_localTrack = value;
+
+                // Need to create a sending SSRC and set it on the RTCP session. 
+                RtcpSession.Ssrc = m_localTrack.Ssrc;
+
+                if (MediaType == SDPMediaTypesEnum.audio)
+                {
+                    if (m_localTrack.Capabilities != null && !m_localTrack.NoDtmfSupport &&
+                        !m_localTrack.Capabilities.Any(x => x.ID == RTPSession.DTMF_EVENT_PAYLOAD_ID))
+                    {
+                        SDPAudioVideoMediaFormat rtpEventFormat = new SDPAudioVideoMediaFormat(
+                            SDPMediaTypesEnum.audio,
+                            RTPSession.DTMF_EVENT_PAYLOAD_ID,
+                            SDP.TELEPHONE_EVENT_ATTRIBUTE,
+                            RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
+                            SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
+                            "0-16");
+                        m_localTrack.Capabilities.Add(rtpEventFormat);
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// The remote video track. Will be null if the remote party is not sending this media
