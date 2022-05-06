@@ -111,7 +111,10 @@ namespace SIPSorcery.net.RTP
                 m_localTrack = value;
 
                 // Need to create a sending SSRC and set it on the RTCP session. 
-                RtcpSession.Ssrc = m_localTrack.Ssrc;
+                if (RtcpSession != null)
+                {
+                    RtcpSession.Ssrc = m_localTrack.Ssrc;
+                }
 
                 if (MediaType == SDPMediaTypesEnum.audio)
                 {
