@@ -43,6 +43,8 @@ namespace demo
 
     class Program
     {
+        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
+
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const int TEST_PATTERN_FRAMES_PER_SECOND = 5; //30;
@@ -126,6 +128,7 @@ namespace demo
             var pc = new RTCPeerConnection(null);
 
             //var testPatternSource = new VideoTestPatternSource(new SIPSorceryMedia.Encoders.VideoEncoder());
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
             var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
             testPatternSource.SetFrameRate(TEST_PATTERN_FRAMES_PER_SECOND);
             //testPatternSource.SetMaxFrameRate(true);
