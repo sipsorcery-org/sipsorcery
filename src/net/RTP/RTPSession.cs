@@ -177,9 +177,11 @@ namespace SIPSorcery.Net
 
         protected RtpSessionConfig rtpSessionConfig;
 
+        private Boolean m_acceptRtpFromAny = false;
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
         internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
+        
 
         protected RTPChannel MultiplexRtpChannel = null;
 
@@ -361,12 +363,13 @@ namespace SIPSorcery.Net
         { 
             get
             {
-                return AudioStream?.AcceptRtpFromAny == true;
+                return m_acceptRtpFromAny;
             }
 
             set
             {
-                foreach(var audioStream in AudioStreamList)
+                m_acceptRtpFromAny = value;
+                foreach (var audioStream in AudioStreamList)
                 {
                     audioStream.AcceptRtpFromAny = value;
                 }
@@ -1424,6 +1427,7 @@ namespace SIPSorcery.Net
 
             // We need to create new AudioStream
             var newAudioStream = new AudioStream(rtpSessionConfig, index);
+            newAudioStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             // If it's not the first one we need to init it
             if (index != 0)
@@ -1451,6 +1455,7 @@ namespace SIPSorcery.Net
 
             // We need to create new AudioStream
             var newAudioStream = new AudioStream(rtpSessionConfig, index);
+            newAudioStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             // If it's not the first one we need to init it
             if (index != 0)
@@ -1478,6 +1483,8 @@ namespace SIPSorcery.Net
 
             // We need to create new VideoStream and Init it
             var newVideoStream = new VideoStream(rtpSessionConfig, index);
+            newVideoStream.AcceptRtpFromAny = AcceptRtpFromAny;
+
             InitIPEndPointAndSecurityContext(newVideoStream);
             VideoStreamList.Add(newVideoStream);
             return newVideoStream;
@@ -1499,6 +1506,8 @@ namespace SIPSorcery.Net
 
             // We need to create new VideoStream and Init it
             var newVideoStream = new VideoStream(rtpSessionConfig, index);
+            newVideoStream.AcceptRtpFromAny = AcceptRtpFromAny;
+
             InitIPEndPointAndSecurityContext(newVideoStream);
             VideoStreamList.Add(newVideoStream);
             return newVideoStream;
@@ -1875,6 +1884,11 @@ namespace SIPSorcery.Net
         public virtual Task SendDtmf(byte key, CancellationToken ct)
         {
             return AudioStream?.SendDtmf(key, ct);
+        }
+
+        public Task SendDtmfEvent(RTPEvent rtpEvent, CancellationToken cancellationToken, int clockRate = RTPSession.DEFAULT_AUDIO_CLOCK_RATE, int samplePeriod = RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS)
+        {
+            return AudioStream?.SendDtmfEvent(rtpEvent, cancellationToken, clockRate, samplePeriod);
         }
 
         /// <summary>
