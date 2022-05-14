@@ -53,6 +53,8 @@ namespace demo
 
     class Program
     {
+        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
+
         private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const int WEBSOCKET_PORT = 8081;
         private const int VIDEO_INITIAL_WIDTH = 640;
@@ -108,26 +110,53 @@ namespace demo
         {
             //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new VpxVideoEncoder());
             //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
-            var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new FFmpegVideoEncoder());
+            //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new FFmpegVideoEncoder());
+            //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
+
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
+            var videoEP = new FFmpegVideoEndPoint();
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
+
+
+            videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
+            {
+                _form.BeginInvoke(new Action(() =>
+                {
+                    if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
+                    {
+                        if (_picBox.Width != rawImage.Width || _picBox.Height != rawImage.Height)
+                        {
+                            logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {rawImage.Width}x{rawImage.Height}.");
+                            _picBox.Width = rawImage.Width;
+                            _picBox.Height = rawImage.Height;
+                        }
+
+                        Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
+                        _picBox.Image = bmpImage;
+                    }
+                }));
+            };
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {
                 _form.BeginInvoke(new Action(() =>
                 {
-                    unsafe
+                    if (pixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
                     {
-                        if(_picBox.Width != (int)width || _picBox.Height != (int)height)
+                        if (_picBox.Width != (int)width || _picBox.Height != (int)height)
                         {
-                           logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {width}x{height}.");
+                            logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {width}x{height}.");
                             _picBox.Width = (int)width;
                             _picBox.Height = (int)height;
                         }
 
-                        fixed (byte* s = bmp)
+                        unsafe
                         {
-                            Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
-                            _picBox.Image = bmpImage;
+                            fixed (byte* s = bmp)
+                            {
+                                Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
+                                _picBox.Image = bmpImage;
+                            }
                         }
                     }
                 }));

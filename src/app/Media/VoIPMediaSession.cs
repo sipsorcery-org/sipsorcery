@@ -43,7 +43,7 @@ namespace SIPSorcery.Media
     /// always co-ordinate the encoding and decoding of samples sent to and received from
     /// the RTP transport.
     /// </summary>
-    public class VoIPMediaSession : RTPSession, IMediaSession
+    public class VoIPMediaSession : RTPSession
     {
         private const int TEST_PATTERN_FPS = 30;
         private const int TEST_PATTERN_ONHOLD_FPS = 3;
@@ -88,7 +88,7 @@ namespace SIPSorcery.Media
 
             var audioTrack = new MediaStreamTrack(_audioExtrasSource.GetAudioSourceFormats());
             base.addTrack(audioTrack);
-            Media.AudioSource.OnAudioSourceEncodedSample += base.SendAudio;
+            Media.AudioSource.OnAudioSourceEncodedSample += SendAudio;
             base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
         }
 
@@ -131,7 +131,7 @@ namespace SIPSorcery.Media
             {
                 var audioTrack = new MediaStreamTrack(config.MediaEndPoint.AudioSource.GetAudioSourceFormats());
                 base.addTrack(audioTrack);
-                Media.AudioSource.OnAudioSourceEncodedSample += base.SendAudio;
+                Media.AudioSource.OnAudioSourceEncodedSample += SendAudio;
             }
 
             if (Media.VideoSource != null)
@@ -164,6 +164,7 @@ namespace SIPSorcery.Media
 
             base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
             base.OnVideoFormatsNegotiated += VideoFormatsNegotiated;
+            
         }
 
         private async void VideoSource_OnVideoSourceError(string errorMessage)
