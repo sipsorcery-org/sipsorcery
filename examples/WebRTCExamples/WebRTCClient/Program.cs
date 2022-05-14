@@ -30,11 +30,15 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.FFmpeg;
 
 namespace demo
 {
     class Program
     {
+        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
+
+
         private const string REST_SIGNALING_SERVER = "https://sipsorcery.cloud/api/webrtcsignal";
         private const string REST_SIGNALING_MY_USER = "con";
         private const string REST_SIGNALING_THEIR_USER = "bro";
@@ -75,10 +79,28 @@ namespace demo
         {
             var peerConnection = new RTCPeerConnection(null);
 
-            var videoEP = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
+            //var videoEP = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
             //var videoEP = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
-            //var videoEP = new FFmpegVideoEndPoint();
+
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
+            var videoEP = new FFmpegVideoEndPoint();
+
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
+            videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
+            {
+                _form.BeginInvoke(new Action(() =>
+                {
+
+                    if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
+                    {
+                        unsafe
+                        {
+                            Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
+                            _picBox.Image = bmpImage;
+                        }
+                    }
+                }));
+            };
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
             {
@@ -97,6 +119,7 @@ namespace demo
 
             // Sink (speaker) only audio end point.
             WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
+            
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);

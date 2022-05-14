@@ -1805,7 +1805,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaType">The media type, aduio or video, that timed out.</param>
         private void OnRtpTimeout(SDPMediaTypesEnum mediaType)
         {
-            logger.LogWarning($"RTP has timed out for media {mediaType}, hanging up call.");
+            logger.LogWarning($"RTP has timed out for media {mediaType} hanging up call.");
 
             Hangup();
         }
