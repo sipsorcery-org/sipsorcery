@@ -1,0 +1,765 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class VideoStream
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class VideoStream
+   ">
+    <meta name="generator" content="docfx 2.59.2.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.net.RTP.VideoStream">
+  
+  
+  <h1 id="SIPSorcery_net_RTP_VideoStream" data-uid="SIPSorcery.net.RTP.VideoStream" class="text-break">Class VideoStream
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.net.RTP.MediaStream.html">MediaStream</a></div>
+    <div class="level2"><span class="xref">VideoStream</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SecureContext">MediaStream.SecureContext</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SrtpHandler">MediaStream.SrtpHandler</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_rtpChannel">MediaStream.rtpChannel</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnTimeout">MediaStream.OnTimeout</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnSendReport">MediaStream.OnSendReport</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnRtpPacketReceived">MediaStream.OnRtpPacketReceived</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnRtpEvent">MediaStream.OnRtpEvent</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnReceiveReport">MediaStream.OnReceiveReport</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_AcceptRtpFromAny">MediaStream.AcceptRtpFromAny</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_IsClosed">MediaStream.IsClosed</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RemoteRtpEventPayloadID">MediaStream.RemoteRtpEventPayloadID</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_MediaType">MediaStream.MediaType</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_LocalTrack">MediaStream.LocalTrack</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RemoteTrack">MediaStream.RemoteTrack</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RtcpSession">MediaStream.RtcpSession</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_DestinationEndPoint">MediaStream.DestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ControlDestinationEndPoint">MediaStream.ControlDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_AddBuffer_System_TimeSpan_">MediaStream.AddBuffer(TimeSpan)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RemoveBuffer_System_TimeSpan_">MediaStream.RemoveBuffer(TimeSpan)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_UseBuffer">MediaStream.UseBuffer()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_GetBuffer">MediaStream.GetBuffer()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SetSecurityContext_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_">MediaStream.SetSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_GetSecurityContext">MediaStream.GetSecurityContext()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_IsSecurityContextReady">MediaStream.IsSecurityContextReady()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_EnsureBufferUnprotected_System_Byte___SIPSorcery_Net_RTPHeader_SIPSorcery_Net_RTPPacket__">MediaStream.EnsureBufferUnprotected(Byte[], RTPHeader, RTPPacket)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_GetOrCreateSrtpHandler">MediaStream.GetOrCreateSrtpHandler()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_AddRtpChannel_SIPSorcery_Net_RTPChannel_">MediaStream.AddRtpChannel(RTPChannel)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_HasRtpChannel">MediaStream.HasRtpChannel()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_GetRTPChannel">MediaStream.GetRTPChannel()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_CheckIfCanSendRtpRaw">MediaStream.CheckIfCanSendRtpRaw()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtpRaw_System_Byte___System_UInt32_System_Int32_System_Int32_System_Boolean_">MediaStream.SendRtpRaw(Byte[], UInt32, Int32, Int32, Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtpRaw_System_Byte___System_UInt32_System_Int32_System_Int32_">MediaStream.SendRtpRaw(Byte[], UInt32, Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtcpReport_SIPSorcery_Net_RTCPCompoundPacket_">MediaStream.SendRtcpReport(RTCPCompoundPacket)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtcpFeedback_SIPSorcery_Net_RTCPFeedback_">MediaStream.SendRtcpFeedback(RTCPFeedback)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnReceiveRTPPacket_SIPSorcery_Net_RTPHeader_SIPSorcery_Net_SDPAudioVideoMediaFormat_System_Int32_System_Net_IPEndPoint_System_Byte___SIPSorcery_net_RTP_VideoStream_">MediaStream.OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte[], VideoStream)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ReceiveReport_System_Net_IPEndPoint_SIPSorcery_Net_RTCPCompoundPacket_">MediaStream.ReceiveReport(IPEndPoint, RTCPCompoundPacket)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RtpEvent_System_Net_IPEndPoint_SIPSorcery_Net_RTPEvent_SIPSorcery_Net_RTPHeader_">MediaStream.RtpEvent(IPEndPoint, RTPEvent, RTPHeader)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RtpPacketReceived_System_Net_IPEndPoint_SIPSorcery_Net_RTPPacket_">MediaStream.RtpPacketReceived(IPEndPoint, RTPPacket)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_LogIfWrongSeqNumber_System_String_SIPSorcery_Net_RTPHeader_SIPSorcery_Net_MediaStreamTrack_">MediaStream.LogIfWrongSeqNumber(String, RTPHeader, MediaStreamTrack)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_AdjustRemoteEndPoint_System_UInt32_System_Net_IPEndPoint_">MediaStream.AdjustRemoteEndPoint(UInt32, IPEndPoint)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_CreateRtcpSession">MediaStream.CreateRtcpSession()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SetDestination_System_Net_IPEndPoint_System_Net_IPEndPoint_">MediaStream.SetDestination(IPEndPoint, IPEndPoint)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_GetSendingFormat">MediaStream.GetSendingFormat()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ProcessHeaderExtensions_SIPSorcery_Net_RTPHeader_">MediaStream.ProcessHeaderExtensions(RTPHeader)</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.net.RTP.html">SIPSorcery.net.RTP</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_net_RTP_VideoStream_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class VideoStream : MediaStream</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream__ctor_SIPSorcery_Net_RtpSessionConfig_.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.%23ctor(SIPSorcery.Net.RtpSessionConfig)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L324">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream__ctor_" data-uid="SIPSorcery.net.RTP.VideoStream.#ctor*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream__ctor_SIPSorcery_Net_RtpSessionConfig_" data-uid="SIPSorcery.net.RTP.VideoStream.#ctor(SIPSorcery.Net.RtpSessionConfig)">VideoStream(RtpSessionConfig)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public VideoStream(RtpSessionConfig config)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RtpSessionConfig.html">RtpSessionConfig</a></td>
+        <td><span class="parametername">config</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_HasVideo.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.HasVideo%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L61">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream_HasVideo_" data-uid="SIPSorcery.net.RTP.VideoStream.HasVideo*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_HasVideo" data-uid="SIPSorcery.net.RTP.VideoStream.HasVideo">HasVideo</h4>
+  <div class="markdown level1 summary"><p>Indicates whether this session is using video.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool HasVideo { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_MaxReconstructedVideoFrameSize.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.MaxReconstructedVideoFrameSize%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L74">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream_MaxReconstructedVideoFrameSize_" data-uid="SIPSorcery.net.RTP.VideoStream.MaxReconstructedVideoFrameSize*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_MaxReconstructedVideoFrameSize" data-uid="SIPSorcery.net.RTP.VideoStream.MaxReconstructedVideoFrameSize">MaxReconstructedVideoFrameSize</h4>
+  <div class="markdown level1 summary"><p>Indicates the maximum frame size that can be reconstructed from RTP packets during the depacketisation
+process.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int MaxReconstructedVideoFrameSize { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_CheckVideoFormatsNegotiation.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.CheckVideoFormatsNegotiation%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L314">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream_CheckVideoFormatsNegotiation_" data-uid="SIPSorcery.net.RTP.VideoStream.CheckVideoFormatsNegotiation*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_CheckVideoFormatsNegotiation" data-uid="SIPSorcery.net.RTP.VideoStream.CheckVideoFormatsNegotiation">CheckVideoFormatsNegotiation()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void CheckVideoFormatsNegotiation()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_OnReceiveRTPPacket_SIPSorcery_Net_RTPHeader_SIPSorcery_Net_SDPAudioVideoMediaFormat_System_Int32_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader%2CSIPSorcery.Net.SDPAudioVideoMediaFormat%2CSystem.Int32%2CSystem.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L307">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream_OnReceiveRTPPacket_" data-uid="SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_OnReceiveRTPPacket_SIPSorcery_Net_RTPHeader_SIPSorcery_Net_SDPAudioVideoMediaFormat_System_Int32_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader,SIPSorcery.Net.SDPAudioVideoMediaFormat,System.Int32,System.Net.IPEndPoint,System.Byte[])">OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte[])</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void OnReceiveRTPPacket(RTPHeader hdr, SDPAudioVideoMediaFormat format, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTPHeader.html">RTPHeader</a></td>
+        <td><span class="parametername">hdr</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPAudioVideoMediaFormat.html">SDPAudioVideoMediaFormat</a></td>
+        <td><span class="parametername">format</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">localPort</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">remoteEndPoint</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_ProcessVideoRtpFrame_System_Net_IPEndPoint_SIPSorcery_Net_RTPPacket_SIPSorcery_Net_SDPAudioVideoMediaFormat_.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.ProcessVideoRtpFrame(System.Net.IPEndPoint%2CSIPSorcery.Net.RTPPacket%2CSIPSorcery.Net.SDPAudioVideoMediaFormat)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L270">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream_ProcessVideoRtpFrame_" data-uid="SIPSorcery.net.RTP.VideoStream.ProcessVideoRtpFrame*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_ProcessVideoRtpFrame_System_Net_IPEndPoint_SIPSorcery_Net_RTPPacket_SIPSorcery_Net_SDPAudioVideoMediaFormat_" data-uid="SIPSorcery.net.RTP.VideoStream.ProcessVideoRtpFrame(System.Net.IPEndPoint,SIPSorcery.Net.RTPPacket,SIPSorcery.Net.SDPAudioVideoMediaFormat)">ProcessVideoRtpFrame(IPEndPoint, RTPPacket, SDPAudioVideoMediaFormat)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">endpoint</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a></td>
+        <td><span class="parametername">packet</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPAudioVideoMediaFormat.html">SDPAudioVideoMediaFormat</a></td>
+        <td><span class="parametername">format</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_SendH264Frame_System_UInt32_System_Int32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32%2CSystem.Int32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L133">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream_SendH264Frame_" data-uid="SIPSorcery.net.RTP.VideoStream.SendH264Frame*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_SendH264Frame_System_UInt32_System_Int32_System_Byte___" data-uid="SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32,System.Int32,System.Byte[])">SendH264Frame(UInt32, Int32, Byte[])</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">duration</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">payloadTypeID</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">accessUnit</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_SendJpegFrame_System_UInt32_System_Int32_System_Byte___System_Int32_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.SendJpegFrame(System.UInt32%2CSystem.Int32%2CSystem.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L90">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream_SendJpegFrame_" data-uid="SIPSorcery.net.RTP.VideoStream.SendJpegFrame*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_SendJpegFrame_System_UInt32_System_Int32_System_Byte___System_Int32_System_Int32_System_Int32_" data-uid="SIPSorcery.net.RTP.VideoStream.SendJpegFrame(System.UInt32,System.Int32,System.Byte[],System.Int32,System.Int32,System.Int32)">SendJpegFrame(UInt32, Int32, Byte[], Int32, Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>Helper method to send a low quality JPEG image over RTP. This method supports a very abbreviated version of RFC 2435 &quot;RTP Payload Format for JPEG-compressed Video&quot;.
+It's intended as a quick convenient way to send something like a test pattern image over an RTSP connection. More than likely it won't be suitable when a high
+quality image is required since the header used in this method does not support quantization tables.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SendJpegFrame(uint duration, int payloadTypeID, byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">duration</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">payloadTypeID</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">jpegBytes</span></td>
+        <td><p>The raw encoded bytes of the JPEG image to transmit.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">jpegQuality</span></td>
+        <td><p>The encoder quality of the JPEG image.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">jpegWidth</span></td>
+        <td><p>The width of the JPEG image.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">jpegHeight</span></td>
+        <td><p>The height of the JPEG image.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_SendVideo_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.SendVideo(System.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L247">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream_SendVideo_" data-uid="SIPSorcery.net.RTP.VideoStream.SendVideo*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_SendVideo_System_UInt32_System_Byte___" data-uid="SIPSorcery.net.RTP.VideoStream.SendVideo(System.UInt32,System.Byte[])">SendVideo(UInt32, Byte[])</h4>
+  <div class="markdown level1 summary"><p>Sends a video sample to the remote peer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SendVideo(uint durationRtpUnits, byte[] sample)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">durationRtpUnits</span></td>
+        <td><p>The duration in RTP timestamp units of the video sample. This
+value is added to the previous RTP timestamp when building the RTP header.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">sample</span></td>
+        <td><p>The video sample to set as the RTP packet payload.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_SendVp8Frame_System_UInt32_System_Int32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.SendVp8Frame(System.UInt32%2CSystem.Int32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L210">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_VideoStream_SendVp8Frame_" data-uid="SIPSorcery.net.RTP.VideoStream.SendVp8Frame*"></a>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_SendVp8Frame_System_UInt32_System_Int32_System_Byte___" data-uid="SIPSorcery.net.RTP.VideoStream.SendVp8Frame(System.UInt32,System.Int32,System.Byte[])">SendVp8Frame(UInt32, Int32, Byte[])</h4>
+  <div class="markdown level1 summary"><p>Sends a VP8 frame as one or more RTP packets.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SendVp8Frame(uint duration, int payloadTypeID, byte[] buffer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">duration</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">payloadTypeID</span></td>
+        <td><p>The payload ID to place in the RTP header.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The VP8 encoded payload.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="events">Events
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_OnVideoFormatsNegotiated.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.OnVideoFormatsNegotiated%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L40">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_OnVideoFormatsNegotiated" data-uid="SIPSorcery.net.RTP.VideoStream.OnVideoFormatsNegotiated">OnVideoFormatsNegotiated</h4>
+  <div class="markdown level1 summary"><p>Gets fired when the remote SDP is received and the set of common video formats is set.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;List&lt;VideoFormat&gt;&gt; OnVideoFormatsNegotiated</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Collections.Generic.List</span>&lt;<span class="xref">SIPSorceryMedia.Abstractions.VideoFormat</span>&gt;&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream_OnVideoFrameReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream.OnVideoFrameReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L52">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_net_RTP_VideoStream_OnVideoFrameReceived" data-uid="SIPSorcery.net.RTP.VideoStream.OnVideoFrameReceived">OnVideoFrameReceived</h4>
+  <div class="markdown level1 summary"><p>Gets fired when a full video frame is reconstructed from one or more RTP packets
+received from the remote party.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;IPEndPoint, uint, byte[], VideoFormat&gt; OnVideoFrameReceived</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.UInt32</span>, <span class="xref">System.Byte</span>[], <span class="xref">SIPSorceryMedia.Abstractions.VideoFormat</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="SIPSorcery_net_RTP_VideoStream_OnVideoFrameReceived_remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><ul>
+<li>Received from end point,</li>
+<li>The frame timestamp,</li>
+<li>The encoded video frame payload.</li>
+<li>The video format of the encoded frame.</li>
+</ul>
+</div>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_System_Object_">JSONWriter.ToJson(Object)</a>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_VideoStream.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.VideoStream%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/VideoStream.cs/#L29" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+                <h5>In This Article</h5>
+                <div></div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

@@ -93,8 +93,8 @@ the RTP transport.</p>
   </div>
   <div classs="implements">
     <h5>Implements</h5>
-    <div><span class="xref">System.IDisposable</span></div>
     <div><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></div>
+    <div><span class="xref">System.IDisposable</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -126,13 +126,19 @@ the RTP transport.</p>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTCP_RR_NOSTREAM_SSRC">RTPSession.RTCP_RR_NOSTREAM_SSRC</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_m_bindPort">RTPSession.m_bindPort</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_rtpSessionConfig">RTPSession.rtpSessionConfig</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_m_rtpPortRange">RTPSession.m_rtpPortRange</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_MultiplexRtpChannel">RTPSession.MultiplexRtpChannel</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RequireRenegotiation">RTPSession.RequireRenegotiation</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioStream">RTPSession.AudioStream</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoStream">RTPSession.VideoStream</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioLocalTrack">RTPSession.AudioLocalTrack</a>
@@ -144,6 +150,12 @@ the RTP transport.</p>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioRtcpSession">RTPSession.AudioRtcpSession</a>
     </div>
     <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioDestinationEndPoint">RTPSession.AudioDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioControlDestinationEndPoint">RTPSession.AudioControlDestinationEndPoint</a>
+    </div>
+    <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoLocalTrack">RTPSession.VideoLocalTrack</a>
     </div>
     <div>
@@ -153,34 +165,19 @@ the RTP transport.</p>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoRtcpSession">RTPSession.VideoRtcpSession</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteDescription">RTPSession.RemoteDescription</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecure">RTPSession.IsSecure</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_UseSdpCryptoNegotiation">RTPSession.UseSdpCryptoNegotiation</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecureContextReady">RTPSession.IsSecureContextReady</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SrtpCryptoSuites">RTPSession.SrtpCryptoSuites</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioDestinationEndPoint">RTPSession.AudioDestinationEndPoint</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioControlDestinationEndPoint">RTPSession.AudioControlDestinationEndPoint</a>
-    </div>
-    <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoDestinationEndPoint">RTPSession.VideoDestinationEndPoint</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoControlDestinationEndPoint">RTPSession.VideoControlDestinationEndPoint</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteRtpEventPayloadID">RTPSession.RemoteRtpEventPayloadID</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteDescription">RTPSession.RemoteDescription</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecureContextReady">RTPSession.IsSecureContextReady()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SrtpCryptoSuites">RTPSession.SrtpCryptoSuites</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_MaxReconstructedVideoFrameSize">RTPSession.MaxReconstructedVideoFrameSize</a>
@@ -202,6 +199,15 @@ the RTP transport.</p>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RtpBindAddress">RTPSession.RtpBindAddress</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnAudioFormatsNegotiated">RTPSession.OnAudioFormatsNegotiated</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFormatsNegotiated">RTPSession.OnVideoFormatsNegotiated</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFrameReceived">RTPSession.OnVideoFrameReceived</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpPacketReceived">RTPSession.OnRtpPacketReceived</a>
@@ -231,31 +237,7 @@ the RTP transport.</p>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnClosed">RTPSession.OnClosed</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnAudioFormatsNegotiated">RTPSession.OnAudioFormatsNegotiated</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFormatsNegotiated">RTPSession.OnVideoFormatsNegotiated</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFrameReceived">RTPSession.OnVideoFrameReceived</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AddBuffer_SIPSorcery_Net_SDPMediaTypesEnum_System_TimeSpan_">RTPSession.AddBuffer(SDPMediaTypesEnum, TimeSpan)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoveBuffer_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.RemoveBuffer(SDPMediaTypesEnum)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack">RTPSession.addSingleTrack()</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addTrack_SIPSorcery_Net_MediaStreamTrack_">RTPSession.addTrack(MediaStreamTrack)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecureContextReadyForMediaType_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.IsSecureContextReadyForMediaType(SDPMediaTypesEnum)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_removeTrack_SIPSorcery_Net_MediaStreamTrack_">RTPSession.removeTrack(MediaStreamTrack)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_">RTPSession.SetSecurityContext(SDPMediaTypesEnum, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateOffer_System_Net_IPAddress_">RTPSession.CreateOffer(IPAddress)</a>
@@ -270,25 +252,19 @@ the RTP transport.</p>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetMediaStreamStatus_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_MediaStreamStatusEnum_">RTPSession.SetMediaStreamStatus(SDPMediaTypesEnum, MediaStreamStatusEnum)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.GetRtpChannel(SDPMediaTypesEnum)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack">RTPSession.addSingleTrack()</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.CreateRtpChannel(SDPMediaTypesEnum)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addTrack_SIPSorcery_Net_MediaStreamTrack_">RTPSession.addTrack(MediaStreamTrack)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_System_Collections_Generic_IEnumerable_SIPSorcery_Net_SDPMediaTypesEnum__SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_">RTPSession.SetSecurityContext(IEnumerable&lt;SDPMediaTypesEnum&gt;, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_removeTrack_SIPSorcery_Net_MediaStreamTrack_">RTPSession.removeTrack(MediaStreamTrack)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_">RTPSession.SetSecurityContext(SDPMediaTypesEnum, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateRtpChannel">RTPSession.CreateRtpChannel()</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetLocalTracks">RTPSession.GetLocalTracks()</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_System_Net_IPEndPoint_System_Net_IPEndPoint_">RTPSession.SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetSendingFormat_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.GetSendingFormat(SDPMediaTypesEnum)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudio_System_UInt32_System_Byte___">RTPSession.SendAudio(UInt32, Byte[])</a>
@@ -297,31 +273,25 @@ the RTP transport.</p>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVideo_System_UInt32_System_Byte___">RTPSession.SendVideo(UInt32, Byte[])</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendAudioFrame(UInt32, Int32, Byte[])</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendVp8Frame(UInt32, Int32, Byte[])</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendJpegFrame_System_UInt32_System_Int32_System_Byte___System_Int32_System_Int32_System_Int32_">RTPSession.SendJpegFrame(UInt32, Int32, Byte[], Int32, Int32, Int32)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendH264Frame(UInt32, Int32, Byte[])</a>
-    </div>
-    <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_System_Threading_CancellationToken_">RTPSession.SendDtmf(Byte, CancellationToken)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_System_Int32_">RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32, Int32)</a>
     </div>
     <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceive_System_Int32_System_Net_IPEndPoint_System_Byte___">RTPSession.OnReceive(Int32, IPEndPoint, Byte[])</a>
+    </div>
+    <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtpRaw_SIPSorcery_Net_SDPMediaTypesEnum_System_Byte___System_UInt32_System_Int32_System_Int32_">RTPSession.SendRtpRaw(SDPMediaTypesEnum, Byte[], UInt32, Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_System_Net_IPEndPoint_System_Net_IPEndPoint_">RTPSession.SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpFeedback_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTCPFeedback_">RTPSession.SendRtcpFeedback(SDPMediaTypesEnum, RTCPFeedback)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceive_System_Int32_System_Net_IPEndPoint_System_Byte___">RTPSession.OnReceive(Int32, IPEndPoint, Byte[])</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpReport_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTCPCompoundPacket_">RTPSession.SendRtcpReport(SDPMediaTypesEnum, RTCPCompoundPacket)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Dispose_System_Boolean_">RTPSession.Dispose(Boolean)</a>
@@ -355,7 +325,7 @@ the RTP transport.</p>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Media_VoIPMediaSession_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class VoIPMediaSession : RTPSession, IDisposable, IMediaSession</code></pre>
+    <pre><code class="lang-csharp hljs">public class VoIPMediaSession : RTPSession, IMediaSession, IDisposable</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -613,7 +583,7 @@ wire up any devices or video processing.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L233">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L234">View Source</a>
   </span>
   <a id="SIPSorcery_Media_VoIPMediaSession_Close_" data-uid="SIPSorcery.Media.VoIPMediaSession.Close*"></a>
   <h4 id="SIPSorcery_Media_VoIPMediaSession_Close_System_String_" data-uid="SIPSorcery.Media.VoIPMediaSession.Close(System.String)">Close(String)</h4>
@@ -647,7 +617,7 @@ wire up any devices or video processing.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession_PutOnHold.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.PutOnHold%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L285">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L286">View Source</a>
   </span>
   <a id="SIPSorcery_Media_VoIPMediaSession_PutOnHold_" data-uid="SIPSorcery.Media.VoIPMediaSession.PutOnHold*"></a>
   <h4 id="SIPSorcery_Media_VoIPMediaSession_PutOnHold" data-uid="SIPSorcery.Media.VoIPMediaSession.PutOnHold">PutOnHold()</h4>
@@ -677,7 +647,7 @@ wire up any devices or video processing.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession_RtpMediaPacketReceived_System_Net_IPEndPoint_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTPPacket_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.RtpMediaPacketReceived(System.Net.IPEndPoint%2CSIPSorcery.Net.SDPMediaTypesEnum%2CSIPSorcery.Net.RTPPacket)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L274">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L275">View Source</a>
   </span>
   <a id="SIPSorcery_Media_VoIPMediaSession_RtpMediaPacketReceived_" data-uid="SIPSorcery.Media.VoIPMediaSession.RtpMediaPacketReceived*"></a>
   <h4 id="SIPSorcery_Media_VoIPMediaSession_RtpMediaPacketReceived_System_Net_IPEndPoint_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTPPacket_" data-uid="SIPSorcery.Media.VoIPMediaSession.RtpMediaPacketReceived(System.Net.IPEndPoint,SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.RTPPacket)">RtpMediaPacketReceived(IPEndPoint, SDPMediaTypesEnum, RTPPacket)</h4>
@@ -719,7 +689,7 @@ wire up any devices or video processing.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession_Start.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.Start%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L199">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L200">View Source</a>
   </span>
   <a id="SIPSorcery_Media_VoIPMediaSession_Start_" data-uid="SIPSorcery.Media.VoIPMediaSession.Start*"></a>
   <h4 id="SIPSorcery_Media_VoIPMediaSession_Start" data-uid="SIPSorcery.Media.VoIPMediaSession.Start">Start()</h4>
@@ -751,7 +721,7 @@ wire up any devices or video processing.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_VoIPMediaSession_TakeOffHold.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.VoIPMediaSession.TakeOffHold%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L305">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/VoIPMediaSession.cs/#L306">View Source</a>
   </span>
   <a id="SIPSorcery_Media_VoIPMediaSession_TakeOffHold_" data-uid="SIPSorcery.Media.VoIPMediaSession.TakeOffHold*"></a>
   <h4 id="SIPSorcery_Media_VoIPMediaSession_TakeOffHold" data-uid="SIPSorcery.Media.VoIPMediaSession.TakeOffHold">TakeOffHold()</h4>
@@ -794,10 +764,10 @@ wire up any devices or video processing.</p>
   </table>
   <h3 id="implements">Implements</h3>
   <div>
-      <span class="xref">System.IDisposable</span>
+      <a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a>
   </div>
   <div>
-      <a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a>
+      <span class="xref">System.IDisposable</span>
   </div>
   <h3 id="extensionmethods">Extension Methods</h3>
   <div>
