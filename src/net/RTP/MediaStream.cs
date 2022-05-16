@@ -109,26 +109,28 @@ namespace SIPSorcery.net.RTP
             set
             {
                 m_localTrack = value;
-
-                // Need to create a sending SSRC and set it on the RTCP session. 
-                if (RtcpSession != null)
+                if (m_localTrack != null)
                 {
-                    RtcpSession.Ssrc = m_localTrack.Ssrc;
-                }
-
-                if (MediaType == SDPMediaTypesEnum.audio)
-                {
-                    if (m_localTrack.Capabilities != null && !m_localTrack.NoDtmfSupport &&
-                        !m_localTrack.Capabilities.Any(x => x.ID == RTPSession.DTMF_EVENT_PAYLOAD_ID))
+                    // Need to create a sending SSRC and set it on the RTCP session. 
+                    if (RtcpSession != null)
                     {
-                        SDPAudioVideoMediaFormat rtpEventFormat = new SDPAudioVideoMediaFormat(
-                            SDPMediaTypesEnum.audio,
-                            RTPSession.DTMF_EVENT_PAYLOAD_ID,
-                            SDP.TELEPHONE_EVENT_ATTRIBUTE,
-                            RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
-                            SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
-                            "0-16");
-                        m_localTrack.Capabilities.Add(rtpEventFormat);
+                        RtcpSession.Ssrc = m_localTrack.Ssrc;
+                    }
+
+                    if (MediaType == SDPMediaTypesEnum.audio)
+                    {
+                        if (m_localTrack.Capabilities != null && !m_localTrack.NoDtmfSupport &&
+                            !m_localTrack.Capabilities.Any(x => x.ID == RTPSession.DTMF_EVENT_PAYLOAD_ID))
+                        {
+                            SDPAudioVideoMediaFormat rtpEventFormat = new SDPAudioVideoMediaFormat(
+                                SDPMediaTypesEnum.audio,
+                                RTPSession.DTMF_EVENT_PAYLOAD_ID,
+                                SDP.TELEPHONE_EVENT_ATTRIBUTE,
+                                RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
+                                SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
+                                "0-16");
+                            m_localTrack.Capabilities.Add(rtpEventFormat);
+                        }
                     }
                 }
             }
