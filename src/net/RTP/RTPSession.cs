@@ -181,7 +181,10 @@ namespace SIPSorcery.Net
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
         internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
-        
+
+        // The stream used for the underlying RTP session to create a single RTP channel that will
+        // be used to multiplex all required media streams. (see addSingleTrack())
+        private MediaStream m_primaryStream; 
 
         protected RTPChannel MultiplexRtpChannel = null;
 
@@ -192,6 +195,17 @@ namespace SIPSorcery.Net
         /// Track if current remote description is invalid (used in Renegotiation logic)
         /// </summary>
         public virtual bool RequireRenegotiation { get; protected internal set; }
+
+        /// <summary>
+        /// The primary stream for this session - can be an AudioStream or a VideoStream
+        /// </summary>
+        public MediaStream PrimaryStream
+        {
+            get
+            {
+                return m_primaryStream;
+            }
+        }
 
         /// <summary>
         /// The primary Audio Stream for this session
@@ -1136,12 +1150,18 @@ namespace SIPSorcery.Net
         /// Used for child classes that require a single RTP channel for all RTP (audio and video)
         /// and RTCP communications.
         /// </summary>
-        protected void addSingleTrack()
+        protected void addSingleTrack(Boolean videoAsPrimary)
         {
-            // We use audio as the media type when multiplexing.
-            var audioStream = GetNextAudioStreamByLocalTrack();
+            if (videoAsPrimary)
+            {
+                m_primaryStream = GetNextVideoStreamByLocalTrack();
+            }
+            else
+            {
+                m_primaryStream = GetNextAudioStreamByLocalTrack();
+            }
 
-            InitMediaStream(audioStream);
+            InitMediaStream(m_primaryStream);
         }
 
         private void InitMediaStream(MediaStream currentMediaStream)
@@ -1400,14 +1420,14 @@ namespace SIPSorcery.Net
         private void InitIPEndPointAndSecurityContext(MediaStream mediaStream)
         {
             // Get primary AudioStream
-            if ( (AudioStream != null) && (mediaStream != null) )
+            if ( (m_primaryStream != null) && (mediaStream != null) )
             {
-                var secureContext = AudioStream.GetSecurityContext();
+                var secureContext = m_primaryStream.GetSecurityContext();
                 if (secureContext != null)
                 {
                     mediaStream.SetSecurityContext(secureContext.ProtectRtpPacket, secureContext.UnprotectRtpPacket, secureContext.ProtectRtcpPacket, secureContext.UnprotectRtcpPacket);
                 }
-                mediaStream.SetDestination(AudioStream.DestinationEndPoint, AudioStream.ControlDestinationEndPoint);
+                mediaStream.SetDestination(m_primaryStream.DestinationEndPoint, m_primaryStream.ControlDestinationEndPoint);
             }
         }
 
@@ -1663,7 +1683,7 @@ namespace SIPSorcery.Net
                 {
                     if (rtpSessionConfig.IsMediaMultiplexed)
                     {
-                        rtpPort = AudioStream.GetRTPChannel().RTPPort;
+                        rtpPort = m_primaryStream.GetRTPChannel().RTPPort;
                     }
                     else 
                     {
@@ -2039,8 +2059,8 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        // We close peer connection only if there is no more audio local/remote tracks
-                        if ((AudioStream.RemoteTrack == null) && (AudioStream.LocalTrack == null))
+                        // We close peer connection only if there is no more local/remote tracks on the primary stream
+                        if ((m_primaryStream.RemoteTrack == null) && (m_primaryStream.LocalTrack == null))
                         {
                             OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
                         }

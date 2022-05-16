@@ -382,7 +382,7 @@ namespace SIPSorcery.Net
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
         /// <param name="configuration">Optional.</param>
-        public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0, PortRange portRange = null) :
+        public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0, PortRange portRange = null, Boolean videoAsPrimary = false) :
             base(true, true, true, configuration?.X_BindAddress, bindPort, portRange)
         {
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
@@ -462,7 +462,7 @@ namespace SIPSorcery.Net
 
             // Request the underlying RTP session to create a single RTP channel that will
             // be used to multiplex all required media streams.
-            addSingleTrack();
+            addSingleTrack(videoAsPrimary);
 
             _rtpIceChannel = GetRtpChannel();
 
@@ -500,8 +500,8 @@ namespace SIPSorcery.Net
             {
                 if (_dtlsHandle != null)
                 {
-                    if (base.AudioStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
-                        base.AudioStream.DestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
+                    if (base.PrimaryStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
+                        base.PrimaryStream.DestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
                     {
                         // Already connected and this event is due to change in the nominated remote candidate.
                         var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
@@ -1015,7 +1015,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public RtpIceChannel GetRtpChannel()
         {
-            return AudioStream.GetRTPChannel() as RtpIceChannel;
+            return PrimaryStream.GetRTPChannel() as RtpIceChannel;
         }
 
         /// <summary>
@@ -1635,12 +1635,12 @@ namespace SIPSorcery.Net
         {
             logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
 
-            var rtpChannel = AudioStream.GetRTPChannel();
+            var rtpChannel = PrimaryStream.GetRTPChannel();
 
             dtlsHandle.OnDataReady += (buf) =>
             {
                 //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-                rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioStream.DestinationEndPoint, buf);
+                rtpChannel.Send(RTPChannelSocketsEnum.RTP, PrimaryStream.DestinationEndPoint, buf);
             };
 
             var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);
