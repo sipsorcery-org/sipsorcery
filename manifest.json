@@ -273,7 +273,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.VoIPMediaSession.html",
-          "hash": "9Z7JFxKZ1AbGWgIy/FXEtvi1NuLjZgEWldsYozb/Qj4="
+          "hash": "4y0sBj6u/+eB6gsr+y0HNzKtDVSsgP0lk7wroE8B4KU="
         }
       },
       "is_incremental": false,
@@ -285,7 +285,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.VoIPMediaSessionConfig.html",
-          "hash": "Hb+dqudnZCWzYKXA4YT8hkBbQ54uvGxxQutgs25Si5c="
+          "hash": "9v1hhdeGw5ui/0I74CAzBpQkvg3E53uzJwsBNgBHyUw="
         }
       },
       "is_incremental": false,

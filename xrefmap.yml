@@ -2560,6 +2560,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.VoIPMediaSessionConfig.MediaEndPoint
   nameWithType: VoIPMediaSessionConfig.MediaEndPoint
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.RtpPortRange
+  name: RtpPortRange
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_RtpPortRange
+  commentId: P:SIPSorcery.Media.VoIPMediaSessionConfig.RtpPortRange
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.RtpPortRange
+  nameWithType: VoIPMediaSessionConfig.RtpPortRange
+- uid: SIPSorcery.Media.VoIPMediaSessionConfig.RtpPortRange*
+  name: RtpPortRange
+  href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_RtpPortRange_
+  commentId: Overload:SIPSorcery.Media.VoIPMediaSessionConfig.RtpPortRange
+  isSpec: "True"
+  fullName: SIPSorcery.Media.VoIPMediaSessionConfig.RtpPortRange
+  nameWithType: VoIPMediaSessionConfig.RtpPortRange
 - uid: SIPSorcery.Media.VoIPMediaSessionConfig.RtpSecureMediaOption
   name: RtpSecureMediaOption
   href: api/SIPSorcery.Media.VoIPMediaSessionConfig.html#SIPSorcery_Media_VoIPMediaSessionConfig_RtpSecureMediaOption
