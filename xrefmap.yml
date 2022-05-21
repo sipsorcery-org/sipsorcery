@@ -23316,6 +23316,12 @@ references:
   commentId: F:SIPSorcery.Net.STUNDns.DNS_TIMEOUT_SECONDS
   fullName: SIPSorcery.Net.STUNDns.DNS_TIMEOUT_SECONDS
   nameWithType: STUNDns.DNS_TIMEOUT_SECONDS
+- uid: SIPSorcery.Net.STUNDns.DnsUseTcpFallback
+  name: DnsUseTcpFallback
+  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_DnsUseTcpFallback
+  commentId: F:SIPSorcery.Net.STUNDns.DnsUseTcpFallback
+  fullName: SIPSorcery.Net.STUNDns.DnsUseTcpFallback
+  nameWithType: STUNDns.DnsUseTcpFallback
 - uid: SIPSorcery.Net.STUNDns.MDNS_TLD
   name: MDNS_TLD
   href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_MDNS_TLD
