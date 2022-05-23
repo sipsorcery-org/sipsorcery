@@ -42,6 +42,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto.Tls;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
@@ -396,46 +397,10 @@ namespace SIPSorcery.Net
             if (configuration != null)
             {
                 _configuration = configuration;
-                if (_configuration.certificates?.Count > 0)
-                {
-                    // Find the first certificate that has a usable private key.
-                    RTCCertificate usableCert = null;
-                    foreach (var cert in _configuration.certificates)
-                    {
-                        // Attempting to check that a certificate has an exportable private key.
-                        // TODO: Does not seem to be a particularly reliable way of checking private key exportability.
-                        if (cert.Certificate.HasPrivateKey)
-                        {
-                            //if (cert.Certificate.PrivateKey is RSACryptoServiceProvider)
-                            //{
-                            //    var rsa = cert.Certificate.PrivateKey as RSACryptoServiceProvider;
-                            //    if (!rsa.CspKeyContainerInfo.Exportable)
-                            //    {
-                            //        logger.LogWarning($"RTCPeerConnection was passed a certificate for {cert.Certificate.FriendlyName} with a non-exportable RSA private key.");
-                            //    }
-                            //    else
-                            //    {
-                            //        usableCert = cert;
-                            //        break;
-                            //    }
-                            //}
-                            //else
-                            //{
-                            usableCert = cert;
-                            break;
-                            //}
-                        }
-                    }
 
-                    if (usableCert == null)
-                    {
-                        throw new ApplicationException("RTCPeerConnection was not able to find a certificate from the input configuration list with a usable private key.");
-                    }
-                    else
-                    {
-                        _dtlsCertificate = DtlsUtils.LoadCertificateChain(usableCert.Certificate);
-                        _dtlsPrivateKey = DtlsUtils.LoadPrivateKeyResource(usableCert.Certificate);
-                    }
+                if (!InitializeCertificates(configuration) && !InitializeCertificates2(configuration))
+                {
+                    logger.LogWarning("No DTLS certificate is provided in the configuration");
                 }
 
                 if (_configuration.X_UseRtpFeedbackProfile)
@@ -485,6 +450,66 @@ namespace SIPSorcery.Net
             // calls and/or initialising DNS was taking up to 600ms, see
             // https://github.com/sipsorcery-org/sipsorcery/issues/456.
             _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
+        }
+
+        private bool InitializeCertificates(RTCConfiguration configuration)
+        {
+            if (configuration.certificates == null || configuration.certificates.Count == 0)
+            {
+                return false;
+            }
+
+            // Find the first certificate that has a usable private key.
+            RTCCertificate usableCert = null;
+            foreach (var cert in _configuration.certificates)
+            {
+                // Attempting to check that a certificate has an exportable private key.
+                // TODO: Does not seem to be a particularly reliable way of checking private key exportability.
+                if (cert.Certificate.HasPrivateKey)
+                {
+                    //if (cert.Certificate.PrivateKey is RSACryptoServiceProvider)
+                    //{
+                    //    var rsa = cert.Certificate.PrivateKey as RSACryptoServiceProvider;
+                    //    if (!rsa.CspKeyContainerInfo.Exportable)
+                    //    {
+                    //        logger.LogWarning($"RTCPeerConnection was passed a certificate for {cert.Certificate.FriendlyName} with a non-exportable RSA private key.");
+                    //    }
+                    //    else
+                    //    {
+                    //        usableCert = cert;
+                    //        break;
+                    //    }
+                    //}
+                    //else
+                    //{
+                    usableCert = cert;
+                    break;
+                    //}
+                }
+            }
+
+            if (usableCert == null)
+            {
+                throw new ApplicationException("RTCPeerConnection was not able to find a certificate from the input configuration list with a usable private key.");
+            }
+
+            _dtlsCertificate = DtlsUtils.LoadCertificateChain(usableCert.Certificate);
+            _dtlsPrivateKey = DtlsUtils.LoadPrivateKeyResource(usableCert.Certificate);
+
+            return true;
+        }
+
+        private bool InitializeCertificates2(RTCConfiguration configuration)
+        {
+            if (configuration.certificates2 == null || configuration.certificates2.Count == 0)
+            {
+                return false;
+            }
+
+            _dtlsCertificate = new Certificate(new [] { configuration.certificates2[0].Certificate.CertificateStructure });
+            _dtlsPrivateKey = configuration.certificates2[0].PrivateKey;
+
+            return true;
         }
 
         /// <summary>
