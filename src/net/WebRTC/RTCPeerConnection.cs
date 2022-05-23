@@ -499,14 +499,14 @@ namespace SIPSorcery.Net
             {
                 if (_dtlsHandle != null)
                 {
-                    if (base.AudioDestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
-                        base.AudioDestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
+                    if (base.AudioStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
+                        base.AudioStream.DestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
                     {
                         // Already connected and this event is due to change in the nominated remote candidate.
                         var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
-                        base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
 
-                        logger.LogInformation($"ICE changing connected remote end point to {AudioDestinationEndPoint}.");
+                        SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
+                        logger.LogInformation($"ICE changing connected remote end point to {AudioStream.DestinationEndPoint}.");
                     }
 
                     if (connectionState == RTCPeerConnectionState.disconnected ||
@@ -524,9 +524,8 @@ namespace SIPSorcery.Net
 
                     var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
-                    base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
-
-                    logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
+                    SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
+                    logger.LogInformation($"ICE connected to remote end point {AudioStream.DestinationEndPoint}.");
 
                     bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
                     _dtlsHandle = new DtlsSrtpTransport(
@@ -599,23 +598,36 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
         /// <returns>A new RTPChannel instance.</returns>
-        protected override RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
+        protected override RTPChannel CreateRtpChannel()
         {
-            var rtpIceChannel = new RtpIceChannel(
-                _configuration?.X_BindAddress,
-                RTCIceComponent.rtp,
-                _configuration?.iceServers,
-                _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
-                _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
-                m_bindPort == 0 ? 0 : m_bindPort + m_rtpChannels.Count() * 2 + 2,
-                m_rtpPortRange);
+            if (rtpSessionConfig.IsMediaMultiplexed)
+            {
+                if (MultiplexRtpChannel != null)
+                {
+                    return MultiplexRtpChannel;
+                }
+            }
 
-            m_rtpChannels.Add(mediaType, rtpIceChannel);
+            var rtpIceChannel = new RtpIceChannel(
+            _configuration?.X_BindAddress,
+            RTCIceComponent.rtp,
+            _configuration?.iceServers,
+            _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
+            _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
+            rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2 + 2,
+            rtpSessionConfig.RtpPortRange);
+
+            if (rtpSessionConfig.IsMediaMultiplexed)
+            {
+                MultiplexRtpChannel = rtpIceChannel;
+            }
 
             rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
 
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             rtpIceChannel.Start();
+
+            m_rtpChannelsCount++;
 
             return rtpIceChannel;
         }
@@ -946,10 +958,10 @@ namespace SIPSorcery.Net
             }
             else
             {
-                var audioCapabilities = (AudioLocalTrack != null && AudioRemoteTrack != null) ?
-                    SDPAudioVideoMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, AudioRemoteTrack.Capabilities) : null;
-                var videoCapabilities = (VideoLocalTrack != null && VideoRemoteTrack != null) ?
-                    SDPAudioVideoMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities) : null;
+                var audioCapabilities = (AudioStream.LocalTrack != null && AudioStream.RemoteTrack != null) ?
+                    SDPAudioVideoMediaFormat.GetCompatibleFormats(AudioStream.LocalTrack.Capabilities, AudioStream.RemoteTrack.Capabilities) : null;
+                var videoCapabilities = (VideoStream.LocalTrack != null && VideoStream.RemoteTrack != null) ?
+                    SDPAudioVideoMediaFormat.GetCompatibleFormats(VideoStream.LocalTrack.Capabilities, VideoStream.RemoteTrack.Capabilities) : null;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
 
@@ -958,8 +970,8 @@ namespace SIPSorcery.Net
                 {
                     if (localTrack != null && localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
                     {
-                        if ((localTrack.Kind == SDPMediaTypesEnum.audio && AudioRemoteTrack != null && AudioRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive) ||
-                            (localTrack.Kind == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive))
+                        if ((localTrack.Kind == SDPMediaTypesEnum.audio && AudioStream.RemoteTrack != null && AudioStream.RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive) ||
+                            (localTrack.Kind == SDPMediaTypesEnum.video && VideoStream.RemoteTrack != null && VideoStream.RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive))
                         {
                             localTrack.StreamStatus = localTrack.DefaultStreamStatus;
                         }
@@ -1010,7 +1022,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public RtpIceChannel GetRtpChannel()
         {
-            return m_rtpChannels.FirstOrDefault().Value as RtpIceChannel;
+            return AudioStream.GetRTPChannel() as RtpIceChannel;
         }
 
         /// <summary>
@@ -1033,10 +1045,7 @@ namespace SIPSorcery.Net
         ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
         ///   agent and the ICE processing MUST continue as usual."
         /// </remarks>
-        private SDP createBaseSdp(List<MediaStreamTrack> tracks,
-            List<SDPAudioVideoMediaFormat> audioCapabilities,
-            List<SDPAudioVideoMediaFormat> videoCapabilities,
-            bool excludeIceCandidates = false)
+        private SDP createBaseSdp(List<MediaStreamTrack> tracks, List<SDPAudioVideoMediaFormat> audioCapabilities, List<SDPAudioVideoMediaFormat> videoCapabilities, bool excludeIceCandidates = false)
         {
             // Make sure the ICE gathering of local IP addresses is complete.
             // This task should complete very quickly (<1s) but it is deemed very useful to wait
@@ -1117,7 +1126,7 @@ namespace SIPSorcery.Net
                     if (track.Ssrc != 0)
                     {
                         string trackCname = track.Kind == SDPMediaTypesEnum.video ?
-                       VideoRtcpSession?.Cname : AudioRtcpSession?.Cname;
+                       VideoStream.RtcpSession?.Cname : AudioStream.RtcpSession?.Cname;
 
                         if (trackCname != null)
                         {
@@ -1615,12 +1624,12 @@ namespace SIPSorcery.Net
         {
             logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
 
-            var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
+            var rtpChannel = AudioStream.GetRTPChannel();
 
             dtlsHandle.OnDataReady += (buf) =>
             {
                 //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-                rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
+                rtpChannel.Send(RTPChannelSocketsEnum.RTP, AudioStream.DestinationEndPoint, buf);
             };
 
             var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);
@@ -1649,13 +1658,9 @@ namespace SIPSorcery.Net
                 {
                     logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
 
-                    base.SetSecurityContext(
-                        new List<SDPMediaTypesEnum> { SDPMediaTypesEnum.audio, SDPMediaTypesEnum.video, SDPMediaTypesEnum.application },
-                        dtlsHandle.ProtectRTP,
-                        dtlsHandle.UnprotectRTP,
-                        dtlsHandle.ProtectRTCP,
-                        dtlsHandle.UnprotectRTCP);
-                        
+                    SetSecurityContext(SDPMediaTypesEnum.audio, dtlsHandle.ProtectRTP, dtlsHandle.UnprotectRTP, dtlsHandle.ProtectRTCP, dtlsHandle.UnprotectRTCP);
+                    SetSecurityContext(SDPMediaTypesEnum.video, dtlsHandle.ProtectRTP, dtlsHandle.UnprotectRTP, dtlsHandle.ProtectRTCP, dtlsHandle.UnprotectRTCP);
+
                     IsDtlsNegotiationComplete = true;
 
                     return true;

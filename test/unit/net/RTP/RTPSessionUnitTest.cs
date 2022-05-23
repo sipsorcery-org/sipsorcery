@@ -206,7 +206,7 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
-            Assert.Null(localSession.AudioDestinationEndPoint);
+            Assert.Null(localSession.AudioStream.DestinationEndPoint);
 
             localSession.Close("normal");
         }
@@ -369,7 +369,7 @@ namespace SIPSorcery.Net.UnitTests
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
             localSession.addTrack(localAudioTrack);
 
-            var rtpEndPoint = localSession.GetRtpChannel(SDPMediaTypesEnum.audio).RTPLocalEndPoint;
+            var rtpEndPoint = localSession.AudioStream.GetRTPChannel().RTPLocalEndPoint;
 
             logger.LogDebug($"RTP session local end point {rtpEndPoint}.");
 
@@ -432,8 +432,8 @@ a=sendrecv";
 
             logger.LogDebug($"Local answer: {answer}");
 
-            Assert.Equal(111, rtpSession.AudioLocalTrack.Capabilities.Single(x => x.Name() == "OPUS").ID);
-            Assert.Equal(100, rtpSession.VideoLocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
+            Assert.Equal(111, rtpSession.AudioStream.LocalTrack.Capabilities.Single(x => x.Name() == "OPUS").ID);
+            Assert.Equal(100, rtpSession.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
 
             //Assert.True(SDPAudioVideoMediaFormat.AreMatch(offer.Media.Single(x => x.Media == SDPMediaTypesEnum.audio)., answer.Media.First().Media));
             //Assert.Equal(offer.Media.Last().Media, answer.Media.Last().Media);
@@ -479,10 +479,10 @@ a=rtpmap:111 OPUS/48000/2";
 
             logger.LogDebug($"Local answer: {answer}");
 
-            Assert.Equal(0, rtpSession.AudioLocalTrack.Capabilities.Single(x => x.Name() == "PCMU").ID);
-            Assert.Equal(MediaStreamStatusEnum.SendRecv, rtpSession.AudioLocalTrack.StreamStatus);
-            Assert.NotNull(rtpSession.AudioRemoteTrack);
-            Assert.Equal(MediaStreamStatusEnum.SendRecv, rtpSession.AudioRemoteTrack.StreamStatus);
+            Assert.Equal(0, rtpSession.AudioStream.LocalTrack.Capabilities.Single(x => x.Name() == "PCMU").ID);
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, rtpSession.AudioStream.LocalTrack.StreamStatus);
+            Assert.NotNull(rtpSession.AudioStream.RemoteTrack);
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, rtpSession.AudioStream.RemoteTrack.StreamStatus);
 
             rtpSession.Close("normal");
         }
@@ -520,8 +520,8 @@ a=rtpmap:111 OPUS/48000/2";
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.OK, result);
-            Assert.Equal(8, rtpSession.AudioLocalTrack.Capabilities.Single(x => x.Name() == "PCMA").ID);
-            Assert.Equal("PCMA", rtpSession.GetSendingFormat(SDPMediaTypesEnum.audio).Name());
+            Assert.Equal(8, rtpSession.AudioStream.LocalTrack.Capabilities.Single(x => x.Name() == "PCMA").ID);
+            Assert.Equal("PCMA", rtpSession.AudioStream.GetSendingFormat().Name());
 
             rtpSession.Close("normal");
         }
@@ -561,8 +561,8 @@ a=rtpmap:12 PCMA/8000";
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.OK, result);
-            Assert.Equal(12, rtpSession.AudioLocalTrack.Capabilities.Single(x => x.Name() == "PCMA").ID);
-            Assert.Equal("PCMA", rtpSession.GetSendingFormat(SDPMediaTypesEnum.audio).Name());
+            Assert.Equal(12, rtpSession.AudioStream.LocalTrack.Capabilities.Single(x => x.Name() == "PCMA").ID);
+            Assert.Equal("PCMA", rtpSession.AudioStream.GetSendingFormat().Name());
 
             var answer = rtpSession.CreateAnswer(null);
 

@@ -72,7 +72,7 @@ namespace SIPSorcery.Examples
         private const string FFMPEG_VP8_CODEC = "vp8";
         private const string FFMPEG_VP9_CODEC = "vp9";
         private const string FFMPEG_H264_CODEC = "h264";
-        private const string FFMPEG_DEFAULT_CODEC = FFMPEG_VP9_CODEC;
+        private const string FFMPEG_DEFAULT_CODEC = FFMPEG_VP8_CODEC;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 

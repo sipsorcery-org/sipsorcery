@@ -509,7 +509,17 @@ namespace SIPSorcery.SIP.App
 
                 var sdpAnnounceAddress = mediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
-                var sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
+                SDP sdp = null;
+
+                if(!string.IsNullOrEmpty(sipCallDescriptor.Content))
+                {
+                    sdp = SDP.ParseSDPDescription(sipCallDescriptor.Content);
+                }
+                else
+                {
+                    sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
+                }
+
                 if (sdp == null)
                 {
                     ClientCallFailed?.Invoke(m_uac, $"Could not generate an offer.", null);
@@ -1805,7 +1815,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaType">The media type, aduio or video, that timed out.</param>
         private void OnRtpTimeout(SDPMediaTypesEnum mediaType)
         {
-            logger.LogWarning($"RTP has timed out for media {mediaType}, hanging up call.");
+            logger.LogWarning($"RTP has timed out for media {mediaType} hanging up call.");
 
             Hangup();
         }
