@@ -7716,6 +7716,50 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCCertificate.getFingerprints
   nameWithType: RTCCertificate.getFingerprints
+- uid: SIPSorcery.Net.RTCCertificate2
+  name: RTCCertificate2
+  href: api/SIPSorcery.Net.RTCCertificate2.html
+  commentId: T:SIPSorcery.Net.RTCCertificate2
+  fullName: SIPSorcery.Net.RTCCertificate2
+  nameWithType: RTCCertificate2
+- uid: SIPSorcery.Net.RTCCertificate2.Certificate
+  name: Certificate
+  href: api/SIPSorcery.Net.RTCCertificate2.html#SIPSorcery_Net_RTCCertificate2_Certificate
+  commentId: F:SIPSorcery.Net.RTCCertificate2.Certificate
+  fullName: SIPSorcery.Net.RTCCertificate2.Certificate
+  nameWithType: RTCCertificate2.Certificate
+- uid: SIPSorcery.Net.RTCCertificate2.expires
+  name: expires
+  href: api/SIPSorcery.Net.RTCCertificate2.html#SIPSorcery_Net_RTCCertificate2_expires
+  commentId: P:SIPSorcery.Net.RTCCertificate2.expires
+  fullName: SIPSorcery.Net.RTCCertificate2.expires
+  nameWithType: RTCCertificate2.expires
+- uid: SIPSorcery.Net.RTCCertificate2.expires*
+  name: expires
+  href: api/SIPSorcery.Net.RTCCertificate2.html#SIPSorcery_Net_RTCCertificate2_expires_
+  commentId: Overload:SIPSorcery.Net.RTCCertificate2.expires
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCCertificate2.expires
+  nameWithType: RTCCertificate2.expires
+- uid: SIPSorcery.Net.RTCCertificate2.getFingerprints
+  name: getFingerprints()
+  href: api/SIPSorcery.Net.RTCCertificate2.html#SIPSorcery_Net_RTCCertificate2_getFingerprints
+  commentId: M:SIPSorcery.Net.RTCCertificate2.getFingerprints
+  fullName: SIPSorcery.Net.RTCCertificate2.getFingerprints()
+  nameWithType: RTCCertificate2.getFingerprints()
+- uid: SIPSorcery.Net.RTCCertificate2.getFingerprints*
+  name: getFingerprints
+  href: api/SIPSorcery.Net.RTCCertificate2.html#SIPSorcery_Net_RTCCertificate2_getFingerprints_
+  commentId: Overload:SIPSorcery.Net.RTCCertificate2.getFingerprints
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCCertificate2.getFingerprints
+  nameWithType: RTCCertificate2.getFingerprints
+- uid: SIPSorcery.Net.RTCCertificate2.PrivateKey
+  name: PrivateKey
+  href: api/SIPSorcery.Net.RTCCertificate2.html#SIPSorcery_Net_RTCCertificate2_PrivateKey
+  commentId: F:SIPSorcery.Net.RTCCertificate2.PrivateKey
+  fullName: SIPSorcery.Net.RTCCertificate2.PrivateKey
+  nameWithType: RTCCertificate2.PrivateKey
 - uid: SIPSorcery.Net.RTCConfiguration
   name: RTCConfiguration
   href: api/SIPSorcery.Net.RTCConfiguration.html
@@ -7734,6 +7778,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCConfiguration.certificates
   fullName: SIPSorcery.Net.RTCConfiguration.certificates
   nameWithType: RTCConfiguration.certificates
+- uid: SIPSorcery.Net.RTCConfiguration.certificates2
+  name: certificates2
+  href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_certificates2
+  commentId: F:SIPSorcery.Net.RTCConfiguration.certificates2
+  fullName: SIPSorcery.Net.RTCConfiguration.certificates2
+  nameWithType: RTCConfiguration.certificates2
 - uid: SIPSorcery.Net.RTCConfiguration.iceCandidatePoolSize
   name: iceCandidatePoolSize
   href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_iceCandidatePoolSize

@@ -609,7 +609,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IRTCPeerConnection.html",
-          "hash": "UKIf8PSpLKB1vnDROyGMgGPZ7A2SCN5CLYwZcago1vM="
+          "hash": "udNqXoir1xLslIr34Rk633AB1B2WZyLvi0yOYdpjtms="
         }
       },
       "is_incremental": false,
@@ -621,7 +621,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IRTCRtpReceiver.html",
-          "hash": "7FCn6on+eM0ilc32NZFj4G6C4WRe+93wPLxfeXuJnkY="
+          "hash": "pS0t57kMQcXg5nnRmS3mKm5fnb0o/a/pvvRCSwmL3eo="
         }
       },
       "is_incremental": false,
@@ -633,7 +633,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IRTCRtpSender.html",
-          "hash": "QLZkfa3R9+9OAVj3I2EFGQg5BqYI0/Kmw6z2O1To0AU="
+          "hash": "Y1vuJcngzxCUPlueeTUl5/sEsIU7Nwgfmlxxf1nptqA="
         }
       },
       "is_incremental": false,
@@ -873,7 +873,19 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCCertificate.html",
-          "hash": "H8iG+pcsVWbB3BXNtwPgSGnhOyxMQWiWLaRoeFhDytk="
+          "hash": "VP61UlKSwwmlKOMe1L3ZhaUkpkSupRZX8tZYBXy0vOQ="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCCertificate2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCCertificate2.html",
+          "hash": "uQhuixeljVCEfJu5d1Q3Uqm7reGEQPQUnMq1It9l5ks="
         }
       },
       "is_incremental": false,
@@ -885,7 +897,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCConfiguration.html",
-          "hash": "uAn6IN0s5JVJCrDb4t/+e24jT2Gu+mrpEwKnendBUJg="
+          "hash": "20TPeKtHJZHACS5p3Np778/dmgPs6bUyKCyelQ+Rmjg="
         }
       },
       "is_incremental": false,
@@ -1221,7 +1233,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "sHEO5f5CG46PNyNBaPz5wVmLYdspP4MTswBf5gGCWlo="
+          "hash": "hCvJxjYMSBBZetQ3u3bgLBLaTwIs9u298hP4dwpH3hY="
         }
       },
       "is_incremental": false,
@@ -1233,7 +1245,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnectionState.html",
-          "hash": "I72f78v1PLuWAIpsFpCUFT63f8XceU7Q79xR8eAMfFQ="
+          "hash": "2FiEB6QUDlEk7dBdD7e75dfIz5yjuDH/Y/1TNJaNdUA="
         }
       },
       "is_incremental": false,
@@ -1317,7 +1329,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCSessionDescriptionInit.html",
-          "hash": "m0n0KgpsiuxLpwfI1+oX9/ZI8bm1cSJPQaAqD82ohDc="
+          "hash": "HI0n8ZGiwMA5mQnqfVgbfum538VRFz8PxsbS8qV5Wto="
         }
       },
       "is_incremental": false,
@@ -1329,7 +1341,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCSignalingState.html",
-          "hash": "5NK9jGjw3z/sNjvCrHPjiaKv5sYEW+sy9aiAHQW4Lys="
+          "hash": "eKqWcourJgPoGK9uO5rltk/TymbViNga6SD4sf4cbsE="
         }
       },
       "is_incremental": false,
@@ -2889,7 +2901,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "T3d3BNv+lrkpDDmScGEOwoFIfJT1KQ6oHbQAYeJXc2g="
+          "hash": "D1A02W3gfWHV4JlY8sYE86F/d5lsyeQB0o1Sxn5QQ70="
         }
       },
       "is_incremental": false,
@@ -4857,7 +4869,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "MFHUBSOFctTxDeGtJgXNYaHBD0Ph9S2vI4JwmipBvLQ="
+          "hash": "YgfwQMXuGB/KpE5onoiyMUSyeFxHTeDcp/Wfs3kiD2o="
         }
       },
       "is_incremental": false,
@@ -5125,7 +5137,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 403,
+          "total_file_count": 404,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
