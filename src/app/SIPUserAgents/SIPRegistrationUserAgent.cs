@@ -313,7 +313,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPRegistrationUserAgent Stop. " + excp.Message);
+                logger.LogError("Exception SIPRegistrationUserAgent Stop. " + excp);
             }
         }
 
