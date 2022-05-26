@@ -1981,7 +1981,7 @@ namespace SIPSorcery.Net
             {
                 AudioStream.SendRtcpFeedback(feedback);
             }
-            else if (mediaType == SDPMediaTypesEnum.audio)
+            else if (mediaType == SDPMediaTypesEnum.video)
             {
                 VideoStream.SendRtcpFeedback(feedback);
             }
