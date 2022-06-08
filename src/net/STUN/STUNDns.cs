@@ -58,6 +58,11 @@ namespace SIPSorcery.Net
 
         private static LookupClient _lookupClient;
 
+        /// <summary>
+        /// Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.
+        /// </summary>
+        public static bool DnsUseTcpFallback = false;
+
         static STUNDns()
         {
             var nameServers = NameServer.ResolveNameServers(skipIPv6SiteLocal: true, fallbackToGooglePublicDns: true);
@@ -66,7 +71,7 @@ namespace SIPSorcery.Net
                 Retries = DNS_RETRIES_PER_SERVER,
                 Timeout = TimeSpan.FromSeconds(DNS_TIMEOUT_SECONDS),
                 UseCache = true,
-                UseTcpFallback = false
+                UseTcpFallback = DnsUseTcpFallback
             };
 
             _lookupClient = new LookupClient(clientOptions);
