@@ -500,7 +500,7 @@ namespace SIPSorcery.Sys
                     byte[] buf = new byte[1];
                     EndPoint remoteEP = new IPEndPoint(IPAddress.IPv6Any, 0);
 
-                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, null, null);
+                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, (ar) => { try { testSocket.EndReceiveFrom(ar, ref remoteEP); } catch { } }, null);
                     hasDualModeReceiveSupport = true;
                 }
                 catch (PlatformNotSupportedException platExcp)
