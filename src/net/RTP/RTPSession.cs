@@ -2193,6 +2193,21 @@ namespace SIPSorcery.Net
 
         private MediaStream GetMediaStream(uint ssrc)
         {
+            if (HasAudio)
+            {
+                if (!HasVideo)
+                {
+                    return AudioStream;
+                }
+            }
+            else 
+            {
+                if (HasVideo)
+                {
+                    return VideoStream;
+                }
+            }
+
             foreach (var audioStream in AudioStreamList)
             {
                 if (audioStream?.RemoteTrack?.IsSsrcMatch(ssrc) == true)
