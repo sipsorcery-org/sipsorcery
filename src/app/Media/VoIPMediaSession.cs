@@ -112,7 +112,8 @@ namespace SIPSorcery.Media
                 IsRtcpMultiplexed = false,
                 RtpSecureMediaOption = config.RtpSecureMediaOption,
                 BindAddress = config.BindAddress,
-                BindPort = config.BindPort
+                BindPort = config.BindPort,
+                RtpPortRange = config.RtpPortRange
             })
         {
             if (config.MediaEndPoint == null)
