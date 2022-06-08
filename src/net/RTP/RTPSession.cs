@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: RTPSession.cs
 //
 // Description: Represents an RTP session constituted of a single media stream. The session
