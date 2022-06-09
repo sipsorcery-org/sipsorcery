@@ -11,28 +11,30 @@ namespace FFmpegConsoleApp
     class Program
     {
         // /!\ It's MANDATORY to specify a valid path where FFmpeg binaries / libraries ae stored
-
-        private const string LIB_PATH = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; // On Windows
-        //private const string LIB_PATH = @"/usr/local/Cellar/ffmpeg/4.4.1_5/lib"; // On MacBookPro
+        private const string LIB_PATH = @"C:\ffmpeg-4.4.1-full_build-shared\bin";
+        //private const string LIB_PATH = @"/usr/local/Cellar/ffmpeg/4.4.1_5/lib";
         //private const string LIB_PATH = @"..\..\..\..\..\lib\x64";
 
         // A valid to a video file - usefull if you want to test streaming of a video file
-        const String VIDEO_FILE_PATH = @"C:\media\big_buck_bunny.mp4";
-        //const String VIDEO_FILE_PATH = @"https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm"; // It's alo possible to set a remote file
+        // It's alo possible to set a remote file
+        const String VIDEO_FILE_PATH = @"https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm"; 
+        //const String VIDEO_FILE_PATH = @"C:\media\big_buck_bunny.mp4";
+        //const String VIDEO_FILE_PATH = @"C:\media\Armello_Trailer.webm";
+        
 
         static private AsciiFrame? asciiFrame = null;
 
         static void Main(string[] args)
         {
             VideoCodecsEnum VideoCodec = VideoCodecsEnum.H264;
-            IVideoSource videoSource;
+            IVideoSource? videoSource = null;
 
             // Initialise FFmpeg librairies
             FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL, LIB_PATH);
 
             // Get cameras and monitors
-            List<Camera> cameras = FFmpegCameraManager.GetCameraDevices();
-            List<Monitor> monitors = FFmpegMonitorManager.GetMonitorDevices();
+            List<Camera>? cameras = FFmpegCameraManager.GetCameraDevices();
+            List<Monitor>? monitors = FFmpegMonitorManager.GetMonitorDevices();
 
             char keyChar = ' ';
             while (true)
@@ -89,11 +91,12 @@ namespace FFmpegConsoleApp
                         }
                     }
                 }
-
-                var selectedCamera = cameras[cameraIndex];
-                SIPSorceryMedia.FFmpeg.FFmpegCameraSource cameraSource = new SIPSorceryMedia.FFmpeg.FFmpegCameraSource(selectedCamera.Path);
-                videoSource = cameraSource as IVideoSource;
-
+                if (cameras != null)
+                {
+                    var selectedCamera = cameras[cameraIndex];
+                    SIPSorceryMedia.FFmpeg.FFmpegCameraSource cameraSource = new SIPSorceryMedia.FFmpeg.FFmpegCameraSource(selectedCamera.Path);
+                    videoSource = cameraSource as IVideoSource;
+                }
             }
             // Do we manage a Monitor ?
             else if (keyChar == 'm')
@@ -108,7 +111,7 @@ namespace FFmpegConsoleApp
                         int index = 0;
                         foreach (Monitor monitor in monitors)
                         {
-                            Console.Write($"\n [{index}] - {monitor.Name} {(monitor.Primary ? " PRIMARY" : "")}");
+                            Console.Write($"\n [{index}] - Monitor {monitor.Name} [{monitor.Rect.Width}x{monitor.Rect.Height}] {(monitor.Primary ? " PRIMARY" : "")}");
                             index++;
                         }
                         Console.WriteLine("\n");
@@ -123,15 +126,25 @@ namespace FFmpegConsoleApp
                     }
                 }
 
-                var selectedMonitor = monitors[monitorIndex];
-                SIPSorceryMedia.FFmpeg.FFmpegScreenSource screenSource = new SIPSorceryMedia.FFmpeg.FFmpegScreenSource(selectedMonitor.Path, selectedMonitor.Rect, 20);
-                videoSource = screenSource as IVideoSource;
+                if (monitors != null)
+                {
+                    var selectedMonitor = monitors[monitorIndex];
+                    SIPSorceryMedia.FFmpeg.FFmpegScreenSource screenSource = new SIPSorceryMedia.FFmpeg.FFmpegScreenSource(selectedMonitor.Path, selectedMonitor.Rect, 20);
+                    videoSource = screenSource as IVideoSource;
+                }
             }
             // Do we manage a File ?
             else
             {
-                SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VIDEO_FILE_PATH, false, null, true);
+                SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VIDEO_FILE_PATH, true, null, 960, true);
                 videoSource = fileSource as IVideoSource;
+            }
+
+
+            if(videoSource == null)
+            {
+                Console.WriteLine("No video source defined ...");
+                return;
             }
 
             // Create object used to display video in Ascii
@@ -159,7 +172,7 @@ namespace FFmpegConsoleApp
 
         private static void FileSource_OnVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage)
         {
-            asciiFrame.GotRawImage(ref rawImage);
+            asciiFrame?.GotRawImage(ref rawImage);
         }
     }
 }

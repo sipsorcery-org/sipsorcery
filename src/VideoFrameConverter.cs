@@ -55,8 +55,6 @@ namespace SIPSorceryMedia.FFmpeg
             ffmpeg.av_image_fill_arrays(ref _dstData, ref _dstLinesize, (byte*)_convertedFrameBufferPtr, destinationPixelFormat, dstWidth, dstHeight, 1)
                 .ThrowExceptionIfError();
 
-            logger.LogDebug($"Successfully initialised ffmpeg based image converted for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{_dstPixelFormat}.");
-
 
             _dstFrame = ffmpeg.av_frame_alloc();
             _dstFrame->width = _dstWidth;
@@ -64,6 +62,8 @@ namespace SIPSorceryMedia.FFmpeg
             _dstFrame->data.UpdateFrom(_dstData);
             _dstFrame->linesize.UpdateFrom(_dstLinesize);
             _dstFrame->format = (int)_dstPixelFormat;
+
+            logger.LogDebug($"Successfully initialised ffmpeg based image converted for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{_dstPixelFormat}.");
         }
 
         public void Dispose()

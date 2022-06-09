@@ -33,11 +33,11 @@ namespace SIPSorceryMedia.FFmpeg
         public event SourceErrorDelegate? OnVideoSourceError;
 #pragma warning restore CS0067
 
-        public unsafe FFmpegFileSource(string path, bool repeat, IAudioEncoder audioEncoder, uint audioFrameSize = 960, bool useVideo = true)
+        public unsafe FFmpegFileSource(string path, bool repeat, IAudioEncoder? audioEncoder, uint audioFrameSize = 960, bool useVideo = true)
         {
             if (!File.Exists(path))
             {
-                if (!Uri.TryCreate(path, UriKind.Absolute, out Uri result))
+                if (!Uri.TryCreate(path, UriKind.Absolute, out Uri? result))
                     throw new ApplicationException($"Requested path is not a valid file path or not a valid Uri: {path}.");
             }
 

@@ -46,6 +46,11 @@ namespace SIPSorceryMedia.FFmpeg
         public Rectangle Rect { get; set; }
 
         public Boolean Primary { get; set; }
+
+        public Monitor()
+        {
+            Name = Path = "";
+        }
     }
 
 }

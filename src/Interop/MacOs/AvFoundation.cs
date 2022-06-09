@@ -56,7 +56,7 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                 if (logs.Contains(AVFOUNDATION_VIDEO_DEVICE_LOG_OUTPUT))
                 {
                     String[] lines = logs.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                    String header = null;
+                    String? header = null;
                     int index;
 
                     foreach (String line in lines)
@@ -120,7 +120,7 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                 if (logs.Contains(AVFOUNDATION_VIDEO_DEVICE_LOG_OUTPUT))
                 {
                     String[] lines = logs.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                    String header = null;
+                    String? header = null;
                     int index;
 
                     foreach (String line in lines)
