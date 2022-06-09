@@ -43,7 +43,7 @@ namespace SIPSorceryMedia.FFmpeg
             //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_TRACE);
         }
 
-        public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
+        public byte[]? EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
             fixed (byte* pSample = sample)
             {
@@ -51,16 +51,17 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public byte[] EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec)
+        public byte[]? EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec)
         {
             byte* pSample = (byte*)rawImage.Sample;
             return EncodeVideo(rawImage.Width, rawImage.Height, pSample, rawImage.PixelFormat, codec);
         }
 
-        private byte[] EncodeVideo(int width, int height, byte* sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
+        private byte[]? EncodeVideo(int width, int height, byte* sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
-            AVCodecID codecID = GetAVCodecID(codec);
-            if (codecID == AVCodecID.AV_CODEC_ID_NONE)
+            AVCodecID? codecID = FFmpegConvert.GetAVCodecID(codec);
+
+            if (codecID == null)
             {
                 throw new NotImplementedException($"Codec {codec} is not supported by the FFmpeg video encoder.");
             }
@@ -70,7 +71,7 @@ namespace SIPSorceryMedia.FFmpeg
                 throw new NotImplementedException($"No matching FFmpeg pixel format was found for video pixel format {pixelFormat}.");
             }
 
-            return Encode(codecID, sample, width, height, Helper.DEFAULT_VIDEO_FRAME_RATE, false, avPixelFormat);
+            return Encode(codecID.Value, sample, width, height, Helper.DEFAULT_VIDEO_FRAME_RATE, false, avPixelFormat);
         }
 
         public void ForceKeyFrame()
@@ -80,13 +81,13 @@ namespace SIPSorceryMedia.FFmpeg
 
         public IEnumerable<RawImage> DecodeVideoFaster(byte[] encodedSample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
-            AVCodecID codecID = GetAVCodecID(codec);
-            if (codecID == AVCodecID.AV_CODEC_ID_NONE)
+            AVCodecID? codecID = FFmpegConvert.GetAVCodecID(codec);
+            if (codecID == null)
             {
                 throw new NotImplementedException($"Codec {codec} is not supported by the FFmpeg video decoder.");
             }
 
-            var decodedFrames = DecodeFaster(codecID, encodedSample, out int width, out int height);
+            var decodedFrames = DecodeFaster(codecID.Value, encodedSample, out int width, out int height);
             if (decodedFrames != null && decodedFrames.Count > 0)
                 return decodedFrames;
 
@@ -100,22 +101,6 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 yield return new VideoSample { Width = (uint)rawImage.Width, Height = (uint)rawImage.Height, Sample = rawImage.GetBuffer() };
             }
-        }
-
-        private AVCodecID GetAVCodecID(VideoCodecsEnum codec)
-        {
-            AVCodecID codecID = AVCodecID.AV_CODEC_ID_NONE;
-
-            if (codec == VideoCodecsEnum.H264)
-            {
-                codecID = AVCodecID.AV_CODEC_ID_H264;
-            }
-            else if (codec == VideoCodecsEnum.VP8)
-            {
-                codecID = AVCodecID.AV_CODEC_ID_VP8;
-            }
-
-            return codecID;
         }
 
         private AVPixelFormat GetAVPixelFormat(VideoPixelFormatsEnum pixelFormat)
@@ -438,7 +423,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                     int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, decodedFrame);
 
-                    while (recvRes >= 0)
+                    while (recvRes == 0)
                     {
                         width = decodedFrame->width;
                         height = decodedFrame->height;
@@ -453,6 +438,19 @@ namespace SIPSorceryMedia.FFmpeg
                                 width, height,
                                 AVPixelFormat.AV_PIX_FMT_BGR24);
                         }
+
+                        //logger.LogDebug($"[DecodeFaster]"
+                        //    + $" - width:[{decodedFrame->width}]"
+                        //    + $" - height:[{decodedFrame->height}]"
+                        //    + $" - key_frame:[{decodedFrame->key_frame}]"
+                        //    + $" - nb_samples:[{decodedFrame->nb_samples}]"
+                        //    + $" - pkt_pos:[{decodedFrame->pkt_pos}]"
+                        //    + $" - pict_type:[{decodedFrame->pict_type}]"
+                        //    + $" - palette_has_changed:[{decodedFrame->palette_has_changed}]"
+                        //    + $" - format:[{decodedFrame->format}]"
+                        //    + $" - coded_picture_number:[{decodedFrame->coded_picture_number}]"
+                        //    + $" - decode_error_flags:[{decodedFrame->decode_error_flags}]"
+                        //    );
 
                         var frameI420 = _i420ToRgb.Convert(*decodedFrame);
                         if ((frameI420.width != 0) && (frameI420.height != 0))

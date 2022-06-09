@@ -22,7 +22,10 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isClosed;
         private bool _forceKeyFrame;
 
+#pragma warning disable CS0067
         public event VideoSinkSampleDecodedDelegate? OnVideoSinkDecodedSample;
+#pragma warning restore CS0067
+
         public event VideoSinkSampleDecodedFasterDelegate? OnVideoSinkDecodedSampleFaster;
 
 #pragma warning disable CS0067
@@ -60,7 +63,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload, VideoFormat format)
         {
-            if ( (!_isClosed) && (payload != null) )
+            if ( (!_isClosed) && (payload != null) && (OnVideoSinkDecodedSampleFaster != null) )
             {
                 AVCodecID? codecID = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
                 if(codecID != null)

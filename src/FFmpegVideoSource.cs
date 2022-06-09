@@ -30,13 +30,13 @@ namespace SIPSorceryMedia.FFmpeg
         internal MediaFormatManager<VideoFormat> _videoFormatManager;
 
         public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
-
-        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
         public event RawVideoSampleFasterDelegate? OnVideoSourceRawSampleFaster;
 
 #pragma warning disable CS0067
         public event SourceErrorDelegate? OnVideoSourceError;
+        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
 #pragma warning restore CS0067
+
         public event Action? OnEndOfFile;
 
         public FFmpegVideoSource()
@@ -92,7 +92,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         private unsafe void VideoDecoder_OnVideoFrame(ref AVFrame frame)
         {
-            if ( (OnVideoSourceEncodedSample != null) || (OnVideoSourceRawSampleFaster != null) )
+            if ( (_videoDecoder != null) && ((OnVideoSourceEncodedSample != null) || (OnVideoSourceRawSampleFaster != null)) )
             {
                 int frameRate = (int)_videoDecoder.VideoAverageFrameRate;
                 frameRate = (frameRate <= 0) ? Helper.DEFAULT_VIDEO_FRAME_RATE : frameRate;
@@ -173,7 +173,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (!_isStarted)
             {
                 _isStarted = true;
-                _videoDecoder.StartDecode();
+                _videoDecoder?.StartDecode();
             }
 
             return Task.CompletedTask;
@@ -184,7 +184,8 @@ namespace SIPSorceryMedia.FFmpeg
             if (!_isClosed)
             {
                 _isClosed = true;
-                await _videoDecoder.Close();
+                if(_videoDecoder != null)
+                    await _videoDecoder.Close();
                 Dispose();
             }
         }
@@ -194,7 +195,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (!_isPaused)
             {
                 _isPaused = true;
-                _videoDecoder.Pause();
+                _videoDecoder?.Pause();
             }
 
             return Task.CompletedTask;
@@ -205,7 +206,8 @@ namespace SIPSorceryMedia.FFmpeg
             if (_isPaused && !_isClosed)
             {
                 _isPaused = false;
-                await _videoDecoder.Resume();
+                if (_videoDecoder != null)
+                    await _videoDecoder.Resume();
             }
         }
 

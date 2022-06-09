@@ -25,7 +25,7 @@ namespace SIPSorceryMedia.FFmpeg
         private static ILogger logger = NullLogger.Instance;
         private static bool registered = false;
 
-        private static av_log_set_callback_callback logCallback;
+        private static av_log_set_callback_callback? logCallback;
         private static String storedLogs = "";
 
         public static String GetStoredLogs(Boolean clear = true)
@@ -73,7 +73,7 @@ namespace SIPSorceryMedia.FFmpeg
             ffmpeg.av_log_set_callback(logCallback);
         }
 
-        public static void Initialise(FfmpegLogLevelEnum? logLevel = null, String? libPath = null, ILogger appLogger = null)
+        public static void Initialise(FfmpegLogLevelEnum? logLevel = null, String? libPath = null, ILogger? appLogger = null)
         {
             RegisterFFmpegBinaries(libPath);
 

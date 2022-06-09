@@ -32,7 +32,7 @@ namespace SIPSorceryMedia.FFmpeg
                         Camera camera = new Camera
                         {
                             Name = dsDevice.Name,
-                            Path = "video=" + dsDevice.Name
+                            Path = $"video={dsDevice.Name}"
                         };
                         result.Add(camera);
                     }
@@ -62,8 +62,8 @@ namespace SIPSorceryMedia.FFmpeg
                     {
                         Camera camera = new Camera
                         {
-                            Name = name,
-                            Path = path
+                            Name = (name == null) ? "" : name,
+                            Path = (path == null) ? "" : path,
                         };
                         result.Add(camera);
                     }
@@ -80,5 +80,10 @@ namespace SIPSorceryMedia.FFmpeg
         public String Name { get; set; }
 
         public String Path { get; set; }
+
+        public Camera()
+        {
+            Name = Path = "";
+        }
     }
 }
