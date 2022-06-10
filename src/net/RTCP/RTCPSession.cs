@@ -267,7 +267,7 @@ namespace SIPSorcery.Net
                 {
                     if (rtcpCompoundPacket.SenderReport != null && m_receptionReport != null)
                     {
-                        m_receptionReport.RtcpSenderReportReceived(DateTimeToNtpTimestamp(DateTime.Now));
+                        m_receptionReport.RtcpSenderReportReceived(rtcpCompoundPacket.SenderReport.NtpTimestamp);
                     }
 
                     // TODO: Apply information from report.
@@ -357,13 +357,15 @@ namespace SIPSorcery.Net
         /// <returns>An RTCP compound packet.</returns>
         private RTCPCompoundPacket GetRtcpReport()
         {
-            ReceptionReportSample rr = (m_receptionReport != null) ? m_receptionReport.GetSample(DateTimeToNtpTimestamp32(DateTime.Now)) : null;
+            var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
+            ReceptionReportSample rr = (m_receptionReport != null) ? m_receptionReport.GetSample(To32Bit(ntcTime)) : null;
             var sdesReport = new RTCPSDesReport(Ssrc, Cname);
 
             if (PacketsSentCount > m_previousPacketsSentCount)
             {
                 // If we have sent a packet since the last report then we send an RTCP Sender Report.
-                var senderReport = new RTCPSenderReport(Ssrc, LastNtpTimestampSent, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, (rr != null) ? new List<ReceptionReportSample> { rr } : null);
+                // TODO: RTP timestamp should corresponds to the same time as the NTP timestamp
+                var senderReport = new RTCPSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, (rr != null) ? new List<ReceptionReportSample> { rr } : null);
                 return new RTCPCompoundPacket(senderReport, sdesReport);
             }
             else
@@ -392,6 +394,8 @@ namespace SIPSorcery.Net
             return Crypto.GetRandomInt((int)(RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR * baseInterval),
                 (int)(RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR * baseInterval));
         }
+
+        public static uint To32Bit(ulong ntpTime) => (uint)((ntpTime >> 16) & 0xFFFFFFFF);
 
         public static uint DateTimeToNtpTimestamp32(DateTime value) { return (uint)((DateTimeToNtpTimestamp(value) >> 16) & 0xFFFFFFFF); }
 
