@@ -151,6 +151,11 @@ namespace SIPSorcery.Net
         public bool IsClosed { get; private set; } = false;
 
         /// <summary>
+        /// Indicates the sample rate for RTP media data.
+        /// </summary>
+        public int PayloadSampleRateHz { get; set; } = 0;
+
+        /// <summary>
         /// Time to schedule the delivery of RTCP reports.
         /// </summary>
         private Timer m_rtcpReportTimer;
@@ -220,7 +225,8 @@ namespace SIPSorcery.Net
                 m_receptionReport = new ReceptionReport(rtpPacket.Header.SyncSource);
             }
 
-            m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, DateTimeToNtpTimestamp32(DateTime.Now));
+            var arrivalTimestamp = PayloadSampleRateHz == 0 ? DateTimeToNtpTimestamp32(DateTime.Now) : (uint)((DateTime.Now - CreatedAt).TotalSeconds * PayloadSampleRateHz);
+            m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, arrivalTimestamp);
         }
 
         /// <summary>
