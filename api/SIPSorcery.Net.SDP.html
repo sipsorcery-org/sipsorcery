@@ -1566,13 +1566,13 @@ they take precedence.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDP_GetIndexForMediaType_SIPSorcery_Net_SDPMediaTypesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDP_GetIndexForMediaType_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SDP/SDP.cs/#L925">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SDP/SDP.cs/#L926">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SDP_GetIndexForMediaType_" data-uid="SIPSorcery.Net.SDP.GetIndexForMediaType*"></a>
-  <h4 id="SIPSorcery_Net_SDP_GetIndexForMediaType_SIPSorcery_Net_SDPMediaTypesEnum_" data-uid="SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum)">GetIndexForMediaType(SDPMediaTypesEnum)</h4>
+  <h4 id="SIPSorcery_Net_SDP_GetIndexForMediaType_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_" data-uid="SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32)">GetIndexForMediaType(SDPMediaTypesEnum, Int32)</h4>
   <div class="markdown level1 summary"><p>Media announcements can be placed in SDP in any order BUT the orders must match
 up in offer/answer pairs. This method can be used to get the index for a specific
 media type. It is useful for obtaining the index of a particular media type when
@@ -1581,7 +1581,7 @@ constructing an SDP answer.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public (int, string) GetIndexForMediaType(SDPMediaTypesEnum mediaType)</code></pre>
+    <pre><code class="lang-csharp hljs">public (int, string) GetIndexForMediaType(SDPMediaTypesEnum mediaType, int index)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1598,6 +1598,11 @@ constructing an SDP answer.</p>
         <td><span class="parametername">mediaType</span></td>
         <td><p>The media type to get the index for.</p>
 </td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">index</span></td>
+        <td></td>
       </tr>
     </tbody>
   </table>
@@ -1621,7 +1626,7 @@ constructing an SDP answer.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDP_GetMediaStreamStatus_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDP.GetMediaStreamStatus(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SDP/SDP.cs/#L902">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SDP/SDP.cs/#L903">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SDP_GetMediaStreamStatus_" data-uid="SIPSorcery.Net.SDP.GetMediaStreamStatus*"></a>
   <h4 id="SIPSorcery_Net_SDP_GetMediaStreamStatus_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_" data-uid="SIPSorcery.Net.SDP.GetMediaStreamStatus(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32)">GetMediaStreamStatus(SDPMediaTypesEnum, Int32)</h4>
@@ -1678,7 +1683,7 @@ there is also no status set on the session then the default value of sendrecv is
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDP_GetSDPRTPEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDP.GetSDPRTPEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SDP/SDP.cs/#L868">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SDP/SDP.cs/#L869">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SDP_GetSDPRTPEndPoint_" data-uid="SIPSorcery.Net.SDP.GetSDPRTPEndPoint*"></a>
   <h4 id="SIPSorcery_Net_SDP_GetSDPRTPEndPoint" data-uid="SIPSorcery.Net.SDP.GetSDPRTPEndPoint">GetSDPRTPEndPoint()</h4>
@@ -1710,7 +1715,7 @@ there is also no status set on the session then the default value of sendrecv is
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDP_GetSDPRTPEndPoint_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDP.GetSDPRTPEndPoint(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SDP/SDP.cs/#L889">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/SDP/SDP.cs/#L890">View Source</a>
   </span>
   <a id="SIPSorcery_Net_SDP_GetSDPRTPEndPoint_" data-uid="SIPSorcery.Net.SDP.GetSDPRTPEndPoint*"></a>
   <h4 id="SIPSorcery_Net_SDP_GetSDPRTPEndPoint_System_String_" data-uid="SIPSorcery.Net.SDP.GetSDPRTPEndPoint(System.String)">GetSDPRTPEndPoint(String)</h4>

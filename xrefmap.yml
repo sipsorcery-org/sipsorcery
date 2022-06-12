@@ -6771,6 +6771,31 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.MediaStreamTrack.NoDtmfSupport
   nameWithType: MediaStreamTrack.NoDtmfSupport
+- uid: SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  name: RestrictCapabilities(SDPAudioVideoMediaFormat)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_SIPSorcery_Net_SDPAudioVideoMediaFormat_
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  fullName: SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorcery.Net.SDPAudioVideoMediaFormat)
+  nameWithType: MediaStreamTrack.RestrictCapabilities(SDPAudioVideoMediaFormat)
+- uid: SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.AudioFormat)
+  name: RestrictCapabilities(AudioFormat)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_SIPSorceryMedia_Abstractions_AudioFormat_
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.AudioFormat)
+  fullName: SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.AudioFormat)
+  nameWithType: MediaStreamTrack.RestrictCapabilities(AudioFormat)
+- uid: SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.VideoFormat)
+  name: RestrictCapabilities(VideoFormat)
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_SIPSorceryMedia_Abstractions_VideoFormat_
+  commentId: M:SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.VideoFormat)
+  fullName: SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.VideoFormat)
+  nameWithType: MediaStreamTrack.RestrictCapabilities(VideoFormat)
+- uid: SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities*
+  name: RestrictCapabilities
+  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_
+  commentId: Overload:SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities
+  isSpec: "True"
+  fullName: SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities
+  nameWithType: MediaStreamTrack.RestrictCapabilities
 - uid: SIPSorcery.Net.MediaStreamTrack.SdpSsrc
   name: SdpSsrc
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack_SdpSsrc
@@ -9131,12 +9156,12 @@ references:
   commentId: M:SIPSorcery.Net.RTCPeerConnection.#ctor
   fullName: SIPSorcery.Net.RTCPeerConnection.RTCPeerConnection()
   nameWithType: RTCPeerConnection.RTCPeerConnection()
-- uid: SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration,System.Int32,SIPSorcery.Sys.PortRange)
-  name: RTCPeerConnection(RTCConfiguration, Int32, PortRange)
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__ctor_SIPSorcery_Net_RTCConfiguration_System_Int32_SIPSorcery_Sys_PortRange_
-  commentId: M:SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration,System.Int32,SIPSorcery.Sys.PortRange)
-  fullName: SIPSorcery.Net.RTCPeerConnection.RTCPeerConnection(SIPSorcery.Net.RTCConfiguration, System.Int32, SIPSorcery.Sys.PortRange)
-  nameWithType: RTCPeerConnection.RTCPeerConnection(RTCConfiguration, Int32, PortRange)
+- uid: SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration,System.Int32,SIPSorcery.Sys.PortRange,System.Boolean)
+  name: RTCPeerConnection(RTCConfiguration, Int32, PortRange, Boolean)
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__ctor_SIPSorcery_Net_RTCConfiguration_System_Int32_SIPSorcery_Sys_PortRange_System_Boolean_
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration,System.Int32,SIPSorcery.Sys.PortRange,System.Boolean)
+  fullName: SIPSorcery.Net.RTCPeerConnection.RTCPeerConnection(SIPSorcery.Net.RTCConfiguration, System.Int32, SIPSorcery.Sys.PortRange, System.Boolean)
+  nameWithType: RTCPeerConnection.RTCPeerConnection(RTCConfiguration, Int32, PortRange, Boolean)
 - uid: SIPSorcery.Net.RTCPeerConnection.#ctor*
   name: RTCPeerConnection
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection__ctor_
@@ -10796,6 +10821,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPSession.PacketsSentCount
   nameWithType: RTCPSession.PacketsSentCount
+- uid: SIPSorcery.Net.RTCPSession.PayloadSampleRateHz
+  name: PayloadSampleRateHz
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_PayloadSampleRateHz
+  commentId: P:SIPSorcery.Net.RTCPSession.PayloadSampleRateHz
+  fullName: SIPSorcery.Net.RTCPSession.PayloadSampleRateHz
+  nameWithType: RTCPSession.PayloadSampleRateHz
+- uid: SIPSorcery.Net.RTCPSession.PayloadSampleRateHz*
+  name: PayloadSampleRateHz
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_PayloadSampleRateHz_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.PayloadSampleRateHz
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.PayloadSampleRateHz
+  nameWithType: RTCPSession.PayloadSampleRateHz
 - uid: SIPSorcery.Net.RTCPSession.ReceptionReport
   name: ReceptionReport
   href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_ReceptionReport
@@ -10900,6 +10938,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPSession.StartedAt
   nameWithType: RTCPSession.StartedAt
+- uid: SIPSorcery.Net.RTCPSession.To32Bit(System.UInt64)
+  name: To32Bit(UInt64)
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_To32Bit_System_UInt64_
+  commentId: M:SIPSorcery.Net.RTCPSession.To32Bit(System.UInt64)
+  fullName: SIPSorcery.Net.RTCPSession.To32Bit(System.UInt64)
+  nameWithType: RTCPSession.To32Bit(UInt64)
+- uid: SIPSorcery.Net.RTCPSession.To32Bit*
+  name: To32Bit
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_To32Bit_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.To32Bit
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.To32Bit
+  nameWithType: RTCPSession.To32Bit
 - uid: SIPSorcery.Net.RTCRtcpMuxPolicy
   name: RTCRtcpMuxPolicy
   href: api/SIPSorcery.Net.RTCRtcpMuxPolicy.html
@@ -11302,12 +11353,12 @@ references:
   commentId: T:SIPSorcery.net.RTP.AudioStream
   fullName: SIPSorcery.net.RTP.AudioStream
   nameWithType: AudioStream
-- uid: SIPSorcery.net.RTP.AudioStream.#ctor(SIPSorcery.Net.RtpSessionConfig)
-  name: AudioStream(RtpSessionConfig)
-  href: api/SIPSorcery.net.RTP.AudioStream.html#SIPSorcery_net_RTP_AudioStream__ctor_SIPSorcery_Net_RtpSessionConfig_
-  commentId: M:SIPSorcery.net.RTP.AudioStream.#ctor(SIPSorcery.Net.RtpSessionConfig)
-  fullName: SIPSorcery.net.RTP.AudioStream.AudioStream(SIPSorcery.Net.RtpSessionConfig)
-  nameWithType: AudioStream.AudioStream(RtpSessionConfig)
+- uid: SIPSorcery.net.RTP.AudioStream.#ctor(SIPSorcery.Net.RtpSessionConfig,System.Int32)
+  name: AudioStream(RtpSessionConfig, Int32)
+  href: api/SIPSorcery.net.RTP.AudioStream.html#SIPSorcery_net_RTP_AudioStream__ctor_SIPSorcery_Net_RtpSessionConfig_System_Int32_
+  commentId: M:SIPSorcery.net.RTP.AudioStream.#ctor(SIPSorcery.Net.RtpSessionConfig,System.Int32)
+  fullName: SIPSorcery.net.RTP.AudioStream.AudioStream(SIPSorcery.Net.RtpSessionConfig, System.Int32)
+  nameWithType: AudioStream.AudioStream(RtpSessionConfig, Int32)
 - uid: SIPSorcery.net.RTP.AudioStream.#ctor*
   name: AudioStream
   href: api/SIPSorcery.net.RTP.AudioStream.html#SIPSorcery_net_RTP_AudioStream__ctor_
@@ -11341,28 +11392,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.AudioStream.HasAudio
   nameWithType: AudioStream.HasAudio
-- uid: SIPSorcery.net.RTP.AudioStream.OnAudioFormatsNegotiated
-  name: OnAudioFormatsNegotiated
-  href: api/SIPSorcery.net.RTP.AudioStream.html#SIPSorcery_net_RTP_AudioStream_OnAudioFormatsNegotiated
-  commentId: E:SIPSorcery.net.RTP.AudioStream.OnAudioFormatsNegotiated
-  fullName: SIPSorcery.net.RTP.AudioStream.OnAudioFormatsNegotiated
-  nameWithType: AudioStream.OnAudioFormatsNegotiated
-- uid: SIPSorcery.net.RTP.AudioStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader,SIPSorcery.Net.SDPAudioVideoMediaFormat,System.Int32,System.Net.IPEndPoint,System.Byte[])
-  name: OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte[])
-  href: api/SIPSorcery.net.RTP.AudioStream.html#SIPSorcery_net_RTP_AudioStream_OnReceiveRTPPacket_SIPSorcery_Net_RTPHeader_SIPSorcery_Net_SDPAudioVideoMediaFormat_System_Int32_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.net.RTP.AudioStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader,SIPSorcery.Net.SDPAudioVideoMediaFormat,System.Int32,System.Net.IPEndPoint,System.Byte[])
-  name.vb: OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte())
-  fullName: SIPSorcery.net.RTP.AudioStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader, SIPSorcery.Net.SDPAudioVideoMediaFormat, System.Int32, System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.net.RTP.AudioStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader, SIPSorcery.Net.SDPAudioVideoMediaFormat, System.Int32, System.Net.IPEndPoint, System.Byte())
-  nameWithType: AudioStream.OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte[])
-  nameWithType.vb: AudioStream.OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte())
-- uid: SIPSorcery.net.RTP.AudioStream.OnReceiveRTPPacket*
-  name: OnReceiveRTPPacket
-  href: api/SIPSorcery.net.RTP.AudioStream.html#SIPSorcery_net_RTP_AudioStream_OnReceiveRTPPacket_
-  commentId: Overload:SIPSorcery.net.RTP.AudioStream.OnReceiveRTPPacket
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.AudioStream.OnReceiveRTPPacket
-  nameWithType: AudioStream.OnReceiveRTPPacket
+- uid: SIPSorcery.net.RTP.AudioStream.OnAudioFormatsNegotiatedByIndex
+  name: OnAudioFormatsNegotiatedByIndex
+  href: api/SIPSorcery.net.RTP.AudioStream.html#SIPSorcery_net_RTP_AudioStream_OnAudioFormatsNegotiatedByIndex
+  commentId: E:SIPSorcery.net.RTP.AudioStream.OnAudioFormatsNegotiatedByIndex
+  fullName: SIPSorcery.net.RTP.AudioStream.OnAudioFormatsNegotiatedByIndex
+  nameWithType: AudioStream.OnAudioFormatsNegotiatedByIndex
 - uid: SIPSorcery.net.RTP.AudioStream.SendAudio(System.UInt32,System.Byte[])
   name: SendAudio(UInt32, Byte[])
   href: api/SIPSorcery.net.RTP.AudioStream.html#SIPSorcery_net_RTP_AudioStream_SendAudio_System_UInt32_System_Byte___
@@ -11465,12 +11500,12 @@ references:
   commentId: T:SIPSorcery.net.RTP.MediaStream
   fullName: SIPSorcery.net.RTP.MediaStream
   nameWithType: MediaStream
-- uid: SIPSorcery.net.RTP.MediaStream.#ctor(SIPSorcery.Net.RtpSessionConfig)
-  name: MediaStream(RtpSessionConfig)
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream__ctor_SIPSorcery_Net_RtpSessionConfig_
-  commentId: M:SIPSorcery.net.RTP.MediaStream.#ctor(SIPSorcery.Net.RtpSessionConfig)
-  fullName: SIPSorcery.net.RTP.MediaStream.MediaStream(SIPSorcery.Net.RtpSessionConfig)
-  nameWithType: MediaStream.MediaStream(RtpSessionConfig)
+- uid: SIPSorcery.net.RTP.MediaStream.#ctor(SIPSorcery.Net.RtpSessionConfig,System.Int32)
+  name: MediaStream(RtpSessionConfig, Int32)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream__ctor_SIPSorcery_Net_RtpSessionConfig_System_Int32_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.#ctor(SIPSorcery.Net.RtpSessionConfig,System.Int32)
+  fullName: SIPSorcery.net.RTP.MediaStream.MediaStream(SIPSorcery.Net.RtpSessionConfig, System.Int32)
+  nameWithType: MediaStream.MediaStream(RtpSessionConfig, Int32)
 - uid: SIPSorcery.net.RTP.MediaStream.#ctor*
   name: MediaStream
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream__ctor_
@@ -11676,6 +11711,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.HasRtpChannel
   nameWithType: MediaStream.HasRtpChannel
+- uid: SIPSorcery.net.RTP.MediaStream.Index
+  name: Index
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_Index
+  commentId: F:SIPSorcery.net.RTP.MediaStream.Index
+  fullName: SIPSorcery.net.RTP.MediaStream.Index
+  nameWithType: MediaStream.Index
 - uid: SIPSorcery.net.RTP.MediaStream.IsClosed
   name: IsClosed
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_IsClosed
@@ -11741,21 +11782,21 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.MediaType
   nameWithType: MediaStream.MediaType
-- uid: SIPSorcery.net.RTP.MediaStream.OnReceiveReport
-  name: OnReceiveReport
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnReceiveReport
-  commentId: E:SIPSorcery.net.RTP.MediaStream.OnReceiveReport
-  fullName: SIPSorcery.net.RTP.MediaStream.OnReceiveReport
-  nameWithType: MediaStream.OnReceiveReport
-- uid: SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader,SIPSorcery.Net.SDPAudioVideoMediaFormat,System.Int32,System.Net.IPEndPoint,System.Byte[],SIPSorcery.net.RTP.VideoStream)
-  name: OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte[], VideoStream)
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnReceiveRTPPacket_SIPSorcery_Net_RTPHeader_SIPSorcery_Net_SDPAudioVideoMediaFormat_System_Int32_System_Net_IPEndPoint_System_Byte___SIPSorcery_net_RTP_VideoStream_
-  commentId: M:SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader,SIPSorcery.Net.SDPAudioVideoMediaFormat,System.Int32,System.Net.IPEndPoint,System.Byte[],SIPSorcery.net.RTP.VideoStream)
-  name.vb: OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte(), VideoStream)
-  fullName: SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader, SIPSorcery.Net.SDPAudioVideoMediaFormat, System.Int32, System.Net.IPEndPoint, System.Byte[], SIPSorcery.net.RTP.VideoStream)
-  fullName.vb: SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader, SIPSorcery.Net.SDPAudioVideoMediaFormat, System.Int32, System.Net.IPEndPoint, System.Byte(), SIPSorcery.net.RTP.VideoStream)
-  nameWithType: MediaStream.OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte[], VideoStream)
-  nameWithType.vb: MediaStream.OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte(), VideoStream)
+- uid: SIPSorcery.net.RTP.MediaStream.OnReceiveReportByIndex
+  name: OnReceiveReportByIndex
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnReceiveReportByIndex
+  commentId: E:SIPSorcery.net.RTP.MediaStream.OnReceiveReportByIndex
+  fullName: SIPSorcery.net.RTP.MediaStream.OnReceiveReportByIndex
+  nameWithType: MediaStream.OnReceiveReportByIndex
+- uid: SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader,System.Int32,System.Net.IPEndPoint,System.Byte[],SIPSorcery.net.RTP.VideoStream)
+  name: OnReceiveRTPPacket(RTPHeader, Int32, IPEndPoint, Byte[], VideoStream)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnReceiveRTPPacket_SIPSorcery_Net_RTPHeader_System_Int32_System_Net_IPEndPoint_System_Byte___SIPSorcery_net_RTP_VideoStream_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader,System.Int32,System.Net.IPEndPoint,System.Byte[],SIPSorcery.net.RTP.VideoStream)
+  name.vb: OnReceiveRTPPacket(RTPHeader, Int32, IPEndPoint, Byte(), VideoStream)
+  fullName: SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader, System.Int32, System.Net.IPEndPoint, System.Byte[], SIPSorcery.net.RTP.VideoStream)
+  fullName.vb: SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader, System.Int32, System.Net.IPEndPoint, System.Byte(), SIPSorcery.net.RTP.VideoStream)
+  nameWithType: MediaStream.OnReceiveRTPPacket(RTPHeader, Int32, IPEndPoint, Byte[], VideoStream)
+  nameWithType.vb: MediaStream.OnReceiveRTPPacket(RTPHeader, Int32, IPEndPoint, Byte(), VideoStream)
 - uid: SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket*
   name: OnReceiveRTPPacket
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnReceiveRTPPacket_
@@ -11763,30 +11804,30 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.OnReceiveRTPPacket
   nameWithType: MediaStream.OnReceiveRTPPacket
-- uid: SIPSorcery.net.RTP.MediaStream.OnRtpEvent
-  name: OnRtpEvent
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnRtpEvent
-  commentId: E:SIPSorcery.net.RTP.MediaStream.OnRtpEvent
-  fullName: SIPSorcery.net.RTP.MediaStream.OnRtpEvent
-  nameWithType: MediaStream.OnRtpEvent
-- uid: SIPSorcery.net.RTP.MediaStream.OnRtpPacketReceived
-  name: OnRtpPacketReceived
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnRtpPacketReceived
-  commentId: E:SIPSorcery.net.RTP.MediaStream.OnRtpPacketReceived
-  fullName: SIPSorcery.net.RTP.MediaStream.OnRtpPacketReceived
-  nameWithType: MediaStream.OnRtpPacketReceived
-- uid: SIPSorcery.net.RTP.MediaStream.OnSendReport
-  name: OnSendReport
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnSendReport
-  commentId: E:SIPSorcery.net.RTP.MediaStream.OnSendReport
-  fullName: SIPSorcery.net.RTP.MediaStream.OnSendReport
-  nameWithType: MediaStream.OnSendReport
-- uid: SIPSorcery.net.RTP.MediaStream.OnTimeout
-  name: OnTimeout
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnTimeout
-  commentId: E:SIPSorcery.net.RTP.MediaStream.OnTimeout
-  fullName: SIPSorcery.net.RTP.MediaStream.OnTimeout
-  nameWithType: MediaStream.OnTimeout
+- uid: SIPSorcery.net.RTP.MediaStream.OnRtpEventByIndex
+  name: OnRtpEventByIndex
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnRtpEventByIndex
+  commentId: E:SIPSorcery.net.RTP.MediaStream.OnRtpEventByIndex
+  fullName: SIPSorcery.net.RTP.MediaStream.OnRtpEventByIndex
+  nameWithType: MediaStream.OnRtpEventByIndex
+- uid: SIPSorcery.net.RTP.MediaStream.OnRtpPacketReceivedByIndex
+  name: OnRtpPacketReceivedByIndex
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnRtpPacketReceivedByIndex
+  commentId: E:SIPSorcery.net.RTP.MediaStream.OnRtpPacketReceivedByIndex
+  fullName: SIPSorcery.net.RTP.MediaStream.OnRtpPacketReceivedByIndex
+  nameWithType: MediaStream.OnRtpPacketReceivedByIndex
+- uid: SIPSorcery.net.RTP.MediaStream.OnSendReportByIndex
+  name: OnSendReportByIndex
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnSendReportByIndex
+  commentId: E:SIPSorcery.net.RTP.MediaStream.OnSendReportByIndex
+  fullName: SIPSorcery.net.RTP.MediaStream.OnSendReportByIndex
+  nameWithType: MediaStream.OnSendReportByIndex
+- uid: SIPSorcery.net.RTP.MediaStream.OnTimeoutByIndex
+  name: OnTimeoutByIndex
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnTimeoutByIndex
+  commentId: E:SIPSorcery.net.RTP.MediaStream.OnTimeoutByIndex
+  fullName: SIPSorcery.net.RTP.MediaStream.OnTimeoutByIndex
+  nameWithType: MediaStream.OnTimeoutByIndex
 - uid: SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions(SIPSorcery.Net.RTPHeader)
   name: ProcessHeaderExtensions(RTPHeader)
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ProcessHeaderExtensions_SIPSorcery_Net_RTPHeader_
@@ -11800,19 +11841,45 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions
   nameWithType: MediaStream.ProcessHeaderExtensions
-- uid: SIPSorcery.net.RTP.MediaStream.ReceiveReport(System.Net.IPEndPoint,SIPSorcery.Net.RTCPCompoundPacket)
-  name: ReceiveReport(IPEndPoint, RTCPCompoundPacket)
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ReceiveReport_System_Net_IPEndPoint_SIPSorcery_Net_RTCPCompoundPacket_
-  commentId: M:SIPSorcery.net.RTP.MediaStream.ReceiveReport(System.Net.IPEndPoint,SIPSorcery.Net.RTCPCompoundPacket)
-  fullName: SIPSorcery.net.RTP.MediaStream.ReceiveReport(System.Net.IPEndPoint, SIPSorcery.Net.RTCPCompoundPacket)
-  nameWithType: MediaStream.ReceiveReport(IPEndPoint, RTCPCompoundPacket)
-- uid: SIPSorcery.net.RTP.MediaStream.ReceiveReport*
-  name: ReceiveReport
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ReceiveReport_
-  commentId: Overload:SIPSorcery.net.RTP.MediaStream.ReceiveReport
+- uid: SIPSorcery.net.RTP.MediaStream.RaiseOnReceiveReportByIndex(System.Net.IPEndPoint,SIPSorcery.Net.RTCPCompoundPacket)
+  name: RaiseOnReceiveReportByIndex(IPEndPoint, RTCPCompoundPacket)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RaiseOnReceiveReportByIndex_System_Net_IPEndPoint_SIPSorcery_Net_RTCPCompoundPacket_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.RaiseOnReceiveReportByIndex(System.Net.IPEndPoint,SIPSorcery.Net.RTCPCompoundPacket)
+  fullName: SIPSorcery.net.RTP.MediaStream.RaiseOnReceiveReportByIndex(System.Net.IPEndPoint, SIPSorcery.Net.RTCPCompoundPacket)
+  nameWithType: MediaStream.RaiseOnReceiveReportByIndex(IPEndPoint, RTCPCompoundPacket)
+- uid: SIPSorcery.net.RTP.MediaStream.RaiseOnReceiveReportByIndex*
+  name: RaiseOnReceiveReportByIndex
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RaiseOnReceiveReportByIndex_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.RaiseOnReceiveReportByIndex
   isSpec: "True"
-  fullName: SIPSorcery.net.RTP.MediaStream.ReceiveReport
-  nameWithType: MediaStream.ReceiveReport
+  fullName: SIPSorcery.net.RTP.MediaStream.RaiseOnReceiveReportByIndex
+  nameWithType: MediaStream.RaiseOnReceiveReportByIndex
+- uid: SIPSorcery.net.RTP.MediaStream.RaiseOnRtpEventByIndex(System.Net.IPEndPoint,SIPSorcery.Net.RTPEvent,SIPSorcery.Net.RTPHeader)
+  name: RaiseOnRtpEventByIndex(IPEndPoint, RTPEvent, RTPHeader)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RaiseOnRtpEventByIndex_System_Net_IPEndPoint_SIPSorcery_Net_RTPEvent_SIPSorcery_Net_RTPHeader_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.RaiseOnRtpEventByIndex(System.Net.IPEndPoint,SIPSorcery.Net.RTPEvent,SIPSorcery.Net.RTPHeader)
+  fullName: SIPSorcery.net.RTP.MediaStream.RaiseOnRtpEventByIndex(System.Net.IPEndPoint, SIPSorcery.Net.RTPEvent, SIPSorcery.Net.RTPHeader)
+  nameWithType: MediaStream.RaiseOnRtpEventByIndex(IPEndPoint, RTPEvent, RTPHeader)
+- uid: SIPSorcery.net.RTP.MediaStream.RaiseOnRtpEventByIndex*
+  name: RaiseOnRtpEventByIndex
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RaiseOnRtpEventByIndex_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.RaiseOnRtpEventByIndex
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.MediaStream.RaiseOnRtpEventByIndex
+  nameWithType: MediaStream.RaiseOnRtpEventByIndex
+- uid: SIPSorcery.net.RTP.MediaStream.RaiseOnRtpPacketReceivedByIndex(System.Net.IPEndPoint,SIPSorcery.Net.RTPPacket)
+  name: RaiseOnRtpPacketReceivedByIndex(IPEndPoint, RTPPacket)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RaiseOnRtpPacketReceivedByIndex_System_Net_IPEndPoint_SIPSorcery_Net_RTPPacket_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.RaiseOnRtpPacketReceivedByIndex(System.Net.IPEndPoint,SIPSorcery.Net.RTPPacket)
+  fullName: SIPSorcery.net.RTP.MediaStream.RaiseOnRtpPacketReceivedByIndex(System.Net.IPEndPoint, SIPSorcery.Net.RTPPacket)
+  nameWithType: MediaStream.RaiseOnRtpPacketReceivedByIndex(IPEndPoint, RTPPacket)
+- uid: SIPSorcery.net.RTP.MediaStream.RaiseOnRtpPacketReceivedByIndex*
+  name: RaiseOnRtpPacketReceivedByIndex
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RaiseOnRtpPacketReceivedByIndex_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.RaiseOnRtpPacketReceivedByIndex
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.MediaStream.RaiseOnRtpPacketReceivedByIndex
+  nameWithType: MediaStream.RaiseOnRtpPacketReceivedByIndex
 - uid: SIPSorcery.net.RTP.MediaStream.RemoteRtpEventPayloadID
   name: RemoteRtpEventPayloadID
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RemoteRtpEventPayloadID
@@ -11871,32 +11938,6 @@ references:
   commentId: F:SIPSorcery.net.RTP.MediaStream.rtpChannel
   fullName: SIPSorcery.net.RTP.MediaStream.rtpChannel
   nameWithType: MediaStream.rtpChannel
-- uid: SIPSorcery.net.RTP.MediaStream.RtpEvent(System.Net.IPEndPoint,SIPSorcery.Net.RTPEvent,SIPSorcery.Net.RTPHeader)
-  name: RtpEvent(IPEndPoint, RTPEvent, RTPHeader)
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RtpEvent_System_Net_IPEndPoint_SIPSorcery_Net_RTPEvent_SIPSorcery_Net_RTPHeader_
-  commentId: M:SIPSorcery.net.RTP.MediaStream.RtpEvent(System.Net.IPEndPoint,SIPSorcery.Net.RTPEvent,SIPSorcery.Net.RTPHeader)
-  fullName: SIPSorcery.net.RTP.MediaStream.RtpEvent(System.Net.IPEndPoint, SIPSorcery.Net.RTPEvent, SIPSorcery.Net.RTPHeader)
-  nameWithType: MediaStream.RtpEvent(IPEndPoint, RTPEvent, RTPHeader)
-- uid: SIPSorcery.net.RTP.MediaStream.RtpEvent*
-  name: RtpEvent
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RtpEvent_
-  commentId: Overload:SIPSorcery.net.RTP.MediaStream.RtpEvent
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.MediaStream.RtpEvent
-  nameWithType: MediaStream.RtpEvent
-- uid: SIPSorcery.net.RTP.MediaStream.RtpPacketReceived(System.Net.IPEndPoint,SIPSorcery.Net.RTPPacket)
-  name: RtpPacketReceived(IPEndPoint, RTPPacket)
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RtpPacketReceived_System_Net_IPEndPoint_SIPSorcery_Net_RTPPacket_
-  commentId: M:SIPSorcery.net.RTP.MediaStream.RtpPacketReceived(System.Net.IPEndPoint,SIPSorcery.Net.RTPPacket)
-  fullName: SIPSorcery.net.RTP.MediaStream.RtpPacketReceived(System.Net.IPEndPoint, SIPSorcery.Net.RTPPacket)
-  nameWithType: MediaStream.RtpPacketReceived(IPEndPoint, RTPPacket)
-- uid: SIPSorcery.net.RTP.MediaStream.RtpPacketReceived*
-  name: RtpPacketReceived
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_RtpPacketReceived_
-  commentId: Overload:SIPSorcery.net.RTP.MediaStream.RtpPacketReceived
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.MediaStream.RtpPacketReceived
-  nameWithType: MediaStream.RtpPacketReceived
 - uid: SIPSorcery.net.RTP.MediaStream.SecureContext
   name: SecureContext
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SecureContext
@@ -12272,12 +12313,12 @@ references:
   commentId: T:SIPSorcery.net.RTP.VideoStream
   fullName: SIPSorcery.net.RTP.VideoStream
   nameWithType: VideoStream
-- uid: SIPSorcery.net.RTP.VideoStream.#ctor(SIPSorcery.Net.RtpSessionConfig)
-  name: VideoStream(RtpSessionConfig)
-  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream__ctor_SIPSorcery_Net_RtpSessionConfig_
-  commentId: M:SIPSorcery.net.RTP.VideoStream.#ctor(SIPSorcery.Net.RtpSessionConfig)
-  fullName: SIPSorcery.net.RTP.VideoStream.VideoStream(SIPSorcery.Net.RtpSessionConfig)
-  nameWithType: VideoStream.VideoStream(RtpSessionConfig)
+- uid: SIPSorcery.net.RTP.VideoStream.#ctor(SIPSorcery.Net.RtpSessionConfig,System.Int32)
+  name: VideoStream(RtpSessionConfig, Int32)
+  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream__ctor_SIPSorcery_Net_RtpSessionConfig_System_Int32_
+  commentId: M:SIPSorcery.net.RTP.VideoStream.#ctor(SIPSorcery.Net.RtpSessionConfig,System.Int32)
+  fullName: SIPSorcery.net.RTP.VideoStream.VideoStream(SIPSorcery.Net.RtpSessionConfig, System.Int32)
+  nameWithType: VideoStream.VideoStream(RtpSessionConfig, Int32)
 - uid: SIPSorcery.net.RTP.VideoStream.#ctor*
   name: VideoStream
   href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream__ctor_
@@ -12324,34 +12365,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.VideoStream.MaxReconstructedVideoFrameSize
   nameWithType: VideoStream.MaxReconstructedVideoFrameSize
-- uid: SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader,SIPSorcery.Net.SDPAudioVideoMediaFormat,System.Int32,System.Net.IPEndPoint,System.Byte[])
-  name: OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte[])
-  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_OnReceiveRTPPacket_SIPSorcery_Net_RTPHeader_SIPSorcery_Net_SDPAudioVideoMediaFormat_System_Int32_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader,SIPSorcery.Net.SDPAudioVideoMediaFormat,System.Int32,System.Net.IPEndPoint,System.Byte[])
-  name.vb: OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte())
-  fullName: SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader, SIPSorcery.Net.SDPAudioVideoMediaFormat, System.Int32, System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket(SIPSorcery.Net.RTPHeader, SIPSorcery.Net.SDPAudioVideoMediaFormat, System.Int32, System.Net.IPEndPoint, System.Byte())
-  nameWithType: VideoStream.OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte[])
-  nameWithType.vb: VideoStream.OnReceiveRTPPacket(RTPHeader, SDPAudioVideoMediaFormat, Int32, IPEndPoint, Byte())
-- uid: SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket*
-  name: OnReceiveRTPPacket
-  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_OnReceiveRTPPacket_
-  commentId: Overload:SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.VideoStream.OnReceiveRTPPacket
-  nameWithType: VideoStream.OnReceiveRTPPacket
-- uid: SIPSorcery.net.RTP.VideoStream.OnVideoFormatsNegotiated
-  name: OnVideoFormatsNegotiated
-  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_OnVideoFormatsNegotiated
-  commentId: E:SIPSorcery.net.RTP.VideoStream.OnVideoFormatsNegotiated
-  fullName: SIPSorcery.net.RTP.VideoStream.OnVideoFormatsNegotiated
-  nameWithType: VideoStream.OnVideoFormatsNegotiated
-- uid: SIPSorcery.net.RTP.VideoStream.OnVideoFrameReceived
-  name: OnVideoFrameReceived
-  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_OnVideoFrameReceived
-  commentId: E:SIPSorcery.net.RTP.VideoStream.OnVideoFrameReceived
-  fullName: SIPSorcery.net.RTP.VideoStream.OnVideoFrameReceived
-  nameWithType: VideoStream.OnVideoFrameReceived
+- uid: SIPSorcery.net.RTP.VideoStream.OnVideoFormatsNegotiatedByIndex
+  name: OnVideoFormatsNegotiatedByIndex
+  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_OnVideoFormatsNegotiatedByIndex
+  commentId: E:SIPSorcery.net.RTP.VideoStream.OnVideoFormatsNegotiatedByIndex
+  fullName: SIPSorcery.net.RTP.VideoStream.OnVideoFormatsNegotiatedByIndex
+  nameWithType: VideoStream.OnVideoFormatsNegotiatedByIndex
+- uid: SIPSorcery.net.RTP.VideoStream.OnVideoFrameReceivedByIndex
+  name: OnVideoFrameReceivedByIndex
+  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_OnVideoFrameReceivedByIndex
+  commentId: E:SIPSorcery.net.RTP.VideoStream.OnVideoFrameReceivedByIndex
+  fullName: SIPSorcery.net.RTP.VideoStream.OnVideoFrameReceivedByIndex
+  nameWithType: VideoStream.OnVideoFrameReceivedByIndex
 - uid: SIPSorcery.net.RTP.VideoStream.ProcessVideoRtpFrame(System.Net.IPEndPoint,SIPSorcery.Net.RTPPacket,SIPSorcery.Net.SDPAudioVideoMediaFormat)
   name: ProcessVideoRtpFrame(IPEndPoint, RTPPacket, SDPAudioVideoMediaFormat)
   href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_ProcessVideoRtpFrame_System_Net_IPEndPoint_SIPSorcery_Net_RTPPacket_SIPSorcery_Net_SDPAudioVideoMediaFormat_
@@ -13500,12 +13525,28 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.AcceptRtpFromAny
   nameWithType: RTPSession.AcceptRtpFromAny
-- uid: SIPSorcery.Net.RTPSession.addSingleTrack
-  name: addSingleTrack()
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack
-  commentId: M:SIPSorcery.Net.RTPSession.addSingleTrack
-  fullName: SIPSorcery.Net.RTPSession.addSingleTrack()
-  nameWithType: RTPSession.addSingleTrack()
+- uid: SIPSorcery.Net.RTPSession.AddRemoteSDPSsrcAttributes(SIPSorcery.Net.SDPMediaTypesEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute})
+  name: AddRemoteSDPSsrcAttributes(SDPMediaTypesEnum, List<SDPSsrcAttribute>)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AddRemoteSDPSsrcAttributes_SIPSorcery_Net_SDPMediaTypesEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPSsrcAttribute__
+  commentId: M:SIPSorcery.Net.RTPSession.AddRemoteSDPSsrcAttributes(SIPSorcery.Net.SDPMediaTypesEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPSsrcAttribute})
+  name.vb: AddRemoteSDPSsrcAttributes(SDPMediaTypesEnum, List(Of SDPSsrcAttribute))
+  fullName: SIPSorcery.Net.RTPSession.AddRemoteSDPSsrcAttributes(SIPSorcery.Net.SDPMediaTypesEnum, System.Collections.Generic.List<SIPSorcery.Net.SDPSsrcAttribute>)
+  fullName.vb: SIPSorcery.Net.RTPSession.AddRemoteSDPSsrcAttributes(SIPSorcery.Net.SDPMediaTypesEnum, System.Collections.Generic.List(Of SIPSorcery.Net.SDPSsrcAttribute))
+  nameWithType: RTPSession.AddRemoteSDPSsrcAttributes(SDPMediaTypesEnum, List<SDPSsrcAttribute>)
+  nameWithType.vb: RTPSession.AddRemoteSDPSsrcAttributes(SDPMediaTypesEnum, List(Of SDPSsrcAttribute))
+- uid: SIPSorcery.Net.RTPSession.AddRemoteSDPSsrcAttributes*
+  name: AddRemoteSDPSsrcAttributes
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AddRemoteSDPSsrcAttributes_
+  commentId: Overload:SIPSorcery.Net.RTPSession.AddRemoteSDPSsrcAttributes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.AddRemoteSDPSsrcAttributes
+  nameWithType: RTPSession.AddRemoteSDPSsrcAttributes
+- uid: SIPSorcery.Net.RTPSession.addSingleTrack(System.Boolean)
+  name: addSingleTrack(Boolean)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack_System_Boolean_
+  commentId: M:SIPSorcery.Net.RTPSession.addSingleTrack(System.Boolean)
+  fullName: SIPSorcery.Net.RTPSession.addSingleTrack(System.Boolean)
+  nameWithType: RTPSession.addSingleTrack(Boolean)
 - uid: SIPSorcery.Net.RTPSession.addSingleTrack*
   name: addSingleTrack
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack_
@@ -13604,6 +13645,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.AudioStream
   nameWithType: RTPSession.AudioStream
+- uid: SIPSorcery.Net.RTPSession.AudioStreamList
+  name: AudioStreamList
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioStreamList
+  commentId: P:SIPSorcery.Net.RTPSession.AudioStreamList
+  fullName: SIPSorcery.Net.RTPSession.AudioStreamList
+  nameWithType: RTPSession.AudioStreamList
+- uid: SIPSorcery.Net.RTPSession.AudioStreamList*
+  name: AudioStreamList
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioStreamList_
+  commentId: Overload:SIPSorcery.Net.RTPSession.AudioStreamList
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.AudioStreamList
+  nameWithType: RTPSession.AudioStreamList
 - uid: SIPSorcery.Net.RTPSession.Close(System.String)
   name: Close(String)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Close_System_String_
@@ -13699,19 +13753,19 @@ references:
   commentId: F:SIPSorcery.Net.RTPSession.DTMF_EVENT_PAYLOAD_ID
   fullName: SIPSorcery.Net.RTPSession.DTMF_EVENT_PAYLOAD_ID
   nameWithType: RTPSession.DTMF_EVENT_PAYLOAD_ID
-- uid: SIPSorcery.Net.RTPSession.GetLocalTracks
-  name: GetLocalTracks()
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetLocalTracks
-  commentId: M:SIPSorcery.Net.RTPSession.GetLocalTracks
-  fullName: SIPSorcery.Net.RTPSession.GetLocalTracks()
-  nameWithType: RTPSession.GetLocalTracks()
-- uid: SIPSorcery.Net.RTPSession.GetLocalTracks*
-  name: GetLocalTracks
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetLocalTracks_
-  commentId: Overload:SIPSorcery.Net.RTPSession.GetLocalTracks
+- uid: SIPSorcery.Net.RTPSession.GetMediaStreams
+  name: GetMediaStreams()
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetMediaStreams
+  commentId: M:SIPSorcery.Net.RTPSession.GetMediaStreams
+  fullName: SIPSorcery.Net.RTPSession.GetMediaStreams()
+  nameWithType: RTPSession.GetMediaStreams()
+- uid: SIPSorcery.Net.RTPSession.GetMediaStreams*
+  name: GetMediaStreams
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetMediaStreams_
+  commentId: Overload:SIPSorcery.Net.RTPSession.GetMediaStreams
   isSpec: "True"
-  fullName: SIPSorcery.Net.RTPSession.GetLocalTracks
-  nameWithType: RTPSession.GetLocalTracks
+  fullName: SIPSorcery.Net.RTPSession.GetMediaStreams
+  nameWithType: RTPSession.GetMediaStreams
 - uid: SIPSorcery.Net.RTPSession.HasAudio
   name: HasAudio
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_HasAudio
@@ -13777,6 +13831,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.IsStarted
   nameWithType: RTPSession.IsStarted
+- uid: SIPSorcery.Net.RTPSession.LogRemoteSDPSsrcAttributes
+  name: LogRemoteSDPSsrcAttributes()
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_LogRemoteSDPSsrcAttributes
+  commentId: M:SIPSorcery.Net.RTPSession.LogRemoteSDPSsrcAttributes
+  fullName: SIPSorcery.Net.RTPSession.LogRemoteSDPSsrcAttributes()
+  nameWithType: RTPSession.LogRemoteSDPSsrcAttributes()
+- uid: SIPSorcery.Net.RTPSession.LogRemoteSDPSsrcAttributes*
+  name: LogRemoteSDPSsrcAttributes
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_LogRemoteSDPSsrcAttributes_
+  commentId: Overload:SIPSorcery.Net.RTPSession.LogRemoteSDPSsrcAttributes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.LogRemoteSDPSsrcAttributes
+  nameWithType: RTPSession.LogRemoteSDPSsrcAttributes
 - uid: SIPSorcery.Net.RTPSession.MaxReconstructedVideoFrameSize
   name: MaxReconstructedVideoFrameSize
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_MaxReconstructedVideoFrameSize
@@ -13802,6 +13869,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnAudioFormatsNegotiated
   fullName: SIPSorcery.Net.RTPSession.OnAudioFormatsNegotiated
   nameWithType: RTPSession.OnAudioFormatsNegotiated
+- uid: SIPSorcery.Net.RTPSession.OnAudioFormatsNegotiatedByIndex
+  name: OnAudioFormatsNegotiatedByIndex
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnAudioFormatsNegotiatedByIndex
+  commentId: E:SIPSorcery.Net.RTPSession.OnAudioFormatsNegotiatedByIndex
+  fullName: SIPSorcery.Net.RTPSession.OnAudioFormatsNegotiatedByIndex
+  nameWithType: RTPSession.OnAudioFormatsNegotiatedByIndex
 - uid: SIPSorcery.Net.RTPSession.OnClosed
   name: OnClosed
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnClosed
@@ -13830,6 +13903,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnReceiveReport
   fullName: SIPSorcery.Net.RTPSession.OnReceiveReport
   nameWithType: RTPSession.OnReceiveReport
+- uid: SIPSorcery.Net.RTPSession.OnReceiveReportByIndex
+  name: OnReceiveReportByIndex
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceiveReportByIndex
+  commentId: E:SIPSorcery.Net.RTPSession.OnReceiveReportByIndex
+  fullName: SIPSorcery.Net.RTPSession.OnReceiveReportByIndex
+  nameWithType: RTPSession.OnReceiveReportByIndex
 - uid: SIPSorcery.Net.RTPSession.OnRtcpBye
   name: OnRtcpBye
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtcpBye
@@ -13848,18 +13927,36 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnRtpEvent
   fullName: SIPSorcery.Net.RTPSession.OnRtpEvent
   nameWithType: RTPSession.OnRtpEvent
+- uid: SIPSorcery.Net.RTPSession.OnRtpEventByIndex
+  name: OnRtpEventByIndex
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpEventByIndex
+  commentId: E:SIPSorcery.Net.RTPSession.OnRtpEventByIndex
+  fullName: SIPSorcery.Net.RTPSession.OnRtpEventByIndex
+  nameWithType: RTPSession.OnRtpEventByIndex
 - uid: SIPSorcery.Net.RTPSession.OnRtpPacketReceived
   name: OnRtpPacketReceived
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpPacketReceived
   commentId: E:SIPSorcery.Net.RTPSession.OnRtpPacketReceived
   fullName: SIPSorcery.Net.RTPSession.OnRtpPacketReceived
   nameWithType: RTPSession.OnRtpPacketReceived
+- uid: SIPSorcery.Net.RTPSession.OnRtpPacketReceivedByIndex
+  name: OnRtpPacketReceivedByIndex
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpPacketReceivedByIndex
+  commentId: E:SIPSorcery.Net.RTPSession.OnRtpPacketReceivedByIndex
+  fullName: SIPSorcery.Net.RTPSession.OnRtpPacketReceivedByIndex
+  nameWithType: RTPSession.OnRtpPacketReceivedByIndex
 - uid: SIPSorcery.Net.RTPSession.OnSendReport
   name: OnSendReport
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnSendReport
   commentId: E:SIPSorcery.Net.RTPSession.OnSendReport
   fullName: SIPSorcery.Net.RTPSession.OnSendReport
   nameWithType: RTPSession.OnSendReport
+- uid: SIPSorcery.Net.RTPSession.OnSendReportByIndex
+  name: OnSendReportByIndex
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnSendReportByIndex
+  commentId: E:SIPSorcery.Net.RTPSession.OnSendReportByIndex
+  fullName: SIPSorcery.Net.RTPSession.OnSendReportByIndex
+  nameWithType: RTPSession.OnSendReportByIndex
 - uid: SIPSorcery.Net.RTPSession.OnStarted
   name: OnStarted
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnStarted
@@ -13872,18 +13969,49 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnTimeout
   fullName: SIPSorcery.Net.RTPSession.OnTimeout
   nameWithType: RTPSession.OnTimeout
+- uid: SIPSorcery.Net.RTPSession.OnTimeoutByIndex
+  name: OnTimeoutByIndex
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnTimeoutByIndex
+  commentId: E:SIPSorcery.Net.RTPSession.OnTimeoutByIndex
+  fullName: SIPSorcery.Net.RTPSession.OnTimeoutByIndex
+  nameWithType: RTPSession.OnTimeoutByIndex
 - uid: SIPSorcery.Net.RTPSession.OnVideoFormatsNegotiated
   name: OnVideoFormatsNegotiated
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFormatsNegotiated
   commentId: E:SIPSorcery.Net.RTPSession.OnVideoFormatsNegotiated
   fullName: SIPSorcery.Net.RTPSession.OnVideoFormatsNegotiated
   nameWithType: RTPSession.OnVideoFormatsNegotiated
+- uid: SIPSorcery.Net.RTPSession.OnVideoFormatsNegotiatedByIndex
+  name: OnVideoFormatsNegotiatedByIndex
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFormatsNegotiatedByIndex
+  commentId: E:SIPSorcery.Net.RTPSession.OnVideoFormatsNegotiatedByIndex
+  fullName: SIPSorcery.Net.RTPSession.OnVideoFormatsNegotiatedByIndex
+  nameWithType: RTPSession.OnVideoFormatsNegotiatedByIndex
 - uid: SIPSorcery.Net.RTPSession.OnVideoFrameReceived
   name: OnVideoFrameReceived
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFrameReceived
   commentId: E:SIPSorcery.Net.RTPSession.OnVideoFrameReceived
   fullName: SIPSorcery.Net.RTPSession.OnVideoFrameReceived
   nameWithType: RTPSession.OnVideoFrameReceived
+- uid: SIPSorcery.Net.RTPSession.OnVideoFrameReceivedByIndex
+  name: OnVideoFrameReceivedByIndex
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnVideoFrameReceivedByIndex
+  commentId: E:SIPSorcery.Net.RTPSession.OnVideoFrameReceivedByIndex
+  fullName: SIPSorcery.Net.RTPSession.OnVideoFrameReceivedByIndex
+  nameWithType: RTPSession.OnVideoFrameReceivedByIndex
+- uid: SIPSorcery.Net.RTPSession.PrimaryStream
+  name: PrimaryStream
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_PrimaryStream
+  commentId: P:SIPSorcery.Net.RTPSession.PrimaryStream
+  fullName: SIPSorcery.Net.RTPSession.PrimaryStream
+  nameWithType: RTPSession.PrimaryStream
+- uid: SIPSorcery.Net.RTPSession.PrimaryStream*
+  name: PrimaryStream
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_PrimaryStream_
+  commentId: Overload:SIPSorcery.Net.RTPSession.PrimaryStream
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.PrimaryStream
+  nameWithType: RTPSession.PrimaryStream
 - uid: SIPSorcery.Net.RTPSession.RemoteDescription
   name: RemoteDescription
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteDescription
@@ -13923,6 +14051,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RequireRenegotiation
   nameWithType: RTPSession.RequireRenegotiation
+- uid: SIPSorcery.Net.RTPSession.ResetRemoteSDPSsrcAttributes
+  name: ResetRemoteSDPSsrcAttributes()
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_ResetRemoteSDPSsrcAttributes
+  commentId: M:SIPSorcery.Net.RTPSession.ResetRemoteSDPSsrcAttributes
+  fullName: SIPSorcery.Net.RTPSession.ResetRemoteSDPSsrcAttributes()
+  nameWithType: RTPSession.ResetRemoteSDPSsrcAttributes()
+- uid: SIPSorcery.Net.RTPSession.ResetRemoteSDPSsrcAttributes*
+  name: ResetRemoteSDPSsrcAttributes
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_ResetRemoteSDPSsrcAttributes_
+  commentId: Overload:SIPSorcery.Net.RTPSession.ResetRemoteSDPSsrcAttributes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.ResetRemoteSDPSsrcAttributes
+  nameWithType: RTPSession.ResetRemoteSDPSsrcAttributes
 - uid: SIPSorcery.Net.RTPSession.RTCP_RR_NOSTREAM_SSRC
   name: RTCP_RR_NOSTREAM_SSRC
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTCP_RR_NOSTREAM_SSRC
@@ -14079,6 +14220,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SetDestination
   nameWithType: RTPSession.SetDestination
+- uid: SIPSorcery.Net.RTPSession.SetGlobalDestination(System.Net.IPEndPoint,System.Net.IPEndPoint)
+  name: SetGlobalDestination(IPEndPoint, IPEndPoint)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetGlobalDestination_System_Net_IPEndPoint_System_Net_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTPSession.SetGlobalDestination(System.Net.IPEndPoint,System.Net.IPEndPoint)
+  fullName: SIPSorcery.Net.RTPSession.SetGlobalDestination(System.Net.IPEndPoint, System.Net.IPEndPoint)
+  nameWithType: RTPSession.SetGlobalDestination(IPEndPoint, IPEndPoint)
+- uid: SIPSorcery.Net.RTPSession.SetGlobalDestination*
+  name: SetGlobalDestination
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetGlobalDestination_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SetGlobalDestination
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SetGlobalDestination
+  nameWithType: RTPSession.SetGlobalDestination
+- uid: SIPSorcery.Net.RTPSession.SetGlobalSecurityContext(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
+  name: SetGlobalSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetGlobalSecurityContext_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
+  commentId: M:SIPSorcery.Net.RTPSession.SetGlobalSecurityContext(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
+  fullName: SIPSorcery.Net.RTPSession.SetGlobalSecurityContext(SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
+  nameWithType: RTPSession.SetGlobalSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
+- uid: SIPSorcery.Net.RTPSession.SetGlobalSecurityContext*
+  name: SetGlobalSecurityContext
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetGlobalSecurityContext_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SetGlobalSecurityContext
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SetGlobalSecurityContext
+  nameWithType: RTPSession.SetGlobalSecurityContext
 - uid: SIPSorcery.Net.RTPSession.SetMediaStreamStatus(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.MediaStreamStatusEnum)
   name: SetMediaStreamStatus(SDPMediaTypesEnum, MediaStreamStatusEnum)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetMediaStreamStatus_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_MediaStreamStatusEnum_
@@ -14105,19 +14272,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SetRemoteDescription
   nameWithType: RTPSession.SetRemoteDescription
-- uid: SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  name: SetSecurityContext(SDPMediaTypesEnum, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
-  commentId: M:SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  fullName: SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.SDPMediaTypesEnum, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
-  nameWithType: RTPSession.SetSecurityContext(SDPMediaTypesEnum, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
-- uid: SIPSorcery.Net.RTPSession.SetSecurityContext*
-  name: SetSecurityContext
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_
-  commentId: Overload:SIPSorcery.Net.RTPSession.SetSecurityContext
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPSession.SetSecurityContext
-  nameWithType: RTPSession.SetSecurityContext
 - uid: SIPSorcery.Net.RTPSession.SRTP_MAX_PREFIX_LENGTH
   name: SRTP_MAX_PREFIX_LENGTH
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SRTP_MAX_PREFIX_LENGTH
@@ -14228,6 +14382,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.VideoStream
   nameWithType: RTPSession.VideoStream
+- uid: SIPSorcery.Net.RTPSession.VideoStreamList
+  name: VideoStreamList
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoStreamList
+  commentId: P:SIPSorcery.Net.RTPSession.VideoStreamList
+  fullName: SIPSorcery.Net.RTPSession.VideoStreamList
+  nameWithType: RTPSession.VideoStreamList
+- uid: SIPSorcery.Net.RTPSession.VideoStreamList*
+  name: VideoStreamList
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoStreamList_
+  commentId: Overload:SIPSorcery.Net.RTPSession.VideoStreamList
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.VideoStreamList
+  nameWithType: RTPSession.VideoStreamList
 - uid: SIPSorcery.Net.RtpSessionConfig
   name: RtpSessionConfig
   href: api/SIPSorcery.Net.RtpSessionConfig.html
@@ -19398,12 +19565,12 @@ references:
   commentId: F:SIPSorcery.Net.SDP.ExtraSessionAttributes
   fullName: SIPSorcery.Net.SDP.ExtraSessionAttributes
   nameWithType: SDP.ExtraSessionAttributes
-- uid: SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum)
-  name: GetIndexForMediaType(SDPMediaTypesEnum)
-  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_GetIndexForMediaType_SIPSorcery_Net_SDPMediaTypesEnum_
-  commentId: M:SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum)
-  fullName: SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum)
-  nameWithType: SDP.GetIndexForMediaType(SDPMediaTypesEnum)
+- uid: SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32)
+  name: GetIndexForMediaType(SDPMediaTypesEnum, Int32)
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_GetIndexForMediaType_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_
+  commentId: M:SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32)
+  fullName: SIPSorcery.Net.SDP.GetIndexForMediaType(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32)
+  nameWithType: SDP.GetIndexForMediaType(SDPMediaTypesEnum, Int32)
 - uid: SIPSorcery.Net.SDP.GetIndexForMediaType*
   name: GetIndexForMediaType
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_GetIndexForMediaType_

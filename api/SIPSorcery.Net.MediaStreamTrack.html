@@ -895,7 +895,7 @@ sent using this media stream.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_GetNextSeqNum.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L288">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L334">View Source</a>
   </span>
   <a id="SIPSorcery_Net_MediaStreamTrack_GetNextSeqNum_" data-uid="SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum*"></a>
   <h4 id="SIPSorcery_Net_MediaStreamTrack_GetNextSeqNum" data-uid="SIPSorcery.Net.MediaStreamTrack.GetNextSeqNum">GetNextSeqNum()</h4>
@@ -1020,6 +1020,159 @@ a value expected for this track.</p>
       <tr>
         <td><span class="xref">System.Boolean</span></td>
         <td><p>True if the SSRC value is expected for this track. False if not.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_SIPSorcery_Net_SDPAudioVideoMediaFormat_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorcery.Net.SDPAudioVideoMediaFormat)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L290">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_" data-uid="SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities*"></a>
+  <h4 id="SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_SIPSorcery_Net_SDPAudioVideoMediaFormat_" data-uid="SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorcery.Net.SDPAudioVideoMediaFormat)">RestrictCapabilities(SDPAudioVideoMediaFormat)</h4>
+  <div class="markdown level1 summary"><p>To restrict MediaStream Capabilties to one Audio/Video format. This Audio/Video format must already be present in the previous list or if the list is empty/null</p>
+<p>Usefull once you have successfully created a connection with a Peer to use the same format even even others negocitions are performed</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool RestrictCapabilities(SDPAudioVideoMediaFormat sdpAudioVideoMediaFormat)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPAudioVideoMediaFormat.html">SDPAudioVideoMediaFormat</a></td>
+        <td><span class="parametername">sdpAudioVideoMediaFormat</span></td>
+        <td><p>The Audio/Video Format to restrict</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><p>True if the operation has been performed</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_SIPSorceryMedia_Abstractions_AudioFormat_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.AudioFormat)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L324">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_" data-uid="SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities*"></a>
+  <h4 id="SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_SIPSorceryMedia_Abstractions_AudioFormat_" data-uid="SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.AudioFormat)">RestrictCapabilities(AudioFormat)</h4>
+  <div class="markdown level1 summary"><p>To restrict MediaStream Capabilties to one Audio format. This Audio format must already be present in the previous list or if the list is empty/null</p>
+<p>Usefull once you have successfully created a connection with a Peer to use the same format even even others negocitions are performed</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool RestrictCapabilities(AudioFormat audioFormat)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.AudioFormat</span></td>
+        <td><span class="parametername">audioFormat</span></td>
+        <td><p>The Audio Format to restrict</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><p>True if the operation has been performed</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_SIPSorceryMedia_Abstractions_VideoFormat_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.VideoFormat)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/MediaStreamTrack.cs/#L312">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_" data-uid="SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities*"></a>
+  <h4 id="SIPSorcery_Net_MediaStreamTrack_RestrictCapabilities_SIPSorceryMedia_Abstractions_VideoFormat_" data-uid="SIPSorcery.Net.MediaStreamTrack.RestrictCapabilities(SIPSorceryMedia.Abstractions.VideoFormat)">RestrictCapabilities(VideoFormat)</h4>
+  <div class="markdown level1 summary"><p>To restrict MediaStream Capabilties to one Video format. This Video format must already be present in the previous list or if the list is empty/null</p>
+<p>Usefull once you have successfully created a connection with a Peer to use the same format even even others negocitions are performed</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool RestrictCapabilities(VideoFormat videoFormat)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.VideoFormat</span></td>
+        <td><span class="parametername">videoFormat</span></td>
+        <td><p>The Video Format to restrict</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><p>True if the operation has been performed</p>
 </td>
       </tr>
     </tbody>
