@@ -153,6 +153,7 @@ namespace SIPSorcery.SIP.App
             m_registerFailureRetryInterval = registerFailureRetryInterval;
             m_maxRegisterAttempts = maxRegisterAttempts;
             m_exitOnUnequivocalFailure = exitOnUnequivocalFailure;
+            m_exit = true;
 
             // Setting the contact to "0.0.0.0" tells the transport layer to populate it at send time.
             m_contactURI = new SIPURI(m_sipAccountAOR.Scheme, IPAddress.Any, 0);
@@ -190,6 +191,7 @@ namespace SIPSorcery.SIP.App
             m_registerFailureRetryInterval = registerFailureRetryInterval;
             m_maxRegisterAttempts = maxRegisterAttempts;
             m_exitOnUnequivocalFailure = exitOnUnequivocalFailure;
+            m_exit = true;
         }
 
         public void Start()
