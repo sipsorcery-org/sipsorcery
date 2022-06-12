@@ -56,9 +56,9 @@ namespace SIPSorcery.Examples
 
     class Program
     {
-        //private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
+        private const uint SSRC_REMOTE_VIDEO = 38106908;
         private const int WEBSOCKET_PORT = 8081;
-        private const string FFMPEG_DEFAULT_COMMAND = "ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 -vcodec {0} -pix_fmt yuv420p -strict experimental -g 1 -f rtp rtp://127.0.0.1:{1} -sdp_file {2}";
+        private const string FFMPEG_DEFAULT_COMMAND = "ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 -vcodec {0} -pix_fmt yuv420p -strict experimental -g 1 -ssrc {2} -f rtp rtp://127.0.0.1:{1} -sdp_file {3}";
         private const string FFMPEG_SDP_FILE = "ffmpeg.sdp";
         private const int FFMPEG_DEFAULT_RTP_PORT = 5020;
 
@@ -104,7 +104,7 @@ namespace SIPSorcery.Examples
 
             logger = AddConsoleLogger();
 
-            string ffmpegCommand = String.Format(FFMPEG_DEFAULT_COMMAND, videoCodec, FFMPEG_DEFAULT_RTP_PORT, FFMPEG_SDP_FILE);
+            string ffmpegCommand = String.Format(FFMPEG_DEFAULT_COMMAND, videoCodec, FFMPEG_DEFAULT_RTP_PORT, SSRC_REMOTE_VIDEO, FFMPEG_SDP_FILE);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -171,7 +171,9 @@ namespace SIPSorcery.Examples
 
                 _ffmpegListener = new RTPSession(false, false, false, IPAddress.Loopback, FFMPEG_DEFAULT_RTP_PORT);
                 _ffmpegListener.AcceptRtpFromAny = true;
+
                 MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { _ffmpegVideoFormat }, MediaStreamStatusEnum.RecvOnly);
+                videoTrack.Ssrc = SSRC_REMOTE_VIDEO; //   /!\ Need to set the correct SSRC in order to accept RTP stream
                 _ffmpegListener.addTrack(videoTrack);
 
                 _ffmpegListener.SetRemoteDescription(SIP.App.SdpType.answer, sdp);

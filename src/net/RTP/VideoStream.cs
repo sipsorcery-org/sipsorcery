@@ -37,7 +37,7 @@ namespace SIPSorcery.net.RTP
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common video formats is set.
         /// </summary>
-        public event Action<List<VideoFormat>> OnVideoFormatsNegotiated;
+        public event Action<int, List<VideoFormat>> OnVideoFormatsNegotiatedByIndex;
 
         /// <summary>
         /// Gets fired when a full video frame is reconstructed from one or more RTP packets
@@ -49,7 +49,7 @@ namespace SIPSorcery.net.RTP
         ///  - The encoded video frame payload.
         ///  - The video format of the encoded frame.
         /// </remarks>
-        public event Action<IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceived;
+        public event Action<int, IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceivedByIndex;
 
     #endregion EVENTS
 
@@ -72,6 +72,7 @@ namespace SIPSorcery.net.RTP
         /// process.
         /// </summary>
         public int MaxReconstructedVideoFrameSize { get; set; } = 1048576;
+
 
     #endregion PROPERTIES
 
@@ -247,16 +248,15 @@ namespace SIPSorcery.net.RTP
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
             var videoSendingFormat = GetSendingFormat();
+            int payloadID = Convert.ToInt32(videoSendingFormat.ID);
 
             switch (videoSendingFormat.Name())
             {
                 case "VP8":
-                    int vp8PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "VP8").ID);
-                    SendVp8Frame(durationRtpUnits, vp8PayloadID, sample);
+                    SendVp8Frame(durationRtpUnits, payloadID, sample);
                     break;
                 case "H264":
-                    int h264PayloadID = Convert.ToInt32(LocalTrack.Capabilities.First(x => x.Name() == "H264").ID);
-                    SendH264Frame(durationRtpUnits, h264PayloadID, sample);
+                    SendH264Frame(durationRtpUnits, payloadID, sample);
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
@@ -269,7 +269,7 @@ namespace SIPSorcery.net.RTP
 
         public void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
         {
-            if (OnVideoFrameReceived == null)
+            if (OnVideoFrameReceivedByIndex == null)
             {
                 return;
             }
@@ -279,7 +279,7 @@ namespace SIPSorcery.net.RTP
                 var frame = RtpVideoFramer.GotRtpPacket(packet);
                 if (frame != null)
                 {
-                    OnVideoFrameReceived?.Invoke(endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
+                    OnVideoFrameReceivedByIndex?.Invoke(Index, endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
                 }
             }
             else
@@ -294,7 +294,7 @@ namespace SIPSorcery.net.RTP
                     var frame = RtpVideoFramer.GotRtpPacket(packet);
                     if (frame != null)
                     {
-                        OnVideoFrameReceived?.Invoke(endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
+                        OnVideoFrameReceivedByIndex?.Invoke(Index, endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
                     }
                 }
                 else
@@ -304,24 +304,20 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        public void OnReceiveRTPPacket(RTPHeader hdr, SDPAudioVideoMediaFormat format, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
-        {
-            base.OnReceiveRTPPacket(hdr, format, localPort, remoteEndPoint, buffer, this);
-        }
-
     #endregion RECEIVE PACKET
 
         public void CheckVideoFormatsNegotiation()
         {
             if (LocalTrack != null && LocalTrack.Capabilities?.Count() > 0)
             {
-                OnVideoFormatsNegotiated?.Invoke(
+                OnVideoFormatsNegotiatedByIndex?.Invoke(
+                            Index,
                             LocalTrack.Capabilities
                             .Select(x => x.ToVideoFormat()).ToList());
             }
         }
 
-        public VideoStream(RtpSessionConfig config) : base(config)
+        public VideoStream(RtpSessionConfig config, int index) : base(config, index)
         {
             MediaType = SDPMediaTypesEnum.video;
         }
