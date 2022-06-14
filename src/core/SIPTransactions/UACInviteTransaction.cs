@@ -42,26 +42,41 @@ namespace SIPSorcery.SIP
         internal bool m_sentPrack;                  // Records whether the PRACK request was sent.
         private int m_cseq;
 
+
         /// <summary>
         /// Default constructor for user agent client INVITE transaction.
         /// </summary>
         /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to 
         /// the application to explicitly call the SendACK request.</param>
         /// <param name="disablePrackSupport">If set to true then PRACK support will not be set in the initial INVITE request.</param>
+        [Obsolete("Please use the new constructor without disablePrackSupport. Note the original implementation of disablePrackSupport does not behave as previously summarised.")]
         public UACInviteTransaction(SIPTransport sipTransport,
             SIPRequest sipRequest,
             SIPEndPoint outboundProxy,
-            bool sendOkAckManually = false,
-            bool disablePrackSupport = false)
+            bool sendOkAckManually,
+            bool disablePrackSupport): this (sipTransport, sipRequest, outboundProxy, sendOkAckManually)
+        {
+            _disablePrackSupport = disablePrackSupport;
+        }
+
+        /// <summary>
+        /// Default constructor for user agent client INVITE transaction.
+        /// </summary>
+        /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to 
+        /// the application to explicitly call the SendACK request.</param>
+        public UACInviteTransaction(SIPTransport sipTransport,
+            SIPRequest sipRequest,
+            SIPEndPoint outboundProxy,
+            bool sendOkAckManually = false)
             : base(sipTransport, sipRequest, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.InviteClient;
             m_localTag = sipRequest.Header.From.FromTag;
             CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
             _sendOkAckManually = sendOkAckManually;
-            _disablePrackSupport = disablePrackSupport;
             m_cseq = sipRequest.Header.CSeq;
-
+            _disablePrackSupport = !((sipRequest.Header.Supported?.Contains(SIPExtensionHeaders.PRACK) ?? false) 
+                                     || (sipRequest.Header.Require?.Contains(SIPExtensionHeaders.PRACK) ?? false));
             TransactionFinalResponseReceived += UACInviteTransaction_TransactionFinalResponseReceived;
             TransactionInformationResponseReceived += UACInviteTransaction_TransactionInformationResponseReceived;
             TransactionFailed += UACInviteTransaction_TransactionFailed;
@@ -90,7 +105,7 @@ namespace SIPSorcery.SIP
             {
                 if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
                 {
-                    if (sipResponse.Header.RSeq > 0)
+                    if (!_disablePrackSupport && sipResponse.Header.RSeq > 0)
                     {
                         // Send a PRACK for this provisional response.
                         m_cseq++;
