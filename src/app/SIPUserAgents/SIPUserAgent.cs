@@ -375,6 +375,12 @@ namespace SIPSorcery.SIP.App
         public event SIPTransactionTraceMessageDelegate OnTransactionTraceMessage;
 
         /// <summary>
+        /// Determines whether the agent will operate with support for reliable provisional responses as per RFC3262.
+        /// If support is not desired it should be set to false before the initial INVITE request is sent.
+        /// </summary>
+        public bool PrackSupported { get; set; } = true;
+
+        /// <summary>
         /// Creates a new instance where the user agent has exclusive control of the SIP transport.
         /// This is significant for incoming requests. WIth exclusive control the agent knows that
         /// any request are for it and can handle accordingly. If the transport needs to be shared 
@@ -493,6 +499,7 @@ namespace SIPSorcery.SIP.App
             m_callDescriptor = sipCallDescriptor;
 
             m_uac = new SIPClientUserAgent(m_transport, m_outboundProxy);
+            m_uac.PrackSupported = PrackSupported;
             m_uac.CallTrying += ClientCallTryingHandler;
             m_uac.CallRinging += ClientCallRingingHandler;
             m_uac.CallAnswered += ClientCallAnsweredHandler;
