@@ -28086,6 +28086,19 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnTransferToTargetSuccessful
   fullName: SIPSorcery.SIP.App.SIPUserAgent.OnTransferToTargetSuccessful
   nameWithType: SIPUserAgent.OnTransferToTargetSuccessful
+- uid: SIPSorcery.SIP.App.SIPUserAgent.PrackSupported
+  name: PrackSupported
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_PrackSupported
+  commentId: P:SIPSorcery.SIP.App.SIPUserAgent.PrackSupported
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.PrackSupported
+  nameWithType: SIPUserAgent.PrackSupported
+- uid: SIPSorcery.SIP.App.SIPUserAgent.PrackSupported*
+  name: PrackSupported
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_PrackSupported_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.PrackSupported
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.PrackSupported
+  nameWithType: SIPUserAgent.PrackSupported
 - uid: SIPSorcery.SIP.App.SIPUserAgent.PutOnHold
   name: PutOnHold()
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_PutOnHold
@@ -38474,6 +38487,12 @@ references:
   commentId: T:SIPSorcery.SIP.UACInviteTransaction
   fullName: SIPSorcery.SIP.UACInviteTransaction
   nameWithType: UACInviteTransaction
+- uid: SIPSorcery.SIP.UACInviteTransaction.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
+  name: UACInviteTransaction(SIPTransport, SIPRequest, SIPEndPoint, Boolean)
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_System_Boolean_
+  commentId: M:SIPSorcery.SIP.UACInviteTransaction.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
+  fullName: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransaction(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPEndPoint, System.Boolean)
+  nameWithType: UACInviteTransaction.UACInviteTransaction(SIPTransport, SIPRequest, SIPEndPoint, Boolean)
 - uid: SIPSorcery.SIP.UACInviteTransaction.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean,System.Boolean)
   name: UACInviteTransaction(SIPTransport, SIPRequest, SIPEndPoint, Boolean, Boolean)
   href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_System_Boolean_System_Boolean_
