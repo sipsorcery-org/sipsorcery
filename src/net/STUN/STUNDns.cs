@@ -58,23 +58,27 @@ namespace SIPSorcery.Net
 
         private static LookupClient _lookupClient;
 
+        private static bool _dnsUseTcpFallback;
+
         /// <summary>
         /// Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.
         /// </summary>
-        public static bool DnsUseTcpFallback = false;
+        public static bool DnsUseTcpFallback
+        {
+            get => _dnsUseTcpFallback;
+            set
+            {
+                if (_dnsUseTcpFallback != value)
+                {
+                    _dnsUseTcpFallback = value;
+                    _lookupClient = CreateLookupClient();
+                }
+            }
+        }
 
         static STUNDns()
         {
-            var nameServers = NameServer.ResolveNameServers(skipIPv6SiteLocal: true, fallbackToGooglePublicDns: true);
-            LookupClientOptions clientOptions = new LookupClientOptions(nameServers.ToArray())
-            {
-                Retries = DNS_RETRIES_PER_SERVER,
-                Timeout = TimeSpan.FromSeconds(DNS_TIMEOUT_SECONDS),
-                UseCache = true,
-                UseTcpFallback = DnsUseTcpFallback
-            };
-
-            _lookupClient = new LookupClient(clientOptions);
+            _lookupClient = CreateLookupClient();
         }
 
         /// <summary>
@@ -247,6 +251,24 @@ namespace SIPSorcery.Net
             return addrRecord != null
                 ? new IPEndPoint(addrRecord.Address, port)
                 : null;
+        }
+
+        /// <summary>
+        /// Creates a LookupClient
+        /// </summary>
+        /// <returns>A LookupClient</returns>
+        private static LookupClient CreateLookupClient()
+        {
+            var nameServers = NameServer.ResolveNameServers(skipIPv6SiteLocal: true, fallbackToGooglePublicDns: true);
+            LookupClientOptions clientOptions = new LookupClientOptions(nameServers.ToArray())
+            {
+                Retries = DNS_RETRIES_PER_SERVER,
+                Timeout = TimeSpan.FromSeconds(DNS_TIMEOUT_SECONDS),
+                UseCache = true,
+                UseTcpFallback = DnsUseTcpFallback
+            };
+
+            return new LookupClient(clientOptions);
         }
     }
 }
