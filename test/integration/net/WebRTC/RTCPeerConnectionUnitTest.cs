@@ -278,6 +278,136 @@ a=max-message-size:262144";
         }
 
         /// <summary>
+        /// Checks that datachannel (application data), audio and video are correctly reused in
+        /// the generated answer (order is correct)
+        /// </summary>
+        [Fact]
+        public void CheckDataChannelVideoAndAudioAreWellManagedInAnswerUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // In this SDP, the datachannel1's media identifier's tag is "application1"
+            string remoteSdp =
+            @"v=0
+o=- 6660358274987668701 3 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE 0 1 2
+a=extmap-allow-mixed
+a=msid-semantic: WMS 03a8cc82-c386-4b9e-9f7d-bb29d00d117d
+m=application 61790 UDP/DTLS/SCTP webrtc-datachannel
+c=IN IP4 51.195.41.188
+a=candidate:2076133753 1 udp 2113937151 7da52ae2-cbda-46a4-a41a-352694bb27cc.local 51273 typ host generation 0 network-cost 999
+a=candidate:875361675 1 udp 2113939711 102e0cd0-cecf-4fa5-9282-1ebed8600fe4.local 51274 typ host generation 0 network-cost 999
+a=candidate:842163049 1 udp 1677729535 86.127.230.60 51273 typ srflx raddr 0.0.0.0 rport 0 generation 0 network-cost 999
+a=candidate:1382836467 1 udp 33562623 51.195.41.188 61790 typ relay raddr 86.127.230.60 rport 51273 generation 0 network-cost 999
+a=candidate:2754337611 1 udp 33562367 51.75.71.217 49926 typ relay raddr 86.127.230.60 rport 51273 generation 0 network-cost 999
+a=ice-ufrag:fXw4
+a=ice-pwd:vb5CJ96xIInblnc6dTFCCpWj
+a=ice-options:trickle
+a=fingerprint:sha-256 2B:35:E2:AA:C0:D7:A6:A6:3C:A1:C8:CE:30:96:E6:9A:42:44:64:CE:9D:95:F6:22:DC:99:DC:BC:E3:00:B8:9B
+a=setup:actpass
+a=mid:0
+a=sctp-port:5000
+a=max-message-size:262144
+m=audio 9 RTP/SAVPF 111 101
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:kpML
+a=ice-pwd:0Mn2nGBHRfhZ94rSx0LCuuPF
+a=ice-options:trickle
+a=fingerprint:sha-256 D5:E7:98:7A:3B:B3:BD:72:39:DC:B1:D7:A7:A6:D4:1D:89:AC:82:B0:F5:55:3D:51:24:67:E9:BB:C1:C3:E7:09
+a=setup:active
+a=sendrecv
+a=mid:1
+a=rtcp-mux
+a=rtpmap:111 opus/48000/2
+a=fmtp:111 minptime=10;useinbandfec=1
+a=rtpmap:101 telephone-event/8000
+a=ssrc:3700183740 cname:yYXyhROknEh4kAox
+a=ssrc:3700183740 msid:- 82cbd7f2-f11e-4f36-992e-e64fd28602d0
+a=ssrc:3700183740 mslabel:-
+a=ssrc:3700183740 label:82cbd7f2-f11e-4f36-992e-e64fd28602d0
+m=video 9 UDP/TLS/RTP/SAVPF 96
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:fXw4
+a=ice-pwd:vb5CJ96xIInblnc6dTFCCpWj
+a=ice-options:trickle
+a=fingerprint:sha-256 2B:35:E2:AA:C0:D7:A6:A6:3C:A1:C8:CE:30:96:E6:9A:42:44:64:CE:9D:95:F6:22:DC:99:DC:BC:E3:00:B8:9B
+a=setup:actpass
+a=mid:2
+a=extmap:1 urn:ietf:params:rtp-hdrext:toffset
+a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:3 urn:3gpp:video-orientation
+a=extmap:4 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=extmap:5 http://www.webrtc.org/experiments/rtp-hdrext/playout-delay
+a=extmap:6 http://www.webrtc.org/experiments/rtp-hdrext/video-content-type
+a=extmap:7 http://www.webrtc.org/experiments/rtp-hdrext/video-timing
+a=extmap:8 http://www.webrtc.org/experiments/rtp-hdrext/color-space
+a=extmap:9 urn:ietf:params:rtp-hdrext:sdes:mid
+a=extmap:10 urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id
+a=extmap:11 urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id
+a=sendrecv
+a=msid:03a8cc82-c386-4b9e-9f7d-bb29d00d117d 5b06be39-0752-497f-80f5-6cf3db665f14
+a=rtcp-mux
+a=rtcp-rsize
+a=rtpmap:96 VP8/90000
+a=rtcp-fb:96 goog-remb
+a=rtcp-fb:96 transport-cc
+a=rtcp-fb:96 ccm fir
+a=rtcp-fb:96 nack
+a=rtcp-fb:96 nack pli
+a=ssrc-group:FID 16371961 1091343449
+a=ssrc:16371961 cname:DE2fEykfrhlS8lo5
+a=ssrc:16371961 msid:03a8cc82-c386-4b9e-9f7d-bb29d00d117d 5b06be39-0752-497f-80f5-6cf3db665f14
+a=ssrc:16371961 mslabel:03a8cc82-c386-4b9e-9f7d-bb29d00d117d
+a=ssrc:16371961 label:5b06be39-0752-497f-80f5-6cf3db665f14
+a=ssrc:1091343449 cname:DE2fEykfrhlS8lo5
+a=ssrc:1091343449 msid:03a8cc82-c386-4b9e-9f7d-bb29d00d117d 5b06be39-0752-497f-80f5-6cf3db665f14
+a=ssrc:1091343449 mslabel:03a8cc82-c386-4b9e-9f7d-bb29d00d117d
+a=ssrc:1091343449 label:5b06be39-0752-497f-80f5-6cf3db665f14";
+
+            RTCPeerConnection pc = new RTCPeerConnection(null);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = pc.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = pc.CreateAnswer(null);
+            var answerString = answer.ToString();
+
+            logger.LogDebug($"Local answer: {answer}");
+
+            // Check DataChannel
+            Assert.Equal("0", answer.Media[0].MediaID);
+            Assert.Equal(SDPMediaTypesEnum.application, answer.Media[0].Media);
+
+            // Check Audio
+            Assert.Equal("1", answer.Media[1].MediaID);
+            Assert.Equal(SDPMediaTypesEnum.audio, answer.Media[1].Media);
+
+            // Check Video
+            Assert.Equal("2", answer.Media[2].MediaID);
+            Assert.Equal(SDPMediaTypesEnum.video, answer.Media[2].Media);
+
+            Assert.Contains("a=group:BUNDLE 0 1 2", answerString);
+            
+            Assert.Contains("a=mid:0", answerString);
+            Assert.Contains("a=mid:1", answerString);
+            Assert.Contains("a=mid:2", answerString);
+
+            pc.Close("normal");
+        }
+
+        /// <summary>
         /// Checks that the media identifier tags in the generated answer are in the same order as in the 
         /// received offer.
         /// </summary>
