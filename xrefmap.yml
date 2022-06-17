@@ -23536,7 +23536,14 @@ references:
 - uid: SIPSorcery.Net.STUNDns.DnsUseTcpFallback
   name: DnsUseTcpFallback
   href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_DnsUseTcpFallback
-  commentId: F:SIPSorcery.Net.STUNDns.DnsUseTcpFallback
+  commentId: P:SIPSorcery.Net.STUNDns.DnsUseTcpFallback
+  fullName: SIPSorcery.Net.STUNDns.DnsUseTcpFallback
+  nameWithType: STUNDns.DnsUseTcpFallback
+- uid: SIPSorcery.Net.STUNDns.DnsUseTcpFallback*
+  name: DnsUseTcpFallback
+  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_DnsUseTcpFallback_
+  commentId: Overload:SIPSorcery.Net.STUNDns.DnsUseTcpFallback
+  isSpec: "True"
   fullName: SIPSorcery.Net.STUNDns.DnsUseTcpFallback
   nameWithType: STUNDns.DnsUseTcpFallback
 - uid: SIPSorcery.Net.STUNDns.MDNS_TLD
