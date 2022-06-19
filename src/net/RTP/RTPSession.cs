@@ -2367,6 +2367,22 @@ namespace SIPSorcery.Net
                 VideoStream?.SendRtpRaw(payload, timestamp, markerBit, payloadTypeID);
             }
         }
+        /// <summary>
+        /// Allows additional control for sending raw RTCP payloads (on the primary one).
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTCP packet being sent. Must be audio or video.</param>
+        /// <param name="payload">The RTCP packet payload.</param>
+        public void SendRtcpRaw(SDPMediaTypesEnum mediaType, byte[] payload)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                AudioStream.SendRtcpRaw(payload);
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                VideoStream?.SendRtcpRaw(payload);
+            }
+        }
 
         /// <summary>
         /// Sets the remote end points for a media type supported by this RTP session. (on the primary one)
