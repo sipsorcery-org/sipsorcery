@@ -42,7 +42,7 @@ namespace SIPSorcery.net.RTP
 
         public int Index = -1;
 
-        #region EVENTS
+    #region EVENTS
 
         /// <summary>
         /// Fires when the connection for a media type is classified as timed out due to not
@@ -74,9 +74,9 @@ namespace SIPSorcery.net.RTP
         /// </summary>
         public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReportByIndex;
 
-        #endregion EVENTS
+    #endregion EVENTS
 
-        #region PROPERTIES
+    #region PROPERTIES
 
         public Boolean AcceptRtpFromAny { get; set; } = false;
 
@@ -156,9 +156,9 @@ namespace SIPSorcery.net.RTP
         /// </summary>
         public IPEndPoint ControlDestinationEndPoint { get; set; }
 
-        #endregion PROPERTIES
+    #endregion PROPERTIES
 
-        #region REORDER BUFFER
+    #region REORDER BUFFER
 
         public void AddBuffer(TimeSpan dropPacketTimeout)
         {
@@ -180,9 +180,9 @@ namespace SIPSorcery.net.RTP
             return RTPReorderBuffer;
         }
 
-        #endregion REORDER BUFFER
+    #endregion REORDER BUFFER
 
-        #region SECURITY CONTEXT
+    #region SECURITY CONTEXT
 
         public void SetSecurityContext( ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
         {
@@ -251,9 +251,9 @@ namespace SIPSorcery.net.RTP
             return SrtpHandler;
         }
 
-        #endregion SECURITY CONTEXT
+    #endregion SECURITY CONTEXT
 
-        #region RTP CHANNEL
+    #region RTP CHANNEL
 
         public void AddRtpChannel(RTPChannel rtpChannel)
         {
@@ -270,9 +270,9 @@ namespace SIPSorcery.net.RTP
             return rtpChannel;
         }
 
-        #endregion RTP CHANNEL
+    #endregion RTP CHANNEL
 
-        #region SEND PACKET
+    #region SEND PACKET
 
         protected Boolean CheckIfCanSendRtpRaw()
         {
@@ -358,41 +358,14 @@ namespace SIPSorcery.net.RTP
         }
 
         /// <summary>
-        /// Allows additional control for sending raw RTCP payloads
-        /// </summary>
-        /// <param name="rtcpBytes">Raw RTCP report data to send.</param>
-        public void SendRtcpRaw(byte[] rtcpBytes)
-        {
-            if (SendRtcpReport(rtcpBytes))
-            {
-                RTCPCompoundPacket rtcpCompoundPacket = null;
-                try
-                {
-                    rtcpCompoundPacket = new RTCPCompoundPacket(rtcpBytes);
-                }
-                catch (Exception excp)
-                {
-                    logger.LogWarning($"Can't create RTCPCompoundPacket from the provided RTCP bytes. {excp.Message}");
-                }
-
-                if (rtcpCompoundPacket != null)
-                {
-                    OnSendReportByIndex?.Invoke(Index, MediaType, rtcpCompoundPacket);
-                }
-            }
-        }
-
-        /// <summary>
         /// Sends the RTCP report to the remote call party.
         /// </summary>
-        /// <param name="reportBuffer">The serialised RTCP report to send.</param>
-        /// <returns>True if report was sent</returns>
-        private bool SendRtcpReport(byte[] reportBuffer)
+        /// <param name="report">The serialised RTCP report to send.</param>
+        private void SendRtcpReport(byte[] reportBuffer)
         {
             if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecurityContextReady())
             {
                 logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
-                return false;
             }
             else if (ControlDestinationEndPoint != null)
             {
@@ -423,8 +396,6 @@ namespace SIPSorcery.net.RTP
                     }
                 }
             }
-
-            return true;
         }
 
         /// <summary>
@@ -446,7 +417,7 @@ namespace SIPSorcery.net.RTP
                 OnSendReportByIndex?.Invoke(Index, MediaType, report);
             }
         }
-
+         
         /// <summary>
         /// Allows sending of RTCP feedback reports.
         /// </summary>
@@ -458,9 +429,9 @@ namespace SIPSorcery.net.RTP
             SendRtcpReport(reportBytes);
         }
 
-        #endregion SEND PACKET
+    #endregion SEND PACKET
 
-        #region RECEIVE PACKET
+    #region RECEIVE PACKET
 
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
         {
@@ -518,7 +489,7 @@ namespace SIPSorcery.net.RTP
             var format = RemoteTrack.GetFormatForPayloadID(hdr.PayloadType);
             if ( (rtpPacket != null) && (format != null) )
             {
-
+                
                 if (UseBuffer())
                 {
                     var reorderBuffer = GetBuffer();
@@ -544,9 +515,9 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        #endregion RECEIVE PACKET
+    #endregion RECEIVE PACKET
 
-        #region TO RAISE EVENTS FROM INHERITED CLASS
+    #region TO RAISE EVENTS FROM INHERITED CLASS
 
         public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
         {
@@ -568,7 +539,7 @@ namespace SIPSorcery.net.RTP
             OnTimeoutByIndex?.Invoke(Index, mediaType);
         }
 
-        #endregion TO RAISE EVENTS FROM INHERITED CLASS
+    #endregion TO RAISE EVENTS FROM INHERITED CLASS
 
         protected void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
         {
