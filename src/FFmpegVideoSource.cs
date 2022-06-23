@@ -95,8 +95,7 @@ namespace SIPSorceryMedia.FFmpeg
             if ( (_videoDecoder != null) && ((OnVideoSourceEncodedSample != null) || (OnVideoSourceRawSampleFaster != null)) )
             {
                 int frameRate = (int)_videoDecoder.VideoAverageFrameRate;
-                frameRate = (frameRate <= 0) ? Helper.DEFAULT_VIDEO_FRAME_RATE : frameRate;
-                uint timestampDuration = (uint)(VideoFormat.DEFAULT_CLOCK_RATE / frameRate);
+                uint timestampDuration = (uint)_videoDecoder.VideoFrameSpace;
 
                 var width = frame.width;
                 var height = frame.height;
