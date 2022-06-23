@@ -39,6 +39,11 @@ namespace SIPSorceryMedia.FFmpeg
             get => _videoAvgFrameRate;
         }
 
+        public double VideoFrameSpace
+        {
+            get => _maxVideoFrameSpace;
+        }
+
         public unsafe FFmpegVideoDecoder(string url, AVInputFormat* inputFormat, bool repeat = false, bool isCamera = false)
         {
             _sourceUrl = url;
@@ -93,7 +98,13 @@ namespace SIPSorceryMedia.FFmpeg
                 ffmpeg.avcodec_open2(_vidDecCtx, vidCodec, null).ThrowExceptionIfError();
 
                 _videoTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->time_base);
+                if (Double.IsNaN(_videoTimebase) || (_videoTimebase <= 0) )
+                    _videoTimebase = 0.001;
+
                 _videoAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->avg_frame_rate);
+                if (Double.IsNaN(_videoAvgFrameRate) || (_videoAvgFrameRate <= 0))
+                    _videoAvgFrameRate = 2;
+
                 _maxVideoFrameSpace = (int)(_videoAvgFrameRate > 0 ? 1000 / _videoAvgFrameRate : 1000 / Helper.DEFAULT_VIDEO_FRAME_RATE);
             }
         }
