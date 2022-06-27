@@ -315,7 +315,13 @@ namespace SIPSorceryMedia.FFmpeg
                     }
                     else
                     {
-                        OnEndOfFile?.Invoke();
+                        if (_isMicrophone)
+                        {
+                            RaiseError("Cannot read more frame");
+                            return;
+                        }
+                        else
+                            OnEndOfFile?.Invoke();
                     }
                 }
             }
