@@ -1,5 +1,6 @@
 ﻿using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,8 +13,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         unsafe private AVInputFormat* _inputFormat = null;
 
-        unsafe private AVFormatContext* _fmtCtx;
-        unsafe private AVCodecContext* _vidDecCtx;
+        unsafe private AVFormatContext* _fmtCtx = null;
+        unsafe private AVCodecContext* _vidDecCtx = null;
         private int _videoStreamIndex;
         private double _videoTimebase;
         private double _videoAvgFrameRate;
@@ -33,6 +34,8 @@ namespace SIPSorceryMedia.FFmpeg
         public event OnFrameDelegate? OnVideoFrame;
 
         public event Action? OnEndOfFile;
+
+        public event SourceErrorDelegate? OnError;
 
         public double VideoAverageFrameRate
         {
@@ -57,7 +60,13 @@ namespace SIPSorceryMedia.FFmpeg
             _isDisposed = false;
         }
 
-        public unsafe void InitialiseSource(Dictionary<string, string>? decoderOptions = null)
+        private void RaiseError(String err)
+        {
+            Dispose();
+            OnError?.Invoke(err);
+        }
+
+        public unsafe Boolean InitialiseSource(Dictionary<string, string>? decoderOptions = null)
         {
             if (!_isInitialised)
             {
@@ -66,7 +75,6 @@ namespace SIPSorceryMedia.FFmpeg
 
                 _fmtCtx = ffmpeg.avformat_alloc_context();
                 _fmtCtx->flags = ffmpeg.AVFMT_FLAG_NONBLOCK;
-
 
                 AVDictionary* options = null;
 
@@ -80,22 +88,59 @@ namespace SIPSorceryMedia.FFmpeg
                 }
 
                 var pFormatContext = _fmtCtx;
-                ffmpeg.avformat_open_input(&pFormatContext, _sourceUrl, _inputFormat, &options).ThrowExceptionIfError();
-                ffmpeg.avformat_find_stream_info(_fmtCtx, null).ThrowExceptionIfError();
+                if (ffmpeg.avformat_open_input(&pFormatContext, _sourceUrl, _inputFormat, &options) < 0)
+                {
+                    ffmpeg.avformat_free_context(pFormatContext);
+                    _fmtCtx = null;
+
+                    RaiseError("Cannot open source");
+                    return false;
+                }
+
+                if (ffmpeg.avformat_find_stream_info(_fmtCtx, null) < 0)
+                {
+                    RaiseError("Cannot get info from stream");
+                    return false;
+                }
 
                 ffmpeg.av_dump_format(_fmtCtx, 0, _sourceUrl, 0);
 
                 // Set up video decoder.
                 AVCodec* vidCodec = null;
-                _videoStreamIndex = ffmpeg.av_find_best_stream(_fmtCtx, AVMediaType.AVMEDIA_TYPE_VIDEO, -1, -1, &vidCodec, 0).ThrowExceptionIfError();
+                _videoStreamIndex = ffmpeg.av_find_best_stream(_fmtCtx, AVMediaType.AVMEDIA_TYPE_VIDEO, -1, -1, &vidCodec, 0);
+                if (_videoStreamIndex  < 0)
+                {
+                    RaiseError("Cannot get video stream using specified codec");
+                    return false;
+                }
+
                 logger.LogDebug($"FFmpeg file source decoder [{ffmpeg.avcodec_get_name(vidCodec->id)}] video codec for stream [{_videoStreamIndex}] - url:[{_sourceUrl}].");
                 _vidDecCtx = ffmpeg.avcodec_alloc_context3(vidCodec);
                 if (_vidDecCtx == null)
                 {
-                    throw new ApplicationException("Failed to allocate video decoder codec context.");
+                    RaiseError("Cannot create video context");
+                    return false;
                 }
-                ffmpeg.avcodec_parameters_to_context(_vidDecCtx, _fmtCtx->streams[_videoStreamIndex]->codecpar).ThrowExceptionIfError();
-                ffmpeg.avcodec_open2(_vidDecCtx, vidCodec, null).ThrowExceptionIfError();
+
+                if (ffmpeg.avcodec_parameters_to_context(_vidDecCtx, _fmtCtx->streams[_videoStreamIndex]->codecpar) < 0)
+                {
+                    var pCodecContext = _vidDecCtx;
+                    ffmpeg.avcodec_free_context(&pCodecContext);
+                    _vidDecCtx = null;
+
+                    RaiseError("Cannot set parameters in this context");
+                    return false;
+                }
+
+                if ( ffmpeg.avcodec_open2(_vidDecCtx, vidCodec, null) < 0)
+                {
+                    var pCodecContext = _vidDecCtx;
+                    ffmpeg.avcodec_free_context(&pCodecContext);
+                    _vidDecCtx = null;
+
+                    RaiseError("Cannot open Codec context");
+                    return false;
+                }
 
                 _videoTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->time_base);
                 if (Double.IsNaN(_videoTimebase) || (_videoTimebase <= 0) )
@@ -107,43 +152,40 @@ namespace SIPSorceryMedia.FFmpeg
 
                 _maxVideoFrameSpace = (int)(_videoAvgFrameRate > 0 ? 1000 / _videoAvgFrameRate : 1000 / Helper.DEFAULT_VIDEO_FRAME_RATE);
             }
+            return true;
         }
 
-        public void StartDecode()
+        public Boolean StartDecode()
         {
             if (!_isStarted)
             {
                 _isClosed = false;
-                _isStarted = true;
-                InitialiseSource();
-                _sourceTask = Task.Run(RunDecodeLoop);
+
+                if (InitialiseSource())
+                {
+                    _isStarted = true;
+                    _sourceTask = Task.Run(RunDecodeLoop);
+                }
             }
+            return _isStarted;
         }
 
-        public void Pause()
+        public Boolean Pause()
         {
             if (!_isClosed)
             {
                 _isPaused = true;
             }
+            return _isPaused;
         }
 
-        public async Task Resume()
+        public Boolean Resume()
         {
             if (_isPaused && !_isClosed)
             {
                 _isPaused = false;
-
-                if (_sourceTask != null)
-                {
-                    // Wait for the decode loop to finish in case Pause and Resume are called
-                    // in quick succession.
-                    await _sourceTask;
-                }
-
-                _sourceTask = Task.Run(RunDecodeLoop);
-                
             }
+            return !_isPaused;
         }
 
         public async Task Close()
@@ -163,7 +205,7 @@ namespace SIPSorceryMedia.FFmpeg
             bool needToRestartVideo = false;
             unsafe
             {
-                AVPacket* pkt = ffmpeg.av_packet_alloc();
+                AVPacket* pkt = null;
                 AVFrame* avFrame = ffmpeg.av_frame_alloc();
 
                 int eagain = ffmpeg.AVERROR(ffmpeg.EAGAIN);
@@ -202,7 +244,11 @@ namespace SIPSorceryMedia.FFmpeg
                         {
                             if (pkt->stream_index == _videoStreamIndex)
                             {
-                                ffmpeg.avcodec_send_packet(_vidDecCtx, pkt).ThrowExceptionIfError();
+                                if (ffmpeg.avcodec_send_packet(_vidDecCtx, pkt) < 0)
+                                {
+                                    RaiseError("Cannot suplly packet to decoder");
+                                    return;
+                                }
 
                                 int recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, avFrame);
                                 while (recvRes >= 0)
@@ -237,7 +283,8 @@ namespace SIPSorceryMedia.FFmpeg
 
                                 if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
                                 {
-                                    recvRes.ThrowExceptionIfError();
+                                    RaiseError("Cannot receive more frame");
+                                    return;
                                 }
                             }
 
@@ -245,12 +292,10 @@ namespace SIPSorceryMedia.FFmpeg
                         }
                     }
 
-                    if (_isPaused)
+                    if (_isPaused && !_isClosed)
                     {
-                        ((int)ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL)).ThrowExceptionIfError();
-
-                        ffmpeg.avformat_seek_file(_fmtCtx, _videoStreamIndex, 0, 0, _fmtCtx->streams[_videoStreamIndex]->duration, 0).ThrowExceptionIfError();
-
+                        ffmpeg.av_usleep((uint)(Helper.MIN_SLEEP_MILLISECONDS * 1000));
+                        goto Repeat;
                     }
                     else
                     {
@@ -258,7 +303,11 @@ namespace SIPSorceryMedia.FFmpeg
 
                         if (!_isClosed && _repeat)
                         {
-                            ((int)ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL)).ThrowExceptionIfError();
+                            if ( ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL) < 0 )
+                            {
+                                RaiseError("Cannot go to the beginning of the stream");
+                                return;
+                            }
 
                             if (ffmpeg.avformat_seek_file(_fmtCtx, _videoStreamIndex, 0, 0, _fmtCtx->streams[_videoStreamIndex]->duration, ffmpeg.AVSEEK_FLAG_ANY) < 0)
                             {
@@ -304,20 +353,34 @@ namespace SIPSorceryMedia.FFmpeg
                 _isInitialised = false;
                 _isStarted = false;
 
-                logger.LogDebug("Disposing of FileSourceDecoder.");
+                logger.LogDebug("Disposing of FFmpegVideoDecoder.");
                 unsafe
                 {
-                    ffmpeg.avcodec_close(_vidDecCtx);
+                    try
+                    {
+                        if (_vidDecCtx != null)
+                        {
+                            var pCodecContext = _vidDecCtx;
+                            ffmpeg.avcodec_close(pCodecContext);
+                            ffmpeg.avcodec_free_context(&pCodecContext);
+                            _vidDecCtx = null;
+                        }
+                    }
+                    catch { }
 
-                    var pFormatContext = _fmtCtx;
-                    ffmpeg.avformat_close_input(&pFormatContext);
+                    try
+                    {
+                        if (_fmtCtx != null)
+                        {
+                            var pFormatContext = _fmtCtx;
+                            ffmpeg.avformat_close_input(&pFormatContext);
+                            ffmpeg.avformat_free_context(pFormatContext);
+                            _fmtCtx = null;
+                        }
+                    }
+                    catch { }
                 }
             }
-        }
-
-        private void ClearObjects()
-        {
-
         }
     }
 }

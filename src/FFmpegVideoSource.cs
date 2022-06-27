@@ -24,7 +24,7 @@ namespace SIPSorceryMedia.FFmpeg
         internal VideoFrameConverter? _videoFrameYUV420PConverter = null;
         internal VideoFrameConverter? _videoFrameBGR24Converter = null;
 
-        internal FFmpegVideoEncoder _videoEncoder;
+        internal FFmpegVideoEncoder? _videoEncoder;
         internal bool _forceKeyFrame;
 
         internal MediaFormatManager<VideoFormat> _videoFormatManager;
@@ -32,12 +32,13 @@ namespace SIPSorceryMedia.FFmpeg
         public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
         public event RawVideoSampleFasterDelegate? OnVideoSourceRawSampleFaster;
 
-#pragma warning disable CS0067
         public event SourceErrorDelegate? OnVideoSourceError;
-        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
-#pragma warning restore CS0067
 
         public event Action? OnEndOfFile;
+
+#pragma warning disable CS0067
+        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
+#pragma warning restore CS0067
 
         public FFmpegVideoSource()
         {
@@ -50,17 +51,23 @@ namespace SIPSorceryMedia.FFmpeg
             _videoDecoder = new FFmpegVideoDecoder(path, avInputFormat, repeat, isCamera);
             _videoDecoder.OnVideoFrame += VideoDecoder_OnVideoFrame;
 
+            _videoDecoder.OnError += (msg) =>
+            {
+                OnVideoSourceError?.Invoke(msg);
+                Dispose();
+            };
+
             _videoDecoder.OnEndOfFile += () =>
             {
                 logger.LogDebug($"File source decode complete for {path}.");
                 OnEndOfFile?.Invoke();
-                _videoDecoder.Dispose();
+                Dispose();
             };
         }
 
-        public void InitialiseDecoder(Dictionary<string, string>? decoderOptions = null)
+        public Boolean InitialiseDecoder(Dictionary<string, string>? decoderOptions = null)
         {
-            _videoDecoder?.InitialiseSource(decoderOptions);
+            return _videoDecoder?.InitialiseSource(decoderOptions) == true ;
         }
 
         public bool IsPaused() => _isPaused;
@@ -92,7 +99,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         private unsafe void VideoDecoder_OnVideoFrame(ref AVFrame frame)
         {
-            if ( (_videoDecoder != null) && ((OnVideoSourceEncodedSample != null) || (OnVideoSourceRawSampleFaster != null)) )
+            if ( (_videoDecoder != null) && (_videoEncoder != null) &&  ((OnVideoSourceEncodedSample != null) || (OnVideoSourceRawSampleFaster != null)) )
             {
                 int frameRate = (int)_videoDecoder.VideoAverageFrameRate;
                 uint timestampDuration = (uint)_videoDecoder.VideoFrameSpace;
@@ -171,8 +178,15 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isStarted)
             {
-                _isStarted = true;
-                _videoDecoder?.StartDecode();
+                if (_videoDecoder == null)
+                {
+                    OnVideoSourceError?.Invoke("Initialization has not be done correctly");
+                }
+                else
+                {
+                    _isStarted = true;
+                    _videoDecoder?.StartDecode();
+                }
             }
 
             return Task.CompletedTask;
@@ -194,27 +208,33 @@ namespace SIPSorceryMedia.FFmpeg
             if (!_isPaused)
             {
                 _isPaused = true;
-                _videoDecoder?.Pause();
+                if (_videoDecoder != null)
+                    _videoDecoder?.Pause();
             }
 
             return Task.CompletedTask;
         }
 
-        public async Task Resume()
+        public Task Resume()
         {
             if (_isPaused && !_isClosed)
             {
                 _isPaused = false;
                 if (_videoDecoder != null)
-                    await _videoDecoder.Resume();
+                     _videoDecoder.Resume();
             }
+            return Task.CompletedTask;
         }
 
         public void Dispose()
         {
+            _isStarted = false;
+
             _videoDecoder?.Dispose();
+            _videoDecoder = null;
 
             _videoEncoder?.Dispose();
+            _videoEncoder = null;
         }
 
     }
