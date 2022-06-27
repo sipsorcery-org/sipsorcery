@@ -176,7 +176,7 @@ namespace FFmpegEncodingTest
         {
             var videoCapabilities = new List<SDPAudioVideoMediaFormat>
                 {
-                    new SDPAudioVideoMediaFormat(new VideoFormat(VideoCodecsEnum.H264, Helper.H264_FORMATID, Helper.VIDEO_SAMPLING_RATE))
+                    new SDPAudioVideoMediaFormat(new VideoFormat(VideoCodecsEnum.H264, Helper.H264_FORMATID, Helper.DEFAULT_VIDEO_FRAME_RATE))
                     
                 };
             int payloadID = Convert.ToInt32(videoCapabilities.First().ID);

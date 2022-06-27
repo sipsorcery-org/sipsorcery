@@ -145,12 +145,19 @@ namespace SIPSorceryMedia.FFmpeg
                 _encoderContext->height = height;
                 _encoderContext->time_base.den = fps;
                 _encoderContext->time_base.num = 1;
+                _encoderContext->framerate.den = 1;
+                _encoderContext->framerate.num = fps;
+
                 _encoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
-                
+
+                // Set Key frame interval
+                if (fps < 5)
+                    _encoderContext->gop_size = 1;
+                else
+                    _encoderContext->gop_size = fps;
+
                 if (_codecID == AVCodecID.AV_CODEC_ID_H264)
                 {
-                    _encoderContext->gop_size = 30; // Key frame interval.
-
                     //_videoCodecContext->profile = ffmpeg.FF_PROFILE_H264_CONSTRAINED_BASELINE;
                     ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
                     //ffmpeg.av_opt_set(_videoCodecContext->priv_data, "packetization-mode", "0", 0).ThrowExceptionIfError();

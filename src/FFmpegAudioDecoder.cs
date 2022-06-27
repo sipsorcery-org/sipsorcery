@@ -2,6 +2,7 @@
 
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions;
 using System;
 using System.Threading.Tasks;
 
@@ -13,8 +14,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         unsafe private AVInputFormat* _inputFormat = null;
 
-        unsafe private AVFormatContext* _fmtCtx;
-        unsafe private AVCodecContext* _audDecCtx;
+        unsafe private AVFormatContext* _fmtCtx = null;
+        unsafe private AVCodecContext* _audDecCtx = null;
         private int _audioStreamIndex;
         private double _audioTimebase;
         private double _audioAvgFrameRate;
@@ -36,6 +37,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         public event Action? OnEndOfFile;
 
+        public event SourceErrorDelegate? OnError;
+
         public unsafe FFmpegAudioDecoder(string url, AVInputFormat* inputFormat = null, bool repeat = false, bool isMicrophone = false)
         {
             _sourceUrl = url;
@@ -45,7 +48,14 @@ namespace SIPSorceryMedia.FFmpeg
             _isMicrophone = isMicrophone;
         }
 
-        public unsafe void InitialiseSource(int clockRate)
+
+        private void RaiseError(String err)
+        {
+            Dispose();
+            OnError?.Invoke(err);
+        }
+
+        public unsafe Boolean InitialiseSource(int clockRate)
         {
             if (!_isInitialised)
             {
@@ -55,22 +65,60 @@ namespace SIPSorceryMedia.FFmpeg
                 _fmtCtx->flags = ffmpeg.AVFMT_FLAG_NONBLOCK;
 
                 var pFormatContext = _fmtCtx;
-                ffmpeg.avformat_open_input(&pFormatContext, _sourceUrl, _inputFormat, null).ThrowExceptionIfError();
-                ffmpeg.avformat_find_stream_info(_fmtCtx, null).ThrowExceptionIfError();
+                if (ffmpeg.avformat_open_input(&pFormatContext, _sourceUrl, _inputFormat, null) < 0)
+                {
+                    ffmpeg.avformat_free_context(pFormatContext);
+                    _fmtCtx = null;
+
+                    RaiseError("Cannot open source");
+                    return false;
+                }
+
+                if (ffmpeg.avformat_find_stream_info(_fmtCtx, null) < 0)
+                {
+                    RaiseError("Cannot get info from stream");
+                    return false;
+                }
 
                 ffmpeg.av_dump_format(_fmtCtx, 0, _sourceUrl, 0);
 
                 // Set up audio decoder.
                 AVCodec* audCodec = null;
-                _audioStreamIndex = ffmpeg.av_find_best_stream(_fmtCtx, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, &audCodec, 0).ThrowExceptionIfError();
+                _audioStreamIndex = ffmpeg.av_find_best_stream(_fmtCtx, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, &audCodec, 0);
+                if (_audioStreamIndex < 0)
+                {
+                    RaiseError("Cannot get audio stream using specified codec");
+                    return false;
+                }
+
+
                 logger.LogDebug($"FFmpeg file source decoder {ffmpeg.avcodec_get_name(audCodec->id)} audio codec for stream {_audioStreamIndex}.");
                 _audDecCtx = ffmpeg.avcodec_alloc_context3(audCodec);
                 if (_audDecCtx == null)
                 {
-                    throw new ApplicationException("Failed to allocate audio decoder codec context.");
+                    RaiseError("Cannot create audio context");
+                    return false;
                 }
-                ffmpeg.avcodec_parameters_to_context(_audDecCtx, _fmtCtx->streams[_audioStreamIndex]->codecpar).ThrowExceptionIfError();
-                ffmpeg.avcodec_open2(_audDecCtx, audCodec, null).ThrowExceptionIfError();
+
+                if ( ffmpeg.avcodec_parameters_to_context(_audDecCtx, _fmtCtx->streams[_audioStreamIndex]->codecpar) < 0)
+                {
+                    var pCodecContext = _audDecCtx;
+                    ffmpeg.avcodec_free_context(&pCodecContext);
+                    _audDecCtx = null;
+
+                    RaiseError("Cannot set parameters in this context");
+                    return false;
+                }
+
+                if (ffmpeg.avcodec_open2(_audDecCtx, audCodec, null) < 0)
+                {
+                    var pCodecContext = _audDecCtx;
+                    ffmpeg.avcodec_free_context(&pCodecContext);
+                    _audDecCtx = null;
+
+                    RaiseError("Cannot open Codec context");
+                    return false;
+                }
 
                 // Set up an audio conversion context so that the decoded samples can always be delivered as signed 16 bit mono PCM.
 
@@ -91,13 +139,17 @@ namespace SIPSorceryMedia.FFmpeg
                     ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", (long)_audDecCtx->channel_layout, 0);
                 ffmpeg.av_opt_set_channel_layout(_swrContext, "out_channel_layout", ffmpeg.AV_CH_LAYOUT_MONO, 0);
 
-                ffmpeg.swr_init(_swrContext).ThrowExceptionIfError();
-
+                if ( ffmpeg.swr_init(_swrContext) < 0 )
+                {
+                    RaiseError("Cannot init context with specifiec parameters");
+                    return false;
+                }
 
                 _audioTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->time_base);
                 _audioAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_audioStreamIndex]->avg_frame_rate);
                 _maxAudioFrameSpace = (int)(_audioAvgFrameRate > 0 ? 1000 / _audioAvgFrameRate : 10000 * clockRate);
             }
+            return true;
         }
 
         public void StartDecode()
@@ -109,29 +161,23 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public void Pause()
+        public Boolean Pause()
         {
             if (!_isClosed)
             {
                 _isPaused = true;
             }
+            return _isPaused;
         }
 
-        public async Task Resume()
+        public Boolean Resume()
         {
             if (_isPaused && !_isClosed)
             {
                 _isPaused = false;
-
-                if (_sourceTask != null)
-                {
-                    // Wait for the decode loop to finish in case Pause and Resume are called
-                    // in quick succession.
-                    await _sourceTask;
-                }
-
-                _sourceTask = Task.Run(RunDecodeLoop);
             }
+
+            return !_isPaused;
         }
 
         public async Task Close()
@@ -148,6 +194,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         private unsafe void RunDecodeLoop()
         {
+            bool needToRestartAudio = false;
+            
             AVPacket* pkt = ffmpeg.av_packet_alloc();
             AVFrame* avFrame = ffmpeg.av_frame_alloc();
 
@@ -188,7 +236,12 @@ namespace SIPSorceryMedia.FFmpeg
                     {
                         if (pkt->stream_index == _audioStreamIndex)
                         {
-                            ffmpeg.avcodec_send_packet(_audDecCtx, pkt).ThrowExceptionIfError();
+                            if (ffmpeg.avcodec_send_packet(_audDecCtx, pkt) < 0)
+                            {
+                                RaiseError("Cannot suplly packet to decoder");
+                                return;
+                            }
+
                             int recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, avFrame);
                             while (recvRes >= 0)
                             {
@@ -222,7 +275,8 @@ namespace SIPSorceryMedia.FFmpeg
 
                             if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
                             {
-                                recvRes.ThrowExceptionIfError();
+                                RaiseError("Cannot receive more frame");
+                                return;
                             }
                         }
 
@@ -230,11 +284,10 @@ namespace SIPSorceryMedia.FFmpeg
                     }
                 }
 
-                if (_isPaused)
+                if (_isPaused && !_isClosed)
                 {
-                    ((int)ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL)).ThrowExceptionIfError();
-
-                    ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, 0).ThrowExceptionIfError();
+                    ffmpeg.av_usleep((uint)(Helper.MIN_SLEEP_MILLISECONDS * 1000));
+                    goto Repeat;
                 }
                 else
                 {
@@ -242,12 +295,23 @@ namespace SIPSorceryMedia.FFmpeg
 
                     if (!_isClosed && _repeat)
                     {
-                        ((int)ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL)).ThrowExceptionIfError();
+                        if (ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL) < 0)
+                        {
+                            RaiseError("Cannot go to the beginning of the stream");
+                            return;
+                        }
 
-                        ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, 0).ThrowExceptionIfError();
-
-                        canContinue = true;
-                        goto Repeat;
+                        if (ffmpeg.avformat_seek_file(_fmtCtx, _audioStreamIndex, 0, 0, _fmtCtx->streams[_audioStreamIndex]->duration, ffmpeg.AVSEEK_FLAG_ANY) < 0)
+                        {
+                            // We can't easily go back to the beginning of the file ...
+                            canContinue = false;
+                            needToRestartAudio = true;
+                        }
+                        else
+                        {
+                            canContinue = true;
+                            goto Repeat;
+                        }
                     }
                     else
                     {
@@ -263,6 +327,12 @@ namespace SIPSorceryMedia.FFmpeg
                 ffmpeg.av_packet_unref(pkt);
                 ffmpeg.av_free(pkt);
             }
+
+            if (needToRestartAudio)
+            {
+                Dispose();
+                Task.Run(() => StartDecode());
+            }
         }
 
         public unsafe void Dispose()
@@ -271,15 +341,38 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 _isClosed = true;
                 _isDisposed = true;
+                _isInitialised = false;
+                _isStarted = false;
 
-                logger.LogDebug("Disposing of FileSourceDecoder.");
+                logger.LogDebug("Disposing of FFmpegAudioDecoder.");
+                unsafe
+                {
+                    try
+                    {
+                        if (_audDecCtx != null)
+                        {
+                            var pCodecContext = _audDecCtx;
+                            ffmpeg.avcodec_close(pCodecContext);
+                            ffmpeg.avcodec_free_context(&pCodecContext);
+                            _audDecCtx = null;
+                        }
+                    }
+                    catch { }
 
-                ffmpeg.avcodec_close(_audDecCtx);
-
-                var pFormatContext = _fmtCtx;
-                ffmpeg.avformat_close_input(&pFormatContext);
-                ffmpeg.swr_close(_swrContext);
+                    try
+                    {
+                        if (_fmtCtx != null)
+                        {
+                            var pFormatContext = _fmtCtx;
+                            ffmpeg.avformat_close_input(&pFormatContext);
+                            ffmpeg.avformat_free_context(pFormatContext);
+                            _fmtCtx = null;
+                        }
+                    }
+                    catch { }
+                }
             }
+
         }
     }
 }

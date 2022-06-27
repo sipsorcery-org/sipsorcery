@@ -26,17 +26,19 @@ namespace SIPSorceryMedia.FFmpeg
 
         private BasicBufferShort _incomingSamples = new BasicBufferShort(48000);
 
-        internal FFmpegAudioDecoder _audioDecoder;
+        internal FFmpegAudioDecoder? _audioDecoder = null;
         internal IAudioEncoder _audioEncoder;
 
         internal MediaFormatManager<AudioFormat> _audioFormatManager;
 
         public event EncodedSampleDelegate? OnAudioSourceEncodedSample;
+        public event Action? OnEndOfFile;
+        public event SourceErrorDelegate? OnAudioSourceError;
+
 #pragma warning disable CS0067
         public event RawAudioSampleDelegate? OnAudioSourceRawSample;
-        public event SourceErrorDelegate? OnAudioSourceError;
 #pragma warning restore CS0067
-        public event Action? OnEndOfFile;
+        
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public FFmpegAudioSource(IAudioEncoder audioEncoder, uint frameSize = 960)
@@ -57,6 +59,13 @@ namespace SIPSorceryMedia.FFmpeg
 
             _audioDecoder.OnAudioFrame += AudioDecoder_OnAudioFrame;
 
+            _audioDecoder.OnError += (msg) =>
+            {
+                OnAudioSourceError?.Invoke(msg);
+                Dispose();
+            };
+
+
             _audioDecoder.OnEndOfFile += () =>
             {
                 logger.LogDebug($"File source decode complete for {path}.");
@@ -65,9 +74,9 @@ namespace SIPSorceryMedia.FFmpeg
             };
         }
         
-        public void InitialiseDecoder()
+        public Boolean InitialiseDecoder()
         {
-            _audioDecoder?.InitialiseSource(_audioFormatManager.SelectedFormat.ClockRate);
+            return _audioDecoder?.InitialiseSource(_audioFormatManager.SelectedFormat.ClockRate) == true;
         }
       
         public bool IsPaused() => _isPaused;
@@ -111,8 +120,9 @@ namespace SIPSorceryMedia.FFmpeg
 
         private unsafe void AudioDecoder_OnAudioFrame(ref AVFrame avFrame)
         {
-            if (OnAudioSourceEncodedSample == null)
+            if ( (OnAudioSourceEncodedSample == null) || (_audioDecoder == null) )
                 return;
+
 
             // Avoid to create several times buffer of the same size
             if (_currentNbSamples != avFrame.nb_samples)
@@ -125,7 +135,14 @@ namespace SIPSorceryMedia.FFmpeg
             // Convert audio
             int dstSampleCount;
             fixed (byte* pBuffer = buffer)
-                dstSampleCount = ffmpeg.swr_convert(_audioDecoder._swrContext, &pBuffer, bufferSize, avFrame.extended_data, avFrame.nb_samples).ThrowExceptionIfError();
+                dstSampleCount = ffmpeg.swr_convert(_audioDecoder._swrContext, &pBuffer, bufferSize, avFrame.extended_data, avFrame.nb_samples);
+
+            if(dstSampleCount < 0)
+            {
+                OnAudioSourceError?.Invoke("Cannot convert audio");
+                Dispose();
+                return;
+            }
 
             if(dstSampleCount > 0)
             {
@@ -147,9 +164,16 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isStarted)
             {
-                _isStarted = true;
-                InitialiseDecoder();
-                _audioDecoder.StartDecode();
+                if (_audioDecoder == null)
+                {
+                    OnAudioSourceError?.Invoke("Initialization has not be done correctly");
+                }
+                else
+                {
+                    _isStarted = true;
+                    InitialiseDecoder();
+                    _audioDecoder.StartDecode();
+                }
             }
 
             return Task.CompletedTask;
@@ -160,8 +184,9 @@ namespace SIPSorceryMedia.FFmpeg
             if (!_isClosed)
             {
                 _isClosed = true;
-
-                await _audioDecoder.Close();
+                
+                if(_audioDecoder != null)
+                    await _audioDecoder.Close();
 
                 Dispose();
             }
@@ -173,25 +198,32 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 _isPaused = true;
 
-                _audioDecoder.Pause();
+                if (_audioDecoder != null)
+                    _audioDecoder.Pause();
             }
 
             return Task.CompletedTask;
         }
 
-        public async Task Resume()
+        public Task Resume()
         {
             if (_isPaused && !_isClosed)
             {
                 _isPaused = false;
-
-                await _audioDecoder.Resume();
+                if (_audioDecoder != null)
+                    _audioDecoder.Resume();
             }
+            return Task.CompletedTask;
         }
 
         public void Dispose()
         {
-            _audioDecoder.Dispose();
+            _isStarted = false;
+
+            if (_audioDecoder != null)
+                _audioDecoder.Dispose();
+
+            _audioDecoder = null;
         }
     }
 }

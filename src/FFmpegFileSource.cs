@@ -26,11 +26,13 @@ namespace SIPSorceryMedia.FFmpeg
 
         public event Action? OnEndOfFile;
 
-#pragma warning disable CS0067
-        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
-
         public event SourceErrorDelegate? OnAudioSourceError;
         public event SourceErrorDelegate? OnVideoSourceError;
+
+#pragma warning disable CS0067
+
+        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
+
 #pragma warning restore CS0067
 
         public unsafe FFmpegFileSource(string path, bool repeat, IAudioEncoder? audioEncoder, uint audioFrameSize = 960, bool useVideo = true)
@@ -49,6 +51,7 @@ namespace SIPSorceryMedia.FFmpeg
                 _FFmpegAudioSource.OnAudioSourceEncodedSample += _FFmpegAudioSource_OnAudioSourceEncodedSample;
                 _FFmpegAudioSource.OnAudioSourceRawSample += _FFmpegAudioSource_OnAudioSourceRawSample;
                 _FFmpegAudioSource.OnEndOfFile += _FFmpegAudioSource_OnEndOfFile;
+                _FFmpegAudioSource.OnAudioSourceError += _FFmpegAudioSource_OnAudioSourceError;
             }
 
             if (useVideo)
@@ -60,7 +63,18 @@ namespace SIPSorceryMedia.FFmpeg
                 _FFmpegVideoSource.OnVideoSourceEncodedSample += _FFmpegVideoSource_OnVideoSourceEncodedSample;
                 _FFmpegVideoSource.OnVideoSourceRawSampleFaster += _FFmpegVideoSource_OnVideoSourceRawSampleFaster;
                 _FFmpegVideoSource.OnEndOfFile += _FFmpegVideoSource_OnEndOfFile;
+                _FFmpegVideoSource.OnVideoSourceError += _FFmpegVideoSource_OnVideoSourceError;
             }
+        }
+
+        private void _FFmpegAudioSource_OnAudioSourceError(string errorMessage)
+        {
+            OnAudioSourceError?.Invoke(errorMessage);
+        }
+
+        private void _FFmpegVideoSource_OnVideoSourceError(string errorMessage)
+        {
+            OnVideoSourceError?.Invoke(errorMessage);
         }
 
         private void _FFmpegVideoSource_OnEndOfFile()
@@ -240,17 +254,18 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public Task Pause()
+        public async Task Pause()
         {
             if (!_isPaused)
             {
                 _isPaused = true;
 
-                _FFmpegAudioSource?.Pause();
-                _FFmpegVideoSource?.Pause();
-            }
+                if (_FFmpegAudioSource != null)
+                    await _FFmpegAudioSource.Pause();
 
-            return Task.CompletedTask;
+                if (_FFmpegVideoSource != null)
+                    await  _FFmpegVideoSource.Pause();
+            }
         }
 
         public async Task Resume()
@@ -269,8 +284,29 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void Dispose()
         {
-            _FFmpegAudioSource?.Dispose();
-            _FFmpegVideoSource?.Dispose();
+            if (_FFmpegAudioSource != null)
+            {
+                _FFmpegAudioSource.OnAudioSourceEncodedSample -= _FFmpegAudioSource_OnAudioSourceEncodedSample;
+                _FFmpegAudioSource.OnAudioSourceRawSample -= _FFmpegAudioSource_OnAudioSourceRawSample;
+                _FFmpegAudioSource.OnEndOfFile -= _FFmpegAudioSource_OnEndOfFile;
+                _FFmpegAudioSource.OnAudioSourceError -= _FFmpegAudioSource_OnAudioSourceError;
+
+                _FFmpegAudioSource.Dispose();
+
+                _FFmpegAudioSource = null;
+            }
+
+            if (_FFmpegVideoSource != null)
+            { 
+                _FFmpegVideoSource.OnVideoSourceEncodedSample -= _FFmpegVideoSource_OnVideoSourceEncodedSample;
+                _FFmpegVideoSource.OnVideoSourceRawSampleFaster -= _FFmpegVideoSource_OnVideoSourceRawSampleFaster;
+                _FFmpegVideoSource.OnEndOfFile -= _FFmpegVideoSource_OnEndOfFile;
+                _FFmpegVideoSource.OnVideoSourceError -= _FFmpegVideoSource_OnVideoSourceError;
+
+                _FFmpegVideoSource.Dispose();
+
+                _FFmpegVideoSource = null;
+            }
         }
     }
 }
