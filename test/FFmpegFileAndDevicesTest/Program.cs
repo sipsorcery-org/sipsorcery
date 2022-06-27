@@ -63,6 +63,7 @@ namespace FFmpegFileAndDevicesTest
         //  /!\   Define some path/urls to some media files - to be set according your environment
         static private string LOCAL_AUDIO_AND_VIDEO_FILE_MP4_BUNNY = @"C:\media\big_buck_bunny.mp4";
         static private string LOCAL_AUDIO_AND_VIDEO_FILE_MP4_MAX = @"C:\media\max_intro.mp4";
+        static private string LOCAL_AUDIO_AND_VIDEO_FILE_WEBM = @"C:\media\Joy_and_Heron.webm";
 
         static private string LOCAL_AUDIO_FILE_MP3 = @"C:\media\simplest_ffmpeg_audio_decoder_skycity1.mp3";
         static private string LOCAL_AUDIO_FILE_WAV = @"C:\media\file_example_WAV_5MG.wav";
@@ -138,7 +139,7 @@ namespace FFmpegFileAndDevicesTest
                     // Do we use same file for Audio ?
                     if ((AudioSourceType == AUDIO_SOURCE.FILE_OR_STREAM)  && (AudioSourceFile == VideoSourceFile))
                     {
-                        SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), true);
+                        SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), 960, true);
                         fileSource.OnEndOfFile += () => PeerConnection.Close("source eof");
 
                         videoSource = fileSource as IVideoSource;
@@ -146,7 +147,7 @@ namespace FFmpegFileAndDevicesTest
                     }
                     else
                     {
-                        SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), true);
+                        SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), 960, true);
                         fileSource.OnEndOfFile += () => PeerConnection.Close("source eof");
 
                         videoSource = fileSource as IVideoSource;
@@ -198,7 +199,7 @@ namespace FFmpegFileAndDevicesTest
                 switch(AudioSourceType)
                 {
                     case AUDIO_SOURCE.FILE_OR_STREAM:
-                        SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(AudioSourceFile, RepeatAudioFile, new AudioEncoder(), false);
+                        SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(AudioSourceFile, RepeatAudioFile, new AudioEncoder(), 960, false);
                         fileSource.OnEndOfFile += () => PeerConnection.Close("source eof");
 
                         audioSource = fileSource as IAudioSource;
