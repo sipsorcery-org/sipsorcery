@@ -2114,7 +2114,12 @@ namespace SIPSorcery.Net
                 var hdr = new RTPHeader(buffer);
 
                 MediaStream mediaStream = GetMediaStream(hdr.SyncSource);
-                
+
+                if ( (mediaStream == null) && (AudioStreamList.Count < 2) && (VideoStreamList.Count < 2) )
+                {
+                    mediaStream = GetMediaStreamFromPayloadType(hdr.PayloadType);
+                }
+
                 if (mediaStream == null)
                 {
                     logger.LogWarning($"An RTP packet with SSRC {hdr.SyncSource} and payload ID {hdr.PayloadType} was received that could not be matched to an audio or video stream.");
