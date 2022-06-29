@@ -34,7 +34,7 @@ namespace SIPSorcery.Net
         public const int UDP_OVERHEAD = 8;
         public const int DEFAULT_TIMEOUT_MILLISECONDS = 20000;
         public const int DTLS_RETRANSMISSION_CODE = -1;
-        //public const int DTLS_RECEIVE_ERROR_CODE = -2;
+        public const int DTLS_RECEIVE_ERROR_CODE = -2;
 
         private static readonly ILogger logger = Log.Logger;
 
@@ -563,8 +563,8 @@ namespace SIPSorcery.Net
             }
             else
             {
-                throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
-                //return DTLS_RECEIVE_ERROR_CODE;
+                //throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
+                return DTLS_RECEIVE_ERROR_CODE;
             }
         }
 
