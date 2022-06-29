@@ -4380,6 +4380,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsSrtpTransport.DoHandshake
   nameWithType: DtlsSrtpTransport.DoHandshake
+- uid: SIPSorcery.Net.DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE
+  name: DTLS_RECEIVE_ERROR_CODE
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DTLS_RECEIVE_ERROR_CODE
+  commentId: F:SIPSorcery.Net.DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE
+  nameWithType: DtlsSrtpTransport.DTLS_RECEIVE_ERROR_CODE
 - uid: SIPSorcery.Net.DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE
   name: DTLS_RETRANSMISSION_CODE
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_DTLS_RETRANSMISSION_CODE
