@@ -140,7 +140,8 @@ namespace FFmpegFileAndDevicesTest
                     if ((AudioSourceType == AUDIO_SOURCE.FILE_OR_STREAM)  && (AudioSourceFile == VideoSourceFile))
                     {
                         SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), 960, true);
-                        fileSource.OnEndOfFile += () => PeerConnection.Close("source eof");
+                        fileSource.OnAudioSourceError += (msg) => PeerConnection.Close(msg);
+                        fileSource.OnVideoSourceError += (msg) => PeerConnection.Close(msg);
 
                         videoSource = fileSource as IVideoSource;
                         audioSource = fileSource as IAudioSource;
@@ -148,7 +149,7 @@ namespace FFmpegFileAndDevicesTest
                     else
                     {
                         SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(VideoSourceFile, RepeatVideoFile, new AudioEncoder(), 960, true);
-                        fileSource.OnEndOfFile += () => PeerConnection.Close("source eof");
+                        fileSource.OnVideoSourceError += (msg) => PeerConnection.Close(msg);
 
                         videoSource = fileSource as IVideoSource;
                     }
@@ -164,7 +165,10 @@ namespace FFmpegFileAndDevicesTest
                         camera = cameras.Last();
                     }
                     if (camera != null)
+                    {
                         videoSource = new SIPSorceryMedia.FFmpeg.FFmpegCameraSource(camera.Path);
+                        videoSource.OnVideoSourceError += (msg) => PeerConnection.Close(msg);
+                    }
                     else
                         throw new NotSupportedException($"Cannot find adequate camera ...");
                     
@@ -187,8 +191,11 @@ namespace FFmpegFileAndDevicesTest
                             primaryMonitor = monitors[0];
                     }
 
-                    if(primaryMonitor != null)
+                    if (primaryMonitor != null)
+                    {
                         videoSource = new SIPSorceryMedia.FFmpeg.FFmpegScreenSource(primaryMonitor.Path, primaryMonitor.Rect, 10);
+                        videoSource.OnVideoSourceError += (msg) => PeerConnection.Close(msg);
+                    }
                     else
                         throw new NotSupportedException($"Cannot find adequate monitor ...");
                     break;
@@ -200,7 +207,7 @@ namespace FFmpegFileAndDevicesTest
                 {
                     case AUDIO_SOURCE.FILE_OR_STREAM:
                         SIPSorceryMedia.FFmpeg.FFmpegFileSource fileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(AudioSourceFile, RepeatAudioFile, new AudioEncoder(), 960, false);
-                        fileSource.OnEndOfFile += () => PeerConnection.Close("source eof");
+                        fileSource.OnAudioSourceError += (msg) => PeerConnection.Close(msg);
 
                         audioSource = fileSource as IAudioSource;
                         break;
