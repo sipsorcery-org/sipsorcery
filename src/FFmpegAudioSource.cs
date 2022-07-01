@@ -23,6 +23,7 @@ namespace SIPSorceryMedia.FFmpeg
         internal byte[] buffer; // Avoid to create buffer of same size
 
         private int frameSize;
+        private String path;
 
         private BasicBufferShort _incomingSamples = new BasicBufferShort(48000);
 
@@ -32,7 +33,6 @@ namespace SIPSorceryMedia.FFmpeg
         internal MediaFormatManager<AudioFormat> _audioFormatManager;
 
         public event EncodedSampleDelegate? OnAudioSourceEncodedSample;
-        public event Action? OnEndOfFile;
         public event SourceErrorDelegate? OnAudioSourceError;
 
 #pragma warning disable CS0067
@@ -55,25 +55,26 @@ namespace SIPSorceryMedia.FFmpeg
 
         public unsafe void CreateAudioDecoder(String path, AVInputFormat* avInputFormat, bool repeat = false, bool isMicrophone = false)
         {
+            this.path = path;
             _audioDecoder = new FFmpegAudioDecoder(path, avInputFormat, repeat, isMicrophone);
 
             _audioDecoder.OnAudioFrame += AudioDecoder_OnAudioFrame;
-
-            _audioDecoder.OnError += (msg) =>
-            {
-                OnAudioSourceError?.Invoke(msg);
-                Dispose();
-            };
-
-
-            _audioDecoder.OnEndOfFile += () =>
-            {
-                logger.LogDebug($"File source decode complete for {path}.");
-                OnEndOfFile?.Invoke();
-                _audioDecoder.Dispose();
-            };
+            _audioDecoder.OnError += AudioDecoder_OnError;
+            _audioDecoder.OnEndOfFile += AudioDecoder_OnEndOfFile;
         }
-        
+
+        private void AudioDecoder_OnEndOfFile()
+        {
+            AudioDecoder_OnError("End of file");
+        }
+
+        private void AudioDecoder_OnError(string errorMessage)
+        {
+            logger.LogDebug($"Audio - Source error for {path} - ErrorMessage:[{errorMessage}]");
+            OnAudioSourceError?.Invoke(errorMessage);
+            Dispose();
+        }
+
         public Boolean InitialiseDecoder()
         {
             return _audioDecoder?.InitialiseSource(_audioFormatManager.SelectedFormat.ClockRate) == true;
@@ -90,12 +91,9 @@ namespace SIPSorceryMedia.FFmpeg
         
         public void SetAudioSourceFormat(AudioFormat audioFormat)
         {
-            if (_audioFormatManager != null)
-            {
-                logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
-                _audioFormatManager.SetSelectedFormat(audioFormat);
-                InitialiseDecoder();
-            }
+            logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
+            _audioFormatManager.SetSelectedFormat(audioFormat);
+            InitialiseDecoder();
         }
         
         public void RestrictFormats(Func<AudioFormat, bool> filter)
@@ -164,14 +162,9 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isStarted)
             {
-                if (_audioDecoder == null)
-                {
-                    OnAudioSourceError?.Invoke("Initialization has not be done correctly");
-                }
-                else
+                if (_audioDecoder != null)
                 {
                     _isStarted = true;
-                    InitialiseDecoder();
                     _audioDecoder.StartDecode();
                 }
             }
@@ -221,9 +214,14 @@ namespace SIPSorceryMedia.FFmpeg
             _isStarted = false;
 
             if (_audioDecoder != null)
-                _audioDecoder.Dispose();
+            {
+                _audioDecoder.OnAudioFrame -= AudioDecoder_OnAudioFrame;
+                _audioDecoder.OnError -= AudioDecoder_OnError;
+                _audioDecoder.OnEndOfFile -= AudioDecoder_OnEndOfFile;
 
-            _audioDecoder = null;
+                _audioDecoder.Dispose();
+                _audioDecoder = null;
+            }
         }
     }
 }
