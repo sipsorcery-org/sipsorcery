@@ -323,13 +323,7 @@ namespace SIPSorceryMedia.FFmpeg
                         }
                         else
                         {
-                            if (_isCamera)
-                            {
-                                RaiseError("Cannot read more frame");
-                                return;
-                            }
-                            else
-                                OnEndOfFile?.Invoke();
+                            OnEndOfFile?.Invoke();
                         }
                     }
                 }
