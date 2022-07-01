@@ -19,6 +19,8 @@ namespace SIPSorceryMedia.FFmpeg
         internal bool _isPaused;
         internal bool _isClosed;
 
+        private String path;
+
         internal FFmpegVideoDecoder ? _videoDecoder;
 
         internal VideoFrameConverter? _videoFrameYUV420PConverter = null;
@@ -34,8 +36,6 @@ namespace SIPSorceryMedia.FFmpeg
 
         public event SourceErrorDelegate? OnVideoSourceError;
 
-        public event Action? OnEndOfFile;
-
 #pragma warning disable CS0067
         public event RawVideoSampleDelegate? OnVideoSourceRawSample;
 #pragma warning restore CS0067
@@ -44,25 +44,29 @@ namespace SIPSorceryMedia.FFmpeg
         {
             _videoFormatManager = new MediaFormatManager<VideoFormat>(_supportedVideoFormats);
             _videoEncoder = new FFmpegVideoEncoder();
+            path = "";
         }
 
         public unsafe void CreateVideoDecoder(String path, AVInputFormat* avInputFormat, bool repeat = false, bool isCamera = false)
         {
+            this.path = path;
             _videoDecoder = new FFmpegVideoDecoder(path, avInputFormat, repeat, isCamera);
+            
             _videoDecoder.OnVideoFrame += VideoDecoder_OnVideoFrame;
+            _videoDecoder.OnError += VideoDecoder_OnError;
+            _videoDecoder.OnEndOfFile += VideoDecoder_OnEndOfFile;
+         }
 
-            _videoDecoder.OnError += (msg) =>
-            {
-                OnVideoSourceError?.Invoke(msg);
-                Dispose();
-            };
+        private void VideoDecoder_OnEndOfFile()
+        {
+            VideoDecoder_OnError("End of file");
+        }
 
-            _videoDecoder.OnEndOfFile += () =>
-            {
-                logger.LogDebug($"File source decode complete for {path}.");
-                OnEndOfFile?.Invoke();
-                Dispose();
-            };
+        private void VideoDecoder_OnError(string errorMessage)
+        {
+            logger.LogDebug($"Video - Source error for {path} - ErrorMessage:[{errorMessage}]");
+            OnVideoSourceError?.Invoke(errorMessage);
+            Dispose();
         }
 
         public Boolean InitialiseDecoder(Dictionary<string, string>? decoderOptions = null)
@@ -81,7 +85,9 @@ namespace SIPSorceryMedia.FFmpeg
         {
             logger.LogDebug($"Setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
             _videoFormatManager.SetSelectedFormat(videoFormat);
+            InitialiseDecoder();
         }
+
         public void RestrictFormats(Func<VideoFormat, bool> filter)
         {
             _videoFormatManager.RestrictFormats(filter);
@@ -178,11 +184,7 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isStarted)
             {
-                if (_videoDecoder == null)
-                {
-                    OnVideoSourceError?.Invoke("Initialization has not be done correctly");
-                }
-                else
+                if (_videoDecoder != null)
                 {
                     _isStarted = true;
                     _videoDecoder?.StartDecode();
@@ -230,11 +232,21 @@ namespace SIPSorceryMedia.FFmpeg
         {
             _isStarted = false;
 
-            _videoDecoder?.Dispose();
-            _videoDecoder = null;
+            if (_videoDecoder != null)
+            {
+                _videoDecoder.OnVideoFrame -= VideoDecoder_OnVideoFrame;
+                _videoDecoder.OnError -= VideoDecoder_OnError;
+                _videoDecoder.OnEndOfFile -= VideoDecoder_OnEndOfFile;
 
-            _videoEncoder?.Dispose();
-            _videoEncoder = null;
+                _videoDecoder.Dispose();
+                _videoDecoder = null;
+            }
+
+            if (_videoEncoder != null)
+            {
+                _videoEncoder.Dispose();
+                _videoEncoder = null;
+            }
         }
 
     }

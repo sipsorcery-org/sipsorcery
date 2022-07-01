@@ -24,8 +24,6 @@ namespace SIPSorceryMedia.FFmpeg
         public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
         public event RawVideoSampleFasterDelegate? OnVideoSourceRawSampleFaster;
 
-        public event Action? OnEndOfFile;
-
         public event SourceErrorDelegate? OnAudioSourceError;
         public event SourceErrorDelegate? OnVideoSourceError;
 
@@ -50,7 +48,6 @@ namespace SIPSorceryMedia.FFmpeg
 
                 _FFmpegAudioSource.OnAudioSourceEncodedSample += _FFmpegAudioSource_OnAudioSourceEncodedSample;
                 _FFmpegAudioSource.OnAudioSourceRawSample += _FFmpegAudioSource_OnAudioSourceRawSample;
-                _FFmpegAudioSource.OnEndOfFile += _FFmpegAudioSource_OnEndOfFile;
                 _FFmpegAudioSource.OnAudioSourceError += _FFmpegAudioSource_OnAudioSourceError;
             }
 
@@ -58,11 +55,9 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 _FFmpegVideoSource = new FFmpegVideoSource();
                 _FFmpegVideoSource.CreateVideoDecoder(path, null, repeat, false);
-                _FFmpegVideoSource.InitialiseDecoder();
 
                 _FFmpegVideoSource.OnVideoSourceEncodedSample += _FFmpegVideoSource_OnVideoSourceEncodedSample;
                 _FFmpegVideoSource.OnVideoSourceRawSampleFaster += _FFmpegVideoSource_OnVideoSourceRawSampleFaster;
-                _FFmpegVideoSource.OnEndOfFile += _FFmpegVideoSource_OnEndOfFile;
                 _FFmpegVideoSource.OnVideoSourceError += _FFmpegVideoSource_OnVideoSourceError;
             }
         }
@@ -75,16 +70,6 @@ namespace SIPSorceryMedia.FFmpeg
         private void _FFmpegVideoSource_OnVideoSourceError(string errorMessage)
         {
             OnVideoSourceError?.Invoke(errorMessage);
-        }
-
-        private void _FFmpegVideoSource_OnEndOfFile()
-        {
-            OnEndOfFile?.Invoke();
-        }
-
-        private void _FFmpegAudioSource_OnEndOfFile()
-        {
-            OnEndOfFile?.Invoke();
         }
 
         private void _FFmpegVideoSource_OnVideoSourceEncodedSample(uint durationRtpUnits, byte[] sample)
@@ -288,7 +273,6 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 _FFmpegAudioSource.OnAudioSourceEncodedSample -= _FFmpegAudioSource_OnAudioSourceEncodedSample;
                 _FFmpegAudioSource.OnAudioSourceRawSample -= _FFmpegAudioSource_OnAudioSourceRawSample;
-                _FFmpegAudioSource.OnEndOfFile -= _FFmpegAudioSource_OnEndOfFile;
                 _FFmpegAudioSource.OnAudioSourceError -= _FFmpegAudioSource_OnAudioSourceError;
 
                 _FFmpegAudioSource.Dispose();
@@ -300,7 +284,6 @@ namespace SIPSorceryMedia.FFmpeg
             { 
                 _FFmpegVideoSource.OnVideoSourceEncodedSample -= _FFmpegVideoSource_OnVideoSourceEncodedSample;
                 _FFmpegVideoSource.OnVideoSourceRawSampleFaster -= _FFmpegVideoSource_OnVideoSourceRawSampleFaster;
-                _FFmpegVideoSource.OnEndOfFile -= _FFmpegVideoSource_OnEndOfFile;
                 _FFmpegVideoSource.OnVideoSourceError -= _FFmpegVideoSource_OnVideoSourceError;
 
                 _FFmpegVideoSource.Dispose();
