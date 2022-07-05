@@ -11963,6 +11963,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.SendRtcpFeedback
   nameWithType: MediaStream.SendRtcpFeedback
+- uid: SIPSorcery.net.RTP.MediaStream.SendRtcpRaw(System.Byte[])
+  name: SendRtcpRaw(Byte[])
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtcpRaw_System_Byte___
+  commentId: M:SIPSorcery.net.RTP.MediaStream.SendRtcpRaw(System.Byte[])
+  name.vb: SendRtcpRaw(Byte())
+  fullName: SIPSorcery.net.RTP.MediaStream.SendRtcpRaw(System.Byte[])
+  fullName.vb: SIPSorcery.net.RTP.MediaStream.SendRtcpRaw(System.Byte())
+  nameWithType: MediaStream.SendRtcpRaw(Byte[])
+  nameWithType.vb: MediaStream.SendRtcpRaw(Byte())
+- uid: SIPSorcery.net.RTP.MediaStream.SendRtcpRaw*
+  name: SendRtcpRaw
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtcpRaw_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.SendRtcpRaw
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.MediaStream.SendRtcpRaw
+  nameWithType: MediaStream.SendRtcpRaw
 - uid: SIPSorcery.net.RTP.MediaStream.SendRtcpReport(SIPSorcery.Net.RTCPCompoundPacket)
   name: SendRtcpReport(RTCPCompoundPacket)
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtcpReport_SIPSorcery_Net_RTCPCompoundPacket_
@@ -14168,6 +14184,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SendRtcpFeedback
   nameWithType: RTPSession.SendRtcpFeedback
+- uid: SIPSorcery.Net.RTPSession.SendRtcpRaw(SIPSorcery.Net.SDPMediaTypesEnum,System.Byte[])
+  name: SendRtcpRaw(SDPMediaTypesEnum, Byte[])
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpRaw_SIPSorcery_Net_SDPMediaTypesEnum_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPSession.SendRtcpRaw(SIPSorcery.Net.SDPMediaTypesEnum,System.Byte[])
+  name.vb: SendRtcpRaw(SDPMediaTypesEnum, Byte())
+  fullName: SIPSorcery.Net.RTPSession.SendRtcpRaw(SIPSorcery.Net.SDPMediaTypesEnum, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPSession.SendRtcpRaw(SIPSorcery.Net.SDPMediaTypesEnum, System.Byte())
+  nameWithType: RTPSession.SendRtcpRaw(SDPMediaTypesEnum, Byte[])
+  nameWithType.vb: RTPSession.SendRtcpRaw(SDPMediaTypesEnum, Byte())
+- uid: SIPSorcery.Net.RTPSession.SendRtcpRaw*
+  name: SendRtcpRaw
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpRaw_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SendRtcpRaw
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SendRtcpRaw
+  nameWithType: RTPSession.SendRtcpRaw
 - uid: SIPSorcery.Net.RTPSession.SendRtcpReport(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.RTCPCompoundPacket)
   name: SendRtcpReport(SDPMediaTypesEnum, RTCPCompoundPacket)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpReport_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTCPCompoundPacket_
@@ -35894,24 +35926,24 @@ references:
   commentId: T:SIPSorcery.SIP.SIPTLSChannel
   fullName: SIPSorcery.SIP.SIPTLSChannel
   nameWithType: SIPTLSChannel
-- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
-  name: SIPTLSChannel(IPEndPoint, Boolean)
-  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_IPEndPoint_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Net.IPEndPoint, System.Boolean)
-  nameWithType: SIPTLSChannel.SIPTLSChannel(IPEndPoint, Boolean)
+- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint,System.Boolean,System.Net.Security.RemoteCertificateValidationCallback)
+  name: SIPTLSChannel(IPEndPoint, Boolean, RemoteCertificateValidationCallback)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_IPEndPoint_System_Boolean_System_Net_Security_RemoteCertificateValidationCallback_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint,System.Boolean,System.Net.Security.RemoteCertificateValidationCallback)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Net.IPEndPoint, System.Boolean, System.Net.Security.RemoteCertificateValidationCallback)
+  nameWithType: SIPTLSChannel.SIPTLSChannel(IPEndPoint, Boolean, RemoteCertificateValidationCallback)
 - uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)
   name: SIPTLSChannel(X509Certificate2, IPAddress, Int32)
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPAddress_System_Int32_
   commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)
   fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPAddress, System.Int32)
   nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPAddress, Int32)
-- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean,System.Security.Cryptography.X509Certificates.X509Certificate2Collection)
-  name: SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean, X509Certificate2Collection)
-  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_System_Boolean_System_Security_Cryptography_X509Certificates_X509Certificate2Collection_
-  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean,System.Security.Cryptography.X509Certificates.X509Certificate2Collection)
-  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPEndPoint, System.Boolean, System.Security.Cryptography.X509Certificates.X509Certificate2Collection)
-  nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean, X509Certificate2Collection)
+- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean,System.Security.Cryptography.X509Certificates.X509Certificate2Collection,System.Net.Security.RemoteCertificateValidationCallback)
+  name: SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean, X509Certificate2Collection, RemoteCertificateValidationCallback)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_System_Boolean_System_Security_Cryptography_X509Certificates_X509Certificate2Collection_System_Net_Security_RemoteCertificateValidationCallback_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint,System.Boolean,System.Security.Cryptography.X509Certificates.X509Certificate2Collection,System.Net.Security.RemoteCertificateValidationCallback)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPEndPoint, System.Boolean, System.Security.Cryptography.X509Certificates.X509Certificate2Collection, System.Net.Security.RemoteCertificateValidationCallback)
+  nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPEndPoint, Boolean, X509Certificate2Collection, RemoteCertificateValidationCallback)
 - uid: SIPSorcery.SIP.SIPTLSChannel.#ctor*
   name: SIPTLSChannel
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_
