@@ -351,51 +351,6 @@ namespace SIPSorcery.Net
                 logger.LogDebug($"SCTP receiver LastInOrderTSN moved from {currentCumulativeTSN} to {newCumulativeTSN}");
                 _inOrderReceiveCount += GetDistance(currentCumulativeTSN, newCumulativeTSN);
 
-                // examine all of the listed stream reordering queues, and immediately make available for delivery
-                // stream sequence numbers earlier than or equal to the stream sequence number listed inside the
-                // FORWARD-TSN. Any such stranded data SHOULD be made immediately available to the upper layer application.
-
-                if (chunk.StreamSequenceAssociations.Count > 0)
-                {
-                    foreach (var kvp in chunk.StreamSequenceAssociations)
-                    {
-                        var streamNum = kvp.Key;
-                        var streamSequenceNum = kvp.Value;
-                        if (_streamLatestSeqNums.TryGetValue(streamNum, out ushort currentStreamSequence))
-                        {
-                            if (SctpDataReceiver.IsNewer(currentStreamSequence, streamSequenceNum))
-                            {
-                                if (_streamOutOfOrderFrames.TryGetValue(streamNum, out var outOfOrder))
-                                {
-                                    unchecked
-                                    {
-                                        var dist = SctpDataReceiver.GetDistance(currentStreamSequence, streamSequenceNum);
-
-                                        for (ushort i = 0; i < dist; i++)
-                                        {
-                                            ushort nextSeqNum = (ushort)(currentStreamSequence + i);
-                                            if (outOfOrder.TryGetValue(nextSeqNum, out var frame))
-                                            {
-                                                _onFrameReady?.Invoke(frame);
-                                                outOfOrder.Remove(nextSeqNum);
-                                            }
-                                            else
-                                            {
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            _streamLatestSeqNums[streamNum] = streamSequenceNum;
-                        }
-                        else
-                        {
-                            logger.LogWarning($"SCTP received a FORWARD-TSN containing untracked stream {streamNum}");
-                        }
-                    }
-                }
-
                 // The receiver MUST remove any partially reassembled message, which is still missing one
                 // or more TSNs earlier than or equal to the new cumulative TSN point.
                 unchecked
@@ -417,6 +372,47 @@ namespace SIPSorcery.Net
                 if (GetSackChunk() is SctpSackChunk sack)
                 {
                     _sendSackChunk?.Invoke(sack);
+                }
+            }
+
+            // examine all of the listed stream reordering queues, and immediately make available for delivery
+            // stream sequence numbers earlier than or equal to the stream sequence number listed inside the
+            // FORWARD-TSN. Any such stranded data SHOULD be made immediately available to the upper layer application.
+
+            if (chunk.StreamSequenceAssociations.Count > 0)
+            {
+                foreach (var kvp in chunk.StreamSequenceAssociations)
+                {
+                    var streamNum = kvp.Key;
+                    var streamSequenceNum = kvp.Value;
+                    if (_streamLatestSeqNums.TryGetValue(streamNum, out ushort currentStreamSequence))
+                    {
+                        if (SctpDataReceiver.IsNewer(currentStreamSequence, streamSequenceNum))
+                        {
+                            if (_streamOutOfOrderFrames.TryGetValue(streamNum, out var outOfOrder))
+                            {
+                                unchecked
+                                {
+                                    var dist = SctpDataReceiver.GetDistance(currentStreamSequence, streamSequenceNum);
+
+                                    for (ushort i = 0; i < dist; i++)
+                                    {
+                                        ushort nextSeqNum = (ushort)(currentStreamSequence + i);
+                                        if (outOfOrder.TryGetValue(nextSeqNum, out var frame))
+                                        {
+                                            _onFrameReady?.Invoke(frame);
+                                            outOfOrder.Remove(nextSeqNum);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        _streamLatestSeqNums[streamNum] = streamSequenceNum;
+                    }
+                    else
+                    {
+                        logger.LogWarning($"SCTP received a FORWARD-TSN containing untracked stream {streamNum}");
+                    }
                 }
             }
         }
