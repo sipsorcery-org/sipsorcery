@@ -103,12 +103,13 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
             SctpDataSender sender = new SctpDataSender("dummy", null, mtu, initialTSN, arwnd);
             sender._burstPeriodMilliseconds = 1;
-            sender._rtoInitialMilliseconds = 1;
-            sender._rtoMinimumMilliseconds = 1;
+            sender._rtoInitialMilliseconds = 20;
+            sender._rtoMinimumMilliseconds = 20;
+            sender._rtoMaximumMilliseconds = 100;
 
             Action<SctpDataChunk> reluctantSender = (chunk) =>
             {
-                if (chunk.TSN % 10 == 0)
+                if (chunk.TSN % 5 == 0)
                 {
                     receiver.OnDataChunk(chunk);
                     sender.GotSack(receiver.GetSackChunk());
@@ -127,7 +128,7 @@ namespace SIPSorcery.Net.UnitTests
                 sender.SendData(0, 0, buffer);
             }
 
-            await Task.Delay(500);
+            await Task.Delay(200);
 
             Assert.Equal(SctpDataSender.CONGESTION_WINDOW_FACTOR + mtu, sender._congestionWindow);
         }
