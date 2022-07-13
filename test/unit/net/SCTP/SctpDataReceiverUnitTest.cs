@@ -100,6 +100,35 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(0, receiver.ForwardTSNCount);
         }
 
+
+
+        /// <summary>
+        /// Tests that exceeding the maximum out of order frames drops the correct stream frame
+        /// </summary>
+        [Fact]
+        public void ExceedBufferOutOfOrder()
+        {
+            SctpDataReceiver receiver = new SctpDataReceiver(0, 0, 0);
+            receiver._maxOutOfOrderFrames = 2;
+
+            SctpDataChunk chunk0 = new SctpDataChunk(false, true, true, 0, 0, 0, 0, new byte[] { 0x00 });
+            SctpDataChunk chunk1 = new SctpDataChunk(false, true, true, 1, 0, 1, 0, new byte[] { 0x01 });
+            SctpDataChunk chunk2 = new SctpDataChunk(false, true, true, 2, 0, 2, 0, new byte[] { 0x02 });
+            SctpDataChunk chunk3 = new SctpDataChunk(false, true, true, 3, 0, 3, 0, new byte[] { 0x03 });
+            SctpDataChunk chunk4 = new SctpDataChunk(false, true, true, 4, 0, 4, 0, new byte[] { 0x04 });
+
+            Assert.Single(receiver.OnDataChunk(chunk0));
+            Assert.Empty(receiver.OnDataChunk(chunk4)); // c4 in out of order queue
+            Assert.Empty(receiver.OnDataChunk(chunk3)); // c3 in out of order queue
+            Assert.Empty(receiver.OnDataChunk(chunk2)); // c4 Dropped, c2,c3 in out of order queue
+            Assert.Empty(receiver.OnDataChunk(chunk4)); // c4 Dropped, c2,c3 in out of order queue
+            Assert.Equal(3, receiver.OnDataChunk(chunk1).Count); // c1,c2,c3 released, out of order queue empty
+            Assert.Single(receiver.OnDataChunk(chunk4)); 
+
+            Assert.Equal(4U, receiver.CumulativeAckTSN);
+            Assert.Equal(0, receiver.ForwardTSNCount);
+        }
+
         /// <summary>
         /// Tests that a fragmented chunk with the beginning chunk received last
         /// gets processed correctly.

@@ -32,14 +32,19 @@ namespace SIPSorcery.Net
         public ushort StreamSeqNum;
         public uint PPID;
         public byte[] UserData;
+        public uint BeginTSN;
+        public uint EndTSN;
 
-        public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid, byte[] userData)
+        public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid, byte[] userData, uint startTSN, uint endTSN)
         {
             Unordered = unordered;
             StreamID = streamID;
             StreamSeqNum = streamSeqNum;
             PPID = ppid;
             UserData = userData;
+            BeginTSN = startTSN;
+            EndTSN = endTSN;
+
         }
 
         public bool IsEmpty()
@@ -85,6 +90,8 @@ namespace SIPSorcery.Net
         /// The maximum number of out of order frames that will be queued per stream ID.
         /// </summary>
         private const int MAXIMUM_OUTOFORDER_FRAMES = 25;
+
+        internal int _maxOutOfOrderFrames = MAXIMUM_OUTOFORDER_FRAMES;
 
         /// <summary>
         /// The maximum size of an SCTP fragmented message.
@@ -265,7 +272,9 @@ namespace SIPSorcery.Net
                         dataChunk.StreamID,
                         dataChunk.StreamSeqNum,
                         dataChunk.PPID,
-                        dataChunk.UserData);
+                        dataChunk.UserData,
+                        dataChunk.TSN,
+                        dataChunk.TSN);
                 }
                 else
                 {
@@ -422,21 +431,60 @@ namespace SIPSorcery.Net
                 else
                 {
                     // Stream seqnum is out of order.
-                    if (!_streamOutOfOrderFrames.ContainsKey(frame.StreamID))
+                    if (!_streamOutOfOrderFrames.TryGetValue(frame.StreamID, out Dictionary<ushort, SctpDataFrame> outOfOrder))
                     {
-                        _streamOutOfOrderFrames[frame.StreamID] = new Dictionary<ushort, SctpDataFrame>();
+                        outOfOrder = new Dictionary<ushort, SctpDataFrame>();
+                        _streamOutOfOrderFrames[frame.StreamID] = outOfOrder;
                     }
 
-                    if (_streamOutOfOrderFrames[frame.StreamID].Count > MAXIMUM_OUTOFORDER_FRAMES)
+                    if (outOfOrder.Count >= _maxOutOfOrderFrames)
                     {
                         logger.LogWarning($"SCTP data receiver exceeded the maximum queue size for out of order frames for stream ID {frame.StreamID}.");
-                        // TODO https://tools.ietf.org/html/rfc4960#section-6.2 says to drop the chunk with the highest TSN that's ahead of the 
-                        // ack'ed TSN.
+
+                        // https://tools.ietf.org/html/rfc4960#section-6.2 ; the data receiver may be
+                        // holding data in its receive buffers while reassembling a fragmented
+                        // user message from its peer when it runs out of receive buffer space.
+                        // It may drop these DATA chunks even though it has acknowledged them in
+                        // Gap Ack Blocks.If a data receiver drops DATA chunks, it MUST NOT
+                        // include them in Gap Ack Blocks in subsequent SACKs until they are
+                        // received again via retransmission.
+
+                        // Determine which out of order frame should be dropped (the newest one)
+                        var sorted = outOfOrder.Keys.ToList();
+                        sorted.Sort((a, b) => IsNewer(a, b) ? 1 : -1);
+                        var newestOutOfOrderFrame = outOfOrder[sorted[0]];
+
+                        if (!IsNewer(newestOutOfOrderFrame.StreamSeqNum, frame.StreamSeqNum))
+                        {
+                            // Drop the frame with the newest stream sequence number
+                            unchecked
+                            {
+                                // 2. Ensure all chunks (TSN) in the frame are dropped to be included in the gap reports
+                                for (uint i = 0; i <= GetDistance(newestOutOfOrderFrame.BeginTSN, newestOutOfOrderFrame.EndTSN); i++)
+                                {
+                                    _forwardTSN.Remove(newestOutOfOrderFrame.BeginTSN + i);
+                                }
+
+                                // 3. Remove reference to the frame
+                                outOfOrder.Remove(newestOutOfOrderFrame.StreamSeqNum);
+                            }
+
+                            outOfOrder.Add(frame.StreamSeqNum, frame);
+                        }
+                        else
+                        {
+                            // Drop the frame that was just received
+                            for (uint i = 0; i <= GetDistance(frame.BeginTSN, frame.EndTSN); i++)
+                            {
+                                _forwardTSN.Remove(frame.BeginTSN + i);
+                            }
+                        }
                     }
                     else
                     {
-                        _streamOutOfOrderFrames[frame.StreamID].Add(frame.StreamSeqNum, frame);
+                        outOfOrder.Add(frame.StreamSeqNum, frame);
                     }
+
                 }
 
                 return sortedFrames;
@@ -504,7 +552,7 @@ namespace SIPSorcery.Net
                 byte[] full = new byte[MAX_FRAME_SIZE];
                 int posn = 0;
                 var beginChunk = fragments[beginTSN];
-                var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
+                var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full, beginTSN, endTSN);
 
                 uint afterEndTSN = endTSN + 1;
                 uint tsn = beginTSN;
@@ -547,6 +595,33 @@ namespace SIPSorcery.Net
             else
             {
                 return receivedTSN > tsn;
+            }
+        }
+
+
+        /// <summary>
+        /// Determines if a Stream Sequence Number is newer than the expected SSN taking
+        /// into account if SSN wrap around has occurred.
+        /// </summary>
+        /// <param name="streamSeqNum">The SSN to compare against.</param>
+        /// <param name="receivedStreamSeqNum">The received SSN.</param>
+        /// <returns>True if the received SSN is newer than the reference TSN
+        /// or false if not.</returns>
+        public static bool IsNewer(ushort streamSeqNum, ushort receivedStreamSeqNum)
+        {
+            if (streamSeqNum < ushort.MaxValue / 2 && receivedStreamSeqNum > ushort.MaxValue / 2)
+            {
+                // SSN wrap has occurred and the received SSN is old.
+                return false;
+            }
+            else if (streamSeqNum > ushort.MaxValue / 2 && receivedStreamSeqNum < ushort.MaxValue / 2)
+            {
+                // SSN wrap has occurred and the received SSN is new.
+                return true;
+            }
+            else
+            {
+                return receivedStreamSeqNum > streamSeqNum;
             }
         }
 
