@@ -89,7 +89,17 @@ namespace SIPSorcery.Net
         {
             _transport = transport;
 
-            // TODO: Apply init settings.
+            if (init == null) {
+                return;
+            }
+            // TODO: Utilize ordered, maxPacketLifeTime, maxRetransmits, andprotocol;
+            ordered = init.ordered;
+            maxPacketLifeTime = init.maxPacketLifeTime;
+            maxRetransmits = init.maxRetransmits;
+            protocol = init.protocol;
+            
+            negotiated = init.negotiated;
+            id = init.id;
         }
 
         internal void GotAck()
