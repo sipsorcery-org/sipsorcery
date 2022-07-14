@@ -108,9 +108,20 @@ namespace SIPSorcery.Net
         private uint _initialRemoteARwnd;
 
         internal int _burstPeriodMilliseconds = BURST_PERIOD_MILLISECONDS;
+        /// <summary>
+        /// Retransmission timeout. 
+        /// See https://datatracker.ietf.org/doc/html/rfc4960#section-6.3.1
+        /// </summary>
+        internal double _rto = RTO_INITIAL_SECONDS * 1000;
         internal int _rtoInitialMilliseconds = RTO_INITIAL_SECONDS * 1000;
         internal int _rtoMinimumMilliseconds = RTO_MIN_SECONDS * 1000;
-        
+        internal int _rtoMaximumMilliseconds = RTO_MAX_SECONDS * 1000;
+        private bool _hasRoundTripTime;
+        private double _smoothedRoundTripTime; // "SRTT"
+        private double _roundTripTimeVariation; // "RTTVAR"
+        private double _rtoAlpha = 0.125; // Suggested value in rfc4960#section-15
+        private double _rtoBeta = 0.25; // Suggested value in rfc4960#section-15
+
         /// <summary>
         /// A count of the bytes currently in-flight to the remote peer.
         /// </summary>
@@ -198,6 +209,12 @@ namespace SIPSorcery.Net
 
                     if (_unconfirmedChunks.TryGetValue(sack.CumulativeTsnAck, out var result))
                     {
+                        // Don't include retransmits in round trip calculation
+                        if (result.SendCount == 1)
+                        {
+                            UpdateRoundTripTime(result);
+                        }
+
                         _lastAckedDataChunkSize = result.UserData.Length;
                     }
 
@@ -476,7 +493,7 @@ namespace SIPSorcery.Net
                 if (chunksSent < burstSize && _unconfirmedChunks.Count > 0)
                 {
                     foreach (var chunk in _unconfirmedChunks.Values
-                        .Where(x => now.Subtract(x.LastSentAt).TotalSeconds > RTO_MIN_SECONDS)
+                        .Where(x => now.Subtract(x.LastSentAt).TotalMilliseconds > (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
                         .Take(burstSize - chunksSent))
                     {
                         chunk.LastSentAt = DateTime.Now;
@@ -496,6 +513,13 @@ namespace SIPSorcery.Net
                             // RFC4960 7.2.3
                             _slowStartThreshold = (uint)Math.Max(_congestionWindow / 2, 4 * _defaultMTU);
                             _congestionWindow = _defaultMTU;
+
+                            // For the destination address for which the timer expires, set RTO <- RTO * 2("back off the timer")
+                            // RFC4960 6.3.3 E2
+                            if (_hasRoundTripTime)
+                            {
+                                _rto = Math.Min(_rtoMaximumMilliseconds, _rto * 2);
+                            }
                         }
                     }
                 }
@@ -548,14 +572,48 @@ namespace SIPSorcery.Net
             }
             else if (_unconfirmedChunks.Count > 0)
             {
-                // TODO use Round Trip Time (RTT) measurements to adjust the Retransmission Timeout (RTO) value.
-                // https://tools.ietf.org/html/rfc4960#section-6.3.1
-                return _rtoMinimumMilliseconds;
+                return (int)(_hasRoundTripTime ? _rto : _rtoInitialMilliseconds);
             }
             else
             {
                 return _rtoInitialMilliseconds;
             }
+        }
+
+
+        /// <summary>
+        /// Updates the round trip time. 
+        /// See https://datatracker.ietf.org/doc/html/rfc4960#section-6.3.1
+        /// </summary>
+        /// <param name="rttMilliseconds">The last round trip time</param>
+        private void UpdateRoundTripTime(SctpDataChunk acknowledgedChunk)
+        {
+            // rfc 4960 6.3.1 C5: RTT measurements MUST NOT be made using packets that were retransmitted
+            if (acknowledgedChunk.SendCount > 1)
+            {
+                return;
+            }
+
+            var rttMilliseconds = (DateTime.Now - acknowledgedChunk.LastSentAt).TotalMilliseconds;
+
+            if (!_hasRoundTripTime)
+            {
+                // rfc 4960 6.3.1 C2
+                _smoothedRoundTripTime = rttMilliseconds;
+                _roundTripTimeVariation = rttMilliseconds / 2;
+                _rto = _smoothedRoundTripTime + 4 * _roundTripTimeVariation;
+                _hasRoundTripTime = true;
+            }
+            else
+            {
+                // rfc 4960 6.3.1 C3
+                _roundTripTimeVariation = (1 - _rtoBeta) * _roundTripTimeVariation + _rtoBeta * Math.Abs(_smoothedRoundTripTime - rttMilliseconds);
+                _smoothedRoundTripTime = (1 - _rtoAlpha) * _smoothedRoundTripTime + _rtoAlpha * rttMilliseconds;
+                _rto = _smoothedRoundTripTime + 4 * _roundTripTimeVariation;
+            }
+
+            // rfc 4960 6.3.1 C6-7
+            _rto = Math.Min(Math.Max(_rto, _rtoMinimumMilliseconds), _rtoMaximumMilliseconds);
         }
 
         /// <summary>
