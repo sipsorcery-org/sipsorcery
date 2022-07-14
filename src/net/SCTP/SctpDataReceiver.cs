@@ -229,6 +229,8 @@ namespace SIPSorcery.Net
                 logger.LogTrace($"SCTP receiver got data chunk with TSN {dataChunk.TSN}, " +
                     $"last in order TSN {_lastInOrderTSN}, in order receive count {_inOrderReceiveCount}.");
 
+                bool processFrame = true;
+
                 // Relying on unsigned integer wrapping.
                 unchecked
                 {
@@ -252,30 +254,44 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        _forwardTSN.Add(dataChunk.TSN, 1);
+                        if (!dataChunk.Unordered &&
+                            _streamOutOfOrderFrames.TryGetValue(dataChunk.StreamID, out var outOfOrder) &&
+                            outOfOrder.Count >= MAXIMUM_OUTOFORDER_FRAMES)
+                        {
+                            // Stream is nearing capacity, only chunks that advance _lastInOrderTSN can be accepted. 
+                            logger.LogWarning($"Stream {dataChunk.StreamID} is at buffer capacity. Rejected out-of-order data chunk TSN {dataChunk.TSN}.");
+                            processFrame = false;
+                        }
+                        else
+                        {
+                            _forwardTSN.Add(dataChunk.TSN, 1);
+                        }
                     }
                 }
 
-                // Now go about processing the data chunk.
-                if (dataChunk.Begining && dataChunk.Ending)
+                if (processFrame)
                 {
-                    // Single packet chunk.
-                    frame = new SctpDataFrame(
-                        dataChunk.Unordered,
-                        dataChunk.StreamID,
-                        dataChunk.StreamSeqNum,
-                        dataChunk.PPID,
-                        dataChunk.UserData);
-                }
-                else
-                {
-                    // This is a data chunk fragment.
-                    _fragmentedChunks.Add(dataChunk.TSN, dataChunk);
-                    (var begin, var end) = GetChunkBeginAndEnd(_fragmentedChunks, dataChunk.TSN);
-
-                    if (begin != null && end != null)
+                    // Now go about processing the data chunk.
+                    if (dataChunk.Begining && dataChunk.Ending)
                     {
-                        frame = GetFragmentedChunk(_fragmentedChunks, begin.Value, end.Value);
+                        // Single packet chunk.
+                        frame = new SctpDataFrame(
+                            dataChunk.Unordered,
+                            dataChunk.StreamID,
+                            dataChunk.StreamSeqNum,
+                            dataChunk.PPID,
+                            dataChunk.UserData);
+                    }
+                    else
+                    {
+                        // This is a data chunk fragment.
+                        _fragmentedChunks.Add(dataChunk.TSN, dataChunk);
+                        (var begin, var end) = GetChunkBeginAndEnd(_fragmentedChunks, dataChunk.TSN);
+
+                        if (begin != null && end != null)
+                        {
+                            frame = GetFragmentedChunk(_fragmentedChunks, begin.Value, end.Value);
+                        }
                     }
                 }
             }
@@ -427,16 +443,7 @@ namespace SIPSorcery.Net
                         _streamOutOfOrderFrames[frame.StreamID] = new Dictionary<ushort, SctpDataFrame>();
                     }
 
-                    if (_streamOutOfOrderFrames[frame.StreamID].Count > MAXIMUM_OUTOFORDER_FRAMES)
-                    {
-                        logger.LogWarning($"SCTP data receiver exceeded the maximum queue size for out of order frames for stream ID {frame.StreamID}.");
-                        // TODO https://tools.ietf.org/html/rfc4960#section-6.2 says to drop the chunk with the highest TSN that's ahead of the 
-                        // ack'ed TSN.
-                    }
-                    else
-                    {
-                        _streamOutOfOrderFrames[frame.StreamID].Add(frame.StreamSeqNum, frame);
-                    }
+                    _streamOutOfOrderFrames[frame.StreamID].Add(frame.StreamSeqNum, frame);
                 }
 
                 return sortedFrames;
