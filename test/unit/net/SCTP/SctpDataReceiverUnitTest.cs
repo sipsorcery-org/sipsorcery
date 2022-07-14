@@ -117,13 +117,42 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk3 = new SctpDataChunk(false, true, true, 3, 0, 3, 0, new byte[] { 0x03 });
             SctpDataChunk chunk4 = new SctpDataChunk(false, true, true, 4, 0, 4, 0, new byte[] { 0x04 });
 
+            SctpSackChunk sack;
             Assert.Single(receiver.OnDataChunk(chunk0));
+            sack = receiver.GetSackChunk();
+            Assert.Empty(sack.GapAckBlocks);
+
             Assert.Empty(receiver.OnDataChunk(chunk4)); // c4 in out of order queue
-            Assert.Empty(receiver.OnDataChunk(chunk3)); // c3 in out of order queue
+            sack = receiver.GetSackChunk();
+            Assert.Single(sack.GapAckBlocks);
+            Assert.Equal(4, sack.GapAckBlocks[0].Start);
+            Assert.Equal(4, sack.GapAckBlocks[0].End);
+
+            Assert.Empty(receiver.OnDataChunk(chunk3)); // c3,c4 in out of order queue
+            sack = receiver.GetSackChunk();
+            Assert.Single(sack.GapAckBlocks);
+            Assert.Equal(3, sack.GapAckBlocks[0].Start);
+            Assert.Equal(4, sack.GapAckBlocks[0].End);
+
             Assert.Empty(receiver.OnDataChunk(chunk2)); // c4 Dropped, c2,c3 in out of order queue
+            sack = receiver.GetSackChunk();
+            Assert.Single(sack.GapAckBlocks);
+            Assert.Equal(2, sack.GapAckBlocks[0].Start);
+            Assert.Equal(3, sack.GapAckBlocks[0].End);
+
             Assert.Empty(receiver.OnDataChunk(chunk4)); // c4 Dropped, c2,c3 in out of order queue
+            sack = receiver.GetSackChunk();
+            Assert.Single(sack.GapAckBlocks);
+            Assert.Equal(2, sack.GapAckBlocks[0].Start);
+            Assert.Equal(3, sack.GapAckBlocks[0].End);
+
             Assert.Equal(3, receiver.OnDataChunk(chunk1).Count); // c1,c2,c3 released, out of order queue empty
-            Assert.Single(receiver.OnDataChunk(chunk4)); 
+            sack = receiver.GetSackChunk();
+            Assert.Empty(sack.GapAckBlocks);
+
+            Assert.Single(receiver.OnDataChunk(chunk4));
+            sack = receiver.GetSackChunk();
+            Assert.Empty(sack.GapAckBlocks);
 
             Assert.Equal(4U, receiver.CumulativeAckTSN);
             Assert.Equal(0, receiver.ForwardTSNCount);
