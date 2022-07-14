@@ -1637,7 +1637,11 @@ namespace SIPSorcery.Net
         /// <param name="dataChannel">The data channel to open.</param>
         private void OpenDataChannel(RTCDataChannel dataChannel)
         {
-            if (dataChannel.id.HasValue)
+            if (dataChannel.negotiated) {
+                logger.LogDebug($"WebRTC data channel negotiated out of band with label {dataChannel.label} and stream ID {dataChannel.id}; invoking open event");
+                dataChannel.GotAck();
+            }
+            else if (dataChannel.id.HasValue)
             {
                 logger.LogDebug($"WebRTC attempting to open data channel with label {dataChannel.label} and stream ID {dataChannel.id}.");
                 dataChannel.SendDcepOpen();
