@@ -92,13 +92,12 @@ namespace SIPSorcery.Net
             if (init == null) {
                 return;
             }
-            // TODO: Utilize ordered, maxPacketLifeTime, maxRetransmits, andprotocol;
-            ordered = init.ordered;
+            // TODO: Utilize ordered, maxPacketLifeTime, maxRetransmits, and protocol;
+            ordered = init.ordered ?? true;
             maxPacketLifeTime = init.maxPacketLifeTime;
             maxRetransmits = init.maxRetransmits;
-            protocol = init.protocol;
-            
-            negotiated = init.negotiated;
+            protocol = init.protocol ?? "";
+            negotiated = init.negotiated ?? false;
             id = init.id;
         }
 
