@@ -256,6 +256,19 @@ namespace SIPSorcery.Net
                         }
                     }
 
+                    if (sack.DuplicateTSN.Count > 0)
+                    {
+                        // The remote is reporting that we have sent a duplicate TSN. 
+                        // This is probably because a SACK chunk was dropped. 
+                        // Ensure that we stop sending the duplicate.
+                        foreach (uint duplicateTSN in sack.DuplicateTSN)
+                        {
+                            _unconfirmedChunks.TryRemove(duplicateTSN, out _);
+                            _missingChunks.TryRemove(duplicateTSN, out _);
+                        }
+                    }
+
+
                     // Check gap reports. Only process them if the cumulative ACK TSN was acceptable.
                     if (processGapReports && sack.GapAckBlocks.Count > 0)
                     {
