@@ -44,7 +44,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v6.0.9: Supporting custom SIP TLS certificate validation callback.
+    <PackageReleaseNotes>-v6.0.9: Supporting custom SIP TLS certificate validation callback. SCTP improvements.
 -v6.0.8: Multiple audio and video stream support and other fixes.
 -v6.0.7: Synchronise with audio/video abstractions library.
 -v6.0.6: Minor bug fixes. G729 codec thanks to @edscodeblenders.
