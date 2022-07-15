@@ -55,6 +55,8 @@ namespace SIPSorcery.SIP
         /// </summary>
         private ConcurrentDictionary<string, SIPTransaction> m_pendingTransactions = new ConcurrentDictionary<string, SIPTransaction>();
 
+        private AutoResetEvent m_newPendingTransactionEvent = new AutoResetEvent(false);
+
         public int TransactionsCount
         {
             get { return m_pendingTransactions.Count; }
@@ -88,6 +90,8 @@ namespace SIPSorcery.SIP
                 {
                     throw new ApplicationException("Failed to add transaction to pending list.");
                 }
+
+                m_newPendingTransactionEvent.Set();
             }
         }
 
@@ -252,6 +256,7 @@ namespace SIPSorcery.SIP
         public void Shutdown()
         {
             m_isClosed = true;
+            m_newPendingTransactionEvent.Set();
         }
 
         /// <summary>
@@ -311,7 +316,7 @@ namespace SIPSorcery.SIP
                 {
                     if (m_pendingTransactions.IsEmpty)
                     {
-                        Thread.Sleep(MAX_TXCHECK_WAIT_MILLISECONDS);
+                        m_newPendingTransactionEvent.WaitOne(MAX_TXCHECK_WAIT_MILLISECONDS);
                     }
                     else
                     {
@@ -483,7 +488,7 @@ namespace SIPSorcery.SIP
 
                         RemoveExpiredTransactions();
 
-                        Thread.Sleep(TXCHECK_WAIT_MILLISECONDS);
+                        m_newPendingTransactionEvent.WaitOne(TXCHECK_WAIT_MILLISECONDS);
                     }
                 }
             }
