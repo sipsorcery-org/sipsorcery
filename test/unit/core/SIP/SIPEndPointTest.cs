@@ -333,5 +333,25 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(sipEndPoint.ChannelID == "123", "The SIPEndPoint channel ID was incorrectly parsed.");
             Assert.True(sipEndPoint.ConnectionID == "1234567", "The SIPEndPoint connection ID was incorrectly parsed.");
         }
+
+        /// <summary>
+        /// Test that an Empty Sip Endpoint can be copied
+        /// </summary>
+        [Fact]
+        public void EmptyCopyTest()
+        {
+            var copy = SIPEndPoint.Empty.CopyOf();
+
+            Assert.Equal(SIPEndPoint.Empty, copy);
+        }
+
+        /// <summary>
+        /// Test that GetHashCode does not throw an exception
+        /// </summary>
+        [Fact]
+        public void EmptyGetHashCodeDoesnotThrowTest()
+        {
+            SIPEndPoint.Empty.GetHashCode();
+        }
     }
 }
