@@ -213,7 +213,7 @@ namespace SIPSorcery.SIP
             if (_body != null && _body.Length > 0)
             {
                 copy._body = new byte[_body.Length];
-                Buffer.BlockCopy(copy._body, 0, copy._body, 0, copy._body.Length);
+                Buffer.BlockCopy(_body, 0, copy._body, 0, copy._body.Length);
             }
 
             copy.Created = Created;

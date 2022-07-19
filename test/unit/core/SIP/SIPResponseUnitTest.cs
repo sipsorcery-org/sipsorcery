@@ -463,6 +463,33 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.Equal(0, resp.Header.CSeq);
             Assert.True(Regex.Match(resp.ToString(), "CSeq: 0 OPTIONS", RegexOptions.Multiline).Success);
         }
+
+        [Fact]
+        public void SipResponseCopy()
+        {
+            SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            SIPRequest req = SIPRequest.GetRequest(SIPMethodsEnum.INVITE, uri);
+
+            var resp = SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.Ok, null);
+
+            resp.Body = "test";
+
+            var copy = resp.Copy();
+
+            Assert.Equal(resp.SIPVersion, copy.SIPVersion);
+            Assert.Equal(resp.Status, copy.Status);
+            Assert.Equal(resp.StatusCode, copy.StatusCode);
+            Assert.Equal(resp.ReasonPhrase, copy.ReasonPhrase);
+            Assert.Equal(resp.Header?.ToString(), copy.Header?.ToString());
+            Assert.Equal(resp.SIPEncoding, copy.SIPEncoding);
+            Assert.Equal(resp.SIPBodyEncoding, copy.SIPBodyEncoding);
+            Assert.Equal(resp.BodyBuffer, copy.BodyBuffer);
+            Assert.Equal(resp.Created, copy.Created);
+            Assert.Equal(resp.LocalSIPEndPoint, copy.LocalSIPEndPoint);
+            Assert.Equal(resp.RemoteSIPEndPoint, copy.RemoteSIPEndPoint);
+            Assert.Equal(resp.SendFromHintChannelID, copy.SendFromHintChannelID);
+            Assert.Equal(resp.SendFromHintConnectionID, copy.SendFromHintConnectionID);
+        }
     }
 
 #pragma warning restore SYSLIB0021
