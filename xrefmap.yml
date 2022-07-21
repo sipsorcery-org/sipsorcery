@@ -35372,6 +35372,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPSchemesEnum.tel
   fullName: SIPSorcery.SIP.SIPSchemesEnum.tel
   nameWithType: SIPSchemesEnum.tel
+- uid: SIPSorcery.SIP.SIPSchemesEnum.urn
+  name: urn
+  href: api/SIPSorcery.SIP.SIPSchemesEnum.html#SIPSorcery_SIP_SIPSchemesEnum_urn
+  commentId: F:SIPSorcery.SIP.SIPSchemesEnum.urn
+  fullName: SIPSorcery.SIP.SIPSchemesEnum.urn
+  nameWithType: SIPSchemesEnum.urn
 - uid: SIPSorcery.SIP.SIPSchemesType
   name: SIPSchemesType
   href: api/SIPSorcery.SIP.SIPSchemesType.html
