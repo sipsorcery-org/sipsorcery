@@ -147,6 +147,7 @@ namespace SIPSorcery.SIP
         sip = 1,
         sips = 2,
         tel = 3,
+        urn = 4,
     }
 
     public static class SIPSchemesType
