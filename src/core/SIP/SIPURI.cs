@@ -61,6 +61,9 @@ namespace SIPSorcery.SIP
         [DataMember]
         public SIPParameters Headers = new SIPParameters();
 
+        [DataMember]
+        public SIPParameters UserParameters = new SIPParameters();
+
         /// <summary>
         /// The protocol for a SIP URI is dictated by the scheme of the URI and then by the transport parameter and finally by the 
         /// use of a default protocol. If the URI is a sips one then the protocol must be TLS. After that if there is a transport
@@ -344,6 +347,17 @@ namespace SIPSorcery.SIP
                                 sipURI.Host = uriHostPortion;
                             }
 
+                            if (!string.IsNullOrWhiteSpace(sipURI.User))
+                            {
+                                int UserParamsPosn = sipURI.User.IndexOf(PARAM_TAG_DELIMITER);
+                                if (UserParamsPosn != -1)
+                                {
+                                    string userParams = sipURI.User.Substring(UserParamsPosn + 1);
+                                    sipURI.UserParameters = new SIPParameters(userParams, PARAM_TAG_DELIMITER);
+                                    sipURI.User = sipURI.User.Substring(0, UserParamsPosn);
+                                }
+                            }
+
                             if (sipURI.Host.IndexOfAny(m_invalidSIPHostChars) != -1)
                             {
                                 throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an invalid character.");
@@ -426,8 +440,14 @@ namespace SIPSorcery.SIP
             try
             {
                 string uriStr = Scheme.ToString() + SCHEME_ADDR_SEPARATOR;
+                string UsrParams = "";
 
-                uriStr = (User != null) ? uriStr + User + USER_HOST_SEPARATOR + Host : uriStr + Host;
+                if (UserParameters != null && UserParameters.Count > 0)
+                {
+                    UsrParams = UserParameters.ToString();
+                }
+
+                uriStr = (User != null) ? uriStr + User + UsrParams + USER_HOST_SEPARATOR + Host : uriStr + Host;
 
                 if (Parameters != null && Parameters.Count > 0)
                 {
