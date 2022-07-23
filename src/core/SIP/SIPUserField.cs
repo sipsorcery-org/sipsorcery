@@ -24,7 +24,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP
 {
     /// <summary>
-    /// Encapsulates the format for the SIP Contact, From and To headers.
+    /// Encapsulates the format for the SIP Contact, From, PAI and To headers.
     /// </summary>
     /// <remarks>
     /// If no "&lt;" and "&gt;" are present, all parameters after the URI are header
