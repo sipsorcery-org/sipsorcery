@@ -1292,6 +1292,108 @@ namespace SIPSorcery.SIP
     }
 
     /// <bnf>
+    /// From            =  "P-Asserted-Identity" HCOLON PAssertedID-value
+    /// from-spec       =  ( name-addr / addr-spec ) *( SEMI from-param )
+    /// name-addr		=  [ display-name ] LAQUOT addr-spec RAQUOT
+    /// addr-spec		=  SIP-URI / SIPS-URI / absoluteURI
+    /// </bnf>
+    /// <remarks>       
+    /// The P-Asserted-Identity header field is used among trusted SIP
+    /// entities(typically intermediaries) to carry the identity of the user
+    /// sending a SIP message as it was verified by authentication.
+    /// A P-Asserted-Identity header field value MUST consist of exactly one
+    /// name-addr or addr-spec.There may be one or two P-Asserted-Identity
+    /// values.If there is one value, it MUST be a sip, sips, or tel URI.
+    /// If there are two values, one value MUST be a sip or sips URI and the
+    /// other MUST be a tel URI.It is worth noting that proxies can (and
+    /// will) add and remove this header field.
+    /// </remarks>
+
+    public class SIPPAssertedIdentityHeader
+    {
+        /// <summary>
+        /// The P-Asserted-Identity header field is used among trusted SIP entities to carry the identity of the user
+        /// sending a SIP message as it was verified by authentication.
+        /// There may be one or two P-Asserted-Identity values.If there is one value, it MUST be a sip, sips, or tel URI. 
+        /// If there are two values, one value MUST be a sip or sips URI and the other MUST be a tel URI
+        /// </summary>
+        public static SIPPAssertedIdentityHeader GetDefaultSIPPAssertedIdentityHeader(SIPSchemesEnum scheme)
+        {
+            return new SIPPAssertedIdentityHeader(null, new SIPURI(scheme, IPAddress.Any, 0));
+        }
+
+        public string PaiName
+        {
+            get { return m_userField.Name; }
+            set { m_userField.Name = value; }
+        }
+
+        public SIPURI PaiURI
+        {
+            get { return m_userField.URI; }
+            set { m_userField.URI = value; }
+        }
+
+        public SIPParameters PaiParameters
+        {
+            get { return m_userField.Parameters; }
+            set { m_userField.Parameters = value; }
+        }
+
+        private SIPUserField m_userField = new SIPUserField();
+        public SIPUserField PaiUserField
+        {
+            get { return m_userField; }
+            set { m_userField = value; }
+        }
+
+        private SIPPAssertedIdentityHeader()
+        { }
+
+        public SIPPAssertedIdentityHeader(string paiName, SIPURI paiURI, string uriParams = null)
+        {
+            m_userField = new SIPUserField(paiName, paiURI, uriParams);
+        }
+
+        public static SIPPAssertedIdentityHeader ParsePaiHeader(string fromHeaderStr)
+        {
+            try
+            {
+                SIPPAssertedIdentityHeader paiHeader = new SIPPAssertedIdentityHeader();
+
+                paiHeader.m_userField = SIPUserField.ParseSIPUserField(fromHeaderStr);
+
+                return paiHeader;
+            }
+            catch (ArgumentException argExcp)
+            {
+                throw new SIPValidationException(SIPValidationFieldsEnum.Unknown, argExcp.Message);
+            }
+            catch
+            {
+                throw new SIPValidationException(SIPValidationFieldsEnum.Unknown, "The SIP P-Asserted-Identity header was invalid.");
+            }
+        }
+
+        public override string ToString()
+        {
+            return m_userField.ToString();
+        }
+
+        /// <summary>
+        /// Returns a friendly description of the caller that's suitable for humans. Leaves out
+        /// all the parameters etc.
+        /// </summary>
+        /// <returns>A string representing a friendly description of the P-Asserted-Identity header.</returns>
+        public string FriendlyDescription()
+        {
+            string caller = PaiURI.ToAOR();
+            caller = (!string.IsNullOrEmpty(PaiName)) ? PaiName + " " + caller : caller;
+            return caller;
+        }
+    }
+
+    /// <bnf>
     /// header  =  "header-name" HCOLON header-value *(COMMA header-value)
     /// field-name: field-value CRLF
     /// </bnf>
@@ -1358,6 +1460,7 @@ namespace SIPSorcery.SIP
         public string UserAgent;
         public SIPViaSet Vias = new SIPViaSet();
         public string Warning;
+        public List<SIPPAssertedIdentityHeader> PassertedIdentity = new List<SIPPAssertedIdentityHeader>();     // RFC3325.
 
         // Non-core custom SIP headers used to allow a SIP Proxy to communicate network info to internal server agents.
         public string ProxyReceivedOn;          // The Proxy socket that the SIP message was received on.
@@ -1983,6 +2086,12 @@ namespace SIPSorcery.SIP
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_SERVER.ToLower())
                         {
                             sipHeader.Server = headerValue;
+                        }
+                        #endregion
+                        #region P-Asserted-Indentity
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PASSERTED_IDENTITY.ToLower())
+                        {
+                            sipHeader.PassertedIdentity.Add(SIPPAssertedIdentityHeader.ParsePaiHeader(headerValue));
                         }
                         #endregion
                         else
