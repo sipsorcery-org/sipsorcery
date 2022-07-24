@@ -62,6 +62,12 @@ namespace SIPSorcery.SIP
         public SIPParameters Headers = new SIPParameters();
 
         /// <summary>
+        /// This user part parameters are only set if the URI Parameter 'user=phone' is set. Then the user part parameters are in here and not in 'User' anymore
+        /// </summary>
+        [DataMember]
+        public SIPParameters UserParameters = new SIPParameters();
+
+        /// <summary>
         /// The protocol for a SIP URI is dictated by the scheme of the URI and then by the transport parameter and finally by the 
         /// use of a default protocol. If the URI is a sips one then the protocol must be TLS. After that if there is a transport
         /// parameter specified for the URI it dictates the protocol for the URI. Finally if there is no transport parameter for a sip
@@ -344,6 +350,38 @@ namespace SIPSorcery.SIP
                                 sipURI.Host = uriHostPortion;
                             }
 
+                            // scan for user part parameters only if user=phone as uri parameter is present,
+                            // since else the seperator maybe for something else
+                            if (!string.IsNullOrWhiteSpace(sipURI.User) 
+                                && (sipURI.Scheme == SIPSchemesEnum.sip || sipURI.Scheme == SIPSchemesEnum.sips)
+                                && sipURI.Parameters.Get("user") == "phone")
+                            {
+                                int UserParamsPosn = sipURI.User.IndexOf(PARAM_TAG_DELIMITER);
+                                if (UserParamsPosn != -1)
+                                {
+                                    // in case there is a ';' we check wheter there is a '=' in the first part,
+                                    // if so we assume there is no number but only parameters
+                                    if (sipURI.User.Substring(0, UserParamsPosn).IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
+                                    {
+                                        sipURI.UserParameters = new SIPParameters(sipURI.User, PARAM_TAG_DELIMITER);
+                                        sipURI.User = "";
+                                    }
+                                    else
+                                    {
+                                        // normal/most likely case there is no '=' in part one so it's a number with parameters
+                                        string userParams = sipURI.User.Substring(UserParamsPosn + 1);
+                                        sipURI.UserParameters = new SIPParameters(userParams, PARAM_TAG_DELIMITER);
+                                        sipURI.User = sipURI.User.Substring(0, UserParamsPosn);
+                                    }
+                                }
+                                else if (sipURI.User.IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
+                                {
+                                    // if there is no ';' but '=' is found we assume it's a user parameter
+                                    sipURI.UserParameters = new SIPParameters(sipURI.User, PARAM_TAG_DELIMITER);
+                                    sipURI.User = "";
+                                }
+                            }
+
                             if (sipURI.Host.IndexOfAny(m_invalidSIPHostChars) != -1)
                             {
                                 throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an invalid character.");
@@ -426,8 +464,14 @@ namespace SIPSorcery.SIP
             try
             {
                 string uriStr = Scheme.ToString() + SCHEME_ADDR_SEPARATOR;
+                string UsrParams = "";
 
-                uriStr = (User != null) ? uriStr + User + USER_HOST_SEPARATOR + Host : uriStr + Host;
+                if (UserParameters != null && UserParameters.Count > 0)
+                {
+                    UsrParams = UserParameters.ToString();
+                }
+
+                uriStr = (User != null) ? uriStr + User + UsrParams + USER_HOST_SEPARATOR + Host : uriStr + Host;
 
                 if (Parameters != null && Parameters.Count > 0)
                 {
