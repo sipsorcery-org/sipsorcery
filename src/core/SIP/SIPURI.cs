@@ -52,6 +52,12 @@ namespace SIPSorcery.SIP
         [DataMember]
         public string User;
 
+        /// <summary>
+        /// Contains the User part without parameters if parameters were detected
+        /// </summary>
+        [DataMember]
+        public string UserNoParams;
+
         [DataMember]
         public string Host;
 
@@ -62,7 +68,7 @@ namespace SIPSorcery.SIP
         public SIPParameters Headers = new SIPParameters();
 
         /// <summary>
-        /// This user part parameters are only set if the URI Parameter 'user=phone' is set. Then the user part parameters are in here and not in 'User' anymore
+        /// contains the user part parameters if there are any
         /// </summary>
         [DataMember]
         public SIPParameters UserParameters = new SIPParameters();
@@ -272,6 +278,52 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// this function checks wheter there are user part parameters in 'User' and 'UserNoParams' and 'UserParameters' are filled
+        /// </summary>
+        private void ParseUserParameters()
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(User) && (Scheme == SIPSchemesEnum.sip || Scheme == SIPSchemesEnum.sips))
+                {
+                    int UserParamsPosn = User.IndexOf(PARAM_TAG_DELIMITER);
+                    if (UserParamsPosn != -1)
+                    {
+                        // in case there is a ';' we check wheter there is a '=' in the first part,
+                        // if so we assume there is nothing but params
+                        if (User.Substring(0, UserParamsPosn).IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
+                        {
+                            UserParameters = new SIPParameters(User, PARAM_TAG_DELIMITER);
+                            UserNoParams = "";
+                        }
+                        else
+                        {
+                            // normal/most likely case there is no '=' in part one so it's a number/username with parameters
+                            string userParams = User.Substring(UserParamsPosn + 1);
+                            UserParameters = new SIPParameters(userParams, PARAM_TAG_DELIMITER);
+                            UserNoParams = User.Substring(0, UserParamsPosn);
+                        }
+                    }
+                    else if (User.IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
+                    {
+                        // if there is no ';' but '=' is found we assume it's a user parameter
+                        UserParameters = new SIPParameters(User, PARAM_TAG_DELIMITER);
+                        UserNoParams = "";
+                    }
+                    else
+                    {
+                        UserNoParams = User;
+                    }
+
+                }
+            }
+            catch(Exception excp)
+            {
+                logger.LogWarning("Failed to parse UserParameters, error: " + excp.ToString());
+            }
+        }
+
         public static SIPURI ParseSIPURI(string uri)
         {
             try
@@ -350,37 +402,7 @@ namespace SIPSorcery.SIP
                                 sipURI.Host = uriHostPortion;
                             }
 
-                            // scan for user part parameters only if user=phone as uri parameter is present,
-                            // since else the seperator maybe for something else
-                            if (!string.IsNullOrWhiteSpace(sipURI.User) 
-                                && (sipURI.Scheme == SIPSchemesEnum.sip || sipURI.Scheme == SIPSchemesEnum.sips)
-                                && sipURI.Parameters.Get("user") == "phone")
-                            {
-                                int UserParamsPosn = sipURI.User.IndexOf(PARAM_TAG_DELIMITER);
-                                if (UserParamsPosn != -1)
-                                {
-                                    // in case there is a ';' we check wheter there is a '=' in the first part,
-                                    // if so we assume there is no number but only parameters
-                                    if (sipURI.User.Substring(0, UserParamsPosn).IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
-                                    {
-                                        sipURI.UserParameters = new SIPParameters(sipURI.User, PARAM_TAG_DELIMITER);
-                                        sipURI.User = "";
-                                    }
-                                    else
-                                    {
-                                        // normal/most likely case there is no '=' in part one so it's a number with parameters
-                                        string userParams = sipURI.User.Substring(UserParamsPosn + 1);
-                                        sipURI.UserParameters = new SIPParameters(userParams, PARAM_TAG_DELIMITER);
-                                        sipURI.User = sipURI.User.Substring(0, UserParamsPosn);
-                                    }
-                                }
-                                else if (sipURI.User.IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
-                                {
-                                    // if there is no ';' but '=' is found we assume it's a user parameter
-                                    sipURI.UserParameters = new SIPParameters(sipURI.User, PARAM_TAG_DELIMITER);
-                                    sipURI.User = "";
-                                }
-                            }
+                            sipURI.ParseUserParameters();
 
                             if (sipURI.Host.IndexOfAny(m_invalidSIPHostChars) != -1)
                             {

@@ -358,7 +358,8 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(sipURI.UserParameters.Get("C") == "on", "SIP user portion parsed incorrectly. Param C wrong.");
             Assert.True(sipURI.UserParameters.Get("t") == "DLPAN", "SIP user portion parsed incorrectly. Param t wrong");
-            Assert.True(sipURI.User == "", "SIP user portion parsed incorrectly. User wrong");
+            Assert.True(sipURI.UserNoParams == "", "SIP user portion parsed incorrectly. UserNoParams wrong");
+            Assert.True(sipURI.User == "C=on;t=DLPAN", "SIP user portion parsed incorrectly. User wrong");
             Assert.True("10.0.0.1:5060" == sipURI.Host, "SIP host portion parsed incorrectly.");
 
             logger.LogDebug("-----------------------------------------");
@@ -373,7 +374,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:C=on@10.0.0.1:5060;lr;user=phone");
 
             Assert.True(sipURI.UserParameters.Get("C") == "on", "SIP user portion parsed incorrectly. Param C wrong.");
-            Assert.True(sipURI.User == "", "SIP user portion parsed incorrectly. User wrong");
+            Assert.True(sipURI.UserNoParams == "", "SIP user portion parsed incorrectly. UserNoParams wrong");
+            Assert.True(sipURI.User == "C=on", "SIP user portion parsed incorrectly. User wrong");
             Assert.True("10.0.0.1:5060" == sipURI.Host, "SIP host portion parsed incorrectly.");
 
             logger.LogDebug("-----------------------------------------");
@@ -388,7 +390,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:+41999999999;cpc=ordinary@10.0.0.1:5060;transport=udp;user=phone");
 
             Assert.True(sipURI.UserParameters.Get("cpc") == "ordinary", "SIP user portion parsed incorrectly. Param cpc wrong.");
-            Assert.True(sipURI.User == "+41999999999", "SIP user portion parsed incorrectly. User wrong.");
+            Assert.True(sipURI.UserNoParams == "+41999999999", "SIP user portion parsed incorrectly. UserNoParams wrong.");
+            Assert.True(sipURI.User == "+41999999999;cpc=ordinary", "SIP user portion parsed incorrectly. User wrong.");
             Assert.True("10.0.0.1:5060" == sipURI.Host, "SIP host portion parsed incorrectly.");
 
             logger.LogDebug("-----------------------------------------");
