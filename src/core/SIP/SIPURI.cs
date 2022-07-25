@@ -487,14 +487,8 @@ namespace SIPSorcery.SIP
             try
             {
                 string uriStr = Scheme.ToString() + SCHEME_ADDR_SEPARATOR;
-                string UsrParams = "";
 
-                if (UserParameters != null && UserParameters.Count > 0)
-                {
-                    UsrParams = UserParameters.ToString();
-                }
-
-                uriStr = (User != null) ? uriStr + User + UsrParams + USER_HOST_SEPARATOR + Host : uriStr + Host;
+                uriStr = (User != null) ? uriStr + User + USER_HOST_SEPARATOR + Host : uriStr + Host;
 
                 if (Parameters != null && Parameters.Count > 0)
                 {
