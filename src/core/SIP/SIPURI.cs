@@ -52,12 +52,6 @@ namespace SIPSorcery.SIP
         [DataMember]
         public string User;
 
-        /// <summary>
-        /// Contains the User part without parameters if parameters were detected
-        /// </summary>
-        [DataMember]
-        public string UserNoParams;
-
         [DataMember]
         public string Host;
 
@@ -72,6 +66,12 @@ namespace SIPSorcery.SIP
         /// </summary>
         [DataMember]
         public SIPParameters UserParameters = new SIPParameters();
+
+        /// <summary>
+        /// Contains the User part without parameters in case there are any
+        /// </summary>
+        [DataMember]
+        public string UserWithoutParameters;
 
         /// <summary>
         /// The protocol for a SIP URI is dictated by the scheme of the URI and then by the transport parameter and finally by the 
@@ -279,9 +279,10 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// this function checks wheter there are user part parameters in 'User' and 'UserNoParams' and 'UserParameters' are filled
+        /// this function checks 'User' for user part paramters and puts them into 'UserParameters' and the part before Parameters into UserNumber
+        /// The Function is called automatically if user=phone is set.
         /// </summary>
-        private void ParseUserParameters()
+        public void ParseUserParameters()
         {
             try
             {
@@ -295,25 +296,25 @@ namespace SIPSorcery.SIP
                         if (User.Substring(0, UserParamsPosn).IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
                         {
                             UserParameters = new SIPParameters(User, PARAM_TAG_DELIMITER);
-                            UserNoParams = "";
+                            UserWithoutParameters = "";
                         }
                         else
                         {
                             // normal/most likely case there is no '=' in part one so it's a number/username with parameters
                             string userParams = User.Substring(UserParamsPosn + 1);
                             UserParameters = new SIPParameters(userParams, PARAM_TAG_DELIMITER);
-                            UserNoParams = User.Substring(0, UserParamsPosn);
+                            UserWithoutParameters = User.Substring(0, UserParamsPosn);
                         }
                     }
                     else if (User.IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
                     {
                         // if there is no ';' but '=' is found we assume it's a user parameter
                         UserParameters = new SIPParameters(User, PARAM_TAG_DELIMITER);
-                        UserNoParams = "";
+                        UserWithoutParameters = "";
                     }
                     else
                     {
-                        UserNoParams = User;
+                        UserWithoutParameters = User;
                     }
 
                 }
