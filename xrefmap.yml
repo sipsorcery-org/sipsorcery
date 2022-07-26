@@ -34636,6 +34636,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPResponse.GetResponse
   nameWithType: SIPResponse.GetResponse
+- uid: SIPSorcery.SIP.SIPResponse.IsSuccessStatusCode
+  name: IsSuccessStatusCode
+  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_IsSuccessStatusCode
+  commentId: P:SIPSorcery.SIP.SIPResponse.IsSuccessStatusCode
+  fullName: SIPSorcery.SIP.SIPResponse.IsSuccessStatusCode
+  nameWithType: SIPResponse.IsSuccessStatusCode
+- uid: SIPSorcery.SIP.SIPResponse.IsSuccessStatusCode*
+  name: IsSuccessStatusCode
+  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_IsSuccessStatusCode_
+  commentId: Overload:SIPSorcery.SIP.SIPResponse.IsSuccessStatusCode
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPResponse.IsSuccessStatusCode
+  nameWithType: SIPResponse.IsSuccessStatusCode
 - uid: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer)
   name: ParseSIPResponse(SIPMessageBuffer)
   href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_ParseSIPResponse_SIPSorcery_SIP_SIPMessageBuffer_
