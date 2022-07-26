@@ -48,6 +48,14 @@ namespace SIPSorcery.SIP
         public int StatusCode;
 
         /// <summary>
+        /// Returns true if a successful status code
+        /// </summary>
+        public bool IsSuccessStatusCode
+        {
+            get { return (StatusCode >= 200) && (StatusCode <= 204); }
+        }
+
+        /// <summary>
         /// The optional reason phrase for the SIP response.
         /// </summary>
         public string ReasonPhrase;
