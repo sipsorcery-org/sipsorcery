@@ -37808,6 +37808,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPURI.ParseSIPURIRelaxed
   nameWithType: SIPURI.ParseSIPURIRelaxed
+- uid: SIPSorcery.SIP.SIPURI.ParseUserParameters
+  name: ParseUserParameters()
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_ParseUserParameters
+  commentId: M:SIPSorcery.SIP.SIPURI.ParseUserParameters
+  fullName: SIPSorcery.SIP.SIPURI.ParseUserParameters()
+  nameWithType: SIPURI.ParseUserParameters()
+- uid: SIPSorcery.SIP.SIPURI.ParseUserParameters*
+  name: ParseUserParameters
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_ParseUserParameters_
+  commentId: Overload:SIPSorcery.SIP.SIPURI.ParseUserParameters
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPURI.ParseUserParameters
+  nameWithType: SIPURI.ParseUserParameters
 - uid: SIPSorcery.SIP.SIPURI.Protocol
   name: Protocol
   href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_Protocol
@@ -37926,6 +37939,18 @@ references:
   commentId: F:SIPSorcery.SIP.SIPURI.USER_HOST_SEPARATOR
   fullName: SIPSorcery.SIP.SIPURI.USER_HOST_SEPARATOR
   nameWithType: SIPURI.USER_HOST_SEPARATOR
+- uid: SIPSorcery.SIP.SIPURI.UserParameters
+  name: UserParameters
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_UserParameters
+  commentId: F:SIPSorcery.SIP.SIPURI.UserParameters
+  fullName: SIPSorcery.SIP.SIPURI.UserParameters
+  nameWithType: SIPURI.UserParameters
+- uid: SIPSorcery.SIP.SIPURI.UserWithoutParameters
+  name: UserWithoutParameters
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_UserWithoutParameters
+  commentId: F:SIPSorcery.SIP.SIPURI.UserWithoutParameters
+  fullName: SIPSorcery.SIP.SIPURI.UserWithoutParameters
+  nameWithType: SIPURI.UserWithoutParameters
 - uid: SIPSorcery.SIP.SIPUserAgentRoles
   name: SIPUserAgentRoles
   href: api/SIPSorcery.SIP.SIPUserAgentRoles.html
