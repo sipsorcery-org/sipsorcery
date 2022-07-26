@@ -62,6 +62,18 @@ namespace SIPSorcery.SIP
         public SIPParameters Headers = new SIPParameters();
 
         /// <summary>
+        /// contains the user part parameters if there are any
+        /// </summary>
+        [DataMember]
+        public SIPParameters UserParameters = new SIPParameters();
+
+        /// <summary>
+        /// Contains the User part without parameters in case there are any
+        /// </summary>
+        [DataMember]
+        public string UserWithoutParameters;
+
+        /// <summary>
         /// The protocol for a SIP URI is dictated by the scheme of the URI and then by the transport parameter and finally by the 
         /// use of a default protocol. If the URI is a sips one then the protocol must be TLS. After that if there is a transport
         /// parameter specified for the URI it dictates the protocol for the URI. Finally if there is no transport parameter for a sip
@@ -266,6 +278,53 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// this function checks 'User' for user part paramters and puts them into 'UserParameters' and the part before Parameters into UserNumber
+        /// The Function is called automatically if user=phone is set.
+        /// </summary>
+        public void ParseUserParameters()
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(User) && (Scheme == SIPSchemesEnum.sip || Scheme == SIPSchemesEnum.sips))
+                {
+                    int UserParamsPosn = User.IndexOf(PARAM_TAG_DELIMITER);
+                    if (UserParamsPosn != -1)
+                    {
+                        // in case there is a ';' we check wheter there is a '=' in the first part,
+                        // if so we assume there is nothing but params
+                        if (User.Substring(0, UserParamsPosn).IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
+                        {
+                            UserParameters = new SIPParameters(User, PARAM_TAG_DELIMITER);
+                            UserWithoutParameters = "";
+                        }
+                        else
+                        {
+                            // normal/most likely case there is no '=' in part one so it's a number/username with parameters
+                            string userParams = User.Substring(UserParamsPosn + 1);
+                            UserParameters = new SIPParameters(userParams, PARAM_TAG_DELIMITER);
+                            UserWithoutParameters = User.Substring(0, UserParamsPosn);
+                        }
+                    }
+                    else if (User.IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
+                    {
+                        // if there is no ';' but '=' is found we assume it's a user parameter
+                        UserParameters = new SIPParameters(User, PARAM_TAG_DELIMITER);
+                        UserWithoutParameters = "";
+                    }
+                    else
+                    {
+                        UserWithoutParameters = User;
+                    }
+
+                }
+            }
+            catch(Exception excp)
+            {
+                logger.LogWarning("Failed to parse UserParameters, error: " + excp.ToString());
+            }
+        }
+
         public static SIPURI ParseSIPURI(string uri)
         {
             try
@@ -343,6 +402,8 @@ namespace SIPSorcery.SIP
                             {
                                 sipURI.Host = uriHostPortion;
                             }
+
+                            sipURI.ParseUserParameters();
 
                             if (sipURI.Host.IndexOfAny(m_invalidSIPHostChars) != -1)
                             {
