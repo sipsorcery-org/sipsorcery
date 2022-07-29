@@ -45,6 +45,7 @@ namespace SIPSorcery.SIP
 
         protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for.    
 
+        private readonly Thread m_transactionPollingThread;
         private bool m_isClosed = false;
         private SIPTransport m_sipTransport;
 
@@ -55,8 +56,8 @@ namespace SIPSorcery.SIP
         /// </summary>
         private ConcurrentDictionary<string, SIPTransaction> m_pendingTransactions = new ConcurrentDictionary<string, SIPTransaction>();
 
-        private AutoResetEvent m_newPendingTransactionEvent = new AutoResetEvent(false);
-        private bool m_disposed;
+        private readonly AutoResetEvent m_newPendingTransactionEvent = new AutoResetEvent(false);
+        private volatile bool m_disposed;
 
         public int TransactionsCount
         {
@@ -75,12 +76,18 @@ namespace SIPSorcery.SIP
         public SIPTransactionEngine(SIPTransport sipTransport)
         {
             m_sipTransport = sipTransport;
-
-            Task.Factory.StartNew(ProcessPendingTransactions, TaskCreationOptions.LongRunning);
+            m_transactionPollingThread = new Thread(ProcessPendingTransactions);
+            m_transactionPollingThread.IsBackground = true;
+            m_transactionPollingThread.Start();
         }
 
         public void AddTransaction(SIPTransaction sipTransaction)
         {
+            if (m_disposed)
+            {
+                return;
+            }
+
             if (m_pendingTransactions.Count > MaxReliableTranismissionsCount)
             {
                 throw new ApplicationException("Pending transactions list is full.");
@@ -737,12 +744,15 @@ namespace SIPSorcery.SIP
         {
             if (!m_disposed)
             {
+                m_disposed = true;
+
                 if (disposing)
                 {
+                    // Actually m_newPendingTransactionEvent.Set() is called on Shutdown(). Call it again just to be safe and make thread join faster
+                    m_newPendingTransactionEvent.Set();
+                    m_transactionPollingThread.Join();
                     m_newPendingTransactionEvent.Dispose();
                 }
-
-                m_disposed = true;
             }
         }
 
