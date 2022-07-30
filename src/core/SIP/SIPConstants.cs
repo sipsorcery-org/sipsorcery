@@ -301,7 +301,9 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_VIA = "Via";
         public const string SIP_HEADER_WARNING = "Warning";
         public const string SIP_HEADER_WWWAUTHENTICATE = "WWW-Authenticate";
-        public const string SIP_HEADER_PASSERTED_IDENTITY = "P-Asserted-Identity";        // RFC 3325
+        public const string SIP_HEADER_PASSERTED_IDENTITY = "P-Asserted-Identity";          // RFC 3325
+        public const string SIP_HEADER_HISTORY_INFO = "History-Info";                       // RFC 4244
+        public const string SIP_HEADER_DIVERSION = "Diversion";                             // RFC 5806
 
         // SIP Compact Header Keys.
         public const string SIP_COMPACTHEADER_ALLOWEVENTS = "u";        // RC3265 (SIP Events).

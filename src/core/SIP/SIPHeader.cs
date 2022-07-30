@@ -1291,79 +1291,89 @@ namespace SIPSorcery.SIP
         }
     }
 
-    /// <bnf>
-    /// From            =  "P-Asserted-Identity" HCOLON PAssertedID-value
-    /// from-spec       =  ( name-addr / addr-spec ) *( SEMI from-param )
-    /// name-addr		=  [ display-name ] LAQUOT addr-spec RAQUOT
-    /// addr-spec		=  SIP-URI / SIPS-URI / absoluteURI
-    /// </bnf>
-    /// <remarks>       
-    /// The P-Asserted-Identity header field is used among trusted SIP
-    /// entities(typically intermediaries) to carry the identity of the user
-    /// sending a SIP message as it was verified by authentication.
-    /// A P-Asserted-Identity header field value MUST consist of exactly one
-    /// name-addr or addr-spec.There may be one or two P-Asserted-Identity
-    /// values.If there is one value, it MUST be a sip, sips, or tel URI.
-    /// If there are two values, one value MUST be a sip or sips URI and the
-    /// other MUST be a tel URI.It is worth noting that proxies can (and
-    /// will) add and remove this header field.
-    /// </remarks>
-
-    public class SIPPAssertedIdentityHeader
+    /// <summary>
+    /// Class used to parse History-Info, Diversion, P-Asserted-Identity Headers.
+    /// </summary>
+    public class SIPUriHeader
     {
-        /// <summary>
-        /// The P-Asserted-Identity header field is used among trusted SIP entities to carry the identity of the user
-        /// sending a SIP message as it was verified by authentication.
-        /// There may be one or two P-Asserted-Identity values.If there is one value, it MUST be a sip, sips, or tel URI. 
-        /// If there are two values, one value MUST be a sip or sips URI and the other MUST be a tel URI
-        /// </summary>
-        public static SIPPAssertedIdentityHeader GetDefaultSIPPAssertedIdentityHeader(SIPSchemesEnum scheme)
+        public static SIPUriHeader GetDefaultHeader(SIPSchemesEnum scheme)
         {
-            return new SIPPAssertedIdentityHeader(null, new SIPURI(scheme, IPAddress.Any, 0));
+            return new SIPUriHeader(null, new SIPURI(scheme, IPAddress.Any, 0));
         }
 
-        public string PaiName
+        public string Name
         {
             get { return m_userField.Name; }
             set { m_userField.Name = value; }
         }
 
-        public SIPURI PaiURI
+        public SIPURI URI
         {
             get { return m_userField.URI; }
             set { m_userField.URI = value; }
         }
 
-        public SIPParameters PaiParameters
+        public SIPParameters Parameters
         {
             get { return m_userField.Parameters; }
             set { m_userField.Parameters = value; }
         }
 
         private SIPUserField m_userField = new SIPUserField();
-        public SIPUserField PaiUserField
+        public SIPUserField UserField
         {
             get { return m_userField; }
             set { m_userField = value; }
         }
 
-        private SIPPAssertedIdentityHeader()
+        public SIPUriHeader()
         { }
 
-        public SIPPAssertedIdentityHeader(string paiName, SIPURI paiURI, string uriParams = null)
+        public static bool SortByUriParameter(ref List<SIPUriHeader> header, string paramterForSort, bool descending = false)
         {
-            m_userField = new SIPUserField(paiName, paiURI, uriParams);
+            if (header == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                if (descending)
+                {
+                    header.Sort((x, y) => y.Parameters.Get(paramterForSort).CompareTo(x.Parameters.Get(paramterForSort)));
+                }
+                else
+                {
+                    header.Sort((x, y) => x.Parameters.Get(paramterForSort).CompareTo(y.Parameters.Get(paramterForSort)));
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public static SIPPAssertedIdentityHeader ParsePaiHeader(string fromHeaderStr)
+        public SIPUriHeader(string Name, SIPURI URI, string uriParams = null)
+        {
+            m_userField = new SIPUserField(Name, URI, uriParams);
+        }
+        public static List<SIPUriHeader> ParseHeader(string headerStr)
         {
             try
             {
-                SIPPAssertedIdentityHeader paiHeader = new SIPPAssertedIdentityHeader();
+                var returnHeaders = new List<SIPUriHeader>();
 
-                paiHeader.m_userField = SIPUserField.ParseSIPUserField(fromHeaderStr);
+                string[] uris = SIPParameters.GetKeyValuePairsFromQuoted(headerStr, ',');
 
-                return paiHeader;
+                foreach (string uri in uris)
+                {
+                    var NewHeader = new SIPUriHeader();
+                    NewHeader.m_userField = SIPUserField.ParseSIPUserField(uri);
+                    returnHeaders.Add(NewHeader);
+                }
+
+                return returnHeaders;
             }
             catch (ArgumentException argExcp)
             {
@@ -1371,7 +1381,7 @@ namespace SIPSorcery.SIP
             }
             catch
             {
-                throw new SIPValidationException(SIPValidationFieldsEnum.Unknown, "The SIP P-Asserted-Identity header was invalid.");
+                throw new SIPValidationException(SIPValidationFieldsEnum.Unknown, "One of the SIP SIPMultiUriHeaders was invalid, header: " + headerStr);
             }
         }
 
@@ -1384,11 +1394,11 @@ namespace SIPSorcery.SIP
         /// Returns a friendly description of the caller that's suitable for humans. Leaves out
         /// all the parameters etc.
         /// </summary>
-        /// <returns>A string representing a friendly description of the P-Asserted-Identity header.</returns>
+        /// <returns>A string representing a friendly description of the MultiUri header.</returns>
         public string FriendlyDescription()
         {
-            string caller = PaiURI.ToAOR();
-            caller = (!string.IsNullOrEmpty(PaiName)) ? PaiName + " " + caller : caller;
+            string caller = URI.ToAOR();
+            caller = (!string.IsNullOrEmpty(Name)) ? Name + " " + caller : caller;
             return caller;
         }
     }
@@ -1460,7 +1470,14 @@ namespace SIPSorcery.SIP
         public string UserAgent;
         public SIPViaSet Vias = new SIPViaSet();
         public string Warning;
-        public List<SIPPAssertedIdentityHeader> PassertedIdentity = new List<SIPPAssertedIdentityHeader>();     // RFC3325.
+        public List<SIPUriHeader> PassertedIdentity = new List<SIPUriHeader>();       // RFC3325.
+
+        /// <summary>
+        /// It's quaranteed to be sorted from shortest index to longest index.
+        /// </summary>
+        public List<SIPUriHeader> HistoryInfo = new List<SIPUriHeader>();             // RFC4244.
+
+        public List<SIPUriHeader> Diversion = new List<SIPUriHeader>();               // RFC5806.
 
         // Non-core custom SIP headers used to allow a SIP Proxy to communicate network info to internal server agents.
         public string ProxyReceivedOn;          // The Proxy socket that the SIP message was received on.
@@ -2091,7 +2108,19 @@ namespace SIPSorcery.SIP
                         #region P-Asserted-Indentity
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_PASSERTED_IDENTITY.ToLower())
                         {
-                            sipHeader.PassertedIdentity.Add(SIPPAssertedIdentityHeader.ParsePaiHeader(headerValue));
+                            sipHeader.PassertedIdentity.AddRange(SIPUriHeader.ParseHeader(headerValue));
+                        }
+                        #endregion
+                        #region History-Info
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_HISTORY_INFO.ToLower())
+                        {
+                            sipHeader.HistoryInfo.AddRange(SIPUriHeader.ParseHeader(headerValue));
+                        }
+                        #endregion
+                        #region Diversion
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_DIVERSION.ToLower())
+                        {
+                            sipHeader.Diversion.AddRange(SIPUriHeader.ParseHeader(headerValue));
                         }
                         #endregion
                         else
@@ -2109,6 +2138,15 @@ namespace SIPSorcery.SIP
                     {
                         logger.LogError("Error parsing SIP header " + headerLine + ". " + parseExcp.Message);
                         throw new SIPValidationException(SIPValidationFieldsEnum.Headers, "Unknown error parsing Header.");
+                    }
+                }
+
+                // ensure History-Info Header is sorted in ascending order, if it already is nothing will be changed
+                if (sipHeader.HistoryInfo != null && sipHeader.HistoryInfo.Count > 1)
+                {
+                    if (!SIPUriHeader.SortByUriParameter(ref sipHeader.HistoryInfo, "index"))
+                    {
+                        logger.LogWarning("could not sort History-Info header");
                     }
                 }
 
@@ -2238,6 +2276,21 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
                 headersBuilder.Append((RSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_SEQ + ": " + RSeq + m_CRLF : null);
                 headersBuilder.Append((RAckRSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_ACK + ": " + RAckRSeq + " " + RAckCSeq + " " + RAckCSeqMethod + m_CRLF : null);
+                
+                foreach (var PAI in PassertedIdentity)
+                {
+                    headersBuilder.Append(SIPHeaders.SIP_HEADER_PASSERTED_IDENTITY + ": " + PAI + m_CRLF);
+                }
+                
+                foreach (var HistInfo in HistoryInfo)
+                {
+                    headersBuilder.Append(SIPHeaders.SIP_HEADER_HISTORY_INFO + ": " + HistInfo + m_CRLF);
+                }
+
+                foreach (var DiversionHeader in Diversion)
+                {
+                    headersBuilder.Append(SIPHeaders.SIP_HEADER_DIVERSION + ": " + DiversionHeader + m_CRLF);
+                }
 
                 // Custom SIP headers.
                 headersBuilder.Append((ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
