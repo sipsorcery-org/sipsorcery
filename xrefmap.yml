@@ -32266,6 +32266,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPHeader.DEFAULT_CSEQ
   fullName: SIPSorcery.SIP.SIPHeader.DEFAULT_CSEQ
   nameWithType: SIPHeader.DEFAULT_CSEQ
+- uid: SIPSorcery.SIP.SIPHeader.Diversion
+  name: Diversion
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_Diversion
+  commentId: F:SIPSorcery.SIP.SIPHeader.Diversion
+  fullName: SIPSorcery.SIP.SIPHeader.Diversion
+  nameWithType: SIPHeader.Diversion
 - uid: SIPSorcery.SIP.SIPHeader.ErrorInfo
   name: ErrorInfo
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_ErrorInfo
@@ -32322,6 +32328,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPHeader.HasAuthenticationHeader
   nameWithType: SIPHeader.HasAuthenticationHeader
+- uid: SIPSorcery.SIP.SIPHeader.HistoryInfo
+  name: HistoryInfo
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_HistoryInfo
+  commentId: F:SIPSorcery.SIP.SIPHeader.HistoryInfo
+  fullName: SIPSorcery.SIP.SIPHeader.HistoryInfo
+  nameWithType: SIPHeader.HistoryInfo
 - uid: SIPSorcery.SIP.SIPHeader.InReplyTo
   name: InReplyTo
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_InReplyTo
@@ -32851,6 +32863,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPHeaders.SIP_HEADER_DATE
   fullName: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_DATE
   nameWithType: SIPHeaders.SIP_HEADER_DATE
+- uid: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_DIVERSION
+  name: SIP_HEADER_DIVERSION
+  href: api/SIPSorcery.SIP.SIPHeaders.html#SIPSorcery_SIP_SIPHeaders_SIP_HEADER_DIVERSION
+  commentId: F:SIPSorcery.SIP.SIPHeaders.SIP_HEADER_DIVERSION
+  fullName: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_DIVERSION
+  nameWithType: SIPHeaders.SIP_HEADER_DIVERSION
 - uid: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_ERROR_INFO
   name: SIP_HEADER_ERROR_INFO
   href: api/SIPSorcery.SIP.SIPHeaders.html#SIPSorcery_SIP_SIPHeaders_SIP_HEADER_ERROR_INFO
@@ -32881,6 +32899,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPHeaders.SIP_HEADER_FROM
   fullName: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_FROM
   nameWithType: SIPHeaders.SIP_HEADER_FROM
+- uid: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_HISTORY_INFO
+  name: SIP_HEADER_HISTORY_INFO
+  href: api/SIPSorcery.SIP.SIPHeaders.html#SIPSorcery_SIP_SIPHeaders_SIP_HEADER_HISTORY_INFO
+  commentId: F:SIPSorcery.SIP.SIPHeaders.SIP_HEADER_HISTORY_INFO
+  fullName: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_HISTORY_INFO
+  nameWithType: SIPHeaders.SIP_HEADER_HISTORY_INFO
 - uid: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_IN_REPLY_TO
   name: SIP_HEADER_IN_REPLY_TO
   href: api/SIPSorcery.SIP.SIPHeaders.html#SIPSorcery_SIP_SIPHeaders_SIP_HEADER_IN_REPLY_TO
@@ -34078,129 +34102,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPParameters.ToString
   nameWithType: SIPParameters.ToString
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader
-  name: SIPPAssertedIdentityHeader
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html
-  commentId: T:SIPSorcery.SIP.SIPPAssertedIdentityHeader
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader
-  nameWithType: SIPPAssertedIdentityHeader
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.#ctor(System.String,SIPSorcery.SIP.SIPURI,System.String)
-  name: SIPPAssertedIdentityHeader(String, SIPURI, String)
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader__ctor_System_String_SIPSorcery_SIP_SIPURI_System_String_
-  commentId: M:SIPSorcery.SIP.SIPPAssertedIdentityHeader.#ctor(System.String,SIPSorcery.SIP.SIPURI,System.String)
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.SIPPAssertedIdentityHeader(System.String, SIPSorcery.SIP.SIPURI, System.String)
-  nameWithType: SIPPAssertedIdentityHeader.SIPPAssertedIdentityHeader(String, SIPURI, String)
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.#ctor*
-  name: SIPPAssertedIdentityHeader
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader__ctor_
-  commentId: Overload:SIPSorcery.SIP.SIPPAssertedIdentityHeader.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.SIPPAssertedIdentityHeader
-  nameWithType: SIPPAssertedIdentityHeader.SIPPAssertedIdentityHeader
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.FriendlyDescription
-  name: FriendlyDescription()
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_FriendlyDescription
-  commentId: M:SIPSorcery.SIP.SIPPAssertedIdentityHeader.FriendlyDescription
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.FriendlyDescription()
-  nameWithType: SIPPAssertedIdentityHeader.FriendlyDescription()
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.FriendlyDescription*
-  name: FriendlyDescription
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_FriendlyDescription_
-  commentId: Overload:SIPSorcery.SIP.SIPPAssertedIdentityHeader.FriendlyDescription
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.FriendlyDescription
-  nameWithType: SIPPAssertedIdentityHeader.FriendlyDescription
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.GetDefaultSIPPAssertedIdentityHeader(SIPSorcery.SIP.SIPSchemesEnum)
-  name: GetDefaultSIPPAssertedIdentityHeader(SIPSchemesEnum)
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_GetDefaultSIPPAssertedIdentityHeader_SIPSorcery_SIP_SIPSchemesEnum_
-  commentId: M:SIPSorcery.SIP.SIPPAssertedIdentityHeader.GetDefaultSIPPAssertedIdentityHeader(SIPSorcery.SIP.SIPSchemesEnum)
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.GetDefaultSIPPAssertedIdentityHeader(SIPSorcery.SIP.SIPSchemesEnum)
-  nameWithType: SIPPAssertedIdentityHeader.GetDefaultSIPPAssertedIdentityHeader(SIPSchemesEnum)
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.GetDefaultSIPPAssertedIdentityHeader*
-  name: GetDefaultSIPPAssertedIdentityHeader
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_GetDefaultSIPPAssertedIdentityHeader_
-  commentId: Overload:SIPSorcery.SIP.SIPPAssertedIdentityHeader.GetDefaultSIPPAssertedIdentityHeader
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.GetDefaultSIPPAssertedIdentityHeader
-  nameWithType: SIPPAssertedIdentityHeader.GetDefaultSIPPAssertedIdentityHeader
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiName
-  name: PaiName
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_PaiName
-  commentId: P:SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiName
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiName
-  nameWithType: SIPPAssertedIdentityHeader.PaiName
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiName*
-  name: PaiName
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_PaiName_
-  commentId: Overload:SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiName
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiName
-  nameWithType: SIPPAssertedIdentityHeader.PaiName
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiParameters
-  name: PaiParameters
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_PaiParameters
-  commentId: P:SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiParameters
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiParameters
-  nameWithType: SIPPAssertedIdentityHeader.PaiParameters
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiParameters*
-  name: PaiParameters
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_PaiParameters_
-  commentId: Overload:SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiParameters
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiParameters
-  nameWithType: SIPPAssertedIdentityHeader.PaiParameters
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiURI
-  name: PaiURI
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_PaiURI
-  commentId: P:SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiURI
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiURI
-  nameWithType: SIPPAssertedIdentityHeader.PaiURI
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiURI*
-  name: PaiURI
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_PaiURI_
-  commentId: Overload:SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiURI
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiURI
-  nameWithType: SIPPAssertedIdentityHeader.PaiURI
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiUserField
-  name: PaiUserField
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_PaiUserField
-  commentId: P:SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiUserField
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiUserField
-  nameWithType: SIPPAssertedIdentityHeader.PaiUserField
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiUserField*
-  name: PaiUserField
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_PaiUserField_
-  commentId: Overload:SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiUserField
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.PaiUserField
-  nameWithType: SIPPAssertedIdentityHeader.PaiUserField
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.ParsePaiHeader(System.String)
-  name: ParsePaiHeader(String)
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_ParsePaiHeader_System_String_
-  commentId: M:SIPSorcery.SIP.SIPPAssertedIdentityHeader.ParsePaiHeader(System.String)
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.ParsePaiHeader(System.String)
-  nameWithType: SIPPAssertedIdentityHeader.ParsePaiHeader(String)
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.ParsePaiHeader*
-  name: ParsePaiHeader
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_ParsePaiHeader_
-  commentId: Overload:SIPSorcery.SIP.SIPPAssertedIdentityHeader.ParsePaiHeader
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.ParsePaiHeader
-  nameWithType: SIPPAssertedIdentityHeader.ParsePaiHeader
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.ToString
-  name: ToString()
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_ToString
-  commentId: M:SIPSorcery.SIP.SIPPAssertedIdentityHeader.ToString
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.ToString()
-  nameWithType: SIPPAssertedIdentityHeader.ToString()
-- uid: SIPSorcery.SIP.SIPPAssertedIdentityHeader.ToString*
-  name: ToString
-  href: api/SIPSorcery.SIP.SIPPAssertedIdentityHeader.html#SIPSorcery_SIP_SIPPAssertedIdentityHeader_ToString_
-  commentId: Overload:SIPSorcery.SIP.SIPPAssertedIdentityHeader.ToString
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPPAssertedIdentityHeader.ToString
-  nameWithType: SIPPAssertedIdentityHeader.ToString
 - uid: SIPSorcery.SIP.SIPProtocolsEnum
   name: SIPProtocolsEnum
   href: api/SIPSorcery.SIP.SIPProtocolsEnum.html
@@ -37964,6 +37865,151 @@ references:
   commentId: F:SIPSorcery.SIP.SIPURI.UserWithoutParameters
   fullName: SIPSorcery.SIP.SIPURI.UserWithoutParameters
   nameWithType: SIPURI.UserWithoutParameters
+- uid: SIPSorcery.SIP.SIPUriHeader
+  name: SIPUriHeader
+  href: api/SIPSorcery.SIP.SIPUriHeader.html
+  commentId: T:SIPSorcery.SIP.SIPUriHeader
+  fullName: SIPSorcery.SIP.SIPUriHeader
+  nameWithType: SIPUriHeader
+- uid: SIPSorcery.SIP.SIPUriHeader.#ctor
+  name: SIPUriHeader()
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader__ctor
+  commentId: M:SIPSorcery.SIP.SIPUriHeader.#ctor
+  fullName: SIPSorcery.SIP.SIPUriHeader.SIPUriHeader()
+  nameWithType: SIPUriHeader.SIPUriHeader()
+- uid: SIPSorcery.SIP.SIPUriHeader.#ctor(System.String,SIPSorcery.SIP.SIPURI,System.String)
+  name: SIPUriHeader(String, SIPURI, String)
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader__ctor_System_String_SIPSorcery_SIP_SIPURI_System_String_
+  commentId: M:SIPSorcery.SIP.SIPUriHeader.#ctor(System.String,SIPSorcery.SIP.SIPURI,System.String)
+  fullName: SIPSorcery.SIP.SIPUriHeader.SIPUriHeader(System.String, SIPSorcery.SIP.SIPURI, System.String)
+  nameWithType: SIPUriHeader.SIPUriHeader(String, SIPURI, String)
+- uid: SIPSorcery.SIP.SIPUriHeader.#ctor*
+  name: SIPUriHeader
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader__ctor_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.SIPUriHeader
+  nameWithType: SIPUriHeader.SIPUriHeader
+- uid: SIPSorcery.SIP.SIPUriHeader.FriendlyDescription
+  name: FriendlyDescription()
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_FriendlyDescription
+  commentId: M:SIPSorcery.SIP.SIPUriHeader.FriendlyDescription
+  fullName: SIPSorcery.SIP.SIPUriHeader.FriendlyDescription()
+  nameWithType: SIPUriHeader.FriendlyDescription()
+- uid: SIPSorcery.SIP.SIPUriHeader.FriendlyDescription*
+  name: FriendlyDescription
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_FriendlyDescription_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.FriendlyDescription
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.FriendlyDescription
+  nameWithType: SIPUriHeader.FriendlyDescription
+- uid: SIPSorcery.SIP.SIPUriHeader.GetDefaultHeader(SIPSorcery.SIP.SIPSchemesEnum)
+  name: GetDefaultHeader(SIPSchemesEnum)
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_GetDefaultHeader_SIPSorcery_SIP_SIPSchemesEnum_
+  commentId: M:SIPSorcery.SIP.SIPUriHeader.GetDefaultHeader(SIPSorcery.SIP.SIPSchemesEnum)
+  fullName: SIPSorcery.SIP.SIPUriHeader.GetDefaultHeader(SIPSorcery.SIP.SIPSchemesEnum)
+  nameWithType: SIPUriHeader.GetDefaultHeader(SIPSchemesEnum)
+- uid: SIPSorcery.SIP.SIPUriHeader.GetDefaultHeader*
+  name: GetDefaultHeader
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_GetDefaultHeader_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.GetDefaultHeader
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.GetDefaultHeader
+  nameWithType: SIPUriHeader.GetDefaultHeader
+- uid: SIPSorcery.SIP.SIPUriHeader.Name
+  name: Name
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_Name
+  commentId: P:SIPSorcery.SIP.SIPUriHeader.Name
+  fullName: SIPSorcery.SIP.SIPUriHeader.Name
+  nameWithType: SIPUriHeader.Name
+- uid: SIPSorcery.SIP.SIPUriHeader.Name*
+  name: Name
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_Name_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.Name
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.Name
+  nameWithType: SIPUriHeader.Name
+- uid: SIPSorcery.SIP.SIPUriHeader.Parameters
+  name: Parameters
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_Parameters
+  commentId: P:SIPSorcery.SIP.SIPUriHeader.Parameters
+  fullName: SIPSorcery.SIP.SIPUriHeader.Parameters
+  nameWithType: SIPUriHeader.Parameters
+- uid: SIPSorcery.SIP.SIPUriHeader.Parameters*
+  name: Parameters
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_Parameters_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.Parameters
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.Parameters
+  nameWithType: SIPUriHeader.Parameters
+- uid: SIPSorcery.SIP.SIPUriHeader.ParseHeader(System.String)
+  name: ParseHeader(String)
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_ParseHeader_System_String_
+  commentId: M:SIPSorcery.SIP.SIPUriHeader.ParseHeader(System.String)
+  fullName: SIPSorcery.SIP.SIPUriHeader.ParseHeader(System.String)
+  nameWithType: SIPUriHeader.ParseHeader(String)
+- uid: SIPSorcery.SIP.SIPUriHeader.ParseHeader*
+  name: ParseHeader
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_ParseHeader_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.ParseHeader
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.ParseHeader
+  nameWithType: SIPUriHeader.ParseHeader
+- uid: SIPSorcery.SIP.SIPUriHeader.SortByUriParameter(System.Collections.Generic.List{SIPSorcery.SIP.SIPUriHeader}@,System.String,System.Boolean)
+  name: SortByUriParameter(ref List<SIPUriHeader>, String, Boolean)
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_SortByUriParameter_System_Collections_Generic_List_SIPSorcery_SIP_SIPUriHeader___System_String_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPUriHeader.SortByUriParameter(System.Collections.Generic.List{SIPSorcery.SIP.SIPUriHeader}@,System.String,System.Boolean)
+  name.vb: SortByUriParameter(ByRef List(Of SIPUriHeader), String, Boolean)
+  fullName: SIPSorcery.SIP.SIPUriHeader.SortByUriParameter(ref System.Collections.Generic.List<SIPSorcery.SIP.SIPUriHeader>, System.String, System.Boolean)
+  fullName.vb: SIPSorcery.SIP.SIPUriHeader.SortByUriParameter(ByRef System.Collections.Generic.List(Of SIPSorcery.SIP.SIPUriHeader), System.String, System.Boolean)
+  nameWithType: SIPUriHeader.SortByUriParameter(ref List<SIPUriHeader>, String, Boolean)
+  nameWithType.vb: SIPUriHeader.SortByUriParameter(ByRef List(Of SIPUriHeader), String, Boolean)
+- uid: SIPSorcery.SIP.SIPUriHeader.SortByUriParameter*
+  name: SortByUriParameter
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_SortByUriParameter_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.SortByUriParameter
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.SortByUriParameter
+  nameWithType: SIPUriHeader.SortByUriParameter
+- uid: SIPSorcery.SIP.SIPUriHeader.ToString
+  name: ToString()
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_ToString
+  commentId: M:SIPSorcery.SIP.SIPUriHeader.ToString
+  fullName: SIPSorcery.SIP.SIPUriHeader.ToString()
+  nameWithType: SIPUriHeader.ToString()
+- uid: SIPSorcery.SIP.SIPUriHeader.ToString*
+  name: ToString
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_ToString_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.ToString
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.ToString
+  nameWithType: SIPUriHeader.ToString
+- uid: SIPSorcery.SIP.SIPUriHeader.URI
+  name: URI
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_URI
+  commentId: P:SIPSorcery.SIP.SIPUriHeader.URI
+  fullName: SIPSorcery.SIP.SIPUriHeader.URI
+  nameWithType: SIPUriHeader.URI
+- uid: SIPSorcery.SIP.SIPUriHeader.URI*
+  name: URI
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_URI_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.URI
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.URI
+  nameWithType: SIPUriHeader.URI
+- uid: SIPSorcery.SIP.SIPUriHeader.UserField
+  name: UserField
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_UserField
+  commentId: P:SIPSorcery.SIP.SIPUriHeader.UserField
+  fullName: SIPSorcery.SIP.SIPUriHeader.UserField
+  nameWithType: SIPUriHeader.UserField
+- uid: SIPSorcery.SIP.SIPUriHeader.UserField*
+  name: UserField
+  href: api/SIPSorcery.SIP.SIPUriHeader.html#SIPSorcery_SIP_SIPUriHeader_UserField_
+  commentId: Overload:SIPSorcery.SIP.SIPUriHeader.UserField
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPUriHeader.UserField
+  nameWithType: SIPUriHeader.UserField
 - uid: SIPSorcery.SIP.SIPUserAgentRoles
   name: SIPUserAgentRoles
   href: api/SIPSorcery.SIP.SIPUserAgentRoles.html
