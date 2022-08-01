@@ -83,7 +83,7 @@ namespace SIPSorcery.SIP
 
         public void AddTransaction(SIPTransaction sipTransaction)
         {
-            if (m_disposed)
+            if (m_disposed || m_isClosed)
             {
                 return;
             }
@@ -263,8 +263,11 @@ namespace SIPSorcery.SIP
 
         public void Shutdown()
         {
-            m_isClosed = true;
-            m_newPendingTransactionEvent.Set();
+            if (!m_isClosed)
+            {
+                m_isClosed = true;
+                m_newPendingTransactionEvent.Set();
+            }
         }
 
         /// <summary>
@@ -748,8 +751,7 @@ namespace SIPSorcery.SIP
 
                 if (disposing)
                 {
-                    // Actually m_newPendingTransactionEvent.Set() is called on Shutdown(). Call it again just to be safe and make thread join faster
-                    m_newPendingTransactionEvent.Set();
+                    Shutdown();
                     m_transactionPollingThread.Join();
                     m_newPendingTransactionEvent.Dispose();
                 }
