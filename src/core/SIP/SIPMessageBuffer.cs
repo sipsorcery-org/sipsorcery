@@ -74,7 +74,7 @@ namespace SIPSorcery.SIP
             byte[] buffer,
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint remoteSIPEndPoint) =>
-            ParseSIPMessage(buffer, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING, localSIPEndPoint, localSIPEndPoint);
+            ParseSIPMessage(buffer, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING, localSIPEndPoint, remoteSIPEndPoint);
 
         /// <summary>
         /// Attempts to parse a SIP message from a single buffer that can only contain a single message.
