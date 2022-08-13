@@ -9,6 +9,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -695,5 +696,33 @@ CRLF +
             logger.LogDebug("-----------------------------------------");
         }
 
+        [Fact]
+        public void ParseWithDefaultEncodingPersistsEndPoints()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipMsg =
+    "SIP/2.0 100 Trying" + CRLF +
+    "Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bKD+ta2mJ+C+VV/L50aPO1lFJnrag=" + CRLF +
+    "Via: SIP/2.0/UDP 192.168.1.2:5065;received=220.240.255.198:64193;branch=z9hG4bKB86FC8D2431F49E9862D1EE439C78AD8" + CRLF +
+    "From: bluesipd <sip:bluesipd@bluesipd:5065>;tag=3272744142" + CRLF +
+    "To: <sip:303@bluesipd>" + CRLF +
+    "Call-ID: FE63F90D-4339-4AD0-9D44-59F44A1935E7@192.168.1.2" + CRLF +
+    "CSeq: 45560 INVITE" + CRLF +
+    "User-Agent: asterisk" + CRLF +
+    "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY" + CRLF +
+    "Contact: <sip:303@213.168.225.133>" + CRLF +
+    "Content-Length: 0" + CRLF + CRLF;
+
+            byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(sipMsg);
+            var localEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Parse("192.168.1.1"), 5060));
+            var remoteEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Parse("192.168.1.2"), 5061));
+
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(testReceiveBytes, localEndPoint, remoteEndPoint);
+
+            Assert.Equal(localEndPoint, sipMessageBuffer.LocalSIPEndPoint);
+            Assert.Equal(remoteEndPoint, sipMessageBuffer.RemoteSIPEndPoint);
+        }
     }
 }
