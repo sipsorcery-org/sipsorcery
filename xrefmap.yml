@@ -34012,12 +34012,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPParameters.Has
   nameWithType: SIPParameters.Has
-- uid: SIPSorcery.SIP.SIPParameters.m_dictionary
-  name: m_dictionary
-  href: api/SIPSorcery.SIP.SIPParameters.html#SIPSorcery_SIP_SIPParameters_m_dictionary
-  commentId: F:SIPSorcery.SIP.SIPParameters.m_dictionary
-  fullName: SIPSorcery.SIP.SIPParameters.m_dictionary
-  nameWithType: SIPParameters.m_dictionary
 - uid: SIPSorcery.SIP.SIPParameters.op_Equality(SIPSorcery.SIP.SIPParameters,SIPSorcery.SIP.SIPParameters)
   name: Equality(SIPParameters, SIPParameters)
   href: api/SIPSorcery.SIP.SIPParameters.html#SIPSorcery_SIP_SIPParameters_op_Equality_SIPSorcery_SIP_SIPParameters_SIPSorcery_SIP_SIPParameters_
