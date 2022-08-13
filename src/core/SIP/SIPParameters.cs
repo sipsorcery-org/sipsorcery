@@ -53,8 +53,8 @@ namespace SIPSorcery.SIP
         [DataMember]
         public char TagDelimiter = DEFAULT_PARAMETER_DELIMITER;
 
-        [DataMember]
-        public Dictionary<string, string> m_dictionary;
+        //[DataMember]
+        private Dictionary<string, string> m_dictionary;
 
         [IgnoreDataMember]
         public int Count
@@ -225,7 +225,7 @@ namespace SIPSorcery.SIP
 
         public string Get(string name)
         {
-            if (m_dictionary != null || m_dictionary.Count == 0)
+            if (m_dictionary != null && m_dictionary.Count > 0)
             {
                 if (m_dictionary.ContainsKey(name))
                 {
