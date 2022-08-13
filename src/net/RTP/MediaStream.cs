@@ -715,10 +715,13 @@ namespace SIPSorcery.net.RTP
         {
             header.GetHeaderExtensions().ToList().ForEach(x =>
             {
-                var ntpTimestamp = x.GetNtpTimestamp(RemoteTrack.HeaderExtensions);
-                if (ntpTimestamp.HasValue)
+                if (RemoteTrack != null)
                 {
-                    RemoteTrack.LastAbsoluteCaptureTimestamp = new TimestampPair() { NtpTimestamp = ntpTimestamp.Value, RtpTimestamp = header.Timestamp };
+                    var ntpTimestamp = x.GetNtpTimestamp(RemoteTrack.HeaderExtensions);
+                    if (ntpTimestamp.HasValue)
+                    {
+                        RemoteTrack.LastAbsoluteCaptureTimestamp = new TimestampPair() { NtpTimestamp = ntpTimestamp.Value, RtpTimestamp = header.Timestamp };
+                    }
                 }
             });
         }
