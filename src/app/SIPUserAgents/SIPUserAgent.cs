@@ -789,8 +789,10 @@ namespace SIPSorcery.SIP.App
         /// accepted or timing out.</param>
         /// <param name="customHeaders">Optional. Custom SIP-Headers that will be set in the REFER request sent 
         /// to the remote party.</param>
+        /// <param name="username">Optional. Used if proxy authentication required.</param>
+        /// <param name="password">Optional. Used if proxy authentication required.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null)
+        public Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null, string username = null, string password = null)
         {
             if (m_sipDialogue == null)
             {
@@ -800,7 +802,7 @@ namespace SIPSorcery.SIP.App
             else
             {
                 var referRequest = GetReferRequest(destination, customHeaders);
-                return Transfer(referRequest, timeout, ct);
+                return Transfer(referRequest, timeout, ct, username, password);
             }
         }
 
@@ -888,8 +890,10 @@ namespace SIPSorcery.SIP.App
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
         /// <param name="ct">Cancellation token. Can be set to cancel the transfer prior to it being
         /// accepted or timing out.</param>
+        /// <param name="username">Optional. Used if proxy authentication required.</param>
+        /// <param name="password">Optional. Used if proxy authentication required.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        private async Task<bool> Transfer(SIPRequest referRequest, TimeSpan timeout, CancellationToken ct)
+        private async Task<bool> Transfer(SIPRequest referRequest, TimeSpan timeout, CancellationToken ct, string username = null, string password = null)
         {
             if (m_sipDialogue == null)
             {
@@ -908,6 +912,26 @@ namespace SIPSorcery.SIP.App
                     {
                         logger.LogInformation("Call transfer was accepted by remote server.");
                         transferAccepted.TrySetResult(true);
+                    }
+                    else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired)
+                    {
+                        var newRequest = referRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders, username, password);
+                        referTx = new SIPNonInviteTransaction(m_transport, newRequest, null);
+                        SIPTransactionResponseReceivedDelegate referTxStatusHandlerAuthRequest = (localSIPEndPointAuthRequest, remoteEndPointAuthRequest, sipTransactionAuthRequest, sipResponseAuthRequest) => {
+                            if (sipResponseAuthRequest.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponseAuthRequest.Status == SIPResponseStatusCodesEnum.Accepted)
+                            {
+                                logger.LogInformation("Call transfer was accepted by remote server.");
+                                transferAccepted.TrySetResult(true);
+                            }
+                            else
+                            {
+                                transferAccepted.TrySetResult(false);
+                            }
+
+                            return Task.FromResult(SocketError.Success);
+                        };
+                        referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandlerAuthRequest;
+                        referTx.SendRequest();
                     }
                     else
                     {
