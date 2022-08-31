@@ -816,8 +816,10 @@ namespace SIPSorcery.SIP.App
         /// accepted or timing out.</param>
         /// <param name="customHeaders">Optional. Custom SIP-Headers that will be set in the REFER request sent 
         /// to the remote party.</param>
+        /// <param name="username">Optional. Used if proxy authentication required.</param>
+        /// <param name="password">Optional. Used if proxy authentication required.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null)
+        public Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null, string username = null, string password = null)
         {
             if (m_sipDialogue == null || transferee == null)
             {
@@ -827,7 +829,7 @@ namespace SIPSorcery.SIP.App
             else
             {
                 var referRequest = GetReferRequest(transferee, customHeaders);
-                return Transfer(referRequest, timeout, ct);
+                return Transfer(referRequest, timeout, ct, username, password);
             }
         }
 
