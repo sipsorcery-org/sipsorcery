@@ -113,7 +113,8 @@ namespace SIPSorcery.Sys
                 // TODO: Reset if the local network interfaces change.
                 if (_localIPAddresses == null)
                 {
-                    _localIPAddresses = NetServices.GetAllLocalIPAddresses();
+                    //_localIPAddresses = NetServices.GetAllLocalIPAddresses();
+                    _localIPAddresses = Dns.GetHostAddresses(string.Empty).ToList(); //SCT 解决安卓系统获取不到本地IP地址的问题
                 }
 
                 return _localIPAddresses;
