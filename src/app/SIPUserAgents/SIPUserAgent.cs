@@ -1565,6 +1565,7 @@ namespace SIPSorcery.SIP.App
             _ringTimeout?.Dispose();
 
             ClientCallFailed?.Invoke(uac, errorMessage, sipResponse);
+            CallEnded(uac.CallDescriptor?.CallId); 
         }
 
         /// <summary>
