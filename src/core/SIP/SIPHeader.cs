@@ -822,30 +822,44 @@ namespace SIPSorcery.SIP
     public class SIPAuthenticationHeader
     {
         public SIPAuthorisationDigest SIPDigest;
-
-        private SIPAuthenticationHeader()
+        public string Value;
+        
+        private SIPAuthenticationHeader():this(new SIPAuthorisationDigest())
         {
-            SIPDigest = new SIPAuthorisationDigest();
         }
 
         public SIPAuthenticationHeader(SIPAuthorisationDigest sipDigest)
         {
             SIPDigest = sipDigest;
+            Value = string.Empty;
         }
 
         public SIPAuthenticationHeader(SIPAuthorisationHeadersEnum authorisationType, string realm, string nonce)
         {
-            SIPDigest = new SIPAuthorisationDigest(authorisationType);
-            SIPDigest.Realm = realm;
-            SIPDigest.Nonce = nonce;
+            SIPDigest = new SIPAuthorisationDigest(authorisationType)
+            {
+                Realm = realm,
+                Nonce = nonce
+            };
+            Value = string.Empty;
         }
 
         public static SIPAuthenticationHeader ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum authorizationType, string headerValue)
         {
             try
             {
-                SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader();
-                authHeader.SIPDigest = SIPAuthorisationDigest.ParseAuthorisationDigest(authorizationType, headerValue);
+                var authHeader = new SIPAuthenticationHeader
+                {
+                    Value = headerValue
+                };
+                if (headerValue.StartsWith(SIPAuthorisationDigest.METHOD))
+                {
+                    authHeader.SIPDigest = SIPAuthorisationDigest.ParseAuthorisationDigest(authorizationType, headerValue);
+                }
+                else
+                {
+                    authHeader.SIPDigest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.Unknown);
+                }
                 return authHeader;
             }
             catch

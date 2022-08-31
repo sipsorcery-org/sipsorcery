@@ -40,6 +40,7 @@ namespace SIPSorcery.SIP
 
     public class SIPAuthorisationDigest
     {
+        public const string METHOD = "Digest";
         public const string QOP_AUTHENTICATION_VALUE = "auth";
         private const int NONCE_DEFAULT_COUNT = 1;
         private const string SHA256_ALGORITHM_ID = "SHA-256";
@@ -48,7 +49,7 @@ namespace SIPSorcery.SIP
 
         private static char[] m_headerFieldRemoveChars = new char[] { ' ', '"', '\'' };
 
-        public SIPAuthorisationHeadersEnum AuthorisationType { get; private set; }              // This is the type of authorisation request received.
+        public SIPAuthorisationHeadersEnum AuthorisationType { get; private set; } // This is the type of authorisation request received.
         public SIPAuthorisationHeadersEnum AuthorisationResponseType { get; private set; }      // If this is set it's the type of authorisation response to use otherwise use the same as the request (God knows why you need a different response header?!?)
 
         public string Realm;
@@ -84,7 +85,7 @@ namespace SIPSorcery.SIP
         {
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(authorisationType);
 
-            string noDigestHeader = Regex.Replace(authorisationRequest, @"^\s*Digest\s*", "", RegexOptions.IgnoreCase);
+            string noDigestHeader = Regex.Replace(authorisationRequest, $@"^\s*{METHOD}\s*", "", RegexOptions.IgnoreCase);
             string[] headerFields = noDigestHeader.Split(',');
 
             if (headerFields != null && headerFields.Length > 0)
