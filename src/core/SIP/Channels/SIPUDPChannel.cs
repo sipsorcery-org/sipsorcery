@@ -69,7 +69,7 @@ namespace SIPSorcery.SIP
             IPEndPoint endPoint,
             Encoding sipEncoding,
             Encoding sipBodyEncoding,
-            bool useDualMode=false) : base(sipEncoding, sipBodyEncoding)
+            bool useDualMode = false) : base(sipEncoding, sipBodyEncoding)
         {
             if (endPoint == null)
             {
@@ -113,7 +113,13 @@ namespace SIPSorcery.SIP
                 m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
             }
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
-            catch (Exception excp)
+            catch (SocketException socketException)
+            {
+                //ignored.
+                logger.LogError(socketException, $"SocketException Receive. {socketException.Message}");
+                EndReceiveFrom(null);
+            }
+            catch (Exception excp) when (excp is ArgumentException || excp is ArgumentNullException || excp is ArgumentOutOfRangeException || excp is InvalidOperationException)
             {
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
                 // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
