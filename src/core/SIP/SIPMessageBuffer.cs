@@ -86,10 +86,10 @@ namespace SIPSorcery.SIP
         /// <param name="sipEncoding">SIP protocol encoding, according to RFC should be UTF-8 </param>
         /// <returns>If successful a SIP message or null if not.</returns>
         public static SIPMessageBuffer ParseSIPMessage(
-            byte[] buffer, 
+            byte[] buffer,
             Encoding sipEncoding,
             Encoding sipBodyEncoding,
-            SIPEndPoint localSIPEndPoint, 
+            SIPEndPoint localSIPEndPoint,
             SIPEndPoint remoteSIPEndPoint)
         {
 
@@ -109,7 +109,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                var sipMessage = new SIPMessageBuffer(sipEncoding,sipBodyEncoding);
+                var sipMessage = new SIPMessageBuffer(sipEncoding, sipBodyEncoding);
 
                 sipMessage.RawBuffer = buffer;
                 sipMessage.LocalSIPEndPoint = localSIPEndPoint;
@@ -137,6 +137,7 @@ namespace SIPSorcery.SIP
                         sipMessage.SIPMessageType = SIPMessageTypesEnum.Request;
                     }
 
+                    //index of \r\n\r\n in the string,is not exactly the position in bytes buffer
                     int endHeaderPosn = message.IndexOf(m_CRLF + m_CRLF);
                     if (endHeaderPosn == -1)
                     {
@@ -151,8 +152,9 @@ namespace SIPSorcery.SIP
 
                         if (message.Length > endHeaderPosn + 4)
                         {
-                            sipMessage.Body = new byte[buffer.Length - (endHeaderPosn + 4)];
-                            Buffer.BlockCopy(buffer, endHeaderPosn + 4, sipMessage.Body, 0, buffer.Length - (endHeaderPosn + 4));
+                            var bodyStartPos = sipEncoding.GetByteCount(headerString) + sipEncoding.GetByteCount(sipMessage.FirstLine) + 2 + 4;
+                            sipMessage.Body = new byte[buffer.Length - bodyStartPos];
+                            Buffer.BlockCopy(buffer, bodyStartPos, sipMessage.Body, 0, sipMessage.Body.Length);
                         }
                     }
 
@@ -186,10 +188,10 @@ namespace SIPSorcery.SIP
             string message,
             Encoding sipEncoding,
             Encoding sipBodyEncoding,
-            SIPEndPoint localSIPEndPoint, 
+            SIPEndPoint localSIPEndPoint,
             SIPEndPoint remoteSIPEndPoint)
         {
-            return ParseSIPMessage(sipEncoding.GetBytes(message), sipEncoding,sipBodyEncoding, localSIPEndPoint, remoteSIPEndPoint);
+            return ParseSIPMessage(sipEncoding.GetBytes(message), sipEncoding, sipBodyEncoding, localSIPEndPoint, remoteSIPEndPoint);
         }
 
         //rj2: check if message could be "well"known Ping message
@@ -246,8 +248,8 @@ namespace SIPSorcery.SIP
         /// <returns>A byte array holding a full SIP message or if no full SIP messages are available null.</returns>
         public static byte[] ParseSIPMessageFromStream(
             byte[] receiveBuffer,
-            int start, 
-            int length, 
+            int start,
+            int length,
             Encoding sipEncoding,
             out int bytesSkipped)
         {
@@ -299,7 +301,7 @@ namespace SIPSorcery.SIP
         /// <param name="end">The position in the buffer to stop the search at.</param>
         /// <param name="sipEncoding"></param>
         /// <returns>If the Content-Length header is found the value if contains otherwise 0.</returns>
-        public static int GetContentLength(byte[] buffer, int start, int end,Encoding sipEncoding)
+        public static int GetContentLength(byte[] buffer, int start, int end, Encoding sipEncoding)
         {
             if (buffer == null || start > end || buffer.Length < end)
             {
