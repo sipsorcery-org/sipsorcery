@@ -69,8 +69,8 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="sip-user-agent">SIP User Agent</h1>
 
-<p>The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> class is the highest level abstraction for dealing with SIP user agent client and server operations. It aims to make dealing with common SIP functions - such as making a call, putting the remote party on hold, hanging up and more - as easy as possible.</p>
-<p>For SIP client applications the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> class will typically be the main class to use.</p>
+<p>The @&quot;SIPSorcery.SIP.App.SIPUserAgent&quot; class is the highest level abstraction for dealing with SIP user agent client and server operations. It aims to make dealing with common SIP functions - such as making a call, putting the remote party on hold, hanging up and more - as easy as possible.</p>
+<p>For SIP client applications the @&quot;SIPSorcery.SIP.App.SIPUserAgent&quot; class will typically be the main class to use.</p>
 <h2 id="initiating-a-call">Initiating a Call</h2>
 <p>To place a SIP call takes only a small amount of code. The code snippet below is capable of successfully completing a call. It requires two nuget packages:</p>
 <ul>
@@ -108,20 +108,20 @@ namespace demo
     }
 }
 </code></pre>
-<p><strong>Step 1:</strong> Create a <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> to handle the SIP signaling.</p>
+<p><strong>Step 1:</strong> Create a @&quot;SIPSorcery.SIP.App.SIPUserAgent&quot; to handle the SIP signaling.</p>
 <pre><code class="lang-csharp">var userAgent = new SIPUserAgent();
 </code></pre>
 <p><strong>Step 2:</strong> The <code>userAgent </code> will be able to place a call and exchange <code>RTP</code> audio and video but it does not know what to do with them. The next line creates a <code>Windows</code> media end point that can obtain audio samples from a microphone and play received audio on a speaker. For non-<code>Windows</code> platforms it is possible to use a different class as long as it implements the <a href="https://github.com/sipsorcery/SIPSorceryMedia.Abstractions/blob/a7fbd2e069ed3ca3925644ff80dd1ad8b47c5804/src/V1/MediaEndPoints.cs#L83">IAudioSource</a> and <a href="https://github.com/sipsorcery/SIPSorceryMedia.Abstractions/blob/a7fbd2e069ed3ca3925644ff80dd1ad8b47c5804/src/V1/MediaEndPoints.cs#L112">IAudioSink</a> interfaces.</p>
 <pre><code class="lang-csharp">var winAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
 </code></pre>
-<p><strong>Step 3:</strong> The <code>userAgent</code> and the <code>winAudioEndPoint</code> now need to be connected. It's possible to do this manually by adding media tracks, wiring up the different events and handlers etc. The <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> does this job automatically.</p>
+<p><strong>Step 3:</strong> The <code>userAgent</code> and the <code>winAudioEndPoint</code> now need to be connected. It's possible to do this manually by adding media tracks, wiring up the different events and handlers etc. The @&quot;SIPSorcery.Media.VoIPMediaSession&quot; does this job automatically.</p>
 <pre><code class="lang-csharp">var voipMediaSession = new VoIPMediaSession(winAudioEndPoint.ToMediaEndPoints());
 </code></pre>
 <p><strong>Step 4:</strong> Finally place the call making sure to provide the media session object as a parameter.</p>
 <pre><code class="lang-csharp">bool callResult = await userAgent.Call(DESTINATION, null, null, voipMediaSession);
 </code></pre>
 <h2 id="accepting-and-answering-calls">Accepting and Answering Calls</h2>
-<p>As well as initiating calls the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> class can also accept and subsequently answer an incoming call. Accepting a call lets the caller know their request has been received. A decision can then be made on whether to answer, reject or redirect the call.</p>
+<p>As well as initiating calls the @&quot;SIPSorcery.SIP.App.SIPUserAgent&quot; class can also accept and subsequently answer an incoming call. Accepting a call lets the caller know their request has been received. A decision can then be made on whether to answer, reject or redirect the call.</p>
 <p>The example below shows a minimal example of how to automatically answer an incoming call using the default Windows audio devices.</p>
 <pre><code class="lang-csharp">using System;
 using System.Net;
@@ -160,12 +160,12 @@ namespace demo
     }
 }
 </code></pre>
-<p><strong>Step 1:</strong> Create a <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> instance and add a <a class="xref" href="../api/SIPSorcery.SIP.SIPChannel.html">SIPChannel</a> to it. This step is generally required if the application needs to listen on a specific protocol, address or port. This is relevant for incoming calls since the caller needs to know how to reach the application.</p>
+<p><strong>Step 1:</strong> Create a @&quot;SIPSorcery.SIP.SIPTransport&quot; instance and add a @&quot;SIPSorcery.SIP.SIPChannel&quot; to it. This step is generally required if the application needs to listen on a specific protocol, address or port. This is relevant for incoming calls since the caller needs to know how to reach the application.</p>
 <p>For more information about how the SIP transport and channel mechanisms see the <a href="transport.html">SIP Transport Layer</a> article.</p>
 <pre><code class="lang-csharp">var sipTransport = new SIPTransport();
 sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 5060)));
 </code></pre>
-<p><strong>Step 2:</strong> Create a <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> using the <code>SIPTransport</code> instance. The <code>SIPUserAgent</code> class will monitor the transport for incoming call requests.</p>
+<p><strong>Step 2:</strong> Create a @&quot;SIPSorcery.SIP.App.SIPUserAgent&quot; using the <code>SIPTransport</code> instance. The <code>SIPUserAgent</code> class will monitor the transport for incoming call requests.</p>
 <pre><code class="lang-csharp">var userAgent = new SIPUserAgent(sipTransport, null, true);
 </code></pre>
 <p><strong>Step 3:</strong> Create an event handler to receive incoming calls.</p>
@@ -183,7 +183,7 @@ sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 5060)
 </ul>
 <pre><code class="lang-csharp">var uas = userAgent.AcceptCall(req);
 </code></pre>
-<p><strong>Step 5:</strong> To answer the call create a <code>WindowsAudioEndPoint</code> and <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> to interface with the system audio devices and decode any received <code>RTP</code> packets. See the <a href="#initiating-a-call">Initiating a Call</a> section for more detail.</p>
+<p><strong>Step 5:</strong> To answer the call create a <code>WindowsAudioEndPoint</code> and @&quot;SIPSorcery.Media.VoIPMediaSession&quot; to interface with the system audio devices and decode any received <code>RTP</code> packets. See the <a href="#initiating-a-call">Initiating a Call</a> section for more detail.</p>
 <pre><code class="lang-csharp">WindowsAudioEndPoint winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
 VoIPMediaSession voipMediaSession = new VoIPMediaSession(winAudioEP.ToMediaEndPoints());
 voipMediaSession.AcceptRtpFromAny = true;
@@ -192,7 +192,7 @@ voipMediaSession.AcceptRtpFromAny = true;
 <pre><code class="lang-csharp">await userAgent.Answer(uas, voipMediaSession);
 </code></pre>
 <h2 id="established-call-actions">Established Call Actions</h2>
-<p>Once a call is established the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> can perform various additional actions such as:</p>
+<p>Once a call is established the @&quot;SIPSorcery.SIP.App.SIPUserAgent&quot; can perform various additional actions such as:</p>
 <ul>
 <li>Hangup,</li>
 <li>Place on and Off Hold,</li>
@@ -205,13 +205,13 @@ voipMediaSession.AcceptRtpFromAny = true;
 <pre><code class="lang-csharp">userAgent.Hangup()
 </code></pre>
 <h2 id="dtmf-tones">DTMF Tones</h2>
-<p>A DTMF tone can be sent to the remote call party using the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_SendDtmf_System_Byte_">SendDtmf(Byte)</a> method.</p>
+<p>A DTMF tone can be sent to the remote call party using the @&quot;SIPSorcery.SIP.App.SIPUserAgent.SendDtmf(System.Byte)&quot; method.</p>
 <pre><code class="lang-csharp">bool callResult = await userAgent.Call(DESTINATION, null, null, voipMediaSession);
 await userAgent.SendDtmf(1);
 await userAgent.SendDtmf(2);
 await userAgent.SendDtmf(3);
 </code></pre>
-<p>To receive DTMF tones add an event handler for the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnDtmfTone">OnDtmfTone</a> event.</p>
+<p>To receive DTMF tones add an event handler for the @&quot;SIPSorcery.SIP.App.SIPUserAgent.OnDtmfTone&quot; event.</p>
 <pre><code class="lang-csharp">ua.OnDtmfTone += (byte tone, int duration) =&gt; Console.WriteLine($&quot;DTMF tone received {tone}, duration {duration}ms.&quot;);
 </code></pre>
 <h2 id="placing-on-and-off-hold">Placing on and Off Hold</h2>
@@ -220,13 +220,13 @@ await userAgent.SendDtmf(3);
 <li>Change the audio source from a capture device to music on hold. This approach does not require any SIP signalling but has the weakness that full audio streams continue to flow,</li>
 <li>Use a SIP re-INVITE request to inform the remote call party that audio will no longer be sent by setting the media flow attribute from <code>sendrecv</code> to <code>sendonly</code> and then send a comfort noise or silence payload.</li>
 </ul>
-<p>A 3rd mechanism is a combination of the two. A re-INVITE request is sent and the agent placing the call on hold streams music to the remote agent. This is the approach used in the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_PutOnHold">PutOnHold()</a> and <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_TakeOffHold">TakeOffHold()</a> methods.</p>
+<p>A 3rd mechanism is a combination of the two. A re-INVITE request is sent and the agent placing the call on hold streams music to the remote agent. This is the approach used in the @&quot;SIPSorcery.SIP.App.SIPUserAgent.PutOnHold&quot; and @&quot;SIPSorcery.SIP.App.SIPUserAgent.TakeOffHold&quot; methods.</p>
 <pre><code class="lang-csharp">bool callResult = await userAgent.Call(DESTINATION, null, null, voipMediaSession);
 await userAgent.PutOnHold();
 await userAgent.TakeOffHold();
 </code></pre>
 <h2 id="blind-transfer">Blind Transfer</h2>
-<p>A Blind Transfer is where the callee is sent a SIP REFER request (see <a href="callholdtransfer.html#blind-transfer">call flow</a>) specifying a new destination for the call. The call party initiating the transfer does not interact with the transfer destination. The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_BlindTransfer_SIPSorcery_SIP_SIPURI_System_TimeSpan_System_Threading_CancellationToken_System_String___">BlindTransfer(SIPURI, TimeSpan, CancellationToken, String[])</a> method is used to carry out a Blind Transfer on an established call.</p>
+<p>A Blind Transfer is where the callee is sent a SIP REFER request (see <a href="callholdtransfer.html#blind-transfer">call flow</a>) specifying a new destination for the call. The call party initiating the transfer does not interact with the transfer destination. The @&quot;SIPSorcery.SIP.App.SIPUserAgent.BlindTransfer(SIPSorcery.SIP.SIPURI,System.TimeSpan,System.Threading.CancellationToken,System.String[])&quot; method is used to carry out a Blind Transfer on an established call.</p>
 <pre><code class="lang-csharp">bool callResult = await userAgent.Call(DESTINATION, null, null, voipMediaSession);
 
 var transferURI = SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI);
@@ -251,7 +251,7 @@ else
 <li>A second call to the transfer destination is established,</li>
 <li>The original callee and the transferee are bridged together. The transferring call party has their call leg terminated.</li>
 </ul>
-<p>The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AttendedTransfer_SIPSorcery_SIP_SIPDialogue_System_TimeSpan_System_Threading_CancellationToken_System_String___">AttendedTransfer(SIPDialogue, TimeSpan, CancellationToken, String[])</a> method is used to carry out an Attended Transfer on two established calls.</p>
+<p>The @&quot;SIPSorcery.SIP.App.SIPUserAgent.AttendedTransfer(SIPSorcery.SIP.SIPDialogue,System.TimeSpan,System.Threading.CancellationToken,System.String[])&quot; method is used to carry out an Attended Transfer on two established calls.</p>
 <pre><code class="lang-csharp">bool callResult1 = await userAgent1.Call(DESTINATION, null, null, voipMediaSession1);
 await userAgent1.PutOnHold();
 

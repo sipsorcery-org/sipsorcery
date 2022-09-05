@@ -69,25 +69,25 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="rtp-session">RTP Session</h1>
 
-<p>The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class provides the building blocks for dealing with the <a href="https://tools.ietf.org/html/rfc3550">Real-Time Transport Protocol</a>. It is used to transport audio and video packets between session participants.</p>
+<p>The @&quot;SIPSorcery.Net.RTPSession&quot; class provides the building blocks for dealing with the <a href="https://tools.ietf.org/html/rfc3550">Real-Time Transport Protocol</a>. It is used to transport audio and video packets between session participants.</p>
 <p>In general it is not necessary for an application to use this class directly. It should typically use one of the higher level classes described below. Having an understanding of this class is useful to be aware of how audio and video packets are communicated in near real-time.</p>
-<p>There are currently two higher level classes that wrap the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class for use in common scenarios:</p>
+<p>There are currently two higher level classes that wrap the @&quot;SIPSorcery.Net.RTPSession&quot; class for use in common scenarios:</p>
 <ul>
-<li>The <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> class which is the recommended implementation for SIP applications. See the <a href="voipmediasession.html">VoIP Media Session article</a> for more details.</li>
-<li>The <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> which is for WebRTC applications. See the <a href="rtcpeerconnection.html">WebRTC RTCPeerConnection article</a> for more details.</li>
+<li>The @&quot;SIPSorcery.Media.VoIPMediaSession&quot; class which is the recommended implementation for SIP applications. See the <a href="voipmediasession.html">VoIP Media Session article</a> for more details.</li>
+<li>The @&quot;SIPSorcery.Net.RTCPeerConnection&quot; which is for WebRTC applications. See the <a href="rtcpeerconnection.html">WebRTC RTCPeerConnection article</a> for more details.</li>
 </ul>
 <h2 id="features">Features</h2>
-<p>As well as taking care of the plumbing required to send and receive media packets the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class performs a number of additional functions that are required for the correct operation of an RTP connection.</p>
+<p>As well as taking care of the plumbing required to send and receive media packets the @&quot;SIPSorcery.Net.RTPSession&quot; class performs a number of additional functions that are required for the correct operation of an RTP connection.</p>
 <ul>
 <li>Takes care of creating and monitoring the required UDP socket(s) (one for multiplexed RTP &amp; RTCP or two if not).</li>
 <li>Takes care of creating the required RTCP session(s) (one for a single media type or two if audio and video are multiplexed).</li>
-<li>Can generate an SDP offer based on the media types that have been added using the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addTrack_SIPSorcery_Net_MediaStreamTrack_">addTrack(MediaStreamTrack)</a> method.</li>
+<li>Can generate an SDP offer based on the media types that have been added using the @&quot;SIPSorcery.Net.RTPSession.addTrack(SIPSorcery.Net.MediaStreamTrack)&quot; method.</li>
 <li>Takes care of matching the local/remote SDP offer/answer and setting the payload types ID's.</li>
 <li>Provides <code>Send</code> methods for common payload encodings such as VPX, H264 and MJPEG.</li>
 <li>Provides a <code>Send</code> method for an RTP event which is utilised to send DTMF tones.</li>
 <li>Provides hooks for setting Secure Real-time Protocol (SRTP) protect and unprotect functions.</li>
 </ul>
-<p>The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class has been updated to support WebRTC peer connections which behave differently compared to the original RTP specification, used by most SIP devices. The main change is that WebRTC multiplexes all packets (STUN, RTP (audio and video) and RTCP) on a single connection. Standard RTP only supports a single packet type per connection and uses multiple sockets for RTP and RTCP.</p>
+<p>The @&quot;SIPSorcery.Net.RTPSession&quot; class has been updated to support WebRTC peer connections which behave differently compared to the original RTP specification, used by most SIP devices. The main change is that WebRTC multiplexes all packets (STUN, RTP (audio and video) and RTCP) on a single connection. Standard RTP only supports a single packet type per connection and uses multiple sockets for RTP and RTCP.</p>
 </article>
           </div>
           

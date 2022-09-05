@@ -91,13 +91,13 @@ regUserAgent.RegistrationSuccessful += (uri) =&gt; Console.WriteLine($&quot;{uri
 regUserAgent.Start();
 </code></pre>
 <h3 id="explanation">Explanation</h3>
-<p>The first step is to create a <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> to allocate a transport layer that can be used to send and receive SIP requests and responses. The <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class supports a number of different protocols and is described in this <a href="transport.html">article</a></p>
+<p>The first step is to create a <a href="xref:SIPSorcery.SIP.SIPTransport">SIPTransport</a> to allocate a transport layer that can be used to send and receive SIP requests and responses. The <a href="xref:SIPSorcery.SIP.SIPTransport">SIPTransport</a> class supports a number of different protocols and is described in this <a href="transport.html">article</a></p>
 <pre><code class="lang-csharp">var sipTransport = new SIPTransport();
 </code></pre>
-<p>Once the SIP transport is available a <a class="xref" href="../api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html">SIPRegistrationUserAgent</a> can be created.</p>
+<p>Once the SIP transport is available a <a href="xref:SIPSorcery.SIP.App.SIPRegistrationUserAgent">SIPRegistrationUserAgent</a> can be created.</p>
 <pre><code class="lang-csharp">var regUserAgent = new SIPRegistrationUserAgent(sipTransport, USERNAME, PASSWORD, DOMAIN, EXPIRY);
 </code></pre>
-<p>Various events for the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html">SIPRegistrationUserAgent</a> can be subscribed to in order to track its operation.</p>
+<p>Various events for the <a href="xref:SIPSorcery.SIP.App.SIPRegistrationUserAgent">SIPRegistrationUserAgent</a> can be subscribed to in order to track its operation.</p>
 <pre><code class="lang-csharp">regUserAgent.RegistrationFailed += (uri, err) =&gt; Console.WriteLine($&quot;{uri.ToString()}: {err}&quot;);
 regUserAgent.RegistrationTemporaryFailure += (uri, msg) =&gt; Console.WriteLine($&quot;{uri.ToString()}: {msg}&quot;);
 regUserAgent.RegistrationRemoved += (uri) =&gt; Console.WriteLine($&quot;{uri.ToString()} registration failed.&quot;);

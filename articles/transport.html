@@ -69,17 +69,17 @@
             <article class="content wrap" id="_content" data-uid="">
 <h2 id="transport-layer">Transport Layer</h2>
 
-<p>The <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class is the most important class in the SIPSorcery library.</p>
+<p>The <a href="xref:SIPSorcery.SIP.SIPTransport">SIPTransport</a> class is the most important class in the SIPSorcery library.</p>
 <h3 id="sip-channels">SIP Channels</h3>
-<p>This transport layer is responsible for managing the <a class="xref" href="../api/SIPSorcery.SIP.SIPChannel.html">SIPChannels</a> that handle the sending and receiving of all SIP requests and responses. The types of SIP channels supported are:</p>
+<p>This transport layer is responsible for managing the <a href="xref:SIPSorcery.SIP.SIPChannel">SIPChannels</a> that handle the sending and receiving of all SIP requests and responses. The types of SIP channels supported are:</p>
 <ul>
-<li><a class="xref" href="../api/SIPSorcery.SIP.SIPUDPChannel.html">SIPUDPChannel</a> the default channel for transmitting and receiving SIP messages over UDP.</li>
-<li><a class="xref" href="../api/SIPSorcery.SIP.SIPTCPChannel.html">SIPTCPChannel</a> transmits and receives SIP messages over TCP.</li>
-<li><a class="xref" href="../api/SIPSorcery.SIP.SIPTCPChannel.html">SIPTLSChannel</a> based on the TCP channel but in this case upgraded to support a secure TLS connection.</li>
-<li><a class="xref" href="../api/SIPSorcery.SIP.SIPWebSocketChannel.html">SIPWebSocketChannel</a> accepts client web socket connections for SIP communications. Supports secure (wss) connections. This channel is accept only, it cannot be used to establish outgoing connections.</li>
+<li><a href="xref:SIPSorcery.SIP.SIPUDPChannel">SIPUDPChannel</a> the default channel for transmitting and receiving SIP messages over UDP.</li>
+<li><a href="xref:SIPSorcery.SIP.SIPTCPChannel">SIPTCPChannel</a> transmits and receives SIP messages over TCP.</li>
+<li><a href="xref:SIPSorcery.SIP.SIPTCPChannel">SIPTLSChannel</a> based on the TCP channel but in this case upgraded to support a secure TLS connection.</li>
+<li><a href="xref:SIPSorcery.SIP.SIPWebSocketChannel">SIPWebSocketChannel</a> accepts client web socket connections for SIP communications. Supports secure (wss) connections. This channel is accept only, it cannot be used to establish outgoing connections.</li>
 </ul>
-<p>To use the SIPSorcery library the first step is always to create an instance of the <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class  and add one or more SIP channels to it.</p>
-<p>The example below shows how to initialise a new <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class and add IPv4 and IPv6 channels for UDP, TCP and TLS. It's not necessary to always add all channels. In a lot of cases a single IPv4 UDP channel will be sufficient.</p>
+<p>To use the SIPSorcery library the first step is always to create an instance of the <a href="xref:SIPSorcery.SIP.SIPTransport">SIPTransport</a> class  and add one or more SIP channels to it.</p>
+<p>The example below shows how to initialise a new <a href="xref:SIPSorcery.SIP.SIPTransport">SIPTransport</a> class and add IPv4 and IPv6 channels for UDP, TCP and TLS. It's not necessary to always add all channels. In a lot of cases a single IPv4 UDP channel will be sufficient.</p>
 <pre><code class="lang-csharp">int SIP_LISTEN_PORT = 5060;
 int SIPS_LISTEN_PORT = 5061;
 int SIP_WEBSOCKET_LISTEN_PORT = 80;
@@ -103,7 +103,7 @@ sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOC
 sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
 </code></pre>
 <h3 id="receiving">Receiving</h3>
-<p>Once the <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class has been initialised it will automatically start receiving. For an application to get access to received messages it needs to add an event handler for the <code>SIPTransportRequestReceived</code> and <code>SIPTransportResponseReceived</code> events.</p>
+<p>Once the <a href="xref:SIPSorcery.SIP.SIPTransport">SIPTransport</a> class has been initialised it will automatically start receiving. For an application to get access to received messages it needs to add an event handler for the <code>SIPTransportRequestReceived</code> and <code>SIPTransportResponseReceived</code> events.</p>
 <pre><code class="lang-csharp">sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =&gt;
 {
     Console.WriteLine($&quot;Request received {localSIPEndPoint}&lt;-{remoteEndPoint}: {sipRequest.StatusLine}&quot;);
@@ -151,11 +151,11 @@ sipRequest.Header.Contact = new List&lt;SIPContactHeader&gt;() { SIPContactHeade
 <h3 id="hints-for-sending-channel">Hints for Sending Channel</h3>
 <p>While the transport layer can generally take care of selecting the best channel to send a request or response there are times where it's desireable to provide a suggestion on which specific channel to use. For example if a request is received on a TCP or TLS channel it's generally desireable to send the response back on the same channel. The tranpsort layer has mechanisms to do this but if it needs to be overriden there are two poperties on a request and response that can be used to give the transport layer guidance.</p>
 <ul>
-<li><a class="xref" href="../api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintChannelID">SIPRequest.SendFromHintChannelID</a> and <a class="xref" href="../api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintChannelID">SIPResponse.SendFromHintChannelID</a>: when the SIP transport layer has mutliple channels  this can be used as a mechanism to request that a specific channel be used to send on.</li>
-<li><a class="xref" href="../api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintConnectionID">SIPRequest.SendFromHintConnectionID</a> and <a class="xref" href="../api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintConnectionID">SIPResponse.SendFromHintConnectionID</a>: for connection oriented channels, such as TCP and TLS, it's normally crucial that a message is sent back on the same socket connection that the original request was received on. This property can inform the sending channel which connection is desired.</li>
+<li><a href="xref:SIPSorcery.SIP.SIPMessageBase.SendFromHintChannelID">SIPRequest.SendFromHintChannelID</a> and <a href="xref:SIPSorcery.SIP.SIPMessageBase.SendFromHintChannelID">SIPResponse.SendFromHintChannelID</a>: when the SIP transport layer has mutliple channels  this can be used as a mechanism to request that a specific channel be used to send on.</li>
+<li><a href="xref:SIPSorcery.SIP.SIPMessageBase.SendFromHintConnectionID">SIPRequest.SendFromHintConnectionID</a> and <a href="xref:SIPSorcery.SIP.SIPMessageBase.SendFromHintConnectionID">SIPResponse.SendFromHintConnectionID</a>: for connection oriented channels, such as TCP and TLS, it's normally crucial that a message is sent back on the same socket connection that the original request was received on. This property can inform the sending channel which connection is desired.</li>
 </ul>
 <p>The reason these poperties are called hints is that the transport layer may have to overrule them. For example if a hinted channel is UDP but the SIP request being sent is a TCP end point then the hint will have to be ignored. Likewise if a connection hint is for a socket connection that has been closed then the sending channel will ignore it and attempt to establish a new connection. The hints will always be given priority and only if there is a protocol mismatch, closed connection etc. will they be overruled.</p>
-<p>The ID's to use for the channel ID and connection ID come from the <a class="xref" href="../api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_ChannelID">LocalSIPEndPoint.ChannelID</a> and <a class="xref" href="../api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_ConnectionID">LocalSIPEndPoint.ConnectionID</a> properties on a received SIP request or response.</p>
+<p>The ID's to use for the channel ID and connection ID come from the <a href="xref:SIPSorcery.SIP.SIPEndPoint.ChannelID">LocalSIPEndPoint.ChannelID</a> and <a href="xref:SIPSorcery.SIP.SIPEndPoint.ConnectionID">LocalSIPEndPoint.ConnectionID</a> properties on a received SIP request or response.</p>
 </article>
           </div>
           
