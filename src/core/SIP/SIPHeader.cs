@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -822,30 +823,48 @@ namespace SIPSorcery.SIP
     public class SIPAuthenticationHeader
     {
         public SIPAuthorisationDigest SIPDigest;
+        public string Value;
+        public SIPAuthorisationHeadersEnum AuthorisationType;
 
-        private SIPAuthenticationHeader()
+        private SIPAuthenticationHeader() : this(new SIPAuthorisationDigest())
         {
-            SIPDigest = new SIPAuthorisationDigest();
         }
 
         public SIPAuthenticationHeader(SIPAuthorisationDigest sipDigest)
         {
             SIPDigest = sipDigest;
+            Value = string.Empty;
+            AuthorisationType = sipDigest?.AuthorisationType ?? SIPAuthorisationHeadersEnum.Authorize;
         }
 
         public SIPAuthenticationHeader(SIPAuthorisationHeadersEnum authorisationType, string realm, string nonce)
         {
-            SIPDigest = new SIPAuthorisationDigest(authorisationType);
-            SIPDigest.Realm = realm;
-            SIPDigest.Nonce = nonce;
+            SIPDigest = new SIPAuthorisationDigest(authorisationType)
+            {
+                Realm = realm,
+                Nonce = nonce
+            };
+            Value = string.Empty;
+            AuthorisationType = authorisationType;
         }
 
         public static SIPAuthenticationHeader ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum authorizationType, string headerValue)
         {
             try
             {
-                SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader();
-                authHeader.SIPDigest = SIPAuthorisationDigest.ParseAuthorisationDigest(authorizationType, headerValue);
+                var authHeader = new SIPAuthenticationHeader
+                {
+                    Value = headerValue
+                };
+                if (headerValue.StartsWith(SIPAuthorisationDigest.METHOD))
+                {
+                    authHeader.SIPDigest = SIPAuthorisationDigest.ParseAuthorisationDigest(authorizationType, headerValue);
+                }
+                else
+                {
+                    authHeader.SIPDigest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.Unknown);
+                }
+                authHeader.AuthorisationType = authHeader.SIPDigest.AuthorisationType;
                 return authHeader;
             }
             catch
@@ -854,35 +873,46 @@ namespace SIPSorcery.SIP
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string BuildAuthorisationHeaderName(SIPAuthorisationHeadersEnum authorisationHeaderType)
+        {
+            string authHeader = null;
+            if (authorisationHeaderType == SIPAuthorisationHeadersEnum.Authorize)
+            {
+                authHeader = SIPHeaders.SIP_HEADER_AUTHORIZATION + ": ";
+            }
+            else if (authorisationHeaderType == SIPAuthorisationHeadersEnum.ProxyAuthenticate)
+            {
+                authHeader = SIPHeaders.SIP_HEADER_PROXYAUTHENTICATION + ": ";
+            }
+            else if (authorisationHeaderType == SIPAuthorisationHeadersEnum.ProxyAuthorization)
+            {
+                authHeader = SIPHeaders.SIP_HEADER_PROXYAUTHORIZATION + ": ";
+            }
+            else if (authorisationHeaderType == SIPAuthorisationHeadersEnum.WWWAuthenticate)
+            {
+                authHeader = SIPHeaders.SIP_HEADER_WWWAUTHENTICATE + ": ";
+            }
+            else
+            {
+                authHeader = SIPHeaders.SIP_HEADER_AUTHORIZATION + ": ";
+            }
+
+            return authHeader;
+        }
+
         public override string ToString()
         {
             if (SIPDigest != null)
             {
-                string authHeader = null;
-                SIPAuthorisationHeadersEnum authorisationHeaderType = (SIPDigest.AuthorisationResponseType != SIPAuthorisationHeadersEnum.Unknown) ? SIPDigest.AuthorisationResponseType : SIPDigest.AuthorisationType;
-
-                if (authorisationHeaderType == SIPAuthorisationHeadersEnum.Authorize)
-                {
-                    authHeader = SIPHeaders.SIP_HEADER_AUTHORIZATION + ": ";
-                }
-                else if (authorisationHeaderType == SIPAuthorisationHeadersEnum.ProxyAuthenticate)
-                {
-                    authHeader = SIPHeaders.SIP_HEADER_PROXYAUTHENTICATION + ": ";
-                }
-                else if (authorisationHeaderType == SIPAuthorisationHeadersEnum.ProxyAuthorization)
-                {
-                    authHeader = SIPHeaders.SIP_HEADER_PROXYAUTHORIZATION + ": ";
-                }
-                else if (authorisationHeaderType == SIPAuthorisationHeadersEnum.WWWAuthenticate)
-                {
-                    authHeader = SIPHeaders.SIP_HEADER_WWWAUTHENTICATE + ": ";
-                }
-                else
-                {
-                    authHeader = SIPHeaders.SIP_HEADER_AUTHORIZATION + ": ";
-                }
-
+                var authorisationHeaderType = (SIPDigest.AuthorisationResponseType != SIPAuthorisationHeadersEnum.Unknown) ? SIPDigest.AuthorisationResponseType : SIPDigest.AuthorisationType;
+                string authHeader = BuildAuthorisationHeaderName(authorisationHeaderType);
                 return authHeader + SIPDigest.ToString();
+            }
+            else if (!string.IsNullOrEmpty(Value))
+            {
+                string authHeader = BuildAuthorisationHeaderName(AuthorisationType);
+                return authHeader + Value;
             }
             else
             {
@@ -2236,7 +2266,11 @@ namespace SIPSorcery.SIP
                 {
                     foreach (var authHeader in AuthenticationHeaders)
                     {
-                        headersBuilder.Append(authHeader.ToString() + m_CRLF);
+                        var value = authHeader.ToString();
+                        if (value != null)
+                        {
+                            headersBuilder.Append(authHeader.ToString() + m_CRLF);
+                        }
                     }
                 }
                 headersBuilder.Append((CallInfo != null) ? SIPHeaders.SIP_HEADER_CALLINFO + ": " + this.CallInfo + m_CRLF : null);
@@ -2276,12 +2310,12 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
                 headersBuilder.Append((RSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_SEQ + ": " + RSeq + m_CRLF : null);
                 headersBuilder.Append((RAckRSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_ACK + ": " + RAckRSeq + " " + RAckCSeq + " " + RAckCSeqMethod + m_CRLF : null);
-                
+
                 foreach (var PAI in PassertedIdentity)
                 {
                     headersBuilder.Append(SIPHeaders.SIP_HEADER_PASSERTED_IDENTITY + ": " + PAI + m_CRLF);
                 }
-                
+
                 foreach (var HistInfo in HistoryInfo)
                 {
                     headersBuilder.Append(SIPHeaders.SIP_HEADER_HISTORY_INFO + ": " + HistInfo + m_CRLF);
