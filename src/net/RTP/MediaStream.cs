@@ -515,7 +515,7 @@ namespace SIPSorcery.net.RTP
                 return;
             }
 
-            var format = RemoteTrack.GetFormatForPayloadID(hdr.PayloadType);
+            var format = RemoteTrack?.GetFormatForPayloadID(hdr.PayloadType);
             if ( (rtpPacket != null) && (format != null) )
             {
 
