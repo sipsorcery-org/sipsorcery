@@ -1980,9 +1980,13 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
+                    if (Enum.IsDefined(typeof(RTCPReportTypesEnum), buffer[1]))
                     {
-                        OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
+                        // Only call OnReceiveRTCPPacket for SR and RR packets
+                        if (buffer[1] == (byte)RTCPReportTypesEnum.SR || buffer[1] == (byte)RTCPReportTypesEnum.RR)
+                        {
+                            OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
+                        }
                     }
                     else
                     {
