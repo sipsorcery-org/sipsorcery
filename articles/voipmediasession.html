@@ -8,7 +8,7 @@
     <title>VoIP Media Session </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="VoIP Media Session ">
-    <meta name="generator" content="docfx 2.59.3.0">
+    <meta name="generator" content="docfx 2.59.4.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -69,15 +69,15 @@
             <article class="content wrap" id="_content" data-uid="">
 <h1 id="voip-media-session">VoIP Media Session</h1>
 
-<p>The rest of this article describes the @&quot;SIPSorcery.Media.VoIPMediaSession&quot; class which is designed for use with SIP/VoIP applications. For WebRTC see the <a href="rtcpeerconnection.html">RTCPeerConnection article</a>.</p>
-<p>The @&quot;SIPSorcery.Media.VoIPMediaSession&quot; class acts as a bridge between the @&quot;SIPSorcery.Net.RTPSession&quot; class and a separate media library, such as <a href="https://github.com/sipsorcery/SIPSorceryMedia.Windows">SIPSorceryMedia.Windows</a> or <a href="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg">SIPSorceryMedia.FFmpeg</a>.</p>
-<p>The code snippet below shows how to instantiate an audio only @&quot;SIPSorcery.Media.VoIPMediaSession&quot;.</p>
+<p>The rest of this article describes the <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> class which is designed for use with SIP/VoIP applications. For WebRTC see the <a href="rtcpeerconnection.html">RTCPeerConnection article</a>.</p>
+<p>The <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> class acts as a bridge between the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class and a separate media library, such as <a href="https://github.com/sipsorcery/SIPSorceryMedia.Windows">SIPSorceryMedia.Windows</a> or <a href="https://github.com/sipsorcery/SIPSorceryMedia.FFmpeg">SIPSorceryMedia.FFmpeg</a>.</p>
+<p>The code snippet below shows how to instantiate an audio only <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a>.</p>
 <pre><code class="lang-csharp">using SIPSorcery.Media;
 
 var audioEndPoint = new SIPSorceryMedia.Windows.WindowsAudioEndPoint(new AudioEncoder());
 var voipMediaSession = new VoIPMediaSession(audioEndPoint.ToMediaEndPoints());
 </code></pre>
-<p>The code snippet below shows how to instantiate an audio and video @&quot;SIPSorcery.Media.VoIPMediaSession&quot;.</p>
+<p>The code snippet below shows how to instantiate an audio and video <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a>.</p>
 <pre><code class="lang-csharp">using SIPSorcery.Media;
 using SIPSorceryMedia.Abstractions.V1;
 
@@ -121,11 +121,11 @@ var voipMediaSession = new VoIPMediaSession(mediaEndPoints);
 voipMediaSession.AcceptRtpFromAny = true;
 </code></pre>
 <h2 id="media-control-during-calls">Media Control during Calls</h2>
-<p>Once a <code>SIP</code> call has been established, typically with the @&quot;SIPSorcery.SIP.App.SIPUserAgent&quot;, certain events, such as hanging up or placing on hold, need to adjust the way audio and/or video streams are handled.</p>
-<p>The @&quot;SIPSorcery.SIP.App.SIPUserAgent&quot; uses the @&quot;SIPSorcery.SIP.App.IMediaSession&quot; interface to control the @&quot;SIPSorcery.Media.VoIPMediaSession&quot;. The reason for an additional interface, instead of relying on, <code>IAudioSink</code> etc, is to combine the signalling and media functions. For example placing a call on hold requires a <code>SIP re-INVITE</code> request to be sent as well as adjusting the media streams.</p>
-<p>Applications do not hav to deal with signalling or media adjustments for standard <code>SIP</code> scenarios - such as on/off hold, transfers and hangup - they are able to be handled automatically by the @&quot;SIPSorcery.SIP.App.SIPUserAgent&quot;.</p>
+<p>Once a <code>SIP</code> call has been established, typically with the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a>, certain events, such as hanging up or placing on hold, need to adjust the way audio and/or video streams are handled.</p>
+<p>The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> uses the <a class="xref" href="../api/SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a> interface to control the <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a>. The reason for an additional interface, instead of relying on, <code>IAudioSink</code> etc, is to combine the signalling and media functions. For example placing a call on hold requires a <code>SIP re-INVITE</code> request to be sent as well as adjusting the media streams.</p>
+<p>Applications do not hav to deal with signalling or media adjustments for standard <code>SIP</code> scenarios - such as on/off hold, transfers and hangup - they are able to be handled automatically by the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a>.</p>
 <p>There are cases where an application may want to adjust the media on a call other than the standard scenarios. For example playing a prompt for an Interactive Voice Response (IVR) system. For those cases the audio or video source can be called directly. The <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPExamples/PlaySounds">Play Sounds</a> demo application is a good example.</p>
-<p>It creates a @&quot;SIPSorcery.Media.VoIPMediaSession&quot; in the standard manner.</p>
+<p>It creates a <a class="xref" href="../api/SIPSorcery.Media.VoIPMediaSession.html">VoIPMediaSession</a> in the standard manner.</p>
 <pre><code class="lang-csharp">var windowsAudio = new WindowsAudioEndPoint(new AudioEncoder());
 var voipMediaSession = new VoIPMediaSession(windowsAudio.ToMediaEndPoints());
 voipMediaSession.AcceptRtpFromAny = true;

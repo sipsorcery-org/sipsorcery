@@ -8,7 +8,7 @@
     <title>How to Place a Call </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="How to Place a Call ">
-    <meta name="generator" content="docfx 2.59.3.0">
+    <meta name="generator" content="docfx 2.59.4.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -99,13 +99,13 @@ else
 }
 </code></pre>
 <h3 id="explanation">Explanation</h3>
-<p>The first step is to create a <a href="xref:SIPSorcery.SIP.SIPTransport">SIPTransport</a> to allocate a transport layer that can be used to send and receive SIP requests and responses. The <a href="xref:SIPSorcery.SIP.SIPTransport">SIPTransport</a> class supports a number of different protocols and is described in this <a href="transport.html">article</a></p>
+<p>The first step is to create a <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> to allocate a transport layer that can be used to send and receive SIP requests and responses. The <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class supports a number of different protocols and is described in this <a href="transport.html">article</a></p>
 <pre><code class="lang-csharp">var sipTransport = new SIPTransport();
 </code></pre>
-<p>Once the SIP transport layer is available a <a href="xref:SIPSorcery.SIP.App.SIPUserAgent">SIPUserAgent</a> (which is capable of acting as both a client and server user agent) can be instantiated. It can be used to place and manage calls and is described further in this <a href="sipuseragent.html">article</a>.</p>
+<p>Once the SIP transport layer is available a <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> (which is capable of acting as both a client and server user agent) can be instantiated. It can be used to place and manage calls and is described further in this <a href="sipuseragent.html">article</a>.</p>
 <pre><code class="lang-csharp">var userAgent = new SIPUserAgent(sipTransport, null);
 </code></pre>
-<p>The <a href="xref:SIPSorcery.SIP.App.SIPUserAgent">SIPUserAgent</a> can handle the signalling to set up a call but it cannot deal with the RTP media packets. To deal with them an <a href="xref:SIPSorcery.Net.RTPSession">RTPSession</a> is needed. The specific type of session created here is an <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/SIPSorcery.RtpAVSession/RtpAVSession.cs">RtpAVSession</a> which is a Windows specific example of how The <a href="xref:SIPSorcery.Net.RTPSession">RTPSession</a> class can be connected to audio and video devices.</p>
+<p>The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> can handle the signalling to set up a call but it cannot deal with the RTP media packets. To deal with them an <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> is needed. The specific type of session created here is an <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/SIPSorcery.RtpAVSession/RtpAVSession.cs">RtpAVSession</a> which is a Windows specific example of how The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class can be connected to audio and video devices.</p>
 <pre><code class="lang-csharp">var rtpSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
 </code></pre>
 <p>Once the SIP and RTP instances are ready a call can be placed.</p>
