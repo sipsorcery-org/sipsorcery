@@ -120,6 +120,7 @@ namespace SIPSorcery.SIP.App
         /// failure condition before incurring a temporary failure.</param>
         /// <param name="exitOnUnequivocalFailure">If true the agent will exit on failure conditions that most 
         /// likely require manual intervention. It is recommended to leave this as true.</param>
+        /// <param name="sendUsernameInContactHeader">If true the request will add the username to the Contact header.</param>
         public SIPRegistrationUserAgent(
             SIPTransport sipTransport,
             string username,
@@ -129,7 +130,8 @@ namespace SIPSorcery.SIP.App
             int maxRegistrationAttemptTimeout = DEFAULT_MAX_REGISTRATION_ATTEMPT_TIMEOUT,
             int registerFailureRetryInterval = DEFAULT_REGISTER_FAILURE_RETRY_INTERVAL,
             int maxRegisterAttempts = DEFAULT_MAX_REGISTER_ATTEMPTS,
-            bool exitOnUnequivocalFailure = true)
+            bool exitOnUnequivocalFailure = true,
+            bool sendUsernameInContactHeader = false)
         {
             m_sipTransport = sipTransport;
 
@@ -157,6 +159,10 @@ namespace SIPSorcery.SIP.App
 
             // Setting the contact to "0.0.0.0" tells the transport layer to populate it at send time.
             m_contactURI = new SIPURI(m_sipAccountAOR.Scheme, IPAddress.Any, 0);
+            if (sendUsernameInContactHeader)
+            {
+                m_contactURI.User = username;
+            }
         }
 
         public SIPRegistrationUserAgent(
