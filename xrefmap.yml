@@ -27090,12 +27090,12 @@ references:
   fullName.vb: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPURI, System.String, System.String, System.String, System.String, SIPSorcery.SIP.SIPURI, System.Int32, System.String(), System.Int32, System.Int32, System.Int32, System.Boolean)
   nameWithType: SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, String[], Int32, Int32, Int32, Boolean)
   nameWithType.vb: SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPTransport, SIPEndPoint, SIPURI, String, String, String, String, SIPURI, Int32, String(), Int32, Int32, Int32, Boolean)
-- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,System.String,System.String,System.String,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)
-  name: SIPRegistrationUserAgent(SIPTransport, String, String, String, Int32, Int32, Int32, Int32, Boolean)
-  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_SIPSorcery_SIP_SIPTransport_System_String_System_String_System_String_System_Int32_System_Int32_System_Int32_System_Int32_System_Boolean_
-  commentId: M:SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,System.String,System.String,System.String,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)
-  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPSorcery.SIP.SIPTransport, System.String, System.String, System.String, System.Int32, System.Int32, System.Int32, System.Int32, System.Boolean)
-  nameWithType: SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPTransport, String, String, String, Int32, Int32, Int32, Int32, Boolean)
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,System.String,System.String,System.String,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean,System.Boolean)
+  name: SIPRegistrationUserAgent(SIPTransport, String, String, String, Int32, Int32, Int32, Int32, Boolean, Boolean)
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_SIPSorcery_SIP_SIPTransport_System_String_System_String_System_String_System_Int32_System_Int32_System_Int32_System_Int32_System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,System.String,System.String,System.String,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean,System.Boolean)
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPSorcery.SIP.SIPTransport, System.String, System.String, System.String, System.Int32, System.Int32, System.Int32, System.Int32, System.Boolean, System.Boolean)
+  nameWithType: SIPRegistrationUserAgent.SIPRegistrationUserAgent(SIPTransport, String, String, String, Int32, Int32, Int32, Int32, Boolean, Boolean)
 - uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.#ctor*
   name: SIPRegistrationUserAgent
   href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent__ctor_
