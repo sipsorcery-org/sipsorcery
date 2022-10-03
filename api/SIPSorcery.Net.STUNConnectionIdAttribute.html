@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Class STUNDns
+    <title>Class STUNConnectionIdAttribute
    </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Class STUNDns
+    <meta name="title" content="Class STUNConnectionIdAttribute
    ">
     <meta name="generator" content="docfx 2.59.4.0">
     
@@ -68,20 +68,39 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.STUNDns">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.STUNConnectionIdAttribute">
   
   
-  <h1 id="SIPSorcery_Net_STUNDns" data-uid="SIPSorcery.Net.STUNDns" class="text-break">Class STUNDns
+  <h1 id="SIPSorcery_Net_STUNConnectionIdAttribute" data-uid="SIPSorcery.Net.STUNConnectionIdAttribute" class="text-break">Class STUNConnectionIdAttribute
   </h1>
   <div class="markdown level0 summary"></div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">STUNDns</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.Net.STUNAttribute.html">STUNAttribute</a></div>
+    <div class="level2"><span class="xref">STUNConnectionIdAttribute</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_STUNATTRIBUTE_HEADER_LENGTH">STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_AttributeType">STUNAttribute.AttributeType</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_Value">STUNAttribute.Value</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_PaddedLength">STUNAttribute.PaddedLength</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_ParseMessageAttributes_System_Byte___System_Int32_System_Int32_">STUNAttribute.ParseMessageAttributes(Byte[], Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_ToByteBuffer_System_Byte___System_Int32_">STUNAttribute.ToByteBuffer(Byte[], Int32)</a>
+    </div>
     <div>
       <span class="xref">System.Object.Equals(System.Object)</span>
     </div>
@@ -100,31 +119,94 @@
     <div>
       <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
     </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
-  <h5 id="SIPSorcery_Net_STUNDns_syntax">Syntax</h5>
+  <h5 id="SIPSorcery_Net_STUNConnectionIdAttribute_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class STUNDns</code></pre>
+    <pre><code class="lang-csharp hljs">public class STUNConnectionIdAttribute : STUNAttribute</code></pre>
   </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNConnectionIdAttribute__ctor_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNConnectionIdAttribute.%23ctor(System.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNConnectionIdAttribute.cs/#L26">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_STUNConnectionIdAttribute__ctor_" data-uid="SIPSorcery.Net.STUNConnectionIdAttribute.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_STUNConnectionIdAttribute__ctor_System_Byte___" data-uid="SIPSorcery.Net.STUNConnectionIdAttribute.#ctor(System.Byte[])">STUNConnectionIdAttribute(Byte[])</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public STUNConnectionIdAttribute(byte[] attributeValue)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">attributeValue</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNConnectionIdAttribute__ctor_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNConnectionIdAttribute.%23ctor(System.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNConnectionIdAttribute.cs/#L39">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_STUNConnectionIdAttribute__ctor_" data-uid="SIPSorcery.Net.STUNConnectionIdAttribute.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_STUNConnectionIdAttribute__ctor_System_UInt32_" data-uid="SIPSorcery.Net.STUNConnectionIdAttribute.#ctor(System.UInt32)">STUNConnectionIdAttribute(UInt32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public STUNConnectionIdAttribute(uint connectionId)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">connectionId</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="fields">Fields
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNDns_DNS_RETRIES_PER_SERVER.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNDns.DNS_RETRIES_PER_SERVER%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNConnectionIdAttribute_ConnectionId.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNConnectionIdAttribute.ConnectionId%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNDns.cs/#L55">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNConnectionIdAttribute.cs/#L24">View Source</a>
   </span>
-  <h4 id="SIPSorcery_Net_STUNDns_DNS_RETRIES_PER_SERVER" data-uid="SIPSorcery.Net.STUNDns.DNS_RETRIES_PER_SERVER">DNS_RETRIES_PER_SERVER</h4>
+  <h4 id="SIPSorcery_Net_STUNConnectionIdAttribute_ConnectionId" data-uid="SIPSorcery.Net.STUNConnectionIdAttribute.ConnectionId">ConnectionId</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int DNS_RETRIES_PER_SERVER = 1</code></pre>
+    <pre><code class="lang-csharp hljs">public readonly uint ConnectionId</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -136,55 +218,29 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Int32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
+  <h3 id="methods">Methods
+  </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNDns_DNS_TIMEOUT_SECONDS.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNDns.DNS_TIMEOUT_SECONDS%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNConnectionIdAttribute_ToString.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNConnectionIdAttribute.ToString%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNDns.cs/#L54">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNConnectionIdAttribute.cs/#L48">View Source</a>
   </span>
-  <h4 id="SIPSorcery_Net_STUNDns_DNS_TIMEOUT_SECONDS" data-uid="SIPSorcery.Net.STUNDns.DNS_TIMEOUT_SECONDS">DNS_TIMEOUT_SECONDS</h4>
+  <a id="SIPSorcery_Net_STUNConnectionIdAttribute_ToString_" data-uid="SIPSorcery.Net.STUNConnectionIdAttribute.ToString*"></a>
+  <h4 id="SIPSorcery_Net_STUNConnectionIdAttribute_ToString" data-uid="SIPSorcery.Net.STUNConnectionIdAttribute.ToString">ToString()</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int DNS_TIMEOUT_SECONDS = 1</code></pre>
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
   </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNDns_MDNS_TLD.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNDns.MDNS_TLD%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNDns.cs/#L53">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_Net_STUNDns_MDNS_TLD" data-uid="SIPSorcery.Net.STUNDns.MDNS_TLD">MDNS_TLD</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string MDNS_TLD = &quot;local&quot;</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
+  <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
@@ -199,98 +255,8 @@
       </tr>
     </tbody>
   </table>
-  <h3 id="properties">Properties
-  </h3>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNDns_DnsUseTcpFallback.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNDns.DnsUseTcpFallback%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNDns.cs/#L69">View Source</a>
-  </span>
-  <a id="SIPSorcery_Net_STUNDns_DnsUseTcpFallback_" data-uid="SIPSorcery.Net.STUNDns.DnsUseTcpFallback*"></a>
-  <h4 id="SIPSorcery_Net_STUNDns_DnsUseTcpFallback" data-uid="SIPSorcery.Net.STUNDns.DnsUseTcpFallback">DnsUseTcpFallback</h4>
-  <div class="markdown level1 summary"><p>Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static bool DnsUseTcpFallback { get; set; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Boolean</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h3 id="methods">Methods
-  </h3>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNDns_Resolve_SIPSorcery_Net_STUNUri_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNDns.cs/#L94">View Source</a>
-  </span>
-  <a id="SIPSorcery_Net_STUNDns_Resolve_" data-uid="SIPSorcery.Net.STUNDns.Resolve*"></a>
-  <h4 id="SIPSorcery_Net_STUNDns_Resolve_SIPSorcery_Net_STUNUri_System_Boolean_" data-uid="SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,System.Boolean)">Resolve(STUNUri, Boolean)</h4>
-  <div class="markdown level1 summary"><p>Resolve method that can be used to request an AAAA result and fallback to a A
-lookup if none found.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Task&lt;IPEndPoint&gt; Resolve(STUNUri uri, bool preferIPv6 = false)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.Net.STUNUri.html">STUNUri</a></td>
-        <td><span class="parametername">uri</span></td>
-        <td><p>The URI to lookup.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Boolean</span></td>
-        <td><span class="parametername">preferIPv6</span></td>
-        <td><p>True if IPv6 (AAAA record lookup) is preferred.</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.IPEndPoint</span>&gt;</td>
-        <td><p>An IPEndPoint or null.</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_ToString">STUNAttribute.ToString()</a></div>
   <h3 id="extensionmethods">Extension Methods</h3>
   <div>
       <a class="xref" href="TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_System_Object_">JSONWriter.ToJson(Object)</a>
@@ -303,10 +269,10 @@ lookup if none found.</p>
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNDns.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNDns%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNConnectionIdAttribute.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNConnectionIdAttribute%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNDns.cs/#L51" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNConnectionIdAttribute.cs/#L22" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

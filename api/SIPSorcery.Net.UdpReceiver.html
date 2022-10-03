@@ -81,6 +81,7 @@ the common logic for UDP socket management.</p>
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">UdpReceiver</span></div>
+      <div class="level2"><a class="xref" href="SIPSorcery.Net.RtpIceChannel.IceTcpReceiver.html">RtpIceChannel.IceTcpReceiver</a></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -110,7 +111,7 @@ the common logic for UDP socket management.</p>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_UdpReceiver_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class UdpReceiver</code></pre>
+    <pre><code class="lang-csharp hljs">public class UdpReceiver</code></pre>
   </div>
   <h5 id="SIPSorcery_Net_UdpReceiver_remarks"><strong>Remarks</strong></h5>
   <div class="markdown level0 remarks"><p>.NET Framework Socket source:
@@ -124,18 +125,18 @@ Mono Socket source:
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver__ctor_System_Net_Sockets_Socket_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.%23ctor(System.Net.Sockets.Socket)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver__ctor_System_Net_Sockets_Socket_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.%23ctor(System.Net.Sockets.Socket%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L68">View Source</a>
   </span>
   <a id="SIPSorcery_Net_UdpReceiver__ctor_" data-uid="SIPSorcery.Net.UdpReceiver.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_UdpReceiver__ctor_System_Net_Sockets_Socket_" data-uid="SIPSorcery.Net.UdpReceiver.#ctor(System.Net.Sockets.Socket)">UdpReceiver(Socket)</h4>
+  <h4 id="SIPSorcery_Net_UdpReceiver__ctor_System_Net_Sockets_Socket_System_Int32_" data-uid="SIPSorcery.Net.UdpReceiver.#ctor(System.Net.Sockets.Socket,System.Int32)">UdpReceiver(Socket, Int32)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public UdpReceiver(Socket udpSocket)</code></pre>
+    <pre><code class="lang-csharp hljs">public UdpReceiver(Socket socket, int mtu = 2048)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -149,7 +150,219 @@ Mono Socket source:
     <tbody>
       <tr>
         <td><span class="xref">System.Net.Sockets.Socket</span></td>
-        <td><span class="parametername">udpSocket</span></td>
+        <td><span class="parametername">socket</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">mtu</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_logger.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.logger%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L50">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_UdpReceiver_logger" data-uid="SIPSorcery.Net.UdpReceiver.logger">logger</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected static ILogger logger</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">Microsoft.Extensions.Logging.ILogger</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_m_addressFamily.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.m_addressFamily%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L56">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_UdpReceiver_m_addressFamily" data-uid="SIPSorcery.Net.UdpReceiver.m_addressFamily">m_addressFamily</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected AddressFamily m_addressFamily</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.Sockets.AddressFamily</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_m_isClosed.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.m_isClosed%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L54">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_UdpReceiver_m_isClosed" data-uid="SIPSorcery.Net.UdpReceiver.m_isClosed">m_isClosed</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected bool m_isClosed</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_m_localEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.m_localEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L55">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_UdpReceiver_m_localEndPoint" data-uid="SIPSorcery.Net.UdpReceiver.m_localEndPoint">m_localEndPoint</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected IPEndPoint m_localEndPoint</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_m_recvBuffer.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.m_recvBuffer%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L53">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_UdpReceiver_m_recvBuffer" data-uid="SIPSorcery.Net.UdpReceiver.m_recvBuffer">m_recvBuffer</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected byte[] m_recvBuffer</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_m_socket.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.m_socket%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L52">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_UdpReceiver_m_socket" data-uid="SIPSorcery.Net.UdpReceiver.m_socket">m_socket</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected readonly Socket m_socket</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.Sockets.Socket</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_RECEIVE_BUFFER_SIZE.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.RECEIVE_BUFFER_SIZE%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L48">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_UdpReceiver_RECEIVE_BUFFER_SIZE" data-uid="SIPSorcery.Net.UdpReceiver.RECEIVE_BUFFER_SIZE">RECEIVE_BUFFER_SIZE</h4>
+  <div class="markdown level1 summary"><p>MTU is 1452 bytes so this should be heaps.
+TODO: What about fragmented UDP packets that are put back together by the OS?</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected const int RECEIVE_BUFFER_SIZE = 2048</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -171,8 +384,50 @@ return any data received.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void BeginReceiveFrom()</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual void BeginReceiveFrom()</code></pre>
   </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_CallOnPacketReceivedCallback_System_Int32_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.CallOnPacketReceivedCallback(System.Int32%2CSystem.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L210">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_UdpReceiver_CallOnPacketReceivedCallback_" data-uid="SIPSorcery.Net.UdpReceiver.CallOnPacketReceivedCallback*"></a>
+  <h4 id="SIPSorcery_Net_UdpReceiver_CallOnPacketReceivedCallback_System_Int32_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.Net.UdpReceiver.CallOnPacketReceivedCallback(System.Int32,System.Net.IPEndPoint,System.Byte[])">CallOnPacketReceivedCallback(Int32, IPEndPoint, Byte[])</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected virtual void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, byte[] packet)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">localPort</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">remoteEndPoint</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">packet</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
@@ -187,7 +442,7 @@ return any data received.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void Close(string reason)</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual void Close(string reason)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -203,6 +458,40 @@ return any data received.</p>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">reason</span></td>
         <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_EndReceiveFrom_System_IAsyncResult_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.EndReceiveFrom(System.IAsyncResult)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L110">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_UdpReceiver_EndReceiveFrom_" data-uid="SIPSorcery.Net.UdpReceiver.EndReceiveFrom*"></a>
+  <h4 id="SIPSorcery_Net_UdpReceiver_EndReceiveFrom_System_IAsyncResult_" data-uid="SIPSorcery.Net.UdpReceiver.EndReceiveFrom(System.IAsyncResult)">EndReceiveFrom(IAsyncResult)</h4>
+  <div class="markdown level1 summary"><p>Handler for end of the begin receive call.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected virtual void EndReceiveFrom(IAsyncResult ar)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.IAsyncResult</span></td>
+        <td><span class="parametername">ar</span></td>
+        <td><p>Contains the results of the receive.</p>
+</td>
       </tr>
     </tbody>
   </table>
