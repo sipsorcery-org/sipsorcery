@@ -1456,7 +1456,6 @@ namespace SIPSorcery.Net
                 InitIPEndPointAndSecurityContext(newAudioStream);
             }
 
-            AudioStreamList.Add(newAudioStream);
             return newAudioStream;
         }
 
@@ -1484,7 +1483,6 @@ namespace SIPSorcery.Net
                 InitIPEndPointAndSecurityContext(newAudioStream);
             }
 
-            AudioStreamList.Add(newAudioStream);
             return newAudioStream;
         }
 
@@ -1507,7 +1505,6 @@ namespace SIPSorcery.Net
             newVideoStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             InitIPEndPointAndSecurityContext(newVideoStream);
-            VideoStreamList.Add(newVideoStream);
             return newVideoStream;
         }
 
@@ -1530,7 +1527,6 @@ namespace SIPSorcery.Net
             newVideoStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             InitIPEndPointAndSecurityContext(newVideoStream);
-            VideoStreamList.Add(newVideoStream);
             return newVideoStream;
         }
 
