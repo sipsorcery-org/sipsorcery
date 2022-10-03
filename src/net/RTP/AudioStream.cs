@@ -30,20 +30,20 @@ namespace SIPSorcery.net.RTP
 {
     public class AudioStream : MediaStream
     {
-        private static ILogger logger = Log.Logger;
+        protected static ILogger logger = Log.Logger;
 
-        private Boolean rtpEventInProgress = false;
+        protected Boolean rtpEventInProgress = false;
 
-    #region EVENTS
-        
+        #region EVENTS
+
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common audio formats is set.
         /// </summary>
         public event Action<int, List<AudioFormat>> OnAudioFormatsNegotiatedByIndex;
-    
-    #endregion EVENTS
 
-    #region PROPERTIES
+        #endregion EVENTS
+
+        #region PROPERTIES
 
         /// <summary>
         /// Indicates whether this session is using audio.
@@ -57,9 +57,9 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-    #endregion PROPERTIES
+        #endregion PROPERTIES
 
-    #region SEND PACKET
+        #region SEND PACKET
 
         /// <summary>
         /// Sends an audio sample to the remote peer.
@@ -148,7 +148,7 @@ namespace SIPSorcery.net.RTP
                 if (rtpEventInProgress)
                 {
                     logger.LogWarning($"A RTPEvent is in progress.");
-                    return ;
+                    return;
                 }
 
                 try
@@ -228,7 +228,7 @@ namespace SIPSorcery.net.RTP
             return SendDtmfEvent(dtmfEvent, ct);
         }
 
-    #endregion SEND PACKET
+        #endregion SEND PACKET
 
         public void CheckAudioFormatsNegotiation()
         {

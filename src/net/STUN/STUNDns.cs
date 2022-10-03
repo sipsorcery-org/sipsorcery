@@ -58,6 +58,9 @@ namespace SIPSorcery.Net
 
         private static LookupClient _lookupClient;
 
+        /// <summary>
+        /// Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.
+        /// </summary>
         private static bool _dnsUseTcpFallback;
 
         /// <summary>

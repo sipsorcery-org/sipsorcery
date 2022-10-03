@@ -28,6 +28,7 @@ namespace SIPSorcery.Net
     public class RTCIceCandidate : IRTCIceCandidate
     {
         public const string m_CRLF = "\r\n";
+        public const string TCP_TYPE_KEY = "tcpType";
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
         public const string CANDIDATE_PREFIX = "candidate";
@@ -129,6 +130,7 @@ namespace SIPSorcery.Net
                 address = iceCandidate.address;
                 port = iceCandidate.port;
                 type = iceCandidate.type;
+                tcpType = iceCandidate.tcpType;
                 relatedAddress = iceCandidate.relatedAddress;
                 relatedPort = iceCandidate.relatedPort;
             }
@@ -205,14 +207,26 @@ namespace SIPSorcery.Net
                     candidate.type = candidateType;
                 }
 
-                if (candidateFields.Length > 8 && candidateFields[8] == REMOTE_ADDRESS_KEY)
+                // TCP Candidates require extra steps to be parsed
+                // {"candidate":"candidate:4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active","sdpMid":"sdparta_0","sdpMLineIndex":0}
+                var parseIndex = 8;
+                if (candidate.protocol == RTCIceProtocol.tcp)
                 {
-                    candidate.relatedAddress = candidateFields[9];
+                    if (candidateFields.Length > parseIndex && candidateFields[parseIndex] == TCP_TYPE_KEY)
+                    {
+                        candidate.relatedAddress = candidateFields[parseIndex + 1];
+                    }
+                    parseIndex += 2;
                 }
 
-                if (candidateFields.Length > 10 && candidateFields[10] == REMOTE_PORT_KEY)
+                if (candidateFields.Length > parseIndex && candidateFields[parseIndex] == REMOTE_ADDRESS_KEY)
                 {
-                    candidate.relatedPort = Convert.ToUInt16(candidateFields[11]);
+                    candidate.relatedAddress = candidateFields[parseIndex+1];
+                }
+
+                if (candidateFields.Length > parseIndex+2 && candidateFields[parseIndex+2] == REMOTE_PORT_KEY)
+                {
+                    candidate.relatedPort = Convert.ToUInt16(candidateFields[parseIndex+3]);
                 }
 
                 return candidate;
@@ -233,13 +247,28 @@ namespace SIPSorcery.Net
         {
             if (type == RTCIceCandidateType.host || type == RTCIceCandidateType.prflx)
             {
-                string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} generation 0",
-                foundation,
-                component.GetHashCode(),
-                priority,
-                address,
-                port,
-                type);
+                string candidateStr;
+                if (protocol == RTCIceProtocol.tcp)
+                {
+                    candidateStr = String.Format("{0} {1} tcp {2} {3} {4} typ {5} tcptype {6} generation 0",
+                        foundation,
+                        component.GetHashCode(),
+                        priority,
+                        address,
+                        port,
+                        type,
+                        tcpType);
+                }
+                else
+                {
+                    candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} generation 0",
+                        foundation,
+                        component.GetHashCode(),
+                        priority,
+                        address,
+                        port,
+                        type);
+                }
 
                 return candidateStr;
             }
@@ -252,15 +281,32 @@ namespace SIPSorcery.Net
                     relAddr = IPAddress.Any.ToString();
                 }
 
-                string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} raddr {6} rport {7} generation 0",
-                     foundation,
-                     component.GetHashCode(),
-                     priority,
-                     address,
-                     port,
-                     type,
-                     relAddr,
-                     relatedPort);
+                string candidateStr;
+                if (protocol == RTCIceProtocol.tcp)
+                {
+                    candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} tcptype {6} raddr {7} rport {8} generation 0",
+                        foundation,
+                        component.GetHashCode(),
+                        priority,
+                        address,
+                        port,
+                        type,
+                        tcpType,
+                        relAddr,
+                        relatedPort);
+                }
+                else
+                {
+                    candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} raddr {6} rport {7} generation 0",
+                        foundation,
+                        component.GetHashCode(),
+                        priority,
+                        address,
+                        port,
+                        type,
+                        relAddr,
+                        relatedPort);
+                }
 
                 return candidateStr;
             }
@@ -274,13 +320,19 @@ namespace SIPSorcery.Net
         {
             DestinationEndPoint = destinationEP;
         }
-
+       
         private string GetFoundation()
         {
-            int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
+            var serverProtocol = IceServer != null ? IceServer.Protocol.ToString().ToLower() : "udp";
+            var builder = new System.Text.StringBuilder();
+            builder = builder.Append(type).Append(address).Append(protocol).Append(serverProtocol);
+            byte[] bytes = System.Text.Encoding.ASCII.GetBytes(builder.ToString());
+            return UpdateCrc32(0, bytes).ToString();
+
+            /*int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
             int svrVal = (type == RTCIceCandidateType.relay || type == RTCIceCandidateType.srflx) ?
                 Crypto.GetSHAHash(IceServer != null ? IceServer._uri.ToString() : "").Sum(x => (byte)x) : 0;
-            return (type.GetHashCode() + addressVal + svrVal + protocol.GetHashCode()).ToString();
+            return (type.GetHashCode() + addressVal + svrVal + protocol.GetHashCode()).ToString();*/
         }
 
         private uint GetPriority()
@@ -375,5 +427,43 @@ namespace SIPSorcery.Net
 
             return $"{protocol}:{epDescription} ({type})";
         }
+
+        //CRC32 implementation from C++ to calculate foundation
+        const uint kCrc32Polynomial = 0xEDB88320;
+        private static uint[] LoadCrc32Table()
+        {
+            uint[] kCrc32Table = new uint[256];
+            for (uint i = 0; i < kCrc32Table.Length; ++i)
+            {
+                uint c = i;
+                for (int j = 0; j < 8; ++j)
+                {
+                    if ((c & 1) != 0)
+                    {
+                        c = kCrc32Polynomial ^ (c >> 1);
+                    }
+                    else
+                    {
+                        c >>= 1;
+                    }
+                }
+                kCrc32Table[i] = c;
+            }
+            return kCrc32Table;
+        }
+
+        private uint UpdateCrc32(uint start, byte[] buf)
+        {
+            var kCrc32Table = LoadCrc32Table();
+
+            long c = (int)(start ^ 0xFFFFFFFF);
+            byte[] u = buf;
+            for (int i = 0; i < buf.Length; ++i)
+            {
+                c = kCrc32Table[(c ^ u[i]) & 0xFF] ^ (c >> 8);
+            }
+            return (uint)(c ^ 0xFFFFFFFF);
+        }
+
     }
 }

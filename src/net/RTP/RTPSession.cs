@@ -135,7 +135,8 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTPSession : IMediaSession, IDisposable
     {
-        internal const int RTP_MAX_PAYLOAD = 1400;
+        //Reduced to be smaller than MTU (1400) beucase header will add extra 2 butes that will fail to deliver to linux as the real size of the package will be 1402
+        protected internal const int RTP_MAX_PAYLOAD = 1200;
 
         /// <summary>
         /// From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
@@ -156,13 +157,13 @@ namespace SIPSorcery.Net
         /// the buffer that holds the RTCP packet.
         /// </summary>
         public const int SRTP_MAX_PREFIX_LENGTH = 148;
-        internal const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
+        protected internal const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
         public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50; // Default sample period for an RTP event as specified by RFC2833.
         public const SDPMediaTypesEnum DEFAULT_MEDIA_TYPE = SDPMediaTypesEnum.audio; // If we can't match an RTP payload ID assume it's audio.
         public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101;
         public const string RTP_MEDIA_PROFILE = "RTP/AVP";
         public const string RTP_SECUREMEDIA_PROFILE = "RTP/SAVP";
-        private const int SDP_SESSIONID_LENGTH = 10;             // The length of the pseudo-random string to use for the session ID.
+        protected const int SDP_SESSIONID_LENGTH = 10;             // The length of the pseudo-random string to use for the session ID.
         public const int DTMF_EVENT_DURATION = 1200;            // Default duration for a DTMF event.
         public const int DTMF_EVENT_PAYLOAD_ID = 101;
 
@@ -173,7 +174,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
             
-        private static ILogger logger = Log.Logger;
+        protected static ILogger logger = Log.Logger;
 
         protected RtpSessionConfig rtpSessionConfig;
 
@@ -184,12 +185,12 @@ namespace SIPSorcery.Net
 
         // The stream used for the underlying RTP session to create a single RTP channel that will
         // be used to multiplex all required media streams. (see addSingleTrack())
-        private MediaStream m_primaryStream; 
+        protected MediaStream m_primaryStream; 
 
         protected RTPChannel MultiplexRtpChannel = null;
 
-        private List<List<SDPSsrcAttribute>> audioRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>> ();
-        private List<List<SDPSsrcAttribute>> videoRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>> ();
+        protected List<List<SDPSsrcAttribute>> audioRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>> ();
+        protected List<List<SDPSsrcAttribute>> videoRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>> ();
 
         /// <summary>
         /// Track if current remote description is invalid (used in Renegotiation logic)
@@ -864,7 +865,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        private AudioStream GetOrCreateAudioStream(int index)
+        protected virtual AudioStream GetOrCreateAudioStream(int index)
         {
             if (index < AudioStreamList.Count)
             {
@@ -880,7 +881,7 @@ namespace SIPSorcery.Net
             return null;
         }
 
-        private VideoStream GetOrCreateVideoStream(int index)
+        protected virtual VideoStream GetOrCreateVideoStream(int index)
         {
             if (index < VideoStreamList.Count)
             {
@@ -1446,7 +1447,7 @@ namespace SIPSorcery.Net
             }
 
             // We need to create new AudioStream
-            var newAudioStream = new AudioStream(rtpSessionConfig, index);
+            var newAudioStream = GetOrCreateAudioStream(index);
             newAudioStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             // If it's not the first one we need to init it
@@ -1455,7 +1456,6 @@ namespace SIPSorcery.Net
                 InitIPEndPointAndSecurityContext(newAudioStream);
             }
 
-            AudioStreamList.Add(newAudioStream);
             return newAudioStream;
         }
 
@@ -1474,7 +1474,7 @@ namespace SIPSorcery.Net
             }
 
             // We need to create new AudioStream
-            var newAudioStream = new AudioStream(rtpSessionConfig, index);
+            var newAudioStream = GetOrCreateAudioStream(index);
             newAudioStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             // If it's not the first one we need to init it
@@ -1483,11 +1483,10 @@ namespace SIPSorcery.Net
                 InitIPEndPointAndSecurityContext(newAudioStream);
             }
 
-            AudioStreamList.Add(newAudioStream);
             return newAudioStream;
         }
 
-        private VideoStream GetNextVideoStreamByLocalTrack()
+        protected virtual VideoStream GetNextVideoStreamByLocalTrack()
         {
             int index = VideoStreamList.Count;
             if (index > 0)
@@ -1502,11 +1501,10 @@ namespace SIPSorcery.Net
             }
 
             // We need to create new VideoStream and Init it
-            var newVideoStream = new VideoStream(rtpSessionConfig, index);
+            var newVideoStream = GetOrCreateVideoStream(index);
             newVideoStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             InitIPEndPointAndSecurityContext(newVideoStream);
-            VideoStreamList.Add(newVideoStream);
             return newVideoStream;
         }
 
@@ -1525,11 +1523,10 @@ namespace SIPSorcery.Net
             }
 
             // We need to create new VideoStream and Init it
-            var newVideoStream = new VideoStream(rtpSessionConfig, index);
+            var newVideoStream = GetOrCreateVideoStream(index);
             newVideoStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             InitIPEndPointAndSecurityContext(newVideoStream);
-            VideoStreamList.Add(newVideoStream);
             return newVideoStream;
         }
 
@@ -1982,8 +1979,13 @@ namespace SIPSorcery.Net
                 {
                     if (Enum.IsDefined(typeof(RTCPReportTypesEnum), buffer[1]))
                     {
-                        // Only call OnReceiveRTCPPacket for SR and RR packets
-                        if (buffer[1] == (byte)RTCPReportTypesEnum.SR || buffer[1] == (byte)RTCPReportTypesEnum.RR)
+                        // Only call OnReceiveRTCPPacket for supported RTCPCompoundPacket types
+                        if (buffer[1] == (byte)RTCPReportTypesEnum.SR ||
+                            buffer[1] == (byte)RTCPReportTypesEnum.RR ||
+                            buffer[1] == (byte)RTCPReportTypesEnum.SDES ||
+                            buffer[1] == (byte)RTCPReportTypesEnum.BYE ||
+                            buffer[1] == (byte)RTCPReportTypesEnum.PSFB ||
+                            buffer[1] == (byte)RTCPReportTypesEnum.RTPFB)
                         {
                             OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
                         }

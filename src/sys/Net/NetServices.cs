@@ -192,6 +192,41 @@ namespace SIPSorcery.Sys
         /// <returns>A bound socket if successful or throws an ApplicationException if unable to bind.</returns>
         public static Socket CreateBoundUdpSocket(int port, IPAddress bindAddress, bool requireEvenPort = false, bool useDualMode = true)
         {
+            return CreateBoundSocket(port, bindAddress, ProtocolType.Udp, requireEvenPort, useDualMode);
+        }
+
+        /// <summary>
+        /// Attempts to create and bind a TCP socket. The socket is always created with the ExclusiveAddressUse socket option
+        /// set to accommodate a Windows 10 .Net Core socket bug where the same port can be bound to two different
+        /// sockets, see https://github.com/dotnet/runtime/issues/36618.
+        /// </summary>
+        /// <param name="port">The port to attempt to bind on. Set to 0 to request the underlying OS to select a port.</param>
+        /// <param name="bindAddress">Optional. If specified the TCP socket will attempt to bind using this specific address.
+        /// If not specified the broadest possible address will be chosen. Either IPAddress.Any or IPAddress.IPv6Any.</param>
+        /// <param name="requireEvenPort">If true the method will only return successfully if it is able to bind on an
+        /// even numbered port.</param>
+        /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
+        /// <returns>A bound socket if successful or throws an ApplicationException if unable to bind.</returns>
+        public static Socket CreateBoundTcpSocket(int port, IPAddress bindAddress, bool requireEvenPort = false, bool useDualMode = true)
+        {
+            return CreateBoundSocket(port, bindAddress, ProtocolType.Tcp, requireEvenPort, useDualMode);
+        }
+
+        /// <summary>
+        /// Attempts to create and bind a socket with defined protocol. The socket is always created with the ExclusiveAddressUse socket option
+        /// set to accommodate a Windows 10 .Net Core socket bug where the same port can be bound to two different
+        /// sockets, see https://github.com/dotnet/runtime/issues/36618.
+        /// </summary>
+        /// <param name="port">The port to attempt to bind on. Set to 0 to request the underlying OS to select a port.</param>
+        /// <param name="bindAddress">Optional. If specified the socket will attempt to bind using this specific address.
+        /// If not specified the broadest possible address will be chosen. Either IPAddress.Any or IPAddress.IPv6Any.</param>
+        /// <param name="protocolType">Optional. If specified the socket procotol</param>
+        /// <param name="requireEvenPort">If true the method will only return successfully if it is able to bind on an
+        /// even numbered port.</param>
+        /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
+        /// <returns>A bound socket if successful or throws an ApplicationException if unable to bind.</returns>
+        public static Socket CreateBoundSocket(int port, IPAddress bindAddress, ProtocolType protocolType, bool requireEvenPort = false, bool useDualMode = true)
+        {
             if (requireEvenPort && port != 0 && port % 2 != 0)
             {
                 throw new ArgumentException("Cannot specify both require even port and a specific non-even port to bind on. Set port to 0.");
@@ -203,7 +238,7 @@ namespace SIPSorcery.Sys
             }
 
             IPEndPoint logEp = new IPEndPoint(bindAddress, port);
-            logger.LogDebug($"CreateBoundUdpSocket attempting to create and bind UDP socket(s) on {logEp}.");
+            logger.LogDebug($"CreateBoundSocket attempting to create and bind socket(s) on {logEp} using protocol {protocolType}.");
 
             CheckBindAddressAndThrow(bindAddress);
 
@@ -216,35 +251,35 @@ namespace SIPSorcery.Sys
             {
                 try
                 {
-                    socket = CreateUdpSocket(addressFamily, useDualMode);
-                    BindUdpSocket(socket, bindAddress, port);
+                    socket = CreateSocket(addressFamily, protocolType, useDualMode);
+                    BindSocket(socket, bindAddress, port);
                     int boundPort = (socket.LocalEndPoint as IPEndPoint).Port;
 
                     if (requireEvenPort && boundPort % 2 != 0 && boundPort == IPEndPoint.MaxPort)
                     {
-                        logger.LogDebug($"CreateBoundUdpSocket even port required, closing socket on {socket.LocalEndPoint}, max port reached request new bind.");
+                        logger.LogDebug($"CreateBoundSocket even port required, closing socket on {socket.LocalEndPoint}, max port reached request new bind.");
                         success = false;
                     }
                     else
                     {
                         if (requireEvenPort && boundPort % 2 != 0)
                         {
-                            logger.LogDebug($"CreateBoundUdpSocket even port required, closing socket on {socket.LocalEndPoint} and retrying on {boundPort + 1}.");
+                            logger.LogDebug($"CreateBoundSocket even port required, closing socket on {socket.LocalEndPoint} and retrying on {boundPort + 1}.");
 
                             // Close the socket, create a new one and try binding on the next consecutive port.
                             socket.Close();
-                            socket = CreateUdpSocket(addressFamily, useDualMode);
-                            BindUdpSocket(socket, bindAddress, boundPort + 1);
+                            socket = CreateSocket(addressFamily, protocolType, useDualMode);
+                            BindSocket(socket, bindAddress, boundPort + 1);
                         }
                         else
                         {
                             if (addressFamily == AddressFamily.InterNetworkV6)
                             {
-                                logger.LogDebug($"CreateBoundUdpSocket successfully bound on {socket.LocalEndPoint}, dual mode {socket.DualMode}.");
+                                logger.LogDebug($"CreateBoundSocket successfully bound on {socket.LocalEndPoint}, dual mode {socket.DualMode}.");
                             }
                             else
                             {
-                                logger.LogDebug($"CreateBoundUdpSocket successfully bound on {socket.LocalEndPoint}.");
+                                logger.LogDebug($"CreateBoundSocket successfully bound on {socket.LocalEndPoint}.");
                             }
                         }
 
@@ -256,25 +291,25 @@ namespace SIPSorcery.Sys
                     if (sockExcp.SocketErrorCode == SocketError.AddressAlreadyInUse)
                     {
                         // Try again if the port is already in use.
-                        logger.LogWarning($"Address already in use exception attempting to bind UDP socket, attempt {bindAttempts}.");
+                        logger.LogWarning($"Address already in use exception attempting to bind socket, attempt {bindAttempts}.");
                         success = false;
                     }
                     else if (sockExcp.SocketErrorCode == SocketError.AccessDenied)
                     {
                         // This exception seems to be interchangeable with address already in use. Perhaps a race condition with another process
                         // attempting to bind at the same time.
-                        logger.LogWarning($"Access denied exception attempting to bind UDP socket, attempt {bindAttempts}.");
+                        logger.LogWarning($"Access denied exception attempting to bind socket, attempt {bindAttempts}.");
                         success = false;
                     }
                     else
                     {
-                        logger.LogError($"SocketException in NetServices.CreateCheckedUdpSocket. {sockExcp}");
+                        logger.LogError($"SocketException in NetServices.CreateBoundSocket. {sockExcp}");
                         throw;
                     }
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError($"Exception in NetServices.CreateBoundUdpSocket attempting the initial socket bind on address {bindAddress}. {excp}");
+                    logger.LogError($"Exception in NetServices.CreateBoundSocket attempting the initial socket bind on address {bindAddress}. {excp}");
                     throw;
                 }
                 finally
@@ -302,11 +337,11 @@ namespace SIPSorcery.Sys
             }
             else
             {
-                throw new ApplicationException($"Unable to bind UDP socket using end point {logEp}.");
+                throw new ApplicationException($"Unable to bind socket using end point {logEp}.");
             }
         }
 
-        private static void BindUdpSocket(Socket socket, IPAddress bindAddress, int port)
+        private static void BindSocket(Socket socket, IPAddress bindAddress, int port)
         {
             // Nasty code warning. On Windows Subsystem for Linux (WSL) on Windows 10
             // the OS lets a socket bind on an IPv6 dual mode port even if there
@@ -337,15 +372,9 @@ namespace SIPSorcery.Sys
             socket.Bind(new IPEndPoint(bindAddress, port));
         }
 
-        /// <summary>
-        /// Common instantiation logic for creating a new UDP socket.
-        /// </summary>
-        /// <param name="addressFamily">The address family for the new socket, IPv4 or IPv6.</param>
-        /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
-        /// <returns>A new socket instance.</returns>
-        private static Socket CreateUdpSocket(AddressFamily addressFamily, bool useDualMode = true)
+        private static Socket CreateSocket(AddressFamily addressFamily, ProtocolType protocol, bool useDualMode = true)
         {
-            var sock = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
+            var sock = new Socket(addressFamily, protocol == ProtocolType.Tcp? SocketType.Stream : SocketType.Dgram, protocol);
             sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, true);
 
             if (addressFamily == AddressFamily.InterNetworkV6)
@@ -363,7 +392,7 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// Attempts to create and bind a new RTP, and optionally an control (RTCP), socket(s).
+        /// Attempts to create and bind a new RTP UDP Socket, and optionally an control (RTCP), socket(s).
         /// The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
         /// either IPv4 or IPv6 packets.
         /// </summary>
@@ -379,6 +408,28 @@ namespace SIPSorcery.Sys
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
         public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, int bindPort, PortRange portRange, out Socket rtpSocket, out Socket controlSocket)
+        {
+            CreateRtpSocket(createControlSocket, ProtocolType.Udp, bindAddress, bindPort, portRange, out rtpSocket, out controlSocket);
+        }
+
+        /// <summary>
+        /// Attempts to create and bind a new RTP Socket with protocol, and optionally an control (RTCP), socket(s).
+        /// The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
+        /// either IPv4 or IPv6 packets.
+        /// </summary>
+        /// <param name="createControlSocket">True if a control (RTCP) socket should be created. Set to false if RTP
+        /// and RTCP are being multiplexed on the same connection.</param>
+        /// <param name="protocolType">Procotol used by socket</param>
+        /// <param name="bindAddress">Optional. If null The RTP and control sockets will be created as IPv4 and IPv6 dual mode 
+        /// sockets which means they can send and receive either IPv4 or IPv6 packets. If the bind address is specified an attempt
+        /// will be made to bind the RTP and optionally control listeners on it.</param>
+        /// <param name="bindPort">Optional. If 0 the choice of port will be left up to the Operating System. If specified
+        /// a single attempt will be made to bind on the port.</param>
+        /// <param name="portRange">Optional. If non-null the choice of port will be left up to the PortRange. Multiple ports will be
+        /// tried before giving up. The parameter bindPort is ignored.</param>
+        /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
+        /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
+        public static void CreateRtpSocket(bool createControlSocket, ProtocolType protocolType, IPAddress bindAddress, int bindPort, PortRange portRange, out Socket rtpSocket, out Socket controlSocket)
         {
             if (bindAddress == null)
             {
@@ -398,11 +449,11 @@ namespace SIPSorcery.Sys
             {
                 try
                 {
-                    if(portRange != null)
+                    if (portRange != null)
                     {
                         bindPort = portRange.GetNextPort();
                     }
-                    rtpSocket = CreateBoundUdpSocket(bindPort, bindAddress, createControlSocket);
+                    rtpSocket = CreateBoundSocket(bindPort, bindAddress, protocolType, createControlSocket);
                     rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
@@ -418,7 +469,7 @@ namespace SIPSorcery.Sys
                         {
                             // This bind is being attempted on a specific port and can therefore legitimately fail if the port is already in use.
                             // Certain expected failure are caught and the attempt to bind two consecutive port will be re-attempted.
-                            controlSocket = CreateBoundUdpSocket(controlPort, bindAddress);
+                            controlSocket = CreateBoundSocket(controlPort, bindAddress, protocolType);
                             controlSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                             controlSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
                         }

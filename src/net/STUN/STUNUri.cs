@@ -81,6 +81,10 @@ namespace SIPSorcery.Net
 
     public class STUNUri
     {
+        public const string SCHEME_TRANSPORT_TCP = "transport=tcp";
+        public const string SCHEME_TRANSPORT_TLS = "transport=tls";
+
+        public static readonly string[] SCHEME_TRANSPORT_SEPARATOR = { "?transport=" };
         public const char SCHEME_ADDR_SEPARATOR = ':';
         public const int SCHEME_MAX_LENGTH = 5;
 
@@ -137,6 +141,18 @@ namespace SIPSorcery.Net
             }
             else
             {
+                //Split uri to include support to transport detection
+                var splitUri = uri.Split(SCHEME_TRANSPORT_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
+                if(splitUri.Length > 1)
+                {
+                    uri = splitUri[0];
+                    var protocolStr = splitUri[1].Trim();
+                    if (string.IsNullOrEmpty(protocolStr) || !Enum.TryParse<STUNProtocolsEnum>(protocolStr, true, out stunUri.Transport))
+                    {
+                        stunUri.Transport = STUNProtocolsEnum.udp;
+                    }
+                }
+
                 uri = uri.Trim();
 
                 // If the scheme is included it needs to be within the first 5 characters.
@@ -218,11 +234,25 @@ namespace SIPSorcery.Net
                 (Scheme == STUNSchemesEnum.stuns && Port == STUNConstants.DEFAULT_STUN_TLS_PORT) ||
                 (Scheme == STUNSchemesEnum.turns && Port == STUNConstants.DEFAULT_TURN_TLS_PORT))
             {
-                return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}";
+                if (Protocol != ProtocolType.Udp)
+                {
+                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}?transport={Protocol.ToString().ToLower()}";
+                }
+                else
+                {
+                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}";
+                }
             }
             else
             {
-                return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}:{Port}";
+                if (Protocol != ProtocolType.Udp)
+                {
+                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}:{Port}?transport={Protocol.ToString().ToLower()}";
+                }
+                else
+                {
+                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}:{Port}";
+                }
             }
         }
 

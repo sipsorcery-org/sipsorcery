@@ -46,6 +46,14 @@ namespace SIPSorcery.Net
         public STUNHeader Header = new STUNHeader();
         public List<STUNAttribute> Attributes = new List<STUNAttribute>();
 
+        public ushort PaddedSize
+        {
+            get
+            {
+                return (ushort)(STUNHeader.STUN_HEADER_LENGTH + Header.MessageLength);
+            }
+        }
+
         public STUNMessage()
         { }
 
