@@ -173,8 +173,6 @@ namespace SIPSorcery.Net
         private new readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
         private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
-        private static ILogger logger = Log.Logger;
-
         public string SessionID { get; private set; }
         public string SdpSessionID { get; private set; }
         public string LocalSdpSessionID { get; private set; }
@@ -461,7 +459,9 @@ namespace SIPSorcery.Net
             }
 
             // Find the first certificate that has a usable private key.
+#pragma warning disable CS0618 // Type or member is obsolete
             RTCCertificate usableCert = null;
+#pragma warning restore CS0618 // Type or member is obsolete
             foreach (var cert in _configuration.certificates)
             {
                 // Attempting to check that a certificate has an exportable private key.

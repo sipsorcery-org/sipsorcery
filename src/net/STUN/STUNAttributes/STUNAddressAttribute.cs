@@ -47,6 +47,21 @@ namespace SIPSorcery.Net
             Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
         }
 
+        public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
+            : base(attributeType, attributeValue)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2));
+            }
+            else
+            {
+                Port = BitConverter.ToUInt16(attributeValue, 2);
+            }
+
+            Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
+        }
+
         public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)
             : base(attributeType, null)
         {

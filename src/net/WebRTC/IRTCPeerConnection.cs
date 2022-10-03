@@ -287,7 +287,9 @@ namespace SIPSorcery.Net
         public RTCIceTransportPolicy iceTransportPolicy;
         public RTCBundlePolicy bundlePolicy;
         public RTCRtcpMuxPolicy rtcpMuxPolicy;
+#pragma warning disable CS0618 // Type or member is obsolete
         public List<RTCCertificate> certificates;
+#pragma warning restore CS0618 // Type or member is obsolete
         public List<RTCCertificate2> certificates2;
 
         /// <summary>

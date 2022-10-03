@@ -177,6 +177,8 @@ namespace SIPSorcery.Net
         /// </summary>
         internal int ErrorResponseCount = 0;
 
+        public ProtocolType Protocol { get { return _uri.Protocol; } }
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -209,7 +211,10 @@ namespace SIPSorcery.Net
 
             if (type == RTCIceCandidateType.srflx && ServerReflexiveEndPoint != null)
             {
-                candidate.SetAddressProperties(RTCIceProtocol.udp, ServerReflexiveEndPoint.Address, (ushort)ServerReflexiveEndPoint.Port,
+                // TODO: Currently implementation always use UDP candidates as we will only support TURN TCP Transport.
+                //var srflxProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
+                var srflxProtocol = RTCIceProtocol.udp;
+                candidate.SetAddressProperties(srflxProtocol, ServerReflexiveEndPoint.Address, (ushort)ServerReflexiveEndPoint.Port,
                                 type, null, 0);
                 candidate.IceServer = this;
 
@@ -217,7 +222,11 @@ namespace SIPSorcery.Net
             }
             else if (type == RTCIceCandidateType.relay && RelayEndPoint != null)
             {
-                candidate.SetAddressProperties(RTCIceProtocol.udp, RelayEndPoint.Address, (ushort)RelayEndPoint.Port,
+                // TODO: Currently implementation always use UDP candidates as we will only support TURN TCP Transport.
+                //var relayProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
+                var relayProtocol = RTCIceProtocol.udp;
+                
+                candidate.SetAddressProperties(relayProtocol, RelayEndPoint.Address, (ushort)RelayEndPoint.Port,
                     type, null, 0);
                 candidate.IceServer = this;
 
@@ -318,7 +327,8 @@ namespace SIPSorcery.Net
 
                     if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
                     {
-                        var errCodeAttribute = stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+                        STUNErrorCodeAttribute errCodeAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+                        STUNAddressAttribute alternateServerAttribute = alternateServerAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.AlternateServer) as STUNAddressAttribute;
 
                         if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == STUN_STALE_NONCE_ERROR_CODE)
                         {
@@ -327,11 +337,28 @@ namespace SIPSorcery.Net
 
                             // Set a new transaction ID.
                             GenerateNewTransactionID();
+
+                            ErrorResponseCount = 1;
+                        }
+                        else if (alternateServerAttribute != null)
+                        {
+                            ServerEndPoint = new IPEndPoint(alternateServerAttribute.Address, alternateServerAttribute.Port);
+
+                            logger.LogWarning($"ICE session received an alternate respose for an Allocate request to {_uri}, changed server url to {ServerEndPoint}.");
+
+                            // Set a new transaction ID.
+                            GenerateNewTransactionID();
+
+                            ErrorResponseCount = 1;
                         }
                         else
                         {
                             logger.LogWarning($"ICE session received an error response for an Allocate request to {_uri}, error {errCodeAttribute.ErrorCode} {errCodeAttribute.ReasonPhrase}.");
                         }
+                    }
+                    else
+                    {
+                        logger.LogWarning($"ICE session received an error response for an Allocate request to {_uri}.");
                     }
                 }
                 else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)

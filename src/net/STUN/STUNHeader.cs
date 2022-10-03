@@ -102,6 +102,11 @@ namespace SIPSorcery.Net
         RefreshErrorResponse = 0x0114,
         CreatePermissionErrorResponse = 0x0118,
         ChannelBindErrorResponse = 0x0119,
+
+        // New methods defined in TURN (RFC6062).
+        Connect = 0x000a,
+        ConnectionBind = 0x000b,
+        ConnectionAttempt = 0x000c,
     }
 
     /// <summary>
@@ -156,17 +161,23 @@ namespace SIPSorcery.Net
 
         public static STUNHeader ParseSTUNHeader(byte[] buffer)
         {
-            if ((buffer[0] & STUN_INITIAL_BYTE_MASK) != 0)
+            return ParseSTUNHeader(new ArraySegment<byte>(buffer, 0, buffer.Length));
+        }
+
+        public static STUNHeader ParseSTUNHeader(ArraySegment<byte> bufferSegment)
+        {
+            var startIndex = bufferSegment.Offset;
+            if ((bufferSegment.Array[startIndex] & STUN_INITIAL_BYTE_MASK) != 0)
             {
                 throw new ApplicationException("The STUN header did not begin with 0x00.");
             }
 
-            if (buffer != null && buffer.Length > 0 && buffer.Length >= STUN_HEADER_LENGTH)
+            if (bufferSegment != null && bufferSegment.Count > 0 && bufferSegment.Count >= STUN_HEADER_LENGTH)
             {
                 STUNHeader stunHeader = new STUNHeader();
 
-                UInt16 stunTypeValue = BitConverter.ToUInt16(buffer, 0);
-                UInt16 stunMessageLength = BitConverter.ToUInt16(buffer, 2);
+                UInt16 stunTypeValue = BitConverter.ToUInt16(bufferSegment.Array, startIndex);
+                UInt16 stunMessageLength = BitConverter.ToUInt16(bufferSegment.Array, startIndex + 2);;
 
                 if (BitConverter.IsLittleEndian)
                 {
@@ -176,7 +187,7 @@ namespace SIPSorcery.Net
 
                 stunHeader.MessageType = STUNMessageTypes.GetSTUNMessageTypeForId(stunTypeValue);
                 stunHeader.MessageLength = stunMessageLength;
-                Buffer.BlockCopy(buffer, 8, stunHeader.TransactionId, 0, TRANSACTION_ID_LENGTH);
+                Buffer.BlockCopy(bufferSegment.Array, startIndex + 8, stunHeader.TransactionId, 0, TRANSACTION_ID_LENGTH);
 
                 return stunHeader;
             }
