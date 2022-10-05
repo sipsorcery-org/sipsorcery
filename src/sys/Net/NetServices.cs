@@ -630,8 +630,16 @@ namespace SIPSorcery.Sys
         /// <returns>A list of local IP addresses on the identified interface(s).</returns>
         public static List<IPAddress> GetLocalAddressesOnInterface(IPAddress destination, bool includeAllInterfaces = false)
         {
-            IPAddress localAddress = GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS));
+#if ANDROID
+            var ipAddresses = GetLocalAddressAndroid();
+            if (includeAllInterfaces)
+            {
+                return ipAddresses;
+            }
 
+            return new List<IPAddress>() { GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS)) };
+#else
+            IPAddress localAddress = GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS));
             List<IPAddress> localAddresses = new List<IPAddress>();
 
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
@@ -655,8 +663,8 @@ namespace SIPSorcery.Sys
                     }
                 }
             }
-
             return localAddresses;
+#endif
         }
 
         /// <summary>
@@ -665,6 +673,9 @@ namespace SIPSorcery.Sys
         /// <returns>A list of all local IP addresses.</returns>
         private static List<IPAddress> GetAllLocalIPAddresses()
         {
+#if ANDROID
+            return GetLocalAddressAndroid(); 
+#else
             List<IPAddress> localAddresses = new List<IPAddress>();
 
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
@@ -682,6 +693,39 @@ namespace SIPSorcery.Sys
             }
 
             return localAddresses;
+#endif
         }
+
+#if ANDROID
+        public static List<IPAddress> GetLocalAddressAndroid()
+        {
+            var inetEnum = Java.Net.NetworkInterface.NetworkInterfaces;
+            if (inetEnum is null)
+            {
+                return new List<IPAddress>();
+            }
+
+            var ipAddresses = new List<IPAddress>();
+            foreach (var interfaces in Java.Util.Collections.List(inetEnum))
+            {
+                var addresses = (interfaces as Java.Net.NetworkInterface)?.InetAddresses;
+                if (addresses == null)
+                {
+                    continue;
+                }
+
+                foreach (Java.Net.InetAddress address in Java.Util.Collections.List(addresses))
+                {
+                    if (address.HostAddress == null || address.IsLoopbackAddress || !(address is Java.Net.Inet4Address))
+                    {
+                        continue;
+                    }
+                    ipAddresses.Add(IPAddress.Parse(address.HostAddress));
+                }
+            }
+
+            return ipAddresses;
+        }
+#endif
     }
 }
