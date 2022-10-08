@@ -324,13 +324,11 @@ namespace SIPSorcery.Net
 
         #region Self Signed Utils
 
-        //[Obsolete("Use CreateSelfSignedTlsCert instead.")]
         public static X509Certificate2 CreateSelfSignedCert(AsymmetricKeyParameter privateKey = null)
         {
             return CreateSelfSignedCert("CN=localhost", "CN=root", privateKey);
         }
 
-        //[Obsolete("Use CreateSelfSignedTlsCert instead.")]
         public static X509Certificate2 CreateSelfSignedCert(string subjectName, string issuerName, AsymmetricKeyParameter privateKey)
         {
             const int keyStrength = DEFAULT_KEY_SIZE;
@@ -432,12 +430,12 @@ namespace SIPSorcery.Net
             }
         }
 
-        public static (Org.BouncyCastle.Crypto.Tls.Certificate crtificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert()
+        public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert()
         {
-            return CreateSelfSignedTlsCert("CN=localhost", "CN=root", null);
+            return CreateSelfSignedBouncyCastleCert("CN=localhost", "CN=root", null);
         }
 
-        public static (Org.BouncyCastle.Crypto.Tls.Certificate crtificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
+        public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
         {
             const int keyStrength = DEFAULT_KEY_SIZE;
             if (issuerPrivateKey == null)
@@ -483,10 +481,23 @@ namespace SIPSorcery.Net
             // self sign certificate
             var certificate = certificateGenerator.Generate(signatureFactory);
 
-            var chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[] { X509CertificateStructure.GetInstance(certificate.GetEncoded()) };
+            return (certificate, subjectKeyPair.Private);
+        }
+
+        public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert()
+        {
+            return CreateSelfSignedTlsCert("CN=localhost", "CN=root", null);
+        }
+
+        public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
+        {
+            var tuple = CreateSelfSignedBouncyCastleCert(subjectName, issuerName, issuerPrivateKey);
+            var certificate = tuple.certificate;
+            var privateKey = tuple.privateKey;
+             var chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[] { X509CertificateStructure.GetInstance(certificate.GetEncoded()) };
             var tlsCertificate = new Org.BouncyCastle.Crypto.Tls.Certificate(chain);
 
-            return (tlsCertificate, subjectKeyPair.Private);
+            return (tlsCertificate, privateKey);
         }
 
         /// <remarks>Plagiarised from https://github.com/CryptLink/CertBuilder/blob/master/CertBuilder.cs.
