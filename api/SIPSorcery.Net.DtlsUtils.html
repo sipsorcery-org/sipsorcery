@@ -149,7 +149,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_ConvertBouncyCert_Org_BouncyCastle_X509_X509Certificate_Org_BouncyCastle_Crypto_AsymmetricCipherKeyPair_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate%2COrg.BouncyCastle.Crypto.AsymmetricCipherKeyPair)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L495">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L506">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_ConvertBouncyCert_" data-uid="SIPSorcery.Net.DtlsUtils.ConvertBouncyCert*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_ConvertBouncyCert_Org_BouncyCastle_X509_X509Certificate_Org_BouncyCastle_Crypto_AsymmetricCipherKeyPair_" data-uid="SIPSorcery.Net.DtlsUtils.ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate,Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair)">ConvertBouncyCert(X509Certificate, AsymmetricCipherKeyPair)</h4>
@@ -206,7 +206,7 @@ use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X5
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_CreatePrivateKeyResource_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.CreatePrivateKeyResource(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L557">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L568">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_CreatePrivateKeyResource_" data-uid="SIPSorcery.Net.DtlsUtils.CreatePrivateKeyResource*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_CreatePrivateKeyResource_System_String_" data-uid="SIPSorcery.Net.DtlsUtils.CreatePrivateKeyResource(System.String)">CreatePrivateKeyResource(String)</h4>
@@ -250,10 +250,97 @@ use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X5
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_CreateSelfSignedBouncyCastleCert.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L433">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedBouncyCastleCert_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert*"></a>
+  <h4 id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedBouncyCastleCert" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert">CreateSelfSignedBouncyCastleCert()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static (X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.ValueTuple</span>&lt;<span class="xref">Org.BouncyCastle.X509.X509Certificate</span>, <span class="xref">Org.BouncyCastle.Crypto.AsymmetricKeyParameter</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_CreateSelfSignedBouncyCastleCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert(System.String%2CSystem.String%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L438">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedBouncyCastleCert_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert*"></a>
+  <h4 id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedBouncyCastleCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">CreateSelfSignedBouncyCastleCert(String, String, AsymmetricKeyParameter)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static (X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">subjectName</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">issuerName</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">Org.BouncyCastle.Crypto.AsymmetricKeyParameter</span></td>
+        <td><span class="parametername">issuerPrivateKey</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.ValueTuple</span>&lt;<span class="xref">Org.BouncyCastle.X509.X509Certificate</span>, <span class="xref">Org.BouncyCastle.Crypto.AsymmetricKeyParameter</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L328">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L327">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">CreateSelfSignedCert(AsymmetricKeyParameter)</h4>
@@ -300,7 +387,7 @@ use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X5
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String%2CSystem.String%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L334">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L332">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">CreateSelfSignedCert(String, String, AsymmetricKeyParameter)</h4>
@@ -357,7 +444,7 @@ use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X5
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L435">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L487">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert">CreateSelfSignedTlsCert()</h4>
@@ -365,7 +452,7 @@ use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X5
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static (Certificate crtificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert()</code></pre>
+    <pre><code class="lang-csharp hljs">public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert()</code></pre>
   </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -387,7 +474,7 @@ use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X5
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert(System.String%2CSystem.String%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L440">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L492">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">CreateSelfSignedTlsCert(String, String, AsymmetricKeyParameter)</h4>
@@ -395,7 +482,7 @@ use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X5
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static (Certificate crtificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)</code></pre>
+    <pre><code class="lang-csharp hljs">public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -788,7 +875,7 @@ use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X5
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_IsHashSupported_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.IsHashSupported(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L653">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L664">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_IsHashSupported_" data-uid="SIPSorcery.Net.DtlsUtils.IsHashSupported*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_IsHashSupported_System_String_" data-uid="SIPSorcery.Net.DtlsUtils.IsHashSupported(System.String)">IsHashSupported(String)</h4>
@@ -1813,7 +1900,7 @@ use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X5
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_ToRSA_Org_BouncyCastle_Crypto_Parameters_RsaPrivateCrtKeyParameters_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.ToRSA(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L601">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L612">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_ToRSA_" data-uid="SIPSorcery.Net.DtlsUtils.ToRSA*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_ToRSA_Org_BouncyCastle_Crypto_Parameters_RsaPrivateCrtKeyParameters_" data-uid="SIPSorcery.Net.DtlsUtils.ToRSA(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)">ToRSA(RsaPrivateCrtKeyParameters)</h4>
@@ -1863,7 +1950,7 @@ version from working on non-Windows platforms.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsUtils_ToRSAParameters_Org_BouncyCastle_Crypto_Parameters_RsaPrivateCrtKeyParameters_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsUtils.ToRSAParameters(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L616">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsUtils.cs/#L627">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsUtils_ToRSAParameters_" data-uid="SIPSorcery.Net.DtlsUtils.ToRSAParameters*"></a>
   <h4 id="SIPSorcery_Net_DtlsUtils_ToRSAParameters_Org_BouncyCastle_Crypto_Parameters_RsaPrivateCrtKeyParameters_" data-uid="SIPSorcery.Net.DtlsUtils.ToRSAParameters(Org.BouncyCastle.Crypto.Parameters.RsaPrivateCrtKeyParameters)">ToRSAParameters(RsaPrivateCrtKeyParameters)</h4>

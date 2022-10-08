@@ -4946,6 +4946,25 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.CreatePrivateKeyResource
   nameWithType: DtlsUtils.CreatePrivateKeyResource
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert
+  name: CreateSelfSignedBouncyCastleCert()
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedBouncyCastleCert
+  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert()
+  nameWithType: DtlsUtils.CreateSelfSignedBouncyCastleCert()
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  name: CreateSelfSignedBouncyCastleCert(String, String, AsymmetricKeyParameter)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedBouncyCastleCert_System_String_System_String_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
+  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert(System.String,System.String,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert(System.String, System.String, Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
+  nameWithType: DtlsUtils.CreateSelfSignedBouncyCastleCert(String, String, AsymmetricKeyParameter)
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert*
+  name: CreateSelfSignedBouncyCastleCert
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedBouncyCastleCert_
+  commentId: Overload:SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedBouncyCastleCert
+  nameWithType: DtlsUtils.CreateSelfSignedBouncyCastleCert
 - uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert(Org.BouncyCastle.Crypto.AsymmetricKeyParameter)
   name: CreateSelfSignedCert(AsymmetricKeyParameter)
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedCert_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_
