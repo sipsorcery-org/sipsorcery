@@ -34,6 +34,9 @@ namespace demo
 {
     class Program
     {
+        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
+
+
         private const string HTTP_LISTEN_URL = "http://*:8080/";
         private const int TEST_PATTERN_FRAMES_PER_SECOND = 30;
 
@@ -102,6 +105,7 @@ namespace demo
             //var pc = new RTCPeerConnection(config);
             var pc = new RTCPeerConnection();
 
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
             //var testPatternSource = new VideoTestPatternSource(new SIPSorceryMedia.Encoders.VideoEncoder());
             var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
             testPatternSource.SetFrameRate(TEST_PATTERN_FRAMES_PER_SECOND);

@@ -169,9 +169,9 @@ namespace SIPSorcery.SIPProxy
 
                     if (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0)
                     {
-                        int expiry = sipRequest.Header.Contact[0].Expires > 0 ? sipRequest.Header.Contact[0].Expires : sipRequest.Header.Expires;
+                        long expiry = sipRequest.Header.Contact[0].Expires > 0 ? sipRequest.Header.Contact[0].Expires : sipRequest.Header.Expires;
                         var sipAccount = new SIPAccount(sipRequest.Header.From.FromURI.User, sipRequest.Header.From.FromURI.Host);
-                        SIPAccountBinding binding = new SIPAccountBinding(sipAccount, sipRequest.Header.Contact[0].ContactURI, remoteEndPoint, localSIPEndPoint, expiry);
+                        SIPAccountBinding binding = new SIPAccountBinding(sipAccount, sipRequest.Header.Contact[0].ContactURI, remoteEndPoint, localSIPEndPoint, (int)expiry);
 
                         if (_sipRegistrations.ContainsKey(sipAccount.SIPUsername))
                         {

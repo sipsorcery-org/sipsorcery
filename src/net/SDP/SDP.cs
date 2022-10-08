@@ -853,6 +853,7 @@ namespace SIPSorcery.Net
                 sdp += MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value) + CRLF;
             }
 
+            //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             {
                 sdp += (media == null) ? null : media.ToString();
@@ -920,21 +921,22 @@ namespace SIPSorcery.Net
         /// media type. It is useful for obtaining the index of a particular media type when
         /// constructing an SDP answer.
         /// </summary>
-        /// <param name="mediaType">The media type to get the index for.</param>
         /// <returns></returns>
-        public (int, string) GetIndexForMediaType(SDPMediaTypesEnum mediaType)
+        public (int, string) GetIndexForMediaType(SDPMediaTypesEnum mediaType, int mediaIndex)
         {
-            int index = 0;
+            int fullIndex = 0;
+            int mIndex = 0;
             foreach (var ann in Media)
             {
                 if (ann.Media == mediaType)
                 {
-                    return (index, ann.MediaID);
+                    if (mIndex == mediaIndex)
+                    {
+                        return (fullIndex, ann.MediaID);
+                    }
+                    mIndex++;
                 }
-                else
-                {
-                    index++;
-                }
+                fullIndex++;
             }
 
             return (MEDIA_INDEX_NOT_PRESENT, MEDIA_INDEX_TAG_NOT_PRESENT);

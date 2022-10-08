@@ -281,6 +281,52 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// To restrict MediaStream Capabilties to one Audio/Video format. This Audio/Video format must already be present in the previous list or if the list is empty/null
+        /// 
+        /// Usefull once you have successfully created a connection with a Peer to use the same format even even others negocitions are performed
+        /// </summary>
+        /// <param name="sdpAudioVideoMediaFormat">The Audio/Video Format to restrict</param>
+        /// <returns>True if the operation has been performed</returns>
+        public Boolean RestrictCapabilities(SDPAudioVideoMediaFormat sdpAudioVideoMediaFormat)
+        {
+            Boolean result = true;
+            if (Capabilities?.Count > 0)
+            {
+                result = (Capabilities.Exists(x => x.ID == sdpAudioVideoMediaFormat.ID));
+            }
+
+            if(result)
+            {
+                Capabilities = new List<SDPAudioVideoMediaFormat> { sdpAudioVideoMediaFormat };
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// To restrict MediaStream Capabilties to one Video format. This Video format must already be present in the previous list or if the list is empty/null
+        /// 
+        /// Usefull once you have successfully created a connection with a Peer to use the same format even even others negocitions are performed
+        /// </summary>
+        /// <param name="videoFormat">The Video Format to restrict</param>
+        /// <returns>True if the operation has been performed</returns>
+        public Boolean RestrictCapabilities(VideoFormat videoFormat)
+        {
+            return RestrictCapabilities(new SDPAudioVideoMediaFormat(videoFormat) );
+        }
+
+        /// <summary>
+        /// To restrict MediaStream Capabilties to one Audio format. This Audio format must already be present in the previous list or if the list is empty/null
+        /// 
+        /// Usefull once you have successfully created a connection with a Peer to use the same format even even others negocitions are performed
+        /// </summary>
+        /// <param name="audioFormat">The Audio Format to restrict</param>
+        /// <returns>True if the operation has been performed</returns>
+        public Boolean RestrictCapabilities(AudioFormat audioFormat)
+        {
+            return RestrictCapabilities(new SDPAudioVideoMediaFormat(audioFormat));
+        }        
+
+        /// <summary>
         /// Returns the next SeqNum to be used in the RTP Sequence Number header field for media packets
         /// sent using this media stream. 
         /// </summary>

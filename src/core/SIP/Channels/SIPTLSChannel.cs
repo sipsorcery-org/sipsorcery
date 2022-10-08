@@ -7,8 +7,9 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 13 Mar 2009	Aaron Clauson	Created, Hobart, Australia.
-// 16 Oct 2019  Aaron Clauson   Added IPv6 support.
+// 13 Mar 2009	Aaron Clauson             Created, Hobart, Australia.
+// 16 Oct 2019  Aaron Clauson             Added IPv6 support.
+// 4 July 2022  Jean-Christophe Grondin   Added custom server certificate callback
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -30,14 +31,19 @@ namespace SIPSorcery.SIP
         private const int CLOSE_CONNECTION_TIMEOUT = 500;
         private const int TLS_ATTEMPT_CONNECT_TIMEOUT = 5000;
 
-        private X509Certificate2 m_serverCertificate;
-        private X509Certificate2Collection m_clientCertificates;
+        private readonly X509Certificate2 m_serverCertificate;
+        private readonly X509Certificate2Collection m_clientCertificates;
+        private readonly RemoteCertificateValidationCallback m_remoteCertificateValidation;
 
         override protected string ProtDescr { get; } = "TLS";
 
+        /// <summary>
+        /// Allows to ignore any ssl policy errors regarding the received certificate.
+        /// Only applicable when no custom remote certificate validation is provided.
+        /// </summary>
         public bool BypassCertificateValidation { get; set; } = true;
 
-        public SIPTLSChannel(IPEndPoint endPoint, bool useDualMode = false)
+        public SIPTLSChannel(IPEndPoint endPoint, bool useDualMode = false, RemoteCertificateValidationCallback remoteCertificateValidation = null)
             : base(endPoint, SIPProtocolsEnum.tls, false, useDualMode)
         {
             if (endPoint == null)
@@ -46,9 +52,12 @@ namespace SIPSorcery.SIP
             }
 
             IsSecure = true;
+            m_serverCertificate = null;
+            m_clientCertificates = null;
+            m_remoteCertificateValidation = remoteCertificateValidation ?? new RemoteCertificateValidationCallback(ValidateServerCertificate);
         }
 
-        public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint, bool useDualMode = false, X509Certificate2Collection clientCertificates = null)
+        public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint, bool useDualMode = false, X509Certificate2Collection clientCertificates = null, RemoteCertificateValidationCallback remoteCertificateValidation = null)
             : base(endPoint, SIPProtocolsEnum.tls, serverCertificate != null, useDualMode)
         {
             if (endPoint == null)
@@ -59,6 +68,7 @@ namespace SIPSorcery.SIP
             IsSecure = true;
             m_serverCertificate = serverCertificate;
             m_clientCertificates = clientCertificates;
+            m_remoteCertificateValidation = remoteCertificateValidation ?? new RemoteCertificateValidationCallback(ValidateServerCertificate);
 
             if (m_serverCertificate != null)
             {
@@ -112,7 +122,7 @@ namespace SIPSorcery.SIP
         protected override async Task<SocketError> OnClientConnect(SIPStreamConnection streamConnection, string serverCertificateName)
         {
             NetworkStream networkStream = new NetworkStream(streamConnection.StreamSocket, true);
-            SslStream sslStream = new SslStream(networkStream, false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            SslStream sslStream = new SslStream(networkStream, false, m_remoteCertificateValidation, null);
             //DisplayCertificateInformation(sslStream);
 
             var timeoutTask = Task.Delay(TLS_ATTEMPT_CONNECT_TIMEOUT);

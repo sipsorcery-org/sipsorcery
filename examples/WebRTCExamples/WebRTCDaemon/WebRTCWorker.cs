@@ -34,6 +34,8 @@ namespace WebRTCDaemon
 {
     public class WebRTCWorker : BackgroundService
     {
+        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //    /!\ Path to FFmpeg binaries
+
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const string MP4_PATH = "media/max_intro.mp4";
@@ -63,9 +65,10 @@ namespace WebRTCDaemon
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, _logger);
             // Set up media sources.
             _maxSource = new FFmpegFileSource(MP4_PATH, true, new AudioEncoder());
-            _maxSource.Initialise();
 
             _testPatternSource = new VideoTestPatternSource();
             _testPatternEncoder = new FFmpegVideoEndPoint();
@@ -137,7 +140,7 @@ namespace WebRTCDaemon
             }
             else
             {
-                videoSource = _testPatternEncoder;
+                videoSource = _testPatternSource;
                 audioSource = _musicSource;
             }
 

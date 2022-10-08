@@ -1,8 +1,8 @@
 {
   "profiles": {
     "WebRTCTestPatternServer": {
-      "commandName": "Project",
-      "commandLineArgs": "--rest https://localhost:5001/api/webrtcsignal;a;b"
+      "commandName": "Project"
+      //"commandLineArgs": "--rest https://localhost:5001/api/webrtcsignal;a;b"
     }
   }
 }

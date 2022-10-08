@@ -456,39 +456,58 @@ namespace SIPSorcery.Media
         {
             if (!_isClosed && _streamSourceReader != null)
             {
-                lock (_streamSourceReader)
+                try
                 {
-                    if (_streamSourceReader?.BaseStream?.CanRead == true)
+                    lock (_streamSourceReader)
                     {
-                        var pcm = GetPcmSampleFromReader(_streamSourceReader, _streamSourceRate, out int samplesRead);
-
-                        if (samplesRead > 0)
+                        if (_streamSourceReader?.BaseStream?.CanRead == true)
                         {
-                            EncodeAndSend(pcm, (int)_streamSourceRate);
+                            var pcm = GetPcmSampleFromReader(_streamSourceReader, _streamSourceRate, out int samplesRead);
 
-                            if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
+                            if (samplesRead > 0)
                             {
-                                Log.LogDebug("Send audio from stream completed.");
+                                EncodeAndSend(pcm, (int)_streamSourceRate);
+
+                                if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
+                                {
+                                    Log.LogDebug("Send audio from stream completed.");
+                                    StopSendFromAudioStream();
+                                }
+                            }
+                            else
+                            {
+                                Log.LogWarning("Failed to read from audio stream source.");
                                 StopSendFromAudioStream();
                             }
                         }
                         else
                         {
-                            Log.LogWarning("Failed to read from audio stream source.");
+                            Log.LogWarning("Failed to read from audio stream source, stream null or closed.");
                             StopSendFromAudioStream();
                         }
                     }
-                    else
-                    {
-                        Log.LogWarning("Failed to read from audio stream source, stream null or closed.");
-                        StopSendFromAudioStream();
-                    }
+
+                }
+                catch (Exception e)
+                {
+                    Log.LogWarning(e, "Caught unhandled exception");
+                    StopSendFromAudioStream();
                 }
 
-                if(!_streamSendInProgress)
+                if (!_streamSendInProgress)
                 {
-                    // An error has occurred or a request has been made to stop the stream.
-                    _streamSourceReader?.Close();
+                    try
+                    {
+                        // An error has occurred or a request has been made to stop the stream.
+                        if (_streamSourceReader != null)
+                        {
+                            _streamSourceReader.Close();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.LogWarning(e, "Error occurred whilst trying to close the stream source reader.");
+                    }
                 }
             }
         }

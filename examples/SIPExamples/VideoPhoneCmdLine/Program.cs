@@ -87,6 +87,7 @@ namespace demo
         private MediaFormatManager<VideoFormat> _formatManager;
 
         public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
+        public event VideoSinkSampleDecodedFasterDelegate OnVideoSinkDecodedSampleFaster;
 
         public DecoderVideoSink(IVideoEncoder videoDecoder)
         {

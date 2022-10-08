@@ -238,14 +238,9 @@ namespace SIPSorcery.Net
         private uint m_jitter;
 
         /// <summary>
-        /// Last SR packet from this source.
+        /// Received last SR packet timestamp.
         /// </summary>
-        private uint m_lastSenderReportTimestamp;
-
-        /// <summary>
-        /// Datetime the last sender report was received at.
-        /// </summary>
-        private DateTime m_lastSenderReportReceivedAt = DateTime.MinValue;
+        private ReceivedSRTimestamp m_receivedLSRTimestamp = null;
 
         /// <summary>
         /// Creates a new Reception Report object.
@@ -262,8 +257,12 @@ namespace SIPSorcery.Net
         /// <param name="srNtpTimestamp">The sender report timestamp.</param>
         internal void RtcpSenderReportReceived(ulong srNtpTimestamp)
         {
-            m_lastSenderReportTimestamp = (uint)((srNtpTimestamp >> 16) & 0xFFFFFFFF);
-            m_lastSenderReportReceivedAt = DateTime.Now;
+            System.Threading.Interlocked.Exchange(ref m_receivedLSRTimestamp,
+                new ReceivedSRTimestamp
+                {
+                    NTP = (uint)((srNtpTimestamp >> 16) & 0xFFFFFFFF),
+                    ReceivedAt = DateTime.Now
+                });
         }
 
         /// <summary>
@@ -364,13 +363,11 @@ namespace SIPSorcery.Net
             // In this case, the estimate is sampled for the reception report as:
             uint jitter = m_jitter >> 4;
 
-            uint delay = 0;
-            if (m_lastSenderReportReceivedAt != DateTime.MinValue)
-            {
-                delay = ntpTimestampNow - m_lastSenderReportTimestamp;
-            }
+            var receivedLSRTimestamp = m_receivedLSRTimestamp;
+            uint delay = receivedLSRTimestamp == null || receivedLSRTimestamp.ReceivedAt == DateTime.MinValue ?
+                0 : ntpTimestampNow - RTCPSession.DateTimeToNtpTimestamp32(receivedLSRTimestamp.ReceivedAt);
 
-            return new ReceptionReportSample(SSRC, fraction, (int)lost_interval, m_max_seq, jitter, m_lastSenderReportTimestamp, delay);
+            return new ReceptionReportSample(SSRC, fraction, (int)lost_interval, m_max_seq, jitter, receivedLSRTimestamp?.NTP ?? 0, delay);
         }
 
         /// <summary>
@@ -470,5 +467,18 @@ namespace SIPSorcery.Net
         //    m_received++;
         //    return false;
         //}
+    }
+
+    internal class ReceivedSRTimestamp
+    {
+        /// <summary>
+        /// NTP timestamp in sender report packet, in 32bit.
+        /// </summary>
+        public uint NTP = 0;
+
+        /// <summary>
+        /// Datetime the sender report was received at.
+        /// </summary>
+        public DateTime ReceivedAt = DateTime.MinValue;
     }
 }

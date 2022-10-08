@@ -48,6 +48,14 @@ namespace SIPSorcery.SIP
         public int StatusCode;
 
         /// <summary>
+        /// Returns true if a successful status code
+        /// </summary>
+        public bool IsSuccessStatusCode
+        {
+            get { return (StatusCode >= 200) && (StatusCode <= 204); }
+        }
+
+        /// <summary>
         /// The optional reason phrase for the SIP response.
         /// </summary>
         public string ReasonPhrase;
@@ -213,7 +221,7 @@ namespace SIPSorcery.SIP
             if (_body != null && _body.Length > 0)
             {
                 copy._body = new byte[_body.Length];
-                Buffer.BlockCopy(copy._body, 0, copy._body, 0, copy._body.Length);
+                Buffer.BlockCopy(_body, 0, copy._body, 0, copy._body.Length);
             }
 
             copy.Created = Created;

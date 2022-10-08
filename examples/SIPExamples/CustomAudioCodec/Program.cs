@@ -26,7 +26,6 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Windows;
 using SIPSorceryMedia.Abstractions;
-using GroovyCodecs.G729;
 
 namespace demo
 {

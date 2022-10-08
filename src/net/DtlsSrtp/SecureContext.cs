@@ -35,37 +35,4 @@ namespace SIPSorcery.Net
             UnprotectRtcpPacket = unprotectRtcpPacket;
         }
     }
-
-    public class SecureContextCollection
-    {
-        private readonly ILogger _logger = Log.Logger;
-
-        private readonly ConcurrentDictionary<SDPMediaTypesEnum, SecureContext> m_handlerCollection;
-
-        public SecureContextCollection()
-        {
-            m_handlerCollection = new ConcurrentDictionary<SDPMediaTypesEnum, SecureContext>();
-        }
-
-        public void SetSecureContextForMediaType(SDPMediaTypesEnum mediaType, SecureContext srtpHandler)
-        {
-            var result = m_handlerCollection.TryAdd(mediaType, srtpHandler);
-            if (!result)
-            {
-                _logger.LogTrace($"Tried adding new SecureContext for media type {mediaType}, but one already existed");
-            }
-        }
-
-        public SecureContext GetSecureContext(SDPMediaTypesEnum mediaType)
-        {
-            m_handlerCollection.TryGetValue(mediaType, out var secureContext);
-            return secureContext;
-        }
-
-        public bool IsSecureContextReady(SDPMediaTypesEnum mediaType)
-        {
-            m_handlerCollection.TryGetValue(mediaType, out var secureContext);
-            return secureContext != null;
-        }
-    }
 }

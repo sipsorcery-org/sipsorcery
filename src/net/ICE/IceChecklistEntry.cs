@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -96,6 +97,9 @@ namespace SIPSorcery.Net
     {
         private static readonly ILogger logger = Log.Logger;
 
+        //Previous RequestIds
+        protected List<string> _cachedRequestTransactionIDs = new List<string>();
+
         public RTCIceCandidate LocalCandidate;
         public RTCIceCandidate RemoteCandidate;
 
@@ -129,7 +133,7 @@ namespace SIPSorcery.Net
         /// indicates the ICE checks have been successful and the application can begin
         /// normal communications.
         /// </summary>
-        public bool Nominated;
+        public bool Nominated { get; set; }
 
         public uint LocalPriority { get; private set; }
 
@@ -175,7 +179,30 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The transaction ID that was set in the last STUN request connectivity check.
         /// </summary>
-        public string RequestTransactionID;
+        public string RequestTransactionID 
+        { 
+            get 
+            { 
+                return _cachedRequestTransactionIDs?.Count > 0 ? _cachedRequestTransactionIDs[0] : null; 
+            }
+            set
+            {
+                var currentValue = _cachedRequestTransactionIDs?.Count > 0 ? _cachedRequestTransactionIDs[0] : null;
+                if (value != currentValue)
+                {
+                    const int MAX_CACHED_REQUEST_IDS = 30;
+                    while (_cachedRequestTransactionIDs.Count >= MAX_CACHED_REQUEST_IDS && _cachedRequestTransactionIDs.Count > 0)
+                    {
+                        _cachedRequestTransactionIDs.RemoveAt(_cachedRequestTransactionIDs.Count - 1);
+                    }
+
+                    if (MAX_CACHED_REQUEST_IDS > 0)
+                    {
+                        _cachedRequestTransactionIDs.Insert(0, value);
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Before a remote peer will be able to use the relay it's IP address needs
@@ -217,6 +244,18 @@ namespace SIPSorcery.Net
 
             LocalPriority = localCandidate.priority;
             RemotePriority = remoteCandidate.priority;
+        }
+
+        public bool IsTransactionIDMatch(string id)
+        {
+            var index = _cachedRequestTransactionIDs.IndexOf(id);
+
+            if(index >= 1)
+            {
+                logger.LogInformation($"Received transaction id from a previous cached RequestTransactionID {id} Index: {index}");
+            }
+
+            return index >= 0;
         }
 
         /// <summary>
@@ -298,6 +337,14 @@ namespace SIPSorcery.Net
                 logger.LogDebug($"A TURN Create Permission success response was received from {remoteEndPoint} (TxID: {Encoding.ASCII.GetString(stunResponse.Header.TransactionId)}).");
                 TurnPermissionsRequestSent = 1;
                 TurnPermissionsResponseAt = DateTime.Now;
+
+                //After creating permission we need to return InProgressState to Waiting to send request again
+                if (State == ChecklistEntryState.InProgress)
+                {
+                    State = ChecklistEntryState.Waiting;
+                    //Clear CheckSentAt Time to force send it again
+                    FirstCheckSentAt = DateTime.MinValue;
+                }
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionErrorResponse)
             {

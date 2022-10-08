@@ -50,6 +50,7 @@ namespace SIPSorcery.SIP.App
         private static readonly string m_sipReferContentType = SIPMIMETypes.REFER_CONTENT_TYPE;
         private static int WAIT_ONHOLD_TIMEOUT = SIPTimings.T1;
         private static int WAIT_DIALOG_TIMEOUT = SIPTimings.T2;
+        private readonly SemaphoreSlim m_semaphoreSlim = new SemaphoreSlim(1, 1);
 
         private static ILogger logger = Log.Logger;
 
@@ -375,6 +376,12 @@ namespace SIPSorcery.SIP.App
         public event SIPTransactionTraceMessageDelegate OnTransactionTraceMessage;
 
         /// <summary>
+        /// Determines whether the agent will operate with support for reliable provisional responses as per RFC3262.
+        /// If support is not desired it should be set to false before the initial INVITE request is sent.
+        /// </summary>
+        public bool PrackSupported { get; set; } = true;
+
+        /// <summary>
         /// Creates a new instance where the user agent has exclusive control of the SIP transport.
         /// This is significant for incoming requests. WIth exclusive control the agent knows that
         /// any request are for it and can handle accordingly. If the transport needs to be shared 
@@ -493,6 +500,7 @@ namespace SIPSorcery.SIP.App
             m_callDescriptor = sipCallDescriptor;
 
             m_uac = new SIPClientUserAgent(m_transport, m_outboundProxy);
+            m_uac.PrackSupported = PrackSupported;
             m_uac.CallTrying += ClientCallTryingHandler;
             m_uac.CallRinging += ClientCallRingingHandler;
             m_uac.CallAnswered += ClientCallAnsweredHandler;
@@ -509,7 +517,17 @@ namespace SIPSorcery.SIP.App
 
                 var sdpAnnounceAddress = mediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
-                var sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
+                SDP sdp = null;
+
+                if (!string.IsNullOrEmpty(sipCallDescriptor.Content))
+                {
+                    sdp = SDP.ParseSDPDescription(sipCallDescriptor.Content);
+                }
+                else
+                {
+                    sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
+                }
+
                 if (sdp == null)
                 {
                     ClientCallFailed?.Invoke(m_uac, $"Could not generate an offer.", null);
@@ -648,6 +666,19 @@ namespace SIPSorcery.SIP.App
         /// such as incompatible codecs.</returns>
         public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
         {
+            try
+            {
+                await m_semaphoreSlim.WaitAsync().ConfigureAwait(false);
+                return await AnswerSyncronized(uas, mediaSession, customHeaders).ConfigureAwait(false);
+            }
+            finally
+            {
+                m_semaphoreSlim.Release();
+            }
+        }
+
+        private async Task<bool> AnswerSyncronized(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
+        {
             if (uas.IsCancelled)
             {
                 logger.LogDebug("The incoming call has been cancelled.");
@@ -772,8 +803,10 @@ namespace SIPSorcery.SIP.App
         /// accepted or timing out.</param>
         /// <param name="customHeaders">Optional. Custom SIP-Headers that will be set in the REFER request sent 
         /// to the remote party.</param>
+        /// <param name="username">Optional. Used if proxy authentication required.</param>
+        /// <param name="password">Optional. Used if proxy authentication required.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null)
+        public Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null, string username = null, string password = null)
         {
             if (m_sipDialogue == null)
             {
@@ -783,7 +816,7 @@ namespace SIPSorcery.SIP.App
             else
             {
                 var referRequest = GetReferRequest(destination, customHeaders);
-                return Transfer(referRequest, timeout, ct);
+                return Transfer(referRequest, timeout, ct, username, password);
             }
         }
 
@@ -797,8 +830,10 @@ namespace SIPSorcery.SIP.App
         /// accepted or timing out.</param>
         /// <param name="customHeaders">Optional. Custom SIP-Headers that will be set in the REFER request sent 
         /// to the remote party.</param>
+        /// <param name="username">Optional. Used if proxy authentication required.</param>
+        /// <param name="password">Optional. Used if proxy authentication required.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null)
+        public Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null, string username = null, string password = null)
         {
             if (m_sipDialogue == null || transferee == null)
             {
@@ -808,7 +843,7 @@ namespace SIPSorcery.SIP.App
             else
             {
                 var referRequest = GetReferRequest(transferee, customHeaders);
-                return Transfer(referRequest, timeout, ct);
+                return Transfer(referRequest, timeout, ct, username, password);
             }
         }
 
@@ -871,8 +906,10 @@ namespace SIPSorcery.SIP.App
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
         /// <param name="ct">Cancellation token. Can be set to cancel the transfer prior to it being
         /// accepted or timing out.</param>
+        /// <param name="username">Optional. Used if proxy authentication required.</param>
+        /// <param name="password">Optional. Used if proxy authentication required.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        private async Task<bool> Transfer(SIPRequest referRequest, TimeSpan timeout, CancellationToken ct)
+        private async Task<bool> Transfer(SIPRequest referRequest, TimeSpan timeout, CancellationToken ct, string username = null, string password = null)
         {
             if (m_sipDialogue == null)
             {
@@ -891,6 +928,26 @@ namespace SIPSorcery.SIP.App
                     {
                         logger.LogInformation("Call transfer was accepted by remote server.");
                         transferAccepted.TrySetResult(true);
+                    }
+                    else if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired && username != null && password != null)
+                    {
+                        var newRequest = referRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders, username, password);
+                        referTx = new SIPNonInviteTransaction(m_transport, newRequest, null);
+                        SIPTransactionResponseReceivedDelegate referTxStatusHandlerAuthRequest = (localSIPEndPointAuthRequest, remoteEndPointAuthRequest, sipTransactionAuthRequest, sipResponseAuthRequest) => {
+                            if (sipResponseAuthRequest.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponseAuthRequest.Status == SIPResponseStatusCodesEnum.Accepted)
+                            {
+                                logger.LogInformation("Call transfer was accepted by remote server.");
+                                transferAccepted.TrySetResult(true);
+                            }
+                            else
+                            {
+                                transferAccepted.TrySetResult(false);
+                            }
+
+                            return Task.FromResult(SocketError.Success);
+                        };
+                        referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandlerAuthRequest;
+                        referTx.SendRequest();
                     }
                     else
                     {
@@ -1496,25 +1553,43 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipResponse">The INVITE ringing response.</param>
         private async void ClientCallRingingHandler(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
-            if (sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress &&
-                sipResponse.Body != null)
+            try
             {
-                var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
-                logger.LogDebug($"Set remote description for early media result {setDescriptionResult}.");
-
-                if (setDescriptionResult == SetDescriptionResultEnum.OK)
+                if (sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress &&
+                    sipResponse.Body != null)
                 {
-                    await MediaSession.Start().ConfigureAwait(false);
+                    var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
+                    logger.LogDebug($"Set remote description for early media result {setDescriptionResult}.");
+
+                    if (setDescriptionResult == SetDescriptionResultEnum.OK)
+                    {
+                        await MediaSession.Start()
+                                          .ConfigureAwait(false);
+                    }
+                }
+
+                if (ClientCallRinging != null)
+                {
+                    ClientCallRinging(uac, sipResponse);
+                }
+                else
+                {
+                    logger.LogInformation(
+                        $"Call attempt to {uac.CallDescriptor.Uri} received a ringing response {sipResponse.ShortDescription}.");
                 }
             }
+            catch (Exception ex)
+            {
+                logger.Log(LogLevel.Error, ex, "ClientCallRingingHandler failed, call will be cancelled.");
 
-            if (ClientCallRinging != null)
-            {
-                ClientCallRinging(uac, sipResponse);
-            }
-            else
-            {
-                logger.LogInformation($"Call attempt to {uac.CallDescriptor.Uri} received a ringing response {sipResponse.ShortDescription}.");
+                try
+                {
+                    Cancel();
+                }
+                catch
+                {
+                    logger.Log(LogLevel.Error, ex, "ClientCallRingingHandler call could not be cancelled.");
+                }
             }
         }
 
@@ -1562,7 +1637,18 @@ namespace SIPSorcery.SIP.App
 
                     if (setDescriptionResult == SetDescriptionResultEnum.OK)
                     {
-                        await MediaSession.Start().ConfigureAwait(false);
+                        try
+                        {
+                            await MediaSession.Start()
+                                              .ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            var errorDescription = "error occurred whilst starting the MediaSession";
+                            logger.Log(LogLevel.Error, ex, errorDescription);
+                            HandleErrorDuringAnswer(setDescriptionResult, errorDescription);
+                            return;
+                        }
 
                         m_sipDialogue = uac.SIPDialogue;
                         m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
@@ -1573,10 +1659,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        logger.LogWarning($"Call attempt was answered with {sipResponse.ShortDescription} but an {setDescriptionResult} error occurred setting the remote description.");
-                        ClientCallFailed?.Invoke(uac, $"Failed to set the remote description {setDescriptionResult}", sipResponse);
-                        uac.SIPDialogue?.Hangup(this.m_transport, this.m_outboundProxy);
-                        CallEnded(sipResponse.Header.CallId);
+                        HandleErrorDuringAnswer(setDescriptionResult, "error occurred setting the remote description");
                     }
                 }
             }
@@ -1584,6 +1667,16 @@ namespace SIPSorcery.SIP.App
             {
                 logger.LogWarning($"Call attempt was answered with failure response {sipResponse.ShortDescription}.");
                 ClientCallFailed?.Invoke(uac, sipResponse.ReasonPhrase, sipResponse);
+                CallEnded(sipResponse.Header.CallId);
+            }
+
+            void HandleErrorDuringAnswer(SetDescriptionResultEnum setDescriptionResult, string errorText)
+            {
+                var errorMessage = $"Call attempt was answered with {sipResponse.ShortDescription} ({setDescriptionResult}) but an {errorText}.";
+                logger.LogWarning(errorMessage);
+
+                ClientCallFailed?.Invoke(uac, errorMessage, sipResponse);
+                uac.SIPDialogue?.Hangup(this.m_transport, this.m_outboundProxy);
                 CallEnded(sipResponse.Header.CallId);
             }
         }
@@ -1660,6 +1753,19 @@ namespace SIPSorcery.SIP.App
         /// The current call has ended. Reset the state of the user agent.
         /// </summary>
         private void CallEnded(string callId)
+        {
+            try
+            {
+                m_semaphoreSlim.Wait();
+                CallEndedSyncronized(callId);
+            }
+            finally
+            {
+                m_semaphoreSlim.Release();
+            }
+        }
+
+        private void CallEndedSyncronized(string callId)
         {
             if (m_callDescriptor != null)
             {
@@ -1805,7 +1911,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaType">The media type, aduio or video, that timed out.</param>
         private void OnRtpTimeout(SDPMediaTypesEnum mediaType)
         {
-            logger.LogWarning($"RTP has timed out for media {mediaType}, hanging up call.");
+            logger.LogWarning($"RTP has timed out for media {mediaType} hanging up call.");
 
             Hangup();
         }
@@ -1837,6 +1943,11 @@ namespace SIPSorcery.SIP.App
             {
                 m_transport.Shutdown();
             }
+
+            // Wait for completion of CallEnded and Answer methods
+            m_semaphoreSlim.Wait();
+            m_semaphoreSlim.Release();
+            m_semaphoreSlim.Dispose();
         }
     }
 }

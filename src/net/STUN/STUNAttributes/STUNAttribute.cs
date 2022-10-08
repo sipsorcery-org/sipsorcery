@@ -81,6 +81,8 @@ namespace SIPSorcery.Net
         RequestedTransport = 0x0019,
         DontFragment = 0x001A,
         ReservationToken = 0x0022,
+
+        ConnectionId = 0x002a,          // Added in RFC6062.
     }
 
     public class STUNAttributeTypes
@@ -94,6 +96,7 @@ namespace SIPSorcery.Net
     public class STUNAttributeConstants
     {
         public static readonly byte[] UdpTransportType = new byte[] { 0x11, 0x00, 0x00, 0x00 };     // The payload type for UDP in a RequestedTransport type attribute.
+        public static readonly byte[] TcpTransportType = new byte[] { 0x06, 0x00, 0x00, 0x00 };     // The payload type for TCP in a RequestedTransport type attribute.
     }
 
     public class STUNAttribute
@@ -157,11 +160,13 @@ namespace SIPSorcery.Net
                     UInt16 stunAttributeLength = NetConvert.ParseUInt16(buffer, startAttIndex + 2);
                     byte[] stunAttributeValue = null;
 
+                    STUNAttributeTypesEnum attributeType = STUNAttributeTypes.GetSTUNAttributeTypeForId(stunAttributeType);
+
                     if (stunAttributeLength > 0)
                     {
-                        if (stunAttributeLength + startIndex + 4 > endIndex)
+                        if (stunAttributeLength + startAttIndex + 4 > endIndex)
                         {
-                            logger.LogWarning("The attribute length on a STUN parameter was greater than the available number of bytes.");
+                            logger.LogWarning($"The attribute length on a STUN parameter was greater than the available number of bytes. Type: {attributeType}");
                         }
                         else
                         {
@@ -170,16 +175,18 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    STUNAttributeTypesEnum attributeType = STUNAttributeTypes.GetSTUNAttributeTypeForId(stunAttributeType);
-
+                    if(stunAttributeValue == null && stunAttributeLength > 0)
+                    {
+                        break;
+                    }
                     STUNAttribute attribute = null;
                     if (attributeType == STUNAttributeTypesEnum.ChangeRequest)
                     {
                         attribute = new STUNChangeRequestAttribute(stunAttributeValue);
                     }
-                    else if (attributeType == STUNAttributeTypesEnum.MappedAddress)
+                    else if (attributeType == STUNAttributeTypesEnum.MappedAddress || attributeType == STUNAttributeTypesEnum.AlternateServer)
                     {
-                        attribute = new STUNAddressAttribute(stunAttributeValue);
+                        attribute = new STUNAddressAttribute(attributeType, stunAttributeValue);
                     }
                     else if (attributeType == STUNAttributeTypesEnum.ErrorCode)
                     {
@@ -188,6 +195,10 @@ namespace SIPSorcery.Net
                     else if (attributeType == STUNAttributeTypesEnum.XORMappedAddress || attributeType == STUNAttributeTypesEnum.XORPeerAddress || attributeType == STUNAttributeTypesEnum.XORRelayedAddress)
                     {
                         attribute = new STUNXORAddressAttribute(attributeType, stunAttributeValue);
+                    }
+                    else if(attributeType == STUNAttributeTypesEnum.ConnectionId)
+                    {
+                        attribute = new STUNConnectionIdAttribute(stunAttributeValue);
                     }
                     else
                     {

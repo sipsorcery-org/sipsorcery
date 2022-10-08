@@ -1214,6 +1214,349 @@ a=ssrc:172341600 cname:ee6f407e-d848-44b3-a451-e8cf2d0e22d9
 
             logger.LogDebug("-----------------------------------------");
         }
+
+        [Fact]
+        public void SupportMultiplePAIHeaderTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
+Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
+Route: <sip:10.0.0.1:5060;transport=udp;lr>,<sip:10.0.0.2:5060;transport=udp;lr>
+Call-ID: xxxxxxxxxxxxxxxxxxxxxxsadasddsdasd@10.0.0.1
+From: ""+417777777""<sip:+417777777@10.0.0.1;transport=udp;user=phone>;tag=2y14yxdy-XX-2258-XXX-xx1
+To: <sip:+4199999999@10.0.0.1;transport=udp;user=phone>
+CSeq: 1 INVITE
+Max-Forwards: 64
+Contact: <sip:+4199999999@10.0.0.1:5060;user=phone>
+Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,INFO,PRACK,NOTIFY,MESSAGE,REFER,UPDATE
+P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+P-Asserted-Identity: <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+History-Info: <sip:+4199999999@10.0.0.1:5060;transport=udp;user=phone;Privacy=none>;index=1
+History-Info: <sip:+4188888888@10.0.0.2:5060;transport=udp;cause=480>;index=1.1
+P-Early-Media: supported
+Supported: 100rel,timer,histinfo
+Min-SE: 90
+Session-Expires: 1800;refresher=uac
+Content-Length: 0
+
+";
+
+            SIPRequest req = SIPRequest.ParseSIPRequest(inviteReq);
+
+            Assert.True(req.Header.PassertedIdentity.Count == 2);
+            Assert.True(req.Header.PassertedIdentity[0].URI.UserWithoutParameters == "+4199999999");
+            Assert.True(req.Header.PassertedIdentity[1].URI.UserWithoutParameters == "+4188888888");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void SupportMultipleHistoryInfoHeaderWithCommaTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
+Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
+Route: <sip:10.0.0.1:5060;transport=udp;lr>,<sip:10.0.0.2:5060;transport=udp;lr>
+Call-ID: xxxxxxxxxxxxxxxxxxxxxxsadasddsdasd@10.0.0.1
+From: ""+417777777""<sip:+417777777@10.0.0.1;transport=udp;user=phone>;tag=2y14yxdy-XX-2258-XXX-xx1
+To: <sip:+4199999999@10.0.0.1;transport=udp;user=phone>
+CSeq: 1 INVITE
+Max-Forwards: 64
+Contact: <sip:+4199999999@10.0.0.1:5060;user=phone>
+Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,INFO,PRACK,NOTIFY,MESSAGE,REFER,UPDATE
+P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>, <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+History-Info: <sip:+4199999999@10.0.0.1:5060;transport=udp;user=phone;Privacy=none>;index=1, <sip:+4188888888@10.0.0.2:5060;transport=udp;cause=480>;index=1.1
+P-Early-Media: supported
+Supported: 100rel,timer,histinfo
+Min-SE: 90
+Session-Expires: 1800;refresher=uac
+Content-Length: 0
+
+";
+
+            SIPRequest req = SIPRequest.ParseSIPRequest(inviteReq);
+
+            Assert.True(req.Header.HistoryInfo.Count == 2);
+            Assert.True(req.Header.HistoryInfo[0].URI.UserWithoutParameters == "+4199999999");
+            Assert.True(req.Header.HistoryInfo[1].URI.UserWithoutParameters == "+4188888888");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void SupportMultiplePAIHeaderWithCommaTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
+Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
+Route: <sip:10.0.0.1:5060;transport=udp;lr>,<sip:10.0.0.2:5060;transport=udp;lr>
+Call-ID: xxxxxxxxxxxxxxxxxxxxxxsadasddsdasd@10.0.0.1
+From: ""+417777777""<sip:+417777777@10.0.0.1;transport=udp;user=phone>;tag=2y14yxdy-XX-2258-XXX-xx1
+To: <sip:+4199999999@10.0.0.1;transport=udp;user=phone>
+CSeq: 1 INVITE
+Max-Forwards: 64
+Contact: <sip:+4199999999@10.0.0.1:5060;user=phone>
+Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,INFO,PRACK,NOTIFY,MESSAGE,REFER,UPDATE
+P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>, <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+History-Info: <sip:+4199999999@10.0.0.1:5060;transport=udp;user=phone;Privacy=none>;index=1
+History-Info: <sip:+4188888888@10.0.0.2:5060;transport=udp;cause=480>;index=1.1
+P-Early-Media: supported
+Supported: 100rel,timer,histinfo
+Min-SE: 90
+Session-Expires: 1800;refresher=uac
+Content-Length: 0
+
+";
+
+            SIPRequest req = SIPRequest.ParseSIPRequest(inviteReq);
+
+            Assert.True(req.Header.PassertedIdentity.Count == 2);
+            Assert.True(req.Header.PassertedIdentity[0].URI.UserWithoutParameters == "+4199999999");
+            Assert.True(req.Header.PassertedIdentity[1].URI.UserWithoutParameters == "+4188888888");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void GeneratePAIHeadersOnToStringTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+
+
+            string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
+Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
+Route: <sip:10.0.0.1:5060;transport=udp;lr>,<sip:10.0.0.2:5060;transport=udp;lr>
+Call-ID: xxxxxxxxxxxxxxxxxxxxxxsadasddsdasd@10.0.0.1
+From: ""+417777777""<sip:+417777777@10.0.0.1;transport=udp;user=phone>;tag=2y14yxdy-XX-2258-XXX-xx1
+To: <sip:+4199999999@10.0.0.1;transport=udp;user=phone>
+CSeq: 1 INVITE
+Max-Forwards: 64
+Contact: <sip:+4199999999@10.0.0.1:5060;user=phone>
+Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,INFO,PRACK,NOTIFY,MESSAGE,REFER,UPDATE
+P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+P-Asserted-Identity: <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+History-Info: <sip:+4199999999@10.0.0.1:5060;transport=udp;user=phone;Privacy=none>;index=1
+History-Info: <sip:+4188888888@10.0.0.2:5060;transport=udp;cause=480>;index=1.1
+P-Early-Media: supported
+Supported: 100rel,timer,histinfo
+Min-SE: 90
+Session-Expires: 1800;refresher=uac
+Content-Length: 0
+
+";
+
+            SIPRequest req = SIPRequest.ParseSIPRequest(inviteReq);
+
+            var reqString = req.ToString();
+
+            string ToFindInfo = @"P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+P-Asserted-Identity: <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>";
+
+            Assert.True(reqString.Contains(ToFindInfo), "SIPRequest.ToString() didn't generate History-Info headers");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void HistoryInfoHeaderSortedTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
+Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
+Route: <sip:10.0.0.1:5060;transport=udp;lr>,<sip:10.0.0.2:5060;transport=udp;lr>
+Call-ID: xxxxxxxxxxxxxxxxxxxxxxsadasddsdasd@10.0.0.1
+From: ""+417777777""<sip:+417777777@10.0.0.1;transport=udp;user=phone>;tag=2y14yxdy-XX-2258-XXX-xx1
+To: <sip:+4199999999@10.0.0.1;transport=udp;user=phone>
+CSeq: 1 INVITE
+Max-Forwards: 64
+Contact: <sip:+4199999999@10.0.0.1:5060;user=phone>
+Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,INFO,PRACK,NOTIFY,MESSAGE,REFER,UPDATE
+P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>, <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+History-Info: <sip:+4199999999@10.0.0.1:5060;transport=udp;user=phone;Privacy=none>;index=1.1
+History-Info: <sip:+4188888888@10.0.0.2:5060;transport=udp;cause=480>;index=1
+P-Early-Media: supported
+Supported: 100rel,timer,histinfo
+Min-SE: 90
+Session-Expires: 1800;refresher=uac
+Content-Length: 0
+
+";
+            SIPRequest req = SIPRequest.ParseSIPRequest(inviteReq);
+           
+            Assert.True(req.Header.HistoryInfo.Count == 2);
+            Assert.True(req.Header.HistoryInfo[0].Parameters.Get("index") == "1", "History-Info Header Sort error, HistoryInfo[0] does't contain 'index=1'");
+            Assert.True(req.Header.HistoryInfo[1].Parameters.Get("index") == "1.1", "History-Info Header Sort error, HistoryInfo[1] does't contain 'index=1.1'");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+
+
+        [Fact]
+        public void GenerateHistoryInfoHeadersOnToStringTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+
+
+            string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
+Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
+Route: <sip:10.0.0.1:5060;transport=udp;lr>,<sip:10.0.0.2:5060;transport=udp;lr>
+Call-ID: xxxxxxxxxxxxxxxxxxxxxxsadasddsdasd@10.0.0.1
+From: ""+417777777""<sip:+417777777@10.0.0.1;transport=udp;user=phone>;tag=2y14yxdy-XX-2258-XXX-xx1
+To: <sip:+4199999999@10.0.0.1;transport=udp;user=phone>
+CSeq: 1 INVITE
+Max-Forwards: 64
+Contact: <sip:+4199999999@10.0.0.1:5060;user=phone>
+Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,INFO,PRACK,NOTIFY,MESSAGE,REFER,UPDATE
+P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>, <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+History-Info: <sip:+4199999999@10.0.0.1:5060;transport=udp;user=phone;Privacy=none>;index=1
+History-Info: <sip:+4188888888@10.0.0.2:5060;transport=udp;cause=480>;index=1.1
+P-Early-Media: supported
+Supported: 100rel,timer,histinfo
+Min-SE: 90
+Session-Expires: 1800;refresher=uac
+Content-Length: 0
+
+";
+
+            SIPRequest req = SIPRequest.ParseSIPRequest(inviteReq);
+
+            var reqString = req.ToString();
+
+            string ToFindInfo = @"History-Info: <sip:+4199999999@10.0.0.1:5060;transport=udp;user=phone;Privacy=none>;index=1
+History-Info: <sip:+4188888888@10.0.0.2:5060;transport=udp;cause=480>;index=1.1";
+
+            Assert.True(reqString.Contains(ToFindInfo), "SIPRequest.ToString() didn't generate History-Info headers");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void DiversionHeaderTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
+Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
+Route: <sip:10.0.0.1:5060;transport=udp;lr>,<sip:10.0.0.2:5060;transport=udp;lr>
+Call-ID: xxxxxxxxxxxxxxxxxxxxxxsadasddsdasd@10.0.0.1
+From: ""+417777777""<sip:+417777777@10.0.0.1;transport=udp;user=phone>;tag=2y14yxdy-XX-2258-XXX-xx1
+To: <sip:+4199999999@10.0.0.1;transport=udp;user=phone>
+CSeq: 1 INVITE
+Max-Forwards: 64
+Contact: <sip:+4199999999@10.0.0.1:5060;user=phone>
+Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,INFO,PRACK,NOTIFY,MESSAGE,REFER,UPDATE
+P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>, <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+Diversion: <sip:+4199999999@10.0.0.1:5060>;reason=user-busy;counter=3;privacy=off
+Diversion: <sip:+4188888888@10.0.0.2:5060>;reason=no-answer;counter=1;privacy=full
+P-Early-Media: supported
+Supported: 100rel,timer,histinfo
+Min-SE: 90
+Session-Expires: 1800;refresher=uac
+Content-Length: 0
+
+";
+            SIPRequest req = SIPRequest.ParseSIPRequest(inviteReq);
+
+            Assert.True(req.Header.Diversion.Count == 2);
+            Assert.True(req.Header.Diversion[0].Parameters.Get("reason") == "user-busy", "Diversion Header error, could not parse properly");
+            Assert.True(req.Header.Diversion[1].Parameters.Get("reason") == "no-answer", "Diversion Header error, could not parse properly");
+            Assert.True(req.Header.Diversion[0].URI.UserWithoutParameters == "+4199999999", "Diversion Header error, could not parse properly");
+            Assert.True(req.Header.Diversion[1].URI.UserWithoutParameters == "+4188888888", "Diversion Header error, could not parse properly");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void DiversionHeaderInOneLineTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
+Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
+Route: <sip:10.0.0.1:5060;transport=udp;lr>,<sip:10.0.0.2:5060;transport=udp;lr>
+Call-ID: xxxxxxxxxxxxxxxxxxxxxxsadasddsdasd@10.0.0.1
+From: ""+417777777""<sip:+417777777@10.0.0.1;transport=udp;user=phone>;tag=2y14yxdy-XX-2258-XXX-xx1
+To: <sip:+4199999999@10.0.0.1;transport=udp;user=phone>
+CSeq: 1 INVITE
+Max-Forwards: 64
+Contact: <sip:+4199999999@10.0.0.1:5060;user=phone>
+Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,INFO,PRACK,NOTIFY,MESSAGE,REFER,UPDATE
+P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>, <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+Diversion: <sip:+4199999999@10.0.0.1:5060>;reason=user-busy;counter=3;privacy=off, <sip:+4188888888@10.0.0.2:5060>;reason=no-answer;counter=1;privacy=full
+P-Early-Media: supported
+Supported: 100rel,timer,histinfo
+Min-SE: 90
+Session-Expires: 1800;refresher=uac
+Content-Length: 0
+
+";
+            SIPRequest req = SIPRequest.ParseSIPRequest(inviteReq);
+
+            Assert.True(req.Header.Diversion.Count == 2);
+            Assert.True(req.Header.Diversion[0].Parameters.Get("reason") == "user-busy", "Diversion Header error, could not parse properly");
+            Assert.True(req.Header.Diversion[1].Parameters.Get("reason") == "no-answer", "Diversion Header error, could not parse properly");
+            Assert.True(req.Header.Diversion[0].URI.UserWithoutParameters == "+4199999999", "Diversion Header error, could not parse properly");
+            Assert.True(req.Header.Diversion[1].URI.UserWithoutParameters == "+4188888888", "Diversion Header error, could not parse properly");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void GenerateDiversionHeadersOnToStringTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+
+
+            string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
+Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
+Route: <sip:10.0.0.1:5060;transport=udp;lr>,<sip:10.0.0.2:5060;transport=udp;lr>
+Call-ID: xxxxxxxxxxxxxxxxxxxxxxsadasddsdasd@10.0.0.1
+From: ""+417777777""<sip:+417777777@10.0.0.1;transport=udp;user=phone>;tag=2y14yxdy-XX-2258-XXX-xx1
+To: <sip:+4199999999@10.0.0.1;transport=udp;user=phone>
+CSeq: 1 INVITE
+Max-Forwards: 64
+Contact: <sip:+4199999999@10.0.0.1:5060;user=phone>
+Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,INFO,PRACK,NOTIFY,MESSAGE,REFER,UPDATE
+P-Asserted-Identity: <sip:+4199999999;cpc=ordinary@10.0.0.1;transport=udp;user=phone>, <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=phone>
+Diversion: <sip:+4199999999@10.0.0.1:5060>;reason=user-busy;counter=3;privacy=off
+Diversion: <sip:+4188888888@10.0.0.2:5060>;reason=no-answer;counter=1;privacy=full
+P-Early-Media: supported
+Supported: 100rel,timer,histinfo
+Min-SE: 90
+Session-Expires: 1800;refresher=uac
+Content-Length: 0
+
+";
+
+            SIPRequest req = SIPRequest.ParseSIPRequest(inviteReq);
+
+            var reqString = req.ToString();
+
+            string ToFindInfo = @"Diversion: <sip:+4199999999@10.0.0.1:5060>;reason=user-busy;counter=3;privacy=off
+Diversion: <sip:+4188888888@10.0.0.2:5060>;reason=no-answer;counter=1;privacy=full";
+
+            Assert.True(reqString.Contains(ToFindInfo), "SIPRequest.ToString() didn't generate History-Info headers");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
     }
 
 #pragma warning restore SYSLIB0021

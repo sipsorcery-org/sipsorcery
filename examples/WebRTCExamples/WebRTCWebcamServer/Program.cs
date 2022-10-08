@@ -98,6 +98,9 @@ namespace demo
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new FFmpegVideoEncoder(), WEBCAM_NAME);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME, 1920, 1080, 30);
             //winVideoEP.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264);
+
+
+
             bool initResult = await winVideoEP.InitialiseVideoSourceDevice();
             if (!initResult)
             {

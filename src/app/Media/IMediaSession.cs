@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -126,7 +127,7 @@ namespace SIPSorcery.SIP.App
         Task Start();
 
         /// <summary>
-        /// Sets the stream status on a local audio or video media track.
+        /// Sets the stream status on all local audio or all video media track.
         /// </summary>
         /// <param name="kind">The type of the media track. Must be audio or video.</param>
         /// <param name="status">The stream status for the media track.</param>

@@ -181,6 +181,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("-----------------------------------------");
         }
 
+
         [Fact]
         public void NotEqualWithParamsURIUnitTest()
         {
@@ -343,6 +344,55 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 Assert.True(SIPURI.ParseSIPURI(value.ToString() + ":1234565").Scheme == (SIPSchemesEnum)value);
             }
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void ParamsInUserPortionURIWithUserPhoneTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI sipURI = SIPURI.ParseSIPURI("sip:C=on;t=DLPAN@10.0.0.1:5060;lr;user=phone");
+
+            Assert.True(sipURI.UserParameters.Get("C") == "on", "SIP user portion parsed incorrectly. Param C wrong.");
+            Assert.True(sipURI.UserParameters.Get("t") == "DLPAN", "SIP user portion parsed incorrectly. Param t wrong");
+            Assert.True(sipURI.UserWithoutParameters == "", "SIP user portion parsed incorrectly. UserNoParams wrong");
+            Assert.True(sipURI.User == "C=on;t=DLPAN", "SIP user portion parsed incorrectly. User wrong");
+            Assert.True("10.0.0.1:5060" == sipURI.Host, "SIP host portion parsed incorrectly.");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void OneParamInUserPortionURIWithUserPhoneTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI sipURI = SIPURI.ParseSIPURI("sip:C=on@10.0.0.1:5060;lr;user=phone");
+
+            Assert.True(sipURI.UserParameters.Get("C") == "on", "SIP user portion parsed incorrectly. Param C wrong.");
+            Assert.True(sipURI.UserWithoutParameters == "", "SIP user portion parsed incorrectly. UserNoParams wrong");
+            Assert.True(sipURI.User == "C=on", "SIP user portion parsed incorrectly. User wrong");
+            Assert.True("10.0.0.1:5060" == sipURI.Host, "SIP host portion parsed incorrectly.");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        [Fact]
+        public void ParamsInUserPortionURIPhoneNumWithParamsTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI sipURI = SIPURI.ParseSIPURI("sip:+41999999999;cpc=ordinary@10.0.0.1:5060;transport=udp;user=phone");
+
+            Assert.True(sipURI.UserParameters.Get("cpc") == "ordinary", "SIP user portion parsed incorrectly. Param cpc wrong.");
+            Assert.True(sipURI.UserWithoutParameters == "+41999999999", "SIP user portion parsed incorrectly. UserNoParams wrong.");
+            Assert.True(sipURI.User == "+41999999999;cpc=ordinary", "SIP user portion parsed incorrectly. User wrong.");
+            Assert.True("10.0.0.1:5060" == sipURI.Host, "SIP host portion parsed incorrectly.");
 
             logger.LogDebug("-----------------------------------------");
         }

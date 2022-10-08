@@ -18,15 +18,15 @@
 
   <ItemGroup>
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.10" />
-    <PackageReference Include="DnsClient" Version="1.5.0" />
+    <PackageReference Include="DnsClient" Version="1.6.1" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.1.0" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.2.0" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461;net5.0;net6.0</TargetFrameworks>
-    <Authors>Aaron Clauson &amp; Contributors</Authors>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net461;net5.0;net6.0</TargetFrameworks>
+    <Authors>Aaron Clauson, Christophe Irles, Rafael Soares &amp; Contributors</Authors>
     <Copyright>Copyright © 2010-2022 Aaron Clauson</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorcery</Title>
@@ -44,15 +44,19 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v6.0.6: Minor bug fixes. G729 codec thanks to @edscodeblenders.
+    <PackageReleaseNotes>-v6.0.11: Bug fixes.
+-v6.0.9: Supporting custom SIP TLS certificate validation callback. SCTP improvements.
+-v6.0.8: Multiple audio and video stream support and other fixes.
+-v6.0.7: Synchronise with audio/video abstractions library.
+-v6.0.6: Minor bug fixes. G729 codec thanks to @edscodeblenders.
 -v6.0.4: SIPUserAgent hangup fixes. SIP Expire header fix. Other minor bug fixes.
 -v6.0.3: No changes. Aligning release tag.
 -v6.0.2: Set .net6 targetted version as stable.
 -v6.0.1-pre: Added .net6 target.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>6.0.6</Version>
-    <AssemblyVersion>6.0.6</AssemblyVersion>
-    <FileVersion>6.0.6</FileVersion>
+    <Version>6.0.11</Version>
+    <AssemblyVersion>6.0.11</AssemblyVersion>
+    <FileVersion>6.0.11</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">

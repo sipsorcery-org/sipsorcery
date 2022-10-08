@@ -27,7 +27,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
-    internal class SIPTransactionEngine
+    internal class SIPTransactionEngine : IDisposable
     {
         private const string TXENGINE_THREAD_NAME = "sip-txengine";
         private const int MAX_TXCHECK_WAIT_MILLISECONDS = 200; // Time to wait between checking for new pending transactions.
@@ -45,6 +45,7 @@ namespace SIPSorcery.SIP
 
         protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for.    
 
+        private readonly Thread m_transactionPollingThread;
         private bool m_isClosed = false;
         private SIPTransport m_sipTransport;
 
@@ -54,6 +55,9 @@ namespace SIPSorcery.SIP
         /// request to get through.
         /// </summary>
         private ConcurrentDictionary<string, SIPTransaction> m_pendingTransactions = new ConcurrentDictionary<string, SIPTransaction>();
+
+        private readonly AutoResetEvent m_newPendingTransactionEvent = new AutoResetEvent(false);
+        private volatile bool m_disposed;
 
         public int TransactionsCount
         {
@@ -72,12 +76,18 @@ namespace SIPSorcery.SIP
         public SIPTransactionEngine(SIPTransport sipTransport)
         {
             m_sipTransport = sipTransport;
-
-            Task.Factory.StartNew(ProcessPendingTransactions, TaskCreationOptions.LongRunning);
+            m_transactionPollingThread = new Thread(ProcessPendingTransactions);
+            m_transactionPollingThread.IsBackground = true;
+            m_transactionPollingThread.Start();
         }
 
         public void AddTransaction(SIPTransaction sipTransaction)
         {
+            if (m_disposed || m_isClosed)
+            {
+                return;
+            }
+
             if (m_pendingTransactions.Count > MaxReliableTranismissionsCount)
             {
                 throw new ApplicationException("Pending transactions list is full.");
@@ -88,6 +98,8 @@ namespace SIPSorcery.SIP
                 {
                     throw new ApplicationException("Failed to add transaction to pending list.");
                 }
+
+                m_newPendingTransactionEvent.Set();
             }
         }
 
@@ -251,7 +263,11 @@ namespace SIPSorcery.SIP
 
         public void Shutdown()
         {
-            m_isClosed = true;
+            if (!m_isClosed)
+            {
+                m_isClosed = true;
+                m_newPendingTransactionEvent.Set();
+            }
         }
 
         /// <summary>
@@ -311,7 +327,7 @@ namespace SIPSorcery.SIP
                 {
                     if (m_pendingTransactions.IsEmpty)
                     {
-                        Thread.Sleep(MAX_TXCHECK_WAIT_MILLISECONDS);
+                        m_newPendingTransactionEvent.WaitOne(MAX_TXCHECK_WAIT_MILLISECONDS);
                     }
                     else
                     {
@@ -483,7 +499,7 @@ namespace SIPSorcery.SIP
 
                         RemoveExpiredTransactions();
 
-                        Thread.Sleep(TXCHECK_WAIT_MILLISECONDS);
+                        m_newPendingTransactionEvent.WaitOne(TXCHECK_WAIT_MILLISECONDS);
                     }
                 }
             }
@@ -725,6 +741,27 @@ namespace SIPSorcery.SIP
             {
                 logger.LogError("Exception RemoveExpiredTransaction. " + excp.Message);
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!m_disposed)
+            {
+                m_disposed = true;
+
+                if (disposing)
+                {
+                    Shutdown();
+                    m_transactionPollingThread.Join();
+                    m_newPendingTransactionEvent.Dispose();
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

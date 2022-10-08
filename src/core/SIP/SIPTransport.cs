@@ -311,6 +311,7 @@ namespace SIPSorcery.SIP
                 m_cts.Cancel();
                 m_inMessageArrived.Set();
                 m_transactionEngine?.Shutdown();
+                m_transactionEngine?.Dispose();
 
                 foreach (SIPChannel channel in m_sipChannels.Values)
                 {

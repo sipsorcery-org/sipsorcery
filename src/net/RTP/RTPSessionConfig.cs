@@ -77,5 +77,9 @@ namespace SIPSorcery.Net
         /// should be created.
         /// </summary>
         public PortRange RtpPortRange { get; set; }
+
+        public bool IsSecure { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.DtlsSrtp; }
+
+        public bool UseSdpCryptoNegotiation { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoNegotiation; }
     }
 }

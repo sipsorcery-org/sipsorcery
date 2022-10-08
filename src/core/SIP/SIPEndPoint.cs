@@ -271,14 +271,16 @@ namespace SIPSorcery.SIP
 
         public override int GetHashCode()
         {
-            return Protocol.GetHashCode() + Address.GetHashCode() + Port.GetHashCode()
+            return Protocol.GetHashCode() +
+                + (Address != null ? Address.GetHashCode() : 0)
+                + Port.GetHashCode()
                 + (ChannelID != null ? ChannelID.GetHashCode() : 0)
                 + (ConnectionID != null ? ConnectionID.GetHashCode() : 0);
         }
 
         public SIPEndPoint CopyOf()
         {
-            return new SIPEndPoint(Protocol, new IPAddress(Address.GetAddressBytes()), Port, ChannelID, ConnectionID);
+            return new SIPEndPoint(Protocol, Address != null ? new IPAddress(Address.GetAddressBytes()) : null, Port, ChannelID, ConnectionID);
         }
 
         /// <summary>
