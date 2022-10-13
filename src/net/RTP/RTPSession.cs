@@ -2039,13 +2039,6 @@ namespace SIPSorcery.Net
                 //logger.LogWarning($"Could not find appropriate remote track for SSRC for RTCP packet - Ssrc:{ssrc}");
             }
 
-
-            if(ssrc < 190)
-            {
-                return;
-            }
-
-
             var rtcpPkt = new RTCPCompoundPacket(buffer);
             if (rtcpPkt != null)
             {
