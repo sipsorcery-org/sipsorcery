@@ -1432,7 +1432,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        private AudioStream GetNextAudioStreamByLocalTrack()
+        protected virtual AudioStream GetNextAudioStreamByLocalTrack()
         {
             int index = AudioStreamList.Count;
             if (index > 0)
@@ -2036,7 +2036,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                //logger.LogWarning($"Could not find appropriate remote track for SSRC for RTCP packet - Ssrc:{ssrc}");
+                logger.LogWarning($"Could not find appropriate remote track for SSRC for RTCP packet - Ssrc:{ssrc}");
             }
 
             var rtcpPkt = new RTCPCompoundPacket(buffer);
@@ -2323,6 +2323,10 @@ namespace SIPSorcery.Net
             else if (rtcpPkt.ReceiverReport != null)
             {
                 return GetMediaStream(rtcpPkt.ReceiverReport.SSRC);
+            }
+            else if (rtcpPkt.Feedback != null)
+            {
+                return GetMediaStream(rtcpPkt.Feedback.SenderSSRC);
             }
 
             // No match on SR/RR SSRC. Check the individual reception reports for a known SSRC.

@@ -27,6 +27,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -84,6 +85,8 @@ namespace SIPSorcery.Net
 
     public class RTCPFeedback
     {
+        private static ILogger logger = Log.Logger;
+
         public int SENDER_PAYLOAD_SIZE = 20;
         public int MIN_PACKET_SIZE = 0;
 
@@ -235,8 +238,11 @@ namespace SIPSorcery.Net
                     // Application feedback reports do no have any additional parameters?
                     break;
                 default:
-                    throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} and message type "
-                    + $"{Header.FeedbackMessageType} not yet implemented.");
+                    logger?.LogDebug($"Serialization for feedback report {Header.PacketType} and message type "
+                                        + $"{Header.FeedbackMessageType} not yet implemented.");
+                    break;
+                    //throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} and message type "
+                    //+ $"{Header.FeedbackMessageType} not yet implemented.");
             }
             return buffer;
         }
