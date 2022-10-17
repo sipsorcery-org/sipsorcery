@@ -1008,16 +1008,21 @@ namespace SIPSorcery.Net
                         }
                     }
 
+                    List<SDPAudioVideoMediaFormat> capabilities = null;
                     if (currentMediaStream.LocalTrack == null)
                     {
+                        capabilities = remoteTrack.Capabilities;
                         var inactiveLocalTrack = new MediaStreamTrack(currentMediaStream.MediaType, false, remoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
                         currentMediaStream.LocalTrack = inactiveLocalTrack;
                     }
                     else
                     {
-                        currentMediaStream.LocalTrack.Capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(announcement.MediaFormats.Values.ToList(), currentMediaStream.LocalTrack?.Capabilities);
+                        // As proved by Azure implementation, we need to send based on capabilities of remote track. Azure return SDP with only one possible Codec (H264 107)
+                        // but we receive frames based on our LocalRemoteTracks, so its possiblet o receive a frame with ID 122, for exemple, even when remote annoucement only have 107
+                        // Thats why we changed line below to keep local track capabilities untouched as we can always do it during send/receive moment
+                        capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(currentMediaStream.LocalTrack?.Capabilities, currentMediaStream.RemoteTrack?.Capabilities);
+                        //currentMediaStream.LocalTrack.Capabilities = capabilities;
                         
-
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
                             // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
@@ -1042,12 +1047,12 @@ namespace SIPSorcery.Net
 
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                     {
-                        if (currentMediaStream.LocalTrack.Capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
+                        if (capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
                         {
                             return SetDescriptionResultEnum.AudioIncompatible;
                         }
                     }
-                    else if (currentMediaStream.LocalTrack == null && currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0)
+                    else if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack == null && currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0))
                     {
                         return SetDescriptionResultEnum.VideoIncompatible;
 
