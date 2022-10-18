@@ -686,12 +686,12 @@ namespace SIPSorcery.net.RTP
                 if (MediaType == SDPMediaTypesEnum.audio)
                 {
 
-                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(LocalTrack.Capabilities, RemoteTrack.Capabilities)
+                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities)
                         .Where(x => x.ID != RemoteRtpEventPayloadID).FirstOrDefault();
                 }
                 else
                 {
-                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(LocalTrack.Capabilities, RemoteTrack.Capabilities).First();
+                    format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities).First();
                 }
 
                 if (format.IsEmpty())

@@ -173,7 +173,7 @@ namespace SIPSorcery.Net
         /// in an RFC somewhere but I wasn't able to find it from a quick search.
         /// </summary>
         public const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
-            
+
         protected static ILogger logger = Log.Logger;
 
         protected RtpSessionConfig rtpSessionConfig;
@@ -185,12 +185,12 @@ namespace SIPSorcery.Net
 
         // The stream used for the underlying RTP session to create a single RTP channel that will
         // be used to multiplex all required media streams. (see addSingleTrack())
-        protected MediaStream m_primaryStream; 
+        protected MediaStream m_primaryStream;
 
         protected RTPChannel MultiplexRtpChannel = null;
 
-        protected List<List<SDPSsrcAttribute>> audioRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>> ();
-        protected List<List<SDPSsrcAttribute>> videoRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>> ();
+        protected List<List<SDPSsrcAttribute>> audioRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
+        protected List<List<SDPSsrcAttribute>> videoRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
 
         /// <summary>
         /// Track if current remote description is invalid (used in Renegotiation logic)
@@ -212,7 +212,7 @@ namespace SIPSorcery.Net
         /// The primary Audio Stream for this session
         /// </summary>
         public AudioStream AudioStream
-        { 
+        {
             get
             {
                 if (AudioStreamList.Count > 0)
@@ -374,8 +374,8 @@ namespace SIPSorcery.Net
         /// a particular audio or video stream. It is recommended to leave the
         /// value to false unless a specific need exists.
         /// </summary>
-        public bool AcceptRtpFromAny 
-        { 
+        public bool AcceptRtpFromAny
+        {
             get
             {
                 return m_acceptRtpFromAny;
@@ -593,7 +593,7 @@ namespace SIPSorcery.Net
 
         protected void AddRemoteSDPSsrcAttributes(SDPMediaTypesEnum mediaType, List<SDPSsrcAttribute> sdpSsrcAttributes)
         {
-            if(mediaType == SDPMediaTypesEnum.audio)
+            if (mediaType == SDPMediaTypesEnum.audio)
             {
                 audioRemoteSDPSsrcAttributes.Add(sdpSsrcAttributes);
             }
@@ -606,9 +606,9 @@ namespace SIPSorcery.Net
         protected void LogRemoteSDPSsrcAttributes()
         {
             string str = "Audio:[ ";
-            foreach(var audioRemoteSDPSsrcAttribute in audioRemoteSDPSsrcAttributes)
+            foreach (var audioRemoteSDPSsrcAttribute in audioRemoteSDPSsrcAttributes)
             {
-                foreach(var attr in audioRemoteSDPSsrcAttribute)
+                foreach (var attr in audioRemoteSDPSsrcAttribute)
                 {
                     str += attr.SSRC + " - ";
                 }
@@ -689,7 +689,7 @@ namespace SIPSorcery.Net
                 mediaStream.RtcpSession = null;
             }
         }
-        
+
         private void RaiseOnTimeOut(int index, SDPMediaTypesEnum media)
         {
             if (index == 0)
@@ -773,7 +773,7 @@ namespace SIPSorcery.Net
         /// <returns>A task that when complete contains the SDP offer.</returns>
         public virtual SDP CreateOffer(IPAddress connectionAddress)
         {
-            if ( ((AudioStream == null) || (AudioStream.LocalTrack == null)) && ((VideoStream == null) || (VideoStream.LocalTrack == null)) )
+            if (((AudioStream == null) || (AudioStream.LocalTrack == null)) && ((VideoStream == null) || (VideoStream.LocalTrack == null)))
             {
                 logger.LogWarning("No local media tracks available for create offer.");
                 return null;
@@ -919,7 +919,7 @@ namespace SIPSorcery.Net
                 else if (sessionDescription.Media?.Count == 1)
                 {
                     var remoteMediaType = sessionDescription.Media.First().Media;
-                    if (remoteMediaType == SDPMediaTypesEnum.audio && ( (AudioStream == null) || (AudioStream.LocalTrack == null) ) )
+                    if (remoteMediaType == SDPMediaTypesEnum.audio && ((AudioStream == null) || (AudioStream.LocalTrack == null)))
                     {
                         return SetDescriptionResultEnum.NoMatchingMediaType;
                     }
@@ -1020,9 +1020,13 @@ namespace SIPSorcery.Net
                         // As proved by Azure implementation, we need to send based on capabilities of remote track. Azure return SDP with only one possible Codec (H264 107)
                         // but we receive frames based on our LocalRemoteTracks, so its possiblet o receive a frame with ID 122, for exemple, even when remote annoucement only have 107
                         // Thats why we changed line below to keep local track capabilities untouched as we can always do it during send/receive moment
-                        capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(currentMediaStream.LocalTrack?.Capabilities, currentMediaStream.RemoteTrack?.Capabilities);
+                        capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(currentMediaStream.RemoteTrack?.Capabilities, currentMediaStream.LocalTrack?.Capabilities);
+                        //Keep same order of LocalTrack priority to prevent incorrect sending format
+                        SDPAudioVideoMediaFormat.SortMediaCapability(capabilities, currentMediaStream.LocalTrack?.Capabilities);
+
+                        currentMediaStream.RemoteTrack.Capabilities = capabilities;
                         //currentMediaStream.LocalTrack.Capabilities = capabilities;
-                        
+
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
                             // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
@@ -1236,16 +1240,17 @@ namespace SIPSorcery.Net
 
             if (track.Kind == SDPMediaTypesEnum.audio)
             {
-                foreach(var audioStream in AudioStreamList)
+                foreach (var audioStream in AudioStreamList)
                 {
-                    if(audioStream.LocalTrack == track)
+                    if (audioStream.LocalTrack == track)
                     {
                         RequireRenegotiation = true;
                         audioStream.LocalTrack = null;
                         return true;
                     }
                 }
-            } else if (track.Kind == SDPMediaTypesEnum.video)
+            }
+            else if (track.Kind == SDPMediaTypesEnum.video)
             {
                 foreach (var videoStream in VideoStreamList)
                 {
@@ -1287,7 +1292,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                if(audioStream != null)
+                if (audioStream != null)
                 {
                     //if ( (audioStream.LocalTrack == null) && (audioStream.RemoteTrack == null) )
                     //{
@@ -1394,7 +1399,7 @@ namespace SIPSorcery.Net
             // in case the remote party send reports (presumably in case we decide we do want
             // to send or receive audio on this session at some later stage).
             CreateRtcpSession(currentMediaStream);
-            
+
         }
 
         protected void SetGlobalDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
@@ -1412,7 +1417,7 @@ namespace SIPSorcery.Net
 
         protected void SetGlobalSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
         {
-            foreach(var audioStream in AudioStreamList)
+            foreach (var audioStream in AudioStreamList)
             {
                 audioStream.SetSecurityContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
             }
@@ -1426,7 +1431,7 @@ namespace SIPSorcery.Net
         private void InitIPEndPointAndSecurityContext(MediaStream mediaStream)
         {
             // Get primary AudioStream
-            if ( (m_primaryStream != null) && (mediaStream != null) )
+            if ((m_primaryStream != null) && (mediaStream != null))
             {
                 var secureContext = m_primaryStream.GetSecurityContext();
                 if (secureContext != null)
@@ -1442,7 +1447,7 @@ namespace SIPSorcery.Net
             int index = AudioStreamList.Count;
             if (index > 0)
             {
-                foreach(var audioStream in AudioStreamList)
+                foreach (var audioStream in AudioStreamList)
                 {
                     if (audioStream.LocalTrack == null)
                     {
@@ -1687,11 +1692,11 @@ namespace SIPSorcery.Net
                     {
                         rtpPort = m_primaryStream.GetRTPChannel().RTPPort;
                     }
-                    else 
+                    else
                     {
                         rtpPort = mediaStream.GetRTPChannel().RTPPort;
                     }
-                    
+
                 }
 
                 SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(mediaStream.LocalTrack.Kind, rtpPort, mediaStream.LocalTrack.Capabilities);
@@ -1849,9 +1854,9 @@ namespace SIPSorcery.Net
                 IsStarted = true;
 
 
-                foreach(var audioStream in AudioStreamList)
+                foreach (var audioStream in AudioStreamList)
                 {
-                    if(audioStream.HasAudio && audioStream.RtcpSession != null && audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                    if (audioStream.HasAudio && audioStream.RtcpSession != null && audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                     {
                         // The local audio track may have been disabled if there were no matching capabilities with
                         // the remote party.
@@ -1923,7 +1928,7 @@ namespace SIPSorcery.Net
                 IsClosed = true;
 
 
-                foreach(var audioStream in AudioStreamList)
+                foreach (var audioStream in AudioStreamList)
                 {
                     if (audioStream != null)
                     {
@@ -1963,7 +1968,7 @@ namespace SIPSorcery.Net
                 OnClosed?.Invoke();
             }
         }
-        
+
         protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
@@ -2119,7 +2124,7 @@ namespace SIPSorcery.Net
 
                 MediaStream mediaStream = GetMediaStream(hdr.SyncSource);
 
-                if ( (mediaStream == null) && (AudioStreamList.Count < 2) && (VideoStreamList.Count < 2) )
+                if ((mediaStream == null) && (AudioStreamList.Count < 2) && (VideoStreamList.Count < 2))
                 {
                     mediaStream = GetMediaStreamFromPayloadType(hdr.PayloadType);
                 }
@@ -2144,12 +2149,12 @@ namespace SIPSorcery.Net
 
         private MediaStreamTrack GetMediaStreamTrackFromPayloadType(int payloadId)
         {
-            foreach(var audioStream in AudioStreamList)
+            foreach (var audioStream in AudioStreamList)
             {
                 if (audioStream.RemoteTrack != null && audioStream.RemoteTrack.IsPayloadIDMatch(payloadId))
                 {
                     return audioStream.RemoteTrack;
-                } 
+                }
                 else if (audioStream.LocalTrack != null && audioStream.LocalTrack.IsPayloadIDMatch(payloadId))
                 {
                     return audioStream.LocalTrack;
@@ -2209,7 +2214,7 @@ namespace SIPSorcery.Net
                     return AudioStream;
                 }
             }
-            else 
+            else
             {
                 if (HasVideo)
                 {
@@ -2222,7 +2227,7 @@ namespace SIPSorcery.Net
                 if (audioStream?.RemoteTrack?.IsSsrcMatch(ssrc) == true)
                 {
                     return audioStream;
-                } 
+                }
                 else if (audioStream?.LocalTrack?.IsSsrcMatch(ssrc) == true)
                 {
                     return audioStream;
@@ -2272,7 +2277,7 @@ namespace SIPSorcery.Net
             }
 
             // Get related AudioStream if found
-            if (found && (AudioStreamList.Count > index) )
+            if (found && (AudioStreamList.Count > index))
             {
                 var audioStream = AudioStreamList[index];
                 //if (audioStream?.RemoteTrack != null)
