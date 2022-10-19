@@ -52,8 +52,41 @@ namespace SIPSorcery.Net
         protected readonly Socket m_socket;
         protected byte[] m_recvBuffer;
         protected bool m_isClosed;
+        protected bool m_isRunningReceive;
         protected IPEndPoint m_localEndPoint;
         protected AddressFamily m_addressFamily;
+
+        public virtual bool IsClosed
+        {
+            get
+            {
+                return m_isClosed;
+            }
+            protected set
+            {
+                if (m_isClosed == value)
+                {
+                    return;
+                }
+                m_isClosed = value;
+            }
+        }
+
+        public virtual bool IsRunningReceive
+        {
+            get
+            {
+                return m_isRunningReceive;
+            }
+            protected set
+            {
+                if (m_isRunningReceive == value)
+                {
+                    return;
+                }
+                m_isRunningReceive = value;
+            }
+        }
 
         /// <summary>
         /// Fires when a new packet has been received on the UDP socket.
@@ -79,22 +112,39 @@ namespace SIPSorcery.Net
         /// </summary>
         public virtual void BeginReceiveFrom()
         {
+            //Prevent call BeginReceiveFrom if it is already running
+            if(m_isClosed && m_isRunningReceive)
+            {
+                m_isRunningReceive = false;
+            }
+            if (m_isRunningReceive || m_isClosed)
+            {
+                return;
+            }
+
             try
             {
+                m_isRunningReceive = true;
                 EndPoint recvEndPoint = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                 m_socket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
             }
-            catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
+            // Thrown when socket is closed. Can be safely ignored.
             // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
             // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
             // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
+            catch (ObjectDisposedException) 
+            {
+                m_isRunningReceive = false;
+            } 
             catch (SocketException sockExcp)
             {
+                m_isRunningReceive = false;
                 logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceiveFrom. {sockExcp.Message}");
                 //Close(sockExcp.Message);
             }
             catch (Exception excp)
             {
+                m_isRunningReceive = false;
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3262
                 // the BeginReceiveFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
                 // case the socket can be considered to be unusable and there's no point trying another receive.
@@ -186,6 +236,7 @@ namespace SIPSorcery.Net
             }
             finally
             {
+                m_isRunningReceive = false;
                 if (!m_isClosed)
                 {
                     BeginReceiveFrom();
@@ -456,6 +507,12 @@ namespace SIPSorcery.Net
                     if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
                     {
                         dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
+                    }
+
+                    //Fix ReceiveFrom logic if any previous exception happens
+                    if (!m_rtpReceiver.IsRunningReceive && !m_rtpReceiver.IsClosed)
+                    {
+                        m_rtpReceiver.BeginReceiveFrom();
                     }
 
                     sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
