@@ -567,10 +567,11 @@ namespace SIPSorcery.net.RTP
                 return;
             }
 
-            var format = RemoteTrack?.GetFormatForPayloadID(hdr.PayloadType);
+            // When receiving an Payload from other peer, it will be related to our LocalDescription,
+            // not to RemoteDescription (as proved by Azure WebRTC Implementation)
+            var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
             if ((rtpPacket != null) && (format != null))
             {
-
                 if (UseBuffer())
                 {
                     var reorderBuffer = GetBuffer();
