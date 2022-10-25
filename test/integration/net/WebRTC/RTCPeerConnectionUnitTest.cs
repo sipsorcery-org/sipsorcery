@@ -654,9 +654,9 @@ a=rtpmap:100 VP8/90000";
 
             logger.LogDebug($"Local answer: {answer}");
 
-            Assert.Equal(2, pc.AudioStream.LocalTrack.Capabilities.Count());
+            Assert.Equal(3, pc.AudioStream.LocalTrack.Capabilities.Count());
             Assert.Equal(0, pc.AudioStream.LocalTrack.Capabilities.Single(x => x.Name() == "PCMU").ID);
-            Assert.Equal(100, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
+            Assert.Equal(96, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
 
             pc.Close("normal");
         }
@@ -731,7 +731,7 @@ a=rtpmap:100 VP8/90000";
             logger.LogDebug($"Local answer: {answer}");
 
             Assert.Equal(MediaStreamStatusEnum.Inactive, pc.AudioStream.LocalTrack.StreamStatus);
-            Assert.Equal(100, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
+            Assert.Equal(96, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
 
             pc.Close("normal");
         }
@@ -909,7 +909,7 @@ a=fingerprint:sha-256 AE:1C:59:19:00:7B:C2:1C:85:95:0C:6C:8C:14:E8:67:A4:7D:D0:A
             logger.LogDebug($"Local answer: {answer}");
 
             Assert.NotNull(pc.VideoStream.LocalTrack);
-            Assert.Equal(96, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "H264").ID);
+            Assert.Equal(100, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "H264").ID);
             Assert.Equal(IceRolesEnum.active, pc.IceRole);
 
             pc.Close("normal");
