@@ -140,8 +140,19 @@ namespace SIPSorcery.Net
             /// </summary>
             public override void BeginReceiveFrom()
             {
+                //Prevent call BeginReceiveFrom if it is already running or into invalid state
+                if ((m_isClosed || !m_socket.Connected) && m_isRunningReceive)
+                {
+                    m_isRunningReceive = false;
+                }
+                if (m_isRunningReceive || m_isClosed || !m_socket.Connected)
+                {
+                    return;
+                }
+
                 try
                 {
+                    m_isRunningReceive = true;
                     EndPoint recvEndPoint = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                     var recvLength = m_recvBuffer.Length - m_recvOffset;
                     //Discard fragmentation buffer as seems that we will have an incorrect result based in cached values
@@ -152,21 +163,27 @@ namespace SIPSorcery.Net
                     }
                     m_socket.BeginReceiveFrom(m_recvBuffer, m_recvOffset, recvLength, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
                 }
-                catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
-                                                    // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
-                                                    // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
-                                                    // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
+                // Thrown when socket is closed. Can be safely ignored.
+                // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
+                // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
+                // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
+                catch (ObjectDisposedException) 
+                {
+                    m_isRunningReceive = false;
+                } 
                 catch (SocketException sockExcp)
                 {
-                    logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceiveFrom. {sockExcp.Message}");
+                    m_isRunningReceive = false;
+                    logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in IceTcpReceiver.BeginReceiveFrom. {sockExcp.Message}");
                     //Close(sockExcp.Message);
                 }
                 catch (Exception excp)
                 {
+                    m_isRunningReceive = false;
                     // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3262
                     // the BeginReceiveFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
                     // case the socket can be considered to be unusable and there's no point trying another receive.
-                    logger.LogError(excp, $"Exception UdpReceiver.BeginReceiveFrom. {excp.Message}");
+                    logger.LogError(excp, $"Exception IceTcpReceiver.BeginReceiveFrom. {excp.Message}");
                     Close(excp.Message);
                 }
             }
@@ -239,17 +256,18 @@ namespace SIPSorcery.Net
                     // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
                     // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
                     // error since the remote party may not have initialised their socket yet.
-                    logger.LogWarning(sockExcp, $"SocketException UdpReceiver.EndReceiveFrom ({sockExcp.SocketErrorCode}). {sockExcp.Message}");
+                    logger.LogWarning(sockExcp, $"SocketException IceTcpReceiver.EndReceiveFrom ({sockExcp.SocketErrorCode}). {sockExcp.Message}");
                 }
                 catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
                 { }
                 catch (Exception excp)
                 {
-                    logger.LogError($"Exception UdpReceiver.EndReceiveFrom. {excp}");
+                    logger.LogError($"Exception IceTcpReceiver.EndReceiveFrom. {excp}");
                     Close(excp.Message);
                 }
                 finally
                 {
+                    m_isRunningReceive = false;
                     if (!m_isClosed)
                     {
                         BeginReceiveFrom();
@@ -2412,6 +2430,12 @@ namespace SIPSorcery.Net
                         sendSocket.Connect(dstEndPoint);
 
                         logger.LogDebug($"SendOverTCP status: {sendSocket.Connected} endpoint: {dstEndPoint}");
+                    }
+
+                    //Fix ReceiveFrom logic if any previous exception happens
+                    if (!m_rtpTcpReceiver.IsRunningReceive && !m_rtpTcpReceiver.IsClosed)
+                    {
+                        m_rtpTcpReceiver.BeginReceiveFrom();
                     }
 
                     sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendToTCP, sendSocket);

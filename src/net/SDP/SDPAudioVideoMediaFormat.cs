@@ -372,6 +372,37 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Sort capabilities array based on another capability array
+        /// </summary>
+        /// <param name="capabilities"></param>
+        /// <param name="priorityOrder"></param>
+        public static void SortMediaCapability(List<SDPAudioVideoMediaFormat> capabilities, List<SDPAudioVideoMediaFormat> priorityOrder)
+        {
+            //Fix Capabilities Order
+            if (priorityOrder != null && capabilities != null)
+            {
+                capabilities.Sort((a, b) =>
+                {
+                    //Sort By Indexes
+                    var aSort = priorityOrder.FindIndex(c => c.ID == a.ID);
+                    var bSort = priorityOrder.FindIndex(c => c.ID == b.ID);
+
+                    //Sort Values
+                    if (aSort < 0)
+                    {
+                        aSort = int.MaxValue;
+                    }
+                    if (bSort < 0)
+                    {
+                        bSort = int.MaxValue;
+                    }
+
+                    return aSort.CompareTo(bSort);
+                });
+            }
+        }
+
+        /// <summary>
         /// Parses an rtpmap attribute in the form "name/clock" or "name/clock/channels".
         /// </summary>
         public static bool TryParseRtpmap(string rtpmap, out string name, out int clockRate, out int channels)
