@@ -11602,6 +11602,24 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.MediaStream
   nameWithType: MediaStream.MediaStream
+- uid: SIPSorcery.net.RTP.MediaStream._isClosed
+  name: _isClosed
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream__isClosed
+  commentId: F:SIPSorcery.net.RTP.MediaStream._isClosed
+  fullName: SIPSorcery.net.RTP.MediaStream._isClosed
+  nameWithType: MediaStream._isClosed
+- uid: SIPSorcery.net.RTP.MediaStream._pendingPackagesBuffer
+  name: _pendingPackagesBuffer
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream__pendingPackagesBuffer
+  commentId: F:SIPSorcery.net.RTP.MediaStream._pendingPackagesBuffer
+  fullName: SIPSorcery.net.RTP.MediaStream._pendingPackagesBuffer
+  nameWithType: MediaStream._pendingPackagesBuffer
+- uid: SIPSorcery.net.RTP.MediaStream._pendingPackagesLock
+  name: _pendingPackagesLock
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream__pendingPackagesLock
+  commentId: F:SIPSorcery.net.RTP.MediaStream._pendingPackagesLock
+  fullName: SIPSorcery.net.RTP.MediaStream._pendingPackagesLock
+  nameWithType: MediaStream._pendingPackagesLock
 - uid: SIPSorcery.net.RTP.MediaStream.AcceptRtpFromAny
   name: AcceptRtpFromAny
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_AcceptRtpFromAny
@@ -11628,6 +11646,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.AddBuffer
   nameWithType: MediaStream.AddBuffer
+- uid: SIPSorcery.net.RTP.MediaStream.AddPendingPackage(SIPSorcery.Net.RTPHeader,System.Int32,System.Net.IPEndPoint,System.Byte[],SIPSorcery.net.RTP.VideoStream)
+  name: AddPendingPackage(RTPHeader, Int32, IPEndPoint, Byte[], VideoStream)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_AddPendingPackage_SIPSorcery_Net_RTPHeader_System_Int32_System_Net_IPEndPoint_System_Byte___SIPSorcery_net_RTP_VideoStream_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.AddPendingPackage(SIPSorcery.Net.RTPHeader,System.Int32,System.Net.IPEndPoint,System.Byte[],SIPSorcery.net.RTP.VideoStream)
+  name.vb: AddPendingPackage(RTPHeader, Int32, IPEndPoint, Byte(), VideoStream)
+  fullName: SIPSorcery.net.RTP.MediaStream.AddPendingPackage(SIPSorcery.Net.RTPHeader, System.Int32, System.Net.IPEndPoint, System.Byte[], SIPSorcery.net.RTP.VideoStream)
+  fullName.vb: SIPSorcery.net.RTP.MediaStream.AddPendingPackage(SIPSorcery.Net.RTPHeader, System.Int32, System.Net.IPEndPoint, System.Byte(), SIPSorcery.net.RTP.VideoStream)
+  nameWithType: MediaStream.AddPendingPackage(RTPHeader, Int32, IPEndPoint, Byte[], VideoStream)
+  nameWithType.vb: MediaStream.AddPendingPackage(RTPHeader, Int32, IPEndPoint, Byte(), VideoStream)
+- uid: SIPSorcery.net.RTP.MediaStream.AddPendingPackage*
+  name: AddPendingPackage
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_AddPendingPackage_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.AddPendingPackage
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.MediaStream.AddPendingPackage
+  nameWithType: MediaStream.AddPendingPackage
 - uid: SIPSorcery.net.RTP.MediaStream.AddRtpChannel(SIPSorcery.Net.RTPChannel)
   name: AddRtpChannel(RTPChannel)
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_AddRtpChannel_SIPSorcery_Net_RTPChannel_
@@ -11667,6 +11701,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.CheckIfCanSendRtpRaw
   nameWithType: MediaStream.CheckIfCanSendRtpRaw
+- uid: SIPSorcery.net.RTP.MediaStream.ClearPendingPackages
+  name: ClearPendingPackages()
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ClearPendingPackages
+  commentId: M:SIPSorcery.net.RTP.MediaStream.ClearPendingPackages
+  fullName: SIPSorcery.net.RTP.MediaStream.ClearPendingPackages()
+  nameWithType: MediaStream.ClearPendingPackages()
+- uid: SIPSorcery.net.RTP.MediaStream.ClearPendingPackages*
+  name: ClearPendingPackages
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ClearPendingPackages_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.ClearPendingPackages
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.MediaStream.ClearPendingPackages
+  nameWithType: MediaStream.ClearPendingPackages
 - uid: SIPSorcery.net.RTP.MediaStream.ControlDestinationEndPoint
   name: ControlDestinationEndPoint
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ControlDestinationEndPoint
@@ -11706,6 +11753,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.DestinationEndPoint
   nameWithType: MediaStream.DestinationEndPoint
+- uid: SIPSorcery.net.RTP.MediaStream.DispatchPendingPackages
+  name: DispatchPendingPackages()
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_DispatchPendingPackages
+  commentId: M:SIPSorcery.net.RTP.MediaStream.DispatchPendingPackages
+  fullName: SIPSorcery.net.RTP.MediaStream.DispatchPendingPackages()
+  nameWithType: MediaStream.DispatchPendingPackages()
+- uid: SIPSorcery.net.RTP.MediaStream.DispatchPendingPackages*
+  name: DispatchPendingPackages
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_DispatchPendingPackages_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.DispatchPendingPackages
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.MediaStream.DispatchPendingPackages
+  nameWithType: MediaStream.DispatchPendingPackages
 - uid: SIPSorcery.net.RTP.MediaStream.EnsureBufferUnprotected(System.Byte[],SIPSorcery.Net.RTPHeader,SIPSorcery.Net.RTPPacket@)
   name: EnsureBufferUnprotected(Byte[], RTPHeader, out RTPPacket)
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_EnsureBufferUnprotected_System_Byte___SIPSorcery_Net_RTPHeader_SIPSorcery_Net_RTPPacket__
@@ -11871,6 +11931,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.MediaType
   nameWithType: MediaStream.MediaType
+- uid: SIPSorcery.net.RTP.MediaStream.OnIsClosedStateChanged
+  name: OnIsClosedStateChanged
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnIsClosedStateChanged
+  commentId: E:SIPSorcery.net.RTP.MediaStream.OnIsClosedStateChanged
+  fullName: SIPSorcery.net.RTP.MediaStream.OnIsClosedStateChanged
+  nameWithType: MediaStream.OnIsClosedStateChanged
 - uid: SIPSorcery.net.RTP.MediaStream.OnReceiveReportByIndex
   name: OnReceiveReportByIndex
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnReceiveReportByIndex
@@ -11917,6 +11983,64 @@ references:
   commentId: E:SIPSorcery.net.RTP.MediaStream.OnTimeoutByIndex
   fullName: SIPSorcery.net.RTP.MediaStream.OnTimeoutByIndex
   nameWithType: MediaStream.OnTimeoutByIndex
+- uid: SIPSorcery.net.RTP.MediaStream.PendingPackages
+  name: MediaStream.PendingPackages
+  href: api/SIPSorcery.net.RTP.MediaStream.PendingPackages.html
+  commentId: T:SIPSorcery.net.RTP.MediaStream.PendingPackages
+  fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages
+  nameWithType: MediaStream.PendingPackages
+- uid: SIPSorcery.net.RTP.MediaStream.PendingPackages.#ctor
+  name: PendingPackages()
+  href: api/SIPSorcery.net.RTP.MediaStream.PendingPackages.html#SIPSorcery_net_RTP_MediaStream_PendingPackages__ctor
+  commentId: M:SIPSorcery.net.RTP.MediaStream.PendingPackages.#ctor
+  fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages.PendingPackages()
+  nameWithType: MediaStream.PendingPackages.PendingPackages()
+- uid: SIPSorcery.net.RTP.MediaStream.PendingPackages.#ctor(SIPSorcery.Net.RTPHeader,System.Int32,System.Net.IPEndPoint,System.Byte[],SIPSorcery.net.RTP.VideoStream)
+  name: PendingPackages(RTPHeader, Int32, IPEndPoint, Byte[], VideoStream)
+  href: api/SIPSorcery.net.RTP.MediaStream.PendingPackages.html#SIPSorcery_net_RTP_MediaStream_PendingPackages__ctor_SIPSorcery_Net_RTPHeader_System_Int32_System_Net_IPEndPoint_System_Byte___SIPSorcery_net_RTP_VideoStream_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.PendingPackages.#ctor(SIPSorcery.Net.RTPHeader,System.Int32,System.Net.IPEndPoint,System.Byte[],SIPSorcery.net.RTP.VideoStream)
+  name.vb: PendingPackages(RTPHeader, Int32, IPEndPoint, Byte(), VideoStream)
+  fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages.PendingPackages(SIPSorcery.Net.RTPHeader, System.Int32, System.Net.IPEndPoint, System.Byte[], SIPSorcery.net.RTP.VideoStream)
+  fullName.vb: SIPSorcery.net.RTP.MediaStream.PendingPackages.PendingPackages(SIPSorcery.Net.RTPHeader, System.Int32, System.Net.IPEndPoint, System.Byte(), SIPSorcery.net.RTP.VideoStream)
+  nameWithType: MediaStream.PendingPackages.PendingPackages(RTPHeader, Int32, IPEndPoint, Byte[], VideoStream)
+  nameWithType.vb: MediaStream.PendingPackages.PendingPackages(RTPHeader, Int32, IPEndPoint, Byte(), VideoStream)
+- uid: SIPSorcery.net.RTP.MediaStream.PendingPackages.#ctor*
+  name: PendingPackages
+  href: api/SIPSorcery.net.RTP.MediaStream.PendingPackages.html#SIPSorcery_net_RTP_MediaStream_PendingPackages__ctor_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.PendingPackages.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages.PendingPackages
+  nameWithType: MediaStream.PendingPackages.PendingPackages
+- uid: SIPSorcery.net.RTP.MediaStream.PendingPackages.buffer
+  name: buffer
+  href: api/SIPSorcery.net.RTP.MediaStream.PendingPackages.html#SIPSorcery_net_RTP_MediaStream_PendingPackages_buffer
+  commentId: F:SIPSorcery.net.RTP.MediaStream.PendingPackages.buffer
+  fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages.buffer
+  nameWithType: MediaStream.PendingPackages.buffer
+- uid: SIPSorcery.net.RTP.MediaStream.PendingPackages.hdr
+  name: hdr
+  href: api/SIPSorcery.net.RTP.MediaStream.PendingPackages.html#SIPSorcery_net_RTP_MediaStream_PendingPackages_hdr
+  commentId: F:SIPSorcery.net.RTP.MediaStream.PendingPackages.hdr
+  fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages.hdr
+  nameWithType: MediaStream.PendingPackages.hdr
+- uid: SIPSorcery.net.RTP.MediaStream.PendingPackages.localPort
+  name: localPort
+  href: api/SIPSorcery.net.RTP.MediaStream.PendingPackages.html#SIPSorcery_net_RTP_MediaStream_PendingPackages_localPort
+  commentId: F:SIPSorcery.net.RTP.MediaStream.PendingPackages.localPort
+  fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages.localPort
+  nameWithType: MediaStream.PendingPackages.localPort
+- uid: SIPSorcery.net.RTP.MediaStream.PendingPackages.remoteEndPoint
+  name: remoteEndPoint
+  href: api/SIPSorcery.net.RTP.MediaStream.PendingPackages.html#SIPSorcery_net_RTP_MediaStream_PendingPackages_remoteEndPoint
+  commentId: F:SIPSorcery.net.RTP.MediaStream.PendingPackages.remoteEndPoint
+  fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages.remoteEndPoint
+  nameWithType: MediaStream.PendingPackages.remoteEndPoint
+- uid: SIPSorcery.net.RTP.MediaStream.PendingPackages.videoStream
+  name: videoStream
+  href: api/SIPSorcery.net.RTP.MediaStream.PendingPackages.html#SIPSorcery_net_RTP_MediaStream_PendingPackages_videoStream
+  commentId: F:SIPSorcery.net.RTP.MediaStream.PendingPackages.videoStream
+  fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages.videoStream
+  nameWithType: MediaStream.PendingPackages.videoStream
 - uid: SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions(SIPSorcery.Net.RTPHeader)
   name: ProcessHeaderExtensions(RTPHeader)
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ProcessHeaderExtensions_SIPSorcery_Net_RTPHeader_
@@ -14052,6 +14176,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.GetMediaStreams
   nameWithType: RTPSession.GetMediaStreams
+- uid: SIPSorcery.Net.RTPSession.GetNextAudioStreamByLocalTrack
+  name: GetNextAudioStreamByLocalTrack()
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetNextAudioStreamByLocalTrack
+  commentId: M:SIPSorcery.Net.RTPSession.GetNextAudioStreamByLocalTrack
+  fullName: SIPSorcery.Net.RTPSession.GetNextAudioStreamByLocalTrack()
+  nameWithType: RTPSession.GetNextAudioStreamByLocalTrack()
+- uid: SIPSorcery.Net.RTPSession.GetNextAudioStreamByLocalTrack*
+  name: GetNextAudioStreamByLocalTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetNextAudioStreamByLocalTrack_
+  commentId: Overload:SIPSorcery.Net.RTPSession.GetNextAudioStreamByLocalTrack
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.GetNextAudioStreamByLocalTrack
+  nameWithType: RTPSession.GetNextAudioStreamByLocalTrack
 - uid: SIPSorcery.Net.RTPSession.GetNextVideoStreamByLocalTrack
   name: GetNextVideoStreamByLocalTrack()
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetNextVideoStreamByLocalTrack
@@ -20530,6 +20667,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.Rtpmap
   nameWithType: SDPAudioVideoMediaFormat.Rtpmap
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.SortMediaCapability(System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat})
+  name: SortMediaCapability(List<SDPAudioVideoMediaFormat>, List<SDPAudioVideoMediaFormat>)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_SortMediaCapability_System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__System_Collections_Generic_List_SIPSorcery_Net_SDPAudioVideoMediaFormat__
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.SortMediaCapability(System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPAudioVideoMediaFormat})
+  name.vb: SortMediaCapability(List(Of SDPAudioVideoMediaFormat), List(Of SDPAudioVideoMediaFormat))
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SortMediaCapability(System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>, System.Collections.Generic.List<SIPSorcery.Net.SDPAudioVideoMediaFormat>)
+  fullName.vb: SIPSorcery.Net.SDPAudioVideoMediaFormat.SortMediaCapability(System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat), System.Collections.Generic.List(Of SIPSorcery.Net.SDPAudioVideoMediaFormat))
+  nameWithType: SDPAudioVideoMediaFormat.SortMediaCapability(List<SDPAudioVideoMediaFormat>, List<SDPAudioVideoMediaFormat>)
+  nameWithType.vb: SDPAudioVideoMediaFormat.SortMediaCapability(List(Of SDPAudioVideoMediaFormat), List(Of SDPAudioVideoMediaFormat))
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.SortMediaCapability*
+  name: SortMediaCapability
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_SortMediaCapability_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.SortMediaCapability
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SortMediaCapability
+  nameWithType: SDPAudioVideoMediaFormat.SortMediaCapability
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToAudioFormat
   name: ToAudioFormat()
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ToAudioFormat
@@ -25232,6 +25385,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.UdpReceiver.EndReceiveFrom
   nameWithType: UdpReceiver.EndReceiveFrom
+- uid: SIPSorcery.Net.UdpReceiver.IsClosed
+  name: IsClosed
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_IsClosed
+  commentId: P:SIPSorcery.Net.UdpReceiver.IsClosed
+  fullName: SIPSorcery.Net.UdpReceiver.IsClosed
+  nameWithType: UdpReceiver.IsClosed
+- uid: SIPSorcery.Net.UdpReceiver.IsClosed*
+  name: IsClosed
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_IsClosed_
+  commentId: Overload:SIPSorcery.Net.UdpReceiver.IsClosed
+  isSpec: "True"
+  fullName: SIPSorcery.Net.UdpReceiver.IsClosed
+  nameWithType: UdpReceiver.IsClosed
+- uid: SIPSorcery.Net.UdpReceiver.IsRunningReceive
+  name: IsRunningReceive
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_IsRunningReceive
+  commentId: P:SIPSorcery.Net.UdpReceiver.IsRunningReceive
+  fullName: SIPSorcery.Net.UdpReceiver.IsRunningReceive
+  nameWithType: UdpReceiver.IsRunningReceive
+- uid: SIPSorcery.Net.UdpReceiver.IsRunningReceive*
+  name: IsRunningReceive
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_IsRunningReceive_
+  commentId: Overload:SIPSorcery.Net.UdpReceiver.IsRunningReceive
+  isSpec: "True"
+  fullName: SIPSorcery.Net.UdpReceiver.IsRunningReceive
+  nameWithType: UdpReceiver.IsRunningReceive
 - uid: SIPSorcery.Net.UdpReceiver.logger
   name: logger
   href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_logger
@@ -25250,6 +25429,12 @@ references:
   commentId: F:SIPSorcery.Net.UdpReceiver.m_isClosed
   fullName: SIPSorcery.Net.UdpReceiver.m_isClosed
   nameWithType: UdpReceiver.m_isClosed
+- uid: SIPSorcery.Net.UdpReceiver.m_isRunningReceive
+  name: m_isRunningReceive
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_m_isRunningReceive
+  commentId: F:SIPSorcery.Net.UdpReceiver.m_isRunningReceive
+  fullName: SIPSorcery.Net.UdpReceiver.m_isRunningReceive
+  nameWithType: UdpReceiver.m_isRunningReceive
 - uid: SIPSorcery.Net.UdpReceiver.m_localEndPoint
   name: m_localEndPoint
   href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_m_localEndPoint
