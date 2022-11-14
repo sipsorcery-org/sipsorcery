@@ -417,6 +417,216 @@ a=sendrecv";
         }
 
         /// <summary>
+        /// Tests that the SIPUserAgent can correctly place an audio only call and sets the remote description using sdp descriptor with empty content.
+        /// </summary>
+        [Fact]
+        public async Task PlaceCallUsingSDPDescriptorWithEmptyContentUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport serverTransport = new SIPTransport();
+            SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
+            serverTransport.AddSIPChannel(udpChannel);
+
+            // Set up two user agents: one to answer the test call and one to place it.
+            SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
+            SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
+
+            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                logger.LogDebug("Request received: " + req.StatusLine);
+
+                var uas = userAgentServer.AcceptCall(req);
+                var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
+                var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
+
+                logger.LogDebug($"Server agent answer result {answerResult}.");
+
+                Assert.True(answerResult);
+            };
+
+            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+
+            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+
+            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
+            var callDescriptor = CreateCallDescriptor(dstUri, SDP.SDP_MIME_CONTENTTYPE, null);
+            var callResult = await userAgentClient.Call(callDescriptor, clientMediaEndPoint);
+
+            logger.LogDebug($"Client agent answer result {callResult}.");
+
+            Assert.True(callResult);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent will fail to place call with wrong custom content.
+        /// </summary>
+
+        [Fact]
+        public async Task PlaceCallUsingSDPDescriptorWithWrongContentFailsUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport serverTransport = new SIPTransport();
+            SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
+            serverTransport.AddSIPChannel(udpChannel);
+
+            // Set up two user agents: one to answer the test call and one to place it.
+            SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
+            SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
+
+            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                logger.LogDebug("Request received: " + req.StatusLine);
+
+                var uas = userAgentServer.AcceptCall(req);
+                var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
+                var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
+
+                logger.LogDebug($"Server agent answer result {answerResult}.");
+
+                Assert.True(answerResult);
+            };
+
+            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+
+            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+
+            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
+            var callDescriptor = CreateCallDescriptor(dstUri, "multipart/mixed", "wrongcontent");
+            var callResult = await userAgentClient.Call(callDescriptor, clientMediaEndPoint);
+
+            logger.LogDebug($"Client agent answer result {callResult}.");
+
+            Assert.False(callResult);
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent will place call with correct custom content.
+        /// </summary>
+
+        [Fact]
+        public async Task PlaceCallUsingSDPDescriptorWithCustomContentUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport serverTransport = new SIPTransport();
+            SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
+            serverTransport.AddSIPChannel(udpChannel);
+
+            // Set up two user agents: one to answer the test call and one to place it.
+            SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
+            SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
+
+            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                logger.LogDebug("Request received: " + req.StatusLine);
+
+                var uas = userAgentServer.AcceptCall(req);
+                var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
+                var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
+
+                logger.LogDebug($"Server agent answer result {answerResult}.");
+
+                Assert.True(answerResult);
+            };
+
+            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+
+            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+
+            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
+            var content = @"
+v=0
+o=- 1838015445 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 19762 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv";
+            var callDescriptor = CreateCallDescriptor(dstUri, "multipart/mixed", content);
+            var callResult = await userAgentClient.Call(callDescriptor, clientMediaEndPoint);
+
+            logger.LogDebug($"Client agent answer result {callResult}.");
+
+            Assert.True(callResult);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
+        }
+
+        [Fact]
+        public async Task PlaceCallUsingSDPDescriptorWithCustomMultiPartContentUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport serverTransport = new SIPTransport();
+            SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
+            serverTransport.AddSIPChannel(udpChannel);
+
+            // Set up two user agents: one to answer the test call and one to place it.
+            SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
+            SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
+
+            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                logger.LogDebug("Request received: " + req.StatusLine);
+
+                var uas = userAgentServer.AcceptCall(req);
+                var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
+                var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
+
+                logger.LogDebug($"Server agent answer result {answerResult}.");
+
+                Assert.True(answerResult);
+            };
+
+            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+
+            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+
+            var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
+            var content = @"
+--testboundary 
+v=0
+o=- 1838015445 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 19762 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv
+--testboundary 
+
+some text
+--testboundary 
+Content-type: text/plain; charset=us-ascii 
+
+ typed plain text
+
+--testboundary-- 
+";
+            var callDescriptor = new SIPCallDescriptor(null, null,
+                dstUri.ToString(), new SIPFromHeader("AAA", SIPURI.ParseSIPURI("sip:+11111111"), null).ToString(),
+                null, null, new List<string> { "Custom header" }, null, SIPCallDirection.Out, "multipart/mixed; boundary=\"testboundary\"", content, null);
+            var callResult = await userAgentClient.Call(callDescriptor, clientMediaEndPoint);
+
+            logger.LogDebug($"Client agent answer result {callResult}.");
+
+            Assert.True(callResult);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
+        }
+
+
+
+        /// <summary>
         /// Tests that the SIPUserAgent can correctly deal with a call failure due to a mismatched audio codec.
         /// </summary>
         [Fact]
@@ -934,6 +1144,24 @@ a=sendrecv";
                 AudioSource = audioSource
             };
             return new VoIPMediaSession(mockEndPoints);
+        }
+
+        private static SIPCallDescriptor CreateCallDescriptor(SIPURI dstUri, string contentType, string content)
+        {
+            return new SIPCallDescriptor(
+                null,
+                null,
+                dstUri.ToString(),
+                new SIPFromHeader("AAA", SIPURI.ParseSIPURI("sip:+11111111"), null).ToString(),
+                null,
+                null,
+                new List<string> { "Custom header" },
+                null,
+                SIPCallDirection.Out,
+                SDP.SDP_MIME_CONTENTTYPE,
+                null,
+                null
+                );
         }
     }
 }
