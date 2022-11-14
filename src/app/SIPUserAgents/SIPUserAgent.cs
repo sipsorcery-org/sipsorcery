@@ -517,35 +517,26 @@ namespace SIPSorcery.SIP.App
 
                 var sdpAnnounceAddress = mediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
-                SDP sdp = null;
-
-                if (!string.IsNullOrEmpty(sipCallDescriptor.Content))
+                if (string.IsNullOrEmpty(sipCallDescriptor.Content))
                 {
-                    sdp = SDP.ParseSDPDescription(sipCallDescriptor.Content);
-                }
-                else
-                {
-                    sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
-                }
-
-                if (sdp == null)
-                {
-                    ClientCallFailed?.Invoke(m_uac, $"Could not generate an offer.", null);
-                    CallEnded(m_callDescriptor.CallId);
-                }
-                else
-                {
-                    sipCallDescriptor.Content = sdp.ToString();
-
-                    if (ringTimeout > 0)
+                    var sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
+                    if (sdp == null)
                     {
-                        logger.LogDebug($"Setting ring timeout of {ringTimeout}s.");
-                        _ringTimeout = new Timer((state) => m_uac?.Cancel(), null, ringTimeout * 1000, Timeout.Infinite);
+                        ClientCallFailed?.Invoke(m_uac, $"Could not generate an offer.", null);
+                        CallEnded(m_callDescriptor.CallId);
+                        return;
                     }
+                    sipCallDescriptor.Content = sdp.ToString();
+                }
+
+                if (ringTimeout > 0)
+                {
+                    logger.LogDebug($"Setting ring timeout of {ringTimeout}s.");
+                    _ringTimeout = new Timer((state) => m_uac?.Cancel(), null, ringTimeout * 1000, Timeout.Infinite);
+                }
 
                     // This initiates the call but does not wait for an answer.
-                    m_uac.Call(sipCallDescriptor, serverEndPoint);
-                }
+                m_uac.Call(sipCallDescriptor, serverEndPoint);
             }
             else
             {
