@@ -519,17 +519,17 @@ namespace SIPSorcery
                 bool result = false;
                 ManualResetEvent mre = new ManualResetEvent(false);
 
-                ua.RegistrationFailed += (uri, err) =>
+                ua.RegistrationFailed += (uri, resp, err) =>
                 {
                     result = false;
                     mre.Set();
                 };
-                ua.RegistrationTemporaryFailure += (uri, err) =>
+                ua.RegistrationTemporaryFailure += (uri, resp, err) =>
                 {
                     result = false;
                     mre.Set();
                 };
-                ua.RegistrationSuccessful += (uri) =>
+                ua.RegistrationSuccessful += (uri, resp) =>
                 {
                     result = true;
                     mre.Set();
