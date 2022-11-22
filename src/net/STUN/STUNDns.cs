@@ -117,60 +117,61 @@ namespace SIPSorcery.Net
             }
             else
             {
-                bool useDnsClient = false;
+                bool useDnsClient = true;
 
-                //if (!uri.Host.Contains(".") || uri.Host.EndsWith(MDNS_TLD))
-                //{
-                AddressFamily family = (queryType == QueryType.AAAA) ? AddressFamily.InterNetworkV6 :
-                    AddressFamily.InterNetwork;
-
-                // The lookup is for a local network host. Use the OS DNS logic as the 
-                // main DNS client can be configured to use external DNS servers that won't
-                // be able to lookup this hostname.
-
-                IPHostEntry hostEntry = null;
-
-                try
+                if (!uri.Host.Contains(".") || uri.Host.EndsWith(MDNS_TLD) || queryType == QueryType.A || queryType == QueryType.AAAA)
                 {
-                    hostEntry = Dns.GetHostEntry(uri.Host);
-                }
-                catch (SocketException)
-                {
-                    // Socket exception gets thrown for failed lookups,
-                }
+                    useDnsClient = false;
+                    AddressFamily family = (queryType == QueryType.AAAA) ? AddressFamily.InterNetworkV6 :
+                        AddressFamily.InterNetwork;
 
-                if (hostEntry != null)
-                {
-                    var addressList = hostEntry.AddressList;
+                    // The lookup is for a local network host. Use the OS DNS logic as the 
+                    // main DNS client can be configured to use external DNS servers that won't
+                    // be able to lookup this hostname.
 
-                    if (addressList?.Length == 0)
+                    IPHostEntry hostEntry = null;
+
+                    try
                     {
-                        logger.LogWarning($"Operating System DNS lookup failed for {uri.Host}.");
-                        useDnsClient = true;
-                        //return null;
+                        hostEntry = Dns.GetHostEntry(uri.Host);
                     }
-                    else
+                    catch (SocketException)
                     {
-                        if (addressList.Any(x => x.AddressFamily == family))
+                        // Socket exception gets thrown for failed lookups,
+                    }
+
+                    if (hostEntry != null)
+                    {
+                        var addressList = hostEntry.AddressList;
+
+                        if (addressList?.Length == 0)
                         {
-                            var addressResult = addressList.First(x => x.AddressFamily == family);
-                            return new IPEndPoint(addressResult, uri.Port);
+                            logger.LogWarning($"Operating System DNS lookup failed for {uri.Host}.");
+                            useDnsClient = true;
+                            //return null;
                         }
                         else
                         {
-                            // Didn't get a result for the preferred address family so just use the 
-                            // first available result.
-                            var addressResult = addressList.First();
-                            return new IPEndPoint(addressResult, uri.Port);
+                            if (addressList.Any(x => x.AddressFamily == family))
+                            {
+                                var addressResult = addressList.First(x => x.AddressFamily == family);
+                                return new IPEndPoint(addressResult, uri.Port);
+                            }
+                            else
+                            {
+                                // Didn't get a result for the preferred address family so just use the 
+                                // first available result.
+                                var addressResult = addressList.First();
+                                return new IPEndPoint(addressResult, uri.Port);
+                            }
                         }
                     }
+                    else
+                    {
+                        useDnsClient = true;
+                        //return null;
+                    }
                 }
-                else
-                {
-                    useDnsClient = true;
-                    //return null;
-                }
-                //}
 
                 if (useDnsClient)
                 {
