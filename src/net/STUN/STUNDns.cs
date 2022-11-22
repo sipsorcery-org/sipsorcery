@@ -117,57 +117,62 @@ namespace SIPSorcery.Net
             }
             else
             {
-                if (!uri.Host.Contains(".") || uri.Host.EndsWith(MDNS_TLD))
+                bool useDnsClient = false;
+
+                //if (!uri.Host.Contains(".") || uri.Host.EndsWith(MDNS_TLD))
+                //{
+                AddressFamily family = (queryType == QueryType.AAAA) ? AddressFamily.InterNetworkV6 :
+                    AddressFamily.InterNetwork;
+
+                // The lookup is for a local network host. Use the OS DNS logic as the 
+                // main DNS client can be configured to use external DNS servers that won't
+                // be able to lookup this hostname.
+
+                IPHostEntry hostEntry = null;
+
+                try
                 {
-                    AddressFamily family = (queryType == QueryType.AAAA) ? AddressFamily.InterNetworkV6 :
-                        AddressFamily.InterNetwork;
+                    hostEntry = Dns.GetHostEntry(uri.Host);
+                }
+                catch (SocketException)
+                {
+                    // Socket exception gets thrown for failed lookups,
+                }
 
-                    // The lookup is for a local network host. Use the OS DNS logic as the 
-                    // main DNS client can be configured to use external DNS servers that won't
-                    // be able to lookup this hostname.
+                if (hostEntry != null)
+                {
+                    var addressList = hostEntry.AddressList;
 
-                    IPHostEntry hostEntry = null;
-
-                    try
+                    if (addressList?.Length == 0)
                     {
-                        hostEntry = Dns.GetHostEntry(uri.Host);
-                    }
-                    catch (SocketException)
-                    {
-                        // Socket exception gets thrown for failed lookups,
-                    }
-
-                    if (hostEntry != null)
-                    {
-                        var addressList = hostEntry.AddressList;
-
-                        if (addressList?.Length == 0)
-                        {
-                            logger.LogWarning($"Operating System DNS lookup failed for {uri.Host}.");
-                            return null;
-                        }
-                        else
-                        {
-                            if (addressList.Any(x => x.AddressFamily == family))
-                            {
-                                var addressResult = addressList.First(x => x.AddressFamily == family);
-                                return new IPEndPoint(addressResult, uri.Port);
-                            }
-                            else
-                            {
-                                // Didn't get a result for the preferred address family so just use the 
-                                // first available result.
-                                var addressResult = addressList.First();
-                                return new IPEndPoint(addressResult, uri.Port);
-                            }
-                        }
+                        logger.LogWarning($"Operating System DNS lookup failed for {uri.Host}.");
+                        useDnsClient = true;
+                        //return null;
                     }
                     else
                     {
-                        return null;
+                        if (addressList.Any(x => x.AddressFamily == family))
+                        {
+                            var addressResult = addressList.First(x => x.AddressFamily == family);
+                            return new IPEndPoint(addressResult, uri.Port);
+                        }
+                        else
+                        {
+                            // Didn't get a result for the preferred address family so just use the 
+                            // first available result.
+                            var addressResult = addressList.First();
+                            return new IPEndPoint(addressResult, uri.Port);
+                        }
                     }
                 }
                 else
+                {
+                    useDnsClient = true;
+                    //return null;
+                }
+                //}
+
+                if (useDnsClient)
                 {
                     if (uri.ExplicitPort)
                     {
@@ -208,6 +213,7 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+            return null;
         }
 
         /// <summary>
