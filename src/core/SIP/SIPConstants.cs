@@ -610,6 +610,7 @@ namespace SIPSorcery.SIP
         NoReferSub = 2,     // No subscription for REFERs as per RFC4488.
         Replaces = 3,
         SipRec = 4,
+        MultipleRefer = 5,
     }
 
     /// <summary>
@@ -622,6 +623,7 @@ namespace SIPSorcery.SIP
         public const string NO_REFER_SUB = "norefersub";
         public const string REPLACES = "replaces";
         public const string SIPREC = "siprec";
+        public const string MULTIPLE_REFER = "multiple-refer";
 
         /// <summary>
         /// Parses a string containing a list of SIP extensions into a list of extensions that this library
@@ -658,6 +660,10 @@ namespace SIPSorcery.SIP
                         else if (extension.Trim().ToLower() == SIPREC)
                         {
                             knownExtensions.Add(SIPExtensions.SipRec);
+                        }
+                        else if (extension.Trim().ToLower() == MULTIPLE_REFER)
+                        {
+                            knownExtensions.Add(SIPExtensions.MultipleRefer);
                         }
                         else
                         {
