@@ -645,29 +645,27 @@ namespace SIPSorcery.SIP
                 {
                     if (String.IsNullOrEmpty(extension) == false)
                     {
-                        if (extension.Trim().ToLower() == PRACK)
+                        string trimmedExtension = extension.Trim().ToLower();
+                        switch (trimmedExtension)
                         {
-                            knownExtensions.Add(SIPExtensions.Prack);
-                        }
-                        else if (extension.Trim().ToLower() == NO_REFER_SUB)
-                        {
-                            knownExtensions.Add(SIPExtensions.NoReferSub);
-                        }
-                        else if (extension.Trim().ToLower() == REPLACES)
-                        {
-                            knownExtensions.Add(SIPExtensions.Replaces);
-                        }
-                        else if (extension.Trim().ToLower() == SIPREC)
-                        {
-                            knownExtensions.Add(SIPExtensions.SipRec);
-                        }
-                        else if (extension.Trim().ToLower() == MULTIPLE_REFER)
-                        {
-                            knownExtensions.Add(SIPExtensions.MultipleRefer);
-                        }
-                        else
-                        {
-                            unknownExtensions += (unknownExtensions != null) ? $",{extension.Trim()}" : extension.Trim();
+                            case PRACK:
+                                knownExtensions.Add(SIPExtensions.Prack);
+                                break;
+                            case NO_REFER_SUB:
+                                knownExtensions.Add(SIPExtensions.NoReferSub);
+                                break;
+                            case REPLACES:
+                                knownExtensions.Add(SIPExtensions.Replaces);
+                                break;
+                            case SIPREC:
+                                knownExtensions.Add(SIPExtensions.SipRec);
+                                break;
+                            case MULTIPLE_REFER:
+                                knownExtensions.Add(SIPExtensions.MultipleRefer);
+                                break;
+                            default:
+                                unknownExtensions += (unknownExtensions != null) ? $",{extension.Trim()}" : extension.Trim();
+                                break;
                         }
                     }
                 }
