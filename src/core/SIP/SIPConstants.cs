@@ -610,6 +610,7 @@ namespace SIPSorcery.SIP
         NoReferSub = 2,     // No subscription for REFERs as per RFC4488.
         Replaces = 3,
         SipRec = 4,
+        MultipleRefer = 5,
     }
 
     /// <summary>
@@ -622,6 +623,7 @@ namespace SIPSorcery.SIP
         public const string NO_REFER_SUB = "norefersub";
         public const string REPLACES = "replaces";
         public const string SIPREC = "siprec";
+        public const string MULTIPLE_REFER = "multiple-refer";
 
         /// <summary>
         /// Parses a string containing a list of SIP extensions into a list of extensions that this library
@@ -643,25 +645,27 @@ namespace SIPSorcery.SIP
                 {
                     if (String.IsNullOrEmpty(extension) == false)
                     {
-                        if (extension.Trim().ToLower() == PRACK)
+                        string trimmedExtension = extension.Trim().ToLower();
+                        switch (trimmedExtension)
                         {
-                            knownExtensions.Add(SIPExtensions.Prack);
-                        }
-                        else if (extension.Trim().ToLower() == NO_REFER_SUB)
-                        {
-                            knownExtensions.Add(SIPExtensions.NoReferSub);
-                        }
-                        else if (extension.Trim().ToLower() == REPLACES)
-                        {
-                            knownExtensions.Add(SIPExtensions.Replaces);
-                        }
-                        else if (extension.Trim().ToLower() == SIPREC)
-                        {
-                            knownExtensions.Add(SIPExtensions.SipRec);
-                        }
-                        else
-                        {
-                            unknownExtensions += (unknownExtensions != null) ? $",{extension.Trim()}" : extension.Trim();
+                            case PRACK:
+                                knownExtensions.Add(SIPExtensions.Prack);
+                                break;
+                            case NO_REFER_SUB:
+                                knownExtensions.Add(SIPExtensions.NoReferSub);
+                                break;
+                            case REPLACES:
+                                knownExtensions.Add(SIPExtensions.Replaces);
+                                break;
+                            case SIPREC:
+                                knownExtensions.Add(SIPExtensions.SipRec);
+                                break;
+                            case MULTIPLE_REFER:
+                                knownExtensions.Add(SIPExtensions.MultipleRefer);
+                                break;
+                            default:
+                                unknownExtensions += (unknownExtensions != null) ? $",{extension.Trim()}" : extension.Trim();
+                                break;
                         }
                     }
                 }
