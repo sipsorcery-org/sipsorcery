@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -463,7 +464,7 @@ namespace SIPSorcery.SIP.App
                         if (m_expiry > 0)
                         {
                             m_isRegistered = true;
-                            m_expiry = GetUpdatedExpiry(sipResponse);
+                            m_expiry = GetUpdatedExpiry(sipTransaction.TransactionRequest, sipResponse);
                             RegistrationSuccessful?.Invoke(m_sipAccountAOR, sipResponse);
                         }
                         else
@@ -520,7 +521,7 @@ namespace SIPSorcery.SIP.App
                     if (m_expiry > 0)
                     {
                         m_isRegistered = true;
-                        m_expiry = GetUpdatedExpiry(sipResponse);
+                        m_expiry = GetUpdatedExpiry(sipTransaction.TransactionRequest, sipResponse);
                         RegistrationSuccessful?.Invoke(m_sipAccountAOR, sipResponse);
                     }
                     else
@@ -596,53 +597,26 @@ namespace SIPSorcery.SIP.App
             return m_expiry;
         }
 
-        private long GetUpdatedExpiry(SIPResponse sipResponse)
+        /// <summary>
+        /// Find the contact in the list that matches the one being maintained by this agent in order to determine the expiry value or as defined in the response expires header in that order.
+        /// </summary>
+        /// <param name="sipRequest"></param>
+        /// <param name="sipResponse"></param>
+        /// <returns>expiry value returned from the server, otherwise -1 if no value is provided by the server.</returns>
+        private long GetServerExpiresFromResponse(SIPRequest sipRequest, SIPResponse sipResponse)
         {
-            // Find the contact in the list that matches the one being maintained by this agent in order to determine the expiry value.
-            long serverExpiry = m_expiry;
-            long headerExpires = (sipResponse.Header.Expires > UInt32.MaxValue) ? UInt32.MaxValue : sipResponse.Header.Expires;
-            long contactExpires = -1;
-            if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
-            {
-                if (sipResponse.Header.Contact.Count == 1)
-                {
-                    contactExpires = sipResponse.Header.Contact[0].Expires;
-                }
-                else
-                {
-                    foreach (SIPContactHeader contactHeader in sipResponse.Header.Contact)
-                    {
-                        if (contactHeader.ContactURI.ToParameterlessString() == m_contactURI.ToParameterlessString())
-                        {
-                            contactExpires = contactHeader.Expires;
-                            break;
-                        }
-                    }
-                }
-            }
+            return sipResponse.Header.Contact?.FirstOrDefault(x =>
+                    sipRequest.Header.Contact.Any(y => x.ContactURI.ToParameterlessString() == y.ContactURI.ToParameterlessString()))?.Expires ??
+                    ((sipResponse.Header.Expires > uint.MaxValue) ? uint.MaxValue : sipResponse.Header.Expires);
+        }
 
-            if (contactExpires != -1)
-            {
-                serverExpiry = contactExpires;
-            }
-            else if (headerExpires != -1)
-            {
-                serverExpiry = headerExpires;
-            }
+        private long GetUpdatedExpiry(SIPRequest sipRequest, SIPResponse sipResponse)
+        {
+            long serverExpires = GetServerExpiresFromResponse(sipRequest, sipResponse);
 
-            if (serverExpiry < REGISTER_MINIMUM_EXPIRY)
-            {
-                // Make sure we don't do a 3CX and send registration floods.
-                return REGISTER_MINIMUM_EXPIRY;
-            }
-            else if (serverExpiry > MAX_EXPIRY)
-            {
-                return MAX_EXPIRY;
-            }
-            else
-            {
-                return serverExpiry;
-            }
+            var result = (serverExpires != -1) ? serverExpires : m_expiry;
+
+            return Math.Max(Math.Min(result, MAX_EXPIRY), REGISTER_MINIMUM_EXPIRY);
         }
 
         private SIPRequest GetRegistrationRequest()
