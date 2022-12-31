@@ -32590,6 +32590,12 @@ references:
   commentId: T:SIPSorcery.SIP.SIPExtensionHeaders
   fullName: SIPSorcery.SIP.SIPExtensionHeaders
   nameWithType: SIPExtensionHeaders
+- uid: SIPSorcery.SIP.SIPExtensionHeaders.MULTIPLE_REFER
+  name: MULTIPLE_REFER
+  href: api/SIPSorcery.SIP.SIPExtensionHeaders.html#SIPSorcery_SIP_SIPExtensionHeaders_MULTIPLE_REFER
+  commentId: F:SIPSorcery.SIP.SIPExtensionHeaders.MULTIPLE_REFER
+  fullName: SIPSorcery.SIP.SIPExtensionHeaders.MULTIPLE_REFER
+  nameWithType: SIPExtensionHeaders.MULTIPLE_REFER
 - uid: SIPSorcery.SIP.SIPExtensionHeaders.NO_REFER_SUB
   name: NO_REFER_SUB
   href: api/SIPSorcery.SIP.SIPExtensionHeaders.html#SIPSorcery_SIP_SIPExtensionHeaders_NO_REFER_SUB
@@ -32636,6 +32642,12 @@ references:
   commentId: T:SIPSorcery.SIP.SIPExtensions
   fullName: SIPSorcery.SIP.SIPExtensions
   nameWithType: SIPExtensions
+- uid: SIPSorcery.SIP.SIPExtensions.MultipleRefer
+  name: MultipleRefer
+  href: api/SIPSorcery.SIP.SIPExtensions.html#SIPSorcery_SIP_SIPExtensions_MultipleRefer
+  commentId: F:SIPSorcery.SIP.SIPExtensions.MultipleRefer
+  fullName: SIPSorcery.SIP.SIPExtensions.MultipleRefer
+  nameWithType: SIPExtensions.MultipleRefer
 - uid: SIPSorcery.SIP.SIPExtensions.None
   name: None
   href: api/SIPSorcery.SIP.SIPExtensions.html#SIPSorcery_SIP_SIPExtensions_None
