@@ -385,7 +385,7 @@ namespace SIPSorcery.Net
             base(true, true, true, configuration?.X_BindAddress, bindPort, portRange)
         {
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
-            
+
             if (_configuration != null &&
                _configuration.iceTransportPolicy == RTCIceTransportPolicy.relay &&
                _configuration.iceServers?.Count == 0)
@@ -436,7 +436,7 @@ namespace SIPSorcery.Net
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
-            
+
             //Cancel Negotiation Task Event to Prevent Duplicated Calls
             onnegotiationneeded += CancelOnNegotiationNeededTask;
 
@@ -507,7 +507,7 @@ namespace SIPSorcery.Net
                 return false;
             }
 
-            _dtlsCertificate = new Certificate(new [] { configuration.certificates2[0].Certificate.CertificateStructure });
+            _dtlsCertificate = new Certificate(new[] { configuration.certificates2[0].Certificate.CertificateStructure });
             _dtlsPrivateKey = configuration.certificates2[0].PrivateKey;
 
             return true;
@@ -770,7 +770,8 @@ namespace SIPSorcery.Net
 
                 SdpSessionID = remoteSdp.SessionId;
 
-                if (remoteSdp.IceImplementation == IceImplementationEnum.lite) {
+                if (remoteSdp.IceImplementation == IceImplementationEnum.lite)
+                {
                     _rtpIceChannel.IsController = true;
                 }
                 if (init.type == RTCSdpType.answer)
@@ -876,10 +877,7 @@ namespace SIPSorcery.Net
                 _rtpIceChannel?.Close();
                 _dtlsHandle?.Close();
 
-                if (sctp != null && sctp.state == RTCSctpTransportState.Connected)
-                {
-                    sctp?.Close();
-                }
+                sctp?.Close();
 
                 base.Close(reason);
 
@@ -1072,7 +1070,7 @@ namespace SIPSorcery.Net
 
             string dtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
             bool iceCandidatesAdded = false;
-            
+
 
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)
@@ -1115,7 +1113,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    if(mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.audio)
+                    if (mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.audio)
                     {
                         (mindex, midTag) = RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, audioMediaIndex);
                         audioMediaIndex++;
@@ -1637,7 +1635,8 @@ namespace SIPSorcery.Net
         /// <param name="dataChannel">The data channel to open.</param>
         private void OpenDataChannel(RTCDataChannel dataChannel)
         {
-            if (dataChannel.negotiated) {
+            if (dataChannel.negotiated)
+            {
                 logger.LogDebug($"WebRTC data channel negotiated out of band with label {dataChannel.label} and stream ID {dataChannel.id}; invoking open event");
                 dataChannel.GotAck();
             }
@@ -1703,7 +1702,7 @@ namespace SIPSorcery.Net
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);
 
-                        
+
                     IsDtlsNegotiationComplete = true;
 
                     return true;
