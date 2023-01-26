@@ -876,10 +876,7 @@ namespace SIPSorcery.Net
                 _rtpIceChannel?.Close();
                 _dtlsHandle?.Close();
 
-                if (sctp != null && sctp.state == RTCSctpTransportState.Connected)
-                {
-                    sctp?.Close();
-                }
+                sctp?.Close();
 
                 base.Close(reason);
 
