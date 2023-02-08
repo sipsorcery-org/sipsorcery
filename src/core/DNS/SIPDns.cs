@@ -237,7 +237,7 @@ namespace SIPSorcery.SIP
                         var aaaaResult = _lookupClient.QueryCache(host, UseANYLookups ? QueryType.ANY : QueryType.AAAA, QueryClass.IN);
                         if (aaaaResult?.Answers?.Count > 0)
                         {
-                            result = GetFromLookupResult(uri.Protocol, aaaaResult.Answers.OrderByDescending(x => x.RecordType).First(), port);
+                            result = GetFromLookupResult(uri.Protocol, aaaaResult.Answers.AddressRecords().OrderByDescending(x => x.RecordType).First(), port);
                             isDone = true;
                         }
                         else
@@ -255,7 +255,7 @@ namespace SIPSorcery.SIP
                         {
                             if (aResult.Answers?.Count > 0)
                             {
-                                result = GetFromLookupResult(uri.Protocol, aResult.Answers.First(), port);
+                                result = GetFromLookupResult(uri.Protocol, aResult.Answers.AddressRecords().First(), port);
                             }
                             else
                             {
