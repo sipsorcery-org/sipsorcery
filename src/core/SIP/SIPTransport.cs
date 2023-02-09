@@ -499,7 +499,7 @@ namespace SIPSorcery.SIP
 
             var cacheResult = ResolveSIPUriFromCacheCallback(lookupURI, PreferIPv6NameResolution);
 
-            if (cacheResult == SIPEndPoint.Empty)
+            if (cacheResult == null || cacheResult == SIPEndPoint.Empty)
             {
                 return SocketError.HostNotFound;
             }
@@ -685,7 +685,7 @@ namespace SIPSorcery.SIP
 
                 var cacheResult = ResolveSIPUriFromCacheCallback(topViaUri, PreferIPv6NameResolution);
 
-                if (cacheResult == SIPEndPoint.Empty)
+                if (cacheResult == null || cacheResult == SIPEndPoint.Empty)
                 {
                     return SocketError.HostNotFound;
                 }
