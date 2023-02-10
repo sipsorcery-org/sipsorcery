@@ -217,7 +217,12 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                return sipStreamConn.SslStream.WriteAsync(buffer, 0, buffer.Length);
+                lock (sipStreamConn.SslStream)
+                {
+                    var t = sipStreamConn.SslStream.WriteAsync(buffer, 0, buffer.Length);
+                    t.Wait();
+                    return t;
+                }
             }
             catch (SocketException sockExcp)
             {
