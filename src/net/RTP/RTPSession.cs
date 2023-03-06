@@ -2231,7 +2231,28 @@ namespace SIPSorcery.Net
                 }
             }
 
-            return GetMediaStreamRemoteSDPSsrcAttributes(ssrc);
+            var stream = GetMediaStreamRemoteSDPSsrcAttributes(ssrc);
+            if (stream != null)
+            {
+                return stream;
+            }
+
+            if (HasAudio)
+            {
+                if (!HasVideo)
+                {
+                    return AudioStream;
+                }
+            }
+            else
+            {
+                if (HasVideo)
+                {
+                    return VideoStream;
+                }
+            }
+
+            return null;
         }
 
         private MediaStream GetMediaStreamRemoteSDPSsrcAttributes(uint ssrc)
