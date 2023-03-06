@@ -2207,21 +2207,6 @@ namespace SIPSorcery.Net
 
         private MediaStream GetMediaStream(uint ssrc)
         {
-            if (HasAudio)
-            {
-                if (!HasVideo)
-                {
-                    return AudioStream;
-                }
-            }
-            else
-            {
-                if (HasVideo)
-                {
-                    return VideoStream;
-                }
-            }
-
             foreach (var audioStream in AudioStreamList)
             {
                 if (audioStream?.RemoteTrack?.IsSsrcMatch(ssrc) == true)
@@ -2246,7 +2231,28 @@ namespace SIPSorcery.Net
                 }
             }
 
-            return GetMediaStreamRemoteSDPSsrcAttributes(ssrc);
+            var stream = GetMediaStreamRemoteSDPSsrcAttributes(ssrc);
+            if (stream != null)
+            {
+                return stream;
+            }
+
+            if (HasAudio)
+            {
+                if (!HasVideo)
+                {
+                    return AudioStream;
+                }
+            }
+            else
+            {
+                if (HasVideo)
+                {
+                    return VideoStream;
+                }
+            }
+
+            return null;
         }
 
         private MediaStream GetMediaStreamRemoteSDPSsrcAttributes(uint ssrc)
