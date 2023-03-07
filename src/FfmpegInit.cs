@@ -75,12 +75,12 @@ namespace SIPSorceryMedia.FFmpeg
 
         public static void Initialise(FfmpegLogLevelEnum? logLevel = null, String? libPath = null, ILogger? appLogger = null)
         {
-            RegisterFFmpegBinaries(libPath);
-
             if (appLogger != null)
             {
                 logger = appLogger;
             }
+
+            RegisterFFmpegBinaries(libPath);
 
             logger.LogInformation($"FFmpeg version info: {ffmpeg.av_version_info()}");
 
