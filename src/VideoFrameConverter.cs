@@ -10,7 +10,7 @@ namespace SIPSorceryMedia.FFmpeg
     {
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<VideoFrameConverter>();
 
-        private readonly IntPtr _convertedFrameBufferPtr;
+        private IntPtr _convertedFrameBufferPtr;
         private readonly int _srcWidth;
         private readonly int _srcHeight;
         private readonly int _dstWidth;
@@ -66,11 +66,21 @@ namespace SIPSorceryMedia.FFmpeg
             logger.LogDebug($"Successfully initialised ffmpeg based image converted for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{_dstPixelFormat}.");
         }
 
+        #region Dispose
+        private bool IsDisposed => _convertedFrameBufferPtr == IntPtr.Zero;
+        private void EnsureNotDisposed()
+        {
+            if (IsDisposed) throw new ObjectDisposedException(nameof(VideoFrameConverter));
+        }
         public void Dispose()
         {
+            if (IsDisposed) return;
+
             Marshal.FreeHGlobal(_convertedFrameBufferPtr);
+            _convertedFrameBufferPtr = IntPtr.Zero;
             ffmpeg.sws_freeContext(_pConvertContext);
         }
+        #endregion
 
         public AVFrame Convert(IntPtr srcData)
         {
@@ -89,6 +99,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         public AVFrame Convert(byte * pSrcData)
         {
+            EnsureNotDisposed();
+
             byte_ptrArray4 src = new byte_ptrArray4();
             int_array4 srcStride = new int_array4();
 
@@ -114,6 +126,8 @@ namespace SIPSorceryMedia.FFmpeg
         // to convert Bitmap to Frame
         public byte[] ConvertToBuffer(byte[] srcData)
         {
+            EnsureNotDisposed();
+
             //int linesz0 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 0);
             //int linesz1 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 1);
             //int linesz2 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 2);
@@ -142,6 +156,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public AVFrame Convert(AVFrame frame)
         {
+            EnsureNotDisposed();
 
             try
             {
@@ -196,6 +211,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         public byte[] ConvertFrame(ref AVFrame frame)
         {
+            EnsureNotDisposed();
+
             //int linesz0 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 0);
             //int linesz1 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 1);
             //int linesz2 = ffmpeg.av_image_get_linesize(_srcPixelFormat, _dstSize.Width, 2);
