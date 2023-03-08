@@ -247,6 +247,9 @@ namespace SIPSorceryMedia.FFmpeg
                 _videoEncoder.Dispose();
                 _videoEncoder = null;
             }
+
+            _videoFrameBGR24Converter?.Dispose();
+            _videoFrameYUV420PConverter?.Dispose();
         }
 
     }
