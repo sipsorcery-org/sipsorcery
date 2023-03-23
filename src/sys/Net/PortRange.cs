@@ -51,11 +51,11 @@ namespace SIPSorcery.Sys
         {
             if (startPort <= 0 || startPort > IPEndPoint.MaxPort)
             {
-                throw new ArgumentException($"startPort must be greater than 0 and less than or euqal {IPEndPoint.MaxPort}");
+                throw new ArgumentException($"startPort must be greater than 0 and less than or equal {IPEndPoint.MaxPort}");
             }
             if (endPort <= 0 || endPort > IPEndPoint.MaxPort)
             {
-                throw new ArgumentException($"endPort must be greater than 0 and less than or euqal {IPEndPoint.MaxPort}");
+                throw new ArgumentException($"endPort must be greater than 0 and less than or equal {IPEndPoint.MaxPort}");
             }
             if (endPort - startPort < 2)
             {
