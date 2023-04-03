@@ -2349,7 +2349,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SctpDataSender.html",
-          "hash": "/S2XyWLgvEZH1Jg5gTAf0U6fs+ezJqtd4mjHO3i6Mgs="
+          "hash": "tPnn/g9KOEfiXdXbg3hjWhn6drCJaISSgfAJWvDg680="
         }
       },
       "is_incremental": false,
@@ -3177,7 +3177,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "QhLC2Naj7NH0bgYszJd03XYMtiWIgv9vOgSmDgQJ41c="
+          "hash": "EA+of3oxEy0IrhYSUQvDT2RECAD+xJMCsbozjPkW/jQ="
         }
       },
       "is_incremental": false,
@@ -4029,7 +4029,19 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPStreamConnection.html",
-          "hash": "2Uc2i5Ud9HjUyEy2G4frwwJqbJ1xwDqKGxZ9jmKwVfk="
+          "hash": "lwLItJWdy8qDJ/X4dilYAuXph6JxLTA9jqj510JxASI="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPStreamWrapper.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPStreamWrapper.html",
+          "hash": "vhr2SZCAwrsmmYKGPPlKHg0Bvv46YkMHpY6Gg/GG7/k="
         }
       },
       "is_incremental": false,
@@ -4485,7 +4497,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.html",
-          "hash": "ihCaLHmgjEnyOTlsnxLWwqetsT/pDVWhuim5uEzjQ74="
+          "hash": "GnphjoEXGJBk46cFQvY4k+tEnfaI3SuvrNmBGsXYEOU="
         }
       },
       "is_incremental": false,
@@ -4917,7 +4929,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "Sw0CPrL2YivNL3AL9z/EU6MGiyMlkKpJLE7KG+ibaos="
+          "hash": "IBYBgfu26oENjBCB63Q0GxBV4flgjYVPnBUKbcxN0hw="
         }
       },
       "is_incremental": false,
@@ -5185,7 +5197,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 408,
+          "total_file_count": 409,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {

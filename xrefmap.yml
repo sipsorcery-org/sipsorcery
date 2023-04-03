@@ -36430,6 +36430,83 @@ references:
   commentId: F:SIPSorcery.SIP.SIPStreamConnection.StreamSocket
   fullName: SIPSorcery.SIP.SIPStreamConnection.StreamSocket
   nameWithType: SIPStreamConnection.StreamSocket
+- uid: SIPSorcery.SIP.SIPStreamWrapper
+  name: SIPStreamWrapper
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html
+  commentId: T:SIPSorcery.SIP.SIPStreamWrapper
+  fullName: SIPSorcery.SIP.SIPStreamWrapper
+  nameWithType: SIPStreamWrapper
+- uid: SIPSorcery.SIP.SIPStreamWrapper.#ctor(System.IO.Stream)
+  name: SIPStreamWrapper(Stream)
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper__ctor_System_IO_Stream_
+  commentId: M:SIPSorcery.SIP.SIPStreamWrapper.#ctor(System.IO.Stream)
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.SIPStreamWrapper(System.IO.Stream)
+  nameWithType: SIPStreamWrapper.SIPStreamWrapper(Stream)
+- uid: SIPSorcery.SIP.SIPStreamWrapper.#ctor*
+  name: SIPStreamWrapper
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper__ctor_
+  commentId: Overload:SIPSorcery.SIP.SIPStreamWrapper.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.SIPStreamWrapper
+  nameWithType: SIPStreamWrapper.SIPStreamWrapper
+- uid: SIPSorcery.SIP.SIPStreamWrapper.BeginRead(System.Byte[],System.Int32,System.Int32,System.AsyncCallback,System.Object)
+  name: BeginRead(Byte[], Int32, Int32, AsyncCallback, Object)
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper_BeginRead_System_Byte___System_Int32_System_Int32_System_AsyncCallback_System_Object_
+  commentId: M:SIPSorcery.SIP.SIPStreamWrapper.BeginRead(System.Byte[],System.Int32,System.Int32,System.AsyncCallback,System.Object)
+  name.vb: BeginRead(Byte(), Int32, Int32, AsyncCallback, Object)
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.BeginRead(System.Byte[], System.Int32, System.Int32, System.AsyncCallback, System.Object)
+  fullName.vb: SIPSorcery.SIP.SIPStreamWrapper.BeginRead(System.Byte(), System.Int32, System.Int32, System.AsyncCallback, System.Object)
+  nameWithType: SIPStreamWrapper.BeginRead(Byte[], Int32, Int32, AsyncCallback, Object)
+  nameWithType.vb: SIPStreamWrapper.BeginRead(Byte(), Int32, Int32, AsyncCallback, Object)
+- uid: SIPSorcery.SIP.SIPStreamWrapper.BeginRead*
+  name: BeginRead
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper_BeginRead_
+  commentId: Overload:SIPSorcery.SIP.SIPStreamWrapper.BeginRead
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.BeginRead
+  nameWithType: SIPStreamWrapper.BeginRead
+- uid: SIPSorcery.SIP.SIPStreamWrapper.Dispose
+  name: Dispose()
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper_Dispose
+  commentId: M:SIPSorcery.SIP.SIPStreamWrapper.Dispose
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.Dispose()
+  nameWithType: SIPStreamWrapper.Dispose()
+- uid: SIPSorcery.SIP.SIPStreamWrapper.Dispose*
+  name: Dispose
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper_Dispose_
+  commentId: Overload:SIPSorcery.SIP.SIPStreamWrapper.Dispose
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.Dispose
+  nameWithType: SIPStreamWrapper.Dispose
+- uid: SIPSorcery.SIP.SIPStreamWrapper.EndRead(System.IAsyncResult)
+  name: EndRead(IAsyncResult)
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper_EndRead_System_IAsyncResult_
+  commentId: M:SIPSorcery.SIP.SIPStreamWrapper.EndRead(System.IAsyncResult)
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.EndRead(System.IAsyncResult)
+  nameWithType: SIPStreamWrapper.EndRead(IAsyncResult)
+- uid: SIPSorcery.SIP.SIPStreamWrapper.EndRead*
+  name: EndRead
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper_EndRead_
+  commentId: Overload:SIPSorcery.SIP.SIPStreamWrapper.EndRead
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.EndRead
+  nameWithType: SIPStreamWrapper.EndRead
+- uid: SIPSorcery.SIP.SIPStreamWrapper.WriteAsync(System.Byte[],System.Int32,System.Int32)
+  name: WriteAsync(Byte[], Int32, Int32)
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper_WriteAsync_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.SIP.SIPStreamWrapper.WriteAsync(System.Byte[],System.Int32,System.Int32)
+  name.vb: WriteAsync(Byte(), Int32, Int32)
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.WriteAsync(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.SIP.SIPStreamWrapper.WriteAsync(System.Byte(), System.Int32, System.Int32)
+  nameWithType: SIPStreamWrapper.WriteAsync(Byte[], Int32, Int32)
+  nameWithType.vb: SIPStreamWrapper.WriteAsync(Byte(), Int32, Int32)
+- uid: SIPSorcery.SIP.SIPStreamWrapper.WriteAsync*
+  name: WriteAsync
+  href: api/SIPSorcery.SIP.SIPStreamWrapper.html#SIPSorcery_SIP_SIPStreamWrapper_WriteAsync_
+  commentId: Overload:SIPSorcery.SIP.SIPStreamWrapper.WriteAsync
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPStreamWrapper.WriteAsync
+  nameWithType: SIPStreamWrapper.WriteAsync
 - uid: SIPSorcery.SIP.SIPTCPChannel
   name: SIPTCPChannel
   href: api/SIPSorcery.SIP.SIPTCPChannel.html
