@@ -35,7 +35,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that a SACK chunk can trigger a retransmit.
+        /// Tests that a SACK chunk can trigger a retransmit after being reported missing 3 times (RFC4960 7.2.4).
         /// </summary>
         [Fact]
         public async Task SACKChunkRetransmit()
@@ -61,22 +61,32 @@ namespace SIPSorcery.Net.UnitTests
             sender._sendDataChunk = doSend;
             sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
             Assert.Equal(initialTSN + 1, sender.TSN);
-            await Task.Delay(250);
+            await Task.Delay(100);
             Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
 
             // This send to the receiver is blocked so the receivers ACK TSN should stay the same.
             sender._sendDataChunk = dontSend;
             sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
             Assert.Equal(initialTSN + 2, sender.TSN);
-            await Task.Delay(250);
+            await Task.Delay(100);
             Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
 
-            // Unblock. Receiver's ACK TSN should not advance as it has a missing chunk.
+            // Unblock. Receiver's ACK TSN should not advance as it is missing chunk #2.
             sender._sendDataChunk = doSend;
             sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
             Assert.Equal(initialTSN + 3, sender.TSN);
+            await Task.Delay(100);
+            Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
+
+            // When the chunk is reported missing a further two times, the sender 
+            // enters fast-recovery mode and retransmits the missing block.
+            sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
+            sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
+            Assert.Equal(initialTSN + 5, sender.TSN);
             await Task.Delay(250);
-            Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
+            // Fast recovery has been entered and missing chunk has been sent.
+            // Sender and receiver are both up-to-date.
+            Assert.Equal(initialTSN + 4, receiver.CumulativeAckTSN);
         }
 
         /// <summary>
