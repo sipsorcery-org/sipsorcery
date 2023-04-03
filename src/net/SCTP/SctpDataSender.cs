@@ -509,9 +509,9 @@ namespace SIPSorcery.Net
             {
                 unchecked
                 {
-                    for (uint i = 0; i < SctpDataReceiver.GetDistance(_cumulativeAckTSN, sackTSN); i++)
+                    for (uint offset = 0; offset <= SctpDataReceiver.GetDistance(_cumulativeAckTSN, sackTSN); offset++)
                     {
-                        uint ackd = _cumulativeAckTSN + i + 1;
+                        uint ackd = _cumulativeAckTSN + offset;
                         _unconfirmedChunks.TryRemove(ackd, out _);
                         _missingChunks.TryRemove(ackd, out _);
                     }
