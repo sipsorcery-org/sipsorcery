@@ -40,7 +40,6 @@ namespace SIPSorcery.SIP
     public class SIPTransport : IDisposable
     {
         private const int MAX_QUEUEWAIT_PERIOD = 200;              // Maximum time to wait to check the message received queue if no events are received.
-        private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
         private const string RECEIVE_THREAD_NAME = "siptrans-recv";
 
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
@@ -76,6 +75,12 @@ namespace SIPSorcery.SIP
         /// created manually.
         /// </summary>
         public bool CanCreateMissingChannels { get; set; } = true;
+
+        /// <summary>
+        /// The maximum number of SIP message receiving queues, if this number is exceeded, new messages will be discarded directly
+        /// Default:5000
+        /// </summary>
+        public int MaxInMessageQueueCount { get; set; } = 5000;
 
         /// <summary>
         /// List of the SIP channels that have been opened and are under management by this instance.
@@ -353,7 +358,7 @@ namespace SIPSorcery.SIP
                     IncomingMessage incomingMessage = new IncomingMessage(sipChannel, localEndPoint, remoteEndPoint, buffer);
 
                     // Keep the queue within size limits 
-                    if (m_inMessageQueue.Count >= MAX_INMESSAGE_QUEUECOUNT)
+                    if (m_inMessageQueue.Count >= MaxInMessageQueueCount)
                     {
                         logger.LogWarning($"SIPTransport queue full new message from {remoteEndPoint} being discarded.");
                     }
