@@ -78,7 +78,7 @@ namespace SIPSorcery.SIP
 
         /// <summary>
         /// The maximum number of SIP message receiving queues, if this number is exceeded, new messages will be discarded directly
-        /// Default:5000
+        /// Default:5000,Unlimited:0
         /// </summary>
         public int MaxInMessageQueueCount { get; set; } = 5000;
 
@@ -358,7 +358,7 @@ namespace SIPSorcery.SIP
                     IncomingMessage incomingMessage = new IncomingMessage(sipChannel, localEndPoint, remoteEndPoint, buffer);
 
                     // Keep the queue within size limits 
-                    if (m_inMessageQueue.Count >= MaxInMessageQueueCount)
+                    if (MaxInMessageQueueCount > 0 && m_inMessageQueue.Count >= MaxInMessageQueueCount)
                     {
                         logger.LogWarning($"SIPTransport queue full new message from {remoteEndPoint} being discarded.");
                     }
