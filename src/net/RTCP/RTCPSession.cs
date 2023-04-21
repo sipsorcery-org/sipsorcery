@@ -361,7 +361,7 @@ namespace SIPSorcery.Net
         /// Gets the RTCP compound packet containing the RTCP reports we send.
         /// </summary>
         /// <returns>An RTCP compound packet.</returns>
-        private RTCPCompoundPacket GetRtcpReport()
+        public RTCPCompoundPacket GetRtcpReport()
         {
             var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
             ReceptionReportSample rr = (m_receptionReport != null) ? m_receptionReport.GetSample(To32Bit(ntcTime)) : null;
