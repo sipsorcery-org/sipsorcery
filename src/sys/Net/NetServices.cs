@@ -453,7 +453,7 @@ namespace SIPSorcery.Sys
                     {
                         bindPort = portRange.GetNextPort();
                     }
-                    rtpSocket = CreateBoundSocket(bindPort, bindAddress, protocolType, createControlSocket);
+                    rtpSocket = CreateBoundSocket(bindPort, bindAddress, protocolType);
                     rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
