@@ -58,86 +58,14 @@ namespace SIPSorcery.Net
         /// <param name="packet">The serialised RTCP compound packet to parse.</param>
         public RTCPCompoundPacket(byte[] packet)
         {
-            TryParse(packet, this);
+            TryParse(packet, this, out _);
         }
 
         public RTCPCompoundPacket()
         {
-           
+
         }
 
-        /// <summary>
-        /// Creates a new RTCP compound packet from a serialised buffer.
-        /// </summary>
-        /// <param name="packet"></param>
-        /// <param name="rtcpCompoundPacket"></param>
-        /// <returns>The amount read from the packet</returns>
-        public static int TryParse(byte[] packet, RTCPCompoundPacket rtcpCompoundPacket)
-        {
-            rtcpCompoundPacket ??= new RTCPCompoundPacket();
-            int offset = 0;
-            while (offset < packet.Length)
-            {
-                if (packet.Length - offset < RTCPHeader.HEADER_BYTES_LENGTH)
-                {
-                    // Not enough bytes left for a RTCP header.
-                    break;
-                }
-                else
-                {
-                    var buffer = packet.Skip(offset).ToArray();
-
-                    // The payload type field is the second byte in the RTCP header.
-                    byte packetTypeID = buffer[1];
-                    switch (packetTypeID)
-                    {
-                        case (byte)RTCPReportTypesEnum.SR:
-                            rtcpCompoundPacket.SenderReport = new RTCPSenderReport(buffer);
-                            int srLength = (rtcpCompoundPacket.SenderReport != null) ? rtcpCompoundPacket.SenderReport.GetBytes().Length : Int32.MaxValue;
-                            offset += srLength;
-                            break;
-                        case (byte)RTCPReportTypesEnum.RR:
-                            rtcpCompoundPacket.ReceiverReport = new RTCPReceiverReport(buffer);
-                            int rrLength = (rtcpCompoundPacket.ReceiverReport != null) ? rtcpCompoundPacket.ReceiverReport.GetBytes().Length : Int32.MaxValue;
-                            offset += rrLength;
-                            break;
-                        case (byte)RTCPReportTypesEnum.SDES:
-                            rtcpCompoundPacket.SDesReport = new RTCPSDesReport(buffer);
-                            int sdesLength = (rtcpCompoundPacket.SDesReport != null) ? rtcpCompoundPacket.SDesReport.GetBytes().Length : Int32.MaxValue;
-                            offset += sdesLength;
-                            break;
-                        case (byte)RTCPReportTypesEnum.BYE:
-                            rtcpCompoundPacket.Bye = new RTCPBye(buffer);
-                            int byeLength = (rtcpCompoundPacket.Bye != null) ? rtcpCompoundPacket.Bye.GetBytes().Length : Int32.MaxValue;
-                            offset += byeLength;
-                            break;
-                        case (byte)RTCPReportTypesEnum.RTPFB:
-                            // TODO: Interpret Generic RTP feedback reports.
-                            rtcpCompoundPacket.Feedback = new RTCPFeedback(buffer);
-                            int rtpfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
-                            offset += rtpfbFeedbackLength;
-                            //var rtpfbHeader = new RTCPHeader(buffer);
-                            //offset += rtpfbHeader.Length * 4 + 4;
-                            break;
-                        case (byte)RTCPReportTypesEnum.PSFB:
-                            // TODO: Interpret Payload specific feedback reports.
-                            rtcpCompoundPacket.Feedback = new RTCPFeedback(buffer);
-                            int psfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
-                            offset += psfbFeedbackLength;
-                            //var psfbHeader = new RTCPHeader(buffer);
-                            //offset += psfbHeader.Length * 4 + 4;
-                            break;
-                        default:
-                            logger.LogWarning($"RTCPCompoundPacket did not recognise packet type ID {packetTypeID}.");
-                            offset = Int32.MaxValue;
-                            logger.LogWarning(packet.HexStr());
-                            break;
-                    }
-                }
-            }
-
-            return offset;
-        }
 
         /// <summary>
         /// Serialises a compound RTCP packet to a byte array ready for transmission.
@@ -207,6 +135,93 @@ namespace SIPSorcery.Net
             }
 
             return sb.ToString().TrimEnd('\n');
+        }
+
+        public static bool TryParse(
+            ReadOnlySpan<byte> packet,
+            out RTCPCompoundPacket rtcpCompoundPacket,
+            out int consumed)
+        {
+            rtcpCompoundPacket = new RTCPCompoundPacket();
+            return TryParse(packet.ToArray(), rtcpCompoundPacket, out consumed);
+        }
+
+        /// <summary>
+        /// Creates a new RTCP compound packet from a serialised buffer.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="rtcpCompoundPacket"></param>
+        /// <param name="consumed"></param>
+        /// <returns>The amount read from the packet</returns>
+        public static bool TryParse(
+            byte[] packet,
+            RTCPCompoundPacket rtcpCompoundPacket,
+            out int consumed)
+        {
+            rtcpCompoundPacket ??= new RTCPCompoundPacket();
+            int offset = 0;
+            while (offset < packet.Length)
+            {
+                if (packet.Length - offset < RTCPHeader.HEADER_BYTES_LENGTH)
+                {
+                    // Not enough bytes left for a RTCP header.
+                    break;
+                }
+                else
+                {
+                    var buffer = packet.Skip(offset).ToArray();
+
+                    // The payload type field is the second byte in the RTCP header.
+                    byte packetTypeID = buffer[1];
+                    switch (packetTypeID)
+                    {
+                        case (byte)RTCPReportTypesEnum.SR:
+                            rtcpCompoundPacket.SenderReport = new RTCPSenderReport(buffer);
+                            int srLength = (rtcpCompoundPacket.SenderReport != null) ? rtcpCompoundPacket.SenderReport.GetBytes().Length : Int32.MaxValue;
+                            offset += srLength;
+                            break;
+                        case (byte)RTCPReportTypesEnum.RR:
+                            rtcpCompoundPacket.ReceiverReport = new RTCPReceiverReport(buffer);
+                            int rrLength = (rtcpCompoundPacket.ReceiverReport != null) ? rtcpCompoundPacket.ReceiverReport.GetBytes().Length : Int32.MaxValue;
+                            offset += rrLength;
+                            break;
+                        case (byte)RTCPReportTypesEnum.SDES:
+                            rtcpCompoundPacket.SDesReport = new RTCPSDesReport(buffer);
+                            int sdesLength = (rtcpCompoundPacket.SDesReport != null) ? rtcpCompoundPacket.SDesReport.GetBytes().Length : Int32.MaxValue;
+                            offset += sdesLength;
+                            break;
+                        case (byte)RTCPReportTypesEnum.BYE:
+                            rtcpCompoundPacket.Bye = new RTCPBye(buffer);
+                            int byeLength = (rtcpCompoundPacket.Bye != null) ? rtcpCompoundPacket.Bye.GetBytes().Length : Int32.MaxValue;
+                            offset += byeLength;
+                            break;
+                        case (byte)RTCPReportTypesEnum.RTPFB:
+                            // TODO: Interpret Generic RTP feedback reports.
+                            rtcpCompoundPacket.Feedback = new RTCPFeedback(buffer);
+                            int rtpfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
+                            offset += rtpfbFeedbackLength;
+                            //var rtpfbHeader = new RTCPHeader(buffer);
+                            //offset += rtpfbHeader.Length * 4 + 4;
+                            break;
+                        case (byte)RTCPReportTypesEnum.PSFB:
+                            // TODO: Interpret Payload specific feedback reports.
+                            rtcpCompoundPacket.Feedback = new RTCPFeedback(buffer);
+                            int psfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
+                            offset += psfbFeedbackLength;
+                            //var psfbHeader = new RTCPHeader(buffer);
+                            //offset += psfbHeader.Length * 4 + 4;
+                            break;
+                        default:
+                            logger.LogWarning($"RTCPCompoundPacket did not recognise packet type ID {packetTypeID}.");
+                            offset = Int32.MaxValue;
+                            logger.LogWarning(packet.HexStr());
+                            break;
+                    }
+                }
+            }
+
+            consumed = offset;
+            return true;
         }
     }
 }
