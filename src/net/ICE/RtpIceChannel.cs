@@ -477,6 +477,11 @@ namespace SIPSorcery.Net
         internal List<ChecklistEntry> _checklist = new List<ChecklistEntry>();
 
         /// <summary>
+        /// Creates a copy of the checklist of local and remote candidate pairs
+        /// </summary>
+        internal List<ChecklistEntry> Checklist { get { return _checklist.ToList(); } }
+
+        /// <summary>
         /// For local candidates this implementation takes a shortcut to reduce complexity. 
         /// The RTP socket will always be bound to one of:
         ///  - IPAddress.IPv6Any [::], 
@@ -519,7 +524,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    return Math.Max(500, Ta * (_checklist.Count(x => x.State == ChecklistEntryState.Waiting) + _checklist.Count(x => x.State == ChecklistEntryState.InProgress)));
+                    return Math.Max(500, Ta * (Checklist.Count(x => x.State == ChecklistEntryState.Waiting) + Checklist.Count(x => x.State == ChecklistEntryState.InProgress)));
                 }
             }
         }
