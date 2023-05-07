@@ -65,14 +65,16 @@ namespace SIPSorcery.Net
             try
             {
                 Method = method;
-
-                URL = RTSPURL.ParseRTSPURL(url, out urlParserError);
-                if (urlParserError != RTSPHeaderParserError.None)
-                {
-                    throw new ApplicationException("Error parsing RTSP URL, " + urlParserError.ToString() + ".");
-                }
-
                 RTSPVersion = m_rtspFullVersion;
+
+                if (!string.IsNullOrEmpty(url))
+                {
+                    URL = RTSPURL.ParseRTSPURL(url, out urlParserError);
+                    if (urlParserError != RTSPHeaderParserError.None)
+                    {
+                        throw new ApplicationException("Error parsing RTSP URL, " + urlParserError.ToString() + ".");
+                    }
+                }
             }
             catch (Exception excp)
             {
@@ -145,8 +147,7 @@ namespace SIPSorcery.Net
             try
             {
                 string methodStr = (Method != RTSPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
-
-                string message = methodStr + " " + URL.ToString() + " " + RTSPVersion + m_CRLF;
+                string message = methodStr + (URL == null ? "" : (" " + URL?.ToString())) + " " + RTSPVersion + m_CRLF;
                 message += (Header != null) ? Header.ToString() : null;
 
                 if (Body != null)
