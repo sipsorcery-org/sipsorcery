@@ -167,10 +167,10 @@ namespace SIPSorcery.Net
                 // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
                 // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
                 // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
-                catch (ObjectDisposedException) 
+                catch (ObjectDisposedException)
                 {
                     m_isRunningReceive = false;
-                } 
+                }
                 catch (SocketException sockExcp)
                 {
                     m_isRunningReceive = false;
@@ -311,7 +311,7 @@ namespace SIPSorcery.Net
                         if (header != null)
                         {
                             int stunMsgBytes = STUNHeader.STUN_HEADER_LENGTH + header.MessageLength;
-                            if(stunMsgBytes % 4 != 0)
+                            if (stunMsgBytes % 4 != 0)
                             {
                                 stunMsgBytes = stunMsgBytes - (stunMsgBytes % 4) + 4;
                             }
@@ -382,7 +382,7 @@ namespace SIPSorcery.Net
             /// </summary>
             public override void Close(string reason)
             {
-                if(!m_isClosed)
+                if (!m_isClosed)
                 {
                     if (m_socket != null && m_socket.Connected)
                     {
@@ -624,7 +624,7 @@ namespace SIPSorcery.Net
         {
             _bindAddress = bindAddress;
             Component = component;
-            _iceServers = iceServers != null? new List<RTCIceServer>(iceServers) : null;
+            _iceServers = iceServers != null ? new List<RTCIceServer>(iceServers) : null;
             _policy = policy;
             _includeAllInterfaceAddresses = includeAllInterfaceAddresses;
             _iceTiebreaker = Crypto.GetRandomULong();
@@ -650,14 +650,14 @@ namespace SIPSorcery.Net
             // Create TCP Socket to implement TURN Control
             // Take a note that TURN Control will only use TCP for CreatePermissions/Allocate/BindRequests/Data
             // Ice Candidates returned by relay will always be UDP Based
-            var supportTcp = _iceServers != null && 
-                _iceServers.Find(a => 
-                    a != null && 
-                    (a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TCP) || 
+            var supportTcp = _iceServers != null &&
+                _iceServers.Find(a =>
+                    a != null &&
+                    (a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TCP) ||
                     a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TLS))) != null;
             if (supportTcp)
             {
-                NetServices.CreateRtpSocket(false, ProtocolType.Tcp, bindAddress, bindPort, rtpPortRange, out var rtpTcpSocket, out _);
+                NetServices.CreateRtpSocket(false, ProtocolType.Tcp, bindAddress, bindPort, rtpPortRange, true, true, out var rtpTcpSocket, out _);
 
                 if (rtpTcpSocket == null)
                 {
@@ -1929,7 +1929,7 @@ namespace SIPSorcery.Net
                                 // This is the response to a connectivity check that had the "UseCandidate" attribute set.
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
-                            else if(IsController)
+                            else if (IsController)
                             {
                                 logger.LogDebug($"ICE RTP channel binding response state {matchingChecklistEntry.State} as Controller for {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
                                 ProcessNominateLogicAsController(matchingChecklistEntry);
@@ -2240,7 +2240,7 @@ namespace SIPSorcery.Net
             }
 
             var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer.ServerEndPoint, stunReqBytes) : 
+                                SendOverTCP(iceServer.ServerEndPoint, stunReqBytes) :
                                 base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, stunReqBytes);
 
             if (sendResult != SocketError.Success)
@@ -2270,9 +2270,9 @@ namespace SIPSorcery.Net
             allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
             //allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600));
             allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType));
-                                            /*iceServer.Protocol == ProtocolType.Tcp?
-                                            STUNAttributeConstants.TcpTransportType :
-                                            STUNAttributeConstants.UdpTransportType));*/
+            /*iceServer.Protocol == ProtocolType.Tcp?
+            STUNAttributeConstants.TcpTransportType :
+            STUNAttributeConstants.UdpTransportType));*/
 
             byte[] allocateReqBytes = null;
 
@@ -2286,7 +2286,7 @@ namespace SIPSorcery.Net
             }
 
             var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer.ServerEndPoint, allocateReqBytes) : 
+                                SendOverTCP(iceServer.ServerEndPoint, allocateReqBytes) :
                                 base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
 
             if (sendResult != SocketError.Success)
@@ -2328,7 +2328,7 @@ namespace SIPSorcery.Net
                 allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
             }
 
-            var sendResult = iceServer.Protocol == ProtocolType.Tcp? 
+            var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
                                 SendOverTCP(iceServer.ServerEndPoint, allocateReqBytes) :
                                 base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
 
@@ -2371,7 +2371,7 @@ namespace SIPSorcery.Net
             }
 
             var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer.ServerEndPoint, createPermissionReqBytes) : 
+                                SendOverTCP(iceServer.ServerEndPoint, createPermissionReqBytes) :
                                 base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
 
             if (sendResult != SocketError.Success)

@@ -265,6 +265,11 @@ namespace SIPSorcery.Net
             Session = session;
         }
 
+        public void AddHeader(string headerName, string value)
+        {
+            UnknownHeaders.Add($"{headerName}: {value}");
+        }
+
         public static string[] SplitHeaders(string message)
         {
             // SIP headers can be extended across lines if the first character of the next line is at least on whitespace character.
@@ -427,6 +432,13 @@ namespace SIPSorcery.Net
                 headersBuilder.Append((ContentType != null) ? RTSPHeaders.RTSP_HEADER_CONTENTTYPE + ": " + ContentType + m_CRLF : null);
                 headersBuilder.Append((ContentLength != 0) ? RTSPHeaders.RTSP_HEADER_CONTENTLENGTH + ": " + ContentLength + m_CRLF : null);
                 headersBuilder.Append((Transport != null) ? RTSPHeaders.RTSP_HEADER_TRANSPORT + ": " + Transport.ToString() + m_CRLF : null);
+                if (UnknownHeaders != null)
+                {
+                    foreach (var unknownHeader in UnknownHeaders)
+                    {
+                        headersBuilder.Append(unknownHeader + m_CRLF);
+                    }
+                }
 
                 return headersBuilder.ToString();
             }
