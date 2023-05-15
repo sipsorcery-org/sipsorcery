@@ -990,11 +990,7 @@ namespace SIPSorcery.Net
                             // Setup the appropriate srtp handler
                             var mediaType = announcement.Media;
                             var srtpHandler = currentMediaStream.GetOrCreateSrtpHandler();
-                            if (srtpHandler.IsNegotiationComplete && srtpHandler.RemoteSecurityDescriptionUnchanged(announcement.SecurityDescriptions))
-                            {
-                               logger.LogDebug("SRTP negotiation unchanged");
-                            }
-                            else
+                            if (!(srtpHandler.IsNegotiationComplete && srtpHandler.RemoteSecurityDescriptionUnchanged(announcement.SecurityDescriptions)))
                             {
                                if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
                                {
@@ -1002,12 +998,9 @@ namespace SIPSorcery.Net
                                    return SetDescriptionResultEnum.CryptoNegotiationFailed;
                                }
 
-                               logger.LogDebug($"SRTP negotiated={srtpHandler.IsNegotiationComplete} remote.ssrc={currentMediaStream.RemoteTrack.Ssrc} local.ssrc={currentMediaStream.LocalTrack.Ssrc}");
                                if (srtpHandler.IsNegotiationComplete)
                                {
-                                   logger.LogDebug($"PRE SetSecurityContext() IsSecurityContextReady={currentMediaStream.IsSecurityContextReady()}");
                                    currentMediaStream.SetSecurityContext(srtpHandler.ProtectRTP, srtpHandler.UnprotectRTP, srtpHandler.ProtectRTCP, srtpHandler.UnprotectRTCP);
-                                   logger.LogDebug($"POST SetSecurityContext() IsSecurityContextReady={currentMediaStream.IsSecurityContextReady()}");
                                }
                             }
                         }
@@ -1741,7 +1734,7 @@ namespace SIPSorcery.Net
                     {
                         if (srtpHandler.LocalSecurityDescription == null)
                         {
-                           // first time security negotiation
+                           // first time security negotiation in SDP offer
                            uint tag = 1;
                            foreach (SDPSecurityDescription.CryptoSuites cryptoSuite in SrtpCryptoSuites)
                            {
@@ -1753,25 +1746,37 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                           // reuse negotiated security
+                           // reuse negotiated security in SDP offer
                             announcement.SecurityDescriptions.Add(srtpHandler.LocalSecurityDescription);
                         }
                     }
                     else
                     {
-                        var sel = RemoteDescription?.Media.FirstOrDefault(a => a.MLineIndex == mindex)?.SecurityDescriptions
-                                                          .FirstOrDefault(s => SrtpCryptoSuites.Contains(s.CryptoSuite));
-
-                        if (sel == null)
+                        if (srtpHandler.LocalSecurityDescription != null)
                         {
-                            throw new ApplicationException("Error creating crypto attribute. No compatible offer.");
+                           // try to reuse security negotiation in SDP asnwer
+                           var sec = RemoteDescription?.Media.FirstOrDefault(a => a.MLineIndex == mindex)?.SecurityDescriptions
+                                                         .FirstOrDefault(s => s.Tag == srtpHandler.LocalSecurityDescription.Tag && s.CryptoSuite == srtpHandler.LocalSecurityDescription.CryptoSuite);
+                           if (sec == null)
+                           {
+                              throw new ApplicationException("Error reusing crypto attribute for SDP answer. No compatible offer.");
+                           }
                         }
                         else
                         {
-                            announcement.SecurityDescriptions.Add(SDPSecurityDescription.CreateNew(sel.Tag, sel.CryptoSuite));
+                           // first time security negotiation in SDP answer
+                           var sec = RemoteDescription?.Media.FirstOrDefault(a => a.MLineIndex == mindex)?.SecurityDescriptions
+                                                             .FirstOrDefault(s => SrtpCryptoSuites.Contains(s.CryptoSuite));
+                           if (sec == null)
+                           {
+                              throw new ApplicationException("Error creating crypto attribute for SDP answer. No compatible offer.");
+                           }
+                           else
+                           {
+                              announcement.SecurityDescriptions.Add(SDPSecurityDescription.CreateNew(sec.Tag, sec.CryptoSuite));
+                              srtpHandler.SetupLocal(announcement.SecurityDescriptions, sdpType);
+                           }
                         }
-
-                        srtpHandler.SetupLocal(announcement.SecurityDescriptions, sdpType);
                     }
 
                     if (srtpHandler.IsNegotiationComplete)
