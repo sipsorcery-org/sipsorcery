@@ -535,7 +535,7 @@ namespace SIPSorcery.SIP.App
                     _ringTimeout = new Timer((state) => m_uac?.Cancel(), null, ringTimeout * 1000, Timeout.Infinite);
                 }
 
-                    // This initiates the call but does not wait for an answer.
+                // This initiates the call but does not wait for an answer.
                 m_uac.Call(sipCallDescriptor, serverEndPoint);
             }
             else
@@ -924,7 +924,8 @@ namespace SIPSorcery.SIP.App
                     {
                         var newRequest = referRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders, username, password);
                         referTx = new SIPNonInviteTransaction(m_transport, newRequest, null);
-                        SIPTransactionResponseReceivedDelegate referTxStatusHandlerAuthRequest = (localSIPEndPointAuthRequest, remoteEndPointAuthRequest, sipTransactionAuthRequest, sipResponseAuthRequest) => {
+                        SIPTransactionResponseReceivedDelegate referTxStatusHandlerAuthRequest = (localSIPEndPointAuthRequest, remoteEndPointAuthRequest, sipTransactionAuthRequest, sipResponseAuthRequest) =>
+                        {
                             if (sipResponseAuthRequest.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponseAuthRequest.Status == SIPResponseStatusCodesEnum.Accepted)
                             {
                                 logger.LogInformation("Call transfer was accepted by remote server.");
@@ -1902,9 +1903,11 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaType">The media type, aduio or video, that timed out.</param>
         private void OnRtpTimeout(SDPMediaTypesEnum mediaType)
         {
-            logger.LogWarning($"RTP has timed out for media {mediaType} hanging up call.");
-
-            Hangup();
+            if (!IsOnLocalHold && !IsOnRemoteHold)
+            {
+                logger.LogWarning($"RTP has timed out for media {mediaType} hanging up call.");
+                Hangup();
+            }
         }
 
         /// <summary>

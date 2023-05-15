@@ -74,7 +74,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The SSRC number of the RTP packets we are sending.
         /// </summary>
-        public uint Ssrc { get; internal set; }
+        public uint Ssrc { get; set; }
 
         /// <summary>
         /// Timestamp that the RTCP session was created at.
@@ -361,7 +361,7 @@ namespace SIPSorcery.Net
         /// Gets the RTCP compound packet containing the RTCP reports we send.
         /// </summary>
         /// <returns>An RTCP compound packet.</returns>
-        private RTCPCompoundPacket GetRtcpReport()
+        public RTCPCompoundPacket GetRtcpReport()
         {
             var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
             ReceptionReportSample rr = (m_receptionReport != null) ? m_receptionReport.GetSample(To32Bit(ntcTime)) : null;

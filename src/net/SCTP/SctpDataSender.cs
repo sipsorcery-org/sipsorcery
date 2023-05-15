@@ -77,6 +77,8 @@ namespace SIPSorcery.Net
         private bool _isClosed;
         private int _lastAckedDataChunkSize;
         private bool _inRetransmitMode;
+        private bool _inFastRecoveryMode;
+        private uint _fastRecoveryExitPoint;
         private ManualResetEventSlim _senderMre = new ManualResetEventSlim();
 
         /// <summary>
@@ -200,12 +202,17 @@ namespace SIPSorcery.Net
         {
             if (sack != null)
             {
-                _inRetransmitMode = false;
+                if (_inRetransmitMode)
+                {
+                    logger.LogTrace($"SCTP sender exiting retransmit mode.");
+                    _inRetransmitMode = false;
+                }
 
                 unchecked
                 {
                     uint maxTSNDistance = SctpDataReceiver.GetDistance(_cumulativeAckTSN, TSN);
                     bool processGapReports = true;
+                    uint cumAckTSNBeforeSackProcessing = _cumulativeAckTSN;
 
                     if (_unconfirmedChunks.TryGetValue(sack.CumulativeTsnAck, out var result))
                     {
@@ -272,7 +279,16 @@ namespace SIPSorcery.Net
                     // Check gap reports. Only process them if the cumulative ACK TSN was acceptable.
                     if (processGapReports && sack.GapAckBlocks.Count > 0)
                     {
-                        ProcessGapReports(sack.GapAckBlocks, maxTSNDistance);
+                        bool didIncrementCumAckTSN = SctpDataReceiver.IsNewer(cumAckTSNBeforeSackProcessing, _cumulativeAckTSN);
+                        ProcessGapReports(sack.GapAckBlocks, maxTSNDistance, didIncrementCumAckTSN);
+                    }
+
+                    // rfc4960 6.2.1 D iv
+                    // If the Cumulative TSN Ack matches or exceeds the Fast Recovery exitpoint(Section 7.2.4), Fast Recovery is exited.
+                    if (_inFastRecoveryMode && SctpDataReceiver.IsNewerOrEqual(_fastRecoveryExitPoint, _cumulativeAckTSN))
+                    {
+                        logger.LogTrace($"SCTP sender exiting fast recovery at TSN {_fastRecoveryExitPoint}");
+                        _inFastRecoveryMode = false;
                     }
                 }
 
@@ -371,58 +387,109 @@ namespace SIPSorcery.Net
         /// <param name="maxTSNDistance">The maximum distance any valid TSN should be from the current
         /// ACK'ed TSN. If this distance gets exceeded by a gap report then it's likely something has been
         /// miscalculated.</param>
-        private void ProcessGapReports(List<SctpTsnGapBlock> sackGapBlocks, uint maxTSNDistance)
+        /// <param name="didSackIncrementTSN">If true, processing of the SACK incremented the <see cref="_cumulativeAckTSN"/></param>
+        private void ProcessGapReports(List<SctpTsnGapBlock> sackGapBlocks, uint maxTSNDistance, bool didSackIncrementTSN)
         {
             uint lastAckTSN = _cumulativeAckTSN;
 
-            foreach (var gapBlock in sackGapBlocks)
-            {
-                uint goodTSNStart = _cumulativeAckTSN + gapBlock.Start;
+            // https://www.rfc-editor.org/rfc/rfc4960#section-7.2.4
+            // For each incoming SACK, miss indications are incremented only for missing TSNs prior to the highest TSN newly acknowledged in the SACK.
+            uint highestTsnNewlyAcknowledged = lastAckTSN;
 
-                if (SctpDataReceiver.GetDistance(lastAckTSN, goodTSNStart) > maxTSNDistance)
-                {
-                    logger.LogWarning($"SCTP SACK gap report had a start TSN of {goodTSNStart} too distant from last good TSN {lastAckTSN}, ignoring rest of SACK.");
-                    break;
-                }
-                else if (!SctpDataReceiver.IsNewer(lastAckTSN, goodTSNStart))
-                {
-                    logger.LogWarning($"SCTP SACK gap report had a start TSN of {goodTSNStart} behind last good TSN {lastAckTSN}, ignoring rest of SACK.");
-                    break;
-                }
-                else
-                {
-                    uint missingTSN = lastAckTSN + 1;
+            unchecked {
 
-                    logger.LogTrace($"SCTP SACK gap report start TSN {goodTSNStart} gap report end TSN {_cumulativeAckTSN + gapBlock.End} " +
-                        $"first missing TSN {missingTSN}.");
-
-                    while (missingTSN != goodTSNStart)
+                // Parse the gap report to identify missing chunks that have now been acknowledged in the gap report
+                foreach (var block in sackGapBlocks)
+                {
+                    for (ushort offset = block.Start; offset <= block.End; offset++)
                     {
-                        if (!_missingChunks.ContainsKey(missingTSN))
-                        {
-                            if (!_unconfirmedChunks.ContainsKey(missingTSN))
-                            {
-                                // What to do? Can't retransmit a chunk that's no longer available. 
-                                // Hope it's a transient error from a duplicate or out of order SACK.
-                                // TODO: Maybe keep count of how many time this occurs and send an ABORT if it
-                                // gets to a certain threshold.
-                                logger.LogWarning($"SCTP SACK gap report reported missing TSN of {missingTSN} but no matching unconfirmed chunk available.");
-                                break;
-                            }
-                            else
-                            {
-                                logger.LogTrace($"SCTP SACK gap adding retransmit entry for TSN {missingTSN}.");
-                                _missingChunks.TryAdd(missingTSN, 0);
-                            }
-                        }
+                        uint goodTSN = _cumulativeAckTSN + offset;
 
-                        missingTSN++;
+                        _missingChunks.TryRemove(goodTSN, out _);
+                        if (_unconfirmedChunks.TryRemove(goodTSN, out _))
+                        {
+                            logger.LogTrace($"SCTP acknowledged data chunk receipt in gap report for TSN {goodTSN}");
+                            highestTsnNewlyAcknowledged = goodTSN;
+                        }
                     }
                 }
 
-                lastAckTSN = _cumulativeAckTSN + gapBlock.End;
+                foreach (var gapBlock in sackGapBlocks)
+                {
+                    uint goodTSNStart = _cumulativeAckTSN + gapBlock.Start;
+
+                    if (SctpDataReceiver.GetDistance(lastAckTSN, goodTSNStart) > maxTSNDistance)
+                    {
+                        logger.LogWarning($"SCTP SACK gap report had a start TSN of {goodTSNStart} too distant from last good TSN {lastAckTSN}, ignoring rest of SACK.");
+                        break;
+                    }
+                    else if (!SctpDataReceiver.IsNewer(lastAckTSN, goodTSNStart))
+                    {
+                        logger.LogWarning($"SCTP SACK gap report had a start TSN of {goodTSNStart} behind last good TSN {lastAckTSN}, ignoring rest of SACK.");
+                        break;
+                    }
+                    else
+                    {
+                        uint missingTSN = lastAckTSN + 1;
+
+                        logger.LogTrace($"SCTP SACK gap report start TSN {goodTSNStart} gap report end TSN {_cumulativeAckTSN + gapBlock.End} " +
+                            $"first missing TSN {missingTSN}.");
+
+                        while (missingTSN != goodTSNStart)
+                        {
+                            if (!_missingChunks.TryGetValue(missingTSN, out int missCount))
+                            {
+                                if (!_unconfirmedChunks.ContainsKey(missingTSN))
+                                {
+                                    // What to do? Can't retransmit a chunk that's no longer available. 
+                                    // Hope it's a transient error from a duplicate or out of order SACK.
+                                    // TODO: Maybe keep count of how many time this occurs and send an ABORT if it
+                                    // gets to a certain threshold.
+                                    logger.LogWarning($"SCTP SACK gap report reported missing TSN of {missingTSN} but no matching unconfirmed chunk available.");
+                                    break;
+                                }
+                                else
+                                {
+                                    logger.LogTrace($"SCTP SACK gap adding retransmit entry for TSN {missingTSN}.");
+                                    _missingChunks.TryAdd(missingTSN, 1);
+                                }
+                            }
+                            else if (
+                                // If an endpoint is in Fast Recovery and a SACK arrives that advances the Cumulative TSN Ack
+                                // Point, the miss indications are incremented for all TSNs reported missing in the SACK.
+                                (_inFastRecoveryMode && didSackIncrementTSN) ||
+                                //  For each incoming SACK, miss indications are incremented only
+                                //  for missing TSNs prior to the highest TSN newly acknowledged in the SACK.
+                                SctpDataReceiver.IsNewer(missingTSN, highestTsnNewlyAcknowledged))
+                            {
+                                _missingChunks.TryUpdate(missingTSN, missCount + 1, missCount);
+
+                                // rfc 7.2.4: When the third consecutive miss indication is received for a TSN(s), the data sender shall do the following...
+                                if (missCount + 1 == 3)
+                                {
+                                    if (!_inFastRecoveryMode) // RFC4960 7.2.4 (2)
+                                    {
+                                        _inFastRecoveryMode = true;
+                                        // mark the highest outstanding TSN as the Fast Recovery exit point
+                                        _fastRecoveryExitPoint = _cumulativeAckTSN + sackGapBlocks.Last().End;
+
+                                        logger.LogTrace($"SCTP sender entering fast recovery mode due to missing TSN {missingTSN}. Fast recovery exit point {_fastRecoveryExitPoint}.");
+                                        // RFC4960 7.2.3
+                                        _slowStartThreshold = (uint)Math.Max(_congestionWindow / 2, 4 * _defaultMTU);
+                                        _congestionWindow = _defaultMTU;
+                                    }
+                                }
+                            }
+
+                            missingTSN++;
+                        }
+                    }
+
+                    lastAckTSN = _cumulativeAckTSN + gapBlock.End;
+                }
             }
         }
+
 
         /// <summary>
         /// Removes the chunks waiting for a SACK confirmation from the unconfirmed queue.
@@ -440,23 +507,16 @@ namespace SIPSorcery.Net
             }
             else
             {
-                int safety = _unconfirmedChunks.Count();
-
-                do
+                unchecked
                 {
-                    _cumulativeAckTSN++;
-                    safety--;
-
-                    if (!_unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _))
+                    for (uint offset = 0; offset <= SctpDataReceiver.GetDistance(_cumulativeAckTSN, sackTSN); offset++)
                     {
-                        logger.LogWarning($"SCTP data sender could not remove unconfirmed chunk for {_cumulativeAckTSN}.");
+                        uint ackd = _cumulativeAckTSN + offset;
+                        _unconfirmedChunks.TryRemove(ackd, out _);
+                        _missingChunks.TryRemove(ackd, out _);
                     }
-
-                    if (_missingChunks.ContainsKey(_cumulativeAckTSN))
-                    {
-                        _missingChunks.TryRemove(_cumulativeAckTSN, out _);
-                    }
-                } while (_cumulativeAckTSN != sackTSN && safety >= 0);
+                    _cumulativeAckTSN = sackTSN;
+                }
             }
         }
 
@@ -469,11 +529,12 @@ namespace SIPSorcery.Net
 
             while (!_isClosed)
             {
+                var outstandingBytes = _outstandingBytes;
                 // DateTime.Now calls have been a tiny bit expensive in the past so get a small saving by only
                 // calling once per loop.
                 DateTime now = DateTime.Now;
 
-                int burstSize = (_inRetransmitMode || _congestionWindow < _outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
+                int burstSize = (_inRetransmitMode || _inFastRecoveryMode || _congestionWindow < outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
                 int chunksSent = 0;
 
                 //logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
@@ -481,24 +542,27 @@ namespace SIPSorcery.Net
                 // Missing chunks from a SACK gap report take priority.
                 if (_missingChunks.Count > 0)
                 {
-                    var misses = _missingChunks.GetEnumerator();
-                    bool haveMissing = misses.MoveNext();
-
-                    while (chunksSent < burstSize && haveMissing)
+                    foreach (var missing in _missingChunks)
                     {
-                        if (_unconfirmedChunks.TryGetValue(misses.Current.Key, out var missingChunk))
+                        if (missing.Value >= 3)  // RFC4960 7.2.4 Fast retransmission
                         {
-                            missingChunk.LastSentAt = now;
-                            missingChunk.SendCount += 1;
+                            if (_unconfirmedChunks.TryGetValue(missing.Key, out var missingChunk))
+                            {
+                                missingChunk.LastSentAt = now;
+                                missingChunk.SendCount += 1;
 
-                            logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserData.Length}, " +
-                                $"flags {missingChunk.ChunkFlags:X2}, send count {missingChunk.SendCount}.");
+                                logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserData.Length}, " +
+                                    $"flags {missingChunk.ChunkFlags:X2}, send count {missingChunk.SendCount}.");
 
-                            _sendDataChunk(missingChunk);
-                            chunksSent++;
+                                _sendDataChunk(missingChunk);
+                                chunksSent++;
+                                _missingChunks.TryUpdate(missing.Key, 0, missing.Value);
+                            }
                         }
-
-                        haveMissing = misses.MoveNext();
+                        if (chunksSent >= burstSize)
+                        {
+                            break;
+                        }
                     }
                 }
 
@@ -520,6 +584,7 @@ namespace SIPSorcery.Net
                         
                         if (!_inRetransmitMode)
                         {
+                            logger.LogTrace($"SCTP sender entering retransmit mode.");
                             _inRetransmitMode = true;
 
                             // When the T3-rtx timer expires on an address, SCTP should perform slow start.
@@ -536,9 +601,11 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
+                // rfc4960 6.1: At any given time, the sender MUST NOT transmit new data to a given transport address
+                // if it has cwnd or more bytes of data outstanding to that transport address.
 
-                // Finally send any new data chunks that have not yet been sent.
-                if (chunksSent < burstSize && _sendQueue.Count > 0)
+                // Send any new data chunks that have not yet been sent.
+                if (chunksSent < burstSize && _sendQueue.Count > 0 && _congestionWindow > outstandingBytes)
                 {
                     while (chunksSent < burstSize && _sendQueue.TryDequeue(out var dataChunk))
                     {
