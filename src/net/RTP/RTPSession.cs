@@ -1761,6 +1761,10 @@ namespace SIPSorcery.Net
                            {
                               throw new ApplicationException("Error reusing crypto attribute for SDP answer. No compatible offer.");
                            }
+                           else
+                           { 
+                              announcement.SecurityDescriptions.Add(srtpHandler.LocalSecurityDescription);
+                           }
                         }
                         else
                         {
