@@ -165,17 +165,25 @@ namespace SIPSorcery.Net.UnitTests
                };
 
             RTPPacket rtpPacket = new RTPPacket(rtpBytes);
+            Verify(rtpPacket);
 
-            Assert.True(2 == rtpPacket.Header.Version, "Version was mismatched.");
-            Assert.True(0 == rtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
-            Assert.True(1 == rtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
-            Assert.True(0 == rtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
-            Assert.True(1 == rtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
-            Assert.True(59133 == rtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
-            Assert.True(240U == rtpPacket.Header.Timestamp, "Timestamp was mismatched.");
-            Assert.True(3739283087 == rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
-            Assert.True(1U == rtpPacket.Header.ExtensionLength, "Extension Length was mismatched.");
-            Assert.True(rtpPacket.Header.ExtensionPayload.Length == rtpPacket.Header.ExtensionLength * 4, "Extension length and payload were mismatched.");
+            static void Verify(RTPPacket rtpPacket)
+            {
+                Assert.True(2 == rtpPacket.Header.Version, "Version was mismatched.");
+                Assert.True(0 == rtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
+                Assert.True(1 == rtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
+                Assert.True(0 == rtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
+                Assert.True(1 == rtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
+                Assert.True(59133 == rtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
+                Assert.True(240U == rtpPacket.Header.Timestamp, "Timestamp was mismatched.");
+                Assert.True(3739283087 == rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
+                Assert.True(1U == rtpPacket.Header.ExtensionLength, "Extension Length was mismatched.");
+                Assert.True(rtpPacket.Header.ExtensionPayload.Length == rtpPacket.Header.ExtensionLength * 4, "Extension length and payload were mismatched.");
+            }
+
+            var result = RTPPacket.TryParse(rtpBytes, out var p, out var consumed);
+            Assert.True(result, "RTP packet was not parsed correctly.");
+            Verify(p);
         }
 
         [Fact]

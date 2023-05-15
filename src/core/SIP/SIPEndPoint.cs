@@ -235,7 +235,11 @@ namespace SIPSorcery.SIP
 
         public override bool Equals(object obj)
         {
-            return AreEqual(this, (SIPEndPoint)obj);
+            if (obj is SIPEndPoint sipEndPoint)
+            {
+                return AreEqual(this, sipEndPoint);
+            }
+            return false;
         }
 
         public static bool operator ==(SIPEndPoint endPoint1, SIPEndPoint endPoint2)

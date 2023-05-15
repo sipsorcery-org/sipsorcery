@@ -374,7 +374,7 @@ namespace SIPSorcery.Sys
 
         private static Socket CreateSocket(AddressFamily addressFamily, ProtocolType protocol, bool useDualMode = true)
         {
-            var sock = new Socket(addressFamily, protocol == ProtocolType.Tcp? SocketType.Stream : SocketType.Dgram, protocol);
+            var sock = new Socket(addressFamily, protocol == ProtocolType.Tcp ? SocketType.Stream : SocketType.Dgram, protocol);
             sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, true);
 
             if (addressFamily == AddressFamily.InterNetworkV6)
@@ -407,9 +407,15 @@ namespace SIPSorcery.Sys
         /// tried before giving up. The parameter bindPort is ignored.</param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, int bindPort, PortRange portRange, out Socket rtpSocket, out Socket controlSocket)
+        public static void CreateRtpSocket(
+            bool createControlSocket,
+            IPAddress bindAddress,
+            int bindPort,
+            PortRange portRange,
+            out Socket rtpSocket,
+            out Socket controlSocket)
         {
-            CreateRtpSocket(createControlSocket, ProtocolType.Udp, bindAddress, bindPort, portRange, out rtpSocket, out controlSocket);
+            CreateRtpSocket(createControlSocket, ProtocolType.Udp, bindAddress, bindPort, portRange, true, true, out rtpSocket, out controlSocket);
         }
 
         /// <summary>
@@ -427,9 +433,20 @@ namespace SIPSorcery.Sys
         /// a single attempt will be made to bind on the port.</param>
         /// <param name="portRange">Optional. If non-null the choice of port will be left up to the PortRange. Multiple ports will be
         /// tried before giving up. The parameter bindPort is ignored.</param>
+        /// <param name="requireEvenPort"></param>
+        /// <param name="useDualMode"></param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(bool createControlSocket, ProtocolType protocolType, IPAddress bindAddress, int bindPort, PortRange portRange, out Socket rtpSocket, out Socket controlSocket)
+        public static void CreateRtpSocket(
+            bool createControlSocket,
+            ProtocolType protocolType,
+            IPAddress bindAddress,
+            int bindPort,
+            PortRange portRange,
+            bool requireEvenPort,
+            bool useDualMode,
+            out Socket rtpSocket,
+            out Socket controlSocket)
         {
             if (bindAddress == null)
             {
@@ -453,7 +470,7 @@ namespace SIPSorcery.Sys
                     {
                         bindPort = portRange.GetNextPort();
                     }
-                    rtpSocket = CreateBoundSocket(bindPort, bindAddress, protocolType, createControlSocket);
+                    rtpSocket = CreateBoundSocket(bindPort, bindAddress, protocolType, requireEvenPort, useDualMode);
                     rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 

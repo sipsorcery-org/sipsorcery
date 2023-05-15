@@ -29,6 +29,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+// ReSharper disable InconsistentNaming
+// ReSharper disable TemplateIsNotCompileTimeConstantProblem
 
 namespace SIPSorcery.SIP
 {
@@ -38,7 +40,6 @@ namespace SIPSorcery.SIP
     public class SIPTransport : IDisposable
     {
         private const int MAX_QUEUEWAIT_PERIOD = 200;              // Maximum time to wait to check the message received queue if no events are received.
-        private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
         private const string RECEIVE_THREAD_NAME = "siptrans-recv";
 
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
@@ -74,6 +75,12 @@ namespace SIPSorcery.SIP
         /// created manually.
         /// </summary>
         public bool CanCreateMissingChannels { get; set; } = true;
+
+        /// <summary>
+        /// The maximum number of SIP message receiving queues, if this number is exceeded, new messages will be discarded directly
+        /// Default:5000,Unlimited:0
+        /// </summary>
+        public int MaxInMessageQueueCount { get; set; } = 5000;
 
         /// <summary>
         /// List of the SIP channels that have been opened and are under management by this instance.
@@ -351,7 +358,7 @@ namespace SIPSorcery.SIP
                     IncomingMessage incomingMessage = new IncomingMessage(sipChannel, localEndPoint, remoteEndPoint, buffer);
 
                     // Keep the queue within size limits 
-                    if (m_inMessageQueue.Count >= MAX_INMESSAGE_QUEUECOUNT)
+                    if (MaxInMessageQueueCount > 0 && m_inMessageQueue.Count >= MaxInMessageQueueCount)
                     {
                         logger.LogWarning($"SIPTransport queue full new message from {remoteEndPoint} being discarded.");
                     }
@@ -499,11 +506,7 @@ namespace SIPSorcery.SIP
 
             var cacheResult = ResolveSIPUriFromCacheCallback(lookupURI, PreferIPv6NameResolution);
 
-            if (cacheResult == SIPEndPoint.Empty)
-            {
-                return SocketError.HostNotFound;
-            }
-            else if(cacheResult != null)
+            if (cacheResult != null && cacheResult != SIPEndPoint.Empty)
             {
                 return await SendRequestAsync(cacheResult, sipRequest).ConfigureAwait(false);
             }
@@ -516,22 +519,23 @@ namespace SIPSorcery.SIP
                     // DNS lookups can take a relatively LONG time, possibly >=20s with a poor DNS server.
                     // In ideal circumstances DON'T wait for DNS and instead use the SIP retransmit mechanism
                     // with its regular retry attempts to wait for DNS resolution.
-                    SIPEndPoint lookupResult = ResolveSIPUriFromCacheCallback(lookupURI, PreferIPv6NameResolution);
+                    cacheResult = ResolveSIPUriFromCacheCallback(lookupURI, PreferIPv6NameResolution);
 
-                    if (lookupResult == null)
+                    if (cacheResult == null)
                     {
-                        lookupResult = await ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
+                        cacheResult = await ResolveSIPUriCallbackAsync(lookupURI, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
                     }
 
-                    if (lookupResult != null && lookupResult != SIPEndPoint.Empty)
+                    if (cacheResult != null && cacheResult != SIPEndPoint.Empty)
                     {
-                        return await SendRequestAsync(lookupResult, sipRequest).ConfigureAwait(false);
+                        return await SendRequestAsync(cacheResult, sipRequest).ConfigureAwait(false);
                     }
                     else
                     {
                         return SocketError.HostNotFound;
                     }
                 }
+
                 else
                 {
                     // This is the HAPPY path.
@@ -685,13 +689,10 @@ namespace SIPSorcery.SIP
 
                 var cacheResult = ResolveSIPUriFromCacheCallback(topViaUri, PreferIPv6NameResolution);
 
-                if (cacheResult == SIPEndPoint.Empty)
-                {
-                    return SocketError.HostNotFound;
-                }
-                else if (cacheResult != null)
+                if (cacheResult != null && cacheResult != SIPEndPoint.Empty)
                 {
                     return await SendResponseAsync(cacheResult, sipResponse).ConfigureAwait(false);
+
                 }
                 else
                 {
@@ -699,11 +700,11 @@ namespace SIPSorcery.SIP
                     {
                         // UNHAPPY PATH.
                         // The send will block waiting for a DNS resolution.
-                        var lookupResult = await ResolveSIPUriCallbackAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
+                        cacheResult = await ResolveSIPUriCallbackAsync(topViaUri, PreferIPv6NameResolution, m_cts.Token).ConfigureAwait(false);
 
-                        if (lookupResult != null && lookupResult != SIPEndPoint.Empty)
+                        if (cacheResult != null && cacheResult != SIPEndPoint.Empty)
                         {
-                            return await SendResponseAsync(lookupResult, sipResponse).ConfigureAwait(false);
+                            return await SendResponseAsync(cacheResult, sipResponse).ConfigureAwait(false);
                         }
                         else
                         {
@@ -741,7 +742,7 @@ namespace SIPSorcery.SIP
                 throw new ArgumentNullException(nameof(sipResponse), "The SIP response must be set for SendResponseAsync.");
             }
 
-            if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
+            if (dstEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the black-hole.
                 return Task.FromResult(SocketError.Success);
@@ -976,9 +977,7 @@ namespace SIPSorcery.SIP
                                     {
                                         SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer,m_sipEncoding,m_sipBodyEncoding);
 
-                                        SIPValidationFieldsEnum sipRequestErrorField = SIPValidationFieldsEnum.Unknown;
-                                        string sipRequestValidationError = null;
-                                        if (!sipRequest.IsValid(out sipRequestErrorField, out sipRequestValidationError))
+                                        if (!sipRequest.IsValid(out var sipRequestErrorField, out var sipRequestValidationError))
                                         {
                                             throw new SIPValidationException(sipRequestErrorField, sipRequestValidationError);
                                         }
@@ -1155,13 +1154,11 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                SIPChannel matchingChannel = null;
-
                 // There's at least one channel available. If there's an IPAddress.Any channel choose that first
                 // since it's able to use all the machine's active network interfaces and should be able to reach
                 // any remote end point.
                 IPAddress addrAny = (dst.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
-                matchingChannel = GetSIPChannel(protocol, addrAny);
+                var matchingChannel = GetSIPChannel(protocol, addrAny);
                 if (matchingChannel != null)
                 {
                     return matchingChannel;
@@ -1234,10 +1231,10 @@ namespace SIPSorcery.SIP
             return m_sipChannels.Select(x => x.Value).ToList();
         }
 
-        /// <summary>
-        /// Add a SIP transaction to the transaction engine for reliable request and response delivery.
-        /// </summary>
-        /// <param name="transaction">The transaction to add.</param>
+        // /// <summary>
+        // /// Add a SIP transaction to the transaction engine for reliable request and response delivery.
+        // /// </summary>
+        // /// <param name="transaction">The transaction to add.</param>
         //public void AddTransaction(SIPTransaction transaction)
         //{
         //    if (m_transactionEngine == null)

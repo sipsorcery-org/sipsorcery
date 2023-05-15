@@ -50,7 +50,7 @@ namespace SIPSorcery.SIP
         /// For secure streams the TCP connection will be upgraded to an SSL stream and the SslStreamBuffer will
         /// be used for receives.
         /// </summary>
-        public SslStream SslStream;
+        public SIPStreamWrapper SslStream;
 
         /// <summary>
         /// The receive buffer to use for SSL streams.
