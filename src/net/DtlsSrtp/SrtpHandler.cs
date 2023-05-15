@@ -29,6 +29,9 @@ namespace SIPSorcery.Net
         public List<SDPSecurityDescription> m_localSecurityDescriptions;
         public List<SDPSecurityDescription> m_remoteSecurityDescriptions;
 
+        public SDPSecurityDescription LocalSecurityDescription { get; private set; }
+        public SDPSecurityDescription RemoteSecurityDescription { get; private set; }
+
         public IPacketTransformer SrtpDecoder { get; private set; }
         public IPacketTransformer SrtpEncoder { get; private set; }
         public IPacketTransformer SrtcpDecoder { get; private set; }
@@ -41,13 +44,28 @@ namespace SIPSorcery.Net
         {
         }
 
+        public bool RemoteSecurityDescriptionUnchanged(List<SDPSecurityDescription> securityDescriptions)
+        {
+            if (RemoteSecurityDescription == null || LocalSecurityDescription == null)
+            {
+                return false;
+            }
+
+            var rsec = securityDescriptions.FirstOrDefault(x => x.CryptoSuite == LocalSecurityDescription.CryptoSuite);
+            logger.LogDebug($"RemoteSecurityDescriptionUnchanged() rsec={rsec.ToString()} RemoteSecDesc={RemoteSecurityDescription.ToString()}");
+            return rsec.ToString() == RemoteSecurityDescription.ToString();
+        }
+
         public bool SetupLocal(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
         {
+            logger.LogDebug($"SrtpHandler.SetupLocal( sdpType={sdpType} )");
+
             m_localSecurityDescriptions = securityDescription;
 
             if (sdpType == SdpType.offer)
             {
                IsNegotiationComplete = false;
+               logger.LogDebug($"...received offer; waiting for answer; negotiated={IsNegotiationComplete}");
                return true;
             }
 
@@ -61,12 +79,13 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("Setup local crypto failed. No crypto attribute in answer.");
             }
 
-            var lsec = m_localSecurityDescriptions[0];
-            var rsec = m_remoteSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == lsec.CryptoSuite);
+            var lsec = LocalSecurityDescription = m_localSecurityDescriptions[0];
+            var rsec = RemoteSecurityDescription = m_remoteSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == lsec.CryptoSuite);
 
             if (rsec != null && rsec.Tag == lsec.Tag)
             {
                IsNegotiationComplete = true;
+               logger.LogDebug($"...security negotiated={IsNegotiationComplete}; tag={lsec.Tag}");
                SrtpEncoder = GenerateRtpEncoder(lsec);
                SrtpDecoder = GenerateRtpDecoder(rsec);
                SrtcpEncoder = GenerateRtcpEncoder(lsec);
@@ -79,11 +98,14 @@ namespace SIPSorcery.Net
 
         public bool SetupRemote(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
         {
+            logger.LogDebug($"SrtpHandler.SetupRemote( sdpType={sdpType} )");
+
             m_remoteSecurityDescriptions = securityDescription;
 
             if (sdpType == SdpType.offer)
             {
                 IsNegotiationComplete = false;
+                logger.LogDebug($"...received offer; waiting for answer; negotiated={IsNegotiationComplete}");
                 return true;
             }
 
@@ -97,12 +119,13 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("Setup remote crypto failed. No cryto attribute in answer.");
             }
 
-            var rsec = m_remoteSecurityDescriptions[0];
-            var lsec = m_localSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == rsec.CryptoSuite);
+            var rsec = RemoteSecurityDescription = m_remoteSecurityDescriptions[0];
+            var lsec = LocalSecurityDescription = m_localSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == rsec.CryptoSuite);
 
             if (lsec != null && lsec.Tag == rsec.Tag)
             {
                 IsNegotiationComplete = true;
+                logger.LogDebug($"...security negotiated={IsNegotiationComplete}; tag={rsec.Tag}");
                 SrtpEncoder = GenerateRtpEncoder(lsec);
                 SrtpDecoder = GenerateRtpDecoder(rsec);
                 SrtcpEncoder = GenerateRtcpEncoder(lsec);
