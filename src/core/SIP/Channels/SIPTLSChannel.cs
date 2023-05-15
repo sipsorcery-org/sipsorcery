@@ -108,7 +108,7 @@ namespace SIPSorcery.SIP
             //sslStream.ReadTimeout = 5000;
             //sslStream.WriteTimeout = 5000;
 
-            streamConnection.SslStream = sslStream;
+            streamConnection.SslStream = new SIPStreamWrapper(sslStream);
             streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 
             sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
@@ -139,7 +139,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    streamConnection.SslStream = sslStream;
+                    streamConnection.SslStream = new SIPStreamWrapper(sslStream);
                     streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 
                     logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningSIPEndPoint}->{streamConnection.RemoteSIPEndPoint}.");
