@@ -1754,7 +1754,7 @@ namespace SIPSorcery.Net
                     {
                         if (srtpHandler.LocalSecurityDescription != null)
                         {
-                           // try to reuse security negotiation in SDP asnwer
+                           // try to reuse security negotiation in SDP answer
                            var sec = RemoteDescription?.Media.FirstOrDefault(a => a.MLineIndex == mindex)?.SecurityDescriptions
                                                          .FirstOrDefault(s => s.Tag == srtpHandler.LocalSecurityDescription.Tag && s.CryptoSuite == srtpHandler.LocalSecurityDescription.CryptoSuite);
                            if (sec == null)
