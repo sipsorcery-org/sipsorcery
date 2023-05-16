@@ -321,7 +321,7 @@ namespace SIPSorcery.Net
             }
 
             consumed = offset;
-            return true;
+            return header.PayloadSize>=0;
         }
     }
 }
