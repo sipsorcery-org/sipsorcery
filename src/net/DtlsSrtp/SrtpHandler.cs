@@ -29,6 +29,9 @@ namespace SIPSorcery.Net
         public List<SDPSecurityDescription> m_localSecurityDescriptions;
         public List<SDPSecurityDescription> m_remoteSecurityDescriptions;
 
+        public SDPSecurityDescription LocalSecurityDescription { get; private set; }
+        public SDPSecurityDescription RemoteSecurityDescription { get; private set; }
+
         public IPacketTransformer SrtpDecoder { get; private set; }
         public IPacketTransformer SrtpEncoder { get; private set; }
         public IPacketTransformer SrtcpDecoder { get; private set; }
@@ -39,6 +42,17 @@ namespace SIPSorcery.Net
 
         public SrtpHandler()
         {
+        }
+
+        public bool RemoteSecurityDescriptionUnchanged(List<SDPSecurityDescription> securityDescriptions)
+        {
+            if (RemoteSecurityDescription == null || LocalSecurityDescription == null)
+            {
+                return false;
+            }
+
+            var rsec = securityDescriptions.FirstOrDefault(x => x.CryptoSuite == LocalSecurityDescription.CryptoSuite);
+            return rsec.ToString() == RemoteSecurityDescription.ToString();
         }
 
         public bool SetupLocal(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
@@ -61,8 +75,8 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("Setup local crypto failed. No crypto attribute in answer.");
             }
 
-            var lsec = m_localSecurityDescriptions[0];
-            var rsec = m_remoteSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == lsec.CryptoSuite);
+            var lsec = LocalSecurityDescription = m_localSecurityDescriptions[0];
+            var rsec = RemoteSecurityDescription = m_remoteSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == lsec.CryptoSuite);
 
             if (rsec != null && rsec.Tag == lsec.Tag)
             {
@@ -97,8 +111,8 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("Setup remote crypto failed. No cryto attribute in answer.");
             }
 
-            var rsec = m_remoteSecurityDescriptions[0];
-            var lsec = m_localSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == rsec.CryptoSuite);
+            var rsec = RemoteSecurityDescription = m_remoteSecurityDescriptions[0];
+            var lsec = LocalSecurityDescription = m_localSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == rsec.CryptoSuite);
 
             if (lsec != null && lsec.Tag == rsec.Tag)
             {
