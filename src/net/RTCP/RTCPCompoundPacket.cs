@@ -158,7 +158,11 @@ namespace SIPSorcery.Net
             RTCPCompoundPacket rtcpCompoundPacket,
             out int consumed)
         {
-            rtcpCompoundPacket ??= new RTCPCompoundPacket();
+            if (rtcpCompoundPacket == null)
+            {
+                rtcpCompoundPacket = new RTCPCompoundPacket();
+            }
+
             int offset = 0;
             while (offset < packet.Length)
             {
