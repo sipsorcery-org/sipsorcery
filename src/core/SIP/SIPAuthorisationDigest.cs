@@ -64,7 +64,7 @@ namespace SIPSorcery.SIP
 
         public string Cnonce;        // Client nonce (used with WWW-Authenticate and qop=auth).
         public string Qop;           // Quality of Protection. Values permitted are auth (authentication) and auth-int (authentication with integrity protection).
-        private int NonceCount = 0;  // Client nonce count.
+        public int NonceCount = 0;  // Client nonce count.
         public string Opaque;
 
         public DigestAlgorithmsEnum DigestAlgorithm = DigestAlgorithmsEnum.MD5;

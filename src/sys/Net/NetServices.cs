@@ -536,7 +536,7 @@ namespace SIPSorcery.Sys
             }
             else
             {
-                throw new ApplicationException($"Failed to create and bind RTP socket using bind address {bindAddress}.");
+                throw new ApplicationException($"Failed to create and bind RTP socket using bind address {bindAddress}:{bindPort}(portRange=[{portRange.StartPort},{portRange.EndPort}],useDualMode={useDualMode},requireEvenPort={requireEvenPort},createControlSocket={createControlSocket},protocolType={protocolType}).");
             }
         }
 

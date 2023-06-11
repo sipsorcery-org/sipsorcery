@@ -148,15 +148,13 @@ namespace SIPSorcery.Net
             {
                 string methodStr = (Method != RTSPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
                 string message = methodStr + (URL == null ? "" : (" " + URL?.ToString())) + " " + RTSPVersion + m_CRLF;
-                message += (Header != null) ? Header.ToString() : null;
-
+                if (Header != null)
+                {
+                    message += Header.ToString();
+                }
                 if (Body != null)
                 {
-                    message += m_CRLF + Body;
-                }
-                else
-                {
-                    message += m_CRLF;
+                    message +=m_CRLF+ Body;
                 }
 
                 return message;
