@@ -21,6 +21,7 @@ namespace SIPSorceryMedia.FFmpeg
         private AVCodecContext* _encoderContext;
         private AVCodecContext* _decoderContext;
         private AVCodecID _codecID;
+        private AVHWDeviceType _HwDeviceType;
 
         private VideoFrameConverter? _encoderPixelConverter;
         private VideoFrameConverter? _i420ToRgb;
@@ -35,10 +36,11 @@ namespace SIPSorceryMedia.FFmpeg
 
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEncoder>();
 
-        public FFmpegVideoEncoder(Dictionary<string, string>? encoderOptions = null)
+        public FFmpegVideoEncoder(Dictionary<string, string>? encoderOptions = null, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
         {
             _encoderOptions = encoderOptions ?? new Dictionary<string, string>();
-            
+            _HwDeviceType = HWDeviceType;
+
             //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_VERBOSE);
             //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_TRACE);
         }
@@ -202,6 +204,11 @@ namespace SIPSorceryMedia.FFmpeg
                 if (_decoderContext == null)
                 {
                     throw new ApplicationException("Failed to allocate decoder codec context.");
+                }
+
+                if (_HwDeviceType != AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
+                {
+                    ffmpeg.av_hwdevice_ctx_create(&_decoderContext->hw_device_ctx, _HwDeviceType, null, null, 0).ThrowExceptionIfError();
                 }
 
                 ffmpeg.avcodec_open2(_decoderContext, codec, null).ThrowExceptionIfError();
@@ -416,7 +423,8 @@ namespace SIPSorceryMedia.FFmpeg
                     InitialiseDecoder(codecID);
                 }
 
-                AVFrame* decodedFrame = ffmpeg.av_frame_alloc();
+                AVFrame* _frame = ffmpeg.av_frame_alloc();
+                AVFrame* receivedFrame = ffmpeg.av_frame_alloc();
 
                 try
                 {
@@ -428,7 +436,14 @@ namespace SIPSorceryMedia.FFmpeg
                         return null;
                     }
 
-                    int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, decodedFrame);
+                    int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, _frame);
+
+                    AVFrame* decodedFrame = _frame;
+                    if(_decoderContext->hw_device_ctx != null)
+                    {
+                        ffmpeg.av_hwframe_transfer_data(receivedFrame, _frame, 0).ThrowExceptionIfError();
+                        decodedFrame = receivedFrame;
+                    }
 
                     while (recvRes == 0)
                     {
@@ -485,7 +500,8 @@ namespace SIPSorceryMedia.FFmpeg
                 }
                 finally
                 {
-                    ffmpeg.av_frame_free(&decodedFrame);
+                    ffmpeg.av_frame_free(&_frame);
+                    ffmpeg.av_frame_free(&receivedFrame);
                 }
             }
             else
