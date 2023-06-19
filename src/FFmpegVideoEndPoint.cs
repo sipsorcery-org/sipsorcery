@@ -35,10 +35,10 @@ namespace SIPSorceryMedia.FFmpeg
         //public event SourceErrorDelegate? OnVideoSourceError;
 #pragma warning restore CS0067
 
-        public FFmpegVideoEndPoint()
+        public FFmpegVideoEndPoint(Dictionary<string, string>? encoderOptions = null)
         {
             _videoFormatManager = new MediaFormatManager<VideoFormat>(_supportedFormats);
-            _ffmpegEncoder = new FFmpegVideoEncoder();
+            _ffmpegEncoder = new FFmpegVideoEncoder(encoderOptions);
         }
 
         public MediaEndPoints ToMediaEndPoints()
