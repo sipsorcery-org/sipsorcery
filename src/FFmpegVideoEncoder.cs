@@ -423,8 +423,8 @@ namespace SIPSorceryMedia.FFmpeg
                     InitialiseDecoder(codecID);
                 }
 
-                AVFrame* _frame = ffmpeg.av_frame_alloc();
-                AVFrame* receivedFrame = ffmpeg.av_frame_alloc();
+                AVFrame* frame = ffmpeg.av_frame_alloc();
+                AVFrame* gpuFrame = ffmpeg.av_frame_alloc();
 
                 try
                 {
@@ -436,17 +436,20 @@ namespace SIPSorceryMedia.FFmpeg
                         return null;
                     }
 
-                    int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, _frame);
-
-                    AVFrame* decodedFrame = _frame;
-                    if(_decoderContext->hw_device_ctx != null)
-                    {
-                        ffmpeg.av_hwframe_transfer_data(receivedFrame, _frame, 0).ThrowExceptionIfError();
-                        decodedFrame = receivedFrame;
-                    }
+                    int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, frame);
 
                     while (recvRes == 0)
                     {
+
+                        AVFrame* decodedFrame = frame;
+                        if(_decoderContext->hw_device_ctx != null)
+                        {
+                            // If this is hw accelerated, the data in `frame` resides in the GPU memory
+                            // Copy it to the CPU memory (gpuFrame)
+                            ffmpeg.av_hwframe_transfer_data(gpuFrame, frame, 0).ThrowExceptionIfError();
+                            decodedFrame = gpuFrame;
+                        }
+
                         width = decodedFrame->width;
                         height = decodedFrame->height;
 
@@ -500,8 +503,8 @@ namespace SIPSorceryMedia.FFmpeg
                 }
                 finally
                 {
-                    ffmpeg.av_frame_free(&_frame);
-                    ffmpeg.av_frame_free(&receivedFrame);
+                    ffmpeg.av_frame_free(&frame);
+                    ffmpeg.av_frame_free(&gpuFrame);
                 }
             }
             else
