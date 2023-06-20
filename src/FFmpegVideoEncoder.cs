@@ -22,6 +22,8 @@ namespace SIPSorceryMedia.FFmpeg
         private AVCodecContext* _decoderContext;
         private AVCodecID _codecID;
         private AVHWDeviceType _HwDeviceType;
+        AVFrame* _frame;
+        AVFrame* _gpuFrame;
 
         private VideoFrameConverter? _encoderPixelConverter;
         private VideoFrameConverter? _i420ToRgb;
@@ -421,91 +423,86 @@ namespace SIPSorceryMedia.FFmpeg
                 if (!_isDecoderInitialised)
                 {
                     InitialiseDecoder(codecID);
+                    _frame = ffmpeg.av_frame_alloc();
+                    _gpuFrame = ffmpeg.av_frame_alloc();
                 }
 
-                AVFrame* frame = ffmpeg.av_frame_alloc();
-                AVFrame* gpuFrame = ffmpeg.av_frame_alloc();
-
-                try
+                List<RawImage> rgbFrames = new List<RawImage>();
+                if( ffmpeg.avcodec_send_packet(_decoderContext, packet) < 0 )
                 {
-                    List<RawImage> rgbFrames = new List<RawImage>();
-
-                    if( ffmpeg.avcodec_send_packet(_decoderContext, packet) < 0 )
-                    {
-                        width = height = 0;
-                        return null;
-                    }
-
-                    int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, frame);
-
-                    while (recvRes == 0)
-                    {
-
-                        AVFrame* decodedFrame = frame;
-                        if(_decoderContext->hw_device_ctx != null)
-                        {
-                            // If this is hw accelerated, the data in `frame` resides in the GPU memory
-                            // Copy it to the CPU memory (gpuFrame)
-                            ffmpeg.av_hwframe_transfer_data(gpuFrame, frame, 0).ThrowExceptionIfError();
-                            decodedFrame = gpuFrame;
-                        }
-
-                        width = decodedFrame->width;
-                        height = decodedFrame->height;
-
-                        if (_i420ToRgb == null ||
-                            _i420ToRgb.SourceWidth != width ||
-                            _i420ToRgb.SourceHeight != height)
-                        {
-                            _i420ToRgb = new VideoFrameConverter(
-                                width, height,
-                                (AVPixelFormat)decodedFrame->format,
-                                width, height,
-                                AVPixelFormat.AV_PIX_FMT_BGR24);
-                        }
-
-                        //logger.LogDebug($"[DecodeFaster]"
-                        //    + $" - width:[{decodedFrame->width}]"
-                        //    + $" - height:[{decodedFrame->height}]"
-                        //    + $" - key_frame:[{decodedFrame->key_frame}]"
-                        //    + $" - nb_samples:[{decodedFrame->nb_samples}]"
-                        //    + $" - pkt_pos:[{decodedFrame->pkt_pos}]"
-                        //    + $" - pict_type:[{decodedFrame->pict_type}]"
-                        //    + $" - palette_has_changed:[{decodedFrame->palette_has_changed}]"
-                        //    + $" - format:[{decodedFrame->format}]"
-                        //    + $" - coded_picture_number:[{decodedFrame->coded_picture_number}]"
-                        //    + $" - decode_error_flags:[{decodedFrame->decode_error_flags}]"
-                        //    );
-
-                        var frameI420 = _i420ToRgb.Convert(*decodedFrame);
-                        if ((frameI420.width != 0) && (frameI420.height != 0))
-                        {
-                            RawImage imageRawSample = new RawImage
-                            {
-                                Width = width,
-                                Height = height,
-                                Stride = frameI420.linesize[0],
-                                Sample = (IntPtr)frameI420.data[0],
-                                PixelFormat = VideoPixelFormatsEnum.Rgb
-                            };
-                            rgbFrames.Add(imageRawSample);
-                        }
-
-                        recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, frame);
-                    }
-
-                    if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
-                    {
-                        //recvRes.ThrowExceptionIfError();
-                    }
-
-                    return rgbFrames;
+                    width = height = 0;
+                    return null;
                 }
-                finally
+
+                ffmpeg.av_frame_unref(_frame);
+                ffmpeg.av_frame_unref(_gpuFrame);
+                int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, _frame);
+
+                while (recvRes == 0)
                 {
-                    ffmpeg.av_frame_free(&frame);
-                    ffmpeg.av_frame_free(&gpuFrame);
+
+                    AVFrame* decodedFrame = _frame;
+                    if(_decoderContext->hw_device_ctx != null)
+                    {
+                        // If this is hw accelerated, the data in `frame` resides in the GPU memory
+                        // Copy it to the CPU memory (gpuFrame)
+                        ffmpeg.av_hwframe_transfer_data(_gpuFrame, _frame, 0).ThrowExceptionIfError();
+                        decodedFrame = _gpuFrame;
+                    }
+
+                    width = decodedFrame->width;
+                    height = decodedFrame->height;
+
+                    if (_i420ToRgb == null ||
+                        _i420ToRgb.SourceWidth != width ||
+                        _i420ToRgb.SourceHeight != height)
+                    {
+                        _i420ToRgb = new VideoFrameConverter(
+                            width, height,
+                            (AVPixelFormat)decodedFrame->format,
+                            width, height,
+                            AVPixelFormat.AV_PIX_FMT_BGR24);
+                    }
+
+                    //logger.LogDebug($"[DecodeFaster]"
+                    //    + $" - width:[{decodedFrame->width}]"
+                    //    + $" - height:[{decodedFrame->height}]"
+                    //    + $" - key_frame:[{decodedFrame->key_frame}]"
+                    //    + $" - nb_samples:[{decodedFrame->nb_samples}]"
+                    //    + $" - pkt_pos:[{decodedFrame->pkt_pos}]"
+                    //    + $" - pict_type:[{decodedFrame->pict_type}]"
+                    //    + $" - palette_has_changed:[{decodedFrame->palette_has_changed}]"
+                    //    + $" - format:[{decodedFrame->format}]"
+                    //    + $" - coded_picture_number:[{decodedFrame->coded_picture_number}]"
+                    //    + $" - decode_error_flags:[{decodedFrame->decode_error_flags}]"
+                    //    );
+
+                    var frameI420 = _i420ToRgb.Convert(*decodedFrame);
+                    if ((frameI420.width != 0) && (frameI420.height != 0))
+                    {
+                        RawImage imageRawSample = new RawImage
+                        {
+                            Width = width,
+                            Height = height,
+                            Stride = frameI420.linesize[0],
+                            Sample = (IntPtr)frameI420.data[0],
+                            PixelFormat = VideoPixelFormatsEnum.Rgb
+                        };
+                        rgbFrames.Add(imageRawSample);
+                    }
+
+                    ffmpeg.av_frame_unref(_frame);
+                    ffmpeg.av_frame_unref(_gpuFrame);
+                    recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, _frame);
                 }
+
+                if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
+                {
+                    //recvRes.ThrowExceptionIfError();
+                }
+
+                return rgbFrames;
+                
             }
             else
             {
@@ -535,6 +532,20 @@ namespace SIPSorceryMedia.FFmpeg
                     fixed (AVCodecContext** pCtx = &_decoderContext)
                     {
                         ffmpeg.avcodec_free_context(pCtx);
+                    }
+                }
+
+                if(_frame != null) {
+                    fixed ( AVFrame** pFrame = &_frame) { 
+                    ffmpeg.av_frame_free(pFrame);
+                    }
+                }
+                
+                if(_gpuFrame != null)
+                {
+                    fixed (AVFrame** pFrame = &_gpuFrame)
+                    {
+                        ffmpeg.av_frame_free(pFrame);
                     }
                 }
             }
