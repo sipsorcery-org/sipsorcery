@@ -491,7 +491,7 @@ namespace SIPSorceryMedia.FFmpeg
                             rgbFrames.Add(imageRawSample);
                         }
 
-                        recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, decodedFrame);
+                        recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, frame);
                     }
 
                     if (recvRes < 0 && recvRes != ffmpeg.AVERROR(ffmpeg.EAGAIN))
