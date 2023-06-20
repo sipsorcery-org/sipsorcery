@@ -22,8 +22,8 @@ namespace SIPSorceryMedia.FFmpeg
         private AVCodecContext* _decoderContext;
         private AVCodecID _codecID;
         private AVHWDeviceType _HwDeviceType;
-        AVFrame* _frame;
-        AVFrame* _gpuFrame;
+        private AVFrame* _frame;
+        private AVFrame* _gpuFrame;
 
         private VideoFrameConverter? _encoderPixelConverter;
         private VideoFrameConverter? _i420ToRgb;
@@ -174,13 +174,13 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
                 }
-                
+
                 foreach (var option in _encoderOptions)
                 {
                     ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
                 }
 
-                
+
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
 
 
@@ -382,7 +382,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public List<RawImage>? DecodeFaster(AVCodecID codecID, byte[] buffer, out int width, out int height)
         {
-            if ( (!_isDisposed) && (buffer != null))
+            if ((!_isDisposed) && (buffer != null))
             {
                 lock (_decoderLock)
                 {
@@ -428,7 +428,7 @@ namespace SIPSorceryMedia.FFmpeg
                 }
 
                 List<RawImage> rgbFrames = new List<RawImage>();
-                if( ffmpeg.avcodec_send_packet(_decoderContext, packet) < 0 )
+                if (ffmpeg.avcodec_send_packet(_decoderContext, packet) < 0)
                 {
                     width = height = 0;
                     return null;
@@ -442,7 +442,7 @@ namespace SIPSorceryMedia.FFmpeg
                 {
 
                     AVFrame* decodedFrame = _frame;
-                    if(_decoderContext->hw_device_ctx != null)
+                    if (_decoderContext->hw_device_ctx != null)
                     {
                         // If this is hw accelerated, the data in `frame` resides in the GPU memory
                         // Copy it to the CPU memory (gpuFrame)
@@ -502,7 +502,7 @@ namespace SIPSorceryMedia.FFmpeg
                 }
 
                 return rgbFrames;
-                
+
             }
             else
             {
@@ -535,13 +535,15 @@ namespace SIPSorceryMedia.FFmpeg
                     }
                 }
 
-                if(_frame != null) {
-                    fixed ( AVFrame** pFrame = &_frame) { 
-                    ffmpeg.av_frame_free(pFrame);
+                if (_frame != null)
+                {
+                    fixed (AVFrame** pFrame = &_frame)
+                    {
+                        ffmpeg.av_frame_free(pFrame);
                     }
                 }
-                
-                if(_gpuFrame != null)
+
+                if (_gpuFrame != null)
                 {
                     fixed (AVFrame** pFrame = &_gpuFrame)
                     {
