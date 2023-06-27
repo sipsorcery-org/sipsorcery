@@ -14,6 +14,7 @@
 
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Xunit;
 
 namespace SIPSorcery.Net.IntegrationTests
@@ -37,8 +38,9 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert();
-            DtlsSrtpTransport dtlsTransport = new DtlsSrtpTransport(new DtlsSrtpClient(tlsCert, pvtKey));
+            var crypto = new BcTlsCrypto();
+            (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert(crypto);
+            DtlsSrtpTransport dtlsTransport = new DtlsSrtpTransport(new DtlsSrtpClient(crypto, tlsCert, pvtKey));
 
             Assert.NotNull(dtlsTransport);
         }
@@ -52,7 +54,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DtlsSrtpTransport dtlsTransport = new DtlsSrtpTransport(new DtlsSrtpServer());
+            DtlsSrtpTransport dtlsTransport = new DtlsSrtpTransport(new DtlsSrtpServer(new BcTlsCrypto()));
 
             Assert.NotNull(dtlsTransport);
         }
@@ -67,8 +69,8 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var dtlsClient = new DtlsSrtpClient();
-            var dtlsServer = new DtlsSrtpServer();
+            var dtlsClient = new DtlsSrtpClient(new BcTlsCrypto());
+            var dtlsServer = new DtlsSrtpServer(new BcTlsCrypto());
 
             DtlsSrtpTransport dtlsClientTransport = new DtlsSrtpTransport(dtlsClient);
             dtlsClientTransport.TimeoutMilliseconds = 5000;
@@ -117,7 +119,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DtlsSrtpTransport dtlsClientTransport = new DtlsSrtpTransport(new DtlsSrtpClient());
+            DtlsSrtpTransport dtlsClientTransport = new DtlsSrtpTransport(new DtlsSrtpClient(new BcTlsCrypto()));
             dtlsClientTransport.TimeoutMilliseconds = 2000;
 
             var result = await Task.Run<bool>(() => dtlsClientTransport.DoHandshake(out _));
@@ -134,7 +136,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DtlsSrtpTransport dtlsServerTransport = new DtlsSrtpTransport(new DtlsSrtpServer());
+            DtlsSrtpTransport dtlsServerTransport = new DtlsSrtpTransport(new DtlsSrtpServer(new BcTlsCrypto()));
             dtlsServerTransport.TimeoutMilliseconds = 2000;
 
             var result = await Task.Run<bool>(() => dtlsServerTransport.DoHandshake(out _));
