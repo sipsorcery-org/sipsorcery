@@ -159,10 +159,6 @@ namespace SIPSorcery.Net
         public DtlsSrtpClient(TlsCrypto crypto, UseSrtpData clientSrtpData) : this(crypto, null, null, clientSrtpData)
         { }
 
-        public override bool ShouldUseExtendedPadding()
-        {
-            return base.ShouldUseExtendedPadding();
-        }
 
         public override IDictionary<int, byte[]> GetClientExtensions()
         {
