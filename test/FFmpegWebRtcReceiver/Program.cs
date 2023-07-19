@@ -28,10 +28,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
-using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.FFmpeg;
 using WebSocketSharp.Server;
 
@@ -74,6 +72,9 @@ namespace demo
             var parseResult = Parser.Default.ParseArguments<Options>(args);
             _options = (parseResult as Parsed<Options>)?.Value;
             X509Certificate2 wssCertificate = (_options.WSSCertificate != null) ? LoadCertificate(_options.WSSCertificate) : null;
+
+            // Initialise FFmpeg librairies
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");

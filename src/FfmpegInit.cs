@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
@@ -90,6 +91,14 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
+        internal static void SetFFmpegBinariesPath(string path)
+        {
+            ffmpeg.RootPath = path;
+            registered = true;
+
+            ffmpeg.avdevice_register_all();
+        }
+
         internal static void RegisterFFmpegBinaries(String? libPath = null)
         {
             if (registered)
@@ -97,6 +106,21 @@ namespace SIPSorceryMedia.FFmpeg
 
             if (libPath == null)
             {
+                // search the system path, handle with and without .exe extension
+                string ffmpegExecutable = "ffmpeg";
+                string path = Environment.GetEnvironmentVariable("PATH")
+                    .Split(';')
+                    .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, ffmpegExecutable  + ".exe")))
+                    .FirstOrDefault();
+
+                if (path != null)
+                {
+                    logger.LogInformation($"FFmpeg binaries found in system path at: {path}");
+                    SetFFmpegBinariesPath(path);
+                    return;
+                }
+
+                // search from the current folder up
                 var current = Environment.CurrentDirectory;
                 var probe = Path.Combine("FFmpeg", "bin", Environment.Is64BitProcess ? "x64" : "x86");
                 while (current != null)
@@ -105,10 +129,7 @@ namespace SIPSorceryMedia.FFmpeg
                     if (Directory.Exists(ffmpegBinaryPath))
                     {
                         logger.LogInformation($"FFmpeg binaries found in: {ffmpegBinaryPath}");
-                        ffmpeg.RootPath = ffmpegBinaryPath;
-                        registered = true;
-
-                        ffmpeg.avdevice_register_all();
+                        SetFFmpegBinariesPath(ffmpegBinaryPath);
                         return;
                     }
 
@@ -119,14 +140,12 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 if (Directory.Exists(libPath))
                 {
-                    logger.LogInformation($"FFmpeg binaries found in: {libPath}");
-                    ffmpeg.RootPath = libPath;
-                    registered = true;
-
-                    ffmpeg.avdevice_register_all();
+                    logger.LogInformation($"FFmpeg binaries path set to: {libPath}");
+                    SetFFmpegBinariesPath(libPath);
                     return;
                 }
             }
+            throw new ApplicationException("Unable to find FFMPEG binaries");
         }
 
         public static unsafe string? av_strerror(int error)

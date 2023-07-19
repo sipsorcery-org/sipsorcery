@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using FFmpeg.AutoGen;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
 
@@ -10,11 +7,6 @@ namespace FFmpegConsoleApp
 {
     class Program
     {
-        // /!\ It's MANDATORY to specify a valid path where FFmpeg binaries / libraries ae stored
-        private const string LIB_PATH = @"C:\ffmpeg-4.4.1-full_build-shared\bin";
-        //private const string LIB_PATH = @"/usr/local/Cellar/ffmpeg/4.4.1_5/lib";
-        //private const string LIB_PATH = @"..\..\..\..\..\lib\x64";
-
         // A valid to a video file - usefull if you want to test streaming of a video file
         // It's alo possible to set a remote file
         const String VIDEO_FILE_PATH = @"https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm"; 
@@ -30,7 +22,7 @@ namespace FFmpegConsoleApp
             IVideoSource? videoSource = null;
 
             // Initialise FFmpeg librairies
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL, LIB_PATH);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL);
 
             // Get cameras and monitors
             List<Camera>? cameras = FFmpegCameraManager.GetCameraDevices();

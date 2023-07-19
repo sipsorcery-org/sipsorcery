@@ -137,7 +137,7 @@ namespace SIPSorceryMedia.FFmpeg
                 }
                 else
                     ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", (long)_audDecCtx->channel_layout, 0);
-                ffmpeg.av_opt_set_channel_layout(_swrContext, "out_channel_layout", ffmpeg.AV_CH_LAYOUT_MONO, 0);
+                ffmpeg.av_opt_set_channel_layout(_swrContext, "out_channel_layout", (long)ffmpeg.AV_CH_LAYOUT_MONO, 0);
 
                 if ( ffmpeg.swr_init(_swrContext) < 0 )
                 {

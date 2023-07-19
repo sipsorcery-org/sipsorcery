@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>1.2.1</Version>
+    <Version>1.3.0-pre</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
@@ -26,7 +26,7 @@
     <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.2.0" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
-    <PackageReference Include="FFmpeg.AutoGen" Version="4.4.1.1" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="6.0.0.2" />
   </ItemGroup>
   
 

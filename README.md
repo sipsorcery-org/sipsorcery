@@ -24,7 +24,7 @@ There is no **Audio ouput** in this library. For this you can use [SIPSorcery.SD
 
 ## For Windows
 
-No additional steps are required for an x64 build. The nuget package includes the [FFmpeg](https://www.ffmpeg.org/) x64 binaries.
+Install the [FFmpeg](https://www.ffmpeg.org/) binaries using the packages at https://www.gyan.dev/ffmpeg/builds/#release-builds and include the FFMPEG executable in your PATH to find them automatically.
 
 ## For Linux
 
