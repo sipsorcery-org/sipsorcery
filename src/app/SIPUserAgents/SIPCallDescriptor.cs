@@ -151,7 +151,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// This constructor is for calls to a SIP account that the application recognises as belonging to it.
         /// </summary>
-        /// <param name="toSIPAccount">The destination SP account for teh call.</param>
+        /// <param name="toSIPAccount">The destination SP account for the call.</param>
         /// <param name="uri">The uri can be different to the to SIP account if a dotted notation is used. For
         /// example 1234.user@sipsorcery.com.</param>
         /// <param name="fromHeader"></param>
