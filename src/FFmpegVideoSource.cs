@@ -93,6 +93,18 @@ namespace SIPSorceryMedia.FFmpeg
             _videoFormatManager.RestrictFormats(filter);
         }
 
+        public void SetVideoEncoderBitrate(long? avgBitrate = null, int? toleranceBitrate = null, long? minBitrate = null, long? maxBitrate = null)
+        {
+            if(_videoEncoder != null)
+            {
+                _videoEncoder.SetBitrate(avgBitrate, toleranceBitrate, minBitrate, maxBitrate);
+            }
+            else
+            {
+                throw new NullReferenceException("Video Encoder is not yet initialized.");
+            }
+        }
+
         public void ForceKeyFrame() => _forceKeyFrame = true;
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) => throw new NotImplementedException();
         public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) => throw new NotImplementedException();

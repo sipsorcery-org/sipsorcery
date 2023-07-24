@@ -32,6 +32,11 @@ namespace SIPSorceryMedia.FFmpeg
         private Object _encoderLock = new object();
         private Object _decoderLock = new object();
 
+        private long? _bit_rate = null;
+        private int? _bit_rate_tolerance = null;
+        private long? _rc_min_rate = null;
+        private long? _rc_max_rate = null;
+
         private bool _forceKeyFrame;
         private int _pts = 0;
         private bool _isDisposed;
@@ -154,6 +159,11 @@ namespace SIPSorceryMedia.FFmpeg
 
                 _encoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
 
+                if (_bit_rate != null) _encoderContext->bit_rate = (long)_bit_rate;
+                if (_bit_rate_tolerance != null) _encoderContext->bit_rate_tolerance = (int)_bit_rate_tolerance;
+                if (_rc_min_rate != null) _encoderContext->rc_min_rate = (long)_rc_min_rate;
+                if (_rc_max_rate != null) _encoderContext->rc_max_rate = (long)_rc_max_rate;
+
                 // Set Key frame interval
                 if (fps < 5)
                     _encoderContext->gop_size = 1;
@@ -183,9 +193,28 @@ namespace SIPSorceryMedia.FFmpeg
 
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
 
-
                 logger.LogDebug($"Successfully initialised ffmpeg based image encoder: CodecId:[{codecID}] - {width}:{height} - {fps} Fps");
+            }
+        }
 
+        internal void SetBitrate(long? avgBitrate, int? toleranceBitrate, long? minBitrate, long? maxBitrate)
+        {
+            _bit_rate = avgBitrate;
+            _bit_rate_tolerance = toleranceBitrate;
+            _rc_min_rate = minBitrate;
+            _rc_max_rate = maxBitrate;
+
+            // Reset encoder
+            lock (_encoderLock)
+            {
+                if (!_isDisposed && _encoderContext != null && _isEncoderInitialised)
+                {
+                    _isEncoderInitialised = false;
+                    fixed (AVCodecContext** pCtx = &_encoderContext)
+                    {
+                        ffmpeg.avcodec_free_context(pCtx);
+                    }
+                }
             }
         }
 
