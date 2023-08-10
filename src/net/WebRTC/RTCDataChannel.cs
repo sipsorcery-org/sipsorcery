@@ -202,11 +202,26 @@ namespace SIPSorcery.Net
         /// </summary>
         internal void SendDcepOpen()
         {
+            byte type = (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE;
+            if (!ordered)
+            {
+                type += (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE_UNORDERED;
+            }
+            if (maxPacketLifeTime > 0)
+            {
+                type += (byte)DataChannelTypes.DATA_CHANNEL_PARTIAL_RELIABLE_TIMED;
+            }
+            else if(maxRetransmits > 0)
+            {
+                type += (byte)DataChannelTypes.DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT;
+            }
+
             var dcepOpen = new DataChannelOpenMessage()
             {
                 MessageType = (byte)DataChannelMessageTypes.OPEN,
-                ChannelType = (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE_UNORDERED,
-                Label = label
+                ChannelType = (byte)type,
+                Label = label,
+                Protocol = protocol,
             };
 
             lock (this)
