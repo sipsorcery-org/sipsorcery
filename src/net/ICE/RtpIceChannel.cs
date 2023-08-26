@@ -574,7 +574,19 @@ namespace SIPSorcery.Net
         /// <summary>
         /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
         /// </summary>
+        /// <remarks>
+        /// The order is <see cref="MdnsGetAddresses"/>, then <see cref="MdnsResolve"/>.
+        /// If both are null system <see cref="Dns">DNS resolver</see> will be used.
+        /// </remarks>
         public Func<string, Task<IPAddress>> MdnsResolve;
+        /// <summary>
+        /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
+        /// </summary>
+        /// <remarks>
+        /// The order is <see cref="MdnsGetAddresses"/>, then <see cref="MdnsResolve"/>.
+        /// If both are null system <see cref="Dns">DNS resolver</see> will be used.
+        /// </remarks>
+        public Func<string, Task<IPAddress[]>> MdnsGetAddresses;
 
         public Dictionary<STUNUri, Socket> RtpTcpSocketByUri { get; private set; } = new Dictionary<STUNUri, Socket>();
 
@@ -881,12 +893,6 @@ namespace SIPSorcery.Net
             {
                 // This implementation currently only supports UDP for RTP communications.
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported transport protocol {candidate.protocol}.");
-            }
-            else if (candidate.address.Trim().ToLower().EndsWith(MDNS_TLD) && MdnsResolve == null)
-            {
-                // Supporting MDNS lookups means an additional nuget dependency. Hopefully
-                // support is coming to .Net Core soon (AC 12 Jun 2020).
-                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
             }
             else if (IPAddress.TryParse(candidate.address, out var addr) &&
                 (IPAddress.Any.Equals(addr) || IPAddress.IPv6Any.Equals(addr)))
@@ -1354,24 +1360,18 @@ namespace SIPSorcery.Net
             {
                 if (remoteCandidate.address.ToLower().EndsWith(MDNS_TLD))
                 {
-                    if (MdnsResolve == null)
+                    var addresses = await ResolveMdnsName(remoteCandidate).ConfigureAwait(false);
+                    if (addresses.Length == 0)
                     {
-                        logger.LogWarning($"RTP ICE channel has no MDNS resolver set, cannot resolve remote candidate with MDNS hostname {remoteCandidate.address}.");
+                        logger.LogWarning($"RTP ICE channel MDNS resolver failed to resolve {remoteCandidate.address}.");
                     }
                     else
                     {
-                        remoteCandidateIPAddr = await MdnsResolve(remoteCandidate.address).ConfigureAwait(false);
-                        if (remoteCandidateIPAddr == null)
-                        {
-                            logger.LogWarning($"RTP ICE channel MDNS resolver failed to resolve {remoteCandidate.address}.");
-                        }
-                        else
-                        {
-                            logger.LogDebug($"RTP ICE channel resolved MDNS hostname {remoteCandidate.address} to {remoteCandidateIPAddr}.");
+                        remoteCandidateIPAddr = addresses[0];
+                        logger.LogDebug($"RTP ICE channel resolved MDNS hostname {remoteCandidate.address} to {remoteCandidateIPAddr}.");
 
-                            var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
-                            remoteCandidate.SetDestinationEndPoint(remoteEP);
-                        }
+                        var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
+                        remoteCandidate.SetDestinationEndPoint(remoteEP);
                     }
                 }
                 else
@@ -2611,6 +2611,49 @@ namespace SIPSorcery.Net
             }
 
             return sendResult;
+        }
+
+        private async Task<IPAddress[]> ResolveMdnsName(RTCIceCandidate candidate)
+        {
+            if (MdnsGetAddresses != null)
+            {
+                if (MdnsResolve != null)
+                {
+                    logger.LogWarning($"RTP ICE channel has both {nameof(MdnsGetAddresses)} and {nameof(MdnsGetAddresses)} set. Only {nameof(MdnsGetAddresses)} will be used.");
+                }
+                return await MdnsGetAddresses(candidate.address).ConfigureAwait(false);
+            }
+            if (MdnsResolve != null)
+            {
+                var address = await MdnsResolve(candidate.address).ConfigureAwait(false);
+                return address != null ? new IPAddress[] { address } : null;
+            }
+
+
+            IPAddress[] addresses;
+            try
+            {
+                addresses = await Dns.GetHostAddressesAsync(candidate.address).ConfigureAwait(false);
+            }
+            catch (SocketException e)
+            {
+                logger.LogError(e, "Error resolving mDNS hostname {Name}", candidate.address);
+                return Array.Empty<IPAddress>();
+            }
+            catch (ArgumentException e)
+            {
+                logger.LogError(e, "Unsupported mDNS hostname {Name}", candidate.address);
+                return Array.Empty<IPAddress>();
+            }
+
+            if (addresses.Length == 0)
+            {
+                logger.LogWarning($"RTP ICE channel has no MDNS resolver set, and the system can not resolve remote candidate with MDNS hostname {candidate.address}.");
+                // Supporting MDNS lookups means an additional nuget dependency. Hopefully
+                // support is coming to .Net Core soon (AC 12 Jun 2020).
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
+            }
+            return addresses;
         }
 
         /// <summary>
