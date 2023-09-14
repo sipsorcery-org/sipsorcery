@@ -352,7 +352,7 @@ namespace SIPSorcery.net.RTP
             return true;
         }
 
-        protected void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType, Boolean checkDone)
+        protected void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType, Boolean checkDone, ushort? seqNum = null)
         {
             if (checkDone || CheckIfCanSendRtpRaw())
             {
@@ -361,7 +361,7 @@ namespace SIPSorcery.net.RTP
 
                 RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
                 rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
-                rtpPacket.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
+                rtpPacket.Header.SequenceNumber = seqNum ?? LocalTrack.GetNextSeqNum();
                 rtpPacket.Header.Timestamp = timestamp;
                 rtpPacket.Header.MarkerBit = markerBit;
                 rtpPacket.Header.PayloadType = payloadType;
@@ -391,6 +391,20 @@ namespace SIPSorcery.net.RTP
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
             }
+        }
+
+        /// <summary>
+        /// Allows additional control for sending raw RTP payloads. No framing or other processing is carried out.
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTP packet being sent. Must be audio or video.</param>
+        /// <param name="payload">The RTP packet payload.</param>
+        /// <param name="timestamp">The timestamp to set on the RTP header.</param>
+        /// <param name="markerBit">The value to set on the RTP header marker bit, should be 0 or 1.</param>
+        /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
+        /// <param name="seqNum"> The RTP sequence number </param>
+        public void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType, ushort seqNum)
+        {
+            SendRtpRaw(data, timestamp, markerBit, payloadType, false, seqNum);
         }
 
         /// <summary>
