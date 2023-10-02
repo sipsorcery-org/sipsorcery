@@ -196,6 +196,7 @@ namespace SIPSorcery.Media
             logger.LogDebug($"Setting video sink and source format to {videoFormat.FormatID}:{videoFormat.Codec}.");
             Media.VideoSink?.SetVideoSinkFormat(videoFormat);
             Media.VideoSource?.SetVideoSourceFormat(videoFormat);
+            _videoTestPatternSource?.SetVideoSourceFormat(videoFormat);
         }
 
         public async override Task Start()
