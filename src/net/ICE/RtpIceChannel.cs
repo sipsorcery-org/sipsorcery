@@ -1111,7 +1111,7 @@ namespace SIPSorcery.Net
         //
         private void RefreshTurn(Object state)
         {
-            if (NominatedEntry == null)
+            if (NominatedEntry == null || _activeIceServer == null)
             {
                 return;
             }
