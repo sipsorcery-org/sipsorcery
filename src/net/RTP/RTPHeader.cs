@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using SIPSorcery.net.RTP;
@@ -182,7 +182,8 @@ namespace SIPSorcery.Net
             return header;
         }
 
-        private RTPHeaderExtensionData GetExtensionAtPosition(ref int position, int id, int len, RTPHeaderExtensionType type, out bool invalid) {
+        private RTPHeaderExtensionData GetExtensionAtPosition(ref int position, int id, int len, RTPHeaderExtensionType type, out bool invalid)
+        {
             RTPHeaderExtensionData ext = null;
             if (ExtensionPayload != null)
             {
@@ -210,7 +211,8 @@ namespace SIPSorcery.Net
             return ext;
         }
 
-        public List<RTPHeaderExtensionData> GetHeaderExtensions() {
+        public List<RTPHeaderExtensionData> GetHeaderExtensions()
+        {
             var extensions = new List<RTPHeaderExtensionData>();
             RTPHeaderExtensionData extension = null;
             var i = 0;
@@ -233,13 +235,13 @@ namespace SIPSorcery.Net
                         var len = ExtensionPayload[i++] + 1;
                         extension = GetExtensionAtPosition(ref i, id, len, RTPHeaderExtensionType.TwoByte, out invalid);
                     }
-
-                    if (invalid)
+                    else
                     {
+                        //We don't recognize this extension, ignore it
                         break;
                     }
 
-                    if (extension != null)
+                    if (!invalid && extension != null)
                     {
                         extensions.Add(extension);
                     }
@@ -249,13 +251,77 @@ namespace SIPSorcery.Net
             return extensions;
         }
 
-        private bool HasOneByteExtension() {
+        private bool HasOneByteExtension()
+        {
             return ExtensionProfile == 0xBEDE;
         }
 
         private bool HasTwoByteExtension()
         {
             return (ExtensionProfile & 0b1111111111110000) == 0b0001000000000000;
+        }
+
+        public static bool TryParse(
+            ReadOnlySpan<byte> buffer,
+            out RTPHeader header,
+            out int consumed)
+        {
+            header = new RTPHeader();
+            consumed = 0;
+            int offset = 0;
+            if (buffer.Length < MIN_HEADER_LEN)
+            {
+                return false;
+            }
+
+            var firstWord = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
+            offset += 2;
+
+            header.SequenceNumber =BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
+            offset += 2;
+            header.Timestamp = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(offset));
+            offset += 4;
+            header.SyncSource = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(offset));
+            offset += 4;
+
+            header.Version = firstWord >> 14;
+            header.PaddingFlag = (firstWord >> 13) & 0x1;
+            header.HeaderExtensionFlag = (firstWord >> 12) & 0x1;
+            header.CSRCCount = (firstWord >> 8) & 0xf;
+
+            header.MarkerBit = (firstWord >> 7) & 0x1;
+            header.PayloadType = firstWord & 0x7f;
+
+            int headerAndCSRCLength = offset + 4 * header.CSRCCount;
+
+            if (header.HeaderExtensionFlag == 1 && (buffer.Length >= (headerAndCSRCLength + 4)))
+            {
+                header.ExtensionProfile =BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
+                offset += 2;
+                header.ExtensionLength = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
+                offset += 2 + header.ExtensionLength * 4;
+
+                var extensionPayloadLength = header.ExtensionLength * 4;
+                if (header.ExtensionLength > 0 && buffer.Length >= extensionPayloadLength)
+                {
+                    header.ExtensionPayload = new byte[extensionPayloadLength];
+                    Buffer.BlockCopy(buffer.ToArray(), headerAndCSRCLength + 4, header.ExtensionPayload, 0, extensionPayloadLength);
+                }
+            }
+
+            header.PayloadSize = buffer.Length - offset;
+            if (header.PaddingFlag == 1)
+            {
+                // ReSharper disable once UseIndexFromEndExpression
+                header.PaddingCount = buffer[buffer.Length - 1];
+                if (header.PaddingCount < header.PayloadSize)//Prevent some protocol attacks 
+                {
+                    header.PayloadSize -= header.PaddingCount;
+                }
+            }
+
+            consumed = offset;
+            return header.PayloadSize>=0;
         }
     }
 }

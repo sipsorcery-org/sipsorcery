@@ -210,6 +210,10 @@ namespace SIPSorcery.Media
                     {
                         await Media.AudioSource.StartAudio().ConfigureAwait(false);
                     }
+                    if (Media.AudioSink != null)
+                    {
+                        await Media.AudioSink.StartAudioSink().ConfigureAwait(false);
+                    }
                 }
 
                 if (HasVideo)
@@ -253,6 +257,11 @@ namespace SIPSorcery.Media
                 if (Media.AudioSource != null)
                 {
                     await Media.AudioSource.CloseAudio().ConfigureAwait(false);
+                }
+
+                if (Media.AudioSink != null)
+                {
+                    await Media.AudioSink.CloseAudioSink().ConfigureAwait(false);
                 }
 
                 if (Media.VideoSource != null)

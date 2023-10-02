@@ -1,0 +1,5 @@
+<Project>
+ <PropertyGroup Condition=" '$(Framework)' != 'NET461'">
+   <LangVersion>8.0</LangVersion>
+ </PropertyGroup>
+</Project>

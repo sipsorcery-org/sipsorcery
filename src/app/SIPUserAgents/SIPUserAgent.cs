@@ -664,7 +664,7 @@ namespace SIPSorcery.SIP.App
             }
             finally
             {
-                m_semaphoreSlim.Release();
+                TryReleaseSemaphore();
             }
         }
 
@@ -1753,7 +1753,7 @@ namespace SIPSorcery.SIP.App
             }
             finally
             {
-                m_semaphoreSlim.Release();
+                TryReleaseSemaphore();
             }
         }
 
@@ -1940,8 +1940,20 @@ namespace SIPSorcery.SIP.App
 
             // Wait for completion of CallEnded and Answer methods
             m_semaphoreSlim.Wait();
-            m_semaphoreSlim.Release();
+            TryReleaseSemaphore();
             m_semaphoreSlim.Dispose();
         }
+		
+		private void TryReleaseSemaphore()
+		{
+			try
+			{
+				m_semaphoreSlim.Release();
+			}
+			catch (ObjectDisposedException)
+			{
+				//Swallow it
+			}
+		}
     }
 }

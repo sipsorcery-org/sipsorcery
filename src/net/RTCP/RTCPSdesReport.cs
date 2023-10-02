@@ -102,28 +102,43 @@ namespace SIPSorcery.Net
         /// <param name="packet">The byte array holding the SDES report.</param>
         public RTCPSDesReport(byte[] packet)
         {
-            if (packet.Length < MIN_PACKET_SIZE)
-            {
-                throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP SDES packet.");
-            }
-            else if (packet[8] != CNAME_ID)
-            {
-                throw new ApplicationException("The RTCP report packet did not have the required CNAME type field set correctly.");
-            }
+            // if (packet.Length < MIN_PACKET_SIZE)
+            // {
+            //     throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP SDES packet.");
+            // }
+            // else if (packet[8] != CNAME_ID)
+            // {
+            //     throw new ApplicationException("The RTCP report packet did not have the required CNAME type field set correctly.");
+            // }
 
             Header = new RTCPHeader(packet);
-
-            if (BitConverter.IsLittleEndian)
+            if (Header.Length <= 0)
             {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-            }
-            else
-            {
-                SSRC = BitConverter.ToUInt32(packet, 4);
+                return;
             }
 
-            int cnameLength = packet[9];
-            CNAME = Encoding.UTF8.GetString(packet, 10, cnameLength);
+            if (packet.Length >= RTCPHeader.HEADER_BYTES_LENGTH+4)
+            {
+                if (BitConverter.IsLittleEndian)
+                {
+                    SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, RTCPHeader.HEADER_BYTES_LENGTH));
+                }
+                else
+                {
+                    SSRC = BitConverter.ToUInt32(packet, RTCPHeader.HEADER_BYTES_LENGTH);
+                }
+            }
+
+            if (packet.Length >= MIN_PACKET_SIZE)
+            {
+                int cnameLength = packet[9];
+                if (cnameLength <= 0 || packet.Length < RTCPHeader.HEADER_BYTES_LENGTH + 4 + cnameLength)
+                {
+                    CNAME = string.Empty;
+                    return;
+                }
+                CNAME = Encoding.UTF8.GetString(packet, 10, cnameLength);
+            }
         }
 
         /// <summary>
@@ -133,7 +148,7 @@ namespace SIPSorcery.Net
         /// <returns>A byte array containing the serialised SDES item.</returns>
         public byte[] GetBytes()
         {
-            byte[] cnameBytes = Encoding.UTF8.GetBytes(CNAME);
+            byte[] cnameBytes = CNAME == null ? Array.Empty<byte>() : Encoding.UTF8.GetBytes(CNAME);
             byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(cnameBytes.Length)]; // Array automatically initialised with 0x00 values.
             Header.SetLength((ushort)(buffer.Length / 4 - 1));
 

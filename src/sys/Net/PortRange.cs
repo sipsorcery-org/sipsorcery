@@ -35,8 +35,8 @@ namespace SIPSorcery.Sys
     {
         private readonly Random m_random;
         private readonly bool m_shuffle;
-        private readonly int m_startPort;
-        private readonly int m_endPort;
+        public readonly int StartPort;
+        public readonly int EndPort;
         private int m_nextPort;
 
         /// <summary>
@@ -69,13 +69,13 @@ namespace SIPSorcery.Sys
             {
                 endPort -= 1;// correct end-port to odd if even -> RtpPort are always handed out in pairs
             }
-            m_startPort = startPort;
-            m_endPort = endPort;
+            StartPort = startPort;
+            EndPort = endPort;
             m_shuffle = shuffle;
             if (shuffle)
             {
                 m_random = randomSeed.HasValue ? new Random(randomSeed.Value) : new Random();
-                m_nextPort = m_random.Next(m_startPort, m_endPort + 1) // The + 1 is needed to get an even distribution because Random.Next(start, end) is inclusive start but exclusive the end
+                m_nextPort = m_random.Next(StartPort, EndPort + 1) // The + 1 is needed to get an even distribution because Random.Next(start, end) is inclusive start but exclusive the end
                     & 0x0000_FFFE; // AND with IPEndPoint.MaxPort but last bit is set to zero to always have an even port
             }
             else
@@ -100,15 +100,15 @@ namespace SIPSorcery.Sys
                 var res = m_nextPort;
                 if (m_shuffle)
                 {
-                    m_nextPort = m_random.Next(m_startPort, m_endPort + 1) // The + 1 is needed to get an even distribution because Random.Next(start, end) is inclusive start but exclusive the end
+                    m_nextPort = m_random.Next(StartPort, EndPort + 1) // The + 1 is needed to get an even distribution because Random.Next(start, end) is inclusive start but exclusive the end
                         & 0x0000_FFFE; // AND with IPEndPoint.MaxPort but last bit is set to zero to always have an even port
                 }
                 else
                 {
                     m_nextPort = m_nextPort + 2;
-                    if (m_nextPort > m_endPort)
+                    if (m_nextPort > EndPort)
                     {
-                        m_nextPort = m_startPort;
+                        m_nextPort = StartPort;
                     }
                 }
                 return res;

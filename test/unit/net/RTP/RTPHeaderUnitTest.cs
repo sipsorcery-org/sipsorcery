@@ -165,17 +165,25 @@ namespace SIPSorcery.Net.UnitTests
                };
 
             RTPPacket rtpPacket = new RTPPacket(rtpBytes);
+            Verify(rtpPacket);
 
-            Assert.True(2 == rtpPacket.Header.Version, "Version was mismatched.");
-            Assert.True(0 == rtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
-            Assert.True(1 == rtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
-            Assert.True(0 == rtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
-            Assert.True(1 == rtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
-            Assert.True(59133 == rtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
-            Assert.True(240U == rtpPacket.Header.Timestamp, "Timestamp was mismatched.");
-            Assert.True(3739283087 == rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
-            Assert.True(1U == rtpPacket.Header.ExtensionLength, "Extension Length was mismatched.");
-            Assert.True(rtpPacket.Header.ExtensionPayload.Length == rtpPacket.Header.ExtensionLength * 4, "Extension length and payload were mismatched.");
+            void Verify(RTPPacket localRtpPacket)
+            {
+                Assert.True(2 == localRtpPacket.Header.Version, "Version was mismatched.");
+                Assert.True(0 == localRtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
+                Assert.True(1 == localRtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
+                Assert.True(0 == localRtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
+                Assert.True(1 == localRtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
+                Assert.True(59133 == localRtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
+                Assert.True(240U == localRtpPacket.Header.Timestamp, "Timestamp was mismatched.");
+                Assert.True(3739283087 == localRtpPacket.Header.SyncSource, "SyncSource was mismatched.");
+                Assert.True(1U == localRtpPacket.Header.ExtensionLength, "Extension Length was mismatched.");
+                Assert.True(localRtpPacket.Header.ExtensionPayload.Length == localRtpPacket.Header.ExtensionLength * 4, "Extension length and payload were mismatched.");
+            }
+
+            var result = RTPPacket.TryParse(rtpBytes, out var p, out var consumed);
+            Assert.True(result, "RTP packet was not parsed correctly.");
+            Verify(p);
         }
 
         [Fact]
@@ -215,6 +223,27 @@ namespace SIPSorcery.Net.UnitTests
 
             var expectedValue = new byte[] {0xb3, 0x85, 0xb0, 0x8f, 0xc, 0x13, 0x9d, 0xe5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
             Assert.Equal(expectedValue, extension.Data);
+        }
+
+        [Fact]
+        public void should_empty_rtp_header_extensions()
+        {
+            var rtpPayload = new byte[] {
+                0x90, 0x00, 0xb7, 0x5e, 0x5a, 0xbd,
+                0x51, 0x99, 0x80, 0x09, 0x9e, 0x1b, 0xe0, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09,
+                0x9e, 0x1b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x71, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x13, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+            };
+            var packet = new RTPPacket(rtpPayload);
+            var header = packet.Header;
+            var extensions= header.GetHeaderExtensions().ToList();
+            Assert.NotNull(extensions);
+            Assert.Empty(extensions);
         }
     }
 }

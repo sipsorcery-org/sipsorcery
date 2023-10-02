@@ -63,5 +63,32 @@ namespace SIPSorcery.Net
 
             return payload;
         }
+
+        public static bool TryParse(
+            ReadOnlySpan<byte> buffer,
+             RTPPacket packet,
+            out int consumed)
+        {
+            consumed = 0;
+            if (RTPHeader.TryParse(buffer, out var header, out var headerConsumed))
+            {
+                packet.Header = header;
+                consumed += headerConsumed;
+                packet.Payload = buffer.Slice(headerConsumed, header.PayloadSize).ToArray();
+                consumed += header.PayloadSize;
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool TryParse(
+            ReadOnlySpan<byte> buffer,
+            out RTPPacket packet,
+            out int consumed)
+        {
+            packet = new RTPPacket();
+            return TryParse(buffer, packet, out consumed);
+        }
     }
 }

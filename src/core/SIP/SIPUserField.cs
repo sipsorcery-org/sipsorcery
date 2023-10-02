@@ -80,6 +80,20 @@ namespace SIPSorcery.SIP
 
             int position = trimUserField.IndexOf('<');
 
+            // fix for some stupid switches/pbxes that add <> to teh name like: "<01234>" <sip:01234@localhost>
+            // position is wrong if the user "name" contains a < character
+            int positionFirstQuote = trimUserField.IndexOf('"');
+            if (positionFirstQuote > -1 && positionFirstQuote < position)
+            {
+                int positionSecondQuote = trimUserField.IndexOf('"', positionFirstQuote + 1);
+                if (positionSecondQuote > position)
+                {
+                    // skip past "name" portion to find the url part because the "name" contained a <
+                    // for example: From: "<00412222222>" <sip:00412222222@xyz.example.com;user=phone>;tag=1111-XX-111111-22222
+                    position = trimUserField.IndexOf('<', positionSecondQuote + 1);
+                }
+            }
+
             if (position == -1)
             {
                 // Treat the field as a URI only, except that all parameters are Header parameters and not URI parameters 
