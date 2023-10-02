@@ -76,9 +76,12 @@ namespace SIPSorceryMedia.Windows
         private int _audioOutDeviceIndex;
         private bool _disableSource;
 
-        protected bool _isStarted;
-        protected bool _isPaused;
-        protected bool _isClosed;
+        protected bool _isAudioSourceStarted;
+        protected bool _isAudioSinkStarted;
+        protected bool _isAudioSourcePaused;
+        protected bool _isAudioSinkPaused;
+        protected bool _isAudioSourceClosed;
+        protected bool _isAudioSinkClosed;
 
         /// <summary>
         /// Not used by this audio source.
@@ -160,7 +163,8 @@ namespace SIPSorceryMedia.Windows
         public List<AudioFormat> GetAudioSinkFormats() => _audioFormatManager.GetSourceFormats();
 
         public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
-        public bool IsAudioSourcePaused() => _isPaused;
+        public bool IsAudioSourcePaused() => _isAudioSourcePaused;
+        public bool IsAudioSinkPaused() => _isAudioSinkPaused;
         public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) =>
             throw new NotImplementedException();
 
@@ -194,10 +198,9 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public Task StartAudio()
         {
-            if (!_isStarted)
+            if (!_isAudioSourceStarted)
             {
-                _isStarted = true;
-                _waveOutEvent?.Play();
+                _isAudioSourceStarted = true;
                 _waveInEvent?.StartRecording();
             }
 
@@ -209,11 +212,9 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public Task CloseAudio()
         {
-            if (!_isClosed)
+            if (!_isAudioSourceClosed)
             {
-                _isClosed = true;
-
-                _waveOutEvent?.Stop();
+                _isAudioSourceClosed = true;
 
                 if (_waveInEvent != null)
                 {
@@ -227,14 +228,14 @@ namespace SIPSorceryMedia.Windows
 
         public Task PauseAudio()
         {
-            _isPaused = true;
+            _isAudioSourcePaused = true;
             _waveInEvent?.StopRecording();
             return Task.CompletedTask;
         }
 
         public Task ResumeAudio()
         {
-            _isPaused = false;
+            _isAudioSourcePaused = false;
             _waveInEvent?.StartRecording();
             return Task.CompletedTask;
         }
@@ -304,21 +305,37 @@ namespace SIPSorceryMedia.Windows
 
         public Task PauseAudioSink()
         {
+            _isAudioSinkPaused = true;
+            _waveOutEvent?.Pause();
             return Task.CompletedTask;
         }
 
         public Task ResumeAudioSink()
         {
+            _isAudioSinkPaused = false;
+            _waveOutEvent?.Play();
             return Task.CompletedTask;
         }
 
         public Task StartAudioSink()
         {
+            if (!_isAudioSinkStarted)
+            {
+                _isAudioSinkStarted = true;
+                _waveOutEvent?.Play();
+            }
             return Task.CompletedTask;
         }
 
         public Task CloseAudioSink()
         {
+            if (!_isAudioSinkClosed)
+            {
+                _isAudioSinkClosed = true;
+
+                _waveOutEvent?.Stop();
+            }
+
             return Task.CompletedTask;
         }
     }
