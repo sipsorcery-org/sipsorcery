@@ -685,7 +685,7 @@ from packets received from the remote call party.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public uint Ssrc { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public uint Ssrc { get; set; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -861,6 +861,38 @@ from packets received from the remote call party.</p>
       <tr>
         <td><span class="xref">System.UInt32</span></td>
         <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSession_GetRtcpReport.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSession.GetRtcpReport%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSession.cs/#L364">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPSession_GetRtcpReport_" data-uid="SIPSorcery.Net.RTCPSession.GetRtcpReport*"></a>
+  <h4 id="SIPSorcery_Net_RTCPSession_GetRtcpReport" data-uid="SIPSorcery.Net.RTCPSession.GetRtcpReport">GetRtcpReport()</h4>
+  <div class="markdown level1 summary"><p>Gets the RTCP compound packet containing the RTCP reports we send.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCPCompoundPacket GetRtcpReport()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCPCompoundPacket.html">RTCPCompoundPacket</a></td>
+        <td><p>An RTCP compound packet.</p>
+</td>
       </tr>
     </tbody>
   </table>

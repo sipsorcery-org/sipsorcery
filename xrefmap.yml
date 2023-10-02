@@ -9102,6 +9102,12 @@ references:
   commentId: T:SIPSorcery.Net.RTCPCompoundPacket
   fullName: SIPSorcery.Net.RTCPCompoundPacket
   nameWithType: RTCPCompoundPacket
+- uid: SIPSorcery.Net.RTCPCompoundPacket.#ctor
+  name: RTCPCompoundPacket()
+  href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket__ctor
+  commentId: M:SIPSorcery.Net.RTCPCompoundPacket.#ctor
+  fullName: SIPSorcery.Net.RTCPCompoundPacket.RTCPCompoundPacket()
+  nameWithType: RTCPCompoundPacket.RTCPCompoundPacket()
 - uid: SIPSorcery.Net.RTCPCompoundPacket.#ctor(SIPSorcery.Net.RTCPReceiverReport,SIPSorcery.Net.RTCPSDesReport)
   name: RTCPCompoundPacket(RTCPReceiverReport, RTCPSDesReport)
   href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket__ctor_SIPSorcery_Net_RTCPReceiverReport_SIPSorcery_Net_RTCPSDesReport_
@@ -9221,6 +9227,31 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPCompoundPacket.SenderReport
   nameWithType: RTCPCompoundPacket.SenderReport
+- uid: SIPSorcery.Net.RTCPCompoundPacket.TryParse(System.Byte[],SIPSorcery.Net.RTCPCompoundPacket,System.Int32@)
+  name: TryParse(Byte[], RTCPCompoundPacket, out Int32)
+  href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket_TryParse_System_Byte___SIPSorcery_Net_RTCPCompoundPacket_System_Int32__
+  commentId: M:SIPSorcery.Net.RTCPCompoundPacket.TryParse(System.Byte[],SIPSorcery.Net.RTCPCompoundPacket,System.Int32@)
+  name.vb: TryParse(Byte(), RTCPCompoundPacket, ByRef Int32)
+  fullName: SIPSorcery.Net.RTCPCompoundPacket.TryParse(System.Byte[], SIPSorcery.Net.RTCPCompoundPacket, out System.Int32)
+  fullName.vb: SIPSorcery.Net.RTCPCompoundPacket.TryParse(System.Byte(), SIPSorcery.Net.RTCPCompoundPacket, ByRef System.Int32)
+  nameWithType: RTCPCompoundPacket.TryParse(Byte[], RTCPCompoundPacket, out Int32)
+  nameWithType.vb: RTCPCompoundPacket.TryParse(Byte(), RTCPCompoundPacket, ByRef Int32)
+- uid: SIPSorcery.Net.RTCPCompoundPacket.TryParse(System.ReadOnlySpan{System.Byte},SIPSorcery.Net.RTCPCompoundPacket@,System.Int32@)
+  name: TryParse(ReadOnlySpan<Byte>, out RTCPCompoundPacket, out Int32)
+  href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket_TryParse_System_ReadOnlySpan_System_Byte__SIPSorcery_Net_RTCPCompoundPacket__System_Int32__
+  commentId: M:SIPSorcery.Net.RTCPCompoundPacket.TryParse(System.ReadOnlySpan{System.Byte},SIPSorcery.Net.RTCPCompoundPacket@,System.Int32@)
+  name.vb: TryParse(ReadOnlySpan(Of Byte), ByRef RTCPCompoundPacket, ByRef Int32)
+  fullName: SIPSorcery.Net.RTCPCompoundPacket.TryParse(System.ReadOnlySpan<System.Byte>, out SIPSorcery.Net.RTCPCompoundPacket, out System.Int32)
+  fullName.vb: SIPSorcery.Net.RTCPCompoundPacket.TryParse(System.ReadOnlySpan(Of System.Byte), ByRef SIPSorcery.Net.RTCPCompoundPacket, ByRef System.Int32)
+  nameWithType: RTCPCompoundPacket.TryParse(ReadOnlySpan<Byte>, out RTCPCompoundPacket, out Int32)
+  nameWithType.vb: RTCPCompoundPacket.TryParse(ReadOnlySpan(Of Byte), ByRef RTCPCompoundPacket, ByRef Int32)
+- uid: SIPSorcery.Net.RTCPCompoundPacket.TryParse*
+  name: TryParse
+  href: api/SIPSorcery.Net.RTCPCompoundPacket.html#SIPSorcery_Net_RTCPCompoundPacket_TryParse_
+  commentId: Overload:SIPSorcery.Net.RTCPCompoundPacket.TryParse
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPCompoundPacket.TryParse
+  nameWithType: RTCPCompoundPacket.TryParse
 - uid: SIPSorcery.Net.RTCPeerConnection
   name: RTCPeerConnection
   href: api/SIPSorcery.Net.RTCPeerConnection.html
@@ -9989,6 +10020,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback
   nameWithType: RTCPFeedback.RTCPFeedback
+- uid: SIPSorcery.Net.RTCPFeedback.BitrateExp
+  name: BitrateExp
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_BitrateExp
+  commentId: F:SIPSorcery.Net.RTCPFeedback.BitrateExp
+  fullName: SIPSorcery.Net.RTCPFeedback.BitrateExp
+  nameWithType: RTCPFeedback.BitrateExp
+- uid: SIPSorcery.Net.RTCPFeedback.BitrateMantissa
+  name: BitrateMantissa
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_BitrateMantissa
+  commentId: F:SIPSorcery.Net.RTCPFeedback.BitrateMantissa
+  fullName: SIPSorcery.Net.RTCPFeedback.BitrateMantissa
+  nameWithType: RTCPFeedback.BitrateMantissa
 - uid: SIPSorcery.Net.RTCPFeedback.BLP
   name: BLP
   href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_BLP
@@ -10001,6 +10044,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCPFeedback.FCI
   fullName: SIPSorcery.Net.RTCPFeedback.FCI
   nameWithType: RTCPFeedback.FCI
+- uid: SIPSorcery.Net.RTCPFeedback.FeedbackSSRC
+  name: FeedbackSSRC
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_FeedbackSSRC
+  commentId: F:SIPSorcery.Net.RTCPFeedback.FeedbackSSRC
+  fullName: SIPSorcery.Net.RTCPFeedback.FeedbackSSRC
+  nameWithType: RTCPFeedback.FeedbackSSRC
 - uid: SIPSorcery.Net.RTCPFeedback.GetBytes
   name: GetBytes()
   href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_GetBytes
@@ -10032,6 +10081,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCPFeedback.MIN_PACKET_SIZE
   fullName: SIPSorcery.Net.RTCPFeedback.MIN_PACKET_SIZE
   nameWithType: RTCPFeedback.MIN_PACKET_SIZE
+- uid: SIPSorcery.Net.RTCPFeedback.NumSsrcs
+  name: NumSsrcs
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_NumSsrcs
+  commentId: F:SIPSorcery.Net.RTCPFeedback.NumSsrcs
+  fullName: SIPSorcery.Net.RTCPFeedback.NumSsrcs
+  nameWithType: RTCPFeedback.NumSsrcs
 - uid: SIPSorcery.Net.RTCPFeedback.PID
   name: PID
   href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_PID
@@ -10050,6 +10105,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCPFeedback.SenderSSRC
   fullName: SIPSorcery.Net.RTCPFeedback.SenderSSRC
   nameWithType: RTCPFeedback.SenderSSRC
+- uid: SIPSorcery.Net.RTCPFeedback.UniqueID
+  name: UniqueID
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_UniqueID
+  commentId: F:SIPSorcery.Net.RTCPFeedback.UniqueID
+  fullName: SIPSorcery.Net.RTCPFeedback.UniqueID
+  nameWithType: RTCPFeedback.UniqueID
 - uid: SIPSorcery.Net.RTCPFeedbackTypesEnum
   name: RTCPFeedbackTypesEnum
   href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html
@@ -10737,6 +10798,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp32
   nameWithType: RTCPSession.DateTimeToNtpTimestamp32
+- uid: SIPSorcery.Net.RTCPSession.GetRtcpReport
+  name: GetRtcpReport()
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_GetRtcpReport
+  commentId: M:SIPSorcery.Net.RTCPSession.GetRtcpReport
+  fullName: SIPSorcery.Net.RTCPSession.GetRtcpReport()
+  nameWithType: RTCPSession.GetRtcpReport()
+- uid: SIPSorcery.Net.RTCPSession.GetRtcpReport*
+  name: GetRtcpReport
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_GetRtcpReport_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.GetRtcpReport
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.GetRtcpReport
+  nameWithType: RTCPSession.GetRtcpReport
 - uid: SIPSorcery.Net.RTCPSession.IsClosed
   name: IsClosed
   href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_IsClosed
@@ -12208,15 +12282,24 @@ references:
   fullName.vb: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte(), System.UInt32, System.Int32, System.Int32)
   nameWithType: MediaStream.SendRtpRaw(Byte[], UInt32, Int32, Int32)
   nameWithType.vb: MediaStream.SendRtpRaw(Byte(), UInt32, Int32, Int32)
-- uid: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.Boolean)
-  name: SendRtpRaw(Byte[], UInt32, Int32, Int32, Boolean)
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtpRaw_System_Byte___System_UInt32_System_Int32_System_Int32_System_Boolean_
-  commentId: M:SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.Boolean)
-  name.vb: SendRtpRaw(Byte(), UInt32, Int32, Int32, Boolean)
-  fullName: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[], System.UInt32, System.Int32, System.Int32, System.Boolean)
-  fullName.vb: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte(), System.UInt32, System.Int32, System.Int32, System.Boolean)
-  nameWithType: MediaStream.SendRtpRaw(Byte[], UInt32, Int32, Int32, Boolean)
-  nameWithType.vb: MediaStream.SendRtpRaw(Byte(), UInt32, Int32, Int32, Boolean)
+- uid: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.Boolean,System.Nullable{System.UInt16})
+  name: SendRtpRaw(Byte[], UInt32, Int32, Int32, Boolean, Nullable<UInt16>)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtpRaw_System_Byte___System_UInt32_System_Int32_System_Int32_System_Boolean_System_Nullable_System_UInt16__
+  commentId: M:SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.Boolean,System.Nullable{System.UInt16})
+  name.vb: SendRtpRaw(Byte(), UInt32, Int32, Int32, Boolean, Nullable(Of UInt16))
+  fullName: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[], System.UInt32, System.Int32, System.Int32, System.Boolean, System.Nullable<System.UInt16>)
+  fullName.vb: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte(), System.UInt32, System.Int32, System.Int32, System.Boolean, System.Nullable(Of System.UInt16))
+  nameWithType: MediaStream.SendRtpRaw(Byte[], UInt32, Int32, Int32, Boolean, Nullable<UInt16>)
+  nameWithType.vb: MediaStream.SendRtpRaw(Byte(), UInt32, Int32, Int32, Boolean, Nullable(Of UInt16))
+- uid: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.UInt16)
+  name: SendRtpRaw(Byte[], UInt32, Int32, Int32, UInt16)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtpRaw_System_Byte___System_UInt32_System_Int32_System_Int32_System_UInt16_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.UInt16)
+  name.vb: SendRtpRaw(Byte(), UInt32, Int32, Int32, UInt16)
+  fullName: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[], System.UInt32, System.Int32, System.Int32, System.UInt16)
+  fullName.vb: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte(), System.UInt32, System.Int32, System.Int32, System.UInt16)
+  nameWithType: MediaStream.SendRtpRaw(Byte[], UInt32, Int32, Int32, UInt16)
+  nameWithType.vb: MediaStream.SendRtpRaw(Byte(), UInt32, Int32, Int32, UInt16)
 - uid: SIPSorcery.net.RTP.MediaStream.SendRtpRaw*
   name: SendRtpRaw
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtpRaw_
@@ -13288,6 +13371,22 @@ references:
   commentId: F:SIPSorcery.Net.RTPHeader.Timestamp
   fullName: SIPSorcery.Net.RTPHeader.Timestamp
   nameWithType: RTPHeader.Timestamp
+- uid: SIPSorcery.Net.RTPHeader.TryParse(System.ReadOnlySpan{System.Byte},SIPSorcery.Net.RTPHeader@,System.Int32@)
+  name: TryParse(ReadOnlySpan<Byte>, out RTPHeader, out Int32)
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_TryParse_System_ReadOnlySpan_System_Byte__SIPSorcery_Net_RTPHeader__System_Int32__
+  commentId: M:SIPSorcery.Net.RTPHeader.TryParse(System.ReadOnlySpan{System.Byte},SIPSorcery.Net.RTPHeader@,System.Int32@)
+  name.vb: TryParse(ReadOnlySpan(Of Byte), ByRef RTPHeader, ByRef Int32)
+  fullName: SIPSorcery.Net.RTPHeader.TryParse(System.ReadOnlySpan<System.Byte>, out SIPSorcery.Net.RTPHeader, out System.Int32)
+  fullName.vb: SIPSorcery.Net.RTPHeader.TryParse(System.ReadOnlySpan(Of System.Byte), ByRef SIPSorcery.Net.RTPHeader, ByRef System.Int32)
+  nameWithType: RTPHeader.TryParse(ReadOnlySpan<Byte>, out RTPHeader, out Int32)
+  nameWithType.vb: RTPHeader.TryParse(ReadOnlySpan(Of Byte), ByRef RTPHeader, ByRef Int32)
+- uid: SIPSorcery.Net.RTPHeader.TryParse*
+  name: TryParse
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_TryParse_
+  commentId: Overload:SIPSorcery.Net.RTPHeader.TryParse
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPHeader.TryParse
+  nameWithType: RTPHeader.TryParse
 - uid: SIPSorcery.Net.RTPHeader.Version
   name: Version
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_Version
@@ -13367,6 +13466,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RtpIceChannel.Close
   nameWithType: RtpIceChannel.Close
+- uid: SIPSorcery.Net.RtpIceChannel.CloseTcp(SIPSorcery.Net.RtpIceChannel.IceTcpReceiver,System.String)
+  name: CloseTcp(RtpIceChannel.IceTcpReceiver, String)
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_CloseTcp_SIPSorcery_Net_RtpIceChannel_IceTcpReceiver_System_String_
+  commentId: M:SIPSorcery.Net.RtpIceChannel.CloseTcp(SIPSorcery.Net.RtpIceChannel.IceTcpReceiver,System.String)
+  fullName: SIPSorcery.Net.RtpIceChannel.CloseTcp(SIPSorcery.Net.RtpIceChannel.IceTcpReceiver, System.String)
+  nameWithType: RtpIceChannel.CloseTcp(RtpIceChannel.IceTcpReceiver, String)
 - uid: SIPSorcery.Net.RtpIceChannel.CloseTcp(System.String)
   name: CloseTcp(String)
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_CloseTcp_System_String_
@@ -13565,12 +13670,18 @@ references:
   commentId: F:SIPSorcery.Net.RtpIceChannel.LocalIceUser
   fullName: SIPSorcery.Net.RtpIceChannel.LocalIceUser
   nameWithType: RtpIceChannel.LocalIceUser
-- uid: SIPSorcery.Net.RtpIceChannel.m_rtpTcpReceiver
-  name: m_rtpTcpReceiver
-  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_m_rtpTcpReceiver
-  commentId: F:SIPSorcery.Net.RtpIceChannel.m_rtpTcpReceiver
-  fullName: SIPSorcery.Net.RtpIceChannel.m_rtpTcpReceiver
-  nameWithType: RtpIceChannel.m_rtpTcpReceiver
+- uid: SIPSorcery.Net.RtpIceChannel.m_rtpTcpReceiverByUri
+  name: m_rtpTcpReceiverByUri
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_m_rtpTcpReceiverByUri
+  commentId: F:SIPSorcery.Net.RtpIceChannel.m_rtpTcpReceiverByUri
+  fullName: SIPSorcery.Net.RtpIceChannel.m_rtpTcpReceiverByUri
+  nameWithType: RtpIceChannel.m_rtpTcpReceiverByUri
+- uid: SIPSorcery.Net.RtpIceChannel.MdnsGetAddresses
+  name: MdnsGetAddresses
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_MdnsGetAddresses
+  commentId: F:SIPSorcery.Net.RtpIceChannel.MdnsGetAddresses
+  fullName: SIPSorcery.Net.RtpIceChannel.MdnsGetAddresses
+  nameWithType: RtpIceChannel.MdnsGetAddresses
 - uid: SIPSorcery.Net.RtpIceChannel.MdnsResolve
   name: MdnsResolve
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_MdnsResolve
@@ -13706,19 +13817,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RtpIceChannel.Restart
   nameWithType: RtpIceChannel.Restart
-- uid: SIPSorcery.Net.RtpIceChannel.RtpTcpSocket
-  name: RtpTcpSocket
-  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_RtpTcpSocket
-  commentId: P:SIPSorcery.Net.RtpIceChannel.RtpTcpSocket
-  fullName: SIPSorcery.Net.RtpIceChannel.RtpTcpSocket
-  nameWithType: RtpIceChannel.RtpTcpSocket
-- uid: SIPSorcery.Net.RtpIceChannel.RtpTcpSocket*
-  name: RtpTcpSocket
-  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_RtpTcpSocket_
-  commentId: Overload:SIPSorcery.Net.RtpIceChannel.RtpTcpSocket
+- uid: SIPSorcery.Net.RtpIceChannel.RtpTcpSocketByUri
+  name: RtpTcpSocketByUri
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_RtpTcpSocketByUri
+  commentId: P:SIPSorcery.Net.RtpIceChannel.RtpTcpSocketByUri
+  fullName: SIPSorcery.Net.RtpIceChannel.RtpTcpSocketByUri
+  nameWithType: RtpIceChannel.RtpTcpSocketByUri
+- uid: SIPSorcery.Net.RtpIceChannel.RtpTcpSocketByUri*
+  name: RtpTcpSocketByUri
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_RtpTcpSocketByUri_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.RtpTcpSocketByUri
   isSpec: "True"
-  fullName: SIPSorcery.Net.RtpIceChannel.RtpTcpSocket
-  nameWithType: RtpIceChannel.RtpTcpSocket
+  fullName: SIPSorcery.Net.RtpIceChannel.RtpTcpSocketByUri
+  nameWithType: RtpIceChannel.RtpTcpSocketByUri
 - uid: SIPSorcery.Net.RtpIceChannel.SDP_MID
   name: SDP_MID
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SDP_MID
@@ -13747,15 +13858,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RtpIceChannel.Send
   nameWithType: RtpIceChannel.Send
-- uid: SIPSorcery.Net.RtpIceChannel.SendOverTCP(System.Net.IPEndPoint,System.Byte[])
-  name: SendOverTCP(IPEndPoint, Byte[])
-  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SendOverTCP_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.Net.RtpIceChannel.SendOverTCP(System.Net.IPEndPoint,System.Byte[])
-  name.vb: SendOverTCP(IPEndPoint, Byte())
-  fullName: SIPSorcery.Net.RtpIceChannel.SendOverTCP(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.Net.RtpIceChannel.SendOverTCP(System.Net.IPEndPoint, System.Byte())
-  nameWithType: RtpIceChannel.SendOverTCP(IPEndPoint, Byte[])
-  nameWithType.vb: RtpIceChannel.SendOverTCP(IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RtpIceChannel.SendOverTCP(SIPSorcery.Net.IceServer,System.Byte[])
+  name: SendOverTCP(IceServer, Byte[])
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SendOverTCP_SIPSorcery_Net_IceServer_System_Byte___
+  commentId: M:SIPSorcery.Net.RtpIceChannel.SendOverTCP(SIPSorcery.Net.IceServer,System.Byte[])
+  name.vb: SendOverTCP(IceServer, Byte())
+  fullName: SIPSorcery.Net.RtpIceChannel.SendOverTCP(SIPSorcery.Net.IceServer, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RtpIceChannel.SendOverTCP(SIPSorcery.Net.IceServer, System.Byte())
+  nameWithType: RtpIceChannel.SendOverTCP(IceServer, Byte[])
+  nameWithType.vb: RtpIceChannel.SendOverTCP(IceServer, Byte())
 - uid: SIPSorcery.Net.RtpIceChannel.SendOverTCP*
   name: SendOverTCP
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SendOverTCP_
@@ -13861,6 +13972,31 @@ references:
   commentId: F:SIPSorcery.Net.RTPPacket.Payload
   fullName: SIPSorcery.Net.RTPPacket.Payload
   nameWithType: RTPPacket.Payload
+- uid: SIPSorcery.Net.RTPPacket.TryParse(System.ReadOnlySpan{System.Byte},SIPSorcery.Net.RTPPacket,System.Int32@)
+  name: TryParse(ReadOnlySpan<Byte>, RTPPacket, out Int32)
+  href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_TryParse_System_ReadOnlySpan_System_Byte__SIPSorcery_Net_RTPPacket_System_Int32__
+  commentId: M:SIPSorcery.Net.RTPPacket.TryParse(System.ReadOnlySpan{System.Byte},SIPSorcery.Net.RTPPacket,System.Int32@)
+  name.vb: TryParse(ReadOnlySpan(Of Byte), RTPPacket, ByRef Int32)
+  fullName: SIPSorcery.Net.RTPPacket.TryParse(System.ReadOnlySpan<System.Byte>, SIPSorcery.Net.RTPPacket, out System.Int32)
+  fullName.vb: SIPSorcery.Net.RTPPacket.TryParse(System.ReadOnlySpan(Of System.Byte), SIPSorcery.Net.RTPPacket, ByRef System.Int32)
+  nameWithType: RTPPacket.TryParse(ReadOnlySpan<Byte>, RTPPacket, out Int32)
+  nameWithType.vb: RTPPacket.TryParse(ReadOnlySpan(Of Byte), RTPPacket, ByRef Int32)
+- uid: SIPSorcery.Net.RTPPacket.TryParse(System.ReadOnlySpan{System.Byte},SIPSorcery.Net.RTPPacket@,System.Int32@)
+  name: TryParse(ReadOnlySpan<Byte>, out RTPPacket, out Int32)
+  href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_TryParse_System_ReadOnlySpan_System_Byte__SIPSorcery_Net_RTPPacket__System_Int32__
+  commentId: M:SIPSorcery.Net.RTPPacket.TryParse(System.ReadOnlySpan{System.Byte},SIPSorcery.Net.RTPPacket@,System.Int32@)
+  name.vb: TryParse(ReadOnlySpan(Of Byte), ByRef RTPPacket, ByRef Int32)
+  fullName: SIPSorcery.Net.RTPPacket.TryParse(System.ReadOnlySpan<System.Byte>, out SIPSorcery.Net.RTPPacket, out System.Int32)
+  fullName.vb: SIPSorcery.Net.RTPPacket.TryParse(System.ReadOnlySpan(Of System.Byte), ByRef SIPSorcery.Net.RTPPacket, ByRef System.Int32)
+  nameWithType: RTPPacket.TryParse(ReadOnlySpan<Byte>, out RTPPacket, out Int32)
+  nameWithType.vb: RTPPacket.TryParse(ReadOnlySpan(Of Byte), ByRef RTPPacket, ByRef Int32)
+- uid: SIPSorcery.Net.RTPPacket.TryParse*
+  name: TryParse
+  href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_TryParse_
+  commentId: Overload:SIPSorcery.Net.RTPPacket.TryParse
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPPacket.TryParse
+  nameWithType: RTPPacket.TryParse
 - uid: SIPSorcery.Net.RtpSecureMediaOptionEnum
   name: RtpSecureMediaOptionEnum
   href: api/SIPSorcery.Net.RtpSecureMediaOptionEnum.html
@@ -14686,6 +14822,15 @@ references:
   fullName.vb: SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum, System.Byte(), System.UInt32, System.Int32, System.Int32)
   nameWithType: RTPSession.SendRtpRaw(SDPMediaTypesEnum, Byte[], UInt32, Int32, Int32)
   nameWithType.vb: RTPSession.SendRtpRaw(SDPMediaTypesEnum, Byte(), UInt32, Int32, Int32)
+- uid: SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum,System.Byte[],System.UInt32,System.Int32,System.Int32,System.UInt16)
+  name: SendRtpRaw(SDPMediaTypesEnum, Byte[], UInt32, Int32, Int32, UInt16)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtpRaw_SIPSorcery_Net_SDPMediaTypesEnum_System_Byte___System_UInt32_System_Int32_System_Int32_System_UInt16_
+  commentId: M:SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum,System.Byte[],System.UInt32,System.Int32,System.Int32,System.UInt16)
+  name.vb: SendRtpRaw(SDPMediaTypesEnum, Byte(), UInt32, Int32, Int32, UInt16)
+  fullName: SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum, System.Byte[], System.UInt32, System.Int32, System.Int32, System.UInt16)
+  fullName.vb: SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum, System.Byte(), System.UInt32, System.Int32, System.Int32, System.UInt16)
+  nameWithType: RTPSession.SendRtpRaw(SDPMediaTypesEnum, Byte[], UInt32, Int32, Int32, UInt16)
+  nameWithType.vb: RTPSession.SendRtpRaw(SDPMediaTypesEnum, Byte(), UInt32, Int32, Int32, UInt16)
 - uid: SIPSorcery.Net.RTPSession.SendRtpRaw*
   name: SendRtpRaw
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtpRaw_
@@ -15330,6 +15475,19 @@ references:
   commentId: F:SIPSorcery.Net.RTSPHeader.Accept
   fullName: SIPSorcery.Net.RTSPHeader.Accept
   nameWithType: RTSPHeader.Accept
+- uid: SIPSorcery.Net.RTSPHeader.AddHeader(System.String,System.String)
+  name: AddHeader(String, String)
+  href: api/SIPSorcery.Net.RTSPHeader.html#SIPSorcery_Net_RTSPHeader_AddHeader_System_String_System_String_
+  commentId: M:SIPSorcery.Net.RTSPHeader.AddHeader(System.String,System.String)
+  fullName: SIPSorcery.Net.RTSPHeader.AddHeader(System.String, System.String)
+  nameWithType: RTSPHeader.AddHeader(String, String)
+- uid: SIPSorcery.Net.RTSPHeader.AddHeader*
+  name: AddHeader
+  href: api/SIPSorcery.Net.RTSPHeader.html#SIPSorcery_Net_RTSPHeader_AddHeader_
+  commentId: Overload:SIPSorcery.Net.RTSPHeader.AddHeader
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTSPHeader.AddHeader
+  nameWithType: RTSPHeader.AddHeader
 - uid: SIPSorcery.Net.RTSPHeader.ContentLength
   name: ContentLength
   href: api/SIPSorcery.Net.RTSPHeader.html#SIPSorcery_Net_RTSPHeader_ContentLength
@@ -22805,6 +22963,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SrtpHandler.IsNegotiationComplete
   nameWithType: SrtpHandler.IsNegotiationComplete
+- uid: SIPSorcery.Net.SrtpHandler.LocalSecurityDescription
+  name: LocalSecurityDescription
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_LocalSecurityDescription
+  commentId: P:SIPSorcery.Net.SrtpHandler.LocalSecurityDescription
+  fullName: SIPSorcery.Net.SrtpHandler.LocalSecurityDescription
+  nameWithType: SrtpHandler.LocalSecurityDescription
+- uid: SIPSorcery.Net.SrtpHandler.LocalSecurityDescription*
+  name: LocalSecurityDescription
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_LocalSecurityDescription_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.LocalSecurityDescription
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.LocalSecurityDescription
+  nameWithType: SrtpHandler.LocalSecurityDescription
 - uid: SIPSorcery.Net.SrtpHandler.m_localSecurityDescriptions
   name: m_localSecurityDescriptions
   href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_m_localSecurityDescriptions
@@ -22867,6 +23038,35 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SrtpHandler.ProtectRTP
   nameWithType: SrtpHandler.ProtectRTP
+- uid: SIPSorcery.Net.SrtpHandler.RemoteSecurityDescription
+  name: RemoteSecurityDescription
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_RemoteSecurityDescription
+  commentId: P:SIPSorcery.Net.SrtpHandler.RemoteSecurityDescription
+  fullName: SIPSorcery.Net.SrtpHandler.RemoteSecurityDescription
+  nameWithType: SrtpHandler.RemoteSecurityDescription
+- uid: SIPSorcery.Net.SrtpHandler.RemoteSecurityDescription*
+  name: RemoteSecurityDescription
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_RemoteSecurityDescription_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.RemoteSecurityDescription
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.RemoteSecurityDescription
+  nameWithType: SrtpHandler.RemoteSecurityDescription
+- uid: SIPSorcery.Net.SrtpHandler.RemoteSecurityDescriptionUnchanged(System.Collections.Generic.List{SIPSorcery.Net.SDPSecurityDescription})
+  name: RemoteSecurityDescriptionUnchanged(List<SDPSecurityDescription>)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_RemoteSecurityDescriptionUnchanged_System_Collections_Generic_List_SIPSorcery_Net_SDPSecurityDescription__
+  commentId: M:SIPSorcery.Net.SrtpHandler.RemoteSecurityDescriptionUnchanged(System.Collections.Generic.List{SIPSorcery.Net.SDPSecurityDescription})
+  name.vb: RemoteSecurityDescriptionUnchanged(List(Of SDPSecurityDescription))
+  fullName: SIPSorcery.Net.SrtpHandler.RemoteSecurityDescriptionUnchanged(System.Collections.Generic.List<SIPSorcery.Net.SDPSecurityDescription>)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.RemoteSecurityDescriptionUnchanged(System.Collections.Generic.List(Of SIPSorcery.Net.SDPSecurityDescription))
+  nameWithType: SrtpHandler.RemoteSecurityDescriptionUnchanged(List<SDPSecurityDescription>)
+  nameWithType.vb: SrtpHandler.RemoteSecurityDescriptionUnchanged(List(Of SDPSecurityDescription))
+- uid: SIPSorcery.Net.SrtpHandler.RemoteSecurityDescriptionUnchanged*
+  name: RemoteSecurityDescriptionUnchanged
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_RemoteSecurityDescriptionUnchanged_
+  commentId: Overload:SIPSorcery.Net.SrtpHandler.RemoteSecurityDescriptionUnchanged
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SrtpHandler.RemoteSecurityDescriptionUnchanged
+  nameWithType: SrtpHandler.RemoteSecurityDescriptionUnchanged
 - uid: SIPSorcery.Net.SrtpHandler.SetupLocal(System.Collections.Generic.List{SIPSorcery.Net.SDPSecurityDescription},SIPSorcery.SIP.App.SdpType)
   name: SetupLocal(List<SDPSecurityDescription>, SdpType)
   href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_SetupLocal_System_Collections_Generic_List_SIPSorcery_Net_SDPSecurityDescription__SIPSorcery_SIP_App_SdpType_
@@ -29362,6 +29562,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.Nonce
   fullName: SIPSorcery.SIP.SIPAuthorisationDigest.Nonce
   nameWithType: SIPAuthorisationDigest.Nonce
+- uid: SIPSorcery.SIP.SIPAuthorisationDigest.NonceCount
+  name: NonceCount
+  href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_NonceCount
+  commentId: F:SIPSorcery.SIP.SIPAuthorisationDigest.NonceCount
+  fullName: SIPSorcery.SIP.SIPAuthorisationDigest.NonceCount
+  nameWithType: SIPAuthorisationDigest.NonceCount
 - uid: SIPSorcery.SIP.SIPAuthorisationDigest.Opaque
   name: Opaque
   href: api/SIPSorcery.SIP.SIPAuthorisationDigest.html#SIPSorcery_SIP_SIPAuthorisationDigest_Opaque
@@ -37843,6 +38049,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.GetSIPChannels
   nameWithType: SIPTransport.GetSIPChannels
+- uid: SIPSorcery.SIP.SIPTransport.MaxInMessageQueueCount
+  name: MaxInMessageQueueCount
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_MaxInMessageQueueCount
+  commentId: P:SIPSorcery.SIP.SIPTransport.MaxInMessageQueueCount
+  fullName: SIPSorcery.SIP.SIPTransport.MaxInMessageQueueCount
+  nameWithType: SIPTransport.MaxInMessageQueueCount
+- uid: SIPSorcery.SIP.SIPTransport.MaxInMessageQueueCount*
+  name: MaxInMessageQueueCount
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_MaxInMessageQueueCount_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.MaxInMessageQueueCount
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransport.MaxInMessageQueueCount
+  nameWithType: SIPTransport.MaxInMessageQueueCount
 - uid: SIPSorcery.SIP.SIPTransport.MaxPendingTransactionsCount
   name: MaxPendingTransactionsCount
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_MaxPendingTransactionsCount
@@ -40776,15 +40995,15 @@ references:
   fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.IPAddress, System.Int32, SIPSorcery.Sys.PortRange, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
   nameWithType: NetServices.CreateRtpSocket(Boolean, IPAddress, Int32, PortRange, out Socket, out Socket)
   nameWithType.vb: NetServices.CreateRtpSocket(Boolean, IPAddress, Int32, PortRange, ByRef Socket, ByRef Socket)
-- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.Sockets.ProtocolType,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
-  name: CreateRtpSocket(Boolean, ProtocolType, IPAddress, Int32, PortRange, out Socket, out Socket)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_Sockets_ProtocolType_System_Net_IPAddress_System_Int32_SIPSorcery_Sys_PortRange_System_Net_Sockets_Socket__System_Net_Sockets_Socket__
-  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.Sockets.ProtocolType,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
-  name.vb: CreateRtpSocket(Boolean, ProtocolType, IPAddress, Int32, PortRange, ByRef Socket, ByRef Socket)
-  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.Sockets.ProtocolType, System.Net.IPAddress, System.Int32, SIPSorcery.Sys.PortRange, out System.Net.Sockets.Socket, out System.Net.Sockets.Socket)
-  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.Sockets.ProtocolType, System.Net.IPAddress, System.Int32, SIPSorcery.Sys.PortRange, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
-  nameWithType: NetServices.CreateRtpSocket(Boolean, ProtocolType, IPAddress, Int32, PortRange, out Socket, out Socket)
-  nameWithType.vb: NetServices.CreateRtpSocket(Boolean, ProtocolType, IPAddress, Int32, PortRange, ByRef Socket, ByRef Socket)
+- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.Sockets.ProtocolType,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange,System.Boolean,System.Boolean,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+  name: CreateRtpSocket(Boolean, ProtocolType, IPAddress, Int32, PortRange, Boolean, Boolean, out Socket, out Socket)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_Sockets_ProtocolType_System_Net_IPAddress_System_Int32_SIPSorcery_Sys_PortRange_System_Boolean_System_Boolean_System_Net_Sockets_Socket__System_Net_Sockets_Socket__
+  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.Sockets.ProtocolType,System.Net.IPAddress,System.Int32,SIPSorcery.Sys.PortRange,System.Boolean,System.Boolean,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+  name.vb: CreateRtpSocket(Boolean, ProtocolType, IPAddress, Int32, PortRange, Boolean, Boolean, ByRef Socket, ByRef Socket)
+  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.Sockets.ProtocolType, System.Net.IPAddress, System.Int32, SIPSorcery.Sys.PortRange, System.Boolean, System.Boolean, out System.Net.Sockets.Socket, out System.Net.Sockets.Socket)
+  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean, System.Net.Sockets.ProtocolType, System.Net.IPAddress, System.Int32, SIPSorcery.Sys.PortRange, System.Boolean, System.Boolean, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
+  nameWithType: NetServices.CreateRtpSocket(Boolean, ProtocolType, IPAddress, Int32, PortRange, Boolean, Boolean, out Socket, out Socket)
+  nameWithType.vb: NetServices.CreateRtpSocket(Boolean, ProtocolType, IPAddress, Int32, PortRange, Boolean, Boolean, ByRef Socket, ByRef Socket)
 - uid: SIPSorcery.Sys.NetServices.CreateRtpSocket*
   name: CreateRtpSocket
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_
@@ -40998,6 +41217,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.PortRange.PortRange
   nameWithType: PortRange.PortRange
+- uid: SIPSorcery.Sys.PortRange.EndPort
+  name: EndPort
+  href: api/SIPSorcery.Sys.PortRange.html#SIPSorcery_Sys_PortRange_EndPort
+  commentId: F:SIPSorcery.Sys.PortRange.EndPort
+  fullName: SIPSorcery.Sys.PortRange.EndPort
+  nameWithType: PortRange.EndPort
 - uid: SIPSorcery.Sys.PortRange.GetNextPort
   name: GetNextPort()
   href: api/SIPSorcery.Sys.PortRange.html#SIPSorcery_Sys_PortRange_GetNextPort
@@ -41011,6 +41236,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.PortRange.GetNextPort
   nameWithType: PortRange.GetNextPort
+- uid: SIPSorcery.Sys.PortRange.StartPort
+  name: StartPort
+  href: api/SIPSorcery.Sys.PortRange.html#SIPSorcery_Sys_PortRange_StartPort
+  commentId: F:SIPSorcery.Sys.PortRange.StartPort
+  fullName: SIPSorcery.Sys.PortRange.StartPort
+  nameWithType: PortRange.StartPort
 - uid: SIPSorcery.Sys.RawSocket
   name: RawSocket
   href: api/SIPSorcery.Sys.RawSocket.html
