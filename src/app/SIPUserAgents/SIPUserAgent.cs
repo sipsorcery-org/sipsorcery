@@ -996,7 +996,7 @@ namespace SIPSorcery.SIP.App
 
                 try
                 {
-                    SDP offer = SDP.ParseSDPDescription(sipRequest.Body);
+                    SDP offer = sipRequest.Body == null ? null : SDP.ParseSDPDescription(sipRequest.Body);
 
                     if (sipRequest.Header.CallId == _oldCallID)
                     {
@@ -1004,6 +1004,29 @@ namespace SIPSorcery.SIP.App
                         // the purpose of the request is to place us on hold. We'll respond with OK but not update any local state.
                         var answerSdp = MediaSession.CreateAnswer(null);
                         var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString());
+                        reInviteTransaction.SendFinalResponse(okResponse);
+                    }
+                    else if(offer == null)
+                    {
+                        CheckRemotePartyHoldCondition();
+
+                        if (MediaSession.HasAudio)
+                        {
+                            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, GetStreamStatusForOnHoldState());
+                        }
+
+                        if (MediaSession.HasVideo)
+                        {
+                            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, GetStreamStatusForOnHoldState());
+                        }
+
+                        var answerSdp = MediaSession.CreateAnswer(null);
+
+                        m_sipDialogue.RemoteSDP = sipRequest.Body;
+                        m_sipDialogue.SDP = answerSdp.ToString();
+                        m_sipDialogue.RemoteCSeq = sipRequest.Header.CSeq;
+
+                        var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, MediaSession.RemoteDescription.ToString());
                         reInviteTransaction.SendFinalResponse(okResponse);
                     }
                     else
@@ -1032,7 +1055,6 @@ namespace SIPSorcery.SIP.App
                             }
 
                             var answerSdp = MediaSession.CreateAnswer(null);
-
                             m_sipDialogue.RemoteSDP = sipRequest.Body;
                             m_sipDialogue.SDP = answerSdp.ToString();
                             m_sipDialogue.RemoteCSeq = sipRequest.Header.CSeq;
@@ -1808,9 +1830,9 @@ namespace SIPSorcery.SIP.App
         /// call hold status has changed.
         /// </summary>
         /// <param name="remoteSDP">The in-dialog SDP received from he remote party.</param>
-        private void CheckRemotePartyHoldCondition(SDP remoteSDP)
+        private void CheckRemotePartyHoldCondition(SDP remoteSDP = null)
         {
-            var mediaStreamStatus = remoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
+            var mediaStreamStatus = remoteSDP?.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) ?? MediaStreamStatusEnum.SendOnly;
 
             if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
             {

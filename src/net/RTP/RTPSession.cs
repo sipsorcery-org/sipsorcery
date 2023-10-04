@@ -2100,7 +2100,7 @@ namespace SIPSorcery.Net
                     else
                     {
                         // We close peer connection only if there is no more local/remote tracks on the primary stream
-                        if ((m_primaryStream.RemoteTrack == null) && (m_primaryStream.LocalTrack == null))
+                        if ((m_primaryStream?.RemoteTrack == null) && (m_primaryStream?.LocalTrack == null))
                         {
                             OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
                         }
