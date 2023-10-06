@@ -115,7 +115,8 @@ namespace SIPSorcery.Net
         private RTCIceCandidate()
         { }
 
-        public RTCIceCandidate(RTCIceCandidateInit init)
+/*
+ public RTCIceCandidate(RTCIceCandidateInit init)
         {
             sdpMid = init.sdpMid;
             sdpMLineIndex = init.sdpMLineIndex;
@@ -135,6 +136,65 @@ namespace SIPSorcery.Net
                 relatedPort = iceCandidate.relatedPort;
             }
         }
+*/
+
+    /*
+    Note- Adding new code for the above commented code from line (118 to 139)
+    */
+
+    public RTCIceCandidate(RTCIceCandidateInit init)
+{
+    try
+    {
+        sdpMid = init.sdpMid;
+        sdpMLineIndex = init.sdpMLineIndex;
+        usernameFragment = init.usernameFragment;
+
+        if (!String.IsNullOrEmpty(init.candidate))
+        {
+            var iceCandidate = Parse(init.candidate);
+            if (iceCandidate != null)
+            {
+                foundation = iceCandidate.foundation;
+                priority = iceCandidate.priority;
+                component = iceCandidate.component;
+                address = iceCandidate.address;
+                port = iceCandidate.port;
+                type = iceCandidate.type;
+
+                // Check if the candidate has a TCP type
+                if (iceCandidate.tcpType != null)
+                {
+                    tcpType = iceCandidate.tcpType;
+                }
+                else
+                {
+                    // If there is no TCP type, set it to a default value or handle it accordingly
+                    tcpType = "unknown"; // You can change this to an appropriate default
+                }
+
+                relatedAddress = iceCandidate.relatedAddress;
+                relatedPort = iceCandidate.relatedPort;
+            }
+            else
+            {
+                // Handle the case where parsing failed
+                // You can log an error or throw an exception as needed
+                throw new Exception("Failed to parse candidate string");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        // Handle any exceptions that occur during this process
+        // You can log the exception details or take appropriate action
+        Console.WriteLine("An error occurred: " + ex.Message);
+        // You can also rethrow the exception if needed
+        // throw ex;
+    }
+}
+
+       
 
         /// <summary>
         /// Convenience constructor for cases when the application wants
