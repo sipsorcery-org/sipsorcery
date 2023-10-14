@@ -427,7 +427,7 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendSilenceSample(object state)
         {
-            if (!_isClosed && !_streamSendInProgress)
+            if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
             {
                 lock (_sendSampleTimer)
                 {
@@ -442,7 +442,7 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendSignalGeneratorSample(object state)
         {
-            if (!_isClosed && !_streamSendInProgress)
+            if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
             {
                 lock (_sendSampleTimer)
                 {
