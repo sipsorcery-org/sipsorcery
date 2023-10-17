@@ -48,11 +48,7 @@ namespace SIPSorceryMedia.Windows
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
         private WaveFormat _waveSinkFormat;
-
-        private WaveFormat _waveSourceFormat = new WaveFormat(
-            (int)DefaultAudioSourceSamplingRate,
-            DEVICE_BITS_PER_SAMPLE,
-            DEVICE_CHANNELS);
+        private WaveFormat _waveSourceFormat;
 
         /// <summary>
         /// Audio render device.
@@ -74,6 +70,7 @@ namespace SIPSorceryMedia.Windows
 
         private bool _disableSink;
         private int _audioOutDeviceIndex;
+        private int _audioInDeviceIndex;
         private bool _disableSource;
 
         protected bool _isAudioSourceStarted;
@@ -122,6 +119,7 @@ namespace SIPSorceryMedia.Windows
             _audioEncoder = audioEncoder;
 
             _audioOutDeviceIndex = audioOutDeviceIndex;
+            _audioInDeviceIndex = audioInDeviceIndex;
             _disableSource = disableSource;
             _disableSink = disableSink;
 
@@ -132,34 +130,12 @@ namespace SIPSorceryMedia.Windows
 
             if (!_disableSource)
             {
-                if (WaveInEvent.DeviceCount > 0)
-                {
-                    if (WaveInEvent.DeviceCount > audioInDeviceIndex)
-                    {
-                        _waveInEvent = new WaveInEvent();
-                        _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
-                        _waveInEvent.NumberOfBuffers = INPUT_BUFFERS;
-                        _waveInEvent.DeviceNumber = audioInDeviceIndex;
-                        _waveInEvent.WaveFormat = _waveSourceFormat;
-                        _waveInEvent.DataAvailable += LocalAudioSampleAvailable;
-                    }
-                    else
-                    {
-                        logger.LogWarning($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
-                        OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
-                    }
-                }
-                else
-                {
-                    logger.LogWarning("No audio capture devices are available.");
-                    OnAudioSourceError?.Invoke("No audio capture devices are available.");
-                }
+                InitCaptureDevice(_audioInDeviceIndex, (int)DefaultAudioSourceSamplingRate);
             }
         }
 
         public void RestrictFormats(Func<AudioFormat, bool> filter) => _audioFormatManager.RestrictFormats(filter);
         public List<AudioFormat> GetAudioSourceFormats() => _audioFormatManager.GetSourceFormats();
-        public void SetAudioSourceFormat(AudioFormat audioFormat) => _audioFormatManager.SetSelectedFormat(audioFormat);
         public List<AudioFormat> GetAudioSinkFormats() => _audioFormatManager.GetSourceFormats();
 
         public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
@@ -167,6 +143,22 @@ namespace SIPSorceryMedia.Windows
         public bool IsAudioSinkPaused() => _isAudioSinkPaused;
         public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) =>
             throw new NotImplementedException();
+
+        public void SetAudioSourceFormat(AudioFormat audioFormat)
+        {
+            _audioFormatManager.SetSelectedFormat(audioFormat);
+
+            if (!_disableSource)
+            {
+                if (_waveSourceFormat.SampleRate != _audioFormatManager.SelectedFormat.ClockRate)
+                {
+                    // Reinitialise the audio capture device.
+                    logger.LogDebug($"Windows audio end point adjusting capture rate from {_waveSourceFormat.SampleRate} to {_audioFormatManager.SelectedFormat.ClockRate}.");
+
+                    InitCaptureDevice(_audioInDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate);
+                }
+            }
+        }
 
         public void SetAudioSinkFormat(AudioFormat audioFormat)
         {
@@ -262,6 +254,43 @@ namespace SIPSorceryMedia.Windows
             {
                 logger.LogWarning(0, excp, "WindowsAudioEndPoint failed to initialise playback device.");
                 OnAudioSinkError?.Invoke($"WindowsAudioEndPoint failed to initialise playback device. {excp.Message}");
+            }
+        }
+
+        private void InitCaptureDevice(int audioInDeviceIndex, int audioSourceSampleRate)
+        {
+            if (WaveInEvent.DeviceCount > 0)
+            {
+                if (WaveInEvent.DeviceCount > audioInDeviceIndex)
+                {
+                    if (_waveInEvent != null)
+                    {
+                        _waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
+                        _waveInEvent.StopRecording();
+                    }
+
+                    _waveSourceFormat = new WaveFormat(
+                           audioSourceSampleRate,
+                           DEVICE_BITS_PER_SAMPLE,
+                           DEVICE_CHANNELS);
+
+                    _waveInEvent = new WaveInEvent();
+                    _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                    _waveInEvent.NumberOfBuffers = INPUT_BUFFERS;
+                    _waveInEvent.DeviceNumber = audioInDeviceIndex;
+                    _waveInEvent.WaveFormat = _waveSourceFormat;
+                    _waveInEvent.DataAvailable += LocalAudioSampleAvailable;
+                }
+                else
+                {
+                    logger.LogWarning($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
+                    OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
+                }
+            }
+            else
+            {
+                logger.LogWarning("No audio capture devices are available.");
+                OnAudioSourceError?.Invoke("No audio capture devices are available.");
             }
         }
 
