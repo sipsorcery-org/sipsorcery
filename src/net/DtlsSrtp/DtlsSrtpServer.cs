@@ -193,7 +193,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                return ProtocolVersion.DTLSv10;
+                return ProtocolVersion.DTLSv12;
             }
         }
 
