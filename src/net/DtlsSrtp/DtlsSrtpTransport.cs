@@ -19,7 +19,7 @@
 using System;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Security;
 using SIPSorcery.Sys;
 
@@ -171,8 +171,7 @@ namespace SIPSorcery.Net
                 this._waitMillis = RetransmissionMilliseconds;
                 this._startTime = System.DateTime.Now;
                 this._handshaking = true;
-                SecureRandom secureRandom = new SecureRandom();
-                DtlsClientProtocol clientProtocol = new DtlsClientProtocol(secureRandom);
+                DtlsClientProtocol clientProtocol = new DtlsClientProtocol();
                 try
                 {
                     var client = (DtlsSrtpClient)connection;
@@ -208,9 +207,9 @@ namespace SIPSorcery.Net
                     else
                     {
                         handshakeError = "unknown";
-                        if (excp is Org.BouncyCastle.Crypto.Tls.TlsFatalAlert)
+                        if (excp is Org.BouncyCastle.Tls.TlsFatalAlert)
                         {
-                            handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
+                            handshakeError = (excp as Org.BouncyCastle.Tls.TlsFatalAlert).Message;
                         }
 
                         logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
@@ -238,8 +237,7 @@ namespace SIPSorcery.Net
                 this._waitMillis = RetransmissionMilliseconds;
                 this._startTime = System.DateTime.Now;
                 this._handshaking = true;
-                SecureRandom secureRandom = new SecureRandom();
-                DtlsServerProtocol serverProtocol = new DtlsServerProtocol(secureRandom);
+                DtlsServerProtocol serverProtocol = new DtlsServerProtocol();
                 try
                 {
                     var server = (DtlsSrtpServer)connection;
@@ -274,9 +272,9 @@ namespace SIPSorcery.Net
                     else
                     {
                         handshakeError = "unknown";
-                        if (excp is Org.BouncyCastle.Crypto.Tls.TlsFatalAlert)
+                        if (excp is Org.BouncyCastle.Tls.TlsFatalAlert)
                         {
-                            handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
+                            handshakeError = (excp as Org.BouncyCastle.Tls.TlsFatalAlert).Message;
                         }
 
                         logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
@@ -514,6 +512,14 @@ namespace SIPSorcery.Net
             return DTLS_RETRANSMISSION_CODE;
         }
 
+#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
+        public int Receive(Span<byte> buf, int waitMillis)
+        {
+            // TODO
+            return Receive(buf.ToArray(), 0, buf.Length, waitMillis);
+        }
+#endif
+
         public int Receive(byte[] buf, int off, int len, int waitMillis)
         {
             if (!_handshakeComplete)
@@ -580,6 +586,13 @@ namespace SIPSorcery.Net
 
             OnDataReady?.Invoke(buf);
         }
+#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+        public void Send(ReadOnlySpan<byte> buf)
+        {
+            OnDataReady?.Invoke(buf.ToArray());
+        }
+#endif
+
 
         public virtual void Close()
         {
