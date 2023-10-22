@@ -97,6 +97,14 @@ namespace SIPSorcery.Net
         public ushort BLP; // bitmask of following lost packets (BLP): 16 bits
         public uint FCI; // Feedback Control Information (FCI)  
 
+        // REMB Parameters
+        // TODO: Maybe we need to separate RTCPFeedback into specialized classes to better implement different kind of messages
+        public string UniqueID = null;
+        public byte NumSsrcs = 0;
+        public byte BitrateExp = 0; // Bitrate Expoent
+        public uint BitrateMantissa = 0; //Bits per Second
+        public uint FeedbackSSRC; // Packet Sender
+
         public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
         {
             Header = new RTCPHeader(feedbackMessageType);
@@ -178,8 +186,61 @@ namespace SIPSorcery.Net
                     SENDER_PAYLOAD_SIZE = 8;
                     break;
 
-                //default:
-                //    throw new NotImplementedException($"Deserialisation for feedback report {Header.PacketType} not yet implemented.");
+                // We have a lot of different kind of extension messages
+                // In case below we will handle the specific REMB Message https://datatracker.ietf.org/doc/html/draft-alvestrand-rmcat-remb-03#page-3
+                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
+
+                    // 0                   1                   2                   3
+                    // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                    //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    //|  Unique identifier 'R' 'E' 'M' 'B'                            |
+                    //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    //|  Num SSRC     | BR Exp    |  BR Mantissa                      |
+                    //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    //|   SSRC feedback                                               |
+
+                    SENDER_PAYLOAD_SIZE = 8 + 12; // 8 bytes from (SenderSSRC + MediaSSRC) + extra 12 bytes from REMB Definition
+
+                    var currentCounter = payloadIndex + 8;
+                    UniqueID = System.Text.ASCIIEncoding.ASCII.GetString(packet, currentCounter, 4);
+                    currentCounter += 4;
+
+                    if (string.Equals(UniqueID,"REMB", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        // Read first 8 bits
+                        NumSsrcs = packet[currentCounter];
+                        currentCounter++;
+
+                        // Now read next 6 bits
+                        BitrateExp = (byte)(packet[currentCounter] >> 2);
+
+                        // Now read next 18 bits
+                        var remaininMantissaBytes = new byte[] { (byte)0, (byte)(packet[currentCounter] & 4), packet[currentCounter + 1], packet[currentCounter + 2] };
+                        if (BitConverter.IsLittleEndian)
+                        {
+                            BitrateMantissa = NetConvert.DoReverseEndian(BitConverter.ToUInt32(remaininMantissaBytes, 0));
+                        }
+                        else
+                        {
+                            BitrateMantissa = BitConverter.ToUInt32(remaininMantissaBytes, 0);
+                        }
+                        
+                        currentCounter += 3;
+
+                        if (BitConverter.IsLittleEndian)
+                        {
+                            FeedbackSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, currentCounter));
+                        }
+                        else
+                        {
+                            FeedbackSSRC = BitConverter.ToUInt32(packet, currentCounter);
+                        }
+                    }
+
+                    break;
+
+                    //default:
+                    //    throw new NotImplementedException($"Deserialisation for feedback report {Header.PacketType} not yet implemented.");
             }
         }
 
@@ -235,7 +296,65 @@ namespace SIPSorcery.Net
                 case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     break;
                 case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
-                    // Application feedback reports do no have any additional parameters?
+
+                    // There's have a lot of different kind of extension messages
+                    // In case below we will handle the specific REMB Message https://datatracker.ietf.org/doc/html/draft-alvestrand-rmcat-remb-03#page-3
+
+                    // 0                   1                   2                   3
+                    // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                    //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    //|  Unique identifier 'R' 'E' 'M' 'B'                            |
+                    //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    //|  Num SSRC     | BR Exp    |  BR Mantissa                      |
+                    //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    //|   SSRC feedback                                               |
+                    var currentCounter = payloadIndex + 8;
+
+                    //Fix UniqueID Size
+                    if(string.IsNullOrEmpty(UniqueID))
+                    {
+                        UniqueID = System.Text.ASCIIEncoding.ASCII.GetString(new byte[4]);
+                    }
+                    while (UniqueID.Length < 4)
+                    {
+                        UniqueID += (char)0;
+                    }
+
+                    Buffer.BlockCopy(System.Text.ASCIIEncoding.ASCII.GetBytes(UniqueID), 0, buffer, currentCounter, 4);
+                    currentCounter += 4;
+
+                    if (string.Equals(UniqueID, "REMB", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        // Copy NumSsrcs
+                        buffer[currentCounter] = NumSsrcs;
+                        currentCounter++;
+                       
+
+                        byte[] remaininMantissaBytes;
+                        if (BitConverter.IsLittleEndian)
+                        {
+                            remaininMantissaBytes = BitConverter.GetBytes(NetConvert.DoReverseEndian(BitrateMantissa));
+                        }
+                        else
+                        {
+                            remaininMantissaBytes = BitConverter.GetBytes(BitrateMantissa);
+                        }
+                        buffer[currentCounter] = (byte)((BitrateExp << 2) & (remaininMantissaBytes[1] & 4));
+                        buffer[currentCounter + 1] = remaininMantissaBytes[2];
+                        buffer[currentCounter + 2] = remaininMantissaBytes[3];
+
+                        currentCounter += 3;
+
+                        if (BitConverter.IsLittleEndian)
+                        {
+                            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(FeedbackSSRC)), 0, buffer, currentCounter, 4);
+                        }
+                        else
+                        {
+                            Buffer.BlockCopy(BitConverter.GetBytes(FeedbackSSRC), 0, buffer, currentCounter, 4);
+                        }
+                    }
+
                     break;
                 default:
                     logger?.LogDebug($"Serialization for feedback report {Header.PacketType} and message type "

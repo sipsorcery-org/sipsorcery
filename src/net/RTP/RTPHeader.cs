@@ -235,13 +235,13 @@ namespace SIPSorcery.Net
                         var len = ExtensionPayload[i++] + 1;
                         extension = GetExtensionAtPosition(ref i, id, len, RTPHeaderExtensionType.TwoByte, out invalid);
                     }
-
-                    if (invalid)
+                    else
                     {
+                        //We don't recognize this extension, ignore it
                         break;
                     }
 
-                    if (extension != null)
+                    if (!invalid && extension != null)
                     {
                         extensions.Add(extension);
                     }

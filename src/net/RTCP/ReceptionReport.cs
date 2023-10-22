@@ -131,7 +131,7 @@ namespace SIPSorcery.Net
                 ExtendedHighestSequenceNumber = BitConverter.ToUInt32(packet, 8);
                 Jitter = BitConverter.ToUInt32(packet, 12);
                 LastSenderReportTimestamp = BitConverter.ToUInt32(packet, 16);
-                LastSenderReportTimestamp = BitConverter.ToUInt32(packet, 20);
+                DelaySinceLastSenderReport = BitConverter.ToUInt32(packet, 20);
             }
         }
 

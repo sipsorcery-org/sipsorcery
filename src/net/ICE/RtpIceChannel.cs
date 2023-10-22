@@ -574,16 +574,25 @@ namespace SIPSorcery.Net
         /// <summary>
         /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
         /// </summary>
+        /// <remarks>
+        /// The order is <see cref="MdnsGetAddresses"/>, then <see cref="MdnsResolve"/>.
+        /// If both are null system <see cref="Dns">DNS resolver</see> will be used.
+        /// </remarks>
         public Func<string, Task<IPAddress>> MdnsResolve;
+        /// <summary>
+        /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
+        /// </summary>
+        /// <remarks>
+        /// The order is <see cref="MdnsGetAddresses"/>, then <see cref="MdnsResolve"/>.
+        /// If both are null system <see cref="Dns">DNS resolver</see> will be used.
+        /// </remarks>
+        public Func<string, Task<IPAddress[]>> MdnsGetAddresses;
 
+        public Dictionary<STUNUri, Socket> RtpTcpSocketByUri { get; private set; } = new Dictionary<STUNUri, Socket>();
 
-        public Socket RtpTcpSocket { get; private set; }
-
-        protected UdpReceiver m_rtpTcpReceiver;
+        protected Dictionary<STUNUri, IceTcpReceiver> m_rtpTcpReceiverByUri = new Dictionary<STUNUri, IceTcpReceiver>();
 
         private bool m_tcpRtpReceiverStarted = false;
-
-        private bool m_isTcpClosed = true;
 
 
         /// <summary>
@@ -650,21 +659,38 @@ namespace SIPSorcery.Net
             // Create TCP Socket to implement TURN Control
             // Take a note that TURN Control will only use TCP for CreatePermissions/Allocate/BindRequests/Data
             // Ice Candidates returned by relay will always be UDP Based
-            var supportTcp = _iceServers != null &&
-                _iceServers.Find(a =>
-                    a != null &&
-                    (a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TCP) ||
-                    a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TLS))) != null;
+            var tcpIceServers = _iceServers != null ?
+                                    _iceServers.FindAll(a =>
+                                       a != null &&
+                                       (a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TCP) ||
+                                       a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TLS))) : 
+                                    new List<RTCIceServer>();
+            var supportTcp = tcpIceServers != null && tcpIceServers.Count > 0;
             if (supportTcp)
             {
-                NetServices.CreateRtpSocket(false, ProtocolType.Tcp, bindAddress, bindPort, rtpPortRange, true, true, out var rtpTcpSocket, out _);
-
-                if (rtpTcpSocket == null)
+                // Init one TCP Socket per IceServer as we need to connect to proper use a TcpSocket (unfortunally)
+                RtpTcpSocketByUri = new Dictionary<STUNUri, Socket>();
+                foreach (var tcpIceServer in tcpIceServers)
                 {
-                    throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
-                }
+                    var serverUrl = tcpIceServer.urls;
+                    STUNUri.TryParse(serverUrl, out STUNUri uri);
+                    if (uri != null && !RtpTcpSocketByUri.ContainsKey(uri))
+                    {
+                        
+                        if (uri != null)
+                        {
+                            NetServices.CreateRtpSocket(false, ProtocolType.Tcp, bindAddress, bindPort, rtpPortRange, true, true, out var rtpTcpSocket, out _);
 
-                RtpTcpSocket = rtpTcpSocket;
+                            if (rtpTcpSocket == null)
+                            {
+                                throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
+                            }
+
+
+                            RtpTcpSocketByUri.Add(uri, rtpTcpSocket);
+                        }
+                    }
+                }
             }
         }
 
@@ -733,16 +759,34 @@ namespace SIPSorcery.Net
         }
         protected void StartTcpRtpReceiver()
         {
-            if (!m_tcpRtpReceiverStarted && RtpTcpSocket != null)
+            if (!m_tcpRtpReceiverStarted && RtpTcpSocketByUri != null && RtpTcpSocketByUri.Count > 0)
             {
                 m_tcpRtpReceiverStarted = true;
 
-                logger.LogDebug($"RTPIceChannel TCP for {RtpSocket.LocalEndPoint} started.");
+                // Create TCP Receivers by Tcp Sockets
+                m_rtpTcpReceiverByUri = new Dictionary<STUNUri, IceTcpReceiver>();
+                foreach (var pair in RtpTcpSocketByUri)
+                {
+                    var stunUri = pair.Key;
+                    var tcpSocket = pair.Value;
 
-                m_rtpTcpReceiver = new IceTcpReceiver(RtpTcpSocket);
-                m_rtpTcpReceiver.OnPacketReceived += OnRTPPacketReceived;
-                m_rtpTcpReceiver.OnClosed += CloseTcp;
-                m_rtpTcpReceiver.BeginReceiveFrom();
+                    if (stunUri != null && !m_rtpTcpReceiverByUri.ContainsKey(stunUri) && tcpSocket != null)
+                    {
+                        var rtpTcpReceiver = new IceTcpReceiver(tcpSocket);
+
+                        Action<string> onClose = (reason) =>
+                        {
+                            CloseTcp(rtpTcpReceiver, reason);
+                        };
+                        rtpTcpReceiver.OnPacketReceived += OnRTPPacketReceived;
+                        rtpTcpReceiver.OnClosed += onClose;
+                        rtpTcpReceiver.BeginReceiveFrom();
+
+                        m_rtpTcpReceiverByUri.Add(stunUri, rtpTcpReceiver);
+                    }
+                }
+
+                logger.LogDebug($"RTPIceChannel TCP for {RtpSocket.LocalEndPoint} started.");
 
                 OnClosed -= CloseTcp;
                 OnClosed += CloseTcp;
@@ -751,17 +795,27 @@ namespace SIPSorcery.Net
 
         protected void CloseTcp(string reason)
         {
-            if (!m_isTcpClosed)
+            if (m_rtpTcpReceiverByUri != null)
             {
-                try
+                foreach (var pair in m_rtpTcpReceiverByUri)
                 {
-                    m_isTcpClosed = true;
-                    m_rtpTcpReceiver?.Close(null);
+                    CloseTcp(pair.Value, reason);
                 }
-                catch (Exception excp)
+            }
+        }
+
+        protected void CloseTcp(IceTcpReceiver target, string reason)
+        {
+            try
+            {
+                if (target != null && !target.IsClosed)
                 {
-                    logger.LogError("Exception RTPChannel.Close. " + excp);
+                    target?.Close(null);
                 }
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception RTPChannel.Close. " + excp);
             }
         }
 
@@ -839,12 +893,6 @@ namespace SIPSorcery.Net
             {
                 // This implementation currently only supports UDP for RTP communications.
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported transport protocol {candidate.protocol}.");
-            }
-            else if (candidate.address.Trim().ToLower().EndsWith(MDNS_TLD) && MdnsResolve == null)
-            {
-                // Supporting MDNS lookups means an additional nuget dependency. Hopefully
-                // support is coming to .Net Core soon (AC 12 Jun 2020).
-                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
             }
             else if (IPAddress.TryParse(candidate.address, out var addr) &&
                 (IPAddress.Any.Equals(addr) || IPAddress.IPv6Any.Equals(addr)))
@@ -1008,9 +1056,6 @@ namespace SIPSorcery.Net
 
             int iceServerID = IceServer.MINIMUM_ICE_SERVER_ID;
 
-            //TODO: We only support one control tcp socket, so we need to skip processing multiple tcp servers
-            bool skipNextTcp = false;
-
             // Add each of the ICE servers to the list. Ideally only one will be used but add 
             // all in case backups are needed.
             foreach (var iceServer in iceServers)
@@ -1033,20 +1078,6 @@ namespace SIPSorcery.Net
                             }
                             else if (!_iceServerConnections.ContainsKey(stunUri))
                             {
-                                //Check if we need to skip TCP ice server as a limitation of our implementation.
-                                if (stunUri.Protocol == ProtocolType.Tcp)
-                                {
-                                    if (!skipNextTcp)
-                                    {
-                                        skipNextTcp = true;
-                                    }
-                                    else
-                                    {
-                                        logger.LogWarning($"ICE channel only support one ice server with tcp protocol. ignoring server {stunUri}.");
-                                        continue;
-                                    }
-                                }
-
                                 logger.LogDebug($"Adding ICE server for {stunUri}.");
 
                                 var iceServerState = new IceServer(stunUri, iceServerID, iceServer.username, iceServer.credential);
@@ -1080,7 +1111,7 @@ namespace SIPSorcery.Net
         //
         private void RefreshTurn(Object state)
         {
-            if (NominatedEntry == null)
+            if (NominatedEntry == null || _activeIceServer == null)
             {
                 return;
             }
@@ -1329,24 +1360,18 @@ namespace SIPSorcery.Net
             {
                 if (remoteCandidate.address.ToLower().EndsWith(MDNS_TLD))
                 {
-                    if (MdnsResolve == null)
+                    var addresses = await ResolveMdnsName(remoteCandidate).ConfigureAwait(false);
+                    if (addresses.Length == 0)
                     {
-                        logger.LogWarning($"RTP ICE channel has no MDNS resolver set, cannot resolve remote candidate with MDNS hostname {remoteCandidate.address}.");
+                        logger.LogWarning($"RTP ICE channel MDNS resolver failed to resolve {remoteCandidate.address}.");
                     }
                     else
                     {
-                        remoteCandidateIPAddr = await MdnsResolve(remoteCandidate.address).ConfigureAwait(false);
-                        if (remoteCandidateIPAddr == null)
-                        {
-                            logger.LogWarning($"RTP ICE channel MDNS resolver failed to resolve {remoteCandidate.address}.");
-                        }
-                        else
-                        {
-                            logger.LogDebug($"RTP ICE channel resolved MDNS hostname {remoteCandidate.address} to {remoteCandidateIPAddr}.");
+                        remoteCandidateIPAddr = addresses[0];
+                        logger.LogDebug($"RTP ICE channel resolved MDNS hostname {remoteCandidate.address} to {remoteCandidateIPAddr}.");
 
-                            var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
-                            remoteCandidate.SetDestinationEndPoint(remoteEP);
-                        }
+                        var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
+                        remoteCandidate.SetDestinationEndPoint(remoteEP);
                     }
                 }
                 else
@@ -1780,7 +1805,7 @@ namespace SIPSorcery.Net
             {
                 IPEndPoint relayServerEP = candidatePair.LocalCandidate.IceServer.ServerEndPoint;
                 var protocol = candidatePair.LocalCandidate.IceServer.Protocol;
-                SendRelay(protocol, candidatePair.RemoteCandidate.DestinationEndPoint, stunReqBytes, relayServerEP);
+                SendRelay(protocol, candidatePair.RemoteCandidate.DestinationEndPoint, stunReqBytes, relayServerEP, candidatePair.LocalCandidate.IceServer);
             }
             else
             {
@@ -2151,7 +2176,7 @@ namespace SIPSorcery.Net
                         if (wasRelayed)
                         {
                             var protocol = matchingChecklistEntry.LocalCandidate.IceServer.Protocol;
-                            SendRelay(protocol, remoteEndPoint, stunRespBytes, matchingChecklistEntry.LocalCandidate.IceServer.ServerEndPoint);
+                            SendRelay(protocol, remoteEndPoint, stunRespBytes, matchingChecklistEntry.LocalCandidate.IceServer.ServerEndPoint, matchingChecklistEntry.LocalCandidate.IceServer);
                             OnStunMessageSent?.Invoke(stunResponse, remoteEndPoint, true);
                         }
                         else
@@ -2240,7 +2265,7 @@ namespace SIPSorcery.Net
             }
 
             var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer.ServerEndPoint, stunReqBytes) :
+                                SendOverTCP(iceServer, stunReqBytes) :
                                 base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, stunReqBytes);
 
             if (sendResult != SocketError.Success)
@@ -2286,7 +2311,7 @@ namespace SIPSorcery.Net
             }
 
             var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer.ServerEndPoint, allocateReqBytes) :
+                                SendOverTCP(iceServer, allocateReqBytes) :
                                 base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
 
             if (sendResult != SocketError.Success)
@@ -2329,7 +2354,7 @@ namespace SIPSorcery.Net
             }
 
             var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer.ServerEndPoint, allocateReqBytes) :
+                                SendOverTCP(iceServer, allocateReqBytes) :
                                 base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
 
             if (sendResult != SocketError.Success)
@@ -2371,7 +2396,7 @@ namespace SIPSorcery.Net
             }
 
             var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer.ServerEndPoint, createPermissionReqBytes) :
+                                SendOverTCP(iceServer, createPermissionReqBytes) :
                                 base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
 
             if (sendResult != SocketError.Success)
@@ -2387,8 +2412,9 @@ namespace SIPSorcery.Net
             return sendResult;
         }
 
-        protected virtual SocketError SendOverTCP(IPEndPoint dstEndPoint, byte[] buffer)
+        protected virtual SocketError SendOverTCP(IceServer iceServer, byte[] buffer)
         {
+            IPEndPoint dstEndPoint = iceServer?.ServerEndPoint;
             if (IsClosed)
             {
                 return SocketError.Disconnecting;
@@ -2411,8 +2437,13 @@ namespace SIPSorcery.Net
                 try
                 {
                     //Connect to destination
-                    Socket sendSocket = RtpTcpSocket;
+                    RtpTcpSocketByUri.TryGetValue(iceServer?._uri, out Socket sendSocket);
                     //LastRtpDestination = dstEndPoint;
+
+                    if (sendSocket == null)
+                    {
+                        return SocketError.Fault;
+                    }
 
                     //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
                     if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
@@ -2438,9 +2469,10 @@ namespace SIPSorcery.Net
                     }
 
                     //Fix ReceiveFrom logic if any previous exception happens
-                    if (!m_rtpTcpReceiver.IsRunningReceive && !m_rtpTcpReceiver.IsClosed)
+                    m_rtpTcpReceiverByUri.TryGetValue(iceServer?._uri, out IceTcpReceiver rtpTcpReceiver);
+                    if (rtpTcpReceiver != null && !rtpTcpReceiver.IsRunningReceive && !rtpTcpReceiver.IsClosed)
                     {
-                        m_rtpTcpReceiver.BeginReceiveFrom();
+                        rtpTcpReceiver.BeginReceiveFrom();
                     }
 
                     sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendToTCP, sendSocket);
@@ -2557,7 +2589,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send to the peer.</param>
         /// <param name="relayEndPoint">The TURN server end point to send the relayed request to.</param>
         /// <returns></returns>
-        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint)
+        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer)
         {
             STUNMessage sendReq = new STUNMessage(STUNMessageTypesEnum.SendIndication);
             sendReq.AddXORPeerAddressAttribute(dstEndPoint.Address, dstEndPoint.Port);
@@ -2565,7 +2597,7 @@ namespace SIPSorcery.Net
 
             var request = sendReq.ToByteBuffer(null, false);
             var sendResult = protocol == ProtocolType.Tcp ?
-                SendOverTCP(relayEndPoint, request) :
+                SendOverTCP(iceServer, request) :
                 base.Send(RTPChannelSocketsEnum.RTP, relayEndPoint, request);
 
             if (sendResult != SocketError.Success)
@@ -2579,6 +2611,49 @@ namespace SIPSorcery.Net
             }
 
             return sendResult;
+        }
+
+        private async Task<IPAddress[]> ResolveMdnsName(RTCIceCandidate candidate)
+        {
+            if (MdnsGetAddresses != null)
+            {
+                if (MdnsResolve != null)
+                {
+                    logger.LogWarning($"RTP ICE channel has both {nameof(MdnsGetAddresses)} and {nameof(MdnsGetAddresses)} set. Only {nameof(MdnsGetAddresses)} will be used.");
+                }
+                return await MdnsGetAddresses(candidate.address).ConfigureAwait(false);
+            }
+            if (MdnsResolve != null)
+            {
+                var address = await MdnsResolve(candidate.address).ConfigureAwait(false);
+                return address != null ? new IPAddress[] { address } : null;
+            }
+
+
+            IPAddress[] addresses;
+            try
+            {
+                addresses = await Dns.GetHostAddressesAsync(candidate.address).ConfigureAwait(false);
+            }
+            catch (SocketException e)
+            {
+                logger.LogError(e, "Error resolving mDNS hostname {Name}", candidate.address);
+                return Array.Empty<IPAddress>();
+            }
+            catch (ArgumentException e)
+            {
+                logger.LogError(e, "Unsupported mDNS hostname {Name}", candidate.address);
+                return Array.Empty<IPAddress>();
+            }
+
+            if (addresses.Length == 0)
+            {
+                logger.LogWarning($"RTP ICE channel has no MDNS resolver set, and the system can not resolve remote candidate with MDNS hostname {candidate.address}.");
+                // Supporting MDNS lookups means an additional nuget dependency. Hopefully
+                // support is coming to .Net Core soon (AC 12 Jun 2020).
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
+            }
+            return addresses;
         }
 
         /// <summary>
@@ -2601,7 +2676,7 @@ namespace SIPSorcery.Net
                 // A TURN relay channel is being used to communicate with the remote peer.
                 var protocol = NominatedEntry.LocalCandidate.IceServer.Protocol;
                 var serverEndPoint = NominatedEntry.LocalCandidate.IceServer.ServerEndPoint;
-                return SendRelay(protocol, dstEndPoint, buffer, serverEndPoint);
+                return SendRelay(protocol, dstEndPoint, buffer, serverEndPoint, NominatedEntry.LocalCandidate.IceServer);
             }
             else
             {

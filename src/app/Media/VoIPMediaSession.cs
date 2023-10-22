@@ -196,6 +196,7 @@ namespace SIPSorcery.Media
             logger.LogDebug($"Setting video sink and source format to {videoFormat.FormatID}:{videoFormat.Codec}.");
             Media.VideoSink?.SetVideoSinkFormat(videoFormat);
             Media.VideoSource?.SetVideoSourceFormat(videoFormat);
+            _videoTestPatternSource?.SetVideoSourceFormat(videoFormat);
         }
 
         public async override Task Start()
@@ -209,6 +210,10 @@ namespace SIPSorcery.Media
                     if (Media.AudioSource != null)
                     {
                         await Media.AudioSource.StartAudio().ConfigureAwait(false);
+                    }
+                    if (Media.AudioSink != null)
+                    {
+                        await Media.AudioSink.StartAudioSink().ConfigureAwait(false);
                     }
                 }
 
@@ -253,6 +258,11 @@ namespace SIPSorcery.Media
                 if (Media.AudioSource != null)
                 {
                     await Media.AudioSource.CloseAudio().ConfigureAwait(false);
+                }
+
+                if (Media.AudioSink != null)
+                {
+                    await Media.AudioSink.CloseAudioSink().ConfigureAwait(false);
                 }
 
                 if (Media.VideoSource != null)
