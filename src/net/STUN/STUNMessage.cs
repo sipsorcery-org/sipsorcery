@@ -100,7 +100,7 @@ namespace SIPSorcery.Net
 
                 if (stunMessage.Header.MessageLength > 0)
                 {
-                    stunMessage.Attributes = STUNAttribute.ParseMessageAttributes(buffer, STUNHeader.STUN_HEADER_LENGTH, bufferLength);
+                    STUNAttribute.TryParseMessageAttributes(stunMessage.Attributes, buffer, STUNHeader.STUN_HEADER_LENGTH, bufferLength);
                 }
 
                 if (stunMessage.Attributes.Count > 0 && stunMessage.Attributes.Last().AttributeType == STUNAttributeTypesEnum.FingerPrint)

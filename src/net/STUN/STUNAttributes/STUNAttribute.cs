@@ -147,11 +147,15 @@ namespace SIPSorcery.Net
             Value = NetConvert.GetBytes(value);
         }
 
-        public static List<STUNAttribute> ParseMessageAttributes(byte[] buffer, int startIndex, int endIndex)
+        public static bool TryParseMessageAttributes(List<STUNAttribute> attributes, byte[] buffer, int startIndex, int endIndex)
         {
+            if (buffer is null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
             if (buffer != null && buffer.Length > startIndex && buffer.Length >= endIndex)
             {
-                List<STUNAttribute> attributes = new List<STUNAttribute>();
                 int startAttIndex = startIndex;
 
                 while (startAttIndex < endIndex)
@@ -220,11 +224,12 @@ namespace SIPSorcery.Net
                     startAttIndex = startAttIndex + 4 + stunAttributeLength + padding;
                 }
 
-                return attributes;
+                return true;
             }
             else
             {
-                return null;
+                logger.LogWarning("Bad STUN attribute parse request. Start: {Start}; End: {End}; Length: {Length}.", startIndex, endIndex, buffer.Length);
+                return false;
             }
         }
 
