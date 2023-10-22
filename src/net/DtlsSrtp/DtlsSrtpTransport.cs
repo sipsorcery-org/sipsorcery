@@ -515,7 +515,7 @@ namespace SIPSorcery.Net
 #if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
         public int Receive(Span<byte> buf, int waitMillis)
         {
-            // TODO
+            throw new NotImplementedException();
             return Receive(buf.ToArray(), 0, buf.Length, waitMillis);
         }
 #endif
