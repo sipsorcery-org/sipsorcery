@@ -156,6 +156,13 @@ namespace SIPSorcery.Net
 
                 while (startAttIndex < endIndex)
                 {
+                    int remainingBytes = endIndex - startAttIndex;
+                    if (remainingBytes < 4)
+                    {
+                        logger.LogWarning("The remaining number of bytes in the STUN message was less than the minimum attribute length 4. Remaining bytes: {RemainingBytes}.", remainingBytes);
+                        break;
+                    }
+
                     UInt16 stunAttributeType = NetConvert.ParseUInt16(buffer, startAttIndex);
                     UInt16 stunAttributeLength = NetConvert.ParseUInt16(buffer, startAttIndex + 2);
                     byte[] stunAttributeValue = null;
