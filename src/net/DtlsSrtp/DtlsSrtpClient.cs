@@ -391,7 +391,7 @@ namespace SIPSorcery.Net
             string alertMessage = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
             alertMessage += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
 
-            if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
+            if (alertDescription == (byte)AlertTypesEnum.close_notify)
             {
                 logger.LogDebug($"DTLS client raised close notification: {alertMessage}");
             }
@@ -416,7 +416,7 @@ namespace SIPSorcery.Net
             return new ProtocolVersion[]
             {
                 ProtocolVersion.DTLSv10,
-                ProtocolVersion.DTLSv12
+                ProtocolVersion.DTLSv12,
             };
         }
 
@@ -427,12 +427,12 @@ namespace SIPSorcery.Net
             AlertLevelsEnum level = AlertLevelsEnum.Warning;
             AlertTypesEnum alertType = AlertTypesEnum.unknown;
 
-            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
+            if (Enum.IsDefined(typeof(AlertLevelsEnum), checked((byte)alertLevel)))
             {
                 level = (AlertLevelsEnum)alertLevel;
             }
 
-            if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
+            if (Enum.IsDefined(typeof(AlertTypesEnum), checked((byte)alertDescription)))
             {
                 alertType = (AlertTypesEnum)alertDescription;
             }
