@@ -491,19 +491,41 @@ namespace SIPSorcery.Net
             }
         }
 
+        private byte[] _partialChunk = null;
+        private int _partialChunkOffset = 0;
         private int Read(byte[] buffer, int offset, int count, int timeout)
         {
             try
             {
-                if(_isClosed)
+                if (_isClosed)
                 {
                     throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
                     //return DTLS_RECEIVE_ERROR_CODE;
                 }
+                else if (_partialChunk != null)
+                {
+                    int bytesToCopy = Math.Min(count, _partialChunk.Length - _partialChunkOffset);
+                    Buffer.BlockCopy(_partialChunk, _partialChunkOffset, buffer, offset, bytesToCopy);
+                    _partialChunkOffset += bytesToCopy;
+
+                    if (_partialChunkOffset == _partialChunk.Length)
+                    {
+                        _partialChunk = null;
+                        _partialChunkOffset = 0;
+                    }
+
+                    return bytesToCopy;
+                }
                 else if (_chunks.TryTake(out var item, timeout))
                 {
-                    Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
-                    return item.Length;
+                    int bytesToCopy = Math.Min(count, item.Length);
+                    Buffer.BlockCopy(item, 0, buffer, offset, bytesToCopy);
+                    if (bytesToCopy < item.Length)
+                    {
+                        _partialChunk = item;
+                        _partialChunkOffset = bytesToCopy;
+                    }
+                    return bytesToCopy;
                 }
             }
             catch (ObjectDisposedException) { }
