@@ -80,6 +80,7 @@ namespace SIPSorcery.Net
         private bool _inFastRecoveryMode;
         private uint _fastRecoveryExitPoint;
         private ManualResetEventSlim _senderMre = new ManualResetEventSlim();
+        private readonly ManualResetEventSlim _queueSpaceAvailable = new ManualResetEventSlim(initialState: true);
 
         /// <summary>
         /// Congestion control window (cwnd, in bytes), which is adjusted by
@@ -141,6 +142,7 @@ namespace SIPSorcery.Net
         /// </summary>
         private Dictionary<ushort, ushort> _streamSeqnums = new Dictionary<ushort, ushort>();
 
+        public int MaxSendQueueCount => 128;
         /// <summary>
         /// Queue to hold SCTP frames that are waiting to be sent to the remote peer.
         /// </summary>
@@ -308,6 +310,12 @@ namespace SIPSorcery.Net
         /// <param name="message">The byte data to send.</param>
         public void SendData(ushort streamID, uint ppid, byte[] data)
         {
+            // combined spin/lock wait
+            while (!_queueSpaceAvailable.Wait(TimeSpan.FromMilliseconds(10)) && _sendQueue.Count > MaxSendQueueCount)
+            {
+
+            }
+
             lock (_sendQueue)
             {
                 ushort seqnum = 0;
@@ -349,6 +357,11 @@ namespace SIPSorcery.Net
 
                     _sendQueue.Enqueue(dataChunk);
 
+                    if (_sendQueue.Count > MaxSendQueueCount)
+                    {
+                        _queueSpaceAvailable.Reset();
+                    }
+
                     TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
                 }
 
@@ -365,7 +378,11 @@ namespace SIPSorcery.Net
             if (!_isStarted)
             {
                 _isStarted = true;
-                var sendThread = new Thread(DoSend);
+                var sendThread = new Thread(DoSend)
+                {
+                    IsBackground = true,
+                    Name = $"{nameof(SctpDataSender)}-{_associationID}",
+                };
                 sendThread.IsBackground = true;
                 sendThread.Start();
             }
@@ -617,6 +634,10 @@ namespace SIPSorcery.Net
 
                         _unconfirmedChunks.TryAdd(dataChunk.TSN, dataChunk);
                         _sendDataChunk(dataChunk);
+                        if (_sendQueue.Count < MaxSendQueueCount)
+                        {
+                            _queueSpaceAvailable.Set();
+                        }
                         chunksSent++;
                     }
                 }
