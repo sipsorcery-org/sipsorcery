@@ -23,7 +23,7 @@
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
     <PackageReleaseNotes>
--v1.2.1: Expose LogFactory signature to generate generic logger (ILogger<T>).
+-v1.2.1: Expose LogFactory signature to generate generic logger.
 -v1.2.0: Add RawImage and new events / methods to avoid the use of byte[] to improve performance.
 -v1.1.0: Stable release.
 -v1.0.4-pre: Changed IAudioEncoder and IVideoEncoder to use SupportedFormats property instead of IsSupported method.
