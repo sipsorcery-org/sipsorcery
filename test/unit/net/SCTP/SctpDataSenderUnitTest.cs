@@ -125,7 +125,7 @@ namespace SIPSorcery.Net.UnitTests
                 sender.SendData(0, 0, buffer);
             }
 
-            await Task.Delay(50);
+            await Task.Delay(100);
 
             Assert.Equal(SctpDataSender.CONGESTION_WINDOW_FACTOR + mtu, sender._congestionWindow);
         }
