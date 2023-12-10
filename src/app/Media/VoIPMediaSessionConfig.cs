@@ -33,5 +33,7 @@ namespace SIPSorcery.Media
         public VideoTestPatternSource TestPatternSource { get; set; }
 
         public PortRange RtpPortRange { get; set; }
+
+        public IAudioEncoder AudioExtrasEncoder { get; set; } = new AudioEncoder();
     }
 }

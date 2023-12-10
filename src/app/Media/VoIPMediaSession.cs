@@ -124,7 +124,7 @@ namespace SIPSorcery.Media
             Media = config.MediaEndPoint;
 
             // The audio extras source is used for on-hold music.
-            _audioExtrasSource = new AudioExtrasSource();
+            _audioExtrasSource = new AudioExtrasSource(config.AudioExtrasEncoder);
             _audioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
 
             // Wire up the audio and video sample event handlers.
