@@ -111,7 +111,7 @@ namespace SIPSorcery.Media
         private bool _isStarted;
         private bool _isPaused;
         private bool _isClosed;
-        private AudioEncoder _audioEncoder;
+        private IAudioEncoder _audioEncoder;
 
         // Fields for interrupting the main audio source with a different stream. For example playing
         // an announcement over music etc.
@@ -173,7 +173,7 @@ namespace SIPSorcery.Media
         /// <param name="audioOptions">Optional. The options that determine the type of audio to stream to the remote party. 
         /// Example type of audio sources are music, silence, white noise etc.</param>
         public AudioExtrasSource(
-            AudioEncoder audioEncoder,
+            IAudioEncoder audioEncoder,
             AudioSourceOptions audioOptions = null)
         {
             _audioEncoder = audioEncoder;
@@ -546,7 +546,7 @@ namespace SIPSorcery.Media
             {
                 if (pcmSampleRate != _audioFormatManager.SelectedFormat.ClockRate)
                 {
-                    pcm = _audioEncoder.Resample(pcm, pcmSampleRate, _audioFormatManager.SelectedFormat.ClockRate);
+                    pcm = PcmResampler.Resample(pcm, pcmSampleRate, _audioFormatManager.SelectedFormat.ClockRate);
                 }
 
                 byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
