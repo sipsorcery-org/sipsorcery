@@ -21,6 +21,7 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -90,28 +91,59 @@ namespace SIPSorcery.SIP
         /// <param name="streamConnection">The stream connection holding the newly accepted client socket.</param>
         protected override void OnAccept(SIPStreamConnection streamConnection)
         {
+            OnAcceptAsync(streamConnection).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// For the TLS channel the SSL stream must be created and any authentication actions undertaken.
+        /// </summary>
+        /// <param name="streamConnection">The stream connection holding the newly accepted client socket.</param>
+        protected async Task OnAcceptAsync(SIPStreamConnection streamConnection)
+        {
             NetworkStream networkStream = new NetworkStream(streamConnection.StreamSocket, true);
-            SslStream sslStream = new SslStream(networkStream, false);
+            SslStream sslStream = null;
 
-            //await sslStream.AuthenticateAsServerAsync(m_serverCertificate).ConfigureAwait(false);
-            sslStream.AuthenticateAsServer(m_serverCertificate);
+            try
+            {
+                sslStream = new SslStream(networkStream, false);
+                using (var cts = new CancellationTokenSource())
+                {
+                    var authTask = sslStream.AuthenticateAsServerAsync(m_serverCertificate);
+                    var timeoutTask = Task.Delay(TLS_ATTEMPT_CONNECT_TIMEOUT, cts.Token);
 
-            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningSIPEndPoint}<-{streamConnection.RemoteSIPEndPoint}.");
+                    var resultTask = await Task.WhenAny(authTask, timeoutTask);
+                    if (resultTask == timeoutTask)
+                    {
+                        logger.LogWarning("SIP TLS Channel failed to connect to remote host. The authentication handshake timed out.");
+                        sslStream.Close();
+                        return;
+                    }
+                    cts.Cancel();
 
-            //// Display the properties and settings for the authenticated stream.
-            ////DisplaySecurityLevel(sslStream);
-            ////DisplaySecurityServices(sslStream);
-            ////DisplayCertificateInformation(sslStream);
-            ////DisplayStreamProperties(sslStream);
+                    logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningSIPEndPoint}<-{streamConnection.RemoteSIPEndPoint}.");
 
-            //// Set timeouts for the read and write to 5 seconds.
-            //sslStream.ReadTimeout = 5000;
-            //sslStream.WriteTimeout = 5000;
 
-            streamConnection.SslStream = new SIPStreamWrapper(sslStream);
-            streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
+                    //// Display the properties and settings for the authenticated stream.
+                    ////DisplaySecurityLevel(sslStream);
+                    ////DisplaySecurityServices(sslStream);
+                    ////DisplayCertificateInformation(sslStream);
+                    ////DisplayStreamProperties(sslStream);
 
-            sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
+                    //// Set timeouts for the read and write to 5 seconds.
+                    //sslStream.ReadTimeout = 5000;
+                    //sslStream.WriteTimeout = 5000;
+
+                    streamConnection.SslStream = new SIPStreamWrapper(sslStream);
+                    streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
+                }
+
+                sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
+            }
+            catch(Exception ex) 
+            {
+                logger.LogError(ex, "SIP TLS channel could not connect to remote host. {exception}", ex.Message);
+                sslStream?.Close();
+            }
         }
 
         /// <summary>
