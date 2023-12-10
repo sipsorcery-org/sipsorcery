@@ -441,7 +441,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.DtlsSrtpClient.html",
-          "hash": "0KGWDsyDgNaiaY66EX8fGEbafQ3ZYHhOvG5MEbD4J1Y="
+          "hash": "Ht2/jCZdwSDjP+IVtCqWmTf2G6C0RxMi2BCvbQBZA9A="
         }
       },
       "is_incremental": false,
@@ -453,7 +453,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.DtlsSrtpServer.html",
-          "hash": "6ZShrfUb5t+VUz1A4BlR5JRiThC6eiOtLiLCxIUGs0k="
+          "hash": "r24WZoB+suXlse/dEuN8FknnazzxglCiTDpuccQjP0k="
         }
       },
       "is_incremental": false,
@@ -4065,7 +4065,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTLSChannel.html",
-          "hash": "xm7VKeHQbLdjSV+46UYmL0rVQ0S3b1rL0X+ORPVNGnM="
+          "hash": "ivbroUXUr9LkBoB1nX2RPPjN0etmzOfDK9ekDgSL9+E="
         }
       },
       "is_incremental": false,

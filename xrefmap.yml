@@ -37064,6 +37064,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTLSChannel.OnAccept
   nameWithType: SIPTLSChannel.OnAccept
+- uid: SIPSorcery.SIP.SIPTLSChannel.OnAcceptAsync(SIPSorcery.SIP.SIPStreamConnection)
+  name: OnAcceptAsync(SIPStreamConnection)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_OnAcceptAsync_SIPSorcery_SIP_SIPStreamConnection_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.OnAcceptAsync(SIPSorcery.SIP.SIPStreamConnection)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.OnAcceptAsync(SIPSorcery.SIP.SIPStreamConnection)
+  nameWithType: SIPTLSChannel.OnAcceptAsync(SIPStreamConnection)
+- uid: SIPSorcery.SIP.SIPTLSChannel.OnAcceptAsync*
+  name: OnAcceptAsync
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_OnAcceptAsync_
+  commentId: Overload:SIPSorcery.SIP.SIPTLSChannel.OnAcceptAsync
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTLSChannel.OnAcceptAsync
+  nameWithType: SIPTLSChannel.OnAcceptAsync
 - uid: SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.String)
   name: OnClientConnect(SIPStreamConnection, String)
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_String_

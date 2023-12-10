@@ -119,7 +119,10 @@
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetNamedGroupRoles()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.CheckForUnexpectedServerExtension(System.Collections.IDictionary, System.Int32)</span>
+      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.CheckForUnexpectedServerExtension(System.Collections.Generic.IDictionary&lt;System.Int32, System.Byte[]&gt;, System.Int32)</span>
+    </div>
+    <div>
+      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetNewConnectionID()</span>
     </div>
     <div>
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetPskIdentity()</span>
@@ -149,7 +152,7 @@
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetSniServerNames()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetSupportedGroups(System.Collections.IList)</span>
+      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetSupportedGroups(System.Collections.Generic.IList&lt;System.Int32&gt;)</span>
     </div>
     <div>
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetSupportedSignatureAlgorithms()</span>
@@ -159,6 +162,12 @@
     </div>
     <div>
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetTrustedCAIndication()</span>
+    </div>
+    <div>
+      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetAllowedClientCertificateTypes()</span>
+    </div>
+    <div>
+      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetAllowedServerCertificateTypes()</span>
     </div>
     <div>
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.Init(Org.BouncyCastle.Tls.TlsClientContext)</span>
@@ -194,10 +203,7 @@
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.NotifySelectedPsk(Org.BouncyCastle.Tls.TlsPsk)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.ProcessServerExtensions(System.Collections.IDictionary)</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.ProcessServerSupplementalData(System.Collections.IList)</span>
+      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.ProcessServerSupplementalData(System.Collections.Generic.IList&lt;Org.BouncyCastle.Tls.SupplementalDataEntry&gt;)</span>
     </div>
     <div>
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.GetClientSupplementalData()</span>
@@ -213,6 +219,9 @@
     </div>
     <div>
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetHandshakeTimeoutMillis()</span>
+    </div>
+    <div>
+      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetHandshakeResendTimeMillis()</span>
     </div>
     <div>
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.AllowLegacyResumption()</span>
@@ -255,6 +264,9 @@
     </div>
     <div>
       <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.Crypto</span>
+    </div>
+    <div>
+      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.IgnoreCorruptDtlsRecords</span>
     </div>
     <div>
       <span class="xref">System.Object.Equals(System.Object)</span>
@@ -1348,6 +1360,8 @@
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsClient.ProcessServerExtensions(System.Collections.Generic.IDictionary&lt;System.Int32, System.Byte[]&gt;)</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpClient_RequiresExtendedMasterSecret.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpClient.RequiresExtendedMasterSecret%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
