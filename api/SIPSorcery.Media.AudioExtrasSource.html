@@ -135,20 +135,20 @@ The available options encompass signal generation, playback from file and more.<
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioExtrasSource__ctor_SIPSorcery_Media_AudioEncoder_SIPSorcery_Media_AudioSourceOptions_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioExtrasSource.%23ctor(SIPSorcery.Media.AudioEncoder%2CSIPSorcery.Media.AudioSourceOptions)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_AudioExtrasSource__ctor_SIPSorceryMedia_Abstractions_IAudioEncoder_SIPSorcery_Media_AudioSourceOptions_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.AudioExtrasSource.%23ctor(SIPSorceryMedia.Abstractions.IAudioEncoder%2CSIPSorcery.Media.AudioSourceOptions)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/app/Media/Sources/AudioExtrasSource.cs/#L175">View Source</a>
   </span>
   <a id="SIPSorcery_Media_AudioExtrasSource__ctor_" data-uid="SIPSorcery.Media.AudioExtrasSource.#ctor*"></a>
-  <h4 id="SIPSorcery_Media_AudioExtrasSource__ctor_SIPSorcery_Media_AudioEncoder_SIPSorcery_Media_AudioSourceOptions_" data-uid="SIPSorcery.Media.AudioExtrasSource.#ctor(SIPSorcery.Media.AudioEncoder,SIPSorcery.Media.AudioSourceOptions)">AudioExtrasSource(AudioEncoder, AudioSourceOptions)</h4>
+  <h4 id="SIPSorcery_Media_AudioExtrasSource__ctor_SIPSorceryMedia_Abstractions_IAudioEncoder_SIPSorcery_Media_AudioSourceOptions_" data-uid="SIPSorcery.Media.AudioExtrasSource.#ctor(SIPSorceryMedia.Abstractions.IAudioEncoder,SIPSorcery.Media.AudioSourceOptions)">AudioExtrasSource(IAudioEncoder, AudioSourceOptions)</h4>
   <div class="markdown level1 summary"><p>Instantiates an audio source that can generate output samples from a variety of different
 non-live sources.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public AudioExtrasSource(AudioEncoder audioEncoder, AudioSourceOptions audioOptions = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public AudioExtrasSource(IAudioEncoder audioEncoder, AudioSourceOptions audioOptions = null)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -161,7 +161,7 @@ non-live sources.</p>
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="SIPSorcery.Media.AudioEncoder.html">AudioEncoder</a></td>
+        <td><span class="xref">SIPSorceryMedia.Abstractions.IAudioEncoder</span></td>
         <td><span class="parametername">audioEncoder</span></td>
         <td></td>
       </tr>

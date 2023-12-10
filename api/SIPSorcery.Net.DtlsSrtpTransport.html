@@ -82,8 +82,10 @@
   </div>
   <div class="implements">
     <h5>Implements</h5>
-    <div><span class="xref">Org.BouncyCastle.Crypto.Tls.DatagramTransport</span></div>
-    <div><span class="xref">Org.BouncyCastle.Crypto.Tls.TlsCloseable</span></div>
+    <div><span class="xref">Org.BouncyCastle.Tls.DatagramTransport</span></div>
+    <div><span class="xref">Org.BouncyCastle.Tls.DatagramReceiver</span></div>
+    <div><span class="xref">Org.BouncyCastle.Tls.DatagramSender</span></div>
+    <div><span class="xref">Org.BouncyCastle.Tls.TlsCloseable</span></div>
     <div><span class="xref">System.IDisposable</span></div>
   </div>
   <div class="inheritedMembers">
@@ -114,7 +116,7 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_DtlsSrtpTransport_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class DtlsSrtpTransport : DatagramTransport, TlsCloseable, IDisposable</code></pre>
+    <pre><code class="lang-csharp hljs">public class DtlsSrtpTransport : DatagramTransport, DatagramReceiver, DatagramSender, TlsCloseable, IDisposable</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -656,7 +658,7 @@ after.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.DtlsTransport</span></td>
+        <td><span class="xref">Org.BouncyCastle.Tls.DtlsTransport</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -668,7 +670,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_BackOff_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.BackOff(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L612">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L625">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_BackOff_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.BackOff*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_BackOff_System_Int32_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.BackOff(System.Int32)">BackOff(Int32)</h4>
@@ -716,7 +718,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_Close.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.Close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L584">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L597">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_Close_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Close*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_Close" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Close">Close()</h4>
@@ -731,7 +733,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_Dispose.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.Dispose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L602">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L615">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_Dispose_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Dispose*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_Dispose" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Dispose">Dispose()</h4>
@@ -747,7 +749,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_Dispose_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.Dispose(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L594">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L607">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_Dispose_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Dispose*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_Dispose_System_Boolean_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Dispose(System.Boolean)">Dispose(Boolean)</h4>
@@ -827,7 +829,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GenerateRtcpDecoder.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GenerateRtcpDecoder%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L348">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L346">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GenerateRtcpDecoder_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateRtcpDecoder*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GenerateRtcpDecoder" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateRtcpDecoder">GenerateRtcpDecoder()</h4>
@@ -857,7 +859,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GenerateRtcpEncoder.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GenerateRtcpEncoder%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L342">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L340">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GenerateRtcpEncoder_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateRtcpEncoder*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GenerateRtcpEncoder" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateRtcpEncoder">GenerateRtcpEncoder()</h4>
@@ -887,7 +889,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GenerateRtpDecoder.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GenerateRtpDecoder%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L336">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L334">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GenerateRtpDecoder_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateRtpDecoder*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GenerateRtpDecoder" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateRtpDecoder">GenerateRtpDecoder()</h4>
@@ -917,7 +919,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GenerateRtpEncoder.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GenerateRtpEncoder%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L331">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L329">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GenerateRtpEncoder_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateRtpEncoder*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GenerateRtpEncoder" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateRtpEncoder">GenerateRtpEncoder()</h4>
@@ -947,7 +949,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GenerateTransformer_System_Boolean_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GenerateTransformer(System.Boolean%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L354">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L352">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GenerateTransformer_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateTransformer*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GenerateTransformer_System_Boolean_System_Boolean_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GenerateTransformer(System.Boolean,System.Boolean)">GenerateTransformer(Boolean, Boolean)</h4>
@@ -999,7 +1001,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GetMasterClientKey.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GetMasterClientKey%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L311">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L309">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GetMasterClientKey_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetMasterClientKey*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GetMasterClientKey" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetMasterClientKey">GetMasterClientKey()</h4>
@@ -1029,7 +1031,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GetMasterClientSalt.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GetMasterClientSalt%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L316">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L314">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GetMasterClientSalt_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetMasterClientSalt*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GetMasterClientSalt" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetMasterClientSalt">GetMasterClientSalt()</h4>
@@ -1059,7 +1061,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GetMasterServerKey.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GetMasterServerKey%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L301">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L299">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GetMasterServerKey_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetMasterServerKey*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GetMasterServerKey" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetMasterServerKey">GetMasterServerKey()</h4>
@@ -1089,7 +1091,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GetMasterServerSalt.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GetMasterServerSalt%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L306">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L304">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GetMasterServerSalt_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetMasterServerSalt*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GetMasterServerSalt" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetMasterServerSalt">GetMasterServerSalt()</h4>
@@ -1119,7 +1121,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GetReceiveLimit.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GetReceiveLimit%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L478">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L476">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GetReceiveLimit_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetReceiveLimit*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GetReceiveLimit" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetReceiveLimit">GetReceiveLimit()</h4>
@@ -1149,7 +1151,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GetRemoteCertificate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GetRemoteCertificate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L296">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L294">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GetRemoteCertificate_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetRemoteCertificate*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GetRemoteCertificate" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetRemoteCertificate">GetRemoteCertificate()</h4>
@@ -1169,7 +1171,7 @@ after.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.Certificate</span></td>
+        <td><span class="xref">Org.BouncyCastle.Tls.Certificate</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1179,7 +1181,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GetSendLimit.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GetSendLimit%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L483">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L481">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GetSendLimit_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetSendLimit*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GetSendLimit" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetSendLimit">GetSendLimit()</h4>
@@ -1209,7 +1211,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GetSrtcpPolicy.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GetSrtcpPolicy%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L326">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L324">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GetSrtcpPolicy_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetSrtcpPolicy*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GetSrtcpPolicy" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetSrtcpPolicy">GetSrtcpPolicy()</h4>
@@ -1239,7 +1241,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_GetSrtpPolicy.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.GetSrtpPolicy%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L321">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L319">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_GetSrtpPolicy_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetSrtpPolicy*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_GetSrtpPolicy" data-uid="SIPSorcery.Net.DtlsSrtpTransport.GetSrtpPolicy">GetSrtpPolicy()</h4>
@@ -1359,7 +1361,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_ProtectRTCP_System_Byte___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L447">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L445">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_ProtectRTCP_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_ProtectRTCP_System_Byte___System_Int32_System_Int32_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte[],System.Int32,System.Int32)">ProtectRTCP(Byte[], Int32, Int32)</h4>
@@ -1416,7 +1418,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_ProtectRTCP_System_Byte___System_Int32_System_Int32__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L455">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L453">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_ProtectRTCP_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_ProtectRTCP_System_Byte___System_Int32_System_Int32__" data-uid="SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte[],System.Int32,System.Int32@)">ProtectRTCP(Byte[], Int32, out Int32)</h4>
@@ -1473,7 +1475,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_ProtectRTP_System_Byte___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L400">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L398">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_ProtectRTP_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_ProtectRTP_System_Byte___System_Int32_System_Int32_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte[],System.Int32,System.Int32)">ProtectRTP(Byte[], Int32, Int32)</h4>
@@ -1530,7 +1532,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_ProtectRTP_System_Byte___System_Int32_System_Int32__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L408">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L406">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_ProtectRTP_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_ProtectRTP_System_Byte___System_Int32_System_Int32__" data-uid="SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte[],System.Int32,System.Int32@)">ProtectRTP(Byte[], Int32, out Int32)</h4>
@@ -1587,7 +1589,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_Receive_System_Byte___System_Int32_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.Receive(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L517">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L523">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_Receive_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Receive*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_Receive_System_Byte___System_Int32_System_Int32_System_Int32_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Receive(System.Byte[],System.Int32,System.Int32,System.Int32)">Receive(Byte[], Int32, Int32, Int32)</h4>
@@ -1649,7 +1651,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_Send_System_Byte___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.Send(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L571">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L577">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_Send_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Send*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_Send_System_Byte___System_Int32_System_Int32_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.Send(System.Byte[],System.Int32,System.Int32)">Send(Byte[], Int32, Int32)</h4>
@@ -1691,7 +1693,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTCP_System_Byte___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTCP(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L424">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L422">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTCP_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTCP*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTCP_System_Byte___System_Int32_System_Int32_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTCP(System.Byte[],System.Int32,System.Int32)">UnprotectRTCP(Byte[], Int32, Int32)</h4>
@@ -1748,7 +1750,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTCP_System_Byte___System_Int32_System_Int32__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTCP(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L432">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L430">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTCP_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTCP*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTCP_System_Byte___System_Int32_System_Int32__" data-uid="SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTCP(System.Byte[],System.Int32,System.Int32@)">UnprotectRTCP(Byte[], Int32, out Int32)</h4>
@@ -1805,7 +1807,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTP_System_Byte___System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTP(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L376">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L374">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTP_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTP*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTP_System_Byte___System_Int32_System_Int32_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTP(System.Byte[],System.Int32,System.Int32)">UnprotectRTP(Byte[], Int32, Int32)</h4>
@@ -1862,7 +1864,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTP_System_Byte___System_Int32_System_Int32__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTP(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L384">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L382">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTP_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTP*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_UnprotectRTP_System_Byte___System_Int32_System_Int32__" data-uid="SIPSorcery.Net.DtlsSrtpTransport.UnprotectRTP(System.Byte[],System.Int32,System.Int32@)">UnprotectRTP(Byte[], Int32, out Int32)</h4>
@@ -1919,7 +1921,7 @@ after.</p>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpTransport_WriteToRecvStream_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpTransport.WriteToRecvStream(System.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L488">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpTransport.cs/#L486">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpTransport_WriteToRecvStream_" data-uid="SIPSorcery.Net.DtlsSrtpTransport.WriteToRecvStream*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpTransport_WriteToRecvStream_System_Byte___" data-uid="SIPSorcery.Net.DtlsSrtpTransport.WriteToRecvStream(System.Byte[])">WriteToRecvStream(Byte[])</h4>
@@ -1985,10 +1987,16 @@ after.</p>
   </table>
   <h3 id="implements">Implements</h3>
   <div>
-      <span class="xref">Org.BouncyCastle.Crypto.Tls.DatagramTransport</span>
+      <span class="xref">Org.BouncyCastle.Tls.DatagramTransport</span>
   </div>
   <div>
-      <span class="xref">Org.BouncyCastle.Crypto.Tls.TlsCloseable</span>
+      <span class="xref">Org.BouncyCastle.Tls.DatagramReceiver</span>
+  </div>
+  <div>
+      <span class="xref">Org.BouncyCastle.Tls.DatagramSender</span>
+  </div>
+  <div>
+      <span class="xref">Org.BouncyCastle.Tls.TlsCloseable</span>
   </div>
   <div>
       <span class="xref">System.IDisposable</span>
