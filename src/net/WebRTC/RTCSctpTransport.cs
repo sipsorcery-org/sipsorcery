@@ -20,7 +20,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Tls;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net

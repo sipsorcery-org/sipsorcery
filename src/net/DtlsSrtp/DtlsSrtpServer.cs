@@ -22,7 +22,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Tls;
+using Org.BouncyCastle.Tls.Crypto;
+using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Org.BouncyCastle.Utilities;
 using SIPSorcery.Sys;
 
@@ -114,8 +116,6 @@ namespace SIPSorcery.Net
         private SrtpPolicy srtpPolicy;
         private SrtpPolicy srtcpPolicy;
 
-        private int[] cipherSuites;
-
         /// <summary>
         /// Parameters:
         ///  - alert level,
@@ -124,31 +124,29 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
-        public DtlsSrtpServer() : this((Certificate)null, null)
+        public DtlsSrtpServer(TlsCrypto crypto) : this(crypto, (Certificate)null, null)
         {
         }
 
-        public DtlsSrtpServer(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate) : this(DtlsUtils.LoadCertificateChain(certificate), DtlsUtils.LoadPrivateKeyResource(certificate))
+        public DtlsSrtpServer(TlsCrypto crypto, System.Security.Cryptography.X509Certificates.X509Certificate2 certificate) : this(crypto,DtlsUtils.LoadCertificateChain(crypto,certificate), DtlsUtils.LoadPrivateKeyResource(certificate))
         {
         }
 
-        public DtlsSrtpServer(string certificatePath, string keyPath) : this(new string[] { certificatePath }, keyPath)
+        public DtlsSrtpServer(TlsCrypto crypto, string certificatePath, string keyPath) : this(crypto, new string[] { certificatePath }, keyPath)
         {
         }
 
-        public DtlsSrtpServer(string[] certificatesPath, string keyPath) :
-            this(DtlsUtils.LoadCertificateChain(certificatesPath), DtlsUtils.LoadPrivateKeyResource(keyPath))
+        public DtlsSrtpServer(TlsCrypto crypto, string[] certificatesPath, string keyPath) :
+            this(crypto, DtlsUtils.LoadCertificateChain(crypto, certificatesPath), DtlsUtils.LoadPrivateKeyResource(keyPath))
         {
         }
 
-        public DtlsSrtpServer(Certificate certificateChain, AsymmetricKeyParameter privateKey)
+        public DtlsSrtpServer(TlsCrypto crypto, Certificate certificateChain, AsymmetricKeyParameter privateKey) : base(crypto)
         {
             if (certificateChain == null && privateKey == null)
             {
-                (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+                (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert(crypto);
             }
-
-            this.cipherSuites = base.GetCipherSuites();
 
             this.mPrivateKey = privateKey;
             mCertificateChain = certificateChain;
@@ -183,15 +181,15 @@ namespace SIPSorcery.Net
             }
         }
 
-        protected override ProtocolVersion MaximumVersion
+        protected ProtocolVersion MaximumVersion
         {
             get
             {
-                return ProtocolVersion.DTLSv12;
+                return ProtocolVersion.DTLSv13;
             }
         }
 
-        protected override ProtocolVersion MinimumVersion
+        protected ProtocolVersion MinimumVersion
         {
             get
             {
@@ -213,18 +211,19 @@ namespace SIPSorcery.Net
              * must be negotiated only if the server can successfully complete the handshake while using the curves and point
              * formats supported by the client [...].
              */
-            bool eccCipherSuitesEnabled = SupportsClientEccCapabilities(this.mNamedCurves, this.mClientECPointFormats);
+
+            bool eccCipherSuitesEnabled = false;// SupportsClientEccCapabilities(this.mNamedCurves, this.mClientECPointFormats);
 
             int[] cipherSuites = GetCipherSuites();
             for (int i = 0; i < cipherSuites.Length; ++i)
             {
                 int cipherSuite = cipherSuites[i];
 
-                if (Arrays.Contains(this.mOfferedCipherSuites, cipherSuite)
+                if (Arrays.Contains(this.m_offeredCipherSuites, cipherSuite)
                         && (eccCipherSuitesEnabled || !TlsEccUtilities.IsEccCipherSuite(cipherSuite))
-                        && TlsUtilities.IsValidCipherSuiteForVersion(cipherSuite, mServerVersion))
+                        && TlsUtilities.IsValidVersionForCipherSuite(cipherSuite, GetServerVersion()))
                 {
-                    return this.mSelectedCipherSuite = cipherSuite;
+                    return this.m_selectedCipherSuite = cipherSuite;
                 }
             }
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
@@ -234,10 +233,10 @@ namespace SIPSorcery.Net
         {
             List<SignatureAndHashAlgorithm> serverSigAlgs = new List<SignatureAndHashAlgorithm>();
 
-            if (TlsUtilities.IsSignatureAlgorithmsExtensionAllowed(mServerVersion))
+            if (TlsUtilities.IsSignatureAlgorithmsExtensionAllowed(GetServerVersion()))
             {
-                byte[] hashAlgorithms = new byte[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224, HashAlgorithm.sha1 };
-                byte[] signatureAlgorithms = new byte[] { SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
+                short[] hashAlgorithms = new short[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224, HashAlgorithm.sha1 };
+                short[] signatureAlgorithms = new short[] { SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
 
                 serverSigAlgs = new List<SignatureAndHashAlgorithm>();
                 for (int i = 0; i < hashAlgorithms.Length; ++i)
@@ -248,7 +247,7 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            return new CertificateRequest(new byte[] { ClientCertificateType.rsa_sign }, serverSigAlgs, null);
+            return new CertificateRequest(new short[] { ClientCertificateType.rsa_sign }, serverSigAlgs, null);
         }
 
         public override void NotifyClientCertificate(Certificate clientCertificate)
@@ -256,27 +255,27 @@ namespace SIPSorcery.Net
             ClientCertificate = clientCertificate;
         }
 
-        public override IDictionary GetServerExtensions()
+        public override IDictionary<int,byte[]> GetServerExtensions()
         {
-            Hashtable serverExtensions = (Hashtable)base.GetServerExtensions();
-            if (TlsSRTPUtils.GetUseSrtpExtension(serverExtensions) == null)
+            var serverExtensions = base.GetServerExtensions();
+            if (TlsSrtpUtilities.GetUseSrtpExtension(serverExtensions) == null)
             {
                 if (serverExtensions == null)
                 {
-                    serverExtensions = new Hashtable();
+                    serverExtensions = (IDictionary<int,byte[]>)new Hashtable();
                 }
-                TlsSRTPUtils.AddUseSrtpExtension(serverExtensions, serverSrtpData);
+                TlsSrtpUtilities.AddUseSrtpExtension(serverExtensions, serverSrtpData);
             }
             return serverExtensions;
         }
 
-        public override void ProcessClientExtensions(IDictionary clientExtensions)
+        public override void ProcessClientExtensions(IDictionary<int,byte[]> clientExtensions)
         {
             base.ProcessClientExtensions(clientExtensions);
 
             // set to some reasonable default value
             int chosenProfile = SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80;
-            UseSrtpData clientSrtpData = TlsSRTPUtils.GetUseSrtpExtension(clientExtensions);
+            UseSrtpData clientSrtpData = TlsSrtpUtilities.GetUseSrtpExtension(clientExtensions);
 
             foreach (int profile in clientSrtpData.ProtectionProfiles)
             {
@@ -331,12 +330,12 @@ namespace SIPSorcery.Net
 
         public override void NotifyHandshakeComplete()
         {
-            //Copy master Secret (will be inaccessible after this call)
-            masterSecret = new byte[mContext.SecurityParameters.MasterSecret != null ? mContext.SecurityParameters.MasterSecret.Length : 0];
-            Buffer.BlockCopy(mContext.SecurityParameters.MasterSecret, 0, masterSecret, 0, masterSecret.Length);
-
             //Prepare Srtp Keys (we must to it here because master key will be cleared after that)
             PrepareSrtpSharedSecret();
+            //Copy master Secret (will be inaccessible after this call)
+            masterSecret = new byte[m_context.SecurityParameters.MasterSecret != null ? m_context.SecurityParameters.MasterSecret.Length : 0];
+            Buffer.BlockCopy(m_context.SecurityParameters.MasterSecret.Extract(), 0, masterSecret, 0, masterSecret.Length);
+
         }
 
         public bool IsClient()
@@ -344,42 +343,19 @@ namespace SIPSorcery.Net
             return false;
         }
 
-        protected override TlsSignerCredentials GetECDsaSignerCredentials()
+        protected override TlsCredentialedSigner GetECDsaSignerCredentials()
         {
-            return DtlsUtils.LoadSignerCredentials(mContext, mCertificateChain, mPrivateKey, new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.ecdsa));
+            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), this.Crypto as BcTlsCrypto, mPrivateKey, mCertificateChain, new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.ecdsa));
         }
 
-        protected override TlsEncryptionCredentials GetRsaEncryptionCredentials()
+        protected override TlsCredentialedDecryptor GetRsaEncryptionCredentials()
         {
-            return DtlsUtils.LoadEncryptionCredentials(mContext, mCertificateChain, mPrivateKey);
+            return new BcDefaultTlsCredentialedDecryptor(Crypto as BcTlsCrypto, mCertificateChain, mPrivateKey);
         }
 
-        protected override TlsSignerCredentials GetRsaSignerCredentials()
+        protected override TlsCredentialedSigner GetRsaSignerCredentials()
         {
-            /*
-             * TODO Note that this code fails to provide default value for the client supported
-             * algorithms if it wasn't sent.
-             */
-            SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-            IList sigAlgs = mSupportedSignatureAlgorithms;
-            if (sigAlgs != null)
-            {
-                foreach (var sigAlgUncasted in sigAlgs)
-                {
-                    SignatureAndHashAlgorithm sigAlg = sigAlgUncasted as SignatureAndHashAlgorithm;
-                    if (sigAlg != null && sigAlg.Signature == SignatureAlgorithm.rsa)
-                    {
-                        signatureAndHashAlgorithm = sigAlg;
-                        break;
-                    }
-                }
-
-                if (signatureAndHashAlgorithm == null)
-                {
-                    return null;
-                }
-            }
-            return DtlsUtils.LoadSignerCredentials(mContext, mCertificateChain, mPrivateKey, signatureAndHashAlgorithm);
+            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), this.Crypto as BcTlsCrypto, mPrivateKey, mCertificateChain, new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa));
         }
 
         protected virtual void PrepareSrtpSharedSecret()
@@ -448,7 +424,7 @@ namespace SIPSorcery.Net
                 throw new ArgumentException("must have length less than 2^16 (or be null)", "context_value");
             }
 
-            SecurityParameters sp = mContext.SecurityParameters;
+            SecurityParameters sp = m_context.SecurityParameters;
             if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
             {
                 /*
@@ -488,7 +464,7 @@ namespace SIPSorcery.Net
                 throw new InvalidOperationException("error in calculation of seed for export");
             }
 
-            return TlsUtilities.PRF(mContext, sp.MasterSecret, asciiLabel, seed, length);
+            return TlsUtilities.Prf(sp, sp.MasterSecret, asciiLabel, seed, length).Extract();
         }
 
         public override bool RequiresExtendedMasterSecret()
@@ -496,22 +472,21 @@ namespace SIPSorcery.Net
             return ForceUseExtendedMasterSecret;
         }
 
-        protected override int[] GetCipherSuites()
-        {
-            int[] cipherSuites = new int[this.cipherSuites.Length];
-            for (int i = 0; i < this.cipherSuites.Length; i++)
-            {
-                cipherSuites[i] = this.cipherSuites[i];
-            }
-            return cipherSuites;
-        }
-
         public Certificate GetRemoteCertificate()
         {
             return ClientCertificate;
         }
 
-        public override void NotifyAlertRaised(byte alertLevel, byte alertDescription, string message, Exception cause)
+        protected override ProtocolVersion[] GetSupportedVersions()
+        {
+            return new ProtocolVersion[]
+            {
+                ProtocolVersion.DTLSv10,
+                ProtocolVersion.DTLSv12
+            };
+        }
+
+        public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
         {
             string description = null;
             if (message != null)
@@ -536,19 +511,19 @@ namespace SIPSorcery.Net
             }
         }
 
-        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
+        public override void NotifyAlertReceived(short alertLevel, short alertDescription)
         {
             string description = AlertDescription.GetText(alertDescription);
 
             AlertLevelsEnum level = AlertLevelsEnum.Warning;
             AlertTypesEnum alertType = AlertTypesEnum.unknown;
 
-            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
+            if (Enum.IsDefined(typeof(AlertLevelsEnum), checked((byte)alertLevel)))
             {
                 level = (AlertLevelsEnum)alertLevel;
             }
 
-            if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
+            if (Enum.IsDefined(typeof(AlertTypesEnum), checked((byte)alertDescription)))
             {
                 alertType = (AlertTypesEnum)alertDescription;
             }

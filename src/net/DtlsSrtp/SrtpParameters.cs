@@ -18,7 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Tls;
 
 namespace SIPSorcery.Net
 {
